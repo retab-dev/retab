@@ -24,8 +24,11 @@ First time here? Go to our [quickstart guide](https://docs.uiform.com/get-starte
 ---
 
 
-We currently support OpenAI, Anthropic, Gemini(Google) and xAI models.
+We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthropic](https://www.anthropic.com/api), [Gemini](https://aistudio.google.com/) and [xAI](https://x.ai/api) models.
 
+You come with your own API key from your favorite AI provider, and we handle the rest.
+
+---
 
 UiForm is a **modern**, **flexible**, and **AI-powered** document processing API that helps you:
 
@@ -33,18 +36,9 @@ UiForm is a **modern**, **flexible**, and **AI-powered** document processing API
 - Add AI capabilities for automated document processing, that is compatible with any data structure
 - Create annotated datasets to distill or finetune your models
 
-Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible. You come with your own API key from your favorite AI provider, and we handle the rest.
+Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
 
-
-```
-
-With UiForm, you can:
-
-- Create from JSON schemas and Pydantic models with zero boilerplate
-- Add AI capabilities for automated document processing, that is compatible with any data structure
-- Create annotated datasets to distill or finetune your models
-
-Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible. You come with your own API key from your favorite AI provider, and we handle the rest.
+Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
 
 ## Quickstart
 
