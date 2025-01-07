@@ -73,6 +73,7 @@ response = client.documents.extract(
     model="gpt-4o-mini-2024-07-18",
     temperature=0
 )
+```
 
 And that's it ! You can start processing documents at scale ! 
 You have 1000 free requests to get started, and you can [subscribe](https://www.uiform.com) to the pro plan to get more.
