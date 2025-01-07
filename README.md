@@ -1,10 +1,14 @@
 # uiform
 
+<div align="center">
+<img src="https://github.com/UiForm/uiform/blob/main/uiform_logo.png" alt="UiForm Logo" width="256">
+</div>
+
 UiForm is a document processing API. It is a set of building blocks for quickly adding document processing features to your app. `pip install uiform`
 
 We currently support OpenAI, Anthropic, Gemini(Google) and xAI models.
 
-<img src="https://github.com/UiForm/uiform/blob/main/docs/assets/supported_models.png" alt="UiForm Logo" width="600">
+<img src="https://github.com/UiForm/uiform/blob/main/supported_models.png" alt="Supported Models" width="600">
 
 ## Installation
 
