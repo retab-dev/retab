@@ -1,0 +1,51 @@
+{
+  "title": "CreditCardInfo",
+  "type": "object",
+  "properties": {
+    "card_number": {
+      "title": "Card Number",
+      "type": "string",
+      "X-LLMDescription": "The 16-digit number found on the front of the card, used for transactions."
+    },
+    "card_type": {
+      "title": "Card Type",
+      "type": "string",
+      "X-LLMDescription": "Specifies the type of card, such as 'Debit', 'Credit', or 'Prepaid'."
+    },
+    "cardholder_name": {
+      "title": "Cardholder Name",
+      "type": "string",
+      "X-LLMDescription": "The name of the person to whom the card is issued, as printed on the card."
+    },
+    "expiration_date": {
+      "title": "Expiration Date",
+      "type": "string",
+      "X-LLMDescription": "The date until which the card is valid, typically formatted as MM/YY."
+    },
+    "card_network": {
+      "title": "Card Network",
+      "type": "string",
+      "X-LLMDescription": "The payment network associated with the card, such as 'Visa' or 'MasterCard'."
+    },
+    "additional_info": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Additional Info",
+      "X-LLMDescription": "Any extra information related to the card, which can be a string or null if not applicable."
+    }
+  },
+  "required": [
+    "card_number",
+    "card_type",
+    "cardholder_name",
+    "expiration_date",
+    "card_network",
+    "additional_info"
+  ]
+}

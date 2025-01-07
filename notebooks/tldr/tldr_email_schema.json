@@ -1,0 +1,85 @@
+{
+  "reasoning": "This schema was designed to represent the structure of a newsletter email, capturing its metadata, content sections, and links. Annotations were added to clarify the purpose of each field.",
+  "title": "Newsletter Email Schema",
+  "type": "object",
+  "properties": {
+    "emailMetadata": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "The sender's email address."
+        },
+        "to": {
+          "type": "string",
+          "description": "The recipient's email address."
+        },
+        "subject": {
+          "type": "string",
+          "description": "The subject line of the email."
+        },
+        "sentAt": {
+          "type": "string",
+          "description": "The timestamp when the email was sent."
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "subject",
+        "sentAt"
+      ],
+      "additionalProperties": false
+    },
+    "contentSections": {
+      "type": "array",
+      "description": "The main content sections of the email.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the section."
+          },
+          "content": {
+            "type": "string",
+            "description": "The textual content of the section."
+          },
+          "links": {
+            "type": "array",
+            "description": "Links included in the section.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "The text of the link."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The URL of the link."
+                }
+              },
+              "required": [
+                "text",
+                "url"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "links"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "emailMetadata",
+    "contentSections"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,1436 @@
+Delivered-To: sachaichbiah@gmail.com
+Received: by 2002:a05:6a10:8c20:b0:5c7:fafc:6789 with SMTP id go32csp95074pxb;
+        Tue, 7 Jan 2025 03:44:49 -0800 (PST)
+X-Google-Smtp-Source: AGHT+IE3G8BQqMKkTOVGo1dcmruRIIXIhm2uzUNxexrdyLuB/jBFuP8QM4pyHJ3ciL53jnccQqPh
+X-Received: by 2002:a05:620a:2904:b0:7b6:6365:1b72 with SMTP id af79cd13be357-7b9ba6fdafdmr9439028785a.3.1736250289617;
+        Tue, 07 Jan 2025 03:44:49 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1736250289; cv=none;
+        d=google.com; s=arc-20240605;
+        b=F4HMNWeJ0T7Nfnb7QDQsIFExM9iI4CFpNZkWb+RkNJjmWscXAF7IWSxC68+smTkINq
+         7P4Iy8y5FQQAFlT5bf+ab3vJVrr4QIqAqvP+9Om0bdDkC4Vdl6CmN4I/ThSetM3eUVO+
+         DBerwQJbEetpHXORS6VpeCQQ9gJjWbMwy+zcr+OhTjQm+28Vbl0UOgpnyr2QdpeWwk7k
+         06uq+LGVHuKPshF0vu+6xws0KrGjuqNWktoB5c5q5haXq9JJgs+jfwNVHQr20SCUKCDJ
+         IBOKFQeaAQRecZb4kHk1bbLVqqNCVGo8Qvr78K6GMCHT/jCmQaxdGZtyZE22Dkg0bLUC
+         Yg7Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=feedback-id:message-id:date:mime-version:list-unsubscribe-post
+         :list-unsubscribe:subject:to:from:dkim-signature:dkim-signature;
+        bh=CHPAA02oc74HjFzLm7pnyn6Jn1V/lW8S6OIm/bN2oYE=;
+        fh=xItG1hjv1yMwyRrI4GQ2Tl0obapc/gP8W9VPjRSlW7Y=;
+        b=jOk0aiQ+T3MMtQhuSn5j7InUscQIqnE4RCKmqLUr4eNXOnN/VaH7jLlDGMe7GLENID
+         gdR7lCID06QUAf8TMUzE+G8/DukryBy/m4gwkC4TVReYv/J/XDUk9yExuYF5BKz7rdTQ
+         vLqWcchHspOENFpGiNRDpNgFOGJ7elUTosWQetrzUpNVrVdbX1kRG49bQV2hlfG2dNdF
+         Wkf3o7qkKOQCogUSnxuUPbgv4ivkxjY8EajV+G+AievWc11WC9Dgyiz2w42sAp8NL1h6
+         wPfXl3v1hmIViJr6/58NHQWAkqimqw7LjE8CXLwLjqOIIiKarCFLtCEsgcppX5Bmm+Wp
+         Rlcw==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@tldrnewsletter.com header.s=sioo5ufy44q7kswoxqlcbgcwkczxbk64 header.b=dfwOO3Xj;
+       dkim=pass header.i=@amazonses.com header.s=ug7nbtf4gccmlpwj322ax3p6ow6yfsug header.b=EiksH87Y;
+       spf=pass (google.com: domain of 010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000@dailyupdate.tldrnewsletter.com designates 54.240.77.24 as permitted sender) smtp.mailfrom=010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000@dailyupdate.tldrnewsletter.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=tldrnewsletter.com
+Return-Path: <010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000@dailyupdate.tldrnewsletter.com>
+Received: from a77-24.smtp-out.amazonses.com (a77-24.smtp-out.amazonses.com. [54.240.77.24])
+        by mx.google.com with ESMTPS id af79cd13be357-7b9ac47a303si4598199785a.286.2025.01.07.03.44.49
+        for <sachaichbiah@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 07 Jan 2025 03:44:49 -0800 (PST)
+Received-SPF: pass (google.com: domain of 010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000@dailyupdate.tldrnewsletter.com designates 54.240.77.24 as permitted sender) client-ip=54.240.77.24;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@tldrnewsletter.com header.s=sioo5ufy44q7kswoxqlcbgcwkczxbk64 header.b=dfwOO3Xj;
+       dkim=pass header.i=@amazonses.com header.s=ug7nbtf4gccmlpwj322ax3p6ow6yfsug header.b=EiksH87Y;
+       spf=pass (google.com: domain of 010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000@dailyupdate.tldrnewsletter.com designates 54.240.77.24 as permitted sender) smtp.mailfrom=010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000@dailyupdate.tldrnewsletter.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=tldrnewsletter.com
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+	s=sioo5ufy44q7kswoxqlcbgcwkczxbk64; d=tldrnewsletter.com;
+	t=1736250289;
+	h=From:To:Subject:List-Unsubscribe:List-Unsubscribe-Post:MIME-Version:Date:Message-ID:Content-Type;
+	bh=k4NtVlCSyDdi7PkYHQJz+iMzjkzuvPi/a/cZWMqhhkE=;
+	b=dfwOO3XjkVFlv5I17wlxmia5koL7hzy5XutseGWzVOs40+w7qLDU5Muyyr+gKo1h
+	Kew5NINYz786RZ27B+8QeGI0bXLWag5mXDZnDR3UiVMRYny/11YCWtjWYAGGf3hgQAD
+	8T941CyGHfiYldToc/tRSX3sZcCT0urkfv3ImRYc=
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+	s=ug7nbtf4gccmlpwj322ax3p6ow6yfsug; d=amazonses.com; t=1736250289;
+	h=From:To:Subject:List-Unsubscribe:List-Unsubscribe-Post:MIME-Version:Date:Message-ID:Content-Type:Feedback-ID;
+	bh=k4NtVlCSyDdi7PkYHQJz+iMzjkzuvPi/a/cZWMqhhkE=;
+	b=EiksH87YLbwKNXW6FKYoUxFRwQLpwpOVa82emtNx0lYM4mxGTPNpfcwlfnZnqovf
+	C9Fa3ow4GscKtVA4waV8IxFWsLFpkuMsw5kVu+i8NuNIiogf0vB4vSkjtq6l2be7axz
+	r3eYjj5jbO3bFZ76vf7bqscidEGlQpckyjUpOfqA=
+From: TLDR <dan@tldrnewsletter.com>
+To: sachaichbiah@gmail.com
+Subject: Nvidia's $3k desktop =?utf-8?Q?=F0=9F=96=A5=EF=B8=8F=2C?= CES kicks
+ off =?utf-8?Q?=F0=9F=A4=96=2C?= Ghostty first impressions
+ =?utf-8?Q?=F0=9F=91=A8=E2=80=8D=F0=9F=92=BB?=
+X-Entity-Ref-Id: 1f5175fe-1b3e-449b-9e04-3e9c8c7f4c70
+X-EmailOctopus-Parent-Id: 1580c222-ccd1-11ef-8d8b-9d2c888b1d47
+X-EmailOctopus-Parent-Type-Id: campaign
+X-EmailOctopus-List-Id: cfa2d55a-b7be-11e8-a3c9-06b79b628af2
+X-EmailOctopus-List-Contact-Id: e6d350cc-cff0-11ed-b4c6-19265e13ae8b
+X-EmailOctopus-Started-Preparing-At: 2025-01-07T11:00:44+00:00
+X-EmailOctopus-Sent-At: 2025-01-07T11:44:48+00:00
+X-EmailOctopus-Team-Id: 66987ef2-4f4c-11e9-a3c9-06b79b628af2
+X-EmailOctopus-Version: 4
+List-Unsubscribe: <https://a.tldrnewsletter.com/unsubscribe?ep=1&l=cfa2d55a-b7be-11e8-a3c9-06b79b628af2&lc=e6d350cc-cff0-11ed-b4c6-19265e13ae8b&p=1580c222-ccd1-11ef-8d8b-9d2c888b1d47&pt=campaign&pv=4&spa=1736247644&t=1736250288&s=0b9515bb2a333cc8b6b260bf3b13411e8ff2476f5b80c425d74d0f28f839f585>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+X-EmailOctopus-Ses-Configuration-Set-Name: emailoctopus-a9f7b12f74f3c968d9408897fb35539c
+MIME-Version: 1.0
+Date: Tue, 7 Jan 2025 11:44:49 +0000
+Message-ID: <010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000@email.amazonses.com>
+Content-Type: multipart/alternative; boundary=5xxFUzvP
+Feedback-ID: ::1.us-east-1.Dj5/7DYmgk+n1sSGGXSQSLIthSjNQ0MGtV5Dro1Tr8U=:AmazonSES
+X-SES-Outgoing: 2025.01.07-54.240.77.24
+
+--5xxFUzvP
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Nvidia announced a personal AI supercomputer called Digits at CES. It
+can=
+ handle AI models with up to 200 billion
+parameters.=C2=A0=E2=80=8C=C2=
+=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=
+=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=
+=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=
+=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=
+=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=
+=C2=A0=E2=80=8C=C2=A0=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=
+=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=
+=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=
+=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=
+=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=
+=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0=E2=80=8C=C2=A0
+
+
+ Sign =
+Up [1] |Advertise [2]|View Online [3]=20
+
+=09=09TLDR=20
+
+=09=09TOGETHER=
+ WITH [TLDR] [4]
+
+TLDR 2025-01-07
+
+ REACH MILLIONS OF TECH PROFESSI=
+ONALS READING TLDR (SPONSOR) [4]=20
+
+ Grab the attention of software deve=
+lopers, product managers,
+marketers, executives and other tech profession=
+als reading TLDR every
+day. TLDR offers 10 interest-based newsletters to =
+help you reach your
+target audience. Learn more [4] about running your fi=
+rst campaign with
+us.=20
+
+=F0=9F=93=B1=20
+
+BIG TECH & STARTUPS
+
+ =
+NVIDIA ANNOUNCES $3,000 PERSONAL AI SUPERCOMPUTER CALLED DIGITS (3
+MINUTE=
+ READ) [5]=20
+
+ Nvidia announced a personal AI supercomputer called Digit=
+s at CES. It
+can handle AI models with up to 200 billion parameters. Simi=
+lar in
+form to a Mac Mini, Digits has a starting price of $3,000. Each sy=
+stem
+comes equipped with 128GB of unified, coherent memory. Two systems c=
+an
+be linked together to handle models with up to 405 billion parameters.=
+
+
+
+ LIVE UPDATES CES 2025: NVIDIA, SAMSUNG, SONY, TOYOTA REVEALS, PLU=
+S
+MORE (WEBSITE) [6]=20
+
+ CES 2025 is currently being held in Las Vegas=
+. This page contains
+live updates from the annual consumer tech conferenc=
+e. AI will likely
+be the focal point of most companies' presentations - A=
+I-powered
+devices are expected to be covered extensively through the even=
+t.
+Robotics and transportation are also core topics at CES.=20
+
+=
+=F0=9F=9A=80=20
+
+SCIENCE & FUTURISTIC TECHNOLOGY
+
+ LG JUST UNVEILED T=
+HE WORLD'S FIRST BENDABLE GAMING MONITOR (2 MINUTE
+READ) [7]=20
+
+ The L=
+G UltraGear GX9 45GX990A is a bendable gaming monitor with an
+ultra-high =
+5K2K resolution that can accurately depict rich blacks,
+vibrant colors, a=
+nd dynamic brightness levels with pinpoint accuracy.
+It can curve its 45-=
+inch body to 900R curvature, providing a level of
+immersion that is rarel=
+y offered by more conventional monitors. The
+screen has the performance s=
+pecs to back up its stylish looks. LG has
+not released the price or comme=
+rcial release date for the screen.=20
+
+ IN 2025, PEOPLE WILL TRY LIVING I=
+N THIS UNDERWATER HABITAT (7 MINUTE
+READ) [8]=20
+
+ Ocean exploration or=
+ganization Deep has embarked on a multiyear quest
+to enable scientists to=
+ live on the sea floor at depths of up to 200
+meters. It is currently dev=
+eloping and testing a small modular habitat
+called Vanguard that is capab=
+le of housing up to three divers for up
+to a week or so. Vanguard is a st=
+eppingstone to a more permanent
+modular habitat system called Sentinel se=
+t to launch in 2027. Deep is
+aiming for a permanent human presence in the=
+ ocean by 2030. Its plans
+are possible thanks to an advanced 3D printing-=
+welding approach that
+can print these large habitation structures.=20
+
+=
+=F0=9F=92=BB=20
+
+PROGRAMMING, DESIGN & DATA SCIENCE
+
+ HOW I PROGRAM W=
+ITH LLMS (28 MINUTE READ) [9]=20
+
+ This post contains a summary of a deve=
+loper's personal experiences
+using generative models while programming ov=
+er the last year. The
+developer currently uses large language models regu=
+larly while
+programming and considers their benefits a net-positive on th=
+eir
+productivity. They discovered some often-repeated steps that can be=
+
+automated and are currently working with a team to build them into a
+t=
+ool specifically for Go programming.=20
+
+ FIRST IMPRESSIONS OF GHOSTTY (6=
+ MINUTE READ) [10]=20
+
+ Ghostty is a cross-platform terminal emulator tha=
+t uses
+platform-native UI and GPU acceleration. It contains many modern=
+
+opt-in features that can improve the terminal experience. This article=
+
+provides a review of Ghostty from a user's point of view. Overall,
+Gho=
+stty improved the reviewer's setup - while setup took some time, it
+wasn'=
+t a big deal.=20
+
+=F0=9F=8E=81=20
+
+MISCELLANEOUS
+
+ MICROSOFT IS USI=
+NG BING TO TRICK PEOPLE INTO THINKING THEY'RE ON
+GOOGLE (3 MINUTE READ) [=
+11]=20
+
+ Searching for Google on Bing (without signing in) takes users to=
+ a
+page that looks a lot like Google. It's a clear attempt from Microsoft=
+
+to make Bing look like Google for this specific search query. Other
+se=
+arch results return without the special interface. Bing still
+surfaces se=
+arch results for Google underneath the spoofed Google UI.
+Microsoft has u=
+sed similar tactics over the years to convince people
+to switch to its pr=
+oducts.=20
+
+ DELL ANNOUNCES ALL-NEW BRANDING WITH DELL, DELL PRO, AND DEL=
+L PRO MAX
+LAPTOPS (5 MINUTE READ) [12]=20
+
+ Dell is rebranding its lapt=
+op and desktop lines for 2025. It has just
+dropped its longtime model nam=
+es for more simplified nomenclature.
+Dell's laptop and PC series will now=
+ be simply labeled as Dell, Dell
+Pro, and Dell Pro Max, with base, Plus, =
+and Premium versions of each.
+The Dell, Dell Plus, and Dell Premium serie=
+s will be the models
+previously labeled as either Inspiron or XPS, the De=
+ll Pro series
+replaces the Latitude line, and the Dell Pro Max will repla=
+ce the
+Precision workstation line.=20
+
+=E2=9A=A1=20
+
+QUICK LINKS
+=
+
+ THE NON-BEGINNER'S GUIDE TO RAG (SPONSOR) [13]=20
+
+ RAG is more than =
+simple text retrieval. Learn about the 5 layers of
+RAG architecture, mode=
+l evaluation, data management, and more. Read
+the guide by Elastic [13] =
+
+
+ HOW UBER AND LYFT ARE GEARING UP FOR THE ROBOTAXI REVOLUTION (8
+MI=
+NUTE READ) [14]=20
+
+ Uber and Lyft are preparing to bring driverless taxi=
+s to several
+cities in the US this year.=20
+
+ AMERICA'S FIRST BIRD FLU =
+DEATH REPORTED IN LOUISIANA (4 MINUTE READ)
+[15]=20
+
+ The person was ov=
+er 65 and reportedly had underlying medical
+conditions - they were hospit=
+alized with the flu after exposure to a
+backyard flock of birds and wild =
+birds.=20
+
+ META'S ZUCKERBERG ADDS UFC'S DANA WHITE, TWO OTHERS TO BOARD =
+(3
+MINUTE READ) [16]=20
+
+ Meta has added UFC CEO Dana White, investor a=
+nd former Microsoft
+executive Charlie Songhurst, and CEO of Exor NV John =
+Elkann to its
+board.=20
+
+ WHO WOULD HAVE WON THE SIMON-EHRLICH BET OVER=
+ DIFFERENT DECADES, AND
+WHAT DO LONG-TERM PRICES TELL US ABOUT RESOURCE S=
+CARCITY? (11 MINUTE
+READ) [17]=20
+
+ We produce far more materials than =
+we did in the past, yet prices
+have barely changed, which suggests that w=
+e're not close to running
+out of these materials any time soon.=20
+
+ TH=
+EY SQUANDERED THE HOLY GRAIL (20 MINUTE READ) [18]=20
+
+ Apple made the ho=
+ly grail of remotely attested trusted compute, but
+its AI is much worse t=
+han integrations made with Ollama on the same
+device, which would be just=
+ as private.=20
+
+ THIS IS NOT YOUR LAST JOB (4 MINUTE READ) [19]=20
+
+ P=
+eople who like to learn and grow will change their roles many times
+throu=
+ghout their lifetimes.=20
+
+Love TLDR? Tell your friends and get rewards!=
+
+
+ Share your referral link below with friends to get free TLDR swag! =
+
+
+ https://refer.tldr.tech/a73258cd/ [20]=20
+
+=09=09 Track your refer=
+rals here. [21]=20
+
+Want to advertise in TLDR? =F0=9F=93=B0
+
+ If your=
+ company is interested in reaching an audience of tech
+executives, decisi=
+on-makers and engineers, you may want to ADVERTISE
+WITH US [22].=20
+
+Wa=
+nt to work at TLDR? =F0=9F=92=BC
+
+ APPLY HERE [23] or send a friend's r=
+esume to jobs@tldr.tech and get
+$1k if we hire them!=20
+
+ If you have a=
+ny comments or feedback, just respond to this email!=20
+
+Thanks for readi=
+ng,=20
+Dan Ni & Stephen Flanders=20
+
+If you don't want to receive future =
+editions of TLDR, please
+unsubscribe from TLDR [24] or manage all of your=
+ TLDR newsletter
+subscriptions [25].=20
+
+=20
+
+Links:
+------
+[1] h=
+ttps://tldr.tech/signup?utm_source=3Dtldr
+[2] https://advertise.tldr.tech=
+/?utm_source=3Dtldr&utm_medium=3Dnewsletter&utm_campaign=3Dadvertisetopnav=
+
+[3] https://a.tldrnewsletter.com/web-version?ep=3D1&lc=3De6d350cc-cff0-1=
+1ed-b4c6-19265e13ae8b&p=3D1580c222-ccd1-11ef-8d8b-9d2c888b1d47&pt=3Dcampaig=
+n&t=3D1736250288&s=3D0cd09589851da05044e86fa73f1013fb7e4c1f71d477c9434325b9=
+8cf4fb528c
+[4] https://advertise.tldr.tech/?utm_source=3Dtldr&utm_medium=
+=3Dnewsletter&utm_campaign=3Dprimary01072025
+[5] https://www.theverge.com=
+/2025/1/6/24337530/nvidia-ces-digits-super-computer-ai?utm_source=3Dtldrnew=
+sletter
+[6] https://techcrunch.com/storyline/live-updates-ces-2025-nvidia=
+-samsung-sony-toyota-reveals-plus-more/?utm_source=3Dtldrnewsletter
+[7] h=
+ttps://www.robbreport.com.sg/lg-45gx990a-gaming-monitor/?utm_source=3Dtldrn=
+ewsletter
+[8] https://spectrum.ieee.org/ocean-engineering?utm_source=3Dtl=
+drnewsletter
+[9] https://crawshaw.io/blog/programming-with-llms?utm_sourc=
+e=3Dtldrnewsletter
+[10] https://www.jonashietala.se/blog/2025/01/06/first=
+_impressions_of_ghostty/?utm_source=3Dtldrnewsletter
+[11] https://www.the=
+verge.com/2025/1/6/24337117/microsoft-bing-search-results-google-design-tri=
+ck?utm_source=3Dtldrnewsletter
+[12] https://www.cnet.com/tech/computing/d=
+ell-announces-all-new-branding-with-dell-dell-pro-and-dell-pro-max-laptops/=
+?utm_source=3Dtldrnewsletter
+[13] https://www.elastic.co/blog/beyond-rag-=
+basics?utm_source=3Dpublisher-direct&utm_medium=3Dtldr&utm_campaign=3Dtech-=
+beyond-rag-blog-cee-gc
+[14] https://www.wsj.com/tech/uber-lyft-self-drivi=
+ng-taxis-a3659c9c?st=3DPYD37P&reflink=3Ddesktopwebshare_permalink&utm_sourc=
+e=3Dtldrnewsletter
+[15] https://www.cnn.com/2025/01/06/health/bird-flu-de=
+ath-louisiana/index.html?utm_source=3Dtldrnewsletter
+[16] https://www.blo=
+omberg.com/news/articles/2025-01-06/meta-s-zuckerberg-adds-ufc-s-dana-white=
+-to-board-songhurst-elkann-also-named?accessToken=3DeyJhbGciOiJIUzI1NiIsInR=
+5cCI6IkpXVCJ9.eyJzb3VyY2UiOiJTdWJzY3JpYmVyR2lmdGVkQXJ0aWNsZSIsImlhdCI6MTczN=
+jIyNDQ1MiwiZXhwIjoxNzM2ODI5MjUyLCJhcnRpY2xlSWQiOiJTUElQQlJUMEcxS1cwMCIsImJj=
+b25uZWN0SWQiOiJFQTExNDNDNTM4NEE0RUY5QTg5RjJEN0IxMTg2MzcwOSJ9.rbzIAhGM6l-fTu=
+YKFllDmRJQwgiHHNxlbc8MD5zic_A&utm_source=3Dtldrnewsletter
+[17] https://ou=
+rworldindata.org/simon-ehrlich-bet?utm_source=3Dtldrnewsletter
+[18] https=
+://xeiaso.net/blog/2025/squandered-holy-grail/?utm_source=3Dtldrnewsletter=
+
+[19] https://v5.chriskrycho.com/journal/this-is-not-your-last-job/?utm_s=
+ource=3Dtldrnewsletter
+[20] https://refer.tldr.tech/a73258cd/
+[21] http=
+s://hub.sparklp.co/sub_bf6da647dfd1/1
+[22] https://advertise.tldr.tech/?u=
+tm_source=3Dtldr&utm_medium=3Dnewsletter&utm_campaign=3Dadvertisecta
+[23]=
+ https://jobs.ashbyhq.com/tldr.tech
+[24] https://a.tldrnewsletter.com/uns=
+ubscribe?ep=3D1&l=3Dcfa2d55a-b7be-11e8-a3c9-06b79b628af2&lc=3De6d350cc-cff0=
+-11ed-b4c6-19265e13ae8b&p=3D1580c222-ccd1-11ef-8d8b-9d2c888b1d47&pt=3Dcampa=
+ign&pv=3D4&spa=3D1736247644&t=3D1736250288&s=3D0b9515bb2a333cc8b6b260bf3b13=
+411e8ff2476f5b80c425d74d0f28f839f585
+[25] https://tldr.tech/tech/manage?e=
+mail=3Dsachaichbiah%40gmail.com
+--5xxFUzvP
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html><html lang=3D"en"><head><meta http-equiv=3D"Content-Type" co=
+ntent=3D"text/html charset=3DUTF-8"><meta charset=3D"UTF-8"><meta name=3D"v=
+iewport" content=3D"width=3Ddevice-width"><meta name=3D"x-apple-disable-mes=
+sage-reformatting"><title>TLDR</title><meta name=3D"color-scheme" content=
+=3D"light dark"><meta name=3D"supported-color-schemes" content=3D"light dar=
+k"><style type=3D"text/css">
+=09=09=09:root {
+=09=09=09=09color-scheme: light dark; supported-color-schemes: light dark;
+=09=09=09}
+=09=09=09
+=09=09=09*,
+=09=09=09*:after,
+=09=09=09*:before {
+=09=09=09=09-webkit-box-sizing: border-box; -moz-box-sizing: border-box; bo=
+x-sizing: border-box;
+=09=09=09}
+=09=09=09
+=09=09=09* {
+=09=09=09=09-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;
+=09=09=09}
+=09=09=09
+=09=09=09html,
+=09=09=09body,
+=09=09=09.document {
+=09=09=09=09width: 100% !important; height: 100% !important; margin: 0; pad=
+ding: 0;
+=09=09=09}
+=09=09=09
+=09=09=09body {
+=09=09=09=09-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: g=
+rayscale; text-rendering: optimizeLegibility;
+=09=09=09}
+=09=09=09
+=09=09=09div[style*=3D"margin: 16px 0"] {
+=09=09=09=09margin: 0 !important;
+=09=09=09}
+=09=09=09
+=09=09=09table,
+=09=09=09td {
+=09=09=09=09mso-table-lspace: 0pt; mso-table-rspace: 0pt;
+=09=09=09}
+=09=09=09
+=09=09=09table {
+=09=09=09=09border-spacing: 0; border-collapse: collapse; table-layout: fix=
+ed; margin: 0 auto;
+=09=09=09}
+=09=09=09
+=09=09=09img {
+=09=09=09=09-ms-interpolation-mode: bicubic; max-width: 100%; border: 0;
+=09=09=09}
+=09=09=09
+=09=09=09*[x-apple-data-detectors] {
+=09=09=09=09color: inherit !important; text-decoration: none !important;
+=09=09=09}
+=09=09=09
+=09=09=09.x-gmail-data-detectors,
+=09=09=09.x-gmail-data-detectors *,
+=09=09=09.aBn {
+=09=09=09=09border-bottom: 0 !important; cursor: default !important;
+=09=09=09}
+=09=09=09
+=09=09=09.btn {
+=09=09=09=09-webkit-transition: all 200ms ease; transition: all 200ms ease;
+=09=09=09}
+=09=09=09
+=09=09=09.btn:hover {
+=09=09=09=09background-color: #f67575; border-color: #f67575;
+=09=09=09}
+=09=09=09
+=09=09=09* {
+=09=09=09=09font-family: Arial, Helvetica, sans-serif; font-size: 18px;
+=09=09=09}
+=09=09=09
+=09=09=09@media screen and (max-width: 600px) {
+=09=09=09=09.container {
+=09=09=09=09=09width: 100%; margin: auto;
+=09=09=09=09}
+=09=09=09=09.stack {
+=09=09=09=09=09display: block!important; width: 100%!important; max-width: =
+100%!important;
+=09=09=09=09}
+=09=09=09=09.btn {
+=09=09=09=09=09display: block; width: 100%; text-align: center;
+=09=09=09=09}
+=09=09=09}
+=09=09=09
+=09=09=09body,
+=09=09=09p,
+=09=09=09td,
+=09=09=09tr,
+=09=09=09.body,
+=09=09=09table,
+=09=09=09h1,
+=09=09=09h2,
+=09=09=09h3,
+=09=09=09h4,
+=09=09=09h5,
+=09=09=09h6,
+=09=09=09div,
+=09=09=09span {
+=09=09=09=09background-color: #FEFEFE !important; color: #010101 !important=
+;
+=09=09=09}
+=09=09=09
+=09=09=09@media (prefers-color-scheme: dark) {
+=09=09=09=09body,
+=09=09=09=09p,
+=09=09=09=09td,
+=09=09=09=09tr,
+=09=09=09=09.body,
+=09=09=09=09table,
+=09=09=09=09h1,
+=09=09=09=09h2,
+=09=09=09=09h3,
+=09=09=09=09h4,
+=09=09=09=09h5,
+=09=09=09=09h6,
+=09=09=09=09div,
+=09=09=09=09span {
+=09=09=09=09=09background-color: #27292D !important; color: #FEFEFE !import=
+ant;
+=09=09=09=09}
+=09=09=09}
+=09=09=09
+=09=09=09a {
+=09=09=09=09color: inherit !important; text-decoration: underline !importan=
+t;
+=09=09=09}
+
+=09=09</style><!--[if mso | ie]>
+=09=09<style type=3D"text/css">
+=09=09=09a {
+=09=09=09=09background-color: #FEFEFE !important; color: #010101 !important=
+;
+=09=09=09}
+=09=09=09@media (prefers-color-scheme: dark) {
+=09=09=09=09a {
+=09=09=09=09=09background-color: #27292D !important; color: #FEFEFE !import=
+ant;
+=09=09=09=09}
+=09=09=09}
+=09 </style>
+=09=09=09<![endif]--></head><body class=3D"">
+
+
+
+<div style=3D"display: none; max-height: 0px; overflow: hidden;">Nvidia ann=
+ounced a personal AI supercomputer called Digits at CES. It can handle AI m=
+odels with up to 200 billion parameters.&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp=
+;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp=
+;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp=
+;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp=
+;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp=
+;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;&nbsp;=E2=80=
+=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=
+=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=
+=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=
+=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=
+=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=8C&nbsp;=E2=80=
+=8C&nbsp;</div>
+
+
+<div style=3D"display: none; max-height: 0px; overflow: hidden;">
+<br>
+</div>
+
+<table align=3D"center" class=3D"document"><tbody><tr><td valign=3D"top">
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" cl=
+ass=3D"container" width=3D"600"><tbody><tr class=3D"inner-body"><td>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr class=3D"header"><td bgcolor=3D"" class=3D"containe=
+r">
+
+<table width=3D"100%"><tbody><tr><td class=3D"container">
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" style=3D"margin-top: 0px;" width=3D"100%"><tbody><tr><td style=
+=3D"padding: 0px;">
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng: 15px 15px;">
+<div style=3D"text-align: center;">
+<span style=3D"margin-right: 0px;"><a href=3D"https://tracking.tldrnewslett=
+er.com/CL0/https:%2F%2Ftldr.tech%2Fsignup%3Futm_source=3Dtldr/1/01000194409=
+4eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/NH_pvB__kkGy951v2Evz3Ly77=
+h3WmuK6AF4U7gu2h_A=3D386" rel=3D"noopener noreferrer" target=3D"_blank"><sp=
+an>Sign Up</span></a>
+<span>|</span><span style=3D"margin-right: 2px; margin-left: 2px;"><a href=
+=3D"https://tracking.tldrnewsletter.com/CL0/https:%2F%2Fadvertise.tldr.tech=
+%2F%3Futm_source=3Dtldr%26utm_medium=3Dnewsletter%26utm_campaign=3Dadvertis=
+etopnav/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/knwB=
+XypqrNjK76pIR5agAgcyjgzbuFRkqwpplbmfO-w=3D386" rel=3D"noopener noreferrer" =
+target=3D"_blank"><span>Advertise</span></a></span><span>|</span><span styl=
+e=3D"margin-left: 2px;"><a href=3D"https://tracking.tldrnewsletter.com/CL0/=
+https:%2F%2Fa.tldrnewsletter.com%2Fweb-version%3Fep=3D1%26lc=3De6d350cc-cff=
+0-11ed-b4c6-19265e13ae8b%26p=3D1580c222-ccd1-11ef-8d8b-9d2c888b1d47%26pt=3D=
+campaign%26t=3D1736250288%26s=3D0cd09589851da05044e86fa73f1013fb7e4c1f71d47=
+7c9434325b98cf4fb528c/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7=
+d2-000000/owayNlZ_r-gwBYyKaY0JFRg20Jlpvab5upS7jVzPhX0=3D386"><span>View Onl=
+ine</span></a></span>
+<br>
+</span></div>
+</td></tr></tbody></table>
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"text-=
+align: center;"><span data-darkreader-inline-color=3D"" style=3D"--darkread=
+er-inline-color:#3db3ff; color: rgb(51, 175, 255) !important; font-size: 30=
+px;">T</span><span style=3D"font-size: 30px;"><span data-darkreader-inline-=
+color=3D"" style=3D"color: rgb(232, 192, 96) !important; --darkreader-inlin=
+e-color:#e8c163; font-size:30px;">L</span><span data-darkreader-inline-colo=
+r=3D"" style=3D"color: rgb(101, 195, 173) !important; --darkreader-inline-c=
+olor:#6ec7b2; font-size:30px;">D</span></span><span data-darkreader-inline-=
+color=3D"" style=3D"--darkreader-inline-color:#dd6e6e; color: rgb(220, 107,=
+ 107) !important; font-size: 30px;">R</span>
+<br>
+</td></tr></tbody></table>
+
+<br>
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr id=3D"together-with"><td align=3D"cent=
+er" height=3D"20" style=3D"vertical-align:middle !important;" valign=3D"mid=
+dle" width=3D"100%"><strong style=3D"vertical-align:middle !important; heig=
+ht: 100%;">Together With </strong>
+<a href=3D"https://tracking.tldrnewsletter.com/CL0/https:%2F%2Fadvertise.tl=
+dr.tech%2F%3Futm_source=3Dtldr%26utm_medium=3Dnewsletter%26utm_campaign=3Dp=
+rimary01072025/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-0000=
+00/WrQE66KmXqo7qgToJATTg5NkupGZ-ZgZhguBfYWv9P8=3D386"><img src=3D"https://i=
+mages.tldr.tech/tldr50.png" valign=3D"middle" style=3D"vertical-align: midd=
+le !important; height: 100%;" alt=3D"TLDR"></a></td></tr></tbody></table>
+
+<table style=3D"table-layout: fixed; width:100%;" width=3D"100%"><tbody><tr=
+><td style=3D"padding:0;border-collapse:collapse;border-spacing:0;margin:0;=
+">
+<div style=3D"text-align: center;">
+
+<h1><strong>TLDR <span id=3D"date">2025-01-07</span></strong></h1>
+</div>
+</td></tr>
+<tr id=3D"sponsy-copy"><td class=3D"container" style=3D"padding: 15px 15px;=
+">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fadvertise.tldr.tech%2F%3Futm_source=3Dtldr%26utm_medium=
+=3Dnewsletter%26utm_campaign=3Dprimary01072025/2/010001944094eb71-fef5b305-=
+9ea3-47d9-8166-dd2f65bda7d2-000000/rzCCo9pR70t4HNhzFVXpwUWM9QlYBWupTwitJ8sf=
+51g=3D386">
+                                    <span>
+                                        <strong>Reach millions of tech prof=
+essionals reading TLDR (Sponsor)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Grab the attention of software develope=
+rs, product managers, marketers, executives and other tech professionals re=
+ading TLDR every day. TLDR offers 10 interest-based newsletters to help you=
+ reach your target audience. <a class=3D"c-link" href=3D"https://tracking.t=
+ldrnewsletter.com/CL0/https:%2F%2Fadvertise.tldr.tech%2F%3Futm_source=3Dtld=
+r%26utm_medium=3Dnewsletter%26utm_campaign=3Dprimary01072025/3/010001944094=
+eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/zX2G4Ni3N_MIXHfjd7vj5m2nd5=
+uLJ4VTBKV27Ef30ek=3D386" rel=3D"noopener noreferrer" target=3D"_blank"><spa=
+n>Learn more</span></a> about running your first campaign with us.
+</span>
+</span>
+</div>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+</td></tr>
+<tr bgcolor=3D""><td class=3D"container">
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td style=3D"padding: 0px;">
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;"><span style=3D"font-size: 36px;">=F0=9F=
+=93=B1</span></div></div>
+</td></tr></tbody></table>
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;">
+
+<h1><strong>Big Tech &amp; Startups</strong></h1>
+</div>
+</div>
+</td></tr></tbody></table>
+
+<table style=3D"table-layout: fixed; width: 100%;" width=3D"100%"><tbody><t=
+r><td style=3D"padding:0;border-collapse:collapse;border-spacing:0;margin:0=
+;" valign=3D"top">
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.theverge.com%2F2025%2F1%2F6%2F24337530%2Fnvidia-ces=
+-digits-super-computer-ai%3Futm_source=3Dtldrnewsletter/1/010001944094eb71-=
+fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/Gw2XQ9fZudxb9sqrVFU1rVmIewpPiyU=
+16q5yHsSpOEE=3D386">
+                                    <span>
+                                        <strong>Nvidia announces $3,000 per=
+sonal AI supercomputer called Digits (3 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Nvidia announced a personal AI supercom=
+puter called Digits at CES. It can handle AI models with up to 200 billion =
+parameters. Similar in form to a Mac Mini, Digits has a starting price of $=
+3,000. Each system comes equipped with 128GB of unified, coherent memory. T=
+wo systems can be linked together to handle models with up to 405 billion p=
+arameters.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Ftechcrunch.com%2Fstoryline%2Flive-updates-ces-2025-nvid=
+ia-samsung-sony-toyota-reveals-plus-more%2F%3Futm_source=3Dtldrnewsletter/1=
+/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/78qWShetDi4_Q=
+QY20_kpaTM0Dl1wSMT-uR6s_MJabwI=3D386">
+                                    <span>
+                                        <strong>Live Updates CES 2025: Nvid=
+ia, Samsung, Sony, Toyota reveals, plus more (Website)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    CES 2025 is currently being held in Las=
+ Vegas. This page contains live updates from the annual consumer tech confe=
+rence. AI will likely be the focal point of most companies' presentations -=
+ AI-powered devices are expected to be covered extensively through the even=
+t. Robotics and transportation are also core topics at CES.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+</td></tr></tbody></table>
+
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;"><span style=3D"font-size: 36px;">=F0=9F=
+=9A=80</span></div>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;">
+
+<h1><strong>Science &amp; Futuristic Technology</strong></h1>
+</div>
+</div>
+</td></tr></tbody></table>
+
+<table style=3D"table-layout: fixed; width: 100%;" width=3D"100%"><tbody><t=
+r><td style=3D"padding:0;border-collapse:collapse;border-spacing:0;margin:0=
+;" valign=3D"top">
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.robbreport.com.sg%2Flg-45gx990a-gaming-monitor%2F%3=
+Futm_source=3Dtldrnewsletter/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2=
+f65bda7d2-000000/bcMaWLB4gNfDEsz4MOQMBMmhQXRdbGuLKhHxajRbJxA=3D386">
+                                    <span>
+                                        <strong>LG just unveiled the world'=
+s first bendable gaming monitor (2 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    The LG UltraGear GX9 45GX990A is a bend=
+able gaming monitor with an ultra-high 5K2K resolution that can accurately =
+depict rich blacks, vibrant colors, and dynamic brightness levels with pinp=
+oint accuracy. It can curve its 45-inch body to 900R curvature, providing a=
+ level of immersion that is rarely offered by more conventional monitors. T=
+he screen has the performance specs to back up its stylish looks. LG has no=
+t released the price or commercial release date for the screen.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fspectrum.ieee.org%2Focean-engineering%3Futm_source=3Dtl=
+drnewsletter/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000=
+/o9omAdkrB8sMCRO0T176uurSqN6biySnotXNnrkQPbY=3D386">
+                                    <span>
+                                        <strong>In 2025, People Will Try Li=
+ving in This Underwater Habitat (7 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Ocean exploration organization Deep has=
+ embarked on a multiyear quest to enable scientists to live on the sea floo=
+r at depths of up to 200 meters. It is currently developing and testing a s=
+mall modular habitat called Vanguard that is capable of housing up to three=
+ divers for up to a week or so. Vanguard is a steppingstone to a more perma=
+nent modular habitat system called Sentinel set to launch in 2027. Deep is =
+aiming for a permanent human presence in the ocean by 2030. Its plans are p=
+ossible thanks to an advanced 3D printing-welding approach that can print t=
+hese large habitation structures.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+</td></tr></tbody></table>
+
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;"><span style=3D"font-size: 36px;">=F0=9F=
+=92=BB</span></div></div>
+</td></tr></tbody></table>
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;">
+
+<h1><strong>Programming, Design &amp; Data Science</strong></h1>
+</div>
+</div>
+</td></tr></tbody></table>
+
+<table style=3D"table-layout: fixed; width: 100%;" width=3D"100%"><tbody><t=
+r><td style=3D"padding:0;border-collapse:collapse;border-spacing:0;margin:0=
+;" valign=3D"top">
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fcrawshaw.io%2Fblog%2Fprogramming-with-llms%3Futm_source=
+=3Dtldrnewsletter/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-0=
+00000/qRZyf-qoizPD5CLpTR0-KDIv5kwXBheAw7pgsMfjwB8=3D386">
+                                    <span>
+                                        <strong>How I program with LLMs (28=
+ minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    This post contains a summary of a devel=
+oper's personal experiences using generative models while programming over =
+the last year. The developer currently uses large language models regularly=
+ while programming and considers their benefits a net-positive on their pro=
+ductivity. They discovered some often-repeated steps that can be automated =
+and are currently working with a team to build them into a tool specificall=
+y for Go programming.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.jonashietala.se%2Fblog%2F2025%2F01%2F06%2Ffirst_imp=
+ressions_of_ghostty%2F%3Futm_source=3Dtldrnewsletter/1/010001944094eb71-fef=
+5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/WKMPMdDAJNXcCpCj_f4bErjJeoPNz86rJS=
+ihS9F1Gew=3D386">
+                                    <span>
+                                        <strong>First impressions of Ghostt=
+y (6 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Ghostty is a cross-platform terminal em=
+ulator that uses platform-native UI and GPU acceleration. It contains many =
+modern opt-in features that can improve the terminal experience. This artic=
+le provides a review of Ghostty from a user's point of view. Overall, Ghost=
+ty improved the reviewer's setup - while setup took some time, it wasn't a =
+big deal.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+</td></tr></tbody></table>
+
+
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;"><span style=3D"font-size: 36px;">=F0=9F=
+=8E=81</span></div></div>
+</td></tr></tbody></table>
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;"><strong><h1>Miscellaneous</h1></strong><=
+/div>
+</div>
+</td></tr></tbody></table>
+
+<table bgcolor=3D"" style=3D"table-layout: fixed; width: 100%;" width=3D"10=
+0%"><tbody><tr><td style=3D"padding:0;border-collapse:collapse;border-spaci=
+ng:0;margin:0;" valign=3D"top">
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.theverge.com%2F2025%2F1%2F6%2F24337117%2Fmicrosoft-=
+bing-search-results-google-design-trick%3Futm_source=3Dtldrnewsletter/1/010=
+001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/tiObahzoc7f8HTxlJ=
+gilB0BCKVhuTp31C2TxtGis5MY=3D386">
+                                    <span>
+                                        <strong>Microsoft is using Bing to =
+trick people into thinking they're on Google (3 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Searching for Google on Bing (without s=
+igning in) takes users to a page that looks a lot like Google. It's a clear=
+ attempt from Microsoft to make Bing look like Google for this specific sea=
+rch query. Other search results return without the special interface. Bing =
+still surfaces search results for Google underneath the spoofed Google UI. =
+Microsoft has used similar tactics over the years to convince people to swi=
+tch to its products.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.cnet.com%2Ftech%2Fcomputing%2Fdell-announces-all-ne=
+w-branding-with-dell-dell-pro-and-dell-pro-max-laptops%2F%3Futm_source=3Dtl=
+drnewsletter/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000=
+/Ev2gmSfmjL4xBeeSPuNeNuoPu6ZITJ2EgPf13Vzz1_o=3D386">
+                                    <span>
+                                        <strong>Dell Announces All-New Bran=
+ding with Dell, Dell Pro, and Dell Pro Max Laptops (5 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Dell is rebranding its laptop and deskt=
+op lines for 2025. It has just dropped its longtime model names for more si=
+mplified nomenclature. Dell's laptop and PC series will now be simply label=
+ed as Dell, Dell Pro, and Dell Pro Max, with base, Plus, and Premium versio=
+ns of each. The Dell, Dell Plus, and Dell Premium series will be the models=
+ previously labeled as either Inspiron or XPS, the Dell Pro series replaces=
+ the Latitude line, and the Dell Pro Max will replace the Precision worksta=
+tion line.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+</td></tr></tbody></table>
+
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;"><span style=3D"font-size: 36px;">=E2=9A=
+=A1</span></div></div>
+</td></tr></tbody></table>
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng-top: 0px; padding-bottom: 0px;">
+<div class=3D"text-block">
+<div style=3D"text-align: center;">
+
+<h1><strong>Quick Links</strong></h1>
+</div>
+</div>
+</td></tr></tbody></table>
+
+<table bgcolor=3D"" style=3D"table-layout: fixed; width: 100%;" width=3D"10=
+0%"><tbody><tr><td style=3D"padding:0;border-collapse:collapse;border-spaci=
+ng:0;margin:0;" valign=3D"top">
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.elastic.co%2Fblog%2Fbeyond-rag-basics%3Futm_source=
+=3Dpublisher-direct%26utm_medium=3Dtldr%26utm_campaign=3Dtech-beyond-rag-bl=
+og-cee-gc/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/6x=
+LVRm7GpwNU-AjtfBXn4rFve7a5PxWS7SzzhGG1yk0=3D386">
+                                    <span>
+                                        <strong>The non-beginner's guide to=
+ RAG (Sponsor)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    RAG is more than simple text retrieval.=
+ Learn about the 5 layers of RAG architecture, model evaluation, data manag=
+ement, and more. <a href=3D"https://tracking.tldrnewsletter.com/CL0/https:%=
+2F%2Fwww.elastic.co%2Fblog%2Fbeyond-rag-basics%3Futm_source=3Dpublisher-dir=
+ect%26utm_medium=3Dtldr%26utm_campaign=3Dtech-beyond-rag-blog-cee-gc/2/0100=
+01944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/KsEjNHiOS11KLcKQ51=
+oaAggVyzmdcgK5jhZmBNes3G8=3D386" rel=3D"noopener noreferrer nofollow" targe=
+t=3D"_blank"><span>Read the guide by Elastic</span></a>
+</span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.wsj.com%2Ftech%2Fuber-lyft-self-driving-taxis-a3659=
+c9c%3Fst=3DPYD37P%26reflink=3Ddesktopwebshare_permalink%26utm_source=3Dtldr=
+newsletter/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/N=
+5BD9zd24wwmfOkR1iRO-syPOcYKkR-YsITDStvkNvY=3D386">
+                                    <span>
+                                        <strong>How Uber and Lyft Are Geari=
+ng Up for the Robotaxi Revolution (8 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Uber and Lyft are preparing to bring dr=
+iverless taxis to several cities in the US this year.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.cnn.com%2F2025%2F01%2F06%2Fhealth%2Fbird-flu-death-=
+louisiana%2Findex.html%3Futm_source=3Dtldrnewsletter/1/010001944094eb71-fef=
+5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/kLE0s1I_KgmLU0WXKnq28d-yAaliptwQfD=
+k8wyLMnXM=3D386">
+                                    <span>
+                                        <strong>America's first bird flu de=
+ath reported in Louisiana (4 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    The person was over 65 and reportedly h=
+ad underlying medical conditions - they were hospitalized with the flu afte=
+r exposure to a backyard flock of birds and wild birds.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fwww.bloomberg.com%2Fnews%2Farticles%2F2025-01-06%2Fmeta=
+-s-zuckerberg-adds-ufc-s-dana-white-to-board-songhurst-elkann-also-named%3F=
+accessToken=3DeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzb3VyY2UiOiJTdWJzY3Jp=
+YmVyR2lmdGVkQXJ0aWNsZSIsImlhdCI6MTczNjIyNDQ1MiwiZXhwIjoxNzM2ODI5MjUyLCJhcnR=
+pY2xlSWQiOiJTUElQQlJUMEcxS1cwMCIsImJjb25uZWN0SWQiOiJFQTExNDNDNTM4NEE0RUY5QT=
+g5RjJEN0IxMTg2MzcwOSJ9.rbzIAhGM6l-fTuYKFllDmRJQwgiHHNxlbc8MD5zic_A%26utm_so=
+urce=3Dtldrnewsletter/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7=
+d2-000000/eh67O6pZJdQ2BAXlklnQphtBUFTaDqr26lC_dJN-43w=3D386">
+                                    <span>
+                                        <strong>Meta's Zuckerberg Adds UFC'=
+s Dana White, Two Others to Board (3 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Meta has added UFC CEO Dana White, inve=
+stor and former Microsoft executive Charlie Songhurst, and CEO of Exor NV J=
+ohn Elkann to its board.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fourworldindata.org%2Fsimon-ehrlich-bet%3Futm_source=3Dt=
+ldrnewsletter/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-00000=
+0/_tnzHmmbcjUzhcfPMEztGO89wkYhDWjxiDB_VrcYY9Q=3D386">
+                                    <span>
+                                        <strong>Who would have won the Simo=
+n-Ehrlich bet over different decades, and what do long-term prices tell us =
+about resource scarcity? (11 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    We produce far more materials than we d=
+id in the past, yet prices have barely changed, which suggests that we're n=
+ot close to running out of these materials any time soon.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fxeiaso.net%2Fblog%2F2025%2Fsquandered-holy-grail%2F%3Fu=
+tm_source=3Dtldrnewsletter/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f6=
+5bda7d2-000000/01ILcqcuDkilcNsInCHk1P5sJGBjSeTpcaXIxfiNGhI=3D386">
+                                    <span>
+                                        <strong>They squandered the holy gr=
+ail (20 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    Apple made the holy grail of remotely a=
+ttested trusted compute, but its AI is much worse than integrations made wi=
+th Ollama on the same device, which would be just as private.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+<table align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" wi=
+dth=3D"100%"><tbody><tr><td class=3D"container" style=3D"padding: 15px 15px=
+;">
+<div class=3D"text-block">
+<span>
+                                <a href=3D"https://tracking.tldrnewsletter.=
+com/CL0/https:%2F%2Fv5.chriskrycho.com%2Fjournal%2Fthis-is-not-your-last-jo=
+b%2F%3Futm_source=3Dtldrnewsletter/1/010001944094eb71-fef5b305-9ea3-47d9-81=
+66-dd2f65bda7d2-000000/qXDa17qcHBXkhK2Q0ibGQi4JXiz7Tk7gLvJkx8mf5hg=3D386">
+                                    <span>
+                                        <strong>This Is Not Your Last Job (=
+4 minute read)</strong>
+                                    </span>
+</a>
+<br>
+<br>
+<span style=3D"font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, V=
+erdana, sans-serif;">
+                                    People who like to learn and grow will =
+change their roles many times throughout their lifetimes.
+                                </span>
+</span>
+</div>
+</td></tr></tbody></table>
+
+</td></tr></tbody></table>
+
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td align=3D"left" style=3D"word-break=
+: break-word; vertical-align: top; padding: 5px 10px;">
+
+<p style=3D"padding: 0; margin: 0; font-size: 22px; color: #000000; line-he=
+ight: 1.6; font-weight: bold;">
+Love TLDR? Tell your friends and get rewards!
+</p>
+</td></tr>
+<tr><td class=3D"container" style=3D"padding: 0px 10px 15px;">
+<div class=3D"text-block">
+Share your referral link below with friends to get free TLDR swag!
+</div>
+</td></tr>
+<tr><td align=3D"left" style=3D"padding: 10px;">
+<div class=3D"text-block">
+<a href=3D"https://tracking.tldrnewsletter.com/CL0/https:%2F%2Frefer.tldr.t=
+ech%2Fa73258cd%2F/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-0=
+00000/gLeFa1fKNqmymeeQ8j-d4FIpxw1j0Px-01wcfIlmiTc=3D386" style=3D"color: #4=
+64ba4; text-decoration: underline;">https://refer.tldr.tech/a73258cd/</a>
+</div>
+</td></tr>
+<tr></tr>
+<tr><td align=3D"left" style=3D"padding:5px 10px;">
+<a href=3D"https://tracking.tldrnewsletter.com/CL0/https:%2F%2Fhub.sparklp.=
+co%2Fsub_bf6da647dfd1%2F1/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65=
+bda7d2-000000/6DMMDPkpJb7fn3yVMUbS4VwLGnSg1X6iO3osGhWhXs0=3D386" style=3D"f=
+ont-size: 16px; line-height: 1.6;  padding: 10px 0; display: inline-block; =
+ text-decoration: underline;"><span style=3D"mso-text-raise:13pt; text-deco=
+ration: underline;">Track your referrals here.</span></a>
+</td></tr></tbody></table>
+
+
+
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td align=3D"left" style=3D"word-break=
+: break-word; vertical-align: top; padding: 5px 10px;">
+
+<p style=3D"padding: 0; margin: 0; font-size: 22px; color: #000000; line-he=
+ight: 1.6; font-weight: bold;">
+Want to advertise in TLDR? =F0=9F=93=B0
+</p>
+<div class=3D"text-block" style=3D"margin-top: 10px;">
+If your company is interested in reaching an audience of tech executives, d=
+ecision-makers and engineers, you may want to <a href=3D"https://tracking.t=
+ldrnewsletter.com/CL0/https:%2F%2Fadvertise.tldr.tech%2F%3Futm_source=3Dtld=
+r%26utm_medium=3Dnewsletter%26utm_campaign=3Dadvertisecta/1/010001944094eb7=
+1-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/M4fyoXy5rIjvr7VjhgGLK_YiqX7mg=
+Uk80q7wsMrVWMs=3D386"><strong><span>advertise with us</span></strong></a>.
+</div>
+<br>
+
+<!-- New "Want to work at TLDR?" section -->
+
+<p style=3D"padding: 0; margin: 0; font-size: 22px; color: #000000; line-he=
+ight: 1.6; font-weight: bold;">
+Want to work at TLDR? =F0=9F=92=BC
+</p>
+<div class=3D"text-block" style=3D"margin-top: 10px;">
+<a href=3D"https://tracking.tldrnewsletter.com/CL0/https:%2F%2Fjobs.ashbyhq=
+.com%2Ftldr.tech/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-00=
+0000/_pY8jSZYPzOYjs6cyuV8bDl5WwZAnsLGWrV0qJpT3jA=3D386" rel=3D"noopener nor=
+eferrer" style=3D"color: #0000EE; text-decoration: underline;" target=3D"_b=
+lank"><strong>Apply here</strong></a> or send a friend's resume to <a href=
+=3D"mailto:jobs@tldr.tech" style=3D"color: #0000EE; text-decoration: underl=
+ine;">jobs@tldr.tech</a> and get $1k if we hire them!
+</div>
+<br>
+
+<div class=3D"text-block">
+If you have any comments or feedback, just respond to this email!
+<br>
+<br> Thanks for reading,
+<br>
+<span>Dan Ni</span> &amp; <span>Stephen Flanders</span>
+<br>
+<br>
+</div>
+<br>
+</td></tr></tbody></table>
+
+<table align=3D"center" bgcolor=3D"" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%"><tbody><tr><td class=3D"container" style=3D"paddi=
+ng: 15px 15px;">
+<div class=3D"text-block" id=3D"testing-id">If you don't want to receive fu=
+ture editions of TLDR, please <a href=3D"https://tracking.tldrnewsletter.co=
+m/CL0/https:%2F%2Fa.tldrnewsletter.com%2Funsubscribe%3Fep=3D1%26l=3Dcfa2d55=
+a-b7be-11e8-a3c9-06b79b628af2%26lc=3De6d350cc-cff0-11ed-b4c6-19265e13ae8b%2=
+6p=3D1580c222-ccd1-11ef-8d8b-9d2c888b1d47%26pt=3Dcampaign%26pv=3D4%26spa=3D=
+1736247644%26t=3D1736250288%26s=3D0b9515bb2a333cc8b6b260bf3b13411e8ff2476f5=
+b80c425d74d0f28f839f585/1/010001944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bd=
+a7d2-000000/AlvuusOEsWF1nDCFL6i4FrWjXrapxVTpzmoz7EVxFSk=3D386">unsubscribe =
+from TLDR</a> or <a href=3D"https://tracking.tldrnewsletter.com/CL0/https:%=
+2F%2Ftldr.tech%2Ftech%2Fmanage%3Femail=3Dsachaichbiah%2540gmail.com/1/01000=
+1944094eb71-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/1OLUMs-GeS0G8Gd7Pyx=
+4NG2Bo2sEFR_6EKJSD7cqZOA=3D386">manage all of your TLDR newsletter subscrip=
+tions</a>.
+<br>
+</div>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+
+
+
+<img alt=3D"" src=3D"http://tracking.tldrnewsletter.com/CI0/010001944094eb7=
+1-fef5b305-9ea3-47d9-8166-dd2f65bda7d2-000000/9-itwLj5XinE-yYUVtU4djl1KFm8A=
+pggc3Qe5YTGMOY=3D386" style=3D"display: none; width: 1px; height: 1px;">
+</body></html>
+--5xxFUzvP--
