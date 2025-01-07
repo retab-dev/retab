@@ -1,6 +1,18 @@
 # uiform
 
-UiForm is a **modern**, **flexible**, and **AI-powered** document processing API that helps you:
+UiForm is a document processing API. It is a set of building blocks for quickly adding document processing features to your app. `pip install uiform`
+
+We currently support OpenAI, Anthropic, Gemini(Google) and xAI models.
+
+<img src="https://github.com/UiForm/uiform/blob/main/docs/assets/supported_models.png" alt="UiForm Logo" width="600">
+
+## Installation
+
+```bash
+pip install uiform
+```
+
+With UiForm, you can:
 
 - Create from JSON schemas and Pydantic models with zero boilerplate
 - Add AI capabilities for automated document processing, that is compatible with any data structure
