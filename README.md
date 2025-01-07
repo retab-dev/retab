@@ -115,3 +115,16 @@ You can view minimal notebooks that demonstrate how to use UiForm to process doc
 - [Quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart.ipynb)
 - [Schema Creation](https://github.com/UiForm/uiform/blob/main/notebooks/Schema_creation.ipynb)
 - [Finetuning](https://github.com/UiForm/uiform/blob/main/notebooks/Finetuning.ipynb)
+
+----
+
+## Community
+
+Let's create the future of document processing together!
+
+Join our [discord community](https://discord.com/invite/vc5tWRPqag) to share tips, discuss best practices, and showcase what you build. Or just [tweet](https://x.com/uiformAPI) at us.
+
+We can't wait to see how you'll use UiForm.
+
+- [Discord](https://discord.com/invite/vc5tWRPqag)
+- [Twitter](https://x.com/uiformAPI)
