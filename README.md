@@ -1,8 +1,9 @@
 # uiform
 
 <div align="center">
-<img src="https://github.com/UiForm/uiform/blob/main/uiform_logo.png" alt="UiForm Logo" width="256">
+<img src="https://github.com/UiForm/uiform/blob/main/uiform_logo.png" alt="UiForm Logo" width="150">
 </div>
+
 
 UiForm is a document processing API. It is a set of building blocks for quickly adding document processing features to your app. `pip install uiform`
 
@@ -43,7 +44,7 @@ Our goal is to make the process of analyzing documents and unstructured data as 
 
 Save this [JSON Schema](https://github.com/UiForm/uiform/blob/main/notebooks/freight/booking_confirmation_json_schema.json) as `json_schema.json`
 
-Download this [example document](https://github.com/UiForm/uiform/blob/main/notebooks/freight/booking_confirmation.jpg) as `example.jpg`
+Download this [example document](https://github.com/UiForm/uiform/blob/main/notebooks/freight/booking_confirmation.jpg) as `booking_confirmation.jpg`
 
 ```python main.py
 import json
