@@ -30,13 +30,17 @@ You come with your own API key from your favorite AI provider, and we handle the
 
 ---
 
-UiForm is a **modern**, **flexible**, and **AI-powered** document processing API that helps you:
+UiForm is a **modern**, **flexible**, and **AI-native** document processing API that helps you:
 
-- Create from JSON schemas and Pydantic models with zero boilerplate
-- Add AI capabilities for automated document processing, that is compatible with any data structure
+- Add AI-defined document processing capabilities to your app
+- Create prompts from JSON schemas and Pydantic models with zero boilerplate
 - Create annotated datasets to distill or finetune your models
 
+We see it as building **Stripe** for document processing.
+
 Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
+
+You come with your own API key from your favorite AI provider, and we handle the rest.
 
 Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
 
@@ -50,7 +54,7 @@ To get started, install the `uiform` package using pip:
 pip install uiform
 ```
 
-Then, populate your `env` variables with your API keys:
+Then, [create your API key on uiform.com](https://www.uiform.com) and populate your `env` variables with your API keys:
 
 ```
 OPENAI_API_KEY=YOUR-API-KEY # Your AI provider API key. Compatible with OpenAI, Anthropic, xAI.
