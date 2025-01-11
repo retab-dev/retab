@@ -40,8 +40,6 @@ We see it as building **Stripe** for document processing.
 
 Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
 
-You come with your own API key from your favorite AI provider, and we handle the rest.
-
 Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
 
 ## Quickstart
