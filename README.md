@@ -42,37 +42,7 @@ Many people haven't yet realized how powerful LLMs have become at document proce
 
 ## Quickstart
 
-<Steps>
-  <Step title="Load a JSON Schema and some Documents">
-    Setup your API keys and load a JSON Schema and some Documents.
-  </Step>
-  <Step title="Extract data from your documents with our Python SDK">
-    Use UiForm to extract data from your documents
-  </Step>
-</Steps>
-
-
-
-
-
-### 1- Load a JSON Schema and some Documents
-
-Save this [JSON Schema](https://github.com/UiForm/uiform/blob/main/notebooks/freight/booking_confirmation_json_schema.json) as `json_schema.json`
-
-Download this [example document](https://github.com/UiForm/uiform/blob/main/notebooks/freight/booking_confirmation.jpg) as `booking_confirmation.jpg`
-
-```python main.py
-import json
-
-with open("booking_confirmation_json_schema.json", "r") as f:
-    json_schema = json.load(f)
-
-document = "booking_confirmation.jpg"
-```
-
-
-### 2 - Extract data from your documents with our Python SDK
-
+### Setup of the Python SDK
 
 To get started, install the `uiform` package using pip:
 
@@ -82,35 +52,99 @@ pip install uiform
 
 Then, populate your `env` variables with your API keys:
 
-```bash .env
+```
 OPENAI_API_KEY=YOUR-API-KEY # Your AI provider API key. Compatible with OpenAI, Anthropic, xAI.
-UIFORM_API_KEY=sk_xxxxxxxxx
+UIFORM_API_KEY=sk_xxxxxxxxx # Create your API key on https://www.uiform.com
 ```
 
-Use the `UiForm` client to extract data from your documents:
+### Summarize a document
 
-```python main.py
-import json
-from uiform.client import UiForm
+Use the `UiForm` client to convert your documents into messages and use your favorite model to analyze your document:
 
-with open("booking_confirmation_json_schema.json", "r") as f:
-    json_schema = json.load(f)
+```python 
+from uiform import UiForm
+from openai import OpenAI
 
-document = "booking_confirmation.jpg"
+uiclient = UiForm()
+doc_msg = uiclient.documents.create_messages(
+    document = "freight/booking_confirmation.jpg"
+)
 
-client = UiForm()
-response = client.documents.extract(
-    json_schema = json_schema,
-    document = document,
-    model="gpt-4o-mini-2024-07-18",
-    temperature=0
+# Now you can use your favorite model to analyze your document
+client = OpenAI()
+completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=doc_msg.openai_messages + [
+        {
+            "role": "user",
+            "content": "Summarize the document"
+        }
+    ]
 )
 ```
+
+---
+
+### Load a schema and extract data from a document
+
+We use a standard JSON Schema with custom annotations (`X-SystemPrompt`, `X-LLMDescription`, and `X-ReasoningDescription`) as a prompt-engineering framework for the extraction process.
+
+These annotations help guide the LLM's behavior and improve extraction accuracy. 
+You can learn more about these in our [JSON Schema documentation](https://docs.uiform.com/get-started/the-json-schema).
+
+
+```python Pydantic BaseModel
+from uiform import UiForm
+from openai import OpenAI
+from pydantic import BaseModel, Field, ConfigDict
+
+uiclient = UiForm()
+doc_msg = uiclient.documents.create_messages(
+    document = "document_1.xlsx"
+)
+
+class CalendarEvent(BaseModel):
+    model_config = ConfigDict(json_schema_extra = {"X-SystemPrompt": "You are a useful assistant."})
+
+    name: str = Field(...,
+        description="The name of the calendar event.",
+        json_schema_extra={"X-LLMDescription": "Provide a descriptive and concise name for the event."}
+    )
+    date: str = Field(...,
+        description="The date of the calendar event in ISO 8601 format.",
+        json_schema_extra={
+            'X-ReasoningDescription': 'The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.',
+        }
+    )
+
+print("Equivalent JSON Schema:",CalendarEvent.model_json_schema())
+
+schema_obj =Schema(
+    pydantic_model = CalendarEvent
+)
+
+# Now you can use your favorite model to analyze your document
+client = OpenAI()
+completion = client.beta.chat.completions.parse(
+    model="gpt-4o",
+    messages=schema_obj.openai_messages + doc_msg.openai_messages,
+    response_format=schema_obj.response_format_pydantic
+)
+
+# Validate the response against the original schema if you want to remove the reasoning fields
+assert completion.choices[0].message.content is not None
+extraction = schema_obj.pydantic_model.model_validate_json(
+    completion.choices[0].message.content 
+)
+
+print("Extraction:",extraction)
+```
+</CodeGroup>
 
 And that's it ! You can start processing documents at scale ! 
 You have 1000 free requests to get started, and you can [subscribe](https://www.uiform.com) to the pro plan to get more.
 
-But this minimalistic example is not much more useful than the bare openAI API. Continue reading to learn more about how to use UiForm **to its full potential**.
+But this minimalistic example is just the beginning. Continue reading to learn more about how to use UiForm **to its full potential**.
 
 ----
 
@@ -144,5 +178,19 @@ We can't wait to see how you'll use UiForm.
 - [Discord](https://discord.com/invite/vc5tWRPqag)
 - [Twitter](https://x.com/uiformAPI)
 
+----
 
+## Roadmap
 
+We publicly share our Roadmap with the community. Please open an issue or [contact me on X](https://x.com/sachaicb) if you have suggestions or ideas.
+
+- [ ] node client with ZOD
+- [ ] Add support for Audio formats
+- [ ] Image rotation - Launch super fast way to rotate the images in the right direction (Simple classifier with a CNN). Put it as an optional middleware for documents/create_messages
+- [ ] Make a json-schema zoo
+- [ ] Launch the data-labelling API (Dataset Upload / Creation / Management / Labelling / Distillation)
+- [ ] Launch the data-labelling platform : A web app based on the data-labelling API with a nice UI
+- [ ] Launch the prompt-optimisation sdk
+- [ ] Launch the finetuning sdk 
+- [ ] Launch @UiForm/React on open-source
+- [ ] Launch the analytics section in the dashboard
