@@ -152,14 +152,15 @@ But this minimalistic example is just the beginning. Continue reading to learn m
 
 ## Go further
 
-- [Additional parameters](https://docs.uiform.com/document-api/additional-parameters)
-- [Finetuning](https://docs.uiform.com/document-api/finetuning)
+- [Prompt Engineering Guide](https://docs.uiform.com/get-started/prompting-with-the-json-schema)
+- [General Concepts](https://docs.uiform.com/get-started/General-Concepts)
+- Finetuning (coming soon)
 - Prompt optimization (coming soon)
 - Data-Labelling with our AI-powered annotator (coming soon)
 
-----
+---
 
-## Examples
+## Jupyter Notebooks
 
 You can view minimal notebooks that demonstrate how to use UiForm to process documents:
 
@@ -167,7 +168,7 @@ You can view minimal notebooks that demonstrate how to use UiForm to process doc
 - [Schema Creation](https://github.com/UiForm/uiform/blob/main/notebooks/Schema_creation.ipynb)
 - [Finetuning](https://github.com/UiForm/uiform/blob/main/notebooks/Finetuning.ipynb)
 
-----
+--- 
 
 ## Community
 
@@ -180,7 +181,6 @@ We can't wait to see how you'll use UiForm.
 - [Discord](https://discord.com/invite/vc5tWRPqag)
 - [Twitter](https://x.com/uiformAPI)
 
-----
 
 ## Roadmap
 
