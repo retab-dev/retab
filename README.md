@@ -148,7 +148,7 @@ You have 1000 free requests to get started, and you can [subscribe](https://www.
 
 But this minimalistic example is just the beginning. Continue reading to learn more about how to use UiForm **to its full potential**.
 
-----
+---
 
 ## Go further
 
@@ -165,8 +165,7 @@ But this minimalistic example is just the beginning. Continue reading to learn m
 You can view minimal notebooks that demonstrate how to use UiForm to process documents:
 
 - [Quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart.ipynb)
-- [Schema Creation](https://github.com/UiForm/uiform/blob/main/notebooks/Schema_creation.ipynb)
-- [Finetuning](https://github.com/UiForm/uiform/blob/main/notebooks/Finetuning.ipynb)
+- [Quickstart - Async](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart-Async.ipynb)
 
 --- 
 
@@ -184,11 +183,11 @@ We can't wait to see how you'll use UiForm.
 
 ## Roadmap
 
-We publicly share our Roadmap with the community. Please open an issue or [contact me on X](https://x.com/sachaicb) if you have suggestions or ideas.
+We publicly share our Roadmap with the community. Please open an issue or [contact us on X](https://x.com/sachaicb) if you have suggestions or ideas.
 
 - [ ] node client with ZOD
 - [ ] Add support for Audio formats
-- [ ] Image rotation - Launch super fast way to rotate the images in the right direction (Simple classifier with a CNN). Put it as an optional middleware for documents/create_messages
+- [ ] Image rotation - Launch super fast way to rotate the images in the right direction (Simple classifier with a CNN). Put it as an optional middleware for documents/create_messages 
 - [ ] Make a json-schema zoo
 - [ ] Launch the data-labelling API (Dataset Upload / Creation / Management / Labelling / Distillation)
 - [ ] Launch the data-labelling platform : A web app based on the data-labelling API with a nice UI
