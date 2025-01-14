@@ -2,7 +2,7 @@ from typing import IO, Any
 from pathlib import Path
 from io import IOBase
 from ...types.modalities import Modality
-from ...utils.mime import prepare_mime_document
+from ..._utils.mime import prepare_mime_document
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
 from .extractions import Extractions, AsyncExtractions

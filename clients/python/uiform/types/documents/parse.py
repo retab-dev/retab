@@ -11,8 +11,8 @@ from ..modalities import Modality
 from ..standards import ErrorDetail, StreamingBaseModel
 from ..schemas.object import Schema
 
-from ...utils.ai_model import find_provider_from_model
-from ...utils.mime import generate_sha_hash_from_base64
+from ..._utils.ai_model import find_provider_from_model
+from ..._utils.mime import generate_sha_hash_from_base64
 
 class DocumentExtractRequest(BaseModel):
     # Attributes

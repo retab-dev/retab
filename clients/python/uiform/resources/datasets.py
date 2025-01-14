@@ -6,8 +6,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
-from ..utils.json_schema import load_json_schema
-from ..utils.ai_model import assert_valid_model_extraction
+from .._utils.json_schema import load_json_schema
+from .._utils.ai_model import assert_valid_model_extraction
 from .._resource import SyncAPIResource, WrappedAsyncAPIResource
 from ..types.modalities import Modality
 from ..types.documents.create_messages import ChatCompletionUiformMessage

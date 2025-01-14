@@ -8,7 +8,7 @@ import logging
 from io import BytesIO
 
 from ..modalities import Modality
-from ...utils.ai_model import find_provider_from_model
+from ..._utils.ai_model import find_provider_from_model
 from ..mime import BaseMIMEData, MIMEData
 from ..ai_model import AIProvider
 from .text_operations import TextOperations

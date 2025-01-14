@@ -4,10 +4,11 @@ from io import IOBase
 
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
 from ...types.modalities import Modality
-from ...utils import load_json_schema, assert_valid_model_extraction, prepare_mime_document
-from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ...jsonschema.utils import convert_basemodel_to_partial_basemodel 
+from ..._utils.mime import prepare_mime_document
+from ..._utils.json_schema import load_json_schema
+from ..._utils.ai_model import assert_valid_model_extraction
+from ..._resource import SyncAPIResource, AsyncAPIResource
 
 
 def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse) -> DocumentExtractResponse:
