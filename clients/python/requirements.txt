@@ -1,0 +1,42 @@
+########################
+## Imports from the standard library
+########################
+# typing
+# copy
+# json
+# collections
+# datetime
+# re
+# asyncio
+# pathlib
+# concurrent
+# types
+# os
+# functools
+# base64
+# hashlib
+# PIL
+# io
+# math
+# time
+
+########################
+## More exotic dependencies
+########################
+httpx
+pydantic
+pydantic_core
+requests
+openai
+tqdm
+tiktoken
+
+########################
+## Validation dependencies
+########################
+pycountry
+phonenumbers
+email_validator
+python-stdnum
+
+
