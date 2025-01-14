@@ -27,6 +27,7 @@
 **/.pytest_cache/
 **/.coverage
 **/htmlcov/
+.env
 
 # Jupyter Notebook
 **/.ipynb_checkpoints
