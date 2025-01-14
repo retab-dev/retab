@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from ..modalities import Modality
 from ..mime import MIMEData
-from ..documents.parse import TextOperations
+from ..documents.text_operations import TextOperations
 
 # Schemas API
 class GenerateSchemaBase(BaseModel):

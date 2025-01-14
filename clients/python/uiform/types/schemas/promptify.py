@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Any, Literal
 from ..modalities import Modality
 from ..mime import MIMEData
-from ..documents.parse import TextOperations
+from ..documents.text_operations import TextOperations
 
 class PromptifyBase(BaseModel):
     text_operations: TextOperations | None = None

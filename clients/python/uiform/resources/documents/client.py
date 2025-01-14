@@ -1,7 +1,7 @@
 from typing import IO, Any
 from pathlib import Path
 from io import IOBase
-from ...types.documents.parse import Modality
+from ...types.modalities import Modality
 from ...utils import prepare_mime_document
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage, ChatCompletionUiformMessage

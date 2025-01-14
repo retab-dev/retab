@@ -2,7 +2,8 @@ from typing import Any, Optional, Iterator, AsyncIterator
 from pathlib import Path
 from io import IOBase
 
-from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse, Modality
+from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
+from ...types.modalities import Modality
 from ...utils import load_json_schema, assert_valid_model_extraction, prepare_mime_document
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import ChatCompletionUiformMessage

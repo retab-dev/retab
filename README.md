@@ -5,7 +5,7 @@
 <img src="https://github.com/UiForm/uiform/blob/main/uiform-logo.png" alt="UiForm Logo" width="150">
 
 
-  *Add document processing processing capabilities to your app.*
+  *The universal document processing API*
 
 Made with love by the team at [UiForm](https://uiform.com).
 

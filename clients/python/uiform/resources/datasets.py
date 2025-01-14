@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from ..utils import load_json_schema, assert_valid_model_extraction
 from .._resource import SyncAPIResource, WrappedAsyncAPIResource
-from ..types.documents.parse import Modality
+from ..types.modalities import Modality
 from ..types.documents.create_messages import ChatCompletionUiformMessage
 from io import IOBase
 
