@@ -132,6 +132,7 @@ completion = client.beta.chat.completions.parse(
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
     response_format=schema_obj.response_format_pydantic
 )
+print("Extracted data with the reasoning fields:", completion.choices[0].message.content)
 
 # Validate the response against the original schema if you want to remove the reasoning fields
 assert completion.choices[0].message.content is not None
@@ -139,7 +140,7 @@ extraction = schema_obj.pydantic_model.model_validate_json(
     completion.choices[0].message.content 
 )
 
-print("Extraction:",extraction)
+print("Extracted data without the reasoning fields:", extraction)
 ```
 </CodeGroup>
 
