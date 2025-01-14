@@ -15,10 +15,6 @@ AI_MODELS = Literal[
     "gemini-1.5-flash-8b"
 ]
 ClientsFixtureType = dict[str, UiForm | AsyncUiForm]
-ClientType = Literal[
-    "sync", 
-    "async",
-]
 
 
 def validate_extraction_response(response: DocumentExtractResponse) -> None:
@@ -40,8 +36,7 @@ def validate_extraction_response(response: DocumentExtractResponse) -> None:
 # Test the extraction endpoint
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", get_args(AI_MODELS))
-async def test_extract_success(model: AI_MODELS, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any], base_url: str) -> None:
-    
+async def test_extract_success(model: AI_MODELS, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
     json_schema = booking_confirmation_json_schema
     document=booking_confirmation_file_path
     modality: Literal["text"] = "text"
