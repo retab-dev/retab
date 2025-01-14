@@ -10,8 +10,9 @@ from ..mime import MIMEData, BaseMIMEData
 from ..modalities import Modality
 from ..standards import ErrorDetail, StreamingBaseModel
 from ..schemas.object import Schema
-from ...utils import generate_sha_hash_from_base64, find_provider_from_model
 
+from ...utils.ai_model import find_provider_from_model
+from ...utils.mime import generate_sha_hash_from_base64
 
 class DocumentExtractRequest(BaseModel):
     # Attributes

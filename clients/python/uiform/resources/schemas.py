@@ -11,7 +11,9 @@ from ..types.schemas.promptify import PromptifyRequest
 from ..types.modalities import Modality
 from .._resource import SyncAPIResource, AsyncAPIResource
 
-from ..utils import load_json_schema, prepare_mime_document_list, assert_valid_model_schema_generation
+from ..utils.json_schema import load_json_schema
+from ..utils.mime import prepare_mime_document_list
+from ..utils.ai_model import assert_valid_model_schema_generation
 
 
 class Schemas(SyncAPIResource):

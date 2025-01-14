@@ -5,8 +5,8 @@ import copy
 
 from ..documents.create_messages import ChatCompletionUiformMessage
 from ..documents.create_messages import convert_to_google_genai_format, convert_to_anthropic_format
-from ...utils import generate_sha_hash_from_string
-from ...jsonschema.utils import clean_schema, json_schema_to_structured_output_json_schema, json_schema_to_typescript_interface, expand_refs, create_inference_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel
+from ...utils.mime import generate_sha_hash_from_string
+from ...utils.json_schema import clean_schema, json_schema_to_structured_output_json_schema, json_schema_to_typescript_interface, expand_refs, create_inference_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.completion_create_params import ResponseFormat
