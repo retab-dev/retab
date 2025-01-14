@@ -21,8 +21,68 @@ def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentE
             except Exception: pass
     return response
 
+class BaseExtractionsMixin:
+    def prepare_extraction(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        document: Path | str | IOBase,
+        text_operations: Optional[dict[str, Any]],
+        model: str,
+        temperature: float | None,
+        messages: list[ChatCompletionUiformMessage],
+        modality: Modality,
+        stream: bool,
+    ) -> DocumentExtractRequest:
+        assert_valid_model_extraction(model)
 
-class Extractions(SyncAPIResource):
+        json_schema = load_json_schema(json_schema)
+
+        mime_document = prepare_mime_document(document)
+        data = {
+            "json_schema": json_schema,
+            "document": mime_document.model_dump(),
+            "model": model,
+            "temperature": temperature,
+            "stream": stream,
+            "text_operations": text_operations or {},
+            "modality": modality,
+            "messages": messages,
+        }
+
+        # Validate DocumentAPIRequest data (raises exception if invalid)
+        return DocumentExtractRequest.model_validate(data)
+
+    def prepare_parse(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        document: Path | str | IOBase,
+        text_operations: Optional[dict[str, Any]],
+        model: str,
+        temperature: float,
+        messages: list[ChatCompletionUiformMessage],
+        modality: Modality,
+    ) -> DocumentExtractRequest:
+        stream = False
+        return self.prepare_extraction(
+            json_schema, document, text_operations, model, temperature, messages, modality, stream
+        )
+    def prepare_stream(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        document: Path | str | IOBase,
+        text_operations: Optional[dict[str, Any]],
+        model: str,
+        temperature: float,
+        messages: list[ChatCompletionUiformMessage],
+        modality: Modality,
+    ) -> DocumentExtractRequest:
+        stream = True
+        return self.prepare_extraction(
+            json_schema, document, text_operations, model, temperature, messages, modality, stream
+        )
+
+
+class Extractions(SyncAPIResource, BaseExtractionsMixin):
     """Extraction API wrapper"""
 
     def parse(
@@ -51,25 +111,10 @@ class Extractions(SyncAPIResource):
             HTTPException if the request fails
         """
 
-        assert_valid_model_extraction(model)
-
-        json_schema = load_json_schema(json_schema)
-
-        mime_document = prepare_mime_document(document)
-        data = {
-            "json_schema": json_schema,
-            "document": mime_document.model_dump(),
-            "model": model,
-            "temperature": temperature,
-            "stream": False,
-            "text_operations": text_operations or {},
-            "modality": modality,
-            "messages": messages,
-        }
-
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        request_object = DocumentExtractRequest.model_validate(data)
-        return maybe_parse_to_pydantic(request_object, DocumentExtractResponse.model_validate(self._client._request("POST", "/api/v1/documents/extractions", data=data)))
+        request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality)
+        response = self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump())
+        return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
     def stream(
         self,
@@ -78,8 +123,8 @@ class Extractions(SyncAPIResource):
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
-        modality: Modality = "native",
         messages: list[ChatCompletionUiformMessage] = [],
+        modality: Modality = "native",
     ) -> Iterator[DocumentExtractResponse]:
         """
         Process a document using the UiForm API with streaming enabled.
@@ -98,35 +143,19 @@ class Extractions(SyncAPIResource):
         Raises:
             HTTPException if the request fails
         """
-        assert_valid_model_extraction(model)
-
-        json_schema = load_json_schema(json_schema)
-
-        mime_document = prepare_mime_document(document)
-        data = {
-            "json_schema": json_schema,
-            "document": mime_document.model_dump(),
-            "model": model,
-            "temperature": temperature,
-            "stream": True,
-            "text_operations": text_operations or {},
-            "modality": modality,
-            "messages": messages,
-        }
-        # Validate DocumentAPIRequest data (raises exception if invalid)
-        request_object = DocumentExtractRequest.model_validate(data)
+        request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality)
 
         # Request the stream and return a context manager
-        for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=data):
+        for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump()):
             if not chunk_json:
                 continue
             try:
-                yield maybe_parse_to_pydantic(request_object, DocumentExtractResponse.model_validate(chunk_json))
+                yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json))
             except Exception:
                 pass
 
 
-class AsyncExtractions(AsyncAPIResource):
+class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
     """Extraction API wrapper for asynchronous usage."""
 
     async def parse(
@@ -136,6 +165,7 @@ class AsyncExtractions(AsyncAPIResource):
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
+        messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
     ) -> DocumentExtractResponse:
         """
@@ -152,24 +182,9 @@ class AsyncExtractions(AsyncAPIResource):
         Returns:
             DocumentExtractResponse: Parsed response from the API.
         """
-        assert_valid_model_extraction(model)
-
-        json_schema = load_json_schema(json_schema)
-
-        mime_document = prepare_mime_document(document)
-        data = {
-            "json_schema": json_schema,
-            "document": mime_document.model_dump(),
-            "model": model,
-            "temperature": temperature,
-            "stream": False,
-            "text_operations": text_operations or {},
-            "modality": modality,
-        }
-
-        request_object = DocumentExtractRequest.model_validate(data)
-        response = await self._client._request("POST", "/api/v1/documents/extractions", data=data)
-        return maybe_parse_to_pydantic(request_object, DocumentExtractResponse.model_validate(response)) 
+        request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality)
+        response = await self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump())
+        return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
     async def stream(
         self,
@@ -178,6 +193,7 @@ class AsyncExtractions(AsyncAPIResource):
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
+        messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
     ) -> AsyncIterator[DocumentExtractResponse]:
         """
@@ -194,25 +210,10 @@ class AsyncExtractions(AsyncAPIResource):
         Returns:
             AsyncIterator[DocumentExtractResponse]: Stream of parsed responses.
         """
-        assert_valid_model_extraction(model)
+        request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality)
 
-        json_schema = load_json_schema(json_schema)
-
-        mime_document = prepare_mime_document(document)
-        data = {
-            "json_schema": json_schema,
-            "document": mime_document.model_dump(),
-            "model": model,
-            "temperature": temperature,
-            "stream": True,
-            "text_operations": text_operations or {},
-            "modality": modality,
-        }
-
-        request_object = DocumentExtractRequest.model_validate(data)
-
-        async for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=data):
+        async for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump()):
             if not chunk_json:
                 continue
             
-            yield maybe_parse_to_pydantic(request_object, DocumentExtractResponse.model_validate(chunk_json))  
+            yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json))  

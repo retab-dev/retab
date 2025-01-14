@@ -1,4 +1,4 @@
-from typing import IO, Any
+from typing import Any
 from pathlib import Path
 from io import IOBase
 from ...types.modalities import Modality
@@ -7,7 +7,24 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
 from .extractions import Extractions, AsyncExtractions
 
-class Documents(SyncAPIResource): 
+class BaseDocumentsMixin:
+    def _prepare_create_messages(
+        self,
+        document: Path | str | IOBase, 
+        modality: Modality = "native", 
+        text_operations: dict[str, Any] | None = None
+    ) -> DocumentCreateMessageRequest:
+        mime_document = prepare_mime_document(document)
+
+        data: dict[str, Any] = {
+            "document": mime_document.model_dump(),
+            "modality": modality,
+            "text_operations": text_operations
+        }
+        return DocumentCreateMessageRequest.model_validate(data)
+
+
+class Documents(SyncAPIResource, BaseDocumentsMixin): 
     """Documents API wrapper"""
 
     # TODO: Add batch methods
@@ -37,24 +54,13 @@ class Documents(SyncAPIResource):
         Raises:
             UiformAPIError: If the API request fails.
         """
-
-        mime_document = prepare_mime_document(document)
-        
-        data: dict[str, Any] = {
-            "document": mime_document.model_dump(), 
-            "modality": modality,
-            "text_operations": text_operations
-        }
-
-        loading_request = DocumentCreateMessageRequest.model_validate(data)
-
+        loading_request = self._prepare_create_messages(document, modality, text_operations)
         response = self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump())
-
         return DocumentMessage.model_validate(response)
 
 
 
-class AsyncDocuments(AsyncAPIResource):
+class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper for asynchronous usage."""
 
     def __init__(self, client: Any) -> None:
@@ -79,18 +85,7 @@ class AsyncDocuments(AsyncAPIResource):
         Raises:
             UiformAPIError: If the API request fails.
         """
-
-        mime_document = prepare_mime_document(document)
-
-        data: dict[str, Any] = {
-            "document": mime_document.model_dump(), 
-            "modality": modality,
-            "text_operations": text_operations
-        }
-
-        loading_request = DocumentCreateMessageRequest.model_validate(data)
-
+        loading_request = self._prepare_create_messages(document, modality, text_operations)
         response = await self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump())
-
         return DocumentMessage.model_validate(response)
 
