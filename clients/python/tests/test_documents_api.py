@@ -18,7 +18,7 @@ ClientsFixtureType = dict[str, UiForm | AsyncUiForm]
 ClientType = Literal[
     "sync", 
     "async",
-    ]
+]
 
 
 def validate_extraction_response(response: DocumentExtractResponse) -> None:

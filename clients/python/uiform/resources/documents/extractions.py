@@ -6,14 +6,17 @@ from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResp
 from ...utils import load_json_schema, assert_valid_model_extraction, prepare_mime_document
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import ChatCompletionUiformMessage
+from ...jsonschema.utils import convert_basemodel_to_partial_basemodel 
 
 
 def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse) -> DocumentExtractResponse:
-    pydantic_base_model = request.form_schema.pydantic_model
     if response.choices[0].message.content:
         try:
-            response.choices[0].message.parsed = pydantic_base_model.model_validate_json(response.choices[0].message.content)
-        except Exception: pass
+            response.choices[0].message.parsed = request.form_schema.pydantic_model.model_validate_json(response.choices[0].message.content)
+        except Exception:
+            try:
+                response.choices[0].message.parsed = request.form_schema._partial_pydantic_model.model_validate_json(response.choices[0].message.content)
+            except Exception: pass
     return response
 
 

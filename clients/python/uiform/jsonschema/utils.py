@@ -4,7 +4,7 @@ import json
 from collections import defaultdict
 from pydantic import BaseModel, BeforeValidator, Field, create_model
 from pydantic.config import ConfigDict
-from typing import Any, Type, Annotated, TypedDict
+from typing import Any, Type, Annotated, Optional, get_origin, get_args
 import datetime
 
 from .validators import validate_time, validate_date, validate_str, validate_bool, validate_vat_number, validate_integer, validate_float, validate_phone_number, validate_email_address
@@ -798,3 +798,41 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
         __module__="__main__",
         **field_definitions,
     )
+
+
+
+def convert_basemodel_to_partial_basemodel(base_model: Type[BaseModel]) -> Type[BaseModel]:
+    # Prepare the fields for the new model
+    fields = {}
+    for field_name, field_info in base_model.model_fields.items():
+        field_type = field_info.annotation
+
+        # Check if the field type is a Pydantic model (BaseModel subclass)
+        if isinstance(field_type, type) and issubclass(field_type, BaseModel):
+            # Recursively make nested models optional
+            optional_field_type = Optional[convert_basemodel_to_partial_basemodel(field_type)]
+        else:
+            # Handle lists of nested models or other complex types
+            origin = get_origin(field_type)
+            if origin in (list, tuple):
+                inner_type = get_args(field_type)[0]
+                # Check if the inner type is a BaseModel subclass and apply recursively if so
+                if isinstance(inner_type, type) and issubclass(inner_type, BaseModel):
+                    optional_inner_type = Optional[origin[convert_basemodel_to_partial_basemodel(inner_type)]]
+                    optional_field_type = optional_inner_type
+                else:
+                    optional_field_type = Optional[field_type]
+            else:
+                # Make the field optional if it's not already
+                optional_field_type = Optional[field_type] if origin is not Optional else field_type
+
+        # Assign field type with default None
+        fields[field_name] = (optional_field_type, None)
+
+    # Create the new model with the optional fields
+    optional_model = create_model(      # type: ignore
+        f"Partial{base_model.__name__}",
+        **fields,
+        __base__=BaseModel
+    )
+    return optional_model

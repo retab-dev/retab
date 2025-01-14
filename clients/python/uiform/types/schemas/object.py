@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, computed_field, model_validator, PrivateAttr
 from typing import Any, Literal, cast, Self
 import json
 import copy
@@ -6,7 +6,7 @@ import copy
 from ..documents.create_messages import ChatCompletionUiformMessage
 from ..documents.create_messages import convert_to_google_genai_format, convert_to_anthropic_format
 from ...utils import generate_sha_hash_from_string
-from ...jsonschema.utils import clean_schema, json_schema_to_structured_output_json_schema, json_schema_to_typescript_interface, expand_refs, create_inference_schema, schema_to_ts_type, convert_json_schema_to_basemodel
+from ...jsonschema.utils import clean_schema, json_schema_to_structured_output_json_schema, json_schema_to_typescript_interface, expand_refs, create_inference_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.completion_create_params import ResponseFormat
@@ -36,14 +36,16 @@ class Schema(BaseModel):
     """The JSON schema to use for loading."""
 
     pydantic_model: type[BaseModel] = Field(default=None, exclude=True, repr=False)     # type: ignore
+
+    _partial_pydantic_model: type[BaseModel] = PrivateAttr()
     """The Pydantic model to use for loading."""
 
     @model_validator(mode="before")
     def validate_schema_and_model(cls, data: Any) -> Any:
         """Validate schema and model logic."""
         # Extract from data
-        json_schema = data.get('json_schema', None)
-        pydantic_model = data.get('pydantic_model', None)
+        json_schema: dict[str, Any] | None = data.get('json_schema', None)
+        pydantic_model: type[BaseModel] | None = data.get('pydantic_model', None)
 
         # Check if either json_schema or pydantic_model is provided
         if json_schema and pydantic_model:
@@ -53,8 +55,8 @@ class Schema(BaseModel):
             raise ValueError("Must provide either json_schema or pydantic_model")
 
         if json_schema:
-            data['json_schema'] = json_schema
             data['pydantic_model'] = convert_json_schema_to_basemodel(json_schema)
+            data['json_schema'] = json_schema
         if pydantic_model:
             data['pydantic_model'] = pydantic_model
             data['json_schema'] = pydantic_model.model_json_schema()
@@ -63,9 +65,13 @@ class Schema(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def validate_messages(self) -> Self:
+    def model_after_validator(self) -> Self:
+        # Validate Messages
         messages = getattr(self, "messages", [])
         self.messages = [ChatCompletionUiformMessage(role="system", content=self.system_prompt)] + messages
+
+        # Set the partial_pydantic_model
+        self._partial_pydantic_model = convert_basemodel_to_partial_basemodel(self.pydantic_model)
 
         return self
 
