@@ -1,4 +1,5 @@
-from typing import Any, Optional, Union, Literal, Callable, Type, Annotated, Optional, get_origin, get_args
+import types
+from typing import Any, Optional, Union, Literal, Callable, Type, Annotated, Optional, get_origin, get_args, cast
 from pydantic import BaseModel, BeforeValidator, Field, create_model
 from pydantic.config import ConfigDict
 from collections import defaultdict
@@ -906,11 +907,11 @@ def get_pydantic_primitive_field_type(type_: SCHEMA_TYPES | str, format_: str | 
 # Defaultdict that returns a no-op lambda for unknown keys, then merges known validators
 # Expansive coercion functions (can evolve on time)
 KNOWN_COERCIONS: dict[tuple[str | None, str | None], Callable[[Any], Any]] = defaultdict(lambda: lambda x: x) | {
-    ("string", "iso-date"): validate_date,
-    ("string", "iso-time"): validate_time,
-    ("string", "email"): validate_email_address,
-    ("string", "phone-number"): validate_phone_number,
-    ("string", "vat-number"): validate_vat_number,
+    # ("string", "iso-date"): validate_date,
+    # ("string", "iso-time"): validate_time,
+    # ("string", "email"): validate_email_address,
+    # ("string", "phone-number"): validate_phone_number,
+    # ("string", "vat-number"): validate_vat_number,
     ("integer", None): validate_integer,
     ("number", None): validate_float,
     ("boolean", None): validate_bool,
@@ -1135,42 +1136,75 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
     )
 
 
+def is_basemodel_subclass(t: Any) -> bool:
+    return isinstance(t, type) and issubclass(t, BaseModel)
+
+def is_already_optional(t: Any) -> bool:
+    """Return True if type t is Optional[...] or includes None in a Union."""
+    return (
+        (get_origin(t) in {Union, types.UnionType})
+        and type(None) in get_args(t)
+    )
 
 def convert_basemodel_to_partial_basemodel(base_model: Type[BaseModel]) -> Type[BaseModel]:
-    # Prepare the fields for the new model
-    fields = {}
+    """
+    Convert a BaseModel class to a new BaseModel class where all fields are Optional.
+    Handles nested BaseModels, lists, and unions recursively.
+    """
+    field_definitions: Any = {}
+    maybe_optional_type: Any
     for field_name, field_info in base_model.model_fields.items():
         field_type = field_info.annotation
 
-        # Check if the field type is a Pydantic model (BaseModel subclass)
-        if isinstance(field_type, type) and issubclass(field_type, BaseModel):
-            # Recursively make nested models optional
-            optional_field_type = Optional[convert_basemodel_to_partial_basemodel(field_type)]
+        # Handle nested BaseModel
+        if is_basemodel_subclass(field_type):
+            partial_nested = convert_basemodel_to_partial_basemodel(cast(Type[BaseModel], field_type))
+            maybe_optional_type = Union[partial_nested, None]
         else:
-            # Handle lists of nested models or other complex types
             origin = get_origin(field_type)
-            if origin in (list, tuple):
-                inner_type = get_args(field_type)[0]
-                # Check if the inner type is a BaseModel subclass and apply recursively if so
-                if isinstance(inner_type, type) and issubclass(inner_type, BaseModel):
-                    optional_inner_type = Optional[origin[convert_basemodel_to_partial_basemodel(inner_type)]]
-                    optional_field_type = optional_inner_type
+            args = get_args(field_type)
+
+            # Handle list[...] or tuple[...]
+            if origin in (list, tuple) and args:
+                inner_type = args[0]
+                if is_basemodel_subclass(inner_type):
+                    # Recursively convert the inner model
+                    partial_inner = convert_basemodel_to_partial_basemodel(inner_type)
+                    container_type = list if origin is list else tuple
+                    new_type = container_type[partial_inner]  # type: ignore
                 else:
-                    optional_field_type = Optional[field_type]
+                    new_type = field_type
+                maybe_optional_type = Union[new_type, None]  # type: ignore
+
+            # Handle Union types
+            elif origin in {Union, types.UnionType}:
+                new_union_args: list[type] = []
+                for arg in args:
+                    if is_basemodel_subclass(arg):
+                        new_union_args.append(convert_basemodel_to_partial_basemodel(arg))
+                    else:
+                        new_union_args.append(arg)
+                # Make sure the union has None in it (to enforce optional)
+                if type(None) not in new_union_args:
+                    new_union_args.append(type(None))
+                maybe_optional_type = Union[tuple(new_union_args)]  # type: ignore
+
+            # Any other type - wrap in Optional unless already optional
             else:
-                # Make the field optional if it's not already
-                optional_field_type = Optional[field_type] if origin is not Optional else field_type
+                if is_already_optional(field_type):
+                    maybe_optional_type = field_type
+                else:
+                    maybe_optional_type = Union[field_type, None]  # type: ignore
 
-        # Assign field type with default None
-        fields[field_name] = (optional_field_type, None)
+        field_definitions[field_name] = (cast(type, maybe_optional_type), None)
 
-    # Create the new model with the optional fields
-    optional_model = create_model(      # type: ignore
+    # Dynamically create a new model
+    return create_model(
         f"Partial{base_model.__name__}",
-        **fields,
-        __base__=BaseModel
+        __config__=base_model.model_config,
+        __module__="__main__",
+        **field_definitions
     )
-    return optional_model
 
 
 def load_json_schema(json_schema: Union[dict[str, Any], Path, str]) -> dict[str, Any]:

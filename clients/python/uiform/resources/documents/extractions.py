@@ -1,4 +1,4 @@
-from typing import Any, Optional, Iterator, AsyncIterator
+from typing import Any, Optional, Generator, AsyncGenerator
 from pathlib import Path
 from io import IOBase
 
@@ -8,17 +8,18 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ..._utils.mime import prepare_mime_document
 from ..._utils.json_schema import load_json_schema
 from ..._utils.ai_model import assert_valid_model_extraction
+from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
 
-def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse) -> DocumentExtractResponse:
+def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse:
     if response.choices[0].message.content:
         try:
-            response.choices[0].message.parsed = request.form_schema.pydantic_model.model_validate_json(response.choices[0].message.content)
-        except Exception:
-            try:
+            if allow_partial:
                 response.choices[0].message.parsed = request.form_schema._partial_pydantic_model.model_validate_json(response.choices[0].message.content)
-            except Exception: pass
+            else:
+                response.choices[0].message.parsed = request.form_schema.pydantic_model.model_validate_json(response.choices[0].message.content)
+        except Exception: pass
     return response
 
 class BaseExtractionsMixin:
@@ -116,6 +117,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         response = self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump())
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
+    @as_context_manager
     def stream(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -125,7 +127,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
-    ) -> Iterator[DocumentExtractResponse]:
+    ) -> Generator[DocumentExtractResponse, None, None]:
         """
         Process a document using the UiForm API with streaming enabled.
 
@@ -139,20 +141,25 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             messages: List of chat completion messages for context
 
         Returns:
-            Iterator[DocumentExtractResponse]: Stream of parsed responses
+            Generator[DocumentExtractResponse]: Stream of parsed responses
         Raises:
             HTTPException if the request fails
+        Usage:
+        ```python
+        with uiform.documents.extractions.stream(json_schema, document, text_operations, model, temperature, messages, modality) as stream:
+            for response in stream:
+                print(response)
+        ```
         """
         request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality)
 
         # Request the stream and return a context manager
+        chunk_json: Any = None
         for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump()):
             if not chunk_json:
                 continue
-            try:
-                yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json))
-            except Exception:
-                pass
+            yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
+        yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json))
 
 
 class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
@@ -186,6 +193,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         response = await self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump())
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
+    @as_async_context_manager
     async def stream(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -195,7 +203,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
-    ) -> AsyncIterator[DocumentExtractResponse]:
+    ) -> AsyncGenerator[DocumentExtractResponse, None]:
         """
         Extract structured data from a document asynchronously with streaming.
 
@@ -208,12 +216,21 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             modality: Modality of the document (e.g., native).
 
         Returns:
-            AsyncIterator[DocumentExtractResponse]: Stream of parsed responses.
+            AsyncGenerator[DocumentExtractResponse, None]: Stream of parsed responses.
+
+        Usage:
+        ```python
+        async with uiform.documents.extractions.stream(json_schema, document, text_operations, model, temperature, messages, modality) as stream:
+            async for response in stream:
+                print(response)
+        ```
         """
         request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality)
-
+        chunk_json: Any = None
         async for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump()):
             if not chunk_json:
                 continue
             
-            yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json))  
+            yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
+        # Last chunk with full parsed response
+        yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json))  
