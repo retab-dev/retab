@@ -109,7 +109,9 @@ def convert_to_google_genai_format(
     
     return formatted_inputs
     
-def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> tuple[str | NotGiven, List[MessageParam]]:
+def convert_to_anthropic_format(
+    messages: List[ChatCompletionUiformMessage]
+) -> tuple[str | NotGiven, List[MessageParam]]:
     """
     Converts a list of ChatCompletionUiformMessage to a format compatible with the Anthropic SDK.
 
@@ -117,75 +119,111 @@ def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> 
         messages (List[ChatCompletionUiformMessage]): List of chat messages.
 
     Returns:
-        List[dict]: A list of formatted content blocks for the Anthropic SDK.
+        (system_message, formatted_messages):
+            system_message (str | NotGiven):
+                The system message if one was found, otherwise NOT_GIVEN.
+            formatted_messages (List[MessageParam]):
+                A list of formatted messages ready for Anthropic.
     """
+
     formatted_messages: list[MessageParam] = []
     system_message: str | NotGiven = NOT_GIVEN
-    
+
     for message in messages:
         content_blocks: list[Union[TextBlockParam, ImageBlockParam]] = []
+
+        # -----------------------
+        # Handle system message
+        # -----------------------
         if message["role"] == "system":
             assert isinstance(message["content"], str), "System message content must be a string."
             if system_message is not NOT_GIVEN:
                 raise ValueError("Only one system message is allowed per chat.")
-            else:
-                system_message = message["content"]
+            system_message = message["content"]
             continue
 
-        
+        # -----------------------
+        # Handle non-system roles
+        # -----------------------
         if isinstance(message['content'], str):
-            # Direct string content is treated as text block
+            # Direct string content is treated as a single text block
             content_blocks.append({
                 "type": "text",
-                "text": message['content']
+                "text": message['content'],
             })
+
         elif isinstance(message['content'], list):
             # Handle structured content
             for part in message['content']:
                 if part["type"] == "text":
                     part = cast(ChatCompletionContentPartTextParam, part)
-                    # Text content
                     content_blocks.append({
                         "type": "text",
-                        "text": part['text'] # type: ignore
+                        "text": part['text'],  # type: ignore
                     })
-                elif part["type"] == "image_url":
+
+                elif part["type"] == "input_audio":
                     part = cast(ChatCompletionContentPartInputAudioParam, part)
-                    # TODO: Audio Input not supported yet
                     logging.warning("Audio input is not supported yet.")
+                    # No blocks appended since not supported
 
                 elif part["type"] == "image_url":
-                    # Two cases: Either is a URL or a base64 encoded image
+                    # Handle images that may be either base64 data-URLs or standard remote URLs
                     part = cast(ChatCompletionContentPartImageParam, part)
-                    base64_url: str | None = None
-                    if "base64" in part["image_url"]["url"]:
-                        base64_url = part["image_url"]["url"]
+                    image_url = part["image_url"]["url"]
+
+                    if "base64," in image_url:
+                        # The string is already something like: data:image/jpeg;base64,xxxxxxxx...
+                        media_type, data_content = image_url.split(";base64,")
+                        # media_type might look like: "data:image/jpeg"
+                        media_type = media_type.split("data:")[-1]  # => "image/jpeg"
+                        base64_data = data_content
                     else:
+                        # It's a remote URL, so fetch, encode, and derive media type from headers
                         try:
-                            base64_url = base64.b64encode(requests.get(part["image_url"]["url"]).content).decode('utf-8')
+                            r = requests.get(image_url)
+                            r.raise_for_status()
+                            content_type = r.headers.get("Content-Type", "image/jpeg")
+                            # fallback "image/jpeg" if no Content-Type given
+
+                            # Only keep recognized image/* for anthropic
+                            if content_type not in (
+                                "image/jpeg", "image/png", "image/gif", "image/webp"
+                            ):
+                                logging.warning(
+                                    "Unrecognized Content-Type '%s' - defaulting to image/jpeg",
+                                    content_type,
+                                )
+                                content_type = "image/jpeg"
+
+                            media_type = content_type
+                            base64_data = base64.b64encode(r.content).decode("utf-8")
+
                         except Exception:
-                            logging.warning("Failed to load image from URL: %s", part["image_url"]["url"], exc_info=True, stack_info=True)
-                    if base64_url:
-                        # Base64 encoded image
-                        media_type, data_content = base64_url.split(":data")[0].split(";base64,")
-                        content_blocks.append(
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": cast(MediaType, media_type),
-                                    "data": data_content
-                                }
-                            }
-                        )
+                            logging.warning(
+                                "Failed to load image from URL: %s",
+                                image_url,
+                                exc_info=True,
+                                stack_info=True,
+                            )
+                            # Skip adding this block if error
+                            continue
 
+                    # Finally, append to content blocks
+                    content_blocks.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": cast(MediaType, media_type),
+                            "data": base64_data,
+                        }
+                    })
 
-        
         formatted_messages.append(MessageParam(
             role=message["role"],  # type: ignore
             content=content_blocks
         ))
-    
+
     return system_message, formatted_messages
 
 def convert_to_openai_format(messages: List[ChatCompletionUiformMessage]) -> List[ChatCompletionMessageParam]:
