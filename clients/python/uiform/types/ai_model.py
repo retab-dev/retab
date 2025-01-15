@@ -1,6 +1,7 @@
 from typing import Literal
 
 AIProvider = Literal["OpenAI", "Anthropic", "xAI", "Gemini"]
+OpenAICompatibleProvider = Literal["OpenAI", "xAI", "Gemini"]
 GeminiModel = Literal[ "gemini-2.0-flash-exp",
                       "gemini-1.5-flash-8b", "gemini-1.5-flash","gemini-1.5-pro"]
 AnthropicModel = Literal["claude-3-5-sonnet-latest","claude-3-5-sonnet-20241022",
