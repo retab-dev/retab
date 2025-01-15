@@ -92,7 +92,7 @@ def sync_client(base_url: str, uiform_api_key: str, api_keys: EnvConfig) -> UiFo
         claude_api_key=api_keys.claude_api_key,
         gemini_api_key=api_keys.gemini_api_key,
         xai_api_key=api_keys.xai_api_key,
-        max_retries=2
+        max_retries=3
     )
 
 @pytest.fixture(scope="function")
@@ -104,7 +104,7 @@ def async_client(base_url: str, uiform_api_key: str, api_keys: EnvConfig) -> Asy
         claude_api_key=api_keys.claude_api_key,
         gemini_api_key=api_keys.gemini_api_key,
         xai_api_key=api_keys.xai_api_key,
-        max_retries=2
+        max_retries=3
     )
 
 @pytest.fixture(scope="session")

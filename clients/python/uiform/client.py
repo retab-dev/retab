@@ -155,7 +155,7 @@ class UiForm(BaseUiForm):
             RuntimeError: If request fails after max retries or validation error occurs
         """
 
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Any:
             response = self.client.request(
                     method, self._prepare_url(endpoint), json=data, headers=self.headers
@@ -182,7 +182,7 @@ class UiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Iterator[Any]:
             with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self.headers) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
@@ -272,7 +272,7 @@ class AsyncUiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> Any:
             response = await self.client.request(
                     method, self._prepare_url(endpoint), json=data, headers=self.headers
@@ -299,7 +299,7 @@ class AsyncUiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> AsyncIterator[Any]:
             async with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self.headers) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
