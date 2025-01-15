@@ -6,7 +6,7 @@ from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResp
 from ...types.modalities import Modality
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ..._utils.mime import prepare_mime_document
-from ..._utils.json_schema import load_json_schema
+from ..._utils.json_schema import load_json_schema, filter_reasoning_fields_json
 from ..._utils.ai_model import assert_valid_model_extraction
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ..._resource import SyncAPIResource, AsyncAPIResource
@@ -16,10 +16,11 @@ def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentE
     if response.choices[0].message.content:
         try:
             if allow_partial:
-                response.choices[0].message.parsed = request.form_schema._partial_pydantic_model.model_validate_json(response.choices[0].message.content)
+                response.choices[0].message.parsed = request.form_schema._partial_pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content, request.form_schema._partial_pydantic_model))
             else:
-                response.choices[0].message.parsed = request.form_schema.pydantic_model.model_validate_json(response.choices[0].message.content)
-        except Exception: pass
+                response.choices[0].message.parsed = request.form_schema.pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content, request.form_schema.pydantic_model))
+        except Exception as e: 
+            pass
     return response
 
 class BaseExtractionsMixin:
