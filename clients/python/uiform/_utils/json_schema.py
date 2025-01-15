@@ -1226,3 +1226,45 @@ def load_json_schema(json_schema: Union[dict[str, Any], Path, str]) -> dict[str,
         with open(json_schema) as f:
             return json.load(f)
     return json_schema
+
+
+
+def filter_reasoning_fields(data: dict[str, Any], model: Type[BaseModel]) -> dict[str, Any]:
+    """
+    Recursively filters input data to match the fields in the given Pydantic model.
+    """
+    if not isinstance(data, dict):
+        return data  # Base case: return non-dict values as is
+
+    filtered: dict[str, Any]  = {}
+    for key, value in data.items():
+        if key in model.model_fields:
+            field_info = model.model_fields[key]
+            field_annotation = field_info.annotation
+
+            # Check if the field is another Pydantic model
+            if isinstance(field_annotation, type) and issubclass(field_annotation, BaseModel):
+                filtered[key] = filter_reasoning_fields(value, field_annotation)
+            elif (
+                isinstance(value, list)
+                and get_origin(field_annotation) is list
+            ):
+                # Handle lists of nested models
+                item_type = get_args(field_annotation)[0]
+                if isinstance(item_type, type) and issubclass(item_type, BaseModel):
+                    filtered[key] = [filter_reasoning_fields(item, item_type) for item in value]
+                else:
+                    filtered[key] = value
+            else:
+                filtered[key] = value  # Copy the value directly for non-nested fields
+
+    return filtered
+
+
+def filter_reasoning_fields_json(data: str, model: Type[BaseModel]) -> dict[str, Any]:
+    """
+    Recursively filters input data to match the fields in the given Pydantic model.
+    """
+
+    data_dict = json.loads(data)
+    return filter_reasoning_fields(data_dict, model)
