@@ -97,13 +97,13 @@ class Schema(BaseModel):
             
 
     @property
-    def anthropic_system_prompt(self) -> str | NotGiven:
+    def anthropic_system_prompt(self) -> str:
         """Returns the system message in Anthropic's Claude format.
         
         Returns:
-            str | NotGiven: The system prompt formatted for Claude or NotGiven if none exists.
+            str : The system prompt formatted for Claude.
         """
-        return self.system_prompt
+        return "Return your response as a JSON object following the provided schema." + self.system_prompt
 
     @property
     def anthropic_messages(self) -> list[MessageParam]:

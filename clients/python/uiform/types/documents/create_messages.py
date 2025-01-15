@@ -28,7 +28,7 @@ from anthropic.types.text_block_param import TextBlockParam
 from anthropic.types.image_block_param import ImageBlockParam, Source
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
-from anthropic._types import NotGiven, NOT_GIVEN
+#from anthropic._types import NotGiven, NOT_GIVEN
 
 BlockUnion = Union[TextBlockParam, ImageBlockParam, ToolUseBlockParam, ToolResultBlockParam, ContentBlock]
 ContentBlockAnthropicUnion = Union[str, Iterable[BlockUnion]]
@@ -111,7 +111,7 @@ def convert_to_google_genai_format(
     
 def convert_to_anthropic_format(
     messages: List[ChatCompletionUiformMessage]
-) -> tuple[str | NotGiven, List[MessageParam]]:
+) -> tuple[str, List[MessageParam]]:
     """
     Converts a list of ChatCompletionUiformMessage to a format compatible with the Anthropic SDK.
 
@@ -127,7 +127,7 @@ def convert_to_anthropic_format(
     """
 
     formatted_messages: list[MessageParam] = []
-    system_message: str | NotGiven = NOT_GIVEN
+    system_message: str = ""
 
     for message in messages:
         content_blocks: list[Union[TextBlockParam, ImageBlockParam]] = []
@@ -137,7 +137,7 @@ def convert_to_anthropic_format(
         # -----------------------
         if message["role"] == "system":
             assert isinstance(message["content"], str), "System message content must be a string."
-            if system_message is not NOT_GIVEN:
+            if system_message != "":
                 raise ValueError("Only one system message is allowed per chat.")
             system_message = message["content"]
             continue
@@ -411,14 +411,13 @@ class DocumentMessage(BaseModel):
         return convert_to_openai_format(self.messages)
 
     @property
-    def anthropic_system_prompt(self) -> str | NotGiven:
+    def anthropic_system_prompt(self) -> str:
         """Returns the system prompt formatted for Anthropic's Claude API.
 
-        Extracts and formats the system message for use with Claude. If no system
-        message exists, returns NOT_GIVEN.
+        Extracts and formats the system message for use with Claude. 
 
         Returns:
-            str | NotGiven: The system prompt if present, otherwise NOT_GIVEN.
+            str: The system prompt formatted for Claude.
         """
         return convert_to_anthropic_format(self.messages)[0]
 
