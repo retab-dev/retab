@@ -1,8 +1,5 @@
 import pytest
 import json
-import time
-import asyncio
-import random
 from typing import Literal, get_args, Any
 from pydantic import BaseModel
 from uiform import UiForm, AsyncUiForm
@@ -14,8 +11,14 @@ AI_MODELS = Literal[
     "claude-3-5-sonnet-latest",
     "gemini-1.5-flash-8b"
 ]
-ClientsFixtureType = dict[str, UiForm | AsyncUiForm]
-
+ClientType = Literal[
+    "sync",
+    "async",
+]
+ResponseModeType = Literal[
+    "stream", 
+    "parse",
+]
 
 def validate_extraction_response(response: DocumentExtractResponse) -> None:
     # Assert the instance
@@ -36,31 +39,53 @@ def validate_extraction_response(response: DocumentExtractResponse) -> None:
 # Test the extraction endpoint
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", get_args(AI_MODELS))
-async def test_extract_success(model: AI_MODELS, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
+@pytest.mark.parametrize("client_type", get_args(ClientType))
+@pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
+# @pytest.mark.parametrize("stream", [False])
+async def test_extract_success(model: AI_MODELS, client_type: ClientType, response_mode: ResponseModeType, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
     json_schema = booking_confirmation_json_schema
     document=booking_confirmation_file_path
     modality: Literal["text"] = "text"
     
     # Wait a random amount of time between 0 and 2 seconds (to avoid sending multiple requests to the same provider at the same time)
-    with sync_client as client:
-        print(f"[Sync -- UiForm] Testing {model}...")
-        response = client.documents.extractions.parse(
-            json_schema=json_schema,
-            document=document,
-            model=model,
-            modality=modality
-        )
-        validate_extraction_response(response)
-    # Wait a little before sending the next request...
-    await asyncio.sleep(random.uniform(1, 5))
+    if client_type == "sync":
+        with sync_client as client:
+            if response_mode == "stream":
+                stream_iterator = client.documents.extractions.stream(
+                    json_schema=json_schema,
+                    document=document,
+                    model=model,
+                    modality=modality
+                )
+                response = stream_iterator.__next__()
+                for response in stream_iterator: pass
+                validate_extraction_response(response)
+            else:
+                response = client.documents.extractions.parse(
+                    json_schema=json_schema,
+                    document=document,
+                    model=model,
+                    modality=modality
+                )
+            validate_extraction_response(response)
     
-    async with async_client:
-        print(f"[Async -- AsyncUiForm] Testing {model}...")
-        response = await async_client.documents.extractions.parse(
-            json_schema=json_schema,
-            document=document,
-            model=model,
-            modality=modality
-        )
-        validate_extraction_response(response)
+    if client_type == "async":
+        async with async_client:
+            if response_mode == "stream":
+                stream_async_iterator = async_client.documents.extractions.stream(
+                    json_schema=json_schema,
+                    document=document,
+                    model=model,
+                    modality=modality
+                )
+                response = await stream_async_iterator.__anext__()
+                async for response in stream_async_iterator: pass
+            else:
+                response = await async_client.documents.extractions.parse(
+                    json_schema=json_schema,
+                    document=document,
+                    model=model,
+                    modality=modality
+                )
+            validate_extraction_response(response)
 

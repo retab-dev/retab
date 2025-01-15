@@ -30,6 +30,7 @@ requests
 openai
 tqdm
 tiktoken
+backoff
 
 ########################
 ## Validation dependencies

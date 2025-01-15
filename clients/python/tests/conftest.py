@@ -51,7 +51,7 @@ class EnvConfig(BaseModel):
     xai_api_key: str = Field(..., description="XAI API key")
 
 @pytest.fixture(scope="session")
-def api_keys(load_env) -> EnvConfig:  
+def api_keys(load_env: None) -> EnvConfig:  
     uiform_api_key = os.getenv("UIFORM_API_KEY")
     uiform_api_base_url = os.getenv("UIFORM_API_BASE_URL")
     openai_api_key = os.getenv("OPENAI_API_KEY")

@@ -3,10 +3,23 @@ from types import TracebackType
 import os
 import httpx
 import json
+import backoff
+import backoff.types
 from pydantic_core import PydanticUndefined
 
 
 from .resources import datasets, documents, files, finetuning, models, prompt_optimization, schemas
+
+class MaxRetriesExceeded(Exception): pass
+
+
+def raise_max_tries_exceeded(details: backoff.types.Details) -> None:
+    exception = details.get("exception")
+    tries = details["tries"]
+    if isinstance(exception, BaseException):
+        raise Exception(f"Max tries exceeded after {tries} tries.") from exception
+    else:
+        raise Exception(f"Max tries exceeded after {tries} tries.")
 
 class BaseUiForm:
     """Base class for UiForm clients that handles authentication and configuration.
@@ -114,7 +127,6 @@ class UiForm(BaseUiForm):
         self.models = models.Models(client=self)
         self.datasets = datasets.Datasets(client=self)
         self.schemas = schemas.Schemas(client=self)
-        
     def _request(
         self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None
     ) -> Any:
@@ -131,29 +143,23 @@ class UiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        retries = 0
-        while retries <= self.max_retries:
-            try:
-                response = self.client.request(
+
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
+        def wrapped_request() -> Any:
+            url = f"{self.base_url}/{endpoint.lstrip('/')}"
+            response = self.client.request(
                     method, url, json=data, headers=self.headers
                 )
+            if response.status_code in {500, 502, 503, 504}:
                 response.raise_for_status()
-                return response.json()
-            except httpx.HTTPStatusError as e:
-                if response.status_code in {500, 502, 503, 504}:
-                    retries += 1
-                elif response.status_code == 422:
-                    # Unprocessable Entity, likely a validation error
-                    # Show the details in the exception message
-                    raise RuntimeError(f"Validation error: {response.json()}")
-                else:
-                    raise e
-            
-            except httpx.RequestError as e:
-                raise RuntimeError(f"Request failed: {e}")
+            elif response.status_code == 422:
+                raise RuntimeError(f"Validation error: {response.json()}")
+            elif not response.is_success:
+                raise RuntimeError(f"Request failed: {response}")
 
-        raise RuntimeError(f"Failed after {self.max_retries} retries")
+            return response.json()
+
+        return wrapped_request()
 
     def _request_stream(
             self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None
@@ -171,32 +177,24 @@ class UiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        retries = 0
-        # Returns a generator of JSON objects or raises an exception
-        while retries < self.max_retries:
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
+        def wrapped_request() -> Iterator[Any]:
+            url = f"{self.base_url}/{endpoint.lstrip('/')}"
             with self.client.stream(method, url, json=data, headers=self.headers) as response_ctx_manager:
-                try:
+                if response_ctx_manager.status_code in {500, 502, 503, 504}:
                     response_ctx_manager.raise_for_status()
-                    # Iterate over the response stream and parse each line as JSON
-                    for chunk in response_ctx_manager.iter_lines():
-                        if not chunk: continue
-                        try: yield json.loads(chunk)
-                        except Exception: pass
-                    # Once we finish the stream, we can break out of the loop
-                    break
-                except httpx.HTTPStatusError as e:
-                    if response_ctx_manager.status_code in {500, 502, 503, 504}:
-                        retries += 1
-                    elif response_ctx_manager.status_code == 422:
-                        # Unprocessable Entity, likely a validation error
-                        # Show the details in the exception message
-                        raise RuntimeError(f"Validation error: {response_ctx_manager.text}")
-                    else:
-                        raise e
-        else:
-            # If we did not break out of the loop, we reached the max retries
-            raise RuntimeError(f"Failed after {self.max_retries} retries")
+                elif response_ctx_manager.status_code == 422:
+                    raise RuntimeError(f"Validation error: {response_ctx_manager.text}")
+                elif not response_ctx_manager.is_success:
+                    raise RuntimeError(f"Request failed: {response_ctx_manager}")
+                
+                for chunk in response_ctx_manager.iter_lines():
+                    if not chunk: continue
+                    try: yield json.loads(chunk)
+                    except Exception: pass
+        
+        for item in wrapped_request():
+            yield item
 
     def close(self) -> None:
         """Closes the HTTP client session."""
@@ -275,27 +273,23 @@ class AsyncUiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        retries = 0
-        while retries <= self.max_retries:
-            try:
-                response = await self.client.request(
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
+        async def wrapped_request() -> Any:
+            url = f"{self.base_url}/{endpoint.lstrip('/')}"
+            response = await self.client.request(
                     method, url, json=data, headers=self.headers
                 )
+            if response.status_code in {500, 502, 503, 504}:
                 response.raise_for_status()
-                return response.json()
-            except httpx.HTTPStatusError as e:
-                if response.status_code in {500, 502, 503, 504}:
-                    retries += 1
-                elif response.status_code == 422:
-                    raise RuntimeError(f"Validation error: {response.json()}")
-                else:
-                    raise e
-            except httpx.RequestError as e:
-                raise RuntimeError(f"Request failed: {e}")
+            elif response.status_code == 422:
+                raise RuntimeError(f"Validation error: {response.json()}")
+            elif not response.is_success:
+                raise RuntimeError(f"Request failed: {response}")
 
-        raise RuntimeError(f"Failed after {self.max_retries} retries")
+            return response.json()
 
+        return await wrapped_request()
+        
     async def _request_stream(
         self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None
     ) -> AsyncIterator[Any]:
@@ -312,32 +306,24 @@ class AsyncUiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        retries = 0
-
-        while retries < self.max_retries:
-            try:
-                async with self.client.stream(method, url, json=data, headers=self.headers) as response_ctx_manager:
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
+        async def wrapped_request() -> AsyncIterator[Any]:
+            url = f"{self.base_url}/{endpoint.lstrip('/')}"
+            async with self.client.stream(method, url, json=data, headers=self.headers) as response_ctx_manager:
+                if response_ctx_manager.status_code in {500, 502, 503, 504}:
                     response_ctx_manager.raise_for_status()
-                    async for line in response_ctx_manager.aiter_lines():
-                        if not line:
-                            continue
-                        try:
-                            yield json.loads(line)
-                        except json.JSONDecodeError:
-                            pass
-                    return  # Exit after a successful streaming session
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code in {500, 502, 503, 504}:
-                    retries += 1
-                elif e.response.status_code == 422:
-                    raise RuntimeError(f"Validation error: {e.response.text}")
-                else:
-                    raise e
-            except httpx.RequestError as e:
-                raise RuntimeError(f"Request failed: {e}")
-
-        raise RuntimeError(f"Failed after {self.max_retries} retries")
+                elif response_ctx_manager.status_code == 422:
+                    raise RuntimeError(f"Validation error: {response_ctx_manager.text}")
+                elif not response_ctx_manager.is_success:
+                    raise RuntimeError(f"Request failed: {response_ctx_manager}")
+                
+                async for chunk in response_ctx_manager.aiter_lines():
+                    if not chunk: continue
+                    try: yield json.loads(chunk)
+                    except Exception: pass
+        
+        async for item in wrapped_request():
+            yield item
 
     async def close(self) -> None:
         """Closes the async HTTP client session."""
