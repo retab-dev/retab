@@ -12,6 +12,7 @@ from ..._utils.ai_model import find_provider_from_model
 from ..mime import BaseMIMEData, MIMEData
 from ..ai_model import AIProvider
 from .text_operations import TextOperations
+from .image_operations import ImageOperations
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
@@ -285,6 +286,10 @@ class DocumentCreateMessageRequest(BaseModel):
         }],
     }])
     """The text operations to apply to the document."""
+    image_operations : ImageOperations|None = Field(default={"correct_orientation" : True}, description="Preprocessing operations applied to image before sending them to the llm", examples=[{
+        "correct_orientation": True
+    }])
+    """The image operations to apply to the document."""
 
     @model_validator(mode="after")
     def validate_model_and_provider(self) -> Self:
