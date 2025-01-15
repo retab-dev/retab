@@ -40,7 +40,6 @@ completion = client.messages.create(
     model="claude-3-5-sonnet-20241022",
     max_tokens=1000,
     temperature=0,
-    system=doc_msg.anthropic_system_prompt,
     messages=doc_msg.anthropic_messages + [
         {
             "role": "user",
@@ -56,7 +55,7 @@ completion = client.messages.create(
     model="claude-3-5-sonnet-20241022",
     max_tokens=1000,
     temperature=0,
-    system=schema_obj.anthropic_system_prompt + doc_msg.anthropic_system_prompt,
+    system=schema_obj.anthropic_system_prompt,
     messages=schema_obj.anthropic_messages + doc_msg.anthropic_messages
 )
 

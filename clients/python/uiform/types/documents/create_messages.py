@@ -410,16 +410,6 @@ class DocumentMessage(BaseModel):
         """
         return convert_to_openai_format(self.messages)
 
-    @property
-    def anthropic_system_prompt(self) -> str:
-        """Returns the system prompt formatted for Anthropic's Claude API.
-
-        Extracts and formats the system message for use with Claude. 
-
-        Returns:
-            str: The system prompt formatted for Claude.
-        """
-        return convert_to_anthropic_format(self.messages)[0]
 
     @property
     def anthropic_messages(self) -> list[MessageParam]:
