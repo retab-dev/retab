@@ -90,6 +90,17 @@ class BaseUiForm:
             self.headers["Gemini-Api-Key"] = gemini_api_key
 
 
+    def _prepare_url(self, endpoint: str) -> str:
+        return f"{self.base_url}/{endpoint.lstrip('/')}"
+    
+    def _validate_response(self, response_object: httpx.Response) -> None:
+        if response_object.status_code in {500, 502, 503, 504}:
+            response_object.raise_for_status()
+        elif response_object.status_code == 422:
+            raise RuntimeError(f"Validation error: {response_object.json()}")
+        elif not response_object.is_success:
+            raise RuntimeError(f"Request failed: {response_object}")
+
 class UiForm(BaseUiForm):
     """Synchronous client for interacting with the UiForm API.
     
@@ -146,16 +157,10 @@ class UiForm(BaseUiForm):
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Any:
-            url = f"{self.base_url}/{endpoint.lstrip('/')}"
             response = self.client.request(
-                    method, url, json=data, headers=self.headers
+                    method, self._prepare_url(endpoint), json=data, headers=self.headers
                 )
-            if response.status_code in {500, 502, 503, 504}:
-                response.raise_for_status()
-            elif response.status_code == 422:
-                raise RuntimeError(f"Validation error: {response.json()}")
-            elif not response.is_success:
-                raise RuntimeError(f"Request failed: {response}")
+            self._validate_response(response)
 
             return response.json()
 
@@ -179,14 +184,8 @@ class UiForm(BaseUiForm):
         """
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Iterator[Any]:
-            url = f"{self.base_url}/{endpoint.lstrip('/')}"
-            with self.client.stream(method, url, json=data, headers=self.headers) as response_ctx_manager:
-                if response_ctx_manager.status_code in {500, 502, 503, 504}:
-                    response_ctx_manager.raise_for_status()
-                elif response_ctx_manager.status_code == 422:
-                    raise RuntimeError(f"Validation error: {response_ctx_manager.text}")
-                elif not response_ctx_manager.is_success:
-                    raise RuntimeError(f"Request failed: {response_ctx_manager}")
+            with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self.headers) as response_ctx_manager:
+                self._validate_response(response_ctx_manager)
                 
                 for chunk in response_ctx_manager.iter_lines():
                     if not chunk: continue
@@ -275,16 +274,10 @@ class AsyncUiForm(BaseUiForm):
         """
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> Any:
-            url = f"{self.base_url}/{endpoint.lstrip('/')}"
             response = await self.client.request(
-                    method, url, json=data, headers=self.headers
+                    method, self._prepare_url(endpoint), json=data, headers=self.headers
                 )
-            if response.status_code in {500, 502, 503, 504}:
-                response.raise_for_status()
-            elif response.status_code == 422:
-                raise RuntimeError(f"Validation error: {response.json()}")
-            elif not response.is_success:
-                raise RuntimeError(f"Request failed: {response}")
+            self._validate_response(response)
 
             return response.json()
 
@@ -308,15 +301,8 @@ class AsyncUiForm(BaseUiForm):
         """
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> AsyncIterator[Any]:
-            url = f"{self.base_url}/{endpoint.lstrip('/')}"
-            async with self.client.stream(method, url, json=data, headers=self.headers) as response_ctx_manager:
-                if response_ctx_manager.status_code in {500, 502, 503, 504}:
-                    response_ctx_manager.raise_for_status()
-                elif response_ctx_manager.status_code == 422:
-                    raise RuntimeError(f"Validation error: {response_ctx_manager.text}")
-                elif not response_ctx_manager.is_success:
-                    raise RuntimeError(f"Request failed: {response_ctx_manager}")
-                
+            async with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self.headers) as response_ctx_manager:
+                self._validate_response(response_ctx_manager)
                 async for chunk in response_ctx_manager.aiter_lines():
                     if not chunk: continue
                     try: yield json.loads(chunk)
