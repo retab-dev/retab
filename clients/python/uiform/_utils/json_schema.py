@@ -1126,7 +1126,8 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
 
     # 5. Build the model class
     model_name: str = schema_expanded.get("title", "DynamicModel")
-    model_config = ConfigDict(json_schema_extra=x_keys) if x_keys else None
+    #model_config = ConfigDict(json_schema_extra=x_keys) if x_keys else None
+    model_config = ConfigDict(extra="forbid", json_schema_extra=x_keys) if x_keys else ConfigDict(extra="forbid")
 
     return create_model(
         model_name,

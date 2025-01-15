@@ -1,5 +1,5 @@
 import asyncio
-from typing import IO, Any, Optional
+from typing import IO, Any, Optional, Literal
 import hashlib
 import time
 import json
@@ -199,8 +199,14 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         # Generate final training set from all results
         self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
 
-    def benchmark(self, **kwargs: Any) -> None:
-        #json_schema: dict[str, Any], jsonl_path: Path, text_operations: Optional[dict[str, Any]], model: str, temperature: float
+    def benchmark(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        jsonl_path: Path,
+        model: str = "gpt-4o-2024-08-06",
+        temperature: float = 0, 
+        metric: Literal["Levenstein", "Jaccard", "Accuracy"] = "Accuracy", # TODO 
+        ) -> None:
 
         """Benchmark model performance on a test dataset.
 
@@ -302,6 +308,25 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         raise NotImplementedError("Stitching is not implemented yet")
 
+    def get(self, jsonl_path: Path | str, n: int) -> dict[str, Any]:
+        """Get the nth element from a JSONL file.
+
+        Args:
+            jsonl_path: Path to the JSONL file
+            n: Index of the element to retrieve (0-based)
+
+        Returns:
+            The nth element as a dictionary
+
+        Raises:
+            IndexError: If n is out of range
+            FileNotFoundError: If the file doesn't exist
+        """
+        with open(jsonl_path, 'r', encoding='utf-8') as file:
+            for i, line in enumerate(file):
+                if i == n:
+                    return json.loads(line)
+            raise IndexError(f"Index {n} is out of range")
 
 class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
     """Asynchronous wrapper for Datasets using thread execution."""
@@ -520,4 +545,28 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         """
 
         raise NotImplementedError("Stitching is not implemented yet")
+
+    async def get(self, jsonl_path: Path | str, n: int) -> dict[str, Any]:
+        """Get the nth element from a JSONL file.
+
+        Args:
+            jsonl_path: Path to the JSONL file
+            n: Index of the element to retrieve (0-based)
+
+        Returns:
+            The nth element as a dictionary
+
+        Raises:
+            IndexError: If n is out of range
+            FileNotFoundError: If the file doesn't exist
+        """
+        # Since file I/O is blocking, we'll run it in a thread pool
+        def read_nth_line():
+            with open(jsonl_path, 'r', encoding='utf-8') as file:
+                for i, line in enumerate(file):
+                    if i == n:
+                        return json.loads(line)
+                raise IndexError(f"Index {n} is out of range")
+        
+        return await asyncio.to_thread(read_nth_line)
 
