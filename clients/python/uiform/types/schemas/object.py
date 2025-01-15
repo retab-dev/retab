@@ -6,7 +6,7 @@ import copy
 from ..documents.create_messages import ChatCompletionUiformMessage
 from ..documents.create_messages import convert_to_google_genai_format, convert_to_anthropic_format
 from ..._utils.mime import generate_sha_hash_from_string
-from ..._utils.json_schema import clean_schema, json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel
+from ..._utils.json_schema import clean_schema, json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.completion_create_params import ResponseFormat
@@ -384,6 +384,7 @@ class Schema(BaseModel):
             raise ValueError("Must provide either json_schema or pydantic_model")
 
         if json_schema:
+            json_schema = load_json_schema(json_schema)
             data['pydantic_model'] = convert_json_schema_to_basemodel(json_schema)
             data['json_schema'] = json_schema
         if pydantic_model:
