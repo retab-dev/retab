@@ -41,7 +41,6 @@ def validate_extraction_response(response: DocumentExtractResponse) -> None:
 @pytest.mark.parametrize("model", get_args(AI_MODELS))
 @pytest.mark.parametrize("client_type", get_args(ClientType))
 @pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
-# @pytest.mark.parametrize("stream", [False])
 async def test_extract_success(model: AI_MODELS, client_type: ClientType, response_mode: ResponseModeType, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
     json_schema = booking_confirmation_json_schema
     document=booking_confirmation_file_path
