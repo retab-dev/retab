@@ -617,7 +617,7 @@ def resolve_ref(ref: str, definitions: dict[str, dict[str, Any]]) -> Optional[di
 
 
 
-def json_schema_to_structured_output_json_schema(obj: Union[dict[str, Any], list[Any]]) -> Union[dict[str, Any], list[Any]]:
+def json_schema_to_inference_schema(obj: Union[dict[str, Any], list[Any]]) -> Union[dict[str, Any], list[Any]]:
     # Gets a json supported by GPT Structured Output from a pydantic Basemodel
 
     if isinstance(obj, dict):
@@ -643,11 +643,11 @@ def json_schema_to_structured_output_json_schema(obj: Union[dict[str, Any], list
                     if '$ref' in subschema:
                         merged.update({'$ref': subschema['$ref']})
                     else:
-                        merged.update(json_schema_to_structured_output_json_schema(subschema))
+                        merged.update(json_schema_to_inference_schema(subschema))
                 new_obj.update(merged)
 
             else:
-                new_obj[key] = json_schema_to_structured_output_json_schema(value)
+                new_obj[key] = json_schema_to_inference_schema(value)
         
         # Add 'required' and 'additionalProperties' if 'properties' is present
         if 'properties' in new_obj:
@@ -659,7 +659,7 @@ def json_schema_to_structured_output_json_schema(obj: Union[dict[str, Any], list
         
         return new_obj
     elif isinstance(obj, list):
-        return [json_schema_to_structured_output_json_schema(item) for item in obj]
+        return [json_schema_to_inference_schema(item) for item in obj]
     else:
         return obj
 
@@ -789,7 +789,7 @@ def _rec_replace_description_with_llm_description(schema: dict[str, Any]) -> dic
 
     return new_schema
 
-def create_inference_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
+def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
     # Resolve refs first to get expanded schema
     definitions = raw_schema.get("$defs", {})
     resolved = expand_refs(copy.deepcopy(raw_schema), definitions)

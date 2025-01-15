@@ -6,7 +6,7 @@ import copy
 from ..documents.create_messages import ChatCompletionUiformMessage
 from ..documents.create_messages import convert_to_google_genai_format, convert_to_anthropic_format
 from ..._utils.mime import generate_sha_hash_from_string
-from ..._utils.json_schema import clean_schema, json_schema_to_structured_output_json_schema, json_schema_to_typescript_interface, expand_refs, create_inference_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel
+from ..._utils.json_schema import clean_schema, json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.completion_create_params import ResponseFormat
@@ -40,83 +40,29 @@ class Schema(BaseModel):
     _partial_pydantic_model: type[BaseModel] = PrivateAttr()
     """The Pydantic model to use for loading."""
 
-    @model_validator(mode="before")
-    def validate_schema_and_model(cls, data: Any) -> Any:
-        """Validate schema and model logic."""
-        # Extract from data
-        json_schema: dict[str, Any] | None = data.get('json_schema', None)
-        pydantic_model: type[BaseModel] | None = data.get('pydantic_model', None)
-
-        # Check if either json_schema or pydantic_model is provided
-        if json_schema and pydantic_model:
-            raise ValueError("Cannot provide both json_schema and pydantic_model")
-        
-        if not json_schema and not pydantic_model:
-            raise ValueError("Must provide either json_schema or pydantic_model")
-
-        if json_schema:
-            data['pydantic_model'] = convert_json_schema_to_basemodel(json_schema)
-            data['json_schema'] = json_schema
-        if pydantic_model:
-            data['pydantic_model'] = pydantic_model
-            data['json_schema'] = pydantic_model.model_json_schema()
-
-
-        return data
-
-    @model_validator(mode="after")
-    def model_after_validator(self) -> Self:
-        # Validate Messages
-        messages = getattr(self, "messages", [])
-        self.messages = [ChatCompletionUiformMessage(role="system", content=self.system_prompt)] + messages
-
-        # Set the partial_pydantic_model
-        self._partial_pydantic_model = convert_basemodel_to_partial_basemodel(self.pydantic_model)
-
-        return self
-
-
     @property
-    def response_format_json(self) -> ResponseFormat:
-        """Returns the JSON schema response format for OpenAI API, with the LLMDescription and ReasoningDescription fields added.
-        
-        Returns:
-            ResponseFormat: A dictionary containing the JSON schema format specification.
-        """
-        return {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "document_preprocessing",
-                "schema": self.structured_output_object_schema,
-                "strict": True
-            }
-        }
-    
-    @property
-    def response_format_pydantic(self) -> type[BaseModel]:
+    def inference_pydantic_model(self) -> type[BaseModel]:
         """Converts the structured output schema to a Pydantic model, with the LLMDescription and ReasoningDescription fields added.
         
         Returns:
             type[BaseModel]: A Pydantic model class generated from the schema.
         """
-        return convert_json_schema_to_basemodel(self.structured_output_object_schema)
-
+        return convert_json_schema_to_basemodel(self.inference_json_schema)
 
     @property
-    def response_format_json_gemini(self) -> ResponseFormat:
-        # This will method does not allow nullable fields, every field is required and the anyOf is not supported.
-        return {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "document_preprocessing",
-                "schema": self.strict_gemini_object_schema,
-                "strict": True
-            }
-        }
-
+    def inference_json_schema(self) ->  dict[str, Any]:
+        """Returns the schema formatted for structured output, with the LLMDescription and ReasoningDescription fields added.
+        
+        Returns:
+            dict[str, Any]: The schema formatted for structured output processing.
+        """
+        inference_json_schema_ = json_schema_to_inference_schema(copy.deepcopy(self._reasoning_object_schema))
+        assert isinstance(inference_json_schema_, dict), "Validation Error: The inference_json_schema is not a dict"
+        return inference_json_schema_
+    
     # This is a computed field, it is exposed when serializing the object
+    @computed_field   # type: ignore
     @property
-    @computed_field
     def schema_data_version(self) -> str:
         """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
         
@@ -130,8 +76,8 @@ class Schema(BaseModel):
             "sha1")
 
     # This is a computed field, it is exposed when serializing the object
+    @computed_field   # type: ignore
     @property
-    @computed_field   
     def schema_version(self) -> str:
         """Returns the SHA1 hash of the complete schema.
         
@@ -139,88 +85,50 @@ class Schema(BaseModel):
             str: A SHA1 hash string representing the complete schema version.
         """
         return generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
-
-    # Inner Properties not exposed when serializing
-    @property
-    def definitions(self) -> dict[str, Any]:
-        """Returns the schema definitions ($defs) section.
-        
-        Returns:
-            dict[str, Any]: A dictionary containing schema definitions.
-        """
-        if "$defs" in self.json_schema:
-            return copy.deepcopy(self.json_schema["$defs"])
-        return {}
-
-    @property
-    def expanded_object_schema(self) -> dict[str, Any]:
-        """Returns the schema with all references expanded inline.
-        
-        Returns:
-            dict[str, Any]: The expanded schema with resolved references.
-        """
-        return expand_refs(copy.deepcopy(self.json_schema))
-
-    @property
-    def inference_object_schema(self) -> dict[str, Any]:
-        """Returns the schema with inference-specific modifications.
-        
-        Returns:
-            dict[str, Any]: The modified schema with reasoning fields added to the structure.
-        """
-        inference_schema = create_inference_schema(copy.deepcopy(self.expanded_object_schema)) # Automatically populates the reasoning fields into the structure.
-        assert isinstance(inference_schema, dict), "Validation Error: The structured_output_object_schema is not a dict"
-        return inference_schema
-
-    @property
-    def structured_output_object_schema(self) ->  dict[str, Any]:
-        """Returns the schema formatted for structured output, with the LLMDescription and ReasoningDescription fields added.
-        
-        Returns:
-            dict[str, Any]: The schema formatted for structured output processing.
-        """
-        structured_output_object_schema_ = json_schema_to_structured_output_json_schema(copy.deepcopy(self.inference_object_schema))
-        assert isinstance(structured_output_object_schema_, dict), "Validation Error: The structured_output_object_schema is not a dict"
-        return structured_output_object_schema_
     
     @property
-    def validation_object_schema(self) -> dict[str, Any]:
-        """Returns a loose validation schema where all fields are optional.
-        
-        This schema ignores all 'required' properties, allowing partial data validation.
+    def openai_messages(self) -> list[ChatCompletionMessageParam]:
+        """Returns the messages formatted for OpenAI's API.
         
         Returns:
-            dict[str, Any]: The modified schema for validation purposes.
+            list[ChatCompletionMessageParam]: List of messages in OpenAI's format.
         """
-        # This ignores all 'required' properties (hence making all fields optional)
-        # This is a 'loose' validation schema that allows for partial data to be validated.
-        validation_object_schema_ = copy.deepcopy(self.inference_object_schema)
-        def rec_remove_required(schema: dict[str, Any]) -> None:
-            if "required" in schema:
-                schema.pop("required")
-            if "properties" in schema:
-                for prop_schema in schema["properties"].values():
-                    rec_remove_required(prop_schema)
-            if "items" in schema:
-                rec_remove_required(schema["items"])
-            if "$defs" in schema:
-                for def_schema in schema["$defs"].values():
-                    rec_remove_required(def_schema)
-            if "anyOf" in schema:
-                for anyof_schema in schema["anyOf"]:
-                    rec_remove_required(anyof_schema)
-            if "allOf" in schema:
-                for allof_schema in schema["allOf"]:
-                    rec_remove_required(allof_schema)
+        return cast(list[ChatCompletionMessageParam], self.messages)
+            
+
+    @property
+    def anthropic_system_prompt(self) -> str | NotGiven:
+        """Returns the system message in Anthropic's Claude format.
         
-        rec_remove_required(validation_object_schema_)
-        return validation_object_schema_
+        Returns:
+            str | NotGiven: The system prompt formatted for Claude or NotGiven if none exists.
+        """
+        return self.system_prompt
+
+    @property
+    def anthropic_messages(self) -> list[MessageParam]:
+        """Returns the messages in Anthropic's Claude format.
+        
+        Returns:
+            list[MessageParam]: List of messages formatted for Claude.
+        """
+        return convert_to_anthropic_format(self.messages)[1]
+    
+    @property
+    def gemini_messages(self) -> content_types.ContentsType:
+        """Returns the messages formatted for Google's Gemini API.
+        
+        Returns:
+            content_types.ContentsType: Messages formatted for Gemini.
+        """
+        return convert_to_google_genai_format(self.messages)
+
 
 
     @property
-    def strict_gemini_object_schema(self) -> dict[str, Any]:
+    def inference_gemini_json_schema(self) -> dict[str, Any]:
         # Like OpenAI but does not accept "anyOf" typing, all fields must not be nullable
-        structured_output_object_schema_ = copy.deepcopy(self.structured_output_object_schema)
+        inference_json_schema_ = copy.deepcopy(self.inference_json_schema)
         def remove_optional_types_rec(schema: dict[str, Any]) -> None:
             if "properties" in schema:
                 for prop_schema in schema["properties"].values():
@@ -240,8 +148,8 @@ class Schema(BaseModel):
             if "allOf" in schema:
                 for allof_schema in schema["allOf"]:
                     remove_optional_types_rec(allof_schema)
-        remove_optional_types_rec(structured_output_object_schema_)
-        return structured_output_object_schema_
+        remove_optional_types_rec(inference_json_schema_)
+        return inference_json_schema_
 
 
     @property
@@ -251,7 +159,7 @@ class Schema(BaseModel):
         Returns:
             str: A string containing the TypeScript interface definition.
         """
-        return json_schema_to_typescript_interface(self.inference_object_schema, add_field_description=True)
+        return json_schema_to_typescript_interface(self._reasoning_object_schema, add_field_description=True)
 
     @property
     def system_prompt(self) -> str:
@@ -272,16 +180,85 @@ class Schema(BaseModel):
         return self.json_schema.get("title", "NoTitle")
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+    @property
+    def _expanded_object_schema(self) -> dict[str, Any]:
+        """Returns the schema with all references expanded inline.
+        
+        Returns:
+            dict[str, Any]: The expanded schema with resolved references.
+        """
+        return expand_refs(copy.deepcopy(self.json_schema))
+
+    @property
+    def _reasoning_object_schema(self) -> dict[str, Any]:
+        """Returns the schema with inference-specific modifications.
+        
+        Returns:
+            dict[str, Any]: The modified schema with reasoning fields added to the structure.
+        """
+        inference_schema = create_reasoning_schema(copy.deepcopy(self._expanded_object_schema)) # Automatically populates the reasoning fields into the structure.
+        assert isinstance(inference_schema, dict), "Validation Error: The inference_json_schema is not a dict"
+        return inference_schema
+
     
     
-    def get_pattern_attribute(self, pattern: str, attribute: Literal['description', 'X-FieldPrompt', 'X-ReasoningPrompt', 'type']) -> str | None:
+    @property
+    def _validation_object_schema(self) -> dict[str, Any]:
+        """Returns a loose validation schema where all fields are optional.
+        
+        This schema ignores all 'required' properties, allowing partial data validation.
+        
+        Returns:
+            dict[str, Any]: The modified schema for validation purposes.
+        """
+        # This ignores all 'required' properties (hence making all fields optional)
+        # This is a 'loose' validation schema that allows for partial data to be validated.
+        _validation_object_schema_ = copy.deepcopy(self._reasoning_object_schema)
+        def rec_remove_required(schema: dict[str, Any]) -> None:
+            if "required" in schema:
+                schema.pop("required")
+            if "properties" in schema:
+                for prop_schema in schema["properties"].values():
+                    rec_remove_required(prop_schema)
+            if "items" in schema:
+                rec_remove_required(schema["items"])
+            if "$defs" in schema:
+                for def_schema in schema["$defs"].values():
+                    rec_remove_required(def_schema)
+            if "anyOf" in schema:
+                for anyof_schema in schema["anyOf"]:
+                    rec_remove_required(anyof_schema)
+            if "allOf" in schema:
+                for allof_schema in schema["allOf"]:
+                    rec_remove_required(allof_schema)
+        
+        rec_remove_required(_validation_object_schema_)
+        return _validation_object_schema_
+
+
+    
+    
+    
+    def _get_pattern_attribute(self, pattern: str, attribute: Literal['description', 'X-FieldPrompt', 'X-ReasoningPrompt', 'type']) -> str | None:
         """
         Given a JSON Schema and a pattern (like "my_object.my_array.*.my_property"),
         navigate the schema and return the specified attribute of the identified node.
         """
 
         # Special case: "*" means the root schema itself
-        current_schema = self.expanded_object_schema
+        current_schema = self._expanded_object_schema
         if pattern.strip() == "*":
             if attribute == "X-FieldPrompt":
                 return current_schema.get(attribute) or current_schema.get("description")
@@ -318,7 +295,7 @@ class Schema(BaseModel):
         return current_schema.get(attribute)
 
 
-    def set_pattern_attribute(self, pattern: str, attribute: Literal['description', 'X-FieldPrompt', 'X-ReasoningPrompt', 'X-SystemPrompt'], value: str) -> None:
+    def _set_pattern_attribute(self, pattern: str, attribute: Literal['description', 'X-FieldPrompt', 'X-ReasoningPrompt', 'X-SystemPrompt'], value: str) -> None:
         """Sets an attribute value at a specific path in the schema.
         
         Args:
@@ -390,39 +367,39 @@ class Schema(BaseModel):
         current_schema[attribute] = value
 
     
-    @property
-    def openai_messages(self) -> list[ChatCompletionMessageParam]:
-        """Returns the messages formatted for OpenAI's API.
-        
-        Returns:
-            list[ChatCompletionMessageParam]: List of messages in OpenAI's format.
-        """
-        return cast(list[ChatCompletionMessageParam], self.messages)
-            
-
-    @property
-    def anthropic_system_prompt(self) -> str | NotGiven:
-        """Returns the system message in Anthropic's Claude format.
-        
-        Returns:
-            str | NotGiven: The system prompt formatted for Claude or NotGiven if none exists.
-        """
-        return self.system_prompt
-
-    @property
-    def anthropic_messages(self) -> list[MessageParam]:
-        """Returns the messages in Anthropic's Claude format.
-        
-        Returns:
-            list[MessageParam]: List of messages formatted for Claude.
-        """
-        return convert_to_anthropic_format(self.messages)[1]
     
-    @property
-    def gemini_messages(self) -> content_types.ContentsType:
-        """Returns the messages formatted for Google's Gemini API.
+    
+    @model_validator(mode="before")
+    def validate_schema_and_model(cls, data: Any) -> Any:
+        """Validate schema and model logic."""
+        # Extract from data
+        json_schema: dict[str, Any] | None = data.get('json_schema', None)
+        pydantic_model: type[BaseModel] | None = data.get('pydantic_model', None)
+
+        # Check if either json_schema or pydantic_model is provided
+        if json_schema and pydantic_model:
+            raise ValueError("Cannot provide both json_schema and pydantic_model")
         
-        Returns:
-            content_types.ContentsType: Messages formatted for Gemini.
-        """
-        return convert_to_google_genai_format(self.messages)
+        if not json_schema and not pydantic_model:
+            raise ValueError("Must provide either json_schema or pydantic_model")
+
+        if json_schema:
+            data['pydantic_model'] = convert_json_schema_to_basemodel(json_schema)
+            data['json_schema'] = json_schema
+        if pydantic_model:
+            data['pydantic_model'] = pydantic_model
+            data['json_schema'] = pydantic_model.model_json_schema() 
+
+
+        return data
+
+    @model_validator(mode="after")
+    def model_after_validator(self) -> Self:
+        # Validate Messages
+        messages = getattr(self, "messages", [])
+        self.messages = [ChatCompletionUiformMessage(role="system", content=self.system_prompt)] + messages
+
+        # Set the partial_pydantic_model
+        self._partial_pydantic_model = convert_basemodel_to_partial_basemodel(self.pydantic_model)
+
+        return self

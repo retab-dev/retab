@@ -33,7 +33,14 @@ client = OpenAI()
 completion = client.chat.completions.create(
     model="gpt-4o",
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
-    response_format=schema_obj.response_format_json
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": schema_obj.schema_version,
+            "schema": schema_obj.inference_json_schema,
+            "strict": True
+        }
+    }
 )
 
 # Validate the response against the original schema if you want to remove the reasoning fields

@@ -2,7 +2,7 @@
 
 <div align="center" style="margin-bottom: 1em;">
 
-<img src="https://github.com/UiForm/uiform/blob/main/uiform-logo.png" alt="UiForm Logo" width="150">
+<img src="https://raw.githubusercontent.com/UiForm/uiform/refs/heads/main/uiform-logo.png" alt="UiForm Logo" width="150">
 
 
   *The universal document processing API*
@@ -130,7 +130,7 @@ client = OpenAI()
 completion = client.beta.chat.completions.parse(
     model="gpt-4o",
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
-    response_format=schema_obj.response_format_pydantic
+    response_format=schema_obj.inference_pydantic_model
 )
 print("Extracted data with the reasoning fields:", completion.choices[0].message.content)
 

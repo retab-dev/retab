@@ -6,15 +6,15 @@ with open('requirements.txt') as f:
 
 setup(
     name='uiform',
-    version='0.0.1',
-    author='Sacha Ichbiah',
-    author_email='sacha@getcube.ai',
-    description='Cube official python library',
+    version='0.0.3',
+    author='UiForm',
+    author_email='contact@uiform.com',
+    description='UiForm official python library',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/cubelogistics/cubeblock',
+    url='https://github.com/UiForm/uiform',
     project_urls={
-        'Team website': 'https://github.com/cubelogistics'
+        'Team website': 'https://uiform.com'
     },
     classifiers=[
         'Programming Language :: Python :: 3',

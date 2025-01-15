@@ -30,7 +30,7 @@ client = OpenAI()
 completion = client.beta.chat.completions.parse(
     model="gpt-4o",
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
-    response_format=schema_obj.response_format_pydantic
+    response_format=schema_obj.inference_pydantic_model
 )
 
 # Validate the response against the original schema if you want to remove the reasoning fields
