@@ -51,14 +51,14 @@ async def test_extract_success(model: AI_MODELS, client_type: ClientType, respon
     if client_type == "sync":
         with sync_client as client:
             if response_mode == "stream":
-                stream_iterator = client.documents.extractions.stream(
+                with client.documents.extractions.stream(
                     json_schema=json_schema,
                     document=document,
                     model=model,
                     modality=modality
-                )
-                response = stream_iterator.__next__()
-                for response in stream_iterator: pass
+                ) as stream_iterator:
+                    response = stream_iterator.__next__()
+                    for response in stream_iterator: pass
                 validate_extraction_response(response)
             else:
                 response = client.documents.extractions.parse(
@@ -72,14 +72,14 @@ async def test_extract_success(model: AI_MODELS, client_type: ClientType, respon
     if client_type == "async":
         async with async_client:
             if response_mode == "stream":
-                stream_async_iterator = async_client.documents.extractions.stream(
+                async with async_client.documents.extractions.stream(
                     json_schema=json_schema,
                     document=document,
                     model=model,
                     modality=modality
-                )
-                response = await stream_async_iterator.__anext__()
-                async for response in stream_async_iterator: pass
+                ) as stream_async_iterator:
+                    response = await stream_async_iterator.__anext__()
+                    async for response in stream_async_iterator: pass
             else:
                 response = await async_client.documents.extractions.parse(
                     json_schema=json_schema,
