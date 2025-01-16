@@ -14,7 +14,7 @@ from ..types.modalities import Modality
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage
 from io import IOBase
 
-from .benchmarking import analyze_error_patterns, AnalyzedErrorPatterns, ExtractionAnalysis, DictionaryComparisonMetrics, compare_dicts
+from .benchmarking import analyze_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics
 
 class BaseDatasetsMixin:
     def _prepare_training_set_element(self, pair_paths: dict[str, Path | str], document_message: DocumentMessage, 
@@ -300,7 +300,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         batch_size: int = 5,
         max_concurrent: int = 3,
         #metric: Literal["Levenstein", "Jaccard", "Accuracy"] = "Accuracy", # TODO
-    ) -> AnalyzedErrorPatterns:
+    ) -> ComparisonMetrics:
+        
         """Benchmark model performance on a test dataset.
 
         Args:
@@ -319,7 +320,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         with open(jsonl_path, 'r') as f:
             lines = [json.loads(line) for line in f]
         
-        extraction_analyses = []
+        extraction_analyses: list[ExtractionAnalysis] = []
         total_batches = (len(lines) + batch_size - 1) // batch_size
 
         # Create main progress bar for batches
@@ -363,7 +364,13 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         batch_pbar.close()
 
         # Analyze error patterns across all examples
-        return analyze_error_patterns(extraction_analyses)
+        analysis = analyze_comparison_metrics(extraction_analyses)
+        plot_comparison_metrics(
+            analysis=analysis, 
+            top_n=10
+        )
+
+        return analysis
 
     def filter(self, **kwargs: Any) -> None:
         """Filter examples from a JSONL file based on specified parameters.

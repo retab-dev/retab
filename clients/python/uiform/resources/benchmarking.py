@@ -11,7 +11,10 @@ from mimelib.email.read import read_email_data_from_eml_bytes
 from pydantic import BaseModel, Field, computed_field
 from typing import Any, Optional
 import uuid
-
+import termplotlib as tpl # type: ignore
+import numpy as np
+from typing import Literal
+import pandas as pd
 # The goal is to leverage this piece of code to open a jsonl file and get an analysis of the performance of the model using a one-liner. 
 
 
@@ -34,7 +37,6 @@ class DictionaryComparisonMetrics(BaseModel):
     total_similarity: float
     valid_comparisons: int
     total_accuracy: float
-    error_rate: float
     false_positive_rate: float
     false_negative_rate: float
     mismatched_value_rate: float
@@ -209,7 +211,6 @@ def compare_dicts(
         total_similarity=total_similarity,
         valid_comparisons=valid_comparisons,
         total_accuracy=total_accuracy,
-        error_rate=1 - total_accuracy,
         false_positive_rate=false_positive_rate,
         false_negative_rate=false_negative_rate,
         mismatched_value_rate=mismatched_value_rate
@@ -237,7 +238,7 @@ class ExtractionAnalysis(BaseModel):
             levenshtein_threshold=self.levenshtein_threshold
         )
 
-class AnalyzedErrorPatterns(BaseModel):
+class ComparisonMetrics(BaseModel):
     # Total Values (count or sum) per Field
     false_positive_counts: dict[str, int] = defaultdict(int)
     false_negative_counts: dict[str, int] = defaultdict(int)
@@ -246,24 +247,19 @@ class AnalyzedErrorPatterns(BaseModel):
     total_similarity_per_field: dict[str, float] = defaultdict(float)
 
     # Rates (percentage) per Field
-    accuracy_rate_per_field: dict[str, float] = defaultdict(float)
-    avg_similarity_per_field: dict[str, float] = defaultdict(float)
-    error_rate_per_field: dict[str, float] = defaultdict(float)
+    accuracy_per_field: dict[str, float] = defaultdict(float)
+    similarity_per_field: dict[str, float] = defaultdict(float)
     false_positive_rate_per_field: dict[str, float] = defaultdict(float)
     false_negative_rate_per_field: dict[str, float] = defaultdict(float)
     mismatched_value_rate_per_field: dict[str, float] = defaultdict(float)
 
     @computed_field
     def accuracy(self) -> float:
-        return sum(self.accuracy_rate_per_field.values()) / len(self.accuracy_rate_per_field)
+        return sum(self.accuracy_per_field.values()) / len(self.accuracy_per_field)
     
     @computed_field
     def similarity(self) -> float:
-        return sum(self.avg_similarity_per_field.values()) / len(self.avg_similarity_per_field)
-    
-    @computed_field
-    def error_rate(self) -> float:
-        return sum(self.error_rate_per_field.values()) / len(self.error_rate_per_field)
+        return sum(self.similarity_per_field.values()) / len(self.similarity_per_field)
     
     @computed_field
     def false_positive_rate(self) -> float:
@@ -277,7 +273,7 @@ class AnalyzedErrorPatterns(BaseModel):
     def mismatched_value_rate(self) -> float:
         return sum(self.mismatched_value_rate_per_field.values()) / len(self.mismatched_value_rate_per_field)
 
-def analyze_error_patterns(list_analyses: list[ExtractionAnalysis], min_freq: float = 0.2) -> AnalyzedErrorPatterns:
+def analyze_comparison_metrics(list_analyses: list[ExtractionAnalysis], min_freq: float = 0.2) -> ComparisonMetrics:
     false_positive_counts: dict[str, int] = defaultdict(int)
     false_negative_counts: dict[str, int] = defaultdict(int)
     mismatched_value_counts: dict[str, int] = defaultdict(int)
@@ -285,8 +281,6 @@ def analyze_error_patterns(list_analyses: list[ExtractionAnalysis], min_freq: fl
     is_equal_per_field: dict[str, int] = defaultdict(int)
 
     total_similarity_per_field: dict[str, float] = defaultdict(float)
-    avg_similarity_per_field: dict[str, float] = defaultdict(float)
-    error_rate_per_field: dict[str, float] = defaultdict(float)
     false_positive_rate_per_field: dict[str, float] = defaultdict(float)
     false_negative_rate_per_field: dict[str, float] = defaultdict(float)
     mismatched_value_rate_per_field: dict[str, float] = defaultdict(float)
@@ -315,23 +309,62 @@ def analyze_error_patterns(list_analyses: list[ExtractionAnalysis], min_freq: fl
         for key, is_equal in analysis.comparison.is_equal.items():
             is_equal_per_field[key_normalization(key)] += int(is_equal)
 
-    accuracy_rate_per_field = {key: is_equal_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    avg_similarity_per_field = {key: total_similarity_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    error_rate_per_field = {key: 1 - accuracy_rate_per_field[key] for key in avg_similarity_per_field}
+    accuracy_per_field = {key: is_equal_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
+    similarity_per_field = {key: total_similarity_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
     false_positive_rate_per_field = {key: false_positive_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
     false_negative_rate_per_field = {key: false_negative_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
     mismatched_value_rate_per_field = {key: mismatched_value_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    return AnalyzedErrorPatterns(
+    return ComparisonMetrics(
         false_positive_counts=false_positive_counts,
         false_negative_counts=false_negative_counts,
         mismatched_value_counts=mismatched_value_counts,
         common_presence_counts=common_presence_counts,
         total_similarity_per_field=total_similarity_per_field,
-        accuracy_rate_per_field=accuracy_rate_per_field,
-        avg_similarity_per_field=avg_similarity_per_field,
-        error_rate_per_field=error_rate_per_field,
+        accuracy_per_field=accuracy_per_field,
+        similarity_per_field=similarity_per_field,
         false_positive_rate_per_field=false_positive_rate_per_field,
         false_negative_rate_per_field=false_negative_rate_per_field,
         mismatched_value_rate_per_field=mismatched_value_rate_per_field
     )
 
+
+
+
+def plot_metric(analysis: ComparisonMetrics, value_type: Literal["accuracy", "similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"] = "accuracy", top_n: int = 20, ascending: bool = False) -> None:
+    """Plot a metric from analysis results using a horizontal bar chart.
+    
+    Args:
+        analysis: ComparisonMetrics object containing the analysis results
+    """
+    # Create dataframe from accuracy data
+    df = pd.DataFrame(
+        list(analysis.__getattribute__(value_type + "_per_field").items()), 
+        columns=["field", value_type]
+    ).sort_values(by=value_type, ascending=ascending)
+
+    # Filter top n fields with the lowest accuracy
+    top_n_df = df.head(top_n)
+
+    # Create the plot
+    fig = tpl.figure()
+    fig.barh(
+        np.array(top_n_df[value_type]).round(4), 
+        np.array(top_n_df["field"]), 
+        force_ascii=False
+    )
+
+    fig.show()
+
+def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None:
+    metric_ascendency_dict: dict[Literal["accuracy", "similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"], bool] = {
+        "accuracy": True,
+        "similarity": True,
+        "false_positive_rate": False,
+        "false_negative_rate": False,
+        "mismatched_value_rate": False
+    }
+    
+    
+    for metric, ascending in metric_ascendency_dict.items():
+        print(f"\n############ {metric.upper()} ############")
+        plot_metric(analysis, metric, top_n, ascending)
