@@ -236,6 +236,173 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 f.write(json.dumps(entry) + '\n')
 
 
+    
+
+    
+    #########################
+    ##### BATCH METHODS #####
+    #########################
+
+    def save_batch_annotate_requests(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        documents: list[Path | str | IOBase],
+        batch_requests_path: Path,
+        text_operations: Optional[dict[str, Any]] = None,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+        messages: list[ChatCompletionUiformMessage] = [],
+        modality: Modality = "native",
+    ) -> None:
+        """Create a JSONL file containing requests for OpenAI batch processing API.
+
+        Args:
+            json_schema: The JSON schema for validation
+            documents: List of documents to process
+            jsonl_path: Output path for the JSONL requests file
+            text_operations: Optional context for prompting
+            model: The model to use for processing
+            temperature: Model temperature (0-1)
+            messages: Additional messages to include
+            modality: The modality to use for document processing
+        """
+        loaded_json_schema = load_json_schema(json_schema)
+        schema_obj = Schema(json_schema=loaded_json_schema)
+        assert_valid_model_extraction(model)
+
+        with open(batch_requests_path, 'w', encoding='utf-8') as f:
+            for i, doc in tqdm(enumerate(documents)):
+                # Create document messages
+                msg_obj = self._client.documents.create_messages(
+                    document=doc,
+                    text_operations=text_operations,
+                    modality=modality,
+                )
+
+                # Construct the request object
+                request: BatchJSONL = {
+                    "custom_id": f"request-{i}",
+                    "method": "POST", 
+                    "url": "/v1/chat/completions",
+                    "body": {
+                        "model": model,
+                        "messages": schema_obj.openai_messages + msg_obj.openai_messages + convert_to_openai_format(messages),
+                        "temperature": temperature,
+                        "response_format": {
+                            "type": "json_schema",
+                            "json_schema": {
+                                "name": schema_obj.schema_version,
+                                "schema": schema_obj.inference_json_schema,
+                                "strict": True
+                            }
+                        }
+                    }
+                }
+                
+                # Write the request as a JSON line
+                f.write(json.dumps(request) + '\n')
+
+
+    def save_batch_update_annotation_requests(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        old_dataset_path: Path,
+        batch_requests_path: Path,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+        messages: list[ChatCompletionUiformMessage] = [],
+    ) -> None:
+        """Create a JSONL file containing requests for OpenAI batch processing API to update annotations.
+        
+        Args:
+            json_schema: The JSON schema for validation
+            jsonl_path: Path to the JSONL file to update
+            save_path: Output path for the updated JSONL file
+            model: The model to use for processing
+            temperature: Model temperature (0-1)
+            messages: Additional messages to include
+            modality: The modality to use for document processing
+        """
+        loaded_json_schema = load_json_schema(json_schema)
+        schema_obj = Schema(json_schema=loaded_json_schema)
+
+        # Read existing annotations
+        with open(old_dataset_path, 'r') as f:
+            entries = [json.loads(line) for line in f]
+
+        # Create new JSONL with update requests
+        with open(batch_requests_path, 'w', encoding='utf-8') as f:
+            for i, entry in enumerate(entries):
+                existing_messages = entry['messages']
+                system_and_user_messages = existing_messages[:-1]
+
+                previous_annotation_message = {
+                    "role": "user", 
+                    "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + existing_messages[-1]['content']
+                }
+
+                # Construct the request object
+                request = {
+                    "custom_id": f"request-{i}",
+                    "method": "POST",
+                    "url": "/v1/chat/completions", 
+                    "body": {
+                        "model": model,
+                        "messages": schema_obj.openai_messages + system_and_user_messages + [previous_annotation_message] + messages,
+                        "temperature": temperature,
+                        "response_format": {
+                            "type": "json_schema",
+                            "json_schema": {
+                                "name": schema_obj.schema_version,
+                                "schema": schema_obj.inference_json_schema,
+                                "strict": True
+                            }
+                        }
+                    }
+                }
+
+                # Write the request as a JSON line
+                f.write(json.dumps(request) + '\n')
+
+    def build_dataset_from_batch_results(
+        self,
+        batch_requests_path: Path,
+        batch_results_path: Path,
+        dataset_results_path: Path,
+    ) -> None:
+        
+        with open(batch_requests_path, 'r') as f:
+            input_lines: list[BatchJSONL] = [json.loads(line) for line in f]
+        with open(batch_results_path, 'r') as f:
+            batch_results_lines: list[BatchJSONLResponse] = [json.loads(line) for line in f]
+
+        assert len(input_lines) == len(batch_results_lines), "Input and batch results must have the same number of lines"
+
+        for input_line, batch_result in zip(input_lines, batch_results_lines):
+            
+            messages = input_line['body']['messages']
+
+            # Filter out messages containing the old annotation reference to remove messages that come from "update annotation"
+            if isinstance(messages[-1].get('content'), str):
+                if re.search(r'Here is an old annotation using a different schema\. Use it as a reference to update the annotation:', str(messages[-1].get('content', ''))):
+                    print("found keyword")
+                    input_line['body']['messages'] = messages[:-1]
+
+            input_line['body']['messages'].append(batch_result['response']['body']['choices'][0]['message'])
+
+        with open(dataset_results_path, 'w') as f:
+            for input_line in input_lines:
+                f.write(json.dumps({'messages':input_line['body']['messages']}) + '\n')
+
+        print(f"Dataset saved to {dataset_results_path}")
+
+
+    #############################
+    ##### END BATCH METHODS #####
+    #############################
+
+    # Normal methods
+
     def annotate_openai(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -351,170 +518,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         # Generate final training set from all results
         self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
 
-
-    
-
-
-
-    def batch_annotate(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        documents: list[Path | str | IOBase],
-        batch_input_path: Path,
-        text_operations: Optional[dict[str, Any]] = None,
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        messages: list[ChatCompletionUiformMessage] = [],
-        modality: Modality = "native",
-    ) -> None:
-        """Create a JSONL file containing requests for OpenAI batch processing API.
-
-        Args:
-            json_schema: The JSON schema for validation
-            documents: List of documents to process
-            jsonl_path: Output path for the JSONL requests file
-            text_operations: Optional context for prompting
-            model: The model to use for processing
-            temperature: Model temperature (0-1)
-            messages: Additional messages to include
-            modality: The modality to use for document processing
-        """
-        loaded_json_schema = load_json_schema(json_schema)
-        schema_obj = Schema(json_schema=loaded_json_schema)
-        assert_valid_model_extraction(model)
-
-        with open(batch_input_path, 'w', encoding='utf-8') as f:
-            for i, doc in tqdm(enumerate(documents)):
-                # Create document messages
-                msg_obj = self._client.documents.create_messages(
-                    document=doc,
-                    text_operations=text_operations,
-                    modality=modality,
-                )
-
-                # Construct the request object
-                request: BatchJSONL = {
-                    "custom_id": f"request-{i}",
-                    "method": "POST", 
-                    "url": "/v1/chat/completions",
-                    "body": {
-                        "model": model,
-                        "messages": schema_obj.openai_messages + msg_obj.openai_messages + convert_to_openai_format(messages),
-                        "temperature": temperature,
-                        "response_format": {
-                            "type": "json_schema",
-                            "json_schema": {
-                                "name": schema_obj.schema_version,
-                                "schema": schema_obj.inference_json_schema,
-                                "strict": True
-                            }
-                        }
-                    }
-                }
-                
-                # Write the request as a JSON line
-                f.write(json.dumps(request) + '\n')
-
-
-    def build_dataset_from_batch_results(
-        self,
-        batch_input_path: Path,
-        batch_results_path: Path,
-        output_dataset_path: Path,
-    ) -> None:
-        
-        with open(batch_input_path, 'r') as f:
-            input_lines: list[BatchJSONL] = [json.loads(line) for line in f]
-        with open(batch_results_path, 'r') as f:
-            batch_results_lines: list[BatchJSONLResponse] = [json.loads(line) for line in f]
-
-        assert len(input_lines) == len(batch_results_lines), "Input and batch results must have the same number of lines"
-
-        for input_line, batch_result in zip(input_lines, batch_results_lines):
-            
-            messages = input_line['body']['messages']
-
-            # Filter out messages containing the old annotation reference to remove messages that come from "update annotation"
-            if isinstance(messages[-1].get('content'), str):
-                if re.search(r'Here is an old annotation using a different schema\. Use it as a reference to update the annotation:', str(messages[-1].get('content', ''))):
-                    print("found keyword")
-                    input_line['body']['messages'] = messages[:-1]
-
-            input_line['body']['messages'].append(batch_result['response']['body']['choices'][0]['message'])
-
-        with open(output_dataset_path, 'w') as f:
-            for input_line in input_lines:
-                f.write(json.dumps({'messages':input_line['body']['messages']}) + '\n')
-
-        print(f"Dataset saved to {output_dataset_path}")
-
-
-
-
-
-
-    def batch_update_annotations(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        old_dataset_path: Path,
-        batch_input_path: Path,
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        messages: list[ChatCompletionUiformMessage] = [],
-    ) -> None:
-        """Create a JSONL file containing requests for OpenAI batch processing API to update annotations.
-        
-        Args:
-            json_schema: The JSON schema for validation
-            jsonl_path: Path to the JSONL file to update
-            save_path: Output path for the updated JSONL file
-            model: The model to use for processing
-            temperature: Model temperature (0-1)
-            messages: Additional messages to include
-            modality: The modality to use for document processing
-        """
-        loaded_json_schema = load_json_schema(json_schema)
-        schema_obj = Schema(json_schema=loaded_json_schema)
-
-        # Read existing annotations
-        with open(old_dataset_path, 'r') as f:
-            entries = [json.loads(line) for line in f]
-
-        # Create new JSONL with update requests
-        with open(batch_input_path, 'w', encoding='utf-8') as f:
-            for i, entry in enumerate(entries):
-                existing_messages = entry['messages']
-                system_and_user_messages = existing_messages[:-1]
-
-                previous_annotation_message = {
-                    "role": "user", 
-                    "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + existing_messages[-1]['content']
-                }
-
-                # Construct the request object
-                request = {
-                    "custom_id": f"request-{i}",
-                    "method": "POST",
-                    "url": "/v1/chat/completions", 
-                    "body": {
-                        "model": model,
-                        "messages": schema_obj.openai_messages + system_and_user_messages + [previous_annotation_message] + messages,
-                        "temperature": temperature,
-                        "response_format": {
-                            "type": "json_schema",
-                            "json_schema": {
-                                "name": schema_obj.schema_version,
-                                "schema": schema_obj.inference_json_schema,
-                                "strict": True
-                            }
-                        }
-                    }
-                }
-
-                # Write the request as a JSON line
-                f.write(json.dumps(request) + '\n')
-
-    
 
     def annotate(
         self,
