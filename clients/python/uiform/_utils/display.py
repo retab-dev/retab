@@ -7,6 +7,11 @@ import base64
 from math import ceil
 from pathlib import Path
 import tiktoken  # For text tokenization
+import json
+import numpy as np
+from typing import List, Dict
+from rich.table import Table
+from rich.console import Console
 
 
 class TokenStats(TypedDict):
@@ -129,11 +134,6 @@ def process_jsonl_file(jsonl_path: str) -> List[TokenCounts]:
 
     return results
 
-import json
-import numpy as np
-from typing import List, Dict
-from rich.table import Table
-from rich.console import Console
 
 def calculate_statistics(data: List[int]) -> TokenStats:
     """

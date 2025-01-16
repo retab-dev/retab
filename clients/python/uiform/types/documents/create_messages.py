@@ -18,7 +18,7 @@ from openai.types.chat.chat_completion_message_param import ChatCompletionMessag
 from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
 from openai.types.chat.chat_completion_content_part_text_param import ChatCompletionContentPartTextParam
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam
-# from openai.types.chat.chat_completion_content_part_input_audio_param import ChatCompletionContentPartInputAudioParam
+from openai.types.chat.chat_completion_content_part_input_audio_param import ChatCompletionContentPartInputAudioParam
 
 from google.generativeai.types import content_types  # type: ignore
 from google.generativeai.types import generation_types
