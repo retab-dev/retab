@@ -12,7 +12,7 @@ from .._utils.ai_model import assert_valid_model_extraction
 from .._resource import SyncAPIResource, AsyncAPIResource
 from ..types.modalities import Modality
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage
-from io import IOBase
+from io import IOBase, BytesIO, StringIO
 
 class BaseDatasetsMixin:
     def _prepare_training_set_element(self, pair_paths: dict[str, Path | str], document_message: DocumentMessage, 
@@ -67,6 +67,88 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             training_set.append(self._prepare_training_set_element(pair_paths, document_message, messages))
 
         self._dump_training_set(training_set, jsonl_path)
+
+
+    def update_annotations(
+            self, 
+            json_schema: dict[str, Any] | Path | str,
+            jsonl_path: Path, 
+            model: str = "gpt-4o-2024-08-06",
+            temperature: float = 0,
+            batch_size: int = 5,
+            max_concurrent: int = 3,
+            modality: Modality = "native",
+            ) -> None:
+        """Update annotations in a JSONL file using a new model.
+        
+        Args:
+            json_schema: The JSON schema for validation
+            jsonl_path: Path to the JSONL file to update
+            model: The model to use for new annotations
+            temperature: Model temperature (0-1)
+            batch_size: Number of examples to process in each batch
+            max_concurrent: Maximum number of concurrent API calls
+            modality: The modality to use for processing
+        """
+        json_schema = load_json_schema(json_schema)
+        assert_valid_model_extraction(model)
+        
+        # Read all lines from the JSONL file
+        with open(jsonl_path, 'r') as f:
+            lines = [json.loads(line) for line in f]
+        
+        updated_entries = []
+        
+        def process_entry(entry: dict) -> dict:
+            messages = entry['messages']
+            # Remove the last message (previous annotation)
+            system_and_user_messages = messages[:-1]
+            
+            # Create document message from the user messages
+            empty_bytesio = BytesIO(b"")
+            empty_bytesio.name = "empty.txt" 
+            
+            # Get new annotation
+            result = self._client.documents.extractions.parse(
+                json_schema=json_schema,
+                document=empty_bytesio,
+                model=model,
+                temperature=temperature,
+                messages=system_and_user_messages,
+                modality=modality,
+            )
+            
+            if result.choices[0].message.content is None:
+                print(f"Failed to update annotation for entry")
+                return entry  # Return original entry if update fails
+            
+            # Create new entry with updated annotation
+            new_assistant_message = {
+                "role": "assistant",
+                "content": json.dumps(result.choices[0].message.content, ensure_ascii=False, indent=2)
+            }
+            return {"messages": system_and_user_messages + [new_assistant_message]}
+        
+        # Process entries in batches with ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+            futures = []
+            # Split entries into batches
+            for batch_idx in range(0, len(lines), batch_size):
+                batch = lines[batch_idx:batch_idx + batch_size]
+                # Submit batch of tasks
+                batch_futures = [executor.submit(process_entry, entry) for entry in batch]
+                futures.extend(batch_futures)
+                
+                # Wait for batch to complete
+                for future in batch_futures:
+                    updated_entries.append(future.result())
+                time.sleep(1)  # Rate limiting between batches
+        
+        # Write updated entries back to file
+        with open(jsonl_path, 'w') as f:
+            for entry in updated_entries:
+                f.write(json.dumps(entry) + '\n')
+
 
     def annotate(
         self,
