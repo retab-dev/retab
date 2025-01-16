@@ -7,7 +7,6 @@ from typing import Any, Literal
 from Levenshtein import distance as levenshtein_distance
 from io import BytesIO
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from mimelib.email.read import read_email_data_from_eml_bytes
 from pydantic import BaseModel, Field, computed_field
 from typing import Any, Optional
 import uuid

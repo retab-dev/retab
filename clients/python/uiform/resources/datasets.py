@@ -16,7 +16,7 @@ from ..types.documents.create_messages import DocumentMessage, ChatCompletionUif
 from ..types.schemas.object import Schema
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .benchmarking import analyze_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics
-
+from openai import OpenAI
 
 
 class BaseDatasetsMixin:
@@ -165,6 +165,154 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         with open(save_path, 'w') as f:
             for entry in updated_entries:
                 f.write(json.dumps(entry) + '\n')
+
+
+    def batch_annotate(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        documents: list[Path | str | IOBase],
+        jsonl_path: Path,
+        text_operations: Optional[dict[str, Any]] = None,
+        model: str = "gpt-4o-2024-08-06",
+        temperature: float = 0,
+        messages: list[ChatCompletionUiformMessage] = [],
+        batch_size: int = 5,
+        max_concurrent: int = 3,
+        root_dir: Path = Path("annotations"),
+        modality: Modality = "native",
+    ) -> None:
+        loaded_json_schema = load_json_schema(json_schema)
+        schema_obj = Schema(
+            json_schema=loaded_json_schema
+        )
+        openai_client = OpenAI(api_key=self._client.headers["OpenAI-Api-Key"])
+
+        assert_valid_model_extraction(model)
+        """
+        Generate annotations from document files or in-memory documents
+        and create a JSONL training set in one go.
+
+        Args:
+            json_schema: The JSON schema for validation
+            documents: list of documents, each can be a Path/str or an IOBase object
+            jsonl_path: Output path for the JSONL training file
+            text_operations: Optional context for prompting
+            model: The model to use for processing
+            temperature: Model temperature (0-1)
+            batch_size: Number of examples to process in each batch
+            max_concurrent: Maximum number of concurrent API calls
+            root_dir: Where to store the per-document JSON annotations
+        """
+
+        def process_example(doc: Path | str | IOBase) -> dict[str, Any]:
+            """
+            Process a single document (either a file path or an in-memory file-like object).
+            Returns a dict with pointers to the original doc and the stored annotation JSON.
+            """
+            if isinstance(doc, (str, Path)):
+                # Handle path or string
+                doc_path = Path(doc)
+                if not doc_path.is_file():
+                    raise ValueError(f"Invalid file path: {doc_path}")
+
+                # Extract results
+                msg_obj = self._client.documents.create_messages(
+                    document=doc_path,  # pass the actual Path to .extract
+                    text_operations=text_operations,
+                    modality=modality,
+                )
+
+                
+
+                completion = openai_client.beta.chat.completions.parse(
+                    model=model,
+                    temperature=temperature,
+                    messages=schema_obj.openai_messages + msg_obj.openai_messages,
+                    response_format=schema_obj.inference_pydantic_model
+                )
+
+                # Validate the response against the original schema if you want to remove the reasoning fields
+                from uiform._utils.json_schema import filter_reasoning_fields_json
+                assert completion.choices[0].message.content is not None, "Failed to extract content from {doc_path}"
+                extraction = schema_obj.pydantic_model.model_validate(
+                    filter_reasoning_fields_json(completion.choices[0].message.content, schema_obj.pydantic_model)
+                )
+
+
+                # Generate a unique filename for the annotation
+                hash_str = hashlib.md5(doc_path.as_posix().encode()).hexdigest()
+                annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
+
+                annotation_path.parent.mkdir(parents=True, exist_ok=True)
+
+                with open(annotation_path, 'w', encoding='utf-8') as f:
+                    json.dump(extraction.model_dump_json(), f, ensure_ascii=False, indent=2)
+
+                return {"document_fpath": str(doc_path), "annotation_fpath": str(annotation_path)}
+
+            elif isinstance(doc, IO):
+                # Handle in-memory file-like object
+                # 1) Read file content (but be careful with read pointer!)
+                file_bytes = doc.read()
+
+                # 2) Attempt to get a name; default to "uploaded_file" if none
+                doc_name = getattr(doc, "name", "uploaded_file")
+
+                # 3) Reset the file pointer if you plan to reuse `doc`
+                #    (optional, depending on how you're using it)
+                doc.seek(0)
+
+                # 4) Call extract with the same doc object
+                result = self._client.documents.extractions.parse(
+                    json_schema=json_schema,
+                    document=doc,  # pass the IO object directly
+                    text_operations=text_operations,
+                    model=model,
+                    temperature=temperature,
+                    modality=modality,
+                )
+
+                if result.choices[0].message.content is None:
+                    print(f"Failed to extract content from {doc_name}")
+                    return {"document_fpath": doc_name, "annotation_fpath": None}
+
+                # 5) Create a unique hash from the content
+                hash_str = hashlib.md5(file_bytes).hexdigest()
+                annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
+
+                annotation_path.parent.mkdir(parents=True, exist_ok=True)
+
+                with open(annotation_path, 'w', encoding='utf-8') as f:
+                    json.dump(result.choices[0].message.content, f, ensure_ascii=False, indent=2)
+
+                return {
+                    "document_fpath": doc_name,  # or "in_memory_file"
+                    "annotation_fpath": str(annotation_path),
+                }
+
+            else:
+                raise ValueError(f"Unsupported document type: {type(doc)}")
+
+        # Make sure output directory exists
+        Path(root_dir).mkdir(parents=True, exist_ok=True)
+
+        pairs_paths: list[dict[str, Path | str]] = []
+        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+            futures = []
+            # Split documents into batches
+            for batch in tqdm([documents[i : i + batch_size] for i in range(0, len(documents), batch_size)], desc="Processing batches"):
+                # Submit batch of tasks
+                batch_futures = [executor.submit(process_example, doc) for doc in batch]
+                futures.extend(batch_futures)
+
+                # Wait for batch to finish (rate limit)
+                for future in batch_futures:
+                    pair = future.result()
+                    pairs_paths.append(pair)
+                time.sleep(1)  # simple rate-limiting pause between batches
+
+        # Generate final training set from all results
+        self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
 
 
     def annotate(
@@ -458,6 +606,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             training_set.append({"messages": document_messages + messages + [assistant_message]})
 
         self._dump_training_set(training_set, jsonl_path)
+
 
    
 
