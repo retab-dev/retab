@@ -385,6 +385,15 @@ def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] |
 
     assert isinstance(definitions, dict)
 
+
+    if "allOf" in schema:
+        # Some schemas (notably the one converted from a pydantic model) have allOf. We only accept one element in allOf
+        if len(schema["allOf"]) != 1:
+            raise ValueError(
+                f"Property schema must have a single element in 'allOf'. Found: {schema['allOf']}"
+            )
+        schema.update(schema.pop("allOf", [{}])[0])
+
     if "$ref" in schema:
         ref: str = schema["$ref"]
         if ref.startswith("#/$defs/"):

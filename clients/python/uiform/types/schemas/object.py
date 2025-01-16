@@ -251,7 +251,7 @@ class Schema(BaseModel):
     
     
     
-    def _get_pattern_attribute(self, pattern: str, attribute: Literal['description', 'X-FieldPrompt', 'X-ReasoningPrompt', 'type']) -> str | None:
+    def _get_pattern_attribute(self, pattern: str, attribute: Literal['X-FieldPrompt', 'X-ReasoningPrompt', 'type']) -> str | None:
         """
         Given a JSON Schema and a pattern (like "my_object.my_array.*.my_property"),
         navigate the schema and return the specified attribute of the identified node.
@@ -295,7 +295,7 @@ class Schema(BaseModel):
         return current_schema.get(attribute)
 
 
-    def _set_pattern_attribute(self, pattern: str, attribute: Literal['description', 'X-FieldPrompt', 'X-ReasoningPrompt', 'X-SystemPrompt'], value: str) -> None:
+    def _set_pattern_attribute(self, pattern: str, attribute: Literal['X-FieldPrompt', 'X-ReasoningPrompt', 'X-SystemPrompt'], value: str) -> None:
         """Sets an attribute value at a specific path in the schema.
         
         Args:
@@ -334,31 +334,39 @@ class Schema(BaseModel):
             elif "$ref" in current_schema:
                 # Handle the $ref case
                 ref = current_schema["$ref"]
-                if not ref.startswith("#/$defs/"):
-                    # The reference is not to a known definition location
-                    return
+                assert isinstance(ref, str), "Validation Error: The $ref is not a string"
+                assert ref.startswith("#/$defs/"), "Validation Error: The $ref is not a definition reference"
                 ref_name = ref.split("/")[-1]
-                if ref_name not in definitions:
-                    # The reference is not found in the definitions
-                    return 
+                assert ref_name in definitions, "Validation Error: The $ref is not a definition reference"
 
                 # Count how many times this ref is used in the entire schema
                 ref_count = json.dumps(self.json_schema).count(ref)
 
                 if ref_count > 1:
-                    # Expand inline if the reference is used multiple times
+                    new_copy_names = [f"{ref_name}Copy{i+1}" for i in range(ref_count)]
+
+                    # Get the nex copy name available
+                    next_copy_name = next((name for name in new_copy_names if name not in definitions), None)
+                    assert next_copy_name is not None, "Validation Error: No available copy name found"
+
+                    # Create a copy of the definition
                     def_copy = copy.deepcopy(definitions[ref_name])
-                    current_schema.pop("$ref", None)  # Remove the $ref
+                    
+                    # Change the title and name of the definition to avoid recursion
+                    if "title" in def_copy:
+                        def_copy["title"] = new_copy_names
+                    if "name" in def_copy:
+                        def_copy["name"] = new_copy_names
 
-                    # Merge def_copy into current_schema
-                    for k, v in def_copy.items():
-                        current_schema[k] = v
+                    # Add the new copy name to the definitions
+                    definitions[next_copy_name] = def_copy
 
-                    # Do not increment index; retry handling the current part
-                else:
-                    # Reference is used only once; directly navigate to the definition
-                    current_schema = definitions[ref_name]
-                    # Do not increment index; retry handling the current part
+                    # Replace the $ref with the new copy name
+                    current_schema["$ref"] = f"#/$defs/{next_copy_name}"
+                    ref_name = next_copy_name
+
+                # Reference is used only once or a copy is created; directly navigate to the definition
+                current_schema = definitions[ref_name]
             else:
                 # Cannot navigate further; invalid pattern
                 return
