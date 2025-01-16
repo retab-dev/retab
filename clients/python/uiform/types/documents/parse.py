@@ -13,6 +13,7 @@ from ..schemas.object import Schema
 
 from ..._utils.ai_model import find_provider_from_model
 from ..._utils.mime import generate_sha_hash_from_base64
+from .create_messages import ChatCompletionUiformMessage
 
 class DocumentExtractRequest(BaseModel):
     # Attributes
@@ -23,7 +24,7 @@ class DocumentExtractRequest(BaseModel):
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
     modality: Modality = Field(default="native", description="Modality of the document")
 
-    document: MIMEData = Field(..., description="Document to be analyzed")    
+    document: MIMEData | None = Field(..., description="Document to be analyzed")    
     text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model", examples=[{
         "regex_instructions": [{
             "name": "VAT Number",
@@ -31,6 +32,8 @@ class DocumentExtractRequest(BaseModel):
             "pattern": r"[Ff][Rr]\s*(\d\s*){11}"
         }]
     }])
+
+    messages: list[ChatCompletionUiformMessage] = Field(..., description="Messages to be used by the AI model")
 
     # Some internal attributes (hidden from serialization)
     _regex_instruction_results: list[RegexInstructionResult] | None = PrivateAttr(default=None)
@@ -71,7 +74,7 @@ class DocumentExtractRequest(BaseModel):
         Returns:
             str: The SHA hash of the document's content.
         """
-        return generate_sha_hash_from_base64(self.document.content)
+        return generate_sha_hash_from_base64(self.document.content if self.document else '')
 
 class BaseDocumentExtractRequest(DocumentExtractRequest):
     document: BaseMIMEData = Field(..., description="Document analyzed (without content, for MongoDB storage)")     # type: ignore

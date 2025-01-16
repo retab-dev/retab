@@ -27,7 +27,7 @@ class BaseExtractionsMixin:
     def prepare_extraction(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase,
+        document: Path | str | IOBase | None,
         text_operations: Optional[dict[str, Any]],
         model: str,
         temperature: float | None,
@@ -39,10 +39,9 @@ class BaseExtractionsMixin:
 
         json_schema = load_json_schema(json_schema)
 
-        mime_document = prepare_mime_document(document)
         data = {
             "json_schema": json_schema,
-            "document": mime_document.model_dump(),
+            "document": prepare_mime_document(document).model_dump() if document is not None else None,
             "model": model,
             "temperature": temperature,
             "stream": stream,
@@ -57,7 +56,7 @@ class BaseExtractionsMixin:
     def prepare_parse(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase,
+        document: Path | str | IOBase | None,
         text_operations: Optional[dict[str, Any]],
         model: str,
         temperature: float,
@@ -90,7 +89,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
     def parse(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase,
+        document: Path | str | IOBase | None,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
@@ -113,6 +112,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         Raises:
             HTTPException if the request fails
         """
+
+        assert (document is not None) or (messages is not None), "Either document or messages must be provided"
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality)

@@ -12,7 +12,9 @@ from .._utils.ai_model import assert_valid_model_extraction
 from .._resource import SyncAPIResource, AsyncAPIResource
 from ..types.modalities import Modality
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage
-from io import IOBase, BytesIO, StringIO
+from io import IOBase
+
+from .benchmarking import analyze_error_patterns, AnalyzedErrorPatterns, ExtractionAnalysis, DictionaryComparisonMetrics, compare_dicts
 
 class BaseDatasetsMixin:
     def _prepare_training_set_element(self, pair_paths: dict[str, Path | str], document_message: DocumentMessage, 
@@ -73,6 +75,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             self, 
             json_schema: dict[str, Any] | Path | str,
             jsonl_path: Path, 
+            save_path: Path,
             model: str = "gpt-4o-2024-08-06",
             temperature: float = 0,
             batch_size: int = 5,
@@ -98,43 +101,45 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             lines = [json.loads(line) for line in f]
         
         updated_entries = []
+        total_batches = (len(lines) + batch_size - 1) // batch_size  # Calculate total number of batches
+        
+        # Create main progress bar for batches
+        batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
         
         def process_entry(entry: dict) -> dict:
             messages = entry['messages']
-            # Remove the last message (previous annotation)
             system_and_user_messages = messages[:-1]
+
+            previous_annotation_message = {
+                "role": "user",
+                "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + messages[-1]['content']
+            }
             
-            # Create document message from the user messages
-            empty_bytesio = BytesIO(b"")
-            empty_bytesio.name = "empty.txt" 
-            
-            # Get new annotation
             result = self._client.documents.extractions.parse(
                 json_schema=json_schema,
-                document=empty_bytesio,
+                document=None,
                 model=model,
                 temperature=temperature,
-                messages=system_and_user_messages,
+                messages=system_and_user_messages + [previous_annotation_message],
                 modality=modality,
             )
             
-            if result.choices[0].message.content is None:
+            if result.choices[0].message.parsed is None:
                 print(f"Failed to update annotation for entry")
-                return entry  # Return original entry if update fails
+                return entry
             
-            # Create new entry with updated annotation
             new_assistant_message = {
                 "role": "assistant",
-                "content": json.dumps(result.choices[0].message.content, ensure_ascii=False, indent=2)
+                "content": result.choices[0].message.parsed.model_dump_json() 
             }
             return {"messages": system_and_user_messages + [new_assistant_message]}
         
-        # Process entries in batches with ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
             futures = []
             # Split entries into batches
             for batch_idx in range(0, len(lines), batch_size):
                 batch = lines[batch_idx:batch_idx + batch_size]
+                
                 # Submit batch of tasks
                 batch_futures = [executor.submit(process_entry, entry) for entry in batch]
                 futures.extend(batch_futures)
@@ -142,10 +147,14 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 # Wait for batch to complete
                 for future in batch_futures:
                     updated_entries.append(future.result())
+                
+                batch_pbar.update(1)  # Update batch progress
                 time.sleep(1)  # Rate limiting between batches
         
+        batch_pbar.close()  # Close batch progress bar
+        
         # Write updated entries back to file
-        with open(jsonl_path, 'w') as f:
+        with open(save_path, 'w') as f:
             for entry in updated_entries:
                 f.write(json.dumps(entry) + '\n')
 
@@ -287,25 +296,74 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         jsonl_path: Path,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0, 
-        metric: Literal["Levenstein", "Jaccard", "Accuracy"] = "Accuracy", # TODO 
-        ) -> None:
-
+        text_operations: Optional[dict[str, Any]] = None,
+        batch_size: int = 5,
+        max_concurrent: int = 3,
+        #metric: Literal["Levenstein", "Jaccard", "Accuracy"] = "Accuracy", # TODO
+    ) -> AnalyzedErrorPatterns:
         """Benchmark model performance on a test dataset.
 
         Args:
             json_schema: JSON schema defining the expected data structure
             jsonl_path: Path to the JSONL file containing test examples
-            text_operations: Optional context with regex instructions or other metadata
-            model: The AI model to use for benchmarking
+            model: The model to use for benchmarking
             temperature: Model temperature setting (0-1)
-
-        Raises:
-            NotImplementedError: This method is not implemented yet
+            text_operations: Optional context with regex instructions
+            batch_size: Number of examples to process in each batch
+            max_concurrent: Maximum number of concurrent API calls
         """
+        json_schema = load_json_schema(json_schema)
+        assert_valid_model_extraction(model)
 
-        # TODO
+        # Read all lines from the JSONL file
+        with open(jsonl_path, 'r') as f:
+            lines = [json.loads(line) for line in f]
+        
+        extraction_analyses = []
+        total_batches = (len(lines) + batch_size - 1) // batch_size
 
-        raise NotImplementedError("Benchmarking is not implemented yet")
+        # Create main progress bar for batches
+        batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
+
+        def process_example(jsonline: dict) -> ExtractionAnalysis:
+            messages = jsonline['messages']
+            ground_truth = json.loads(messages[-1]['content'])
+            inference_messages = messages[:-1]
+
+            result = self._client.documents.extractions.parse(
+                json_schema=json_schema,
+                document=None,
+                text_operations=text_operations,
+                model=model,
+                temperature=temperature,
+                messages=inference_messages,
+            )
+
+            assert result.choices[0].message.parsed is not None
+            prediction = result.choices[0].message.parsed.model_dump()
+
+            return ExtractionAnalysis(
+                ground_truth=ground_truth,
+                prediction=prediction,
+            )
+
+        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+            # Split entries into batches
+            for batch_idx in range(0, len(lines), batch_size):
+                batch = lines[batch_idx:batch_idx + batch_size]
+                
+                # Submit and process batch
+                futures = [executor.submit(process_example, entry) for entry in batch]
+                for future in futures:
+                    extraction_analyses.append(future.result())
+
+                batch_pbar.update(1)
+                time.sleep(1)  # Rate limiting between batches
+
+        batch_pbar.close()
+
+        # Analyze error patterns across all examples
+        return analyze_error_patterns(extraction_analyses)
 
     def filter(self, **kwargs: Any) -> None:
         """Filter examples from a JSONL file based on specified parameters.
@@ -390,25 +448,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         raise NotImplementedError("Stitching is not implemented yet")
 
-    def get(self, jsonl_path: Path | str, n: int) -> dict[str, Any]:
-        """Get the nth element from a JSONL file.
-
-        Args:
-            jsonl_path: Path to the JSONL file
-            n: Index of the element to retrieve (0-based)
-
-        Returns:
-            The nth element as a dictionary
-
-        Raises:
-            IndexError: If n is out of range
-            FileNotFoundError: If the file doesn't exist
-        """
-        with open(jsonl_path, 'r', encoding='utf-8') as file:
-            for i, line in enumerate(file):
-                if i == n:
-                    return json.loads(line)
-            raise IndexError(f"Index {n} is out of range")
+   
 
 class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
     """Asynchronous wrapper for Datasets using thread execution."""
@@ -627,28 +667,3 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         """
 
         raise NotImplementedError("Stitching is not implemented yet")
-
-    async def get(self, jsonl_path: Path | str, n: int) -> dict[str, Any]:
-        """Get the nth element from a JSONL file.
-
-        Args:
-            jsonl_path: Path to the JSONL file
-            n: Index of the element to retrieve (0-based)
-
-        Returns:
-            The nth element as a dictionary
-
-        Raises:
-            IndexError: If n is out of range
-            FileNotFoundError: If the file doesn't exist
-        """
-        # Since file I/O is blocking, we'll run it in a thread pool
-        def read_nth_line():
-            with open(jsonl_path, 'r', encoding='utf-8') as file:
-                for i, line in enumerate(file):
-                    if i == n:
-                        return json.loads(line)
-                raise IndexError(f"Index {n} is out of range")
-        
-        return await asyncio.to_thread(read_nth_line)
-
