@@ -35,7 +35,6 @@ termplotlib
 Levenshtein
 pandas
 numpy
-unicodedata
 motor
 rich
 
