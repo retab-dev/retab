@@ -1,36 +1,25 @@
 import asyncio
 from typing import IO, Any, Optional, Literal
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import time
 import json
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
+from io import IOBase
 
 from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction
 from .._utils.display import display_metrics, process_dataset_and_compute_metrics, Metrics
-
-from .._resource import SyncAPIResource, AsyncAPIResource
 from ..types.modalities import Modality
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage
-from io import IOBase
-
+from ..types.schemas.object import Schema
+from .._resource import SyncAPIResource, AsyncAPIResource
 from .benchmarking import analyze_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics
 
+
+
 class BaseDatasetsMixin:
-    def _prepare_training_set_element(self, pair_paths: dict[str, Path | str], document_message: DocumentMessage, 
-        messages: list[ChatCompletionUiformMessage] = [],) -> dict[str, Any]:
-        system_and_user_messages = document_message.messages + messages if document_message.messages else messages
-
-        # Use context manager to properly close the file
-        with open(pair_paths["annotation_fpath"], 'r') as f:
-            annotation = json.loads(f.read())
-
-        assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
-
-        # Add the complete message set as an entry
-        return {"messages": system_and_user_messages + [assistant_message]}
 
     def _dump_training_set(self, training_set: list[dict[str, Any]], jsonl_path: Path | str) -> None:
         with open(jsonl_path, 'w', encoding='utf-8') as file:
@@ -64,11 +53,28 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             messages: List of additional chat messages to include
         """
         json_schema = load_json_schema(json_schema)
+        schema_obj = Schema(
+            json_schema=json_schema
+        )
+
         training_set = []
 
         for pair_paths in tqdm(pairs_paths):
-            document_message = self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality, text_operations=text_operations)
-            training_set.append(self._prepare_training_set_element(pair_paths, document_message, messages))
+            document_message = self._client.documents.create_messages(
+                document=pair_paths['document_fpath'], 
+                modality=modality, 
+                text_operations=text_operations
+            )
+            
+            # Use context manager to properly close the file
+            with open(pair_paths['annotation_fpath'], 'r') as f:
+                annotation = json.loads(f.read())
+            assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
+
+            # Add the complete message set as an entry
+            training_set.append({"messages": document_message.messages + messages + [assistant_message]})
+    
+            
 
         self._dump_training_set(training_set, jsonl_path)
 
@@ -374,87 +380,84 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         return analysis
 
-    def filter(self, **kwargs: Any) -> None:
-        """Filter examples from a JSONL file based on specified parameters.
 
-        Args:
-            json_schema: JSON schema defining the data structure
-            jsonl_path: Path to the JSONL file to filter
-            text_operations: Optional context with processing instructions
-            output_path: Optional path for the filtered output
-            inplace: Whether to modify the file in place
-            filter_parameters: Parameters to filter examples by (e.g., {"confidence": 0.8})
-
-        Note:
-            Filter parameters can include:
-            - Number of tokens
-            - Modality
-            - Other custom parameters
-        """
-        #json_schema: dict[str, Any] | Path | str,
-        #jsonl_path: Path,
-        #text_operations: Optional[dict[str, Any]] = None,
-        #output_path: Optional[Path] = None,
-        #inplace: bool = False,
-        #filter_parameters: Optional[dict[str, Any]] = None,
-
-        #json_schema = load_json_schema(json_schema)
-
-        # filter parameters:
-        # num tokens
-        # modality
-
-        # TODO
-
-        raise NotImplementedError("Filtering is not implemented yet")
-
-    def print_dataset_statistics(self, jsonl_path: Path, output_path: Path = Path("annotations")) -> Metrics:
+    def pprint(self, jsonl_path: Path, output_path: Path = Path("annotations")) -> Metrics:
         """Print a summary of the contents and statistics of a JSONL file.
 
         This method analyzes the JSONL file and displays various metrics and statistics
         about the dataset contents.
+
+        Inspired from : https://gist.github.com/nmwsharp/54d04af87872a4988809f128e1a1d233
 
         Args:
             jsonl_path: Path to the JSONL file to analyze
             output_path: Directory where to save any generated reports
         """
 
-        # client.datasets.statistics(json_schema, jsonl_path, text_operations) -> this is a valid name as well for the method.
-        # inspiration: https://x.com/nmwsharp/status/1629205292096557056/photo/1
-        # https://gist.github.com/nmwsharp/54d04af87872a4988809f128e1a1d233
-
-
         computed_metrics = process_dataset_and_compute_metrics(jsonl_path)
         display_metrics(computed_metrics)
         return computed_metrics
 
-    def stitch(self, **kwargs: Any) -> None:
-        """Stitch annotations from a list of MIMEData objects into a single MIMEData object.
+    def stich_and_save(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        pairs_paths: list[dict[str, Path | str | list[Path | str] | list[str] | list[Path]]],
+        jsonl_path: Path | str,
+        text_operations: Optional[dict[str, Any]] = None,
+        modality: Modality = "native",
+        messages: list[ChatCompletionUiformMessage] = [],
+    ) -> None:        
+        
+        """Stitch multiple documents and their annotations into a JSONL training set.
 
-        This method combines multiple MIMEData annotations into a single object to avoid
-        nested list structures (list[list[MIMEData]]) and maintain a simpler list[MIMEData] structure.
+        This method processes and combines multiple documents into messages, creating document-annotation
+        pairs that are saved to a JSONL file. Each document is processed according to the specified
+        modality and combined with its corresponding annotation.
+
 
         Args:
-            json_schema: The JSON schema for validation
-            jsonl_path: Path to the JSONL file
-            text_operations: Optional context with processing instructions
-            output_path: Optional path for the output file
-            inplace: Whether to modify the file in place
-            filter_parameters: Optional parameters for filtering
-            modality: The modality to use for processing
+            json_schema: The JSON schema for validation, can be a dict, Path, or string
+            pairs_paths: List of dictionaries containing document and annotation file paths
+            jsonl_path: Output path for the JSONL training file
+            text_operations: Optional context for prompting
+            modality: The modality to use for document processing ("native" by default)
+            messages: List of additional chat messages to include
         """
-        #json_schema: dict[str, Any] | Path | str,
-        #jsonl_path: Path,
-        #text_operations: Optional[dict[str, Any]] = None,
-        #output_path: Optional[Path] = None,
-        #inplace: bool = False,
-        #filter_parameters: Optional[dict[str, Any]] = None,
-        #modality: Modality = "native",
-        #json_schema = load_json_schema(json_schema)
 
-        # TODO
+        json_schema = load_json_schema(json_schema)
+        training_set = []
 
-        raise NotImplementedError("Stitching is not implemented yet")
+        for pair_paths in tqdm(pairs_paths):
+            document_messages: list[ChatCompletionUiformMessage] = []
+            
+            if isinstance(pair_paths['document_fpath'], str) or isinstance(pair_paths['document_fpath'], Path):
+                document_message = self._client.documents.create_messages(
+                    document=pair_paths['document_fpath'], 
+                    modality=modality, 
+                    text_operations=text_operations
+                )
+                document_messages.extend(document_message.messages)
+
+            else: 
+                assert isinstance(pair_paths['document_fpath'], list)
+                for document_fpath in pair_paths['document_fpath']:
+                    document_message = self._client.documents.create_messages(
+                        document=document_fpath, 
+                        modality=modality, 
+                        text_operations=text_operations
+                    )
+                    document_messages.extend(document_message.messages)
+            
+            # Use context manager to properly close the file
+            assert isinstance(pair_paths['annotation_fpath'], Path) or isinstance(pair_paths['annotation_fpath'], str)
+            with open(pair_paths['annotation_fpath'], 'r') as f:
+                annotation = json.loads(f.read())
+            assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
+
+            # Add the complete message set as an entry
+            training_set.append({"messages": document_messages + messages + [assistant_message]})
+
+        self._dump_training_set(training_set, jsonl_path)
 
    
 
@@ -475,7 +478,12 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
 
         for pair_paths in tqdm(pairs_paths):
             document_message = await self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality, text_operations=text_operations)
-            training_set.append(self._prepare_training_set_element(pair_paths, document_message, messages))
+            
+            with open(pair_paths['annotation_fpath'], 'r') as f:
+                annotation = json.loads(f.read())
+            assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
+
+            training_set.append({"messages": document_message.messages + messages + [assistant_message]})
 
         self._dump_training_set(training_set, jsonl_path)
 

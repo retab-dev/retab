@@ -269,6 +269,7 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
 
     return metrics
 
+
 def display_metrics(metrics: Metrics) -> None:
     """
     Display the metrics dictionary in a compact table with min/max, mean/median, and p5/p95 on the same row.
@@ -289,63 +290,6 @@ def display_metrics(metrics: Metrics) -> None:
         str(metrics["Image"]["num_examples"]), 
         str(metrics["Total"]["num_examples"])
     )
-
-    table.add_row(
-        "Min / Max Tokens", 
-        f"{metrics['Text']['total_tokens']['min']:.2f} / {metrics['Text']['total_tokens']['max']:.2f}", 
-        f"{metrics['Image']['total_tokens']['min']:.2f} / {metrics['Image']['total_tokens']['max']:.2f}", 
-        f"{metrics['Total']['total_tokens']['min']:.2f} / {metrics['Total']['total_tokens']['max']:.2f}"
-    )
-
-    table.add_row(
-        "Mean / Median Tokens", 
-        f"{metrics['Text']['total_tokens']['mean']:.2f} / {metrics['Text']['total_tokens']['median']:.2f}", 
-        f"{metrics['Image']['total_tokens']['mean']:.2f} / {metrics['Image']['total_tokens']['median']:.2f}", 
-        f"{metrics['Total']['total_tokens']['mean']:.2f} / {metrics['Total']['total_tokens']['median']:.2f}"
-    )
-
-    table.add_row(
-        "P5 / P95 Tokens", 
-        f"{metrics['Text']['total_tokens']['p5']:.2f} / {metrics['Text']['total_tokens']['p95']:.2f}", 
-        f"{metrics['Image']['total_tokens']['p5']:.2f} / {metrics['Image']['total_tokens']['p95']:.2f}", 
-        f"{metrics['Total']['total_tokens']['p5']:.2f} / {metrics['Total']['total_tokens']['p95']:.2f}"
-    )
-
-    table.add_row(
-        "Sum Total Tokens", 
-        f"{metrics['Text']['sum_total_tokens']:.2f}", 
-        f"{metrics['Image']['sum_total_tokens']:.2f}", 
-        f"{metrics['Total']['sum_total_tokens']:.2f}"
-    )
-
-    # Rows for assistant_tokens
-    table.add_row(
-        "Min / Max Assistant Tokens", 
-        f"{metrics['Text']['assistant_tokens']['min']:.2f} / {metrics['Text']['assistant_tokens']['max']:.2f}", 
-        f"{metrics['Image']['assistant_tokens']['min']:.2f} / {metrics['Image']['assistant_tokens']['max']:.2f}", 
-        f"{metrics['Total']['assistant_tokens']['min']:.2f} / {metrics['Total']['assistant_tokens']['max']:.2f}"
-    )
-
-    table.add_row(
-        "Mean / Median Assistant Tokens", 
-        f"{metrics['Text']['assistant_tokens']['mean']:.2f} / {metrics['Text']['assistant_tokens']['median']:.2f}", 
-        f"{metrics['Image']['assistant_tokens']['mean']:.2f} / {metrics['Image']['assistant_tokens']['median']:.2f}", 
-        f"{metrics['Total']['assistant_tokens']['mean']:.2f} / {metrics['Total']['assistant_tokens']['median']:.2f}"
-    )
-
-    table.add_row(
-        "P5 / P95 Assistant Tokens", 
-        f"{metrics['Text']['assistant_tokens']['p5']:.2f} / {metrics['Text']['assistant_tokens']['p95']:.2f}", 
-        f"{metrics['Image']['assistant_tokens']['p5']:.2f} / {metrics['Image']['assistant_tokens']['p95']:.2f}", 
-        f"{metrics['Total']['assistant_tokens']['p5']:.2f} / {metrics['Total']['assistant_tokens']['p95']:.2f}"
-    )
-
-    table.add_row(
-        "Sum Assistant Tokens", 
-        f"{metrics['Text']['sum_assistant_tokens']:.2f}", 
-        f"{metrics['Image']['sum_assistant_tokens']:.2f}", 
-        f"{metrics['Total']['sum_assistant_tokens']:.2f}"
-    )
     
     table.add_row(
         "Examples Over Limit", 
@@ -354,5 +298,69 @@ def display_metrics(metrics: Metrics) -> None:
         str(metrics["Total"]["num_examples_over_token_limit"])
     )
 
+    table.add_row("")
+
+
+    # Rows for assistant_tokens
+    table.add_row(
+        "Min / Max Assistant Tokens", 
+        f"{metrics['Text']['assistant_tokens']['min']:.0f} / {metrics['Text']['assistant_tokens']['max']:.0f}", 
+        f"{metrics['Image']['assistant_tokens']['min']:.0f} / {metrics['Image']['assistant_tokens']['max']:.0f}", 
+        f"{metrics['Total']['assistant_tokens']['min']:.0f} / {metrics['Total']['assistant_tokens']['max']:.0f}"
+    )
+
+    table.add_row(
+        "Mean / Median Assistant Tokens", 
+        f"{metrics['Text']['assistant_tokens']['mean']:.0f} / {metrics['Text']['assistant_tokens']['median']:.0f}", 
+        f"{metrics['Image']['assistant_tokens']['mean']:.0f} / {metrics['Image']['assistant_tokens']['median']:.0f}", 
+        f"{metrics['Total']['assistant_tokens']['mean']:.0f} / {metrics['Total']['assistant_tokens']['median']:.0f}"
+    )
+
+    table.add_row(
+        "P5 / P95 Assistant Tokens", 
+        f"{metrics['Text']['assistant_tokens']['p5']:.0f} / {metrics['Text']['assistant_tokens']['p95']:.0f}", 
+        f"{metrics['Image']['assistant_tokens']['p5']:.0f} / {metrics['Image']['assistant_tokens']['p95']:.0f}", 
+        f"{metrics['Total']['assistant_tokens']['p5']:.0f} / {metrics['Total']['assistant_tokens']['p95']:.0f}"
+    )
+
+    table.add_row(
+        "Sum Assistant Tokens", 
+        f"{metrics['Text']['sum_assistant_tokens']}", 
+        f"{metrics['Image']['sum_assistant_tokens']}", 
+        f"{metrics['Total']['sum_assistant_tokens']}"
+    )
+    
+    
+    table.add_row("")  # Empty row for spacing
+
+
+    table.add_row(
+        "Min / Max Tokens", 
+        f"{metrics['Text']['total_tokens']['min']:.0f} / {metrics['Text']['total_tokens']['max']:.0f}", 
+        f"{metrics['Image']['total_tokens']['min']:.0f} / {metrics['Image']['total_tokens']['max']:.0f}", 
+        f"{metrics['Total']['total_tokens']['min']:.0f} / {metrics['Total']['total_tokens']['max']:.0f}"
+    )
+
+    table.add_row(
+        "Mean / Median Tokens", 
+        f"{metrics['Text']['total_tokens']['mean']:.0f} / {metrics['Text']['total_tokens']['median']:.0f}", 
+        f"{metrics['Image']['total_tokens']['mean']:.0f} / {metrics['Image']['total_tokens']['median']:.0f}", 
+        f"{metrics['Total']['total_tokens']['mean']:.0f} / {metrics['Total']['total_tokens']['median']:.0f}"
+    )
+
+    table.add_row(
+        "P5 / P95 Tokens", 
+        f"{metrics['Text']['total_tokens']['p5']:.0f} / {metrics['Text']['total_tokens']['p95']:.0f}", 
+        f"{metrics['Image']['total_tokens']['p5']:.0f} / {metrics['Image']['total_tokens']['p95']:.0f}", 
+        f"{metrics['Total']['total_tokens']['p5']:.0f} / {metrics['Total']['total_tokens']['p95']:.0f}"
+    )
+
+    table.add_row(
+        "Sum Total Tokens", 
+        f"{metrics['Text']['sum_total_tokens']}", 
+        f"{metrics['Image']['sum_total_tokens']}", 
+        f"{metrics['Total']['sum_total_tokens']}"
+    )
+   
     # Print the table
     console.print(table)

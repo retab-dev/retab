@@ -25,7 +25,6 @@ class DictionaryComparisonMetrics(BaseModel):
     unchanged_fields: int
     total_fields: int
     is_equal: dict[str, bool]
-    similarity: dict[str, float]
     false_positives: list[dict[str, Any]]
     false_negatives: list[dict[str, Any]]
     mismatched_values: list[dict[str, Any]]
@@ -33,13 +32,19 @@ class DictionaryComparisonMetrics(BaseModel):
     keys_only_on_2: list[str]
 
     # Some metrics
-    avg_similarity: float
-    total_similarity: float
     valid_comparisons: int
     total_accuracy: float
     false_positive_rate: float
     false_negative_rate: float
     mismatched_value_rate: float
+
+    similarity_levenshtein: dict[str, float]
+    similarity_jaccard: dict[str, float]
+
+    avg_similarity_levenshtein: float
+    avg_similarity_jaccard: float
+    total_similarity_levenshtein: float
+    total_similarity_jaccard: float
 
 
 def flatten_dict(obj: Any, prefix: str = '') -> dict[str, Any]:
@@ -115,6 +120,31 @@ def levenshtein_similarity(val1: Any, val2: Any) -> float:
         
     return 0.0
 
+def jaccard_similarity(val1: Any, val2: Any) -> float:
+    """
+    Calculate Jaccard similarity between two values.
+    Returns a similarity score between 0.0 and 1.0.
+    """
+    # Handle None/empty and general cases
+    if (val1 or "") == (val2 or ""):
+        return 1.0
+    
+    # Check if both values are numeric, compare with 5% tolerance
+    if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
+        return 1.0 if abs(val1 - val2) <= 0.05 * max(abs(val1), abs(val2)) else 0.0
+
+    # Convert to normalized strings and split into words
+    str1 = set(normalize_value(val1).split())
+    str2 = set(normalize_value(val2).split())
+    
+    if not str1 and not str2:
+        return 1.0
+    
+    # Calculate Jaccard similarity
+    intersection = len(str1.intersection(str2))
+    union = len(str1.union(str2))
+    
+    return intersection / union if union > 0 else 0.0
 
 def compare_dicts(
         ground_truth: dict[str, Any],
@@ -122,7 +152,7 @@ def compare_dicts(
         include_fields: list[str] | None = None,
         exclude_fields: list[str] | None = None,
         information_presence_per_field: dict[str, bool] | None = None,
-        levenshtein_threshold: float = 0.0  # 0.0 means exact match
+        levenshtein_threshold: float = 0.0,  # 0.0 means exact match
     ) -> DictionaryComparisonMetrics:
     flat_ground_truth = flatten_dict(ground_truth)
     flat_prediction = flatten_dict(prediction)
@@ -139,14 +169,17 @@ def compare_dicts(
     
     total_fields = len(common_keys)
     unchanged_fields = 0
-    similarity_per_field = {}
     is_equal_per_field = {}
     
     false_positives = []
     false_negatives = []
     mismatched_values = []
     
-    total_similarity = 0.0
+    total_similarity_levenshtein = 0.0
+    total_similarity_jaccard = 0.0
+    similarity_levenshtein_per_field = {}
+    similarity_jaccard_per_field = {}
+    
     valid_comparisons = 0
 
     for key in common_keys:
@@ -154,15 +187,22 @@ def compare_dicts(
         extraction_value = flat_prediction[key]
 
         coerced_llm_value = llm_value or ""
-        coerced_extraction_value = extraction_value or ""        
-        similarity = levenshtein_similarity(llm_value, extraction_value)
-        is_equal = similarity >= (1 - levenshtein_threshold)
-        similarity_per_field[key] = similarity
+        coerced_extraction_value = extraction_value or ""
+        
+        similarity_lev = levenshtein_similarity(llm_value, extraction_value)
+        similarity_jac = jaccard_similarity(llm_value, extraction_value)
+        
+        # Use Levenshtein for equality comparison (you can adjust this if needed)
+        is_equal = similarity_lev >= (1 - levenshtein_threshold)
+        
+        similarity_levenshtein_per_field[key] = similarity_lev
+        similarity_jaccard_per_field[key] = similarity_jac
         is_equal_per_field[key] = is_equal
         
         # Only count non-empty comparisons for average similarity
         if coerced_llm_value != "" and coerced_extraction_value != "":
-            total_similarity += similarity
+            total_similarity_levenshtein += similarity_lev
+            total_similarity_jaccard += similarity_jac
             valid_comparisons += 1
         
         if is_equal:
@@ -173,14 +213,14 @@ def compare_dicts(
                     "key": key, 
                     "expected": extraction_value, 
                     "got": llm_value,
-                    "similarity": similarity
+                    "similarity": similarity_lev
                 })
             elif coerced_llm_value == "" and coerced_extraction_value != "":
                 false_negatives.append({
                     "key": key, 
                     "expected": extraction_value, 
                     "got": llm_value,
-                    "similarity": similarity
+                    "similarity": similarity_lev
                 })
             elif coerced_llm_value != "" and coerced_extraction_value != "":
                 # Both are non-empty but not equal
@@ -188,10 +228,11 @@ def compare_dicts(
                     "key": key, 
                     "expected": extraction_value, 
                     "got": llm_value,
-                    "similarity": similarity
+                    "similarity": similarity_lev
                 })
     # Some metrics
-    avg_similarity = total_similarity / valid_comparisons if valid_comparisons > 0 else 1.0
+    avg_similarity_levenshtein = total_similarity_levenshtein / valid_comparisons if valid_comparisons > 0 else 1.0
+    avg_similarity_jaccard = total_similarity_jaccard / valid_comparisons if valid_comparisons > 0 else 1.0
     total_accuracy = unchanged_fields / total_fields if total_fields > 0 else 1.0
     false_positive_rate = len(false_positives) / total_fields if total_fields > 0 else 0.0
     false_negative_rate = len(false_negatives) / total_fields if total_fields > 0 else 0.0
@@ -201,19 +242,22 @@ def compare_dicts(
         unchanged_fields=unchanged_fields,
         total_fields=total_fields,
         is_equal=is_equal_per_field,
-        similarity=similarity_per_field,
         false_positives=false_positives,
         false_negatives=false_negatives,
         mismatched_values = mismatched_values,
         keys_only_on_1=keys_only_on_1,
         keys_only_on_2=keys_only_on_2,
-        avg_similarity=avg_similarity,
-        total_similarity=total_similarity,
         valid_comparisons=valid_comparisons,
         total_accuracy=total_accuracy,
         false_positive_rate=false_positive_rate,
         false_negative_rate=false_negative_rate,
-        mismatched_value_rate=mismatched_value_rate
+        mismatched_value_rate=mismatched_value_rate,
+        similarity_levenshtein=similarity_levenshtein_per_field,
+        similarity_jaccard=similarity_jaccard_per_field,
+        avg_similarity_levenshtein=avg_similarity_levenshtein,
+        avg_similarity_jaccard=avg_similarity_jaccard,
+        total_similarity_levenshtein=total_similarity_levenshtein,
+        total_similarity_jaccard=total_similarity_jaccard
     )
 
 
@@ -235,31 +279,42 @@ class ExtractionAnalysis(BaseModel):
             include_fields=self.include_fields,
             exclude_fields=self.exclude_fields,
             information_presence_per_field=self.information_presence_per_field,
-            levenshtein_threshold=self.levenshtein_threshold
+            levenshtein_threshold=self.levenshtein_threshold,
         )
 
 class ComparisonMetrics(BaseModel):
     # Total Values (count or sum) per Field
     false_positive_counts: dict[str, int] = defaultdict(int)
-    false_negative_counts: dict[str, int] = defaultdict(int)
-    mismatched_value_counts: dict[str, int] = defaultdict(int)
-    common_presence_counts: dict[str, int] = defaultdict(int)
-    total_similarity_per_field: dict[str, float] = defaultdict(float)
-
-    # Rates (percentage) per Field
-    accuracy_per_field: dict[str, float] = defaultdict(float)
-    similarity_per_field: dict[str, float] = defaultdict(float)
     false_positive_rate_per_field: dict[str, float] = defaultdict(float)
+
+    false_negative_counts: dict[str, int] = defaultdict(int)
     false_negative_rate_per_field: dict[str, float] = defaultdict(float)
+
+    mismatched_value_counts: dict[str, int] = defaultdict(int)
     mismatched_value_rate_per_field: dict[str, float] = defaultdict(float)
+
+    common_presence_counts: dict[str, int] = defaultdict(int)
+    accuracy_per_field: dict[str, float] = defaultdict(float)
+
+    jaccard_similarity_per_field: dict[str, float] = defaultdict(float)
+    total_jaccard_similarity_per_field: dict[str, float] = defaultdict(float)
+
+
+    levenshtein_similarity_per_field: dict[str, float] = defaultdict(float)
+    total_levenshtein_similarity_per_field: dict[str, float] = defaultdict(float)
+
 
     @computed_field
     def accuracy(self) -> float:
         return sum(self.accuracy_per_field.values()) / len(self.accuracy_per_field)
     
     @computed_field
-    def similarity(self) -> float:
-        return sum(self.similarity_per_field.values()) / len(self.similarity_per_field)
+    def levenshtein_similarity(self) -> float:
+        return sum(self.total_levenshtein_similarity_per_field.values()) / len(self.total_levenshtein_similarity_per_field)
+    
+    @computed_field
+    def jaccard_similarity(self) -> float:
+        return sum(self.total_jaccard_similarity_per_field.values()) / len(self.total_jaccard_similarity_per_field)
     
     @computed_field
     def false_positive_rate(self) -> float:
@@ -280,7 +335,8 @@ def analyze_comparison_metrics(list_analyses: list[ExtractionAnalysis], min_freq
     common_presence_counts: dict[str, int] = defaultdict(int)
     is_equal_per_field: dict[str, int] = defaultdict(int)
 
-    total_similarity_per_field: dict[str, float] = defaultdict(float)
+    total_levenshtein_similarity_per_field: dict[str, float] = defaultdict(float)
+    total_jaccard_similarity_per_field: dict[str, float] = defaultdict(float)
     false_positive_rate_per_field: dict[str, float] = defaultdict(float)
     false_negative_rate_per_field: dict[str, float] = defaultdict(float)
     mismatched_value_rate_per_field: dict[str, float] = defaultdict(float)
@@ -302,35 +358,42 @@ def analyze_comparison_metrics(list_analyses: list[ExtractionAnalysis], min_freq
             key = error["key"]
             mismatched_value_counts[key_normalization(key)] += 1
 
-        # Count total errors per field
-        for key, similarity in analysis.comparison.similarity.items():
+        # Count total errors per field (Levenshtein)
+        for key, similarity in analysis.comparison.similarity_levenshtein.items():
             common_presence_counts[key_normalization(key)] += 1
-            total_similarity_per_field[key_normalization(key)] += similarity
+            total_levenshtein_similarity_per_field[key_normalization(key)] += similarity
         for key, is_equal in analysis.comparison.is_equal.items():
             is_equal_per_field[key_normalization(key)] += int(is_equal)
 
+        # Count Jaccard Similarity
+        for key, similarity in analysis.comparison.similarity_jaccard.items():
+            common_presence_counts[key_normalization(key)] += 1
+            total_jaccard_similarity_per_field[key_normalization(key)] += similarity
+
     accuracy_per_field = {key: is_equal_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    similarity_per_field = {key: total_similarity_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
+    levenshtein_similarity_per_field = {key: total_levenshtein_similarity_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
+    jaccard_similarity_per_field = {key: total_jaccard_similarity_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
     false_positive_rate_per_field = {key: false_positive_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
     false_negative_rate_per_field = {key: false_negative_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
     mismatched_value_rate_per_field = {key: mismatched_value_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
+    
     return ComparisonMetrics(
         false_positive_counts=false_positive_counts,
         false_negative_counts=false_negative_counts,
         mismatched_value_counts=mismatched_value_counts,
         common_presence_counts=common_presence_counts,
-        total_similarity_per_field=total_similarity_per_field,
+        total_levenshtein_similarity_per_field=total_levenshtein_similarity_per_field,
+        total_jaccard_similarity_per_field=total_jaccard_similarity_per_field,
         accuracy_per_field=accuracy_per_field,
-        similarity_per_field=similarity_per_field,
+        levenshtein_similarity_per_field=levenshtein_similarity_per_field,
+        jaccard_similarity_per_field=jaccard_similarity_per_field,
         false_positive_rate_per_field=false_positive_rate_per_field,
         false_negative_rate_per_field=false_negative_rate_per_field,
         mismatched_value_rate_per_field=mismatched_value_rate_per_field
     )
 
 
-
-
-def plot_metric(analysis: ComparisonMetrics, value_type: Literal["accuracy", "similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"] = "accuracy", top_n: int = 20, ascending: bool = False) -> None:
+def plot_metric(analysis: ComparisonMetrics, value_type: Literal["accuracy", "levenshtein_similarity", "jaccard_similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"] = "accuracy", top_n: int = 20, ascending: bool = False) -> None:
     """Plot a metric from analysis results using a horizontal bar chart.
     
     Args:
@@ -355,15 +418,16 @@ def plot_metric(analysis: ComparisonMetrics, value_type: Literal["accuracy", "si
 
     fig.show()
 
+
 def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None:
-    metric_ascendency_dict: dict[Literal["accuracy", "similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"], bool] = {
+    metric_ascendency_dict: dict[Literal["accuracy", "levenshtein_similarity", "jaccard_similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"], bool] = {
         "accuracy": True,
-        "similarity": True,
+        "levenshtein_similarity": True,
+        "jaccard_similarity": True,
         "false_positive_rate": False,
         "false_negative_rate": False,
         "mismatched_value_rate": False
     }
-    
     
     for metric, ascending in metric_ascendency_dict.items():
         print(f"\n############ {metric.upper()} ############")
