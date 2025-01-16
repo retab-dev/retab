@@ -9,6 +9,8 @@ from tqdm import tqdm
 
 from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction
+from .._utils.display import display_metrics, process_dataset_and_compute_metrics, Metrics
+
 from .._resource import SyncAPIResource, AsyncAPIResource
 from ..types.modalities import Modality
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage
@@ -406,7 +408,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         raise NotImplementedError("Filtering is not implemented yet")
 
-    def print(self, jsonl_path: Path, output_path: Path = Path("annotations")) -> None:
+    def print_dataset_statistics(self, jsonl_path: Path, output_path: Path = Path("annotations")) -> Metrics:
         """Print a summary of the contents and statistics of a JSONL file.
 
         This method analyzes the JSONL file and displays various metrics and statistics
@@ -421,11 +423,10 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         # inspiration: https://x.com/nmwsharp/status/1629205292096557056/photo/1
         # https://gist.github.com/nmwsharp/54d04af87872a4988809f128e1a1d233
 
-        from uiform.display import display_metrics, process_dataset_and_compute_metrics
 
         computed_metrics = process_dataset_and_compute_metrics(jsonl_path)
         display_metrics(computed_metrics)
-        raise NotImplementedError("Printing is not implemented yet")
+        return computed_metrics
 
     def stitch(self, **kwargs: Any) -> None:
         """Stitch annotations from a list of MIMEData objects into a single MIMEData object.

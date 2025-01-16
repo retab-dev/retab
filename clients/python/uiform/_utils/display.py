@@ -277,10 +277,10 @@ def display_metrics(metrics: Metrics) -> None:
     table = Table(title="Token Metrics", show_lines=True)
 
     # Add columns
-    table.add_column("Metric", justify="left", style="cyan", no_wrap=True)
-    table.add_column("Text", justify="right", style="magenta")
-    table.add_column("Image", justify="right", style="green")
-    table.add_column("Total", justify="right", style="yellow")
+    table.add_column("Metric", justify="left", style="#BDE8F6", no_wrap=True)
+    table.add_column("Text", justify="right", style="#C2BDF6")
+    table.add_column("Image", justify="right", style="#F6BDBD")
+    table.add_column("Total", justify="right", style="#F6E4BD")
 
     # Add rows
     table.add_row(
