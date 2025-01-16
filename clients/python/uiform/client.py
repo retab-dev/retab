@@ -24,15 +24,21 @@ def raise_max_tries_exceeded(details: backoff.types.Details) -> None:
 class BaseUiForm:
     """Base class for UiForm clients that handles authentication and configuration.
 
+    This class provides core functionality for API authentication, configuration, and common HTTP operations
+    used by both synchronous and asynchronous clients.
+
     Args:
-        api_key (Optional[str]): UiForm API key. If not provided, will look for UIFORM_API_KEY env variable.
-        base_url (Optional[str]): Base URL for API requests. Defaults to https://api.uiform.com
+        api_key (str, optional): UiForm API key. If not provided, will look for UIFORM_API_KEY env variable.
+        base_url (str, optional): Base URL for API requests. Defaults to https://api.uiform.com
         timeout (float): Request timeout in seconds. Defaults to 240.0
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
-        openai_api_key (Optional[str]): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
-        claude_api_key (Optional[str]): Claude API key. Will look for CLAUDE_API_KEY env variable if not provided
-        xai_api_key (Optional[str]): XAI API key. Will look for XAI_API_KEY env variable if not provided
-        gemini_api_key (Optional[str]): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
+        openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
+        claude_api_key (str, optional): Claude API key. Will look for CLAUDE_API_KEY env variable if not provided
+        xai_api_key (str, optional): XAI API key. Will look for XAI_API_KEY env variable if not provided
+        gemini_api_key (str, optional): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
+
+    Raises:
+        ValueError: If no API key is provided through arguments or environment variables
     """
     def __init__(
         self,
@@ -100,11 +106,37 @@ class BaseUiForm:
             raise RuntimeError(f"Validation error: {response_object.json()}")
         elif not response_object.is_success:
             raise RuntimeError(f"Request failed: {response_object}")
+        
+    def _get_headers(self, idempotency_key: str | None = None) -> dict[str, Any]:
+        headers = self.headers.copy()
+        if idempotency_key:
+            headers["Idempotency-Key"] = idempotency_key
+        return headers
 
 class UiForm(BaseUiForm):
     """Synchronous client for interacting with the UiForm API.
     
-    Provides access to all UiForm API resources through synchronous methods.
+    This client provides synchronous access to all UiForm API resources including files, fine-tuning,
+    prompt optimization, documents, models, datasets, and schemas.
+
+    Args:
+        api_key (str, optional): UiForm API key. If not provided, will look for UIFORM_API_KEY env variable.
+        base_url (str, optional): Base URL for API requests. Defaults to https://api.uiform.com
+        timeout (float): Request timeout in seconds. Defaults to 240.0
+        max_retries (int): Maximum number of retries for failed requests. Defaults to 3
+        openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
+        claude_api_key (str, optional): Claude API key. Will look for CLAUDE_API_KEY env variable if not provided
+        xai_api_key (str, optional): XAI API key. Will look for XAI_API_KEY env variable if not provided
+        gemini_api_key (str, optional): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
+
+    Attributes:
+        files: Access to file operations
+        fine_tuning: Access to model fine-tuning operations
+        prompt_optimization: Access to prompt optimization operations
+        documents: Access to document operations
+        models: Access to model operations
+        datasets: Access to dataset operations
+        schemas: Access to schema operations
     """
     def __init__(
         self,
@@ -139,7 +171,7 @@ class UiForm(BaseUiForm):
         self.datasets = datasets.Datasets(client=self)
         self.schemas = schemas.Schemas(client=self)
     def _request(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None
+        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> Any:
         """Makes a synchronous HTTP request to the API.
 
@@ -147,6 +179,7 @@ class UiForm(BaseUiForm):
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
+            idempotency_key (str, optional): Idempotency key for request
 
         Returns:
             Any: Parsed JSON response
@@ -158,7 +191,7 @@ class UiForm(BaseUiForm):
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Any:
             response = self.client.request(
-                    method, self._prepare_url(endpoint), json=data, headers=self.headers
+                    method, self._prepare_url(endpoint), json=data, headers=self._get_headers(idempotency_key)
                 )
             self._validate_response(response)
 
@@ -167,7 +200,7 @@ class UiForm(BaseUiForm):
         return wrapped_request()
 
     def _request_stream(
-            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None
+            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> Iterator[Any]:
         """Makes a streaming synchronous HTTP request to the API.
 
@@ -175,7 +208,7 @@ class UiForm(BaseUiForm):
             method (str): HTTP method (GET, POST, etc.) 
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
-
+            idempotency_key (str, optional): Idempotency key for request
         Returns:
             Iterator[Any]: Generator yielding parsed JSON objects from the stream
 
@@ -184,7 +217,7 @@ class UiForm(BaseUiForm):
         """
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Iterator[Any]:
-            with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self.headers) as response_ctx_manager:
+            with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
                 
                 for chunk in response_ctx_manager.iter_lines():
@@ -222,7 +255,27 @@ class UiForm(BaseUiForm):
 class AsyncUiForm(BaseUiForm):
     """Asynchronous client for interacting with the UiForm API.
     
-    Provides access to all UiForm API resources through async methods.
+    This client provides asynchronous access to all UiForm API resources including files, fine-tuning,
+    prompt optimization, documents, models, datasets, and schemas.
+
+    Args:
+        api_key (str, optional): UiForm API key. If not provided, will look for UIFORM_API_KEY env variable.
+        base_url (str, optional): Base URL for API requests. Defaults to https://api.uiform.com
+        timeout (float): Request timeout in seconds. Defaults to 240.0
+        max_retries (int): Maximum number of retries for failed requests. Defaults to 3
+        openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
+        claude_api_key (str, optional): Claude API key. Will look for CLAUDE_API_KEY env variable if not provided
+        xai_api_key (str, optional): XAI API key. Will look for XAI_API_KEY env variable if not provided
+        gemini_api_key (str, optional): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
+
+    Attributes:
+        files: Access to asynchronous file operations
+        fine_tuning: Access to asynchronous model fine-tuning operations
+        prompt_optimization: Access to asynchronous prompt optimization operations
+        documents: Access to asynchronous document operations
+        models: Access to asynchronous model operations
+        datasets: Access to asynchronous dataset operations
+        schemas: Access to asynchronous schema operations
     """
     def __init__(
         self,
@@ -257,7 +310,7 @@ class AsyncUiForm(BaseUiForm):
         self.schemas = schemas.AsyncSchemas(client=self)
 
     async def _request(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None
+        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> Any:
         """Makes an asynchronous HTTP request to the API.
 
@@ -265,7 +318,7 @@ class AsyncUiForm(BaseUiForm):
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
-
+            idempotency_key (str, optional): Idempotency key for request
         Returns:
             Any: Parsed JSON response
 
@@ -275,7 +328,7 @@ class AsyncUiForm(BaseUiForm):
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> Any:
             response = await self.client.request(
-                    method, self._prepare_url(endpoint), json=data, headers=self.headers
+                    method, self._prepare_url(endpoint), json=data, headers=self._get_headers(idempotency_key)
                 )
             self._validate_response(response)
 
@@ -284,7 +337,7 @@ class AsyncUiForm(BaseUiForm):
         return await wrapped_request()
         
     async def _request_stream(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None
+        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> AsyncIterator[Any]:
         """Makes a streaming asynchronous HTTP request to the API.
 
@@ -292,7 +345,7 @@ class AsyncUiForm(BaseUiForm):
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
-
+            idempotency_key (str, optional): Idempotency key for request
         Returns:
             AsyncIterator[Any]: Async generator yielding parsed JSON objects from the stream
 
@@ -301,7 +354,7 @@ class AsyncUiForm(BaseUiForm):
         """
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> AsyncIterator[Any]:
-            async with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self.headers) as response_ctx_manager:
+            async with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
                 async for chunk in response_ctx_manager.aiter_lines():
                     if not chunk: continue

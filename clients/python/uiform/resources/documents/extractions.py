@@ -96,6 +96,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
+        idempotency_key: str | None = None,
     ) -> DocumentExtractResponse:
         """
         Process a document using the UiForm API.
@@ -106,7 +107,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             model: The AI model to use for processing
             temperature: Model temperature setting (0-1)
             text_operations: Optional context with regex instructions or other metadata
-
+            idempotency_key: Idempotency key for request
         Returns:
             DocumentAPIResponse
         Raises:
@@ -115,7 +116,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality)
-        response = self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump())
+        response = self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
     @as_context_manager
@@ -128,6 +129,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
+        idempotency_key: str | None = None,
     ) -> Generator[DocumentExtractResponse, None, None]:
         """
         Process a document using the UiForm API with streaming enabled.
@@ -156,7 +158,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
 
         # Request the stream and return a context manager
         chunk_json: Any = None
-        for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump()):
+        for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:
                 continue
             yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
@@ -175,6 +177,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
+        idempotency_key: str | None = None,
     ) -> DocumentExtractResponse:
         """
         Extract structured data from a document asynchronously.
@@ -191,7 +194,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             DocumentExtractResponse: Parsed response from the API.
         """
         request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality)
-        response = await self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump())
+        response = await self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
     @as_async_context_manager
@@ -204,6 +207,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
+        idempotency_key: str | None = None,
     ) -> AsyncGenerator[DocumentExtractResponse, None]:
         """
         Extract structured data from a document asynchronously with streaming.
@@ -215,7 +219,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             model: The AI model to use.
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
-
+            idempotency_key: Idempotency key for request
         Returns:
             AsyncGenerator[DocumentExtractResponse, None]: Stream of parsed responses.
 
@@ -228,7 +232,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         """
         request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality)
         chunk_json: Any = None
-        async for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump()):
+        async for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:
                 continue
             

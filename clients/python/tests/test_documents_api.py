@@ -1,5 +1,7 @@
 import pytest
 import json
+import uuid
+import time
 from typing import Literal, get_args, Any
 from pydantic import BaseModel
 from uiform import UiForm, AsyncUiForm
@@ -144,3 +146,32 @@ async def test_extract_google(client_type: ClientType, response_mode: ResponseMo
         booking_confirmation_file_path=booking_confirmation_file_path,
         booking_confirmation_json_schema=booking_confirmation_json_schema
     )
+
+
+
+@pytest.mark.asyncio
+async def test_extraction_with_idempotency(sync_client: UiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
+    client = sync_client
+    idempotency_key = str(uuid.uuid4())
+    response_initial = client.documents.extractions.parse(
+        json_schema=booking_confirmation_json_schema,
+        document=booking_confirmation_file_path,
+        model="gpt-4o-mini",
+        modality="native",
+        idempotency_key=idempotency_key
+    )
+    t0 = time.time()
+    time.sleep(1)
+    response_second = client.documents.extractions.parse(
+        json_schema=booking_confirmation_json_schema,
+        document=booking_confirmation_file_path,
+        model="gpt-4o-mini",
+        modality="native",
+        idempotency_key=idempotency_key
+    )
+    t1 = time.time()
+    assert t1 - t0 < 5, "Request should take less than 5 seconds"
+    assert response_initial.choices[0].message.content == response_second.choices[0].message.content, "Response should be the same"
+    assert response_initial.choices[0].message.parsed is not None, "Parsed response should not be None for the first request"
+    assert response_second.choices[0].message.parsed is not None, "Parsed response should not be None for the second request"
+    assert response_initial.choices[0].message.parsed.model_dump() == response_second.choices[0].message.parsed.model_dump(), "Parsed response should be the same"
