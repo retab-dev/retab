@@ -105,7 +105,7 @@ class BaseUiForm:
         elif response_object.status_code == 422:
             raise RuntimeError(f"Validation error: {response_object.json()}")
         elif not response_object.is_success:
-            raise RuntimeError(f"Request failed: {response_object}")
+            raise RuntimeError(f"Request failed: {response_object.json()}")
         
     def _get_headers(self, idempotency_key: str | None = None) -> dict[str, Any]:
         headers = self.headers.copy()

@@ -2,6 +2,7 @@ from typing import Any
 from pathlib import Path
 from io import IOBase
 from ...types.modalities import Modality
+from ...types.mime import MIMEData
 from ..._utils.mime import prepare_mime_document
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
@@ -10,7 +11,7 @@ from .extractions import Extractions, AsyncExtractions
 class BaseDocumentsMixin:
     def _prepare_create_messages(
         self,
-        document: Path | str | IOBase, 
+        document: Path | str | IOBase | MIMEData, 
         modality: Modality = "native", 
         text_operations: dict[str, Any] | None = None
     ) -> DocumentCreateMessageRequest:
@@ -37,7 +38,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         # self.batch = Batch(client=client)
 
     def create_messages(self, 
-            document: Path | str | IOBase, 
+            document: Path | str | IOBase | MIMEData, 
             modality: Modality = "native", 
             text_operations: dict[str, Any] | None = None) -> DocumentMessage:
         """
@@ -68,7 +69,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self.extractions = AsyncExtractions(client=client)
 
     async def create_messages(self, 
-            document: Path | str | IOBase, 
+            document: Path | str | IOBase | MIMEData, 
             modality: Modality = "native",
             text_operations: dict[str, Any] | None = None) -> DocumentMessage:
         """

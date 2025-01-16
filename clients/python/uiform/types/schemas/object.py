@@ -168,7 +168,7 @@ class Schema(BaseModel):
         Returns:
             str: The combined system prompt string.
         """
-        return self.json_schema.get("X-SystemPrompt", "") + "\n" + self.inference_typescript_interface
+        return self.json_schema.get("X-SystemPrompt", "") + "\nThis is the expected output schema (as an TypeScript interface for better readability) with useful prompts added as comments :\n" + self.inference_typescript_interface
     
     @property
     def title(self) -> str:
@@ -270,7 +270,7 @@ class Schema(BaseModel):
         while index < len(parts):
             part = parts[index]
 
-            if part == "*":
+            if part == "*" or part.isdigit():
                 # Handle wildcard case for arrays
                 if "items" in current_schema:
                     current_schema = current_schema["items"]
@@ -317,7 +317,7 @@ class Schema(BaseModel):
         index = 0  # Index for the parts list
         while index < len(parts):
             part = parts[index]
-            if part == "*":
+            if part == "*" or part.isdigit():
                 # Handle the array case
                 if "items" in current_schema:
                     current_schema = current_schema["items"]

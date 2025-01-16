@@ -1,15 +1,16 @@
-from typing import Any, Optional, Generator, AsyncGenerator
-from pathlib import Path
 from io import IOBase
+from pathlib import Path
+from typing import Any, AsyncGenerator, Generator, Optional
 
-from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
-from ...types.modalities import Modality
-from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ..._utils.mime import prepare_mime_document
-from ..._utils.json_schema import load_json_schema, filter_reasoning_fields_json
+from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_model import assert_valid_model_extraction
+from ..._utils.json_schema import filter_reasoning_fields_json, load_json_schema
+from ..._utils.mime import prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ..._resource import SyncAPIResource, AsyncAPIResource
+from ...types.documents.create_messages import ChatCompletionUiformMessage
+from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
+from ...types.mime import MIMEData
+from ...types.modalities import Modality
 
 
 def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse:
@@ -27,7 +28,7 @@ class BaseExtractionsMixin:
     def prepare_extraction(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | None,
+        document: Path | str | IOBase | MIMEData | None,
         text_operations: Optional[dict[str, Any]],
         model: str,
         temperature: float | None,
@@ -56,7 +57,7 @@ class BaseExtractionsMixin:
     def prepare_parse(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | None,
+        document: Path | str | IOBase | MIMEData | None,
         text_operations: Optional[dict[str, Any]],
         model: str,
         temperature: float,
@@ -70,7 +71,7 @@ class BaseExtractionsMixin:
     def prepare_stream(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase,
+        document: Path | str | IOBase | MIMEData | None,
         text_operations: Optional[dict[str, Any]],
         model: str,
         temperature: float,
@@ -89,7 +90,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
     def parse(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | None,
+        document: Path | str | IOBase | MIMEData | None,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
@@ -124,7 +125,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
     def stream(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase,
+        document: Path | str | IOBase | MIMEData | None,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
@@ -172,7 +173,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
     async def parse(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase,
+        document: Path | str | IOBase | MIMEData | None,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
@@ -202,7 +203,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
     async def stream(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase,
+        document: Path | str | IOBase | MIMEData | None,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,

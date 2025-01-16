@@ -35,7 +35,7 @@ T = TypeVar('T')
 
 
 
-def prepare_mime_document(document: Path | str | bytes | io.IOBase) -> MIMEData:
+def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData) -> MIMEData:
     """
     Convert documents (file paths or file-like objects) to MIMEData objects.
     
@@ -45,6 +45,9 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase) -> MIMEData:
     Returns:
         A MIMEData object
     """
+
+    if isinstance(document, MIMEData):
+        return document
 
     if isinstance(document, bytes):
         # `document` is already the raw bytes

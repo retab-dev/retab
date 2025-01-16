@@ -352,6 +352,10 @@ class DocumentMessage(BaseModel):
         results: list[str | PIL.Image.Image] = []
         
         for msg in self.messages:
+            if isinstance(msg["content"], str):
+                results.append(msg["content"])
+                continue
+            assert isinstance(msg["content"], list), "content must be a list or a string"
             for content_item in msg["content"]:
                 if isinstance(content_item, str):
                     results.append(content_item)

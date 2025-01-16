@@ -46,4 +46,8 @@ phonenumbers
 email_validator
 python-stdnum
 
+########################
+## Plotting dependencies
+########################
+termplotlib
 
