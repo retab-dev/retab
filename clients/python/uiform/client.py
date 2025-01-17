@@ -56,7 +56,8 @@ class BaseUiForm:
 
         if api_key is None:
             raise ValueError(
-                "The api_key client option must be set either by passing api_key to the client or by setting the UIFORM_API_KEY environment variable"
+                "No API key provided. You can create an API key at https://uiform.com\n"
+                "Then either pass it to the client (api_key='your-key') or set the UIFORM_API_KEY environment variable"
             )
 
         if base_url is None:    

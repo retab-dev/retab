@@ -1,5 +1,6 @@
 import asyncio
-from typing import IO, Any, Optional, Literal
+from typing import IO, Any, Optional, TypedDict
+import re
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import time
@@ -9,20 +10,22 @@ from tqdm import tqdm
 from io import IOBase
 
 from .._utils.json_schema import load_json_schema, filter_reasoning_fields_json
-from .._utils.ai_model import assert_valid_model_extraction
+from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
 from .._utils.display import display_metrics, process_dataset_and_compute_metrics, Metrics
 from ..types.modalities import Modality
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage, convert_to_openai_format
 from ..types.schemas.object import Schema
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .benchmarking import analyze_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics
+
 from openai import OpenAI
-
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
+from openai.types.chat.chat_completion import ChatCompletion
 
-from typing import TypedDict
+from anthropic import Anthropic
+from anthropic.types.message import Message
 
-import re
 
 class FinetuningJSONL(TypedDict):
     messages: list[ChatCompletionUiformMessage]
@@ -273,7 +276,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         with open(batch_requests_path, 'w', encoding='utf-8') as f:
             for i, doc in tqdm(enumerate(documents)):
                 # Create document messages
-                msg_obj = self._client.documents.create_messages(
+                doc_msg = self._client.documents.create_messages(
                     document=doc,
                     text_operations=text_operations,
                     modality=modality,
@@ -286,7 +289,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     "url": "/v1/chat/completions",
                     "body": {
                         "model": model,
-                        "messages": schema_obj.openai_messages + msg_obj.openai_messages + convert_to_openai_format(messages),
+                        "messages": schema_obj.openai_messages + doc_msg.openai_messages + convert_to_openai_format(messages),
                         "temperature": temperature,
                         "response_format": {
                             "type": "json_schema",
@@ -402,7 +405,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     #############################
 
     # Normal methods
-
     def annotate_openai(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -467,7 +469,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 raise ValueError(f"Unsupported document type: {type(doc)}")
 
             # Extract results
-            msg_obj = self._client.documents.create_messages(
+            doc_msg = self._client.documents.create_messages(
                 document=doc, 
                 text_operations=text_operations,
                 modality=modality,
@@ -476,7 +478,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             completion = openai_client.beta.chat.completions.parse(
                 model=model,
                 temperature=temperature,
-                messages=schema_obj.openai_messages + msg_obj.openai_messages,
+                messages=schema_obj.openai_messages + doc_msg.openai_messages,
                 response_format=schema_obj.inference_pydantic_model
             )
 
@@ -535,6 +537,31 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     ) -> None:
         json_schema = load_json_schema(json_schema)
         assert_valid_model_extraction(model)
+
+        if find_provider_from_model(model) == "OpenAI": 
+            openai_client = OpenAI(
+                api_key=self._client.headers["OpenAI-Api-Key"]
+            )
+        elif find_provider_from_model(model) == "xAI":
+            openai_client = OpenAI(
+                api_key=self._client.headers["xAI-Api-Key"],
+                base_url="https://api.x.ai/v1"
+            )
+        elif find_provider_from_model(model) == "Gemini":
+            openai_client = OpenAI(
+                api_key=self._client.headers["Gemini-Api-Key"],
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            )
+        else:
+            assert find_provider_from_model(model) == "Anthropic", f"Unsupported model: {model}"
+            anthropic_client = Anthropic(
+                api_key=self._client.headers["Anthropic-Api-Key"]
+            )
+
+        schema_obj = Schema(
+            json_schema=json_schema
+        )
+
         """
         Generate annotations from document files or in-memory documents
         and create a JSONL training set in one go.
@@ -575,26 +602,85 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             else:
                 raise ValueError(f"Unsupported document type: {type(doc)}")
 
-            # Extract results
-            result = self._client.documents.extractions.parse(
-                json_schema=json_schema,
-                document=doc,  # pass the actual Path to .extract
+
+            doc_msg = self._client.documents.create_messages(
+                document=doc, 
                 text_operations=text_operations,
-                model=model,
-                temperature=temperature,
-                messages=messages,
                 modality=modality,
             )
-            if result.choices[0].message.content is None:
-                print(f"Failed to extract content from {doc_path}")
-                return {"document_fpath": str(doc_path), "annotation_fpath": None}
-            
-            annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
+            # Extract results
+            # We use directly the openAI client
+            if find_provider_from_model(model) == "OpenAI" or find_provider_from_model(model) == "xAI": 
+                
+                completion: ChatCompletion | Message = openai_client.chat.completions.create(
+                    model=model,
+                    temperature=temperature,
+                    messages=schema_obj.openai_messages + doc_msg.openai_messages,
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": schema_obj.schema_version,
+                            "schema": schema_obj.inference_json_schema,
+                            "strict": True
+                        }
+                    }
+                )
+                assert completion.choices[0].message.content is not None, "Failed to extract content from {doc_path}"
+                string_json = completion.choices[0].message.content
 
+            elif find_provider_from_model(model) == "Gemini":
+                completion = openai_client.chat.completions.create(
+                    model=model,
+                    temperature=temperature,
+                    messages=schema_obj.openai_messages + doc_msg.openai_messages,
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": schema_obj.schema_version,
+                            "schema": schema_obj.inference_gemini_json_schema,
+                            "strict": True
+                        }
+                    }
+                )
+                assert completion.choices[0].message.content is not None, "Failed to extract content from {doc_path}"
+                string_json = completion.choices[0].message.content
+
+            else: 
+                # Using Anthropic's JSON mode
+                completion = anthropic_client.messages.create(
+                    model="claude-3-5-sonnet-20241022",
+                    max_tokens=1000,
+                    temperature=0,
+                    system=schema_obj.anthropic_system_prompt,
+                    messages=schema_obj.anthropic_messages + doc_msg.anthropic_messages
+                )
+
+                from anthropic.types.text_block import TextBlock
+                assert isinstance(completion.content[0], TextBlock)
+                string_json = completion.content[0].text
+
+
+            """else: 
+                completion = self._client.documents.extractions.parse(
+                    json_schema=json_schema,
+                    document=doc,  # pass the actual Path to .extract
+                    text_operations=text_operations,
+                    model=model,
+                    temperature=temperature,
+                    messages=messages,
+                    modality=modality,
+                )
+                if completion.choices[0].message.content is None:
+                    print(f"Failed to extract content from {doc_path}")
+                    return {"document_fpath": str(doc_path), "annotation_fpath": None}
+            """
+            
+                
+            annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
             annotation_path.parent.mkdir(parents=True, exist_ok=True)
 
             with open(annotation_path, 'w', encoding='utf-8') as f:
-                json.dump(result.choices[0].message.content, f, ensure_ascii=False, indent=2)
+                json.dump(string_json, f, ensure_ascii=False, indent=2)
 
             return {"document_fpath": str(doc_path), "annotation_fpath": str(annotation_path)}
 

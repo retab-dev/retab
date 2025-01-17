@@ -96,7 +96,7 @@ class UiParsedChoice(Choice):
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None     # type: ignore
 
 
-class UiParsedChatCompletion(ChatCompletion): 
+class UiParsedChatCompletion(ParsedChatCompletion): 
     choices: List[UiParsedChoice]   # type: ignore[assignment]
 
     # Additional metadata fields (UIForm)
