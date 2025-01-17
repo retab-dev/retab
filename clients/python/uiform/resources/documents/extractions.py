@@ -17,9 +17,9 @@ def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentE
     if response.choices[0].message.content:
         try:
             if allow_partial:
-                response.choices[0].message.parsed = request.form_schema._partial_pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content, request.form_schema._partial_pydantic_model))
+                response.choices[0].message.parsed = request.form_schema._partial_pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content))
             else:
-                response.choices[0].message.parsed = request.form_schema.pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content, request.form_schema.pydantic_model))
+                response.choices[0].message.parsed = request.form_schema.pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content))
         except Exception as e: 
             pass
     return response

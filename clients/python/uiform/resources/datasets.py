@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 from io import IOBase
 
-from .._utils.json_schema import load_json_schema, filter_reasoning_fields_json
+from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
 from .._utils.display import display_metrics, process_dataset_and_compute_metrics, Metrics
 from ..types.modalities import Modality
@@ -103,9 +103,25 @@ class BaseDatasetsMixin:
 class Datasets(SyncAPIResource, BaseDatasetsMixin):
     """Datasets API wrapper"""
 
-    # TODO : Maybe at some point we could add some visualization methods... but the multimodality makes it hard...
-    # client.datasets.plot.tsne()...
-    # client.datasets.plot.umap()...
+    
+    # TODO : Maybe at some point we could add some visualization methods... but the multimodality makes it hard... # client.datasets.plot.tsne()... # client.datasets.plot.umap()...
+    def pprint(self, jsonl_path: Path, output_path: Path = Path("annotations")) -> Metrics:
+        """Print a summary of the contents and statistics of a JSONL file.
+
+        This method analyzes the JSONL file and displays various metrics and statistics
+        about the dataset contents.
+
+        Inspired from : https://gist.github.com/nmwsharp/54d04af87872a4988809f128e1a1d233
+
+        Args:
+            jsonl_path: Path to the JSONL file to analyze
+            output_path: Directory where to save any generated reports
+        """
+
+        computed_metrics = process_dataset_and_compute_metrics(jsonl_path)
+        display_metrics(computed_metrics)
+        return computed_metrics
+
 
     def save(
         self,
@@ -151,40 +167,396 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             
 
         self._dump_training_set(training_set, jsonl_path)
+   
 
+    def stich_and_save(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        pairs_paths: list[dict[str, Path | str | list[Path | str] | list[str] | list[Path]]],
+        jsonl_path: Path | str,
+        text_operations: Optional[dict[str, Any]] = None,
+        modality: Modality = "native",
+        messages: list[ChatCompletionUiformMessage] = [],
+    ) -> None:        
+        
+        """Stitch multiple documents and their annotations into a JSONL training set.
+
+        This method processes and combines multiple documents into messages, creating document-annotation
+        pairs that are saved to a JSONL file. Each document is processed according to the specified
+        modality and combined with its corresponding annotation.
+
+
+        Args:
+            json_schema: The JSON schema for validation, can be a dict, Path, or string
+            pairs_paths: List of dictionaries containing document and annotation file paths
+            jsonl_path: Output path for the JSONL training file
+            text_operations: Optional context for prompting
+            modality: The modality to use for document processing ("native" by default)
+            messages: List of additional chat messages to include
+        """
+
+        json_schema = load_json_schema(json_schema)
+        training_set = []
+
+        for pair_paths in tqdm(pairs_paths):
+            document_messages: list[ChatCompletionUiformMessage] = []
+            
+            if isinstance(pair_paths['document_fpath'], str) or isinstance(pair_paths['document_fpath'], Path):
+                document_message = self._client.documents.create_messages(
+                    document=pair_paths['document_fpath'], 
+                    modality=modality, 
+                    text_operations=text_operations
+                )
+                document_messages.extend(document_message.messages)
+
+            else: 
+                assert isinstance(pair_paths['document_fpath'], list)
+                for document_fpath in pair_paths['document_fpath']:
+                    document_message = self._client.documents.create_messages(
+                        document=document_fpath, 
+                        modality=modality, 
+                        text_operations=text_operations
+                    )
+                    document_messages.extend(document_message.messages)
+            
+            # Use context manager to properly close the file
+            assert isinstance(pair_paths['annotation_fpath'], Path) or isinstance(pair_paths['annotation_fpath'], str)
+            with open(pair_paths['annotation_fpath'], 'r') as f:
+                annotation = json.loads(f.read())
+            assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
+
+            # Add the complete message set as an entry
+            training_set.append({"messages": document_messages + messages + [assistant_message]})
+
+        self._dump_training_set(training_set, jsonl_path)
+
+    #########################################
+    ##### ENDPOINTS THAT MAKE LLM CALLS #####
+    #########################################
+
+    def _initialize_model_client(self, model: str) -> tuple[OpenAI | Anthropic, str]:
+        """Initialize the appropriate client based on the model provider.
+        
+        Args:
+            model: The model identifier string
+            
+        Returns:
+            A tuple of (client instance, provider type string)
+        """
+        provider = find_provider_from_model(model)
+        
+        if provider == "OpenAI":
+            return OpenAI(api_key=self._client.headers["OpenAI-Api-Key"]), provider
+        elif provider == "xAI":
+            return OpenAI(
+                api_key=self._client.headers["xAI-Api-Key"],
+                base_url="https://api.x.ai/v1"
+            ), provider
+        elif provider == "Gemini":
+            return OpenAI(
+                api_key=self._client.headers["Gemini-Api-Key"],
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            ), provider
+        else:
+            assert provider == "Anthropic", f"Unsupported model: {model}"
+            return Anthropic(api_key=self._client.headers["Anthropic-Api-Key"]), provider
+
+    def _get_model_completion(
+        self,
+        client: OpenAI | Anthropic,
+        provider: str,
+        model: str,
+        temperature: float,
+        messages: list[Any],
+        schema_obj: Schema,
+    ) -> str:
+        """Get completion from the appropriate model provider.
+        
+        Args:
+            client: The initialized client instance
+            provider: The provider type string
+            model: The model identifier
+            temperature: Temperature setting for generation
+            messages: The messages to send to the model
+            schema_obj: The schema object containing format information
+            
+        Returns:
+            The completion string in JSON format
+        """
+        if provider in ["OpenAI", "xAI"]:
+            assert isinstance(client, OpenAI)
+            completion = client.chat.completions.create(
+                model=model,
+                temperature=temperature,
+                messages=messages,
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": schema_obj.schema_version,
+                        "schema": schema_obj.inference_json_schema,
+                        "strict": True
+                    }
+                }
+            )
+            assert completion.choices[0].message.content is not None
+            return completion.choices[0].message.content
+        
+        elif provider == "Gemini":
+            assert isinstance(client, OpenAI)
+            completion = client.chat.completions.create(
+                model=model,
+                temperature=temperature,
+                messages=messages,
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": schema_obj.schema_version,
+                        "schema": schema_obj.inference_gemini_json_schema,
+                        "strict": True
+                    }
+                }
+            )
+            assert completion.choices[0].message.content is not None
+            return completion.choices[0].message.content
+        
+        else:  # Anthropic
+            assert isinstance(client, Anthropic)
+            anthropic_completion = client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=8192,
+                temperature=temperature,
+                system=schema_obj.anthropic_system_prompt,
+                messages=messages
+            )
+            from anthropic.types.text_block import TextBlock
+            assert isinstance(anthropic_completion.content[0], TextBlock)
+            return anthropic_completion.content[0].text
+
+    def annotate(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        documents: list[Path | str | IOBase],
+        jsonl_path: Path,
+        text_operations: Optional[dict[str, Any]] = None,
+        model: str = "gpt-4o-2024-08-06",
+        temperature: float = 0,
+        messages: list[ChatCompletionUiformMessage] = [],
+        batch_size: int = 5,
+        max_concurrent: int = 3,
+        root_dir: Path = Path("annotations"),
+        modality: Modality = "native",
+    ) -> None:
+        json_schema = load_json_schema(json_schema)
+        assert_valid_model_extraction(model)
+
+        client, provider = self._initialize_model_client(model)
+        schema_obj = Schema(
+            json_schema=json_schema
+        )
+
+        """
+        Generate annotations from document files or in-memory documents
+        and create a JSONL training set in one go.
+
+        Args:
+            json_schema: The JSON schema for validation
+            documents: list of documents, each can be a Path/str or an IOBase object
+            jsonl_path: Output path for the JSONL training file
+            text_operations: Optional context for prompting
+            model: The model to use for processing
+            temperature: Model temperature (0-1)
+            batch_size: Number of examples to process in each batch
+            max_concurrent: Maximum number of concurrent API calls
+            root_dir: Where to store the per-document JSON annotations
+        """
+
+        def process_example(doc: Path | str | IOBase) -> dict[str, Any]:
+            """
+            Process a single document (either a file path or an in-memory file-like object).
+            Returns a dict with pointers to the original doc and the stored annotation JSON.
+            """
+            if isinstance(doc, (str, Path)):
+                doc_path = Path(doc)
+                if not doc_path.is_file():
+                    raise ValueError(f"Invalid file path: {doc_path}")
+                hash_str = hashlib.md5(doc_path.as_posix().encode()).hexdigest()
+            elif isinstance(doc, IO):
+                file_bytes = doc.read()
+                hash_str = hashlib.md5(file_bytes).hexdigest()
+                doc.seek(0)
+            else:
+                raise ValueError(f"Unsupported document type: {type(doc)}")
+
+            doc_msg = self._client.documents.create_messages(
+                document=doc, 
+                text_operations=text_operations,
+                modality=modality,
+            )
+
+            # Use _get_model_completion instead of duplicating provider-specific logic
+            string_json = self._get_model_completion(
+                client=client,
+                provider=provider,
+                model=model,
+                temperature=temperature,
+                messages=schema_obj.openai_messages + doc_msg.openai_messages,
+                schema_obj=schema_obj
+            )
+            
+            annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
+            annotation_path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(annotation_path, 'w', encoding='utf-8') as f:
+                json.dump(string_json, f, ensure_ascii=False, indent=2)
+
+            return {"document_fpath": str(doc_path), "annotation_fpath": str(annotation_path)}
+
+
+        # Make sure output directory exists
+        Path(root_dir).mkdir(parents=True, exist_ok=True)
+
+        pairs_paths: list[dict[str, Path | str]] = []
+        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+            futures = []
+            # Split documents into batches
+            for batch in tqdm([documents[i : i + batch_size] for i in range(0, len(documents), batch_size)], desc="Processing batches"):
+                # Submit batch of tasks
+                batch_futures = [executor.submit(process_example, doc) for doc in batch]
+                futures.extend(batch_futures)
+
+                # Wait for batch to finish (rate limit)
+                for future in batch_futures:
+                    pair = future.result()
+                    pairs_paths.append(pair)
+                time.sleep(1)  # simple rate-limiting pause between batches
+
+        # Generate final training set from all results
+        self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
+
+    def benchmark(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        jsonl_path: Path,
+        model: str = "gpt-4o-2024-08-06",
+        temperature: float = 0, 
+        batch_size: int = 5,
+        max_concurrent: int = 3,
+        #metric: Literal["Levenstein", "Jaccard", "Accuracy"] = "Accuracy", # TODO
+    ) -> ComparisonMetrics:
+        
+        """Benchmark model performance on a test dataset.
+
+        ### IMPORTANT : TODO: CHECK THAT
+        ### THIS HAS TO BE DONE ONLY FOR THE NORMAL FIELDS. REASONING FIELDS HAVE TO BE REMOVED
+
+        Args:
+            json_schema: JSON schema defining the expected data structure
+            jsonl_path: Path to the JSONL file containing test examples
+            model: The model to use for benchmarking
+            temperature: Model temperature setting (0-1)
+            text_operations: Optional context with regex instructions
+            batch_size: Number of examples to process in each batch
+            max_concurrent: Maximum number of concurrent API calls
+        """
+        
+        json_schema = load_json_schema(json_schema)
+        assert_valid_model_extraction(model)
+        schema_obj = Schema(json_schema=json_schema)
+
+        # Initialize appropriate client
+        client, provider = self._initialize_model_client(model)
+
+        # Read all lines from the JSONL file
+        with open(jsonl_path, 'r') as f:
+            lines = [json.loads(line) for line in f]
+        
+        extraction_analyses: list[ExtractionAnalysis] = []
+        total_batches = (len(lines) + batch_size - 1) // batch_size
+
+        # Create main progress bar for batches
+        batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
+
+        def process_example(jsonline: dict) -> ExtractionAnalysis:
+            messages = jsonline['messages']
+            ground_truth = json.loads(messages[-1]['content'])
+            inference_messages = messages[:-1]
+
+            # Use _get_model_completion instead of duplicating provider-specific logic
+            string_json = self._get_model_completion(
+                client=client,
+                provider=provider,
+                model=model,
+                temperature=temperature,
+                messages=schema_obj.openai_messages + inference_messages,
+                schema_obj=schema_obj
+            )
+            
+            prediction = json.loads(string_json)
+
+            return ExtractionAnalysis(
+                ground_truth=ground_truth,
+                prediction=prediction,
+            )
+
+        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+            # Split entries into batches
+            for batch_idx in range(0, len(lines), batch_size):
+                batch = lines[batch_idx:batch_idx + batch_size]
+                
+                # Submit and process batch
+                futures = [executor.submit(process_example, entry) for entry in batch]
+                for future in futures:
+                    extraction_analyses.append(future.result())
+
+                batch_pbar.update(1)
+                time.sleep(1)  # Rate limiting between batches
+
+        batch_pbar.close()
+
+        # Analyze error patterns across all examples
+        analysis = analyze_comparison_metrics(extraction_analyses)
+        plot_comparison_metrics(
+            analysis=analysis, 
+            top_n=10
+        )
+
+        return analysis
 
     def update_annotations(
-            self, 
-            json_schema: dict[str, Any] | Path | str,
-            jsonl_path: Path, 
-            save_path: Path,
-            model: str = "gpt-4o-2024-08-06",
-            temperature: float = 0,
-            batch_size: int = 5,
-            max_concurrent: int = 3,
-            ) -> None:
+        self, 
+        json_schema: dict[str, Any] | Path | str,
+        jsonl_path: Path, 
+        save_path: Path,
+        model: str = "gpt-4o-2024-08-06",
+        temperature: float = 0,
+        batch_size: int = 5,
+        max_concurrent: int = 3,
+        ) -> None:
         """Update annotations in a JSONL file using a new model.
         
         Args:
             json_schema: The JSON schema for validation
             jsonl_path: Path to the JSONL file to update
+            save_path: Path for saving updated annotations
             model: The model to use for new annotations
             temperature: Model temperature (0-1)
             batch_size: Number of examples to process in each batch
             max_concurrent: Maximum number of concurrent API calls
-            modality: The modality to use for processing
         """
         json_schema = load_json_schema(json_schema)
         assert_valid_model_extraction(model)
+        schema_obj = Schema(json_schema=json_schema)
+
+        # Initialize appropriate client
+        client, provider = self._initialize_model_client(model)
         
         # Read all lines from the JSONL file
         with open(jsonl_path, 'r') as f:
             lines = [json.loads(line) for line in f]
         
         updated_entries = []
-        total_batches = (len(lines) + batch_size - 1) // batch_size  # Calculate total number of batches
+        total_batches = (len(lines) + batch_size - 1) // batch_size
         
-        # Create main progress bar for batches
         batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
         
         def process_entry(entry: dict) -> dict:
@@ -195,45 +567,34 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 "role": "user",
                 "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + messages[-1]['content']
             }
-            
-            result = self._client.documents.extractions.parse(
-                json_schema=json_schema,
-                document=None,
+
+            string_json = self._get_model_completion(
+                client=client,
+                provider=provider,
                 model=model,
                 temperature=temperature,
-                messages=system_and_user_messages + [previous_annotation_message]
+                messages=schema_obj.openai_messages + system_and_user_messages + [previous_annotation_message],
+                schema_obj=schema_obj
             )
-            
-            if result.choices[0].message.parsed is None:
-                print(f"Failed to update annotation for entry")
-                return entry
-            
-            new_assistant_message = {
-                "role": "assistant",
-                "content": result.choices[0].message.parsed.model_dump_json() 
-            }
-            return {"messages": system_and_user_messages + [new_assistant_message]}
+
+            return {"messages": system_and_user_messages + [{"role": "assistant", "content": string_json}]}
         
         with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
             futures = []
-            # Split entries into batches
             for batch_idx in range(0, len(lines), batch_size):
                 batch = lines[batch_idx:batch_idx + batch_size]
                 
-                # Submit batch of tasks
                 batch_futures = [executor.submit(process_entry, entry) for entry in batch]
                 futures.extend(batch_futures)
                 
-                # Wait for batch to complete
                 for future in batch_futures:
                     updated_entries.append(future.result())
                 
-                batch_pbar.update(1)  # Update batch progress
-                time.sleep(1)  # Rate limiting between batches
+                batch_pbar.update(1)
+                time.sleep(1)
         
-        batch_pbar.close()  # Close batch progress bar
+        batch_pbar.close()
         
-        # Write updated entries back to file
         with open(save_path, 'w') as f:
             for entry in updated_entries:
                 f.write(json.dumps(entry) + '\n')
@@ -404,340 +765,10 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     ##### END BATCH METHODS #####
     #############################
 
-    def annotate(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        documents: list[Path | str | IOBase],
-        jsonl_path: Path,
-        text_operations: Optional[dict[str, Any]] = None,
-        model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
-        messages: list[ChatCompletionUiformMessage] = [],
-        batch_size: int = 5,
-        max_concurrent: int = 3,
-        root_dir: Path = Path("annotations"),
-        modality: Modality = "native",
-    ) -> None:
-        json_schema = load_json_schema(json_schema)
-        assert_valid_model_extraction(model)
-
-        if find_provider_from_model(model) == "OpenAI": 
-            openai_client = OpenAI(
-                api_key=self._client.headers["OpenAI-Api-Key"]
-            )
-        elif find_provider_from_model(model) == "xAI":
-            openai_client = OpenAI(
-                api_key=self._client.headers["xAI-Api-Key"],
-                base_url="https://api.x.ai/v1"
-            )
-        elif find_provider_from_model(model) == "Gemini":
-            openai_client = OpenAI(
-                api_key=self._client.headers["Gemini-Api-Key"],
-                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-            )
-        else:
-            assert find_provider_from_model(model) == "Anthropic", f"Unsupported model: {model}"
-            anthropic_client = Anthropic(
-                api_key=self._client.headers["Anthropic-Api-Key"]
-            )
-
-        schema_obj = Schema(
-            json_schema=json_schema
-        )
-
-        """
-        Generate annotations from document files or in-memory documents
-        and create a JSONL training set in one go.
-
-        Args:
-            json_schema: The JSON schema for validation
-            documents: list of documents, each can be a Path/str or an IOBase object
-            jsonl_path: Output path for the JSONL training file
-            text_operations: Optional context for prompting
-            model: The model to use for processing
-            temperature: Model temperature (0-1)
-            batch_size: Number of examples to process in each batch
-            max_concurrent: Maximum number of concurrent API calls
-            root_dir: Where to store the per-document JSON annotations
-        """
-
-        def process_example(doc: Path | str | IOBase) -> dict[str, Any]:
-            """
-            Process a single document (either a file path or an in-memory file-like object).
-            Returns a dict with pointers to the original doc and the stored annotation JSON.
-            """
-            if isinstance(doc, (str, Path)):
-                # Handle path or string
-                doc_path = Path(doc)
-                if not doc_path.is_file():
-                    raise ValueError(f"Invalid file path: {doc_path}")
-                # Generate a unique filename for the annotation
-                hash_str = hashlib.md5(doc_path.as_posix().encode()).hexdigest()
-            elif isinstance(doc, IO):
-                # Handle in-memory file-like object
-                # 1) Read file content (but be careful with read pointer!)
-                file_bytes = doc.read()
-                hash_str = hashlib.md5(file_bytes).hexdigest()
-
-                # 2) Reset the file pointer to reuse `doc`
-                doc.seek(0)
-            
-            else:
-                raise ValueError(f"Unsupported document type: {type(doc)}")
-
-
-            doc_msg = self._client.documents.create_messages(
-                document=doc, 
-                text_operations=text_operations,
-                modality=modality,
-            )
-            # Extract results
-            # We use directly the openAI client
-            if find_provider_from_model(model) == "OpenAI" or find_provider_from_model(model) == "xAI": 
-                
-                completion: ChatCompletion = openai_client.chat.completions.create(
-                    model=model,
-                    temperature=temperature,
-                    messages=schema_obj.openai_messages + doc_msg.openai_messages,
-                    response_format={
-                        "type": "json_schema",
-                        "json_schema": {
-                            "name": schema_obj.schema_version,
-                            "schema": schema_obj.inference_json_schema,
-                            "strict": True
-                        }
-                    }
-                )
-                assert completion.choices[0].message.content is not None, "Failed to extract content from {doc_path}"
-                string_json = completion.choices[0].message.content
-
-            elif find_provider_from_model(model) == "Gemini":
-                completion = openai_client.chat.completions.create(
-                    model=model,
-                    temperature=temperature,
-                    messages=schema_obj.openai_messages + doc_msg.openai_messages,
-                    response_format={
-                        "type": "json_schema",
-                        "json_schema": {
-                            "name": schema_obj.schema_version,
-                            "schema": schema_obj.inference_gemini_json_schema,
-                            "strict": True
-                        }
-                    }
-                )
-                assert completion.choices[0].message.content is not None, "Failed to extract content from {doc_path}"
-                string_json = completion.choices[0].message.content
-
-            else: 
-                # Using Anthropic's JSON mode
-                anthropic_completion = anthropic_client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
-                    max_tokens=1000,
-                    temperature=0,
-                    system=schema_obj.anthropic_system_prompt,
-                    messages=schema_obj.anthropic_messages + doc_msg.anthropic_messages
-                )
-
-                from anthropic.types.text_block import TextBlock
-                assert isinstance(anthropic_completion.content[0], TextBlock)
-                string_json = anthropic_completion.content[0].text
-
-
-                
-            annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
-            annotation_path.parent.mkdir(parents=True, exist_ok=True)
-
-            with open(annotation_path, 'w', encoding='utf-8') as f:
-                json.dump(string_json, f, ensure_ascii=False, indent=2)
-
-            return {"document_fpath": str(doc_path), "annotation_fpath": str(annotation_path)}
-
-
-        # Make sure output directory exists
-        Path(root_dir).mkdir(parents=True, exist_ok=True)
-
-        pairs_paths: list[dict[str, Path | str]] = []
-        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-            futures = []
-            # Split documents into batches
-            for batch in tqdm([documents[i : i + batch_size] for i in range(0, len(documents), batch_size)], desc="Processing batches"):
-                # Submit batch of tasks
-                batch_futures = [executor.submit(process_example, doc) for doc in batch]
-                futures.extend(batch_futures)
-
-                # Wait for batch to finish (rate limit)
-                for future in batch_futures:
-                    pair = future.result()
-                    pairs_paths.append(pair)
-                time.sleep(1)  # simple rate-limiting pause between batches
-
-        # Generate final training set from all results
-        self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
-
-    def benchmark(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        jsonl_path: Path,
-        model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0, 
-        text_operations: Optional[dict[str, Any]] = None,
-        batch_size: int = 5,
-        max_concurrent: int = 3,
-        #metric: Literal["Levenstein", "Jaccard", "Accuracy"] = "Accuracy", # TODO
-    ) -> ComparisonMetrics:
-        
-        """Benchmark model performance on a test dataset.
-
-        ### IMPORTANT : TODO: CHECK THAT
-        ### THIS HAS TO BE DONE ONLY FOR THE NORMAL FIELDS. REASONING FIELDS HAVE TO BE REMOVED
-
-        Args:
-            json_schema: JSON schema defining the expected data structure
-            jsonl_path: Path to the JSONL file containing test examples
-            model: The model to use for benchmarking
-            temperature: Model temperature setting (0-1)
-            text_operations: Optional context with regex instructions
-            batch_size: Number of examples to process in each batch
-            max_concurrent: Maximum number of concurrent API calls
-        """
-        json_schema = load_json_schema(json_schema)
-        assert_valid_model_extraction(model)
-
-        # Read all lines from the JSONL file
-        with open(jsonl_path, 'r') as f:
-            lines = [json.loads(line) for line in f]
-        
-        extraction_analyses: list[ExtractionAnalysis] = []
-        total_batches = (len(lines) + batch_size - 1) // batch_size
-
-        # Create main progress bar for batches
-        batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
-
-        def process_example(jsonline: dict) -> ExtractionAnalysis:
-            messages = jsonline['messages']
-            ground_truth = json.loads(messages[-1]['content'])
-            inference_messages = messages[:-1]
-
-            result = self._client.documents.extractions.parse(
-                json_schema=json_schema,
-                document=None,
-                text_operations=text_operations,
-                model=model,
-                temperature=temperature,
-                messages=inference_messages,
-            )
-
-            assert result.choices[0].message.parsed is not None
-            prediction = result.choices[0].message.parsed.model_dump()
-
-            return ExtractionAnalysis(
-                ground_truth=ground_truth,
-                prediction=prediction,
-            )
-
-        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-            # Split entries into batches
-            for batch_idx in range(0, len(lines), batch_size):
-                batch = lines[batch_idx:batch_idx + batch_size]
-                
-                # Submit and process batch
-                futures = [executor.submit(process_example, entry) for entry in batch]
-                for future in futures:
-                    extraction_analyses.append(future.result())
-
-                batch_pbar.update(1)
-                time.sleep(1)  # Rate limiting between batches
-
-        batch_pbar.close()
-
-        # Analyze error patterns across all examples
-        analysis = analyze_comparison_metrics(extraction_analyses)
-        plot_comparison_metrics(
-            analysis=analysis, 
-            top_n=10
-        )
-
-        return analysis
-
-
-    def pprint(self, jsonl_path: Path, output_path: Path = Path("annotations")) -> Metrics:
-        """Print a summary of the contents and statistics of a JSONL file.
-
-        This method analyzes the JSONL file and displays various metrics and statistics
-        about the dataset contents.
-
-        Inspired from : https://gist.github.com/nmwsharp/54d04af87872a4988809f128e1a1d233
-
-        Args:
-            jsonl_path: Path to the JSONL file to analyze
-            output_path: Directory where to save any generated reports
-        """
-
-        computed_metrics = process_dataset_and_compute_metrics(jsonl_path)
-        display_metrics(computed_metrics)
-        return computed_metrics
     
 
-    def stich_and_save(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        pairs_paths: list[dict[str, Path | str | list[Path | str] | list[str] | list[Path]]],
-        jsonl_path: Path | str,
-        text_operations: Optional[dict[str, Any]] = None,
-        modality: Modality = "native",
-        messages: list[ChatCompletionUiformMessage] = [],
-    ) -> None:        
-        
-        """Stitch multiple documents and their annotations into a JSONL training set.
 
-        This method processes and combines multiple documents into messages, creating document-annotation
-        pairs that are saved to a JSONL file. Each document is processed according to the specified
-        modality and combined with its corresponding annotation.
-
-
-        Args:
-            json_schema: The JSON schema for validation, can be a dict, Path, or string
-            pairs_paths: List of dictionaries containing document and annotation file paths
-            jsonl_path: Output path for the JSONL training file
-            text_operations: Optional context for prompting
-            modality: The modality to use for document processing ("native" by default)
-            messages: List of additional chat messages to include
-        """
-
-        json_schema = load_json_schema(json_schema)
-        training_set = []
-
-        for pair_paths in tqdm(pairs_paths):
-            document_messages: list[ChatCompletionUiformMessage] = []
-            
-            if isinstance(pair_paths['document_fpath'], str) or isinstance(pair_paths['document_fpath'], Path):
-                document_message = self._client.documents.create_messages(
-                    document=pair_paths['document_fpath'], 
-                    modality=modality, 
-                    text_operations=text_operations
-                )
-                document_messages.extend(document_message.messages)
-
-            else: 
-                assert isinstance(pair_paths['document_fpath'], list)
-                for document_fpath in pair_paths['document_fpath']:
-                    document_message = self._client.documents.create_messages(
-                        document=document_fpath, 
-                        modality=modality, 
-                        text_operations=text_operations
-                    )
-                    document_messages.extend(document_message.messages)
-            
-            # Use context manager to properly close the file
-            assert isinstance(pair_paths['annotation_fpath'], Path) or isinstance(pair_paths['annotation_fpath'], str)
-            with open(pair_paths['annotation_fpath'], 'r') as f:
-                annotation = json.loads(f.read())
-            assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
-
-            # Add the complete message set as an entry
-            training_set.append({"messages": document_messages + messages + [assistant_message]})
-
-        self._dump_training_set(training_set, jsonl_path)
+    
 
 
    
