@@ -404,123 +404,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     ##### END BATCH METHODS #####
     #############################
 
-    # Normal methods
-    def annotate_openai(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        documents: list[Path | str | IOBase],
-        jsonl_path: Path,
-        text_operations: Optional[dict[str, Any]] = None,
-        model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
-        messages: list[ChatCompletionUiformMessage] = [],
-        batch_size: int = 5,
-        max_concurrent: int = 3,
-        root_dir: Path = Path("annotations"),
-        modality: Modality = "native",
-    ) -> None:
-        loaded_json_schema = load_json_schema(json_schema)
-        schema_obj = Schema(
-            json_schema=loaded_json_schema
-        )
-        openai_client = OpenAI(api_key=self._client.headers["OpenAI-Api-Key"])
-
-        assert_valid_model_extraction(model)
-        """
-        Generate annotations from document files or in-memory documents
-        and create a JSONL training set in one go.
-
-        Args:
-            json_schema: The JSON schema for validation
-            documents: list of documents, each can be a Path/str or an IOBase object
-            jsonl_path: Output path for the JSONL training file
-            text_operations: Optional context for prompting
-            model: The model to use for processing
-            temperature: Model temperature (0-1)
-            batch_size: Number of examples to process in each batch
-            max_concurrent: Maximum number of concurrent API calls
-            root_dir: Where to store the per-document JSON annotations
-        """
-
-        def process_example(doc: Path | str | IOBase) -> dict[str, Any]:
-            """
-            Process a single document (either a file path or an in-memory file-like object).
-            Returns a dict with pointers to the original doc and the stored annotation JSON.
-            """
-            if isinstance(doc, (str, Path)):
-                # Handle path or string
-                doc_path = Path(doc)
-                if not doc_path.is_file():
-                    raise ValueError(f"Invalid file path: {doc_path}")
-                
-                # Generate a unique filename for the annotation
-                hash_str = hashlib.md5(doc_path.as_posix().encode()).hexdigest()
-
-            elif isinstance(doc, IO):
-                # Handle in-memory file-like object
-                # 1) Read file content (but be careful with read pointer!)
-                file_bytes = doc.read()
-                hash_str = hashlib.md5(file_bytes).hexdigest()
-                # 2) Reset the file pointer to reuse `doc`
-                doc.seek(0)
-
-
-            else:
-                raise ValueError(f"Unsupported document type: {type(doc)}")
-
-            # Extract results
-            doc_msg = self._client.documents.create_messages(
-                document=doc, 
-                text_operations=text_operations,
-                modality=modality,
-            )
-
-            completion = openai_client.beta.chat.completions.parse(
-                model=model,
-                temperature=temperature,
-                messages=schema_obj.openai_messages + doc_msg.openai_messages,
-                response_format=schema_obj.inference_pydantic_model
-            )
-
-            # Validate the response against the original schema if you want to remove the reasoning fields
-            assert completion.choices[0].message.content is not None, "Failed to extract content from {doc_path}"
-            extraction = schema_obj.pydantic_model.model_validate(
-                filter_reasoning_fields_json(completion.choices[0].message.content, schema_obj.pydantic_model)
-            )
-
-
-            
-            annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
-            annotation_path.parent.mkdir(parents=True, exist_ok=True)
-
-            with open(annotation_path, 'w', encoding='utf-8') as f:
-                json.dump(extraction.model_dump_json(), f, ensure_ascii=False, indent=2)
-
-            return {"document_fpath": str(doc_path), "annotation_fpath": str(annotation_path)}
-
-
-        # Make sure output directory exists
-        Path(root_dir).mkdir(parents=True, exist_ok=True)
-
-        pairs_paths: list[dict[str, Path | str]] = []
-        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-            futures = []
-            # Split documents into batches
-            for batch in tqdm([documents[i : i + batch_size] for i in range(0, len(documents), batch_size)], desc="Processing batches"):
-                # Submit batch of tasks
-                batch_futures = [executor.submit(process_example, doc) for doc in batch]
-                futures.extend(batch_futures)
-
-                # Wait for batch to finish (rate limit)
-                for future in batch_futures:
-                    pair = future.result()
-                    pairs_paths.append(pair)
-                time.sleep(1)  # simple rate-limiting pause between batches
-
-        # Generate final training set from all results
-        self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
-
-
     def annotate(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -612,7 +495,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             # We use directly the openAI client
             if find_provider_from_model(model) == "OpenAI" or find_provider_from_model(model) == "xAI": 
                 
-                completion: ChatCompletion | Message = openai_client.chat.completions.create(
+                completion: ChatCompletion = openai_client.chat.completions.create(
                     model=model,
                     temperature=temperature,
                     messages=schema_obj.openai_messages + doc_msg.openai_messages,
@@ -647,7 +530,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
             else: 
                 # Using Anthropic's JSON mode
-                completion = anthropic_client.messages.create(
+                anthropic_completion = anthropic_client.messages.create(
                     model="claude-3-5-sonnet-20241022",
                     max_tokens=1000,
                     temperature=0,
@@ -656,25 +539,10 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 )
 
                 from anthropic.types.text_block import TextBlock
-                assert isinstance(completion.content[0], TextBlock)
-                string_json = completion.content[0].text
+                assert isinstance(anthropic_completion.content[0], TextBlock)
+                string_json = anthropic_completion.content[0].text
 
 
-            """else: 
-                completion = self._client.documents.extractions.parse(
-                    json_schema=json_schema,
-                    document=doc,  # pass the actual Path to .extract
-                    text_operations=text_operations,
-                    model=model,
-                    temperature=temperature,
-                    messages=messages,
-                    modality=modality,
-                )
-                if completion.choices[0].message.content is None:
-                    print(f"Failed to extract content from {doc_path}")
-                    return {"document_fpath": str(doc_path), "annotation_fpath": None}
-            """
-            
                 
             annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
             annotation_path.parent.mkdir(parents=True, exist_ok=True)
@@ -719,6 +587,9 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     ) -> ComparisonMetrics:
         
         """Benchmark model performance on a test dataset.
+
+        ### IMPORTANT : TODO: CHECK THAT
+        ### THIS HAS TO BE DONE ONLY FOR THE NORMAL FIELDS. REASONING FIELDS HAVE TO BE REMOVED
 
         Args:
             json_schema: JSON schema defining the expected data structure
@@ -805,6 +676,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         computed_metrics = process_dataset_and_compute_metrics(jsonl_path)
         display_metrics(computed_metrics)
         return computed_metrics
+    
 
     def stich_and_save(
         self,
