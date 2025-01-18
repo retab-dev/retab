@@ -6,11 +6,12 @@ import base64
 from pathlib import Path
 import io
 import mimetypes
+import PIL.Image
 
 from ..types.mime import MIMEData
 from ..types.modalities import SUPPORTED_TYPES
 
-
+T = TypeVar('T')
 
 def generate_sha_hash_from_bytes(bytes_: bytes, hash_algorithm_: Literal['sha256', 'sha1'] = 'sha256') -> str:
     hash_algorithm = hashlib.sha256() if hash_algorithm_ == 'sha256' else hashlib.sha1()
@@ -29,13 +30,60 @@ def generate_sha_hash_from_dict(input_dict: dict, hash_algorithm_: Literal['sha2
     return generate_sha_hash_from_string(json.dumps(input_dict, sort_keys=True).strip(), hash_algorithm_=hash_algorithm_)
 
 
-T = TypeVar('T')
+    
+
+def convert_pil_image_to_mime_data(image: PIL.Image.Image) -> MIMEData:
+    """Convert a PIL Image object to a MIMEData object.
+    
+    Args:
+        image: PIL Image object to convert
+        
+    Returns:
+        MIMEData object containing the image data
+    """
+
+    # Convert PIL image to base64 string
+    buffered = io.BytesIO()
+    image.save(buffered, format="PNG")
+    base64_content = base64.b64encode(buffered.getvalue()).decode("utf-8")    
+
+    
+    content_hash = hashlib.sha256(base64_content.encode("utf-8")).hexdigest()
+    
+    # Create MIMEData object
+    return MIMEData(
+        id=content_hash,
+        name=f"image_{content_hash}.png",
+        mime_type="image/png",
+        content=base64_content
+    )
+
+def convert_mime_data_to_pil_image(mime_data: MIMEData) -> PIL.Image.Image:
+    """Convert a MIMEData object to a PIL Image object.
+    
+    Args:
+        mime_data: MIMEData object containing image data
+        
+    Returns:
+        PIL Image object
+        
+    Raises:
+        ValueError: If the MIMEData object does not contain image data
+    """
+    if not mime_data.mime_type.startswith("image/"):
+        raise ValueError("MIMEData object does not contain image data")
+
+    # Decode base64 content to bytes
+    image_bytes = base64.b64decode(mime_data.content)
+    
+    # Create PIL Image from bytes
+    image = PIL.Image.open(io.BytesIO(image_bytes))
+    
+    return image
 
 
 
-
-
-def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData) -> MIMEData:
+def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | PIL.Image.Image) -> MIMEData:
     """
     Convert documents (file paths or file-like objects) to MIMEData objects.
     
@@ -45,6 +93,9 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData) -
     Returns:
         A MIMEData object
     """
+
+    if isinstance(document, PIL.Image.Image):
+        return convert_pil_image_to_mime_data(document)
 
     if isinstance(document, MIMEData):
         return document
@@ -95,7 +146,7 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData) -
 
 
 
-def prepare_mime_document_list(documents: list[Path | str | bytes | io.IOBase])  -> list[MIMEData]:
+def prepare_mime_document_list(documents: list[Path | str | bytes | io.IOBase | PIL.Image.Image])  -> list[MIMEData]:
     """
     Convert documents (file paths or file-like objects) to MIMEData objects.
     

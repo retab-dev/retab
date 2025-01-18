@@ -1,9 +1,11 @@
 from typing import Any
 from pathlib import Path
 from io import IOBase
+import PIL.Image
+
 from ...types.modalities import Modality
 from ...types.mime import MIMEData
-from ..._utils.mime import prepare_mime_document
+from ..._utils.mime import prepare_mime_document, convert_mime_data_to_pil_image
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
 from .extractions import Extractions, AsyncExtractions
@@ -11,7 +13,7 @@ from .extractions import Extractions, AsyncExtractions
 class BaseDocumentsMixin:
     def _prepare_create_messages(
         self,
-        document: Path | str | IOBase | MIMEData, 
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
         modality: Modality = "native", 
         text_operations: dict[str, Any] | None = None
     ) -> DocumentCreateMessageRequest:
@@ -37,8 +39,37 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self.extractions = Extractions(client=client)
         # self.batch = Batch(client=client)
 
+    def correct_image_orientation(self, image: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
+        """Corrects the orientation of an image using the UiForm API.
+
+        This method takes an image in various formats and returns a PIL Image with corrected orientation.
+        Useful for handling images from mobile devices or cameras that may have incorrect EXIF orientation.
+
+        Args:
+            image: The input image to correct. Can be:
+                - A file path (Path or str)
+                - A file-like object (IOBase)
+                - A MIMEData object
+                - A PIL Image object
+
+        Returns:
+            PIL.Image.Image: The orientation-corrected image as a PIL Image object
+
+        Raises:
+            ValueError: If the input is not a valid image
+            UiformAPIError: If the API request fails
+        """
+        mime_document = prepare_mime_document(image)
+
+        if not mime_document.mime_type.startswith("image/"):
+            raise ValueError("Image is not a valid image")
+
+        response = self._client._request("POST", "/api/v1/documents/correct_image_orientation", data=mime_document.model_dump())
+        mime_response = MIMEData.model_validate(response.json()['document'])
+        return convert_mime_data_to_pil_image(mime_response)
+
     def create_messages(self, 
-            document: Path | str | IOBase | MIMEData, 
+            document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
             modality: Modality = "native", 
             text_operations: dict[str, Any] | None = None) -> DocumentMessage:
         """
@@ -69,7 +100,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self.extractions = AsyncExtractions(client=client)
 
     async def create_messages(self, 
-            document: Path | str | IOBase | MIMEData, 
+            document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
             modality: Modality = "native",
             text_operations: dict[str, Any] | None = None) -> DocumentMessage:
         """
