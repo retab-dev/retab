@@ -1,4 +1,4 @@
-from typing import Any, Optional, Iterator, AsyncIterator
+from typing import Any, Optional, Iterator, AsyncIterator, BinaryIO, List
 from types import TracebackType
 import os
 import httpx
@@ -7,8 +7,8 @@ import backoff
 import backoff.types
 from pydantic_core import PydanticUndefined
 
-
-from .resources import datasets, documents, files, finetuning, models, prompt_optimization, schemas
+from .types.files_datasets import FileTuple
+from .resources import datasets, documents, files, finetuning, models, prompt_optimization, schemas, files_datasets
 
 class MaxRetriesExceeded(Exception): pass
 
@@ -171,8 +171,9 @@ class UiForm(BaseUiForm):
         self.models = models.Models(client=self)
         self.datasets = datasets.Datasets(client=self)
         self.schemas = schemas.Schemas(client=self)
+        self.files_datasets = files_datasets.Datasets(client=self)
     def _request(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
+            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, files: Optional[List[FileTuple]] = None
     ) -> Any:
         """Makes a synchronous HTTP request to the API.
 
@@ -191,14 +192,37 @@ class UiForm(BaseUiForm):
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Any:
-            response = self.client.request(
-                    method, self._prepare_url(endpoint), json=data, headers=self._get_headers(idempotency_key)
+            if method == "GET":
+                response = self.client.request(
+                    method,
+                    self._prepare_url(endpoint),
+                    params=data,  # Use data as query params for GET
+                    headers=self._get_headers(idempotency_key)
                 )
-            self._validate_response(response)
+            elif files:  # Handle requests with file uploads
+                headers = self._get_headers(idempotency_key)
+                headers.pop("Content-Type", None)  # Remove Content-Type if present
+                response = self.client.request(
+                    method,
+                    self._prepare_url(endpoint),
+                    params=data,  # Query parameters
+                    files=files,  # File data
+                    headers=headers
+                 )
+            else:
+                response = self.client.request(
+                    method,
+                    self._prepare_url(endpoint),
+                    json=data,  # Use data as JSON body for non-GET
+                    headers=self._get_headers(idempotency_key)
+                )
 
+            self._validate_response(response)
             return response.json()
 
         return wrapped_request()
+
+
 
     def _request_stream(
             self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
