@@ -39,6 +39,33 @@ class ChatCompletionUiformMessage(TypedDict):  # homemade replacement for ChatCo
     role: Literal['user', 'system', 'assistant']
     content : Union[str, list[ChatCompletionContentPartParam]]
 
+def separate_messages(messages: list[ChatCompletionUiformMessage]) -> tuple[Optional[ChatCompletionUiformMessage], list[ChatCompletionUiformMessage], list[ChatCompletionUiformMessage]]:
+    """
+    Separates messages into system, user and assistant messages.
+
+    Args:
+        messages: List of chat messages containing system, user and assistant messages
+
+    Returns:
+        Tuple containing:
+        - The system message if present, otherwise None
+        - List of user messages
+        - List of assistant messages
+    """
+    system_message = None
+    user_messages = []
+    assistant_messages = []
+
+    for message in messages:
+        if message["role"] == "system":
+            system_message = message
+        elif message["role"] == "user":
+            user_messages.append(message)
+        elif message["role"] == "assistant":
+            assistant_messages.append(message)
+
+    return system_message, user_messages, assistant_messages
+
 def convert_to_google_genai_format(
     messages: List[ChatCompletionUiformMessage]
 ) -> content_types.ContentsType:
@@ -140,7 +167,7 @@ def convert_to_anthropic_format(
             assert isinstance(message["content"], str), "System message content must be a string."
             if system_message != "":
                 raise ValueError("Only one system message is allowed per chat.")
-            system_message = message["content"]
+            system_message+= message["content"]
             continue
 
         # -----------------------

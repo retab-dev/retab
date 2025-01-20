@@ -13,10 +13,11 @@ from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
 from .._utils.display import display_metrics, process_dataset_and_compute_metrics, Metrics
 from ..types.modalities import Modality
-from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage, convert_to_openai_format
+from ..types.ai_model import LLMModel
+from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage, convert_to_openai_format, convert_to_anthropic_format, separate_messages
 from ..types.schemas.object import Schema
 from .._resource import SyncAPIResource, AsyncAPIResource
-from .benchmarking import analyze_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics
+from .benchmarking import analyze_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics, BenchmarkMetrics, display_benchmark_metrics
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
@@ -45,6 +46,7 @@ class BatchJSONL(TypedDict):
     method: str
     url: str 
     body: BatchJSONLBody
+
 class BatchJSONLResponseUsageTokenDetails(TypedDict):
     cached_tokens: int
     audio_tokens: int
@@ -249,7 +251,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             return OpenAI(api_key=self._client.headers["OpenAI-Api-Key"]), provider
         elif provider == "xAI":
             return OpenAI(
-                api_key=self._client.headers["xAI-Api-Key"],
+                api_key=self._client.headers["XAI-Api-Key"],
                 base_url="https://api.x.ai/v1"
             ), provider
         elif provider == "Gemini":
@@ -259,7 +261,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             ), provider
         else:
             assert provider == "Anthropic", f"Unsupported model: {model}"
-            return Anthropic(api_key=self._client.headers["Anthropic-Api-Key"]), provider
+            return Anthropic(api_key=self._client.headers["Claude-Api-Key"]), provider
 
     def _get_model_completion(
         self,
@@ -267,7 +269,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         provider: str,
         model: str,
         temperature: float,
-        messages: list[Any],
+        messages: list[ChatCompletionUiformMessage],
         schema_obj: Schema,
     ) -> str:
         """Get completion from the appropriate model provider.
@@ -285,28 +287,21 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         """
         if provider in ["OpenAI", "xAI"]:
             assert isinstance(client, OpenAI)
-            completion = client.chat.completions.create(
+            completion = client.beta.chat.completions.parse(
                 model=model,
                 temperature=temperature,
-                messages=messages,
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": schema_obj.schema_version,
-                        "schema": schema_obj.inference_json_schema,
-                        "strict": True
-                    }
-                }
+                messages=convert_to_openai_format(messages),
+                response_format=schema_obj.inference_pydantic_model
             )
             assert completion.choices[0].message.content is not None
             return completion.choices[0].message.content
         
         elif provider == "Gemini":
             assert isinstance(client, OpenAI)
-            completion = client.chat.completions.create(
+            gemini_completion = client.chat.completions.create(
                 model=model,
                 temperature=temperature,
-                messages=messages,
+                messages=convert_to_openai_format(messages),
                 response_format={
                     "type": "json_schema",
                     "json_schema": {
@@ -316,17 +311,18 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     }
                 }
             )
-            assert completion.choices[0].message.content is not None
-            return completion.choices[0].message.content
+            assert gemini_completion.choices[0].message.content is not None
+            return gemini_completion.choices[0].message.content
         
         else:  # Anthropic
             assert isinstance(client, Anthropic)
+            system_messages, other_messages = convert_to_anthropic_format(messages)
             anthropic_completion = client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=8192,
                 temperature=temperature,
-                system=schema_obj.anthropic_system_prompt,
-                messages=messages
+                system=system_messages,
+                messages=other_messages
             )
             from anthropic.types.text_block import TextBlock
             assert isinstance(anthropic_completion.content[0], TextBlock)
@@ -339,7 +335,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         jsonl_path: Path,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
+        temperature: float = 0.0,
         messages: list[ChatCompletionUiformMessage] = [],
         batch_size: int = 5,
         max_concurrent: int = 3,
@@ -399,7 +395,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 provider=provider,
                 model=model,
                 temperature=temperature,
-                messages=schema_obj.openai_messages + doc_msg.openai_messages,
+                messages=schema_obj.messages + doc_msg.messages,
                 schema_obj=schema_obj
             )
             
@@ -433,21 +429,23 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         # Generate final training set from all results
         self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
 
-    def benchmark(
+
+    ### IMPORTANT : TODO: CHECK THAT
+    ### THIS HAS TO BE DONE ONLY FOR THE NORMAL FIELDS. REASONING FIELDS HAVE TO BE REMOVED
+    def eval(
         self,
         json_schema: dict[str, Any] | Path | str,
         jsonl_path: Path,
         model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0, 
+        temperature: float = 0.0, 
         batch_size: int = 5,
         max_concurrent: int = 3,
-        #metric: Literal["Levenstein", "Jaccard", "Accuracy"] = "Accuracy", # TODO
+        display: bool = True,
     ) -> ComparisonMetrics:
         
-        """Benchmark model performance on a test dataset.
+        """Evaluate model performance on a test dataset.
 
-        ### IMPORTANT : TODO: CHECK THAT
-        ### THIS HAS TO BE DONE ONLY FOR THE NORMAL FIELDS. REASONING FIELDS HAVE TO BE REMOVED
+
 
         Args:
             json_schema: JSON schema defining the expected data structure
@@ -476,27 +474,72 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         # Create main progress bar for batches
         batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
 
-        def process_example(jsonline: dict) -> ExtractionAnalysis:
-            messages = jsonline['messages']
-            ground_truth = json.loads(messages[-1]['content'])
-            inference_messages = messages[:-1]
+        # Track running metrics
+        class RunningMetrics(TypedDict): 
+            model: str
+            accuracy: float
+            levenshtein: float
+            jaccard: float
+            false_positive: float
+            mismatched: float
+            processed: int
 
-            # Use _get_model_completion instead of duplicating provider-specific logic
-            string_json = self._get_model_completion(
-                client=client,
-                provider=provider,
-                model=model,
-                temperature=temperature,
-                messages=schema_obj.openai_messages + inference_messages,
-                schema_obj=schema_obj
-            )
-            
-            prediction = json.loads(string_json)
+        running_metrics: RunningMetrics = {
+            'model': model,
+            'accuracy': 0.0,
+            'levenshtein': 0.0,
+            'jaccard': 0.0,
+            'false_positive': 0.0,
+            'mismatched': 0.0,
+            'processed': 0 # number of processed examples - used in the loop to compute the running averages
+        }
 
-            return ExtractionAnalysis(
-                ground_truth=ground_truth,
-                prediction=prediction,
+        def update_running_metrics(analysis: ExtractionAnalysis) -> None:
+            comparison = analyze_comparison_metrics([analysis])
+            running_metrics['processed'] += 1
+            n = running_metrics['processed']
+            # Update running averages
+            running_metrics['accuracy'] = (running_metrics['accuracy'] * (n-1) + comparison.accuracy) / n
+            running_metrics['levenshtein'] = (running_metrics['levenshtein'] * (n-1) + comparison.levenshtein_similarity) / n
+            running_metrics['jaccard'] = (running_metrics['jaccard'] * (n-1) + comparison.jaccard_similarity) / n
+            running_metrics['false_positive'] = (running_metrics['false_positive'] * (n-1) + comparison.false_positive_rate) / n
+            running_metrics['mismatched'] = (running_metrics['mismatched'] * (n-1) + comparison.mismatched_value_rate) / n
+            # Update progress bar description
+            batch_pbar.set_description(
+                f"Processing batches | Model: {running_metrics['model']} | Acc: {running_metrics['accuracy']:.2f} | "
+                f"Lev: {running_metrics['levenshtein']:.2f} | "
+                f"Jac: {running_metrics['jaccard']:.2f} | "
+                f"FP: {running_metrics['false_positive']:.2f} | "
+                f"Mism: {running_metrics['mismatched']:.2f}"
             )
+
+        def process_example(jsonline: dict) -> ExtractionAnalysis | None:
+            line_number = jsonline['line_number']
+            try:
+                messages = jsonline['messages']
+                ground_truth = json.loads(messages[-1]['content'])
+                inference_messages = messages[:-1]
+
+                # Use _get_model_completion instead of duplicating provider-specific logic
+                string_json = self._get_model_completion(
+                    client=client,
+                    provider=provider,
+                    model=model,
+                    temperature=temperature,
+                    messages=inference_messages,
+                    schema_obj=schema_obj
+                )
+                
+                prediction = json.loads(string_json)
+                analysis = ExtractionAnalysis(
+                    ground_truth=ground_truth,
+                    prediction=prediction,
+                )
+                update_running_metrics(analysis)
+                return analysis
+            except Exception as e:
+                print(f"\nWarning: Failed to process line number {line_number}: {str(e)}")
+                return None
 
         with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
             # Split entries into batches
@@ -504,9 +547,11 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 batch = lines[batch_idx:batch_idx + batch_size]
                 
                 # Submit and process batch
-                futures = [executor.submit(process_example, entry) for entry in batch]
+                futures = [executor.submit(process_example, entry.update({"line_number": batch_idx*batch_size + i})) for i, entry in enumerate(batch)]
                 for future in futures:
-                    extraction_analyses.append(future.result())
+                    result = future.result()
+                    if result is not None:
+                        extraction_analyses.append(result)
 
                 batch_pbar.update(1)
                 time.sleep(1)  # Rate limiting between batches
@@ -515,12 +560,69 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         # Analyze error patterns across all examples
         analysis = analyze_comparison_metrics(extraction_analyses)
-        plot_comparison_metrics(
-            analysis=analysis, 
-            top_n=10
-        )
+
+        if display: 
+            plot_comparison_metrics(
+                analysis=analysis, 
+                top_n=10
+            )
 
         return analysis
+    
+    def benchmark(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        jsonl_path: Path,
+        models: list[LLMModel],
+        temperature: float = 0.0,
+        batch_size: int = 5,
+        max_concurrent: int = 3,
+        print: bool = True,
+        verbose: bool = False,
+    ) -> list[BenchmarkMetrics]:
+        """Benchmark multiple models on a test dataset.
+
+        Args:
+            json_schema: JSON schema defining the expected data structure
+            jsonl_path: Path to the JSONL file containing test examples
+            models: List of models to benchmark
+            temperature: Model temperature setting (0-1)
+            batch_size: Number of examples to process in each batch
+            max_concurrent: Maximum number of concurrent API calls
+            print: Whether to print the metrics
+            verbose: Whether to print all the metrics of all the function calls
+
+        Returns:
+            Dictionary mapping model names to their evaluation metrics
+        """
+        results: list[BenchmarkMetrics] = []
+        
+        for model in models:
+            metrics: ComparisonMetrics = self.eval(
+                json_schema=json_schema,
+                jsonl_path=jsonl_path,
+                model=model,
+                temperature=temperature,
+                batch_size=batch_size,
+                max_concurrent=max_concurrent,
+                display=verbose
+            )
+            results.append(
+                BenchmarkMetrics(
+                    ai_model=model,
+                    accuracy=metrics.accuracy,
+                    levenshtein_similarity=metrics.levenshtein_similarity,
+                    jaccard_similarity=metrics.jaccard_similarity,
+                    false_positive_rate=metrics.false_positive_rate,
+                    false_negative_rate=metrics.false_negative_rate,
+                    mismatched_value_rate=metrics.mismatched_value_rate,
+                )
+            )
+
+        if print: 
+            display_benchmark_metrics(results)
+
+        return results
 
     def update_annotations(
         self, 
@@ -528,7 +630,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         jsonl_path: Path, 
         save_path: Path,
         model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
+        temperature: float = 0.0,
         batch_size: int = 5,
         max_concurrent: int = 3,
         ) -> None:
@@ -559,11 +661,14 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         
         batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
         
+        # TODO: Maybe remove the system message from the messages here
+        
         def process_entry(entry: dict) -> dict:
             messages = entry['messages']
-            system_and_user_messages = messages[:-1]
+            system_message, user_messages, assistant_messages = separate_messages(messages)
+            system_and_user_messages=messages[:-1]
 
-            previous_annotation_message = {
+            previous_annotation_message: ChatCompletionUiformMessage = {
                 "role": "user",
                 "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + messages[-1]['content']
             }
@@ -573,7 +678,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 provider=provider,
                 model=model,
                 temperature=temperature,
-                messages=schema_obj.openai_messages + system_and_user_messages + [previous_annotation_message],
+                messages=schema_obj.messages + user_messages + [previous_annotation_message],
                 schema_obj=schema_obj
             )
 
@@ -584,7 +689,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             for batch_idx in range(0, len(lines), batch_size):
                 batch = lines[batch_idx:batch_idx + batch_size]
                 
-                batch_futures = [executor.submit(process_entry, entry) for entry in batch]
+                batch_futures = [executor.submit(process_entry, entry.update({"line_number": batch_idx*batch_size + i})) for i, entry in enumerate(batch)]
                 futures.extend(batch_futures)
                 
                 for future in batch_futures:
@@ -614,7 +719,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         batch_requests_path: Path,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-mini",
-        temperature: float = 0,
+        temperature: float = 0.0,
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
     ) -> None:
@@ -673,7 +778,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         old_dataset_path: Path,
         batch_requests_path: Path,
         model: str = "gpt-4o-mini",
-        temperature: float = 0,
+        temperature: float = 0.0,
         messages: list[ChatCompletionUiformMessage] = [],
     ) -> None:
         """Create a JSONL file containing requests for OpenAI batch processing API to update annotations.
@@ -806,7 +911,7 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         jsonl_path: Path,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
+        temperature: float = 0.0,
         messages: list[ChatCompletionUiformMessage] = [],
         batch_size: int = 5,
         max_concurrent: int = 3,
@@ -995,3 +1100,6 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         """
 
         raise NotImplementedError("Stitching is not implemented yet")
+
+
+

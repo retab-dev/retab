@@ -280,6 +280,63 @@ class ExtractionAnalysis(BaseModel):
             information_presence_per_field=self.information_presence_per_field,
             levenshtein_threshold=self.levenshtein_threshold,
         )
+    
+from ..types.ai_model import LLMModel
+class BenchmarkMetrics(BaseModel): 
+    ai_model: LLMModel
+    accuracy: float
+    levenshtein_similarity: float
+    jaccard_similarity: float
+    false_positive_rate: float
+    false_negative_rate: float
+    mismatched_value_rate: float
+
+from rich.table import Table
+from rich.console import Console
+def display_benchmark_metrics(benchmark_metrics: list[BenchmarkMetrics]) -> None:
+    """
+    Display benchmark metrics for multiple models in a formatted table.
+    
+    Args:
+        benchmark_metrics: List of BenchmarkMetrics objects containing model performance data
+    """
+    console = Console(style="on grey23")
+    table = Table(title="Model Benchmark Comparison", show_lines=True)
+
+    # Add columns
+    table.add_column("Model", justify="left", style="#BDE8F6", no_wrap=True)
+    table.add_column("Accuracy", justify="right", style="#C2BDF6")
+    table.add_column("Levenshtein", justify="right", style="#F6BDBD")
+    table.add_column("Jaccard", justify="right", style="#F6E4BD")
+    table.add_column("False Positive Rate", justify="right", style="#BDF6C0")
+    table.add_column("False Negative Rate", justify="right", style="#F6BDE4")
+    table.add_column("Mismatched Value Rate", justify="right", style="#E4F6BD")
+
+   # Find best values for each metric
+    best_values = {
+        'accuracy': max(m.accuracy for m in benchmark_metrics),
+        'levenshtein': max(m.levenshtein_similarity for m in benchmark_metrics),
+        'jaccard': max(m.jaccard_similarity for m in benchmark_metrics),
+        'fp_rate': min(m.false_positive_rate for m in benchmark_metrics),
+        'fn_rate': min(m.false_negative_rate for m in benchmark_metrics),
+        'mismatch_rate': min(m.mismatched_value_rate for m in benchmark_metrics),
+    }
+
+    # Add rows for each model's metrics
+    for metrics in benchmark_metrics:
+        table.add_row(
+            metrics.ai_model,
+            f"[bold]{metrics.accuracy:.3f}[/bold]" if metrics.accuracy == best_values['accuracy'] else f"[dim]{metrics.accuracy:.3f}[/dim]",
+            f"[bold]{metrics.levenshtein_similarity:.3f}[/bold]" if metrics.levenshtein_similarity == best_values['levenshtein'] else f"[dim]{metrics.levenshtein_similarity:.3f}[/dim]",
+            f"[bold]{metrics.jaccard_similarity:.3f}[/bold]" if metrics.jaccard_similarity == best_values['jaccard'] else f"[dim]{metrics.jaccard_similarity:.3f}[/dim]",
+            f"[bold]{metrics.false_positive_rate:.3f}[/bold]" if metrics.false_positive_rate == best_values['fp_rate'] else f"[dim]{metrics.false_positive_rate:.3f}[/dim]",
+            f"[bold]{metrics.false_negative_rate:.3f}[/bold]" if metrics.false_negative_rate == best_values['fn_rate'] else f"[dim]{metrics.false_negative_rate:.3f}[/dim]",
+            f"[bold]{metrics.mismatched_value_rate:.3f}[/bold]" if metrics.mismatched_value_rate == best_values['mismatch_rate'] else f"[dim]{metrics.mismatched_value_rate:.3f}[/dim]"
+        )
+
+    # Print the table
+    console.print(table)
+
 
 class ComparisonMetrics(BaseModel):
     # Total Values (count or sum) per Field
@@ -303,27 +360,33 @@ class ComparisonMetrics(BaseModel):
     total_levenshtein_similarity_per_field: dict[str, float] = defaultdict(float)
 
 
-    @computed_field
+    @computed_field # type: ignore
+    @property
     def accuracy(self) -> float:
         return sum(self.accuracy_per_field.values()) / len(self.accuracy_per_field)
     
-    @computed_field
+    @computed_field # type: ignore
+    @property
     def levenshtein_similarity(self) -> float:
         return sum(self.total_levenshtein_similarity_per_field.values()) / len(self.total_levenshtein_similarity_per_field)
     
-    @computed_field
+    @computed_field # type: ignore
+    @property
     def jaccard_similarity(self) -> float:
         return sum(self.total_jaccard_similarity_per_field.values()) / len(self.total_jaccard_similarity_per_field)
     
-    @computed_field
+    @computed_field # type: ignore
+    @property
     def false_positive_rate(self) -> float:
         return sum(self.false_positive_rate_per_field.values()) / len(self.false_positive_rate_per_field)
     
-    @computed_field
+    @computed_field # type: ignore
+    @property
     def false_negative_rate(self) -> float:
         return sum(self.false_negative_rate_per_field.values()) / len(self.false_negative_rate_per_field)
     
-    @computed_field
+    @computed_field # type: ignore
+    @property
     def mismatched_value_rate(self) -> float:
         return sum(self.mismatched_value_rate_per_field.values()) / len(self.mismatched_value_rate_per_field)
 
@@ -427,7 +490,18 @@ def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None
         "false_negative_rate": False,
         "mismatched_value_rate": False
     }
+
+    print(f"#########################################")
+    print(f"############ AVERAGE METRICS ############")
+    print(f"#########################################")
+    print(f"Accuracy: {analysis.accuracy:.2f}")
+    print(f"Levenshtein Similarity: {analysis.levenshtein_similarity:.2f}")
+    print(f"Jaccard Similarity: {analysis.jaccard_similarity:.2f}")
+    print(f"False Positive Rate: {analysis.false_positive_rate:.2f}")
+    print(f"False Negative Rate: {analysis.false_negative_rate:.2f}")
+    print(f"Mismatched Value Rate: {analysis.mismatched_value_rate:.2f}")
+
     
     for metric, ascending in metric_ascendency_dict.items():
-        print(f"\n############ {metric.upper()} ############")
+        print(f"\n\n############ {metric.upper()} ############")
         plot_metric(analysis, metric, top_n, ascending)

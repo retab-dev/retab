@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='uiform',
-    version='0.0.8',
+    version='0.0.9',
     author='UiForm',
     author_email='contact@uiform.com',
     description='UiForm official python library',

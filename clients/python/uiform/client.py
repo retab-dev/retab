@@ -301,7 +301,6 @@ class AsyncUiForm(BaseUiForm):
         )
         
         self.client = httpx.AsyncClient(timeout=self.timeout)
-
         self.files = files.AsyncFiles(client=self)
         self.fine_tuning = finetuning.AsyncFineTuning(client=self)
         self.prompt_optimization = prompt_optimization.AsyncPromptOptimization(client=self)
