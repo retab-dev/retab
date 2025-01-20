@@ -54,7 +54,7 @@ def flatten_dict(obj: Any, prefix: str = '') -> dict[str, Any]:
             items.extend(flatten_dict(v, new_key).items())
     elif isinstance(obj, list):
         for i, v in enumerate(obj):
-            new_key = f"{prefix}[{i}]"
+            new_key = f"{prefix}.{i}"
             items.extend(flatten_dict(v, new_key).items())
     else:
         items.append((prefix, obj))
@@ -70,8 +70,15 @@ def normalize_value(val: Any) -> str:
 
 def key_normalization(key: str) -> str:
     """This method is useful to compare keys under list indexes (that refers to the same kind of error but on different list index position)"""
-    # We will replace all [{i}] with ["_"] where i is the index of the list (using regex for this)
-    return re.sub(r'\[\d+\]', "[i]", key)
+    # We will replace all .{i} with .* where i is the index of the list (using regex for this)
+    key_parts = key.split(".")
+    new_key_parts = []
+    for key_part in key_parts:
+        if key_part.isdigit():
+            new_key_parts.append("*")
+        else:
+            new_key_parts.append(key_part)
+    return ".".join(new_key_parts)
 
 def should_ignore_key(key: str, exclude_field_patterns: list[str] | None, include_field_patterns: list[str] | None = None, information_presence_per_field: dict[str, bool] | None = None) -> bool:    
     if information_presence_per_field and information_presence_per_field.get(key) is False:
@@ -391,7 +398,7 @@ class ComparisonMetrics(BaseModel):
     def mismatched_value_rate(self) -> float:
         return sum(self.mismatched_value_rate_per_field.values()) / len(self.mismatched_value_rate_per_field)
 
-def analyze_comparison_metrics(list_analyses: list[ExtractionAnalysis], min_freq: float = 0.2) -> ComparisonMetrics:
+def normalized_comparison_metrics(list_analyses: list[ExtractionAnalysis], min_freq: float = 0.2) -> ComparisonMetrics:
     false_positive_counts: dict[str, int] = defaultdict(int)
     false_negative_counts: dict[str, int] = defaultdict(int)
     mismatched_value_counts: dict[str, int] = defaultdict(int)
@@ -425,6 +432,7 @@ def analyze_comparison_metrics(list_analyses: list[ExtractionAnalysis], min_freq
         for key, similarity in analysis.comparison.similarity_levenshtein.items():
             common_presence_counts[key_normalization(key)] += 1
             total_levenshtein_similarity_per_field[key_normalization(key)] += similarity
+        
         for key, is_equal in analysis.comparison.is_equal.items():
             is_equal_per_field[key_normalization(key)] += int(is_equal)
 
@@ -505,3 +513,78 @@ def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None
     for metric, ascending in metric_ascendency_dict.items():
         print(f"\n\n############ {metric.upper()} ############")
         plot_metric(analysis, metric, top_n, ascending)
+        print(f"\n############ {metric.upper()} ############")
+        plot_metric(analysis, metric, top_n, ascending)
+
+def aggregate_metric_per_hierarchy_level(metric: dict[str, float | int], hierarchy_level: int) -> dict[str, float | int]:
+    """Aggregates metrics by grouping and averaging values at a specified hierarchy level in the key structure.
+    
+    Args:
+        metric: Dictionary mapping hierarchical keys (dot-separated strings) to numeric values.
+               Array indices in keys are treated as wildcards.
+        hierarchy_level: The depth level at which to aggregate the metrics.
+                        E.g. level 1 aggregates at first dot separator.
+    
+    Returns:
+        Dictionary mapping aggregated keys to averaged values. Keys are truncated to the specified
+        hierarchy level with array indices replaced by '*'.
+        
+    Raises:
+        ValueError: If the requested hierarchy level exceeds the maximum depth in the data.
+    """
+    def get_aggregation_metrics(_hierarchy_level: int) -> dict[str, float]:
+        if _hierarchy_level == 0:
+            # For level 0, aggregate all values under empty string key
+            return {"": sum(metric.values()) / len(metric)}
+            
+        aggregated_metrics: dict[str, list[float | int]] = {}
+        for key, value in metric.items():
+            # Split key and handle array notation by replacing array indices with '*'
+            key_parts: list[str] = []
+            for part in key.split('.'):
+                if part.isdigit():
+                    key_parts.append('*')
+                else:
+                    key_parts.append(part)
+            actual_depth = len([part for part in key_parts if part != '*'])
+            if actual_depth < _hierarchy_level:
+                continue
+        
+            used_depth = 0
+            aggregation_prefix_parts: list[str] = []
+            for part in key_parts:
+                if part == "*":
+                    aggregation_prefix_parts.append("*")
+                else:
+                    aggregation_prefix_parts.append(part)
+                    used_depth += 1
+                if used_depth == _hierarchy_level:
+                    break
+            aggregation_prefix = '.'.join(aggregation_prefix_parts)
+            
+            # Aggregate metrics
+            if aggregation_prefix not in aggregated_metrics:
+                aggregated_metrics[aggregation_prefix] = []
+            aggregated_metrics[aggregation_prefix].append(value)
+            
+        # Calculate averages
+        return {
+            key: sum(values) / len(values) 
+            for key, values in aggregated_metrics.items()
+        }
+
+    def get_max_depth() -> int:
+        max_depth_upper_bound = max(len(key.split('.')) for key in metric.keys())
+        for max_depth in range(max_depth_upper_bound, 0, -1):
+            if get_aggregation_metrics(max_depth):
+                return max_depth
+        return 0
+
+    max_depth = get_max_depth()
+    
+    if hierarchy_level > max_depth:
+        raise ValueError(f"Hierarchy level {hierarchy_level} is greater than the maximum depth {max_depth}")
+    
+    return get_aggregation_metrics(hierarchy_level)
+
+

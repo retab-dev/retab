@@ -168,7 +168,7 @@ class Schema(BaseModel):
         Returns:
             str: The combined system prompt string.
         """
-        return self.json_schema.get("X-SystemPrompt", "") + "\nThis is the expected output schema (as an TypeScript interface for better readability) with useful prompts added as comments :\n" + self.inference_typescript_interface
+        return self.json_schema.get("X-SystemPrompt", "") + "\nThis is the expected output schema (as a TypeScript interface for better readability) with useful prompts added as comments bellow each field :\n\n" + self.inference_typescript_interface
     
     @property
     def title(self) -> str:

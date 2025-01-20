@@ -17,7 +17,7 @@ from ..types.ai_model import LLMModel
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage, convert_to_openai_format, convert_to_anthropic_format, separate_messages
 from ..types.schemas.object import Schema
 from .._resource import SyncAPIResource, AsyncAPIResource
-from .benchmarking import analyze_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics, BenchmarkMetrics, display_benchmark_metrics
+from .benchmarking import normalized_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics, BenchmarkMetrics, display_benchmark_metrics
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
@@ -559,7 +559,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         batch_pbar.close()
 
         # Analyze error patterns across all examples
-        analysis = analyze_comparison_metrics(extraction_analyses)
+        analysis = normalized_comparison_metrics(extraction_analyses)
 
         if display: 
             plot_comparison_metrics(

@@ -477,10 +477,12 @@ def json_schema_to_typescript_interface(
             field_ts = schema_to_ts_type(prop_schema, definitions or {}, processed_refs, indent, indent, add_field_description=add_field_description)
             optional_flag = "?" if is_optional else ""
             line = f"{indentation}{prop_name}{optional_flag}: {field_ts};"
-            comment_identation = " " * (len(line.split("\n")[-1]) + 2)
+            # comment_identation = " " * (len(line.split("\n")[-1]) + 2)
             if add_field_description and "description" in prop_schema:
-                desc = prop_schema["description"].replace("\n", f"\n{comment_identation}// ")
-                line += f"  // {desc}"
+                # desc = prop_schema["description"].replace("\n", f"\n{comment_identation}// ")
+                # line += f"  // {desc}"
+                desc = prop_schema["description"].replace("\n", f"\n{indentation}// ")
+                line += f"\n{indentation}// {desc}"
             interface_lines.append(line)
 
         interface_lines.append("}")
@@ -584,10 +586,12 @@ def inline_object(schema: dict[str, Any], definitions: dict[str, dict[str, Any]]
         ts_type = schema_to_ts_type(prop_schema, definitions, processed_refs, indent + increment, increment, add_field_description)
         optional_flag = "?" if is_optional else ""
         line = f"{field_indentation}{prop_name}{optional_flag}: {ts_type};"
-        field_comment_identation = " " * (len(line.split("\n")[-1]) + 2)
+        # field_comment_identation = " " * (len(line.split("\n")[-1]) + 2)
         if add_field_description and "description" in prop_schema:
-            desc = prop_schema["description"].replace("\n", f"\n{field_comment_identation}// ")
-            line += f"  // {desc}"
+            # desc = prop_schema["description"].replace("\n", f"\n{field_comment_identation}// ")
+            # line += f"  // {desc}"
+            desc = prop_schema["description"].replace("\n", f"\n{field_indentation}// ")
+            line += f"\n{field_indentation}// {desc}"
         lines.append(line)
     lines.append(" " * indent + "}")
     return "\n".join(lines)
@@ -879,7 +883,7 @@ def get_pydantic_primitive_field_type(type_: SCHEMA_TYPES | str, format_: str | 
     python_base_type: Any
     
     if enum_values is not None:
-        python_base_type = Literal[tuple(enum_values)]
+        python_base_type = Literal[tuple(enum_values)]  # type: ignore
     elif type_ == "string":
         if format_ in ("date", "iso-date"):
             python_base_type = datetime.date
@@ -1121,7 +1125,7 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
             sub_model = convert_json_schema_to_basemodel(items_schema)
 
             field_definitions[prop_name] = (
-                list[sub_model] if not is_nullable else Optional[list[sub_model]], 
+                list[sub_model] if not is_nullable else Optional[list[sub_model]],  # type: ignore
                 Field(default_val, **field_kwargs)
             )
 

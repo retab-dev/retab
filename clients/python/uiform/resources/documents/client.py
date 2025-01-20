@@ -71,7 +71,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def create_messages(self, 
             document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
             modality: Modality = "native", 
-            text_operations: dict[str, Any] | None = None) -> DocumentMessage:
+            text_operations: dict[str, Any] | None = None,
+            idempotency_key: str | None = None) -> DocumentMessage:
         """
         Create document messages from a file using the UiForm API.
 
@@ -79,7 +80,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document: The document to process. Can be a file path (Path or str) or a file-like object.
             modality: The processing modality to use. Defaults to "native".
             text_operations: Optional dictionary of text processing operations to apply.
-
+            idempotency_key: Idempotency key for request
         Returns:
             DocumentMessage: The processed document message containing extracted content.
 
@@ -87,7 +88,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             UiformAPIError: If the API request fails.
         """
         loading_request = self._prepare_create_messages(document, modality, text_operations)
-        response = self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump())
+        response = self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
         return DocumentMessage.model_validate(response)
 
 
@@ -102,7 +103,8 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     async def create_messages(self, 
             document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
             modality: Modality = "native",
-            text_operations: dict[str, Any] | None = None) -> DocumentMessage:
+            text_operations: dict[str, Any] | None = None,
+            idempotency_key: str | None = None) -> DocumentMessage:
         """
         Create document messages from a file using the UiForm API asynchronously.
 
@@ -110,7 +112,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document: The document to process. Can be a file path (Path or str) or a file-like object.
             modality: The processing modality to use. Defaults to "native".
             text_operations: Optional dictionary of text processing operations to apply.
-
+            idempotency_key: Idempotency key for request
         Returns:
             DocumentMessage: The processed document message containing extracted content.
 
@@ -118,7 +120,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             UiformAPIError: If the API request fails.
         """
         loading_request = self._prepare_create_messages(document, modality, text_operations)
-        response = await self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump())
+        response = await self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
         return DocumentMessage.model_validate(response)
 
     async def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
