@@ -39,7 +39,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self.extractions = Extractions(client=client)
         # self.batch = Batch(client=client)
 
-    def correct_image_orientation(self, image: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
+    def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
         """Corrects the orientation of an image using the UiForm API.
 
         This method takes an image in various formats and returns a PIL Image with corrected orientation.
@@ -59,7 +59,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             ValueError: If the input is not a valid image
             UiformAPIError: If the API request fails
         """
-        mime_document = prepare_mime_document(image)
+        mime_document = prepare_mime_document(document)
 
         if not mime_document.mime_type.startswith("image/"):
             raise ValueError("Image is not a valid image")
@@ -121,3 +121,31 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         response = await self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump())
         return DocumentMessage.model_validate(response)
 
+    async def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
+        """Corrects the orientation of an image using the UiForm API asynchronously.
+
+        This method takes an image in various formats and returns a PIL Image with corrected orientation.
+        Useful for handling images from mobile devices or cameras that may have incorrect EXIF orientation.
+
+        Args:
+            image: The input image to correct. Can be:
+                - A file path (Path or str)
+                - A file-like object (IOBase)
+                - A MIMEData object
+                - A PIL Image object
+
+        Returns:
+            PIL.Image.Image: The orientation-corrected image as a PIL Image object
+
+        Raises:
+            ValueError: If the input is not a valid image
+            UiformAPIError: If the API request fails
+        """
+        mime_document = prepare_mime_document(document)
+
+        if not mime_document.mime_type.startswith("image/"):
+            raise ValueError("Image is not a valid image")
+
+        response = await self._client._request("POST", "/api/v1/documents/correct_image_orientation", data={"document": mime_document.model_dump()})
+        mime_response = MIMEData.model_validate(response['document'])
+        return convert_mime_data_to_pil_image(mime_response)
