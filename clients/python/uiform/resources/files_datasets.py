@@ -200,13 +200,15 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         self,
         annotated_dataset_id: str,
         annotated_file_id: str
-    ) -> FileWithAnnotationAndSchema:
+    ) -> AnnotatedFile:
         """Get an annotated file"""
         response = self._client._request(
             "GET",
             f"/api/v1/datasets/annotated-datasets/{annotated_dataset_id}/files/{annotated_file_id}"
         )
-        return FileWithAnnotationAndSchema.model_validate(response)
+        response_parsed= FileWithAnnotationAndSchema.model_validate(response)
+        assert response_parsed.annotation
+        return response_parsed.annotation
 
     def update_annotation(
         self,
