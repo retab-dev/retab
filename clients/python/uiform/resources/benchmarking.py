@@ -484,7 +484,7 @@ def plot_metric(analysis: ComparisonMetrics, value_type: Literal["accuracy", "le
 def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None:
     metric_ascendency_dict: dict[Literal["accuracy", "levenshtein_similarity", "jaccard_similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"], bool] = {
         "accuracy": True,
-        "levenshtein_similarity": False,
+        "levenshtein_similarity": True,
         "jaccard_similarity": True,
         "false_positive_rate": False,
         "false_negative_rate": False,
