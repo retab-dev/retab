@@ -64,8 +64,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         if not mime_document.mime_type.startswith("image/"):
             raise ValueError("Image is not a valid image")
 
-        response = self._client._request("POST", "/api/v1/documents/correct_image_orientation", data=mime_document.model_dump())
-        mime_response = MIMEData.model_validate(response.json()['document'])
+        response = self._client._request("POST", "/api/v1/documents/correct_image_orientation", data={"document": mime_document.model_dump()})
+        mime_response = MIMEData.model_validate(response['document'])
         return convert_mime_data_to_pil_image(mime_response)
 
     def create_messages(self, 

@@ -286,8 +286,8 @@ class DocumentCreateMessageRequest(BaseModel):
         }],
     }])
     """The text operations to apply to the document."""
-    image_operations : ImageOperations|None = Field(default={"correct_orientation" : True}, description="Preprocessing operations applied to image before sending them to the llm", examples=[{
-        "correct_orientation": True
+    image_operations : ImageOperations|None = Field(default={"correct_image_orientation" : True}, description="Preprocessing operations applied to image before sending them to the llm", examples=[{
+        "correct_image_orientation": True
     }])
     """The image operations to apply to the document."""
 
