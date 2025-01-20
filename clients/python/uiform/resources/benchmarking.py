@@ -190,6 +190,7 @@ def compare_dicts(
         
         similarity_lev = levenshtein_similarity(llm_value, extraction_value)
         similarity_jac = jaccard_similarity(llm_value, extraction_value)
+        #print("Jaccard similarity", similarity_jac)
         
         # Use Levenshtein for equality comparison (you can adjust this if needed)
         is_equal = similarity_lev >= (1 - levenshtein_threshold)
@@ -368,12 +369,12 @@ class ComparisonMetrics(BaseModel):
     @computed_field # type: ignore
     @property
     def levenshtein_similarity(self) -> float:
-        return sum(self.total_levenshtein_similarity_per_field.values()) / len(self.total_levenshtein_similarity_per_field)
+        return sum(self.levenshtein_similarity_per_field.values()) / len(self.levenshtein_similarity_per_field)
     
     @computed_field # type: ignore
     @property
     def jaccard_similarity(self) -> float:
-        return sum(self.total_jaccard_similarity_per_field.values()) / len(self.total_jaccard_similarity_per_field)
+        return sum(self.jaccard_similarity_per_field.values()) / len(self.jaccard_similarity_per_field)
     
     @computed_field # type: ignore
     @property
@@ -429,7 +430,6 @@ def analyze_comparison_metrics(list_analyses: list[ExtractionAnalysis], min_freq
 
         # Count Jaccard Similarity
         for key, similarity in analysis.comparison.similarity_jaccard.items():
-            common_presence_counts[key_normalization(key)] += 1
             total_jaccard_similarity_per_field[key_normalization(key)] += similarity
 
     accuracy_per_field = {key: is_equal_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
@@ -484,7 +484,7 @@ def plot_metric(analysis: ComparisonMetrics, value_type: Literal["accuracy", "le
 def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None:
     metric_ascendency_dict: dict[Literal["accuracy", "levenshtein_similarity", "jaccard_similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"], bool] = {
         "accuracy": True,
-        "levenshtein_similarity": True,
+        "levenshtein_similarity": False,
         "jaccard_similarity": True,
         "false_positive_rate": False,
         "false_negative_rate": False,
@@ -496,7 +496,7 @@ def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None
     print(f"#########################################")
     print(f"Accuracy: {analysis.accuracy:.2f}")
     print(f"Levenshtein Similarity: {analysis.levenshtein_similarity:.2f}")
-    print(f"Jaccard Similarity: {analysis.jaccard_similarity:.2f}")
+    print(f"Jaccard Similarity (IOU): {analysis.jaccard_similarity:.2f}")
     print(f"False Positive Rate: {analysis.false_positive_rate:.2f}")
     print(f"False Negative Rate: {analysis.false_negative_rate:.2f}")
     print(f"Mismatched Value Rate: {analysis.mismatched_value_rate:.2f}")

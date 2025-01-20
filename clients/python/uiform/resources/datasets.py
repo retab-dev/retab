@@ -508,7 +508,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             batch_pbar.set_description(
                 f"Processing batches | Model: {running_metrics['model']} | Acc: {running_metrics['accuracy']:.2f} | "
                 f"Lev: {running_metrics['levenshtein']:.2f} | "
-                f"Jac: {running_metrics['jaccard']:.2f} | "
+                f"IOU: {running_metrics['jaccard']:.2f} | "
                 f"FP: {running_metrics['false_positive']:.2f} | "
                 f"Mism: {running_metrics['mismatched']:.2f}"
             )
@@ -547,7 +547,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 batch = lines[batch_idx:batch_idx + batch_size]
                 
                 # Submit and process batch
-                futures = [executor.submit(process_example, entry.update({"line_number": batch_idx*batch_size + i})) for i, entry in enumerate(batch)]
+                futures = [executor.submit(process_example, entry | {"line_number": batch_idx*batch_size + i}) for i, entry in enumerate(batch)]
                 for future in futures:
                     result = future.result()
                     if result is not None:
@@ -689,7 +689,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             for batch_idx in range(0, len(lines), batch_size):
                 batch = lines[batch_idx:batch_idx + batch_size]
                 
-                batch_futures = [executor.submit(process_entry, entry.update({"line_number": batch_idx*batch_size + i})) for i, entry in enumerate(batch)]
+                batch_futures = [executor.submit(process_entry, entry | {"line_number": batch_idx*batch_size + i}) for i, entry in enumerate(batch)]
                 futures.extend(batch_futures)
                 
                 for future in batch_futures:
