@@ -510,7 +510,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         }
 
         def update_running_metrics(analysis: ExtractionAnalysis) -> None:
-            comparison = analyze_comparison_metrics([analysis])
+            comparison = normalized_comparison_metrics([analysis])
             running_metrics['processed'] += 1
             n = running_metrics['processed']
             # Update running averages
