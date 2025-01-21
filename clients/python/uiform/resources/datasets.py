@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from tqdm import tqdm
 from io import IOBase
+import os
 
 from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
@@ -28,8 +29,11 @@ from anthropic import Anthropic
 from anthropic.types.message import Message
 
 
-class FinetuningJSONL(TypedDict):
+
+class FinetuningJSON(TypedDict):
     messages: list[ChatCompletionUiformMessage]
+    
+FinetuningJSONL = list[FinetuningJSON]
 
 class BatchJSONLResponseFormat(TypedDict):
     type: str
@@ -63,8 +67,6 @@ class BatchJSONLResponseUsage(TypedDict):
     total_tokens: int
     prompt_tokens_details: BatchJSONLResponseUsageTokenDetails
     completion_tokens_details: BatchJSONLResponseUsageCompletionDetails
-
-
 
 class BatchJSONLResponseChoice(TypedDict):
     index: int
@@ -125,6 +127,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         return computed_metrics
 
 
+    
+
     def save(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -133,43 +137,56 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         text_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
         messages: list[ChatCompletionUiformMessage] = [],
+        n_workers: None | int = None,
     ) -> None:
         """Save document-annotation pairs to a JSONL training set.
 
         Args:
             json_schema: The JSON schema for validation, can be a dict, Path, or string
-            pairs_paths: List of dictionaries containing document and annotation file paths
+            pairs_paths: {document_fpath: Path | str, annotation_fpath: Path | str} List of dictionaries containing document and annotation file paths
             jsonl_path: Output path for the JSONL training file
             text_operations: Optional context for prompting
             modality: The modality to use for document processing ("native" by default)
             messages: List of additional chat messages to include
+            n_workers: Number of worker processes (defaults to CPU count)
         """
         json_schema = load_json_schema(json_schema)
-        schema_obj = Schema(
-            json_schema=json_schema
-        )
+        schema_obj = Schema(json_schema=json_schema)
 
+        # Initialize the process pool
+        from concurrent.futures import ThreadPoolExecutor
+        n_workers = n_workers if n_workers is not None else os.cpu_count() or 1
+        print(f"Using {n_workers} workers")
+        
         training_set = []
+        batch_pbar = tqdm(total=len(pairs_paths), desc="Processing pairs", position=0)
 
-        for pair_paths in tqdm(pairs_paths):
+        def process_pair(pair_paths: dict) -> dict:
+            """Process a single document-annotation pair."""
             document_message = self._client.documents.create_messages(
-                document=pair_paths['document_fpath'], 
-                modality=modality, 
+                document=pair_paths['document_fpath'],
+                modality=modality,
                 text_operations=text_operations
             )
             
-            # Use context manager to properly close the file
             with open(pair_paths['annotation_fpath'], 'r') as f:
                 annotation = json.loads(f.read())
             assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
-
-            # Add the complete message set as an entry
-            training_set.append({"messages": document_message.messages + messages + [assistant_message]})
-    
             
+            return {"messages": document_message.messages + messages + [assistant_message]}
 
+        with ThreadPoolExecutor(max_workers=n_workers) as executor:
+            futures = []
+            for pair_paths in pairs_paths:
+                future = executor.submit(process_pair, pair_paths)
+                futures.append(future)
+                
+                training_set.append(future.result())
+                batch_pbar.update(1)
+                time.sleep(1)  # Rate limiting between pairs
+
+        batch_pbar.close()
         self._dump_training_set(training_set, jsonl_path)
-   
 
     def stich_and_save(
         self,
@@ -445,8 +462,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         
         """Evaluate model performance on a test dataset.
 
-
-
         Args:
             json_schema: JSON schema defining the expected data structure
             jsonl_path: Path to the JSONL file containing test examples
@@ -632,7 +647,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
         batch_size: int = 5,
-        max_concurrent: int = 3,
+        max_concurrent: int = 3
         ) -> None:
         """Update annotations in a JSONL file using a new model.
         
@@ -660,8 +675,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         total_batches = (len(lines) + batch_size - 1) // batch_size
         
         batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
-        
-        # TODO: Maybe remove the system message from the messages here
         
         def process_entry(entry: dict) -> dict:
             messages = entry['messages']

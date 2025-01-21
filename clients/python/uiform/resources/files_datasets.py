@@ -22,7 +22,7 @@ from ..types.files_datasets import (
 )
 
 class BaseDatasetsMixin:
-    def prepare_file_upload(
+    def _prepare_file_upload(
             self,
             files: List[IOBase | Path | str],
     ) -> List[FileData]:
@@ -106,7 +106,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         dataset_id: str
     ) -> MultipleUploadResponse:
         """Upload files to a dataset"""
-        prepared_files = self.prepare_file_upload(files)
+        prepared_files = self._prepare_file_upload(files)
         files_data = [("files", f) for f in prepared_files]
         response = self._client._request(
             "POST",
@@ -167,6 +167,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             }
         )
         return AnnotatedDataset.model_validate(response)
+    
     def create_annotated_file(
             self,
             annotated_dataset_id: str,
@@ -232,7 +233,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         annotations_file: IOBase | Path | str
     ) -> BulkAnnotationResponse:
         """Bulk annotate files"""
-        files = self.prepare_file_upload([annotations_file])
+        files = self._prepare_file_upload([annotations_file])
         response = self._client._request(
             "POST",
             f"/api/v1/datasets/annotated-datasets/{annotated_dataset_id}/bulk-annotate",
