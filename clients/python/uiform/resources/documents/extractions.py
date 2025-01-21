@@ -35,6 +35,7 @@ class BaseExtractionsMixin:
         messages: list[ChatCompletionUiformMessage],
         modality: Modality,
         stream: bool,
+        store: bool = False,
     ) -> DocumentExtractRequest:
         assert_valid_model_extraction(model)
 
@@ -49,6 +50,7 @@ class BaseExtractionsMixin:
             "text_operations": text_operations or {},
             "modality": modality,
             "messages": messages,
+            "store": store,
         }
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
@@ -63,10 +65,11 @@ class BaseExtractionsMixin:
         temperature: float,
         messages: list[ChatCompletionUiformMessage],
         modality: Modality,
+        store: bool = False,
     ) -> DocumentExtractRequest:
         stream = False
         return self.prepare_extraction(
-            json_schema, document, text_operations, model, temperature, messages, modality, stream
+            json_schema, document, text_operations, model, temperature, messages, modality, stream, store
         )
     def prepare_stream(
         self,
@@ -77,10 +80,11 @@ class BaseExtractionsMixin:
         temperature: float,
         messages: list[ChatCompletionUiformMessage],
         modality: Modality,
+        store: bool = False,
     ) -> DocumentExtractRequest:
         stream = True
         return self.prepare_extraction(
-            json_schema, document, text_operations, model, temperature, messages, modality, stream
+            json_schema, document, text_operations, model, temperature, messages, modality, stream, store
         )
 
 
@@ -97,6 +101,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
         idempotency_key: str | None = None,
+        store: bool = False,
     ) -> DocumentExtractResponse:
         """
         Process a document using the UiForm API.
@@ -117,7 +122,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         assert (document is not None) or (messages is not None), "Either document or messages must be provided"
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality)
+        request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality, store)
         response = self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
@@ -132,6 +137,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
         idempotency_key: str | None = None,
+        store: bool = False,
     ) -> Generator[DocumentExtractResponse, None, None]:
         """
         Process a document using the UiForm API with streaming enabled.
@@ -156,7 +162,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
                 print(response)
         ```
         """
-        request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality)
+        request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality, store)
 
         # Request the stream and return a context manager
         chunk_json: Any = None
@@ -180,6 +186,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
         idempotency_key: str | None = None,
+        store: bool = False,
     ) -> DocumentExtractResponse:
         """
         Extract structured data from a document asynchronously.
@@ -195,7 +202,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         Returns:
             DocumentExtractResponse: Parsed response from the API.
         """
-        request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality)
+        request = self.prepare_parse(json_schema, document, text_operations, model, temperature, messages, modality, store)
         response = await self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
@@ -210,6 +217,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
         idempotency_key: str | None = None,
+        store: bool = False,
     ) -> AsyncGenerator[DocumentExtractResponse, None]:
         """
         Extract structured data from a document asynchronously with streaming.
@@ -232,7 +240,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
                 print(response)
         ```
         """
-        request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality)
+        request = self.prepare_stream(json_schema, document, text_operations, model, temperature, messages, modality, store)
         chunk_json: Any = None
         async for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:

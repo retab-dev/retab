@@ -23,8 +23,8 @@ class DocumentExtractRequest(BaseModel):
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
     modality: Modality = Field(default="native", description="Modality of the document")
-
-    document: MIMEData | None = Field(..., description="Document to be analyzed")    
+    store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
+    document: MIMEData | None = Field(..., description="Document to be analyzed")
     text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model", examples=[{
         "regex_instructions": [{
             "name": "VAT Number",
