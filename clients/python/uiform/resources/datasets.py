@@ -99,8 +99,8 @@ class BatchJSONLResponse(TypedDict):
 
 class BaseDatasetsMixin:
 
-    def _dump_training_set(self, training_set: list[dict[str, Any]], jsonl_path: Path | str) -> None:
-        with open(jsonl_path, 'w', encoding='utf-8') as file:
+    def _dump_training_set(self, training_set: list[dict[str, Any]], dataset_path: Path | str) -> None:
+        with open(dataset_path, 'w', encoding='utf-8') as file:
             for entry in training_set:
                 file.write(json.dumps(entry) + '\n')
 
@@ -109,7 +109,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
     
     # TODO : Maybe at some point we could add some visualization methods... but the multimodality makes it hard... # client.datasets.plot.tsne()... # client.datasets.plot.umap()...
-    def pprint(self, jsonl_path: Path, output_path: Path = Path("annotations")) -> Metrics:
+    def pprint(self, dataset_path: Path) -> Metrics:
         """Print a summary of the contents and statistics of a JSONL file.
 
         This method analyzes the JSONL file and displays various metrics and statistics
@@ -118,11 +118,11 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         Inspired from : https://gist.github.com/nmwsharp/54d04af87872a4988809f128e1a1d233
 
         Args:
-            jsonl_path: Path to the JSONL file to analyze
+            dataset_path: Path to the JSONL file to analyze
             output_path: Directory where to save any generated reports
         """
 
-        computed_metrics = process_dataset_and_compute_metrics(jsonl_path)
+        computed_metrics = process_dataset_and_compute_metrics(dataset_path)
         display_metrics(computed_metrics)
         return computed_metrics
 
@@ -131,8 +131,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     def save(
         self,
         json_schema: dict[str, Any] | Path | str,
-        pairs_paths: list[dict[str, Path | str]],
-        jsonl_path: Path | str,
+        document_annotation_pairs_paths: list[dict[str, Path | str]],
+        dataset_path: Path | str,
         text_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
         messages: list[ChatCompletionUiformMessage] = [],
@@ -141,7 +141,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         Args:
             json_schema: The JSON schema for validation, can be a dict, Path, or string
-            pairs_paths: {document_fpath: Path | str, annotation_fpath: Path | str} List of dictionaries containing document and annotation file paths
+            document_annotation_pairs_paths: {document_fpath: Path | str, annotation_fpath: Path | str} List of dictionaries containing document and annotation file paths
             jsonl_path: Output path for the JSONL training file
             text_operations: Optional context for prompting
             modality: The modality to use for document processing ("native" by default)
@@ -154,7 +154,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         # Initialize the process pool
         
         training_set = []
-        batch_pbar = tqdm(total=len(pairs_paths), desc="Processing pairs", position=0)
+        batch_pbar = tqdm(total=len(document_annotation_pairs_paths), desc="Processing pairs", position=0)
 
         def process_pair(pair_paths: dict) -> dict:
             """Process a single document-annotation pair."""
@@ -172,7 +172,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 1) as executor:
             futures = []
-            for pair_paths in pairs_paths:
+            for pair_paths in document_annotation_pairs_paths:
                 future = executor.submit(process_pair, pair_paths)
                 futures.append(future)
                 
@@ -180,13 +180,13 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 batch_pbar.update(1)
 
         batch_pbar.close()
-        self._dump_training_set(training_set, jsonl_path)
+        self._dump_training_set(training_set, dataset_path)
 
     def stich_and_save(
         self,
         json_schema: dict[str, Any] | Path | str,
         pairs_paths: list[dict[str, Path | str | list[Path | str] | list[str] | list[Path]]],
-        jsonl_path: Path | str,
+        dataset_path: Path | str,
         text_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
         messages: list[ChatCompletionUiformMessage] = [],
@@ -242,7 +242,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             # Add the complete message set as an entry
             training_set.append({"messages": schema_obj.messages + document_messages + messages + [assistant_message]})
 
-        self._dump_training_set(training_set, jsonl_path)
+        self._dump_training_set(training_set, dataset_path)
 
     #########################################
     ##### ENDPOINTS THAT MAKE LLM CALLS #####
@@ -299,11 +299,18 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         """
         if provider in ["OpenAI", "xAI"]:
             assert isinstance(client, OpenAI)
-            completion = client.beta.chat.completions.parse(
+            completion = client.chat.completions.create(
                 model=model,
                 temperature=temperature,
                 messages=convert_to_openai_format(messages),
-                response_format=schema_obj.inference_pydantic_model
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": schema_obj.schema_version,
+                        "schema": schema_obj.inference_json_schema,
+                        "strict": True
+                    }
+                }
             )
             assert completion.choices[0].message.content is not None
             return completion.choices[0].message.content
@@ -344,7 +351,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: list[Path | str | IOBase],
-        jsonl_path: Path,
+        dataset_path: Path,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
@@ -369,7 +376,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         Args:
             json_schema: The JSON schema for validation
             documents: list of documents, each can be a Path/str or an IOBase object
-            jsonl_path: Output path for the JSONL training file
+            dataset_path: Output path for the JSONL training file
             text_operations: Optional context for prompting
             model: The model to use for processing
             temperature: Model temperature (0-1)
@@ -407,7 +414,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 provider=provider,
                 model=model,
                 temperature=temperature,
-                messages=schema_obj.messages + doc_msg.messages,
+                messages=schema_obj.messages + doc_msg.messages + messages,
                 schema_obj=schema_obj
             )
             
@@ -429,24 +436,31 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             # Split documents into batches
             for batch in tqdm([documents[i : i + batch_size] for i in range(0, len(documents), batch_size)], desc="Processing batches"):
                 # Submit batch of tasks
-                batch_futures = [executor.submit(process_example, doc) for doc in batch]
+                batch_futures = []
+                for doc in batch:
+                    try:
+                        future = executor.submit(process_example, doc)
+                        batch_futures.append(future)
+                    except Exception as e:
+                        print(f"Error submitting document for processing: {e}")
                 futures.extend(batch_futures)
 
                 # Wait for batch to finish (rate limit)
                 for future in batch_futures:
-                    pair = future.result()
-                    pairs_paths.append(pair)
+                    try:
+                        pair = future.result()
+                        pairs_paths.append(pair)
+                    except Exception as e:
+                        print(f"Error processing example: {e}")
 
         # Generate final training set from all results
-        self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
+        self.save(json_schema=json_schema, text_operations=text_operations, document_annotation_pairs_paths=pairs_paths, dataset_path=dataset_path)
 
 
-    ### IMPORTANT : TODO: CHECK THAT
-    ### THIS HAS TO BE DONE ONLY FOR THE NORMAL FIELDS. REASONING FIELDS HAVE TO BE REMOVED
     def eval(
         self,
         json_schema: dict[str, Any] | Path | str,
-        jsonl_path: Path,
+        dataset_path: str | Path,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0, 
         batch_size: int = 5,
@@ -458,7 +472,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         Args:
             json_schema: JSON schema defining the expected data structure
-            jsonl_path: Path to the JSONL file containing test examples
+            dataset_path: Path to the JSONL file containing test examples
             model: The model to use for benchmarking
             temperature: Model temperature setting (0-1)
             text_operations: Optional context with regex instructions
@@ -474,7 +488,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         client, provider = self._initialize_model_client(model)
 
         # Read all lines from the JSONL file
-        with open(jsonl_path, 'r') as f:
+        with open(dataset_path, 'r') as f:
             lines = [json.loads(line) for line in f]
         
         extraction_analyses: list[ExtractionAnalysis] = []
@@ -580,7 +594,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     def benchmark(
         self,
         json_schema: dict[str, Any] | Path | str,
-        jsonl_path: Path,
+        dataset_path: str | Path,
         models: list[LLMModel],
         temperature: float = 0.0,
         batch_size: int = 5,
@@ -592,7 +606,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         Args:
             json_schema: JSON schema defining the expected data structure
-            jsonl_path: Path to the JSONL file containing test examples
+            dataset_path: Path to the JSONL file containing test examples
             models: List of models to benchmark
             temperature: Model temperature setting (0-1)
             batch_size: Number of examples to process in each batch
@@ -608,7 +622,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         for model in models:
             metrics: ComparisonMetrics = self.eval(
                 json_schema=json_schema,
-                jsonl_path=jsonl_path,
+                dataset_path=dataset_path,
                 model=model,
                 temperature=temperature,
                 batch_size=batch_size,
@@ -635,8 +649,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     def update_annotations(
         self, 
         json_schema: dict[str, Any] | Path | str,
-        jsonl_path: Path, 
-        save_path: Path,
+        old_dataset_path: str | Path, 
+        new_dataset_path: str | Path,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
         batch_size: int = 5,
@@ -646,8 +660,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         
         Args:
             json_schema: The JSON schema for validation
-            jsonl_path: Path to the JSONL file to update
-            save_path: Path for saving updated annotations
+            old_dataset_path: Path to the JSONL file to update
+            new_dataset_path: Path for saving updated annotations
             model: The model to use for new annotations
             temperature: Model temperature (0-1)
             batch_size: Number of examples to process in each batch
@@ -661,7 +675,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         client, provider = self._initialize_model_client(model)
         
         # Read all lines from the JSONL file
-        with open(jsonl_path, 'r') as f:
+        with open(old_dataset_path, 'r') as f:
             lines = [json.loads(line) for line in f]
         
         updated_entries = []
@@ -699,14 +713,18 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 futures.extend(batch_futures)
                 
                 for future in batch_futures:
-                    updated_entries.append(future.result())
+                    try:
+                        result = future.result()
+                        updated_entries.append(result)
+                    except Exception as e:
+                        print(f"Error processing example: {e}")
                 
                 batch_pbar.update(1)
                 time.sleep(1)
         
         batch_pbar.close()
         
-        with open(save_path, 'w') as f:
+        with open(new_dataset_path, 'w') as f:
             for entry in updated_entries:
                 f.write(json.dumps(entry) + '\n')
 
@@ -734,7 +752,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         Args:
             json_schema: The JSON schema for validation
             documents: List of documents to process
-            jsonl_path: Output path for the JSONL requests file
+            batch_requests_path: Output path for the JSONL requests file
             text_operations: Optional context for prompting
             model: The model to use for processing
             temperature: Model temperature (0-1)
@@ -781,8 +799,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     def save_batch_update_annotation_requests(
         self,
         json_schema: dict[str, Any] | Path | str,
-        old_dataset_path: Path,
-        batch_requests_path: Path,
+        old_dataset_path: str | Path,
+        batch_requests_path: str | Path,
         model: str = "gpt-4o-mini",
         temperature: float = 0.0,
         messages: list[ChatCompletionUiformMessage] = [],
@@ -791,8 +809,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         
         Args:
             json_schema: The JSON schema for validation
-            jsonl_path: Path to the JSONL file to update
-            save_path: Output path for the updated JSONL file
+            old_dataset_path: Path to the JSONL file to update
+            batch_requests_path: Output path for the updated JSONL file
             model: The model to use for processing
             temperature: Model temperature (0-1)
             messages: Additional messages to include
@@ -841,9 +859,9 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
     def build_dataset_from_batch_results(
         self,
-        batch_requests_path: Path,
-        batch_results_path: Path,
-        dataset_results_path: Path,
+        batch_requests_path: str | Path,
+        batch_results_path: str | Path,
+        dataset_results_path: str | Path,
     ) -> None:
         
         with open(batch_requests_path, 'r') as f:
@@ -882,6 +900,53 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
    
 
 class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
@@ -914,7 +979,7 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: list[Path | str | IOBase],
-        jsonl_path: Path,
+        jsonl_path: str | Path,
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
