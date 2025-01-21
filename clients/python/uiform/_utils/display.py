@@ -275,7 +275,7 @@ def display_metrics(metrics: Metrics) -> None:
     Display the metrics dictionary in a compact table with min/max, mean/median, and p5/p95 on the same row.
     """
     console = Console(style="on grey23")
-    table = Table(title="Token Metrics", show_lines=True)
+    table = Table(title="Dataset Metrics", show_lines=True)
 
     # Add columns
     table.add_column("Metric", justify="left", style="#BDE8F6", no_wrap=True)

@@ -7,15 +7,12 @@ from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.files_datasets import (
      AnnotationStatus, FileTuple,FileData,
     Dataset,
-    DatasetFile,
     AnnotatedDataset,
     AnnotatedFile,
     CreateDatasetRequest,
     ListDatasetsResponse,
-    UploadFileResponse,
     MultipleUploadResponse,
     PaginatedListFilesResponse,
-    UpdateAnnotatedDatasetRequest,
     UpdateAnnotationRequest,
     BulkAnnotationResponse,
     FileWithAnnotationAndSchema

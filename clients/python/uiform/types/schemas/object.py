@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, computed_field, model_validator, PrivateAttr
 from typing import Any, Literal, cast, Self
 import json
+from pathlib import Path
 import copy
 
 from ..documents.create_messages import ChatCompletionUiformMessage
@@ -412,3 +413,15 @@ class Schema(BaseModel):
         self._partial_pydantic_model = convert_basemodel_to_partial_basemodel(self.pydantic_model)
 
         return self
+    
+
+    def save(self, path: Path | str) -> None:
+        """Save a JSON schema to a file.
+
+        Args:
+            json_schema: The JSON schema to save, can be a dict, Path, or string
+            schema_path: Output path for the schema file
+        """
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(self.json_schema, f, ensure_ascii=False, indent=2)
+

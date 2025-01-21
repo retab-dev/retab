@@ -128,7 +128,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
 
     
-
     def save(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -137,7 +136,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         text_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
         messages: list[ChatCompletionUiformMessage] = [],
-        n_workers: None | int = None,
     ) -> None:
         """Save document-annotation pairs to a JSONL training set.
 
@@ -154,9 +152,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         schema_obj = Schema(json_schema=json_schema)
 
         # Initialize the process pool
-        from concurrent.futures import ThreadPoolExecutor
-        n_workers = n_workers if n_workers is not None else os.cpu_count() or 1
-        print(f"Using {n_workers} workers")
         
         training_set = []
         batch_pbar = tqdm(total=len(pairs_paths), desc="Processing pairs", position=0)
@@ -173,9 +168,9 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 annotation = json.loads(f.read())
             assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
             
-            return {"messages": document_message.messages + messages + [assistant_message]}
+            return {"messages": schema_obj.messages + document_message.messages + messages + [assistant_message]}
 
-        with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 1) as executor:
             futures = []
             for pair_paths in pairs_paths:
                 future = executor.submit(process_pair, pair_paths)
@@ -183,7 +178,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 
                 training_set.append(future.result())
                 batch_pbar.update(1)
-                time.sleep(1)  # Rate limiting between pairs
 
         batch_pbar.close()
         self._dump_training_set(training_set, jsonl_path)
@@ -215,6 +209,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         """
 
         json_schema = load_json_schema(json_schema)
+        schema_obj = Schema(json_schema=json_schema)
         training_set = []
 
         for pair_paths in tqdm(pairs_paths):
@@ -245,7 +240,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
 
             # Add the complete message set as an entry
-            training_set.append({"messages": document_messages + messages + [assistant_message]})
+            training_set.append({"messages": schema_obj.messages + document_messages + messages + [assistant_message]})
 
         self._dump_training_set(training_set, jsonl_path)
 
@@ -441,7 +436,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 for future in batch_futures:
                     pair = future.result()
                     pairs_paths.append(pair)
-                time.sleep(1)  # simple rate-limiting pause between batches
 
         # Generate final training set from all results
         self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
@@ -569,7 +563,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                         extraction_analyses.append(result)
 
                 batch_pbar.update(1)
-                time.sleep(1)  # Rate limiting between batches
 
         batch_pbar.close()
 
