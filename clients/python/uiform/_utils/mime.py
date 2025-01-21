@@ -7,6 +7,8 @@ from pathlib import Path
 import io
 import mimetypes
 import PIL.Image
+from pydantic import HttpUrl
+import httpx
 
 from ..types.mime import MIMEData
 from ..types.modalities import SUPPORTED_TYPES
@@ -83,7 +85,7 @@ def convert_mime_data_to_pil_image(mime_data: MIMEData) -> PIL.Image.Image:
 
 
 
-def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | PIL.Image.Image) -> MIMEData:
+def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | PIL.Image.Image | HttpUrl) -> MIMEData:
     """
     Convert documents (file paths or file-like objects) to MIMEData objects.
     
@@ -93,7 +95,18 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     Returns:
         A MIMEData object
     """
-
+    if isinstance(document, HttpUrl):
+        with httpx.Client() as client:
+            url : str = document.unicode_string()
+            response = client.get(url)
+            response.raise_for_status()
+            try:
+                import puremagic
+                extension = puremagic.from_string(response.content)
+            except:
+                extension = '.txt'
+        file_bytes = document
+        filename = "uploaded_file" + extension
     if isinstance(document, PIL.Image.Image):
         return convert_pil_image_to_mime_data(document)
 

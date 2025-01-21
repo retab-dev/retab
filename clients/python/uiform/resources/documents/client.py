@@ -2,6 +2,8 @@ from typing import Any
 from pathlib import Path
 from io import IOBase
 import PIL.Image
+from pydantic import HttpUrl
+
 
 from ...types.modalities import Modality
 from ...types.mime import MIMEData
@@ -13,7 +15,7 @@ from .extractions import Extractions, AsyncExtractions
 class BaseDocumentsMixin:
     def _prepare_create_messages(
         self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native", 
         text_operations: dict[str, Any] | None = None
     ) -> DocumentCreateMessageRequest:
@@ -69,7 +71,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         return convert_mime_data_to_pil_image(mime_response)
 
     def create_messages(self, 
-            document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
+            document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
             modality: Modality = "native", 
             text_operations: dict[str, Any] | None = None,
             idempotency_key: str | None = None) -> DocumentMessage:

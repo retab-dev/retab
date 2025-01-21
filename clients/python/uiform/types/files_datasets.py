@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional, Any, Literal, Tuple, BinaryIO
 from datetime import datetime
 
@@ -92,3 +92,19 @@ class BulkAnnotationResponse(BaseModel):
     successful: int = Field(description="Number of successful annotations")
     failed: int = Field(description="Number of failed annotations")
     errors: List[str] = Field(description="List of error messages")
+
+class ListAnnotatedDatasetsResponse(BaseModel):
+    annotated_datasets: List[AnnotatedDataset]
+
+class PaginatedListFilesWithAnnotationsResponse(BaseModel):
+    files: List[FileWithAnnotation]
+    annotated_dataset: AnnotatedDataset
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+class FileLink(BaseModel):
+    download_url: HttpUrl = Field(description="The signed URL to download the file")
+    expires_in: str = Field(description="The expiration time of the signed URL")
+    filename: str = Field(description="The name of the file")
