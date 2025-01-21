@@ -14,7 +14,7 @@ from ..schemas.object import Schema
 from ..._utils.ai_model import find_provider_from_model
 from ..._utils.mime import generate_sha_hash_from_base64
 from .create_messages import ChatCompletionUiformMessage
-
+import datetime
 class DocumentExtractRequest(BaseModel):
     # Attributes
     model: str = Field(..., description="Model used for chat completion")
@@ -104,6 +104,11 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     regex_instruction_results: list[RegexInstructionResult] | None = None
     text_operations_message: str | None = None
     schema_validation_error: ErrorDetail | None = None
+    
+    # Timestamps
+    request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
+    first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
+    last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
 
 class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion): pass

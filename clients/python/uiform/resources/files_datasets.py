@@ -1,12 +1,12 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Optional, List, BinaryIO, cast,
+from typing import Any, Optional, List, BinaryIO, cast
 from datetime import datetime
 import mimetypes
 import json
 from uiform.types.documents.create_messages import ChatCompletionUiformMessage
 from uiform.types.modalities import Modality
-from documents import Documents, AsyncDocuments
+from .documents import Documents, AsyncDocuments
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.files_datasets import (
      AnnotationStatus, FileLink, FileTuple,FileData,
