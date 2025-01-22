@@ -96,20 +96,8 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
         A MIMEData object
     """
     # Check if document is a HttpUrl (Pydantic type)
-    if hasattr(document, 'unicode_string') and callable(getattr(document, 'unicode_string')):
-        with httpx.Client() as client:
-            url: str = document.unicode_string() # type: ignore
-            response = client.get(url)
-            response.raise_for_status()
-            try:
-                import puremagic
-                extension = puremagic.from_string(response.content)
-            except:
-                extension = '.txt'
-            file_bytes = response.content  # Fix: Use response.content instead of document
-            filename = "uploaded_file" + extension
-            
-    elif isinstance(document, PIL.Image.Image):
+
+    if isinstance(document, PIL.Image.Image):
         return convert_pil_image_to_mime_data(document)
 
     if isinstance(document, MIMEData):
@@ -129,6 +117,18 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
         file_bytes = document.read()
         filename = getattr(document, "name", "uploaded_file")
         filename = Path(filename).name
+    elif hasattr(document, 'unicode_string') and callable(getattr(document, 'unicode_string')):
+        with httpx.Client() as client:
+            url: str = document.unicode_string() # type: ignore
+            response = client.get(url)
+            response.raise_for_status()
+            try:
+                import puremagic
+                extension = puremagic.from_string(response.content)
+            except:
+                extension = '.txt'
+            file_bytes = response.content  # Fix: Use response.content instead of document
+            filename = "uploaded_file" + extension
     else:
         # `document` is a path or a string; cast it to Path
         assert isinstance(document, (Path, str))
@@ -139,7 +139,7 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
 
     # Base64-encode
     encoded_content = base64.b64encode(file_bytes).decode("utf-8")
-
+    print("encodede")
     # Compute SHA-256 hash over the *base64-encoded* content
     hash_obj = hashlib.sha256(encoded_content.encode("utf-8"))
     content_hash = hash_obj.hexdigest()
@@ -147,7 +147,7 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     # Guess MIME type based on file extension
     guessed_type, _ = mimetypes.guess_type(filename)
     mime_type = guessed_type or "application/octet-stream"
-
+    print("mime_type",mime_type)
     # Build and return the MIMEData object
     mime_data = MIMEData(
         id=content_hash,
@@ -155,6 +155,7 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
         mime_type=mime_type,
         content=encoded_content
     )
+    print("mime",mime_data)
     assert_valid_file_type(mime_data.extension)  # <-- Validate extension as needed
 
     return mime_data
