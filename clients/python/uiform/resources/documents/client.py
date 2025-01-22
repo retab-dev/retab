@@ -31,9 +31,6 @@ class BaseDocumentsMixin:
         if image_operations:
             data["image_operations"] = image_operations
 
-        print(DocumentCreateMessageRequest.model_validate(data))
-        print(DocumentCreateMessageRequest.model_validate(data).model_dump())
-
         return DocumentCreateMessageRequest.model_validate(data)
 
 

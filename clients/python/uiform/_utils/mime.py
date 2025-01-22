@@ -139,7 +139,6 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
 
     # Base64-encode
     encoded_content = base64.b64encode(file_bytes).decode("utf-8")
-    print("encodede")
     # Compute SHA-256 hash over the *base64-encoded* content
     hash_obj = hashlib.sha256(encoded_content.encode("utf-8"))
     content_hash = hash_obj.hexdigest()
@@ -147,7 +146,6 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     # Guess MIME type based on file extension
     guessed_type, _ = mimetypes.guess_type(filename)
     mime_type = guessed_type or "application/octet-stream"
-    print("mime_type",mime_type)
     # Build and return the MIMEData object
     mime_data = MIMEData(
         id=content_hash,
@@ -155,7 +153,6 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
         mime_type=mime_type,
         content=encoded_content
     )
-    print("mime",mime_data)
     assert_valid_file_type(mime_data.extension)  # <-- Validate extension as needed
 
     return mime_data

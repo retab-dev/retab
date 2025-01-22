@@ -146,7 +146,7 @@ def validate_packing_type(v: Any) -> Optional[str]:
     if v is None:
         return None
     v_str = str(v).strip().lower()
-    # We’ll store the valid set in lower for easy comparison
+    # We'll store the valid set in lower for easy comparison
     valid_packing_types = {'box', 'pallet', 'container', 'bag', 'drum', 'other'}
     if v_str in valid_packing_types:
         return v_str
@@ -1060,7 +1060,7 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
     Steps:
       1. Expand all refs.
       2. For each property, parse type info and create a suitable Pydantic field.
-      3. Nested objects -> submodels, arrays of objects -> list[submodels].
+      3. Nested objects -> submodels, arrays -> list[type].
       4. Keep 'enum' and 'format' in the final schema so Pydantic sees them in the
          generated model's JSON schema.
     """
@@ -1108,24 +1108,27 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
             field_definitions[prop_name] = (final_type, Field(default_val, **field_kwargs))
 
         elif prop_type == "array":
-            # We only handle "array of objects" for simplicity
+            # Handle arrays of both objects and primitive types
             items_schema = prop_schema.get("items", {})
-            item_type, _, item_nullable, _ = extract_property_type_info(items_schema)
+            item_type, item_format, item_nullable, item_enum = extract_property_type_info(items_schema)
 
-            if item_type != "object":
-                raise ValueError(
-                    f"Only arrays of type 'object' are currently supported. Got: {item_type}"
+            if item_type == "object":
+                # Handle array of objects
+                sub_model = convert_json_schema_to_basemodel(items_schema)
+                array_type = list[sub_model]  # type: ignore
+            else:
+                # Handle array of primitives
+                item_python_type = get_pydantic_primitive_field_type(
+                    item_type, 
+                    item_format, 
+                    is_nullable=item_nullable,
+                    validator_func=KNOWN_COERCIONS.get((item_type, item_format), None),
+                    enum_values=item_enum
                 )
-            if item_nullable:
-                raise ValueError(
-                    "Array of nullable objects is not supported by this function."
-                )
-
-            # create sub-model for items
-            sub_model = convert_json_schema_to_basemodel(items_schema)
+                array_type = list[item_python_type]  # type: ignore
 
             field_definitions[prop_name] = (
-                list[sub_model] if not is_nullable else Optional[list[sub_model]],  # type: ignore
+                array_type if not is_nullable else Optional[array_type],
                 Field(default_val, **field_kwargs)
             )
 
@@ -1139,7 +1142,6 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
 
     # 5. Build the model class
     model_name: str = schema_expanded.get("title", "DynamicModel")
-    #model_config = ConfigDict(json_schema_extra=x_keys) if x_keys else None
     model_config = ConfigDict(extra="forbid", json_schema_extra=x_keys) if x_keys else ConfigDict(extra="forbid")
 
     return create_model(
