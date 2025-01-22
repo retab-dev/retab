@@ -2,6 +2,7 @@ from typing import IO, Any, Optional
 from pathlib import Path
 import time
 from pydantic import BaseModel
+import PIL.Image
 from typing import Type, Optional
 from io import IOBase
 
@@ -20,7 +21,7 @@ class Schemas(SyncAPIResource):
     """Schemas API wrapper"""
     def promptify(self,
                raw_schema: dict[str, Any] | Path | str,
-               documents: list[Path | str | bytes | IOBase],
+               documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
                text_operations: Optional[dict[str, Any]] = None,
                model: str = "gpt-4o-2024-08-06",
                temperature: float = 0,
@@ -65,8 +66,7 @@ class Schemas(SyncAPIResource):
         return Schema.model_validate(self._client._request("POST", "/api/v1/schemas/promptify", data=data))
 
     def generate(self,
-                documents: list[Path | str | bytes | IOBase],
-                text_operations: Optional[dict[str, Any]] = None,    
+                documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
                 model: str = "gpt-4o-2024-11-20",
                 temperature: float = 0.0,
                 modality: Modality = "native") -> Schema:
@@ -80,7 +80,6 @@ class Schemas(SyncAPIResource):
         
         Args:
             documents: List of documents (as MIMEData) to analyze
-            text_operations: Optional context with regex instructions or other metadata
         
         Returns:
             dict[str, Any]: Generated JSON schema with X-Prompts based on document analysis
@@ -95,7 +94,6 @@ class Schemas(SyncAPIResource):
 
         data = {
             "documents": [doc.model_dump() for doc in mime_documents],
-            "text_operations": text_operations,
             "model": model,
             "temperature": temperature,
             "modality": modality
@@ -111,7 +109,7 @@ class AsyncSchemas(AsyncAPIResource):
     """Schemas Asyncronous API wrapper"""
     async def promptify(self,
                     raw_schema: dict[str, Any] | Path | str,
-                    documents: list[Path | str | bytes | IOBase],
+                    documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
                     text_operations: Optional[dict[str, Any]] = None,
                     model: str = "gpt-4o-2024-08-06",
                     temperature: float = 0,
@@ -156,7 +154,7 @@ class AsyncSchemas(AsyncAPIResource):
         return Schema.model_validate(await self._client._request("POST", "/api/v1/schemas/promptify", data=data))
 
     async def generate(self,
-                    documents: list[Path | str | bytes | IOBase],
+                    documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
                     text_operations: Optional[dict[str, Any]] = None,    
                     model: str = "gpt-4o-2024-11-20",
                     temperature: float = 0.0,
