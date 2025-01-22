@@ -4,16 +4,18 @@ from functools import cached_property
 from openai.types.chat.chat_completion import Choice, ChatCompletion
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ContentType
-from ...types.ai_model import AIProvider
+
 from .text_operations import TextOperations, RegexInstructionResult
+from .create_messages import ChatCompletionUiformMessage
+from .image_operations import ImageOperations
 from ..mime import MIMEData, BaseMIMEData
 from ..modalities import Modality
+from ..ai_model import AIProvider
 from ..standards import ErrorDetail, StreamingBaseModel
 from ..schemas.object import Schema
-
 from ..._utils.ai_model import find_provider_from_model
 from ..._utils.mime import generate_sha_hash_from_base64
-from .create_messages import ChatCompletionUiformMessage
+
 import datetime
 class DocumentExtractRequest(BaseModel):
     # Attributes
@@ -32,6 +34,22 @@ class DocumentExtractRequest(BaseModel):
             "pattern": r"[Ff][Rr]\s*(\d\s*){11}"
         }]
     }])
+    image_operations: ImageOperations = Field(
+        default=ImageOperations(**{
+            "correct_image_orientation": True,
+            "dpi": "auto",
+            "image_to_text": "ocr", 
+            "browser_canvas": "A4"
+        }),
+        description="Preprocessing operations applied to image before sending them to the llm",
+        examples=[{
+            "correct_image_orientation": True,
+            "dpi": "300",
+            "image_to_text": "ocr", 
+            "browser_canvas": "A4"
+        }]
+    )
+    """The image operations to apply to the document."""
 
     messages: list[ChatCompletionUiformMessage] = Field(..., description="Messages to be used by the AI model")
 

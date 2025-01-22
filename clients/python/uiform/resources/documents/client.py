@@ -25,9 +25,15 @@ class BaseDocumentsMixin:
         data: dict[str, Any] = {
             "document": mime_document.model_dump(),
             "modality": modality,
-            "text_operations": text_operations,
-            "image_operations": image_operations
         }
+        if text_operations:
+            data["text_operations"] = text_operations
+        if image_operations:
+            data["image_operations"] = image_operations
+
+        print(DocumentCreateMessageRequest.model_validate(data))
+        print(DocumentCreateMessageRequest.model_validate(data).model_dump())
+
         return DocumentCreateMessageRequest.model_validate(data)
 
 

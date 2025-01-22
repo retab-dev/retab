@@ -101,7 +101,7 @@ def convert_to_google_genai_format(
     for message in messages:
         if isinstance(message['content'], str):
             # Direct string content is treated as the prompt for the SDK
-            formatted_inputs.append(message['content'])
+            formatted_inputs.append(message['content']) # type: ignore
         elif isinstance(message['content'], list):
             # Handle structured content
             for part in message['content']:
@@ -115,14 +115,14 @@ def convert_to_google_genai_format(
                         formatted_inputs.append({
                             "mime_type": part.get("mime_type", "application/octet-stream"), # type: ignore
                             "data": base64.b64encode(part["data"]).decode('utf-8') # type: ignore
-                        })
+                        }) # type: ignore
                 elif 'data' in part: 
                     if isinstance(part.get('data', None), str):
                         # Handle string data with a mime_type
                         formatted_inputs.append({
                             "mime_type": part.get("mime_type", "text/plain"), # type: ignore
                             "data": part["data"] # type: ignore
-                        })
+                        }) # type: ignore
                 if part.get('type') == 'image_url':
                     if 'image_url' in part:
                         # Handle image URLs containing base64-encoded data
@@ -133,7 +133,7 @@ def convert_to_google_genai_format(
                             formatted_inputs.append({
                                 "mime_type": "image/jpeg",
                                 "data": base64_data # type: ignore
-                            })
+                            }) # type: ignore   
     
     return formatted_inputs
     
@@ -305,7 +305,7 @@ class DocumentCreateMessageRequest(BaseModel):
     provider: AIProvider = "OpenAI"
     """The AI provider to use for loading the document."""
 
-    text_operations: TextOperations | None = Field(default=None, description="Additional context to be used by the AI model", examples=[{
+    text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model", examples=[{
         "regex_instructions": [{
             "name": "VAT Number",
             "description": "All potential VAT numbers in the documents",
@@ -314,17 +314,17 @@ class DocumentCreateMessageRequest(BaseModel):
     }])
     """The text operations to apply to the document."""
 
-    image_operations : ImageOperations|None = Field(
-        default={
-            "correct_image_orientation" : True, 
+    image_operations : ImageOperations = Field(
+        default=ImageOperations(**{
+            "correct_image_orientation": True,
             "dpi" : 'auto', 
             "image_to_text" : "ocr", 
             "browser_canvas" : "A4"
-        }, 
-            description="Preprocessing operations applied to image before sending them to the llm", 
-            examples=[{
+        }),
+        description="Preprocessing operations applied to image before sending them to the llm", 
+        examples=[{
             "correct_image_orientation": True,
-            "dpi" : '300', 
+            "dpi" : 'auto', 
             "image_to_text" : "ocr", 
             "browser_canvas" : "A4"
         }]
