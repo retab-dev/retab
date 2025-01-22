@@ -313,9 +313,22 @@ class DocumentCreateMessageRequest(BaseModel):
         }],
     }])
     """The text operations to apply to the document."""
-    image_operations : ImageOperations|None = Field(default={"correct_image_orientation" : True}, description="Preprocessing operations applied to image before sending them to the llm", examples=[{
-        "correct_image_orientation": True
-    }])
+
+    image_operations : ImageOperations|None = Field(
+        default={
+            "correct_image_orientation" : True, 
+            "dpi" : 'auto', 
+            "image_to_text" : "ocr", 
+            "browser_canvas" : "A4"
+        }, 
+            description="Preprocessing operations applied to image before sending them to the llm", 
+            examples=[{
+            "correct_image_orientation": True,
+            "dpi" : '300', 
+            "image_to_text" : "ocr", 
+            "browser_canvas" : "A4"
+        }]
+    )
     """The image operations to apply to the document."""
 
     @model_validator(mode="after")

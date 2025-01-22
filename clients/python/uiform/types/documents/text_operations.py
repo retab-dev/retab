@@ -13,3 +13,6 @@ class TextOperations(TypedDict, total=False):
 class RegexInstructionResult(BaseModel):
     instruction: RegexInstruction
     hits: list[str]
+
+
+    
