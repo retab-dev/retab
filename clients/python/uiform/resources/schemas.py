@@ -22,7 +22,6 @@ class Schemas(SyncAPIResource):
     def promptify(self,
                raw_schema: dict[str, Any] | Path | str,
                documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
-               text_operations: Optional[dict[str, Any]] = None,
                model: str = "gpt-4o-2024-08-06",
                temperature: float = 0,
                modality: Modality = "native") -> Schema:

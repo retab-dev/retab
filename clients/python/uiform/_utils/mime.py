@@ -95,9 +95,10 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     Returns:
         A MIMEData object
     """
-    if isinstance(document, HttpUrl):
+    # Check if document is a HttpUrl (Pydantic type)
+    if hasattr(document, 'unicode_string') and callable(getattr(document, 'unicode_string')):
         with httpx.Client() as client:
-            url : str = document.unicode_string()
+            url: str = document.unicode_string() # type: ignore
             response = client.get(url)
             response.raise_for_status()
             try:
@@ -105,9 +106,10 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
                 extension = puremagic.from_string(response.content)
             except:
                 extension = '.txt'
-        file_bytes = document
-        filename = "uploaded_file" + extension
-    if isinstance(document, PIL.Image.Image):
+            file_bytes = response.content  # Fix: Use response.content instead of document
+            filename = "uploaded_file" + extension
+            
+    elif isinstance(document, PIL.Image.Image):
         return convert_pil_image_to_mime_data(document)
 
     if isinstance(document, MIMEData):
