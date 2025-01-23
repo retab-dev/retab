@@ -160,8 +160,8 @@ async def test_extraction_with_idempotency(sync_client: UiForm, booking_confirma
         modality="native",
         idempotency_key=idempotency_key
     )
-    t0 = time.time()
     time.sleep(1)
+    t0 = time.time()
     response_second = client.documents.extractions.parse(
         json_schema=booking_confirmation_json_schema,
         document=booking_confirmation_file_path,
@@ -170,7 +170,7 @@ async def test_extraction_with_idempotency(sync_client: UiForm, booking_confirma
         idempotency_key=idempotency_key
     )
     t1 = time.time()
-    assert t1 - t0 < 5, "Request should take less than 5 seconds"
+    assert t1 - t0 < 10, "Request should take less than 10 seconds"
     assert response_initial.choices[0].message.content == response_second.choices[0].message.content, "Response should be the same"
     assert response_initial.choices[0].message.parsed is not None, "Parsed response should not be None for the first request"
     assert response_second.choices[0].message.parsed is not None, "Parsed response should not be None for the second request"

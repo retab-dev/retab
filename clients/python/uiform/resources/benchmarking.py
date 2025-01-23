@@ -516,6 +516,54 @@ def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None
         print(f"\n############ {metric.upper()} ############")
         plot_metric(analysis, metric, top_n, ascending)
 
+def get_aggregation_metrics(metric: dict[str, float | int], _hierarchy_level: int) -> dict[str, float]:
+    if _hierarchy_level == 0:
+        # For level 0, aggregate all values under empty string key
+        return {"": sum(metric.values()) / len(metric)}
+        
+    aggregated_metrics: dict[str, list[float | int]] = {}
+    for key, value in metric.items():
+        # Split key and handle array notation by replacing array indices with '*'
+        key_parts: list[str] = []
+        for part in key.split('.'):
+            if part.isdigit():
+                key_parts.append('*')
+            else:
+                key_parts.append(part)
+        actual_depth = len([part for part in key_parts if part != '*'])
+        if actual_depth < _hierarchy_level:
+            continue
+    
+        used_depth = 0
+        aggregation_prefix_parts: list[str] = []
+        for part in key_parts:
+            if part == "*":
+                aggregation_prefix_parts.append("*")
+            else:
+                aggregation_prefix_parts.append(part)
+                used_depth += 1
+            if used_depth == _hierarchy_level:
+                break
+        aggregation_prefix = '.'.join(aggregation_prefix_parts)
+        
+        # Aggregate metrics
+        if aggregation_prefix not in aggregated_metrics:
+            aggregated_metrics[aggregation_prefix] = []
+        aggregated_metrics[aggregation_prefix].append(value)
+        
+    # Calculate averages
+    return {
+        key: sum(values) / len(values) if len(values) > 0 else 0
+        for key, values in aggregated_metrics.items()
+    }
+
+def get_max_depth(metric: dict[str, float | int]) -> int:
+    max_depth_upper_bound = max(len(key.split('.')) for key in metric.keys())
+    for max_depth in range(max_depth_upper_bound, 0, -1):
+        if get_aggregation_metrics(metric, max_depth):
+            return max_depth
+    return 0
+
 def aggregate_metric_per_hierarchy_level(metric: dict[str, float | int], hierarchy_level: int) -> dict[str, float | int]:
     """Aggregates metrics by grouping and averaging values at a specified hierarchy level in the key structure.
     
@@ -532,59 +580,9 @@ def aggregate_metric_per_hierarchy_level(metric: dict[str, float | int], hierarc
     Raises:
         ValueError: If the requested hierarchy level exceeds the maximum depth in the data.
     """
-    def get_aggregation_metrics(_hierarchy_level: int) -> dict[str, float]:
-        if _hierarchy_level == 0:
-            # For level 0, aggregate all values under empty string key
-            return {"": sum(metric.values()) / len(metric)}
-            
-        aggregated_metrics: dict[str, list[float | int]] = {}
-        for key, value in metric.items():
-            # Split key and handle array notation by replacing array indices with '*'
-            key_parts: list[str] = []
-            for part in key.split('.'):
-                if part.isdigit():
-                    key_parts.append('*')
-                else:
-                    key_parts.append(part)
-            actual_depth = len([part for part in key_parts if part != '*'])
-            if actual_depth < _hierarchy_level:
-                continue
-        
-            used_depth = 0
-            aggregation_prefix_parts: list[str] = []
-            for part in key_parts:
-                if part == "*":
-                    aggregation_prefix_parts.append("*")
-                else:
-                    aggregation_prefix_parts.append(part)
-                    used_depth += 1
-                if used_depth == _hierarchy_level:
-                    break
-            aggregation_prefix = '.'.join(aggregation_prefix_parts)
-            
-            # Aggregate metrics
-            if aggregation_prefix not in aggregated_metrics:
-                aggregated_metrics[aggregation_prefix] = []
-            aggregated_metrics[aggregation_prefix].append(value)
-            
-        # Calculate averages
-        return {
-            key: sum(values) / len(values) 
-            for key, values in aggregated_metrics.items()
-        }
-
-    def get_max_depth() -> int:
-        max_depth_upper_bound = max(len(key.split('.')) for key in metric.keys())
-        for max_depth in range(max_depth_upper_bound, 0, -1):
-            if get_aggregation_metrics(max_depth):
-                return max_depth
-        return 0
-
-    max_depth = get_max_depth()
+    max_depth = get_max_depth(metric)
     
     if hierarchy_level > max_depth:
         raise ValueError(f"Hierarchy level {hierarchy_level} is greater than the maximum depth {max_depth}")
     
-    return get_aggregation_metrics(hierarchy_level)
-
-
+    return get_aggregation_metrics(metric, hierarchy_level)

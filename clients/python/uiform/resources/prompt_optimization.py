@@ -1,37 +1,61 @@
 from typing import Any
+from pathlib import Path
+import json
 
 from .._resource import SyncAPIResource, AsyncAPIResource
+from .._utils.json_schema import load_json_schema
+from ..types.jobs import JobResponse
+from ..types.prompt_optimization import PromptOptimizationObject, PromptOptimizationProps, PromptOptimizationJobInputData, PromptOptimizationJob, PromptOptimizationPropsParams
 
+class PromptOptimizationJobsMixin:
+    def prepare_create(self, raw_schema: dict[str, Any] | Path | str, 
+                       training_file: str,
+                       schema_optimization_props: PromptOptimizationPropsParams) -> PromptOptimizationJob:
+        
+        optimization_objects = []
+        with open(training_file, "r") as f:
+            for line in f:
+                optimization_objects.append(PromptOptimizationObject(**json.loads(line)))
+        
+        
+        job = PromptOptimizationJob(
+            job_type="prompt-optimization",
+            input_data=PromptOptimizationJobInputData(
+                raw_schema=load_json_schema(raw_schema),
+                optimization_objects=optimization_objects,
+                schema_optimization_props=PromptOptimizationProps(**schema_optimization_props)
+            )
+        )
+        return job
 
-class PromptOptimizationJobs(SyncAPIResource):
-    def create(self, training_file: str, model: str) -> Any:
+class PromptOptimizationJobs(SyncAPIResource, PromptOptimizationJobsMixin):
+    def create(self, raw_schema: dict[str, Any] | Path | str, training_file: str, schema_optimization_props: PromptOptimizationPropsParams) -> JobResponse:
         """Create a new prompt optimization job"""
 
-        # TODO
+        request_data = self.prepare_create(raw_schema, training_file, schema_optimization_props)
+        response = self._client._request("POST", "/api/v1/jobs", data=request_data.model_dump(mode="json"))
+        return JobResponse.model_validate(response)
 
-        raise NotImplementedError("Prompt optimization is not implemented yet")
 
     def retrieve(self, job_id: str) -> Any:
         """Retrieve status of a prompt optimization job"""
+        response = self._client._request("GET", f"/api/v1/jobs/{job_id}")
+        return JobResponse.model_validate(response)
 
-        # TODO
-
-        raise NotImplementedError("Prompt optimization is not implemented yet")
-
-class AsyncOptimizationJobs(AsyncAPIResource):
-    async def create(self, training_file: str, model: str) -> Any:
+class AsyncPromptOptimizationJobs(AsyncAPIResource, PromptOptimizationJobsMixin):
+    async def create(self, raw_schema: dict[str, Any] | Path | str, training_file: str, schema_optimization_props: PromptOptimizationPropsParams) -> Any:
         """Create a new prompt optimization job"""
 
-        # TODO
-
-        raise NotImplementedError("Prompt optimization is not implemented yet")
+        request_data = self.prepare_create(raw_schema, training_file, schema_optimization_props)
+        response = await self._client._request("POST", "/api/v1/jobs/", data=request_data.model_dump(mode="json"))
+        return JobResponse.model_validate(response)
 
     async def retrieve(self, job_id: str) -> Any:
         """Retrieve status of a prompt optimization job"""
 
-        # TODO
+        response = await self._client._request("GET", f"/api/v1/jobs/{job_id}")
+        return JobResponse.model_validate(response)
 
-        raise NotImplementedError("Prompt optimization is not implemented yet")
 
 class PromptOptimization(SyncAPIResource):
     """Prompt optimization jobs API wrapper"""
@@ -43,9 +67,9 @@ class PromptOptimization(SyncAPIResource):
 
 class AsyncPromptOptimization(AsyncAPIResource):
     """Prompt optimization jobs Asyncronous API wrapper"""
-    _jobs: AsyncOptimizationJobs
+    _jobs: AsyncPromptOptimizationJobs
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self._jobs = AsyncOptimizationJobs(client=self._client)
+        self._jobs = AsyncPromptOptimizationJobs(client=self._client)
    
