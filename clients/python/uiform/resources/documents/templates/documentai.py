@@ -13,16 +13,7 @@ from ....types.mime import MIMEData
 from ....types.modalities import Modality
 from typing import Literal
 
-DocumentAITemplate = Literal['bank_statement',
-    'contract',
-    'driver_license',
-    'expense',
-    'identity_proofing',
-    'invoice',
-    'passport',
-    'pay_slip',
-    'w2'
-]
+DocumentAITemplate = Literal['bank_statement', 'contract', 'driver_license', 'expense', 'identity_proofing', 'invoice', 'passport', 'pay_slip', 'w2']
 
 from pydantic import BaseModel
 from .schemas import Invoice, Contract, BankStatement, W2, Expense, PaySlip, DriverLicense, Passport, IdentityProofing
