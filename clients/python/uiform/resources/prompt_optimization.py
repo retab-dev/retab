@@ -7,6 +7,8 @@ from .._utils.json_schema import load_json_schema
 from ..types.jobs import JobResponse
 from ..types.prompt_optimization import PromptOptimizationObject, PromptOptimizationProps, PromptOptimizationJobInputData, PromptOptimizationJob, PromptOptimizationPropsParams
 
+MAX_TRAINING_SAMPLES = 10
+
 class PromptOptimizationJobsMixin:
     def prepare_create(self, raw_schema: dict[str, Any] | Path | str, 
                        training_file: str,
@@ -22,7 +24,7 @@ class PromptOptimizationJobsMixin:
             job_type="prompt-optimization",
             input_data=PromptOptimizationJobInputData(
                 raw_schema=load_json_schema(raw_schema),
-                optimization_objects=optimization_objects,
+                optimization_objects=optimization_objects[:MAX_TRAINING_SAMPLES],
                 schema_optimization_props=PromptOptimizationProps(**schema_optimization_props)
             )
         )
