@@ -112,14 +112,14 @@ def convert_to_google_genai_format(
                 if 'data' in part: 
                     if isinstance(part.get('data', None), bytes):
                         # Handle binary data
-                        formatted_inputs.append({
+                        formatted_inputs.append({ # type: ignore
                             "mime_type": part.get("mime_type", "application/octet-stream"), # type: ignore
                             "data": base64.b64encode(part["data"]).decode('utf-8') # type: ignore
                         }) # type: ignore
                 elif 'data' in part: 
                     if isinstance(part.get('data', None), str):
                         # Handle string data with a mime_type
-                        formatted_inputs.append({
+                        formatted_inputs.append({ # type: ignore
                             "mime_type": part.get("mime_type", "text/plain"), # type: ignore
                             "data": part["data"] # type: ignore
                         }) # type: ignore
@@ -130,7 +130,7 @@ def convert_to_google_genai_format(
                         if url.startswith('data:image/jpeg;base64,'):
                             # Extract base64 data and add it to the formatted inputs
                             base64_data = url.replace('data:image/jpeg;base64,', '')
-                            formatted_inputs.append({
+                            formatted_inputs.append({ # type: ignore
                                 "mime_type": "image/jpeg",
                                 "data": base64_data # type: ignore
                             }) # type: ignore   
@@ -317,14 +317,14 @@ class DocumentCreateMessageRequest(BaseModel):
     image_operations : ImageOperations = Field(
         default=ImageOperations(**{
             "correct_image_orientation": True,
-            "dpi" : 'auto', 
+            "dpi" : 72, 
             "image_to_text" : "ocr", 
             "browser_canvas" : "A4"
         }),
         description="Preprocessing operations applied to image before sending them to the llm", 
         examples=[{
             "correct_image_orientation": True,
-            "dpi" : 'auto', 
+            "dpi" : 72, 
             "image_to_text" : "ocr", 
             "browser_canvas" : "A4"
         }]

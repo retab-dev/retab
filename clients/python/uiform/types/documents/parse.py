@@ -37,14 +37,14 @@ class DocumentExtractRequest(BaseModel):
     image_operations: ImageOperations = Field(
         default=ImageOperations(**{
             "correct_image_orientation": True,
-            "dpi": "auto",
+            "dpi" : 72,
             "image_to_text": "ocr", 
             "browser_canvas": "A4"
         }),
         description="Preprocessing operations applied to image before sending them to the llm",
         examples=[{
             "correct_image_orientation": True,
-            "dpi": "300",
+            "dpi" : 72,
             "image_to_text": "ocr", 
             "browser_canvas": "A4"
         }]

@@ -134,6 +134,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         document_annotation_pairs_paths: list[dict[str, Path | str]],
         dataset_path: Path | str,
         text_operations: Optional[dict[str, Any]] = None,
+        image_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
         messages: list[ChatCompletionUiformMessage] = [],
     ) -> None:
@@ -146,41 +147,25 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             text_operations: Optional context for prompting
             modality: The modality to use for document processing ("native" by default)
             messages: List of additional chat messages to include
-            n_workers: Number of worker processes (defaults to CPU count)
         """
         json_schema = load_json_schema(json_schema)
         schema_obj = Schema(json_schema=json_schema)
 
-        # Initialize the process pool
-        
-        training_set = []
-        batch_pbar = tqdm(total=len(document_annotation_pairs_paths), desc="Processing pairs", position=0)
-
-        def process_pair(pair_paths: dict) -> dict:
-            """Process a single document-annotation pair."""
-            document_message = self._client.documents.create_messages(
-                document=pair_paths['document_fpath'],
-                modality=modality,
-                text_operations=text_operations
-            )
-            
-            with open(pair_paths['annotation_fpath'], 'r') as f:
-                annotation = json.loads(f.read())
-            assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
-            
-            return {"messages": schema_obj.messages + document_message.messages + messages + [assistant_message]}
-
-        with ThreadPoolExecutor(max_workers=os.cpu_count() or 1) as executor:
-            futures = []
-            for pair_paths in document_annotation_pairs_paths:
-                future = executor.submit(process_pair, pair_paths)
-                futures.append(future)
+        with open(dataset_path, 'w', encoding='utf-8') as file:
+            for pair_paths in tqdm(document_annotation_pairs_paths, desc="Processing pairs", position=0):
+                document_message = self._client.documents.create_messages(
+                    document=pair_paths['document_fpath'],
+                    modality=modality,
+                    text_operations=text_operations,
+                    image_operations=image_operations
+                )
                 
-                training_set.append(future.result())
-                batch_pbar.update(1)
-
-        batch_pbar.close()
-        self._dump_training_set(training_set, dataset_path)
+                with open(pair_paths['annotation_fpath'], 'r') as f:
+                    annotation = json.loads(f.read())
+                assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
+                
+                entry = {"messages": schema_obj.messages + document_message.messages + messages + [assistant_message]}
+                file.write(json.dumps(entry) + '\n')
 
     def stich_and_save(
         self,
