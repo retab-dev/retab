@@ -9,6 +9,8 @@ from pathlib import Path
 from tqdm import tqdm
 from io import IOBase
 import os
+import tempfile
+import shutil
 
 from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
@@ -109,7 +111,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
     
     # TODO : Maybe at some point we could add some visualization methods... but the multimodality makes it hard... # client.datasets.plot.tsne()... # client.datasets.plot.umap()...
-    def pprint(self, dataset_path: Path) -> Metrics:
+    def pprint(self, dataset_path: Path, input_token_price: Optional[float] = None, output_token_price: Optional[float] = None) -> Metrics:
         """Print a summary of the contents and statistics of a JSONL file.
 
         This method analyzes the JSONL file and displays various metrics and statistics
@@ -119,11 +121,12 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         Args:
             dataset_path: Path to the JSONL file to analyze
-            output_path: Directory where to save any generated reports
+            completion_token_price: Price per completion token
+            input_token_price: Price per input token
         """
 
         computed_metrics = process_dataset_and_compute_metrics(dataset_path)
-        display_metrics(computed_metrics)
+        display_metrics(computed_metrics, input_token_price=input_token_price, output_token_price=output_token_price)
         return computed_metrics
 
 
@@ -166,6 +169,57 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 
                 entry = {"messages": schema_obj.messages + document_message.messages + messages + [assistant_message]}
                 file.write(json.dumps(entry) + '\n')
+
+
+    def change_schema(
+        self,
+        input_dataset_path: Path | str,
+        json_schema: dict[str, Any] | Path | str,
+        output_dataset_path: None | Path | str = None,
+        inplace: bool = False,
+    ) -> None:
+        """Change the system prompt in a dataset to match a new schema.
+
+        Args:
+            input_dataset_path: Path to the input JSONL dataset file
+            output_dataset_path: Path to the output JSONL dataset file
+            json_schema: The new JSON schema for validation, can be a dict, Path, or string
+            inplace: If True, overwrite the input dataset with the changes
+        """
+        json_schema = load_json_schema(json_schema)
+        schema_obj = Schema(json_schema=json_schema)
+
+        # Determine the path to write to
+        if inplace: 
+            assert output_dataset_path is None, "Cannot specify inplace=True and output_dataset_path not None"
+            target_path = input_dataset_path
+        else: 
+            assert output_dataset_path, "Cannot save the file if inplace=False and output_dataset_path is None"
+            target_path = output_dataset_path
+
+        assert isinstance(target_path, Path) or isinstance(target_path, str)
+
+        # Use a temporary file to write the updated content
+        with tempfile.NamedTemporaryFile('w', delete=False, encoding='utf-8') as temp_file:
+            with open(input_dataset_path, 'r', encoding='utf-8') as infile:
+                for line in infile:
+                    entry = json.loads(line)
+                    messages = entry.get("messages", [])
+
+                    # Remove existing system prompt if it exists
+                    if messages and messages[0].get("role") == "system":
+                        messages = messages[1:]
+
+                    # Add the new system prompt from schema_obj.messages
+                    updated_messages = schema_obj.messages + messages
+                    updated_entry = {"messages": updated_messages}
+
+                    # Write the updated entry to the temporary file
+                    temp_file.write(json.dumps(updated_entry) + '\n')
+
+        # Replace the original file with the temporary file
+        shutil.move(temp_file.name, target_path)
+
 
     def stich_and_save(
         self,

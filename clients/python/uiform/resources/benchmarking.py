@@ -513,8 +513,6 @@ def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None
     for metric, ascending in metric_ascendency_dict.items():
         print(f"\n\n############ {metric.upper()} ############")
         plot_metric(analysis, metric, top_n, ascending)
-        print(f"\n############ {metric.upper()} ############")
-        plot_metric(analysis, metric, top_n, ascending)
 
 def get_aggregation_metrics(metric: dict[str, float | int], _hierarchy_level: int) -> dict[str, float]:
     if _hierarchy_level == 0:

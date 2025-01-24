@@ -1,4 +1,4 @@
-from typing import TypedDict, List
+from typing import TypedDict, List, Optional
 import json
 import requests
 from PIL import Image
@@ -12,7 +12,7 @@ import numpy as np
 from typing import List, Dict
 from rich.table import Table
 from rich.console import Console
-
+from typing import Literal
 
 class TokenStats(TypedDict):
     min: float
@@ -23,17 +23,19 @@ class TokenStats(TypedDict):
     p95: float
 
 class TokenCounts(TypedDict):
-    system_text_tokens: int
-    user_text_tokens: int
-    assistant_text_tokens: int
-    image_tokens: int
+    input_text_tokens: int
+    output_text_tokens: int
+    input_image_tokens: int
+    output_image_tokens: int
 
 class MetricCategory(TypedDict):
     num_examples: int
     total_tokens: TokenStats
-    assistant_tokens: TokenStats
+    input_tokens: TokenStats
+    output_tokens: TokenStats
     sum_total_tokens: float
-    sum_assistant_tokens: float
+    sum_input_tokens: float
+    sum_output_tokens: float
     num_examples_over_token_limit: int
 
 class Metrics(TypedDict):
@@ -50,45 +52,60 @@ def count_text_tokens(content: str, encoding_name: str = "cl100k_base") -> int:
     return len(enc.encode(content))
 
 
+def count_image_tokens(
+    image_url: str, 
+    detail: Literal["low", "high", "auto"] = "high"
+) -> int:
+    base_token_cost = 85       # cost for all images
+    token_per_tile = 170       # cost per 512×512 tile in high detail
 
-def count_image_tokens(image_url: str) -> int:
-    """
-    Count the number of tokens for an image. If the image is a base64-encoded data URL,
-    calculate dimensions from the decoded image metadata (if available).
-    For HTTP URLs, try to fetch dimensions; fallback to default tile count if not accessible.
-    """
-    base_token_cost = 85  # Base token cost for any image
-    token_per_tile = 170  # Token cost per 512x512 tile
+    # 1. Decide detail=low or detail=high
+    #    If detail=auto, figure out from user input or some heuristic
+    if detail == "low":
+        # 2. Low detail => always 85 tokens
+        return base_token_cost
+    else: 
+        assert detail == "high" or detail == "auto"
+        # 3. High detail => 2-step scaling + tile-based cost
 
-    if image_url.startswith("data:image"):
-        # Parse base64 data
+        # (a) Get the raw image dimensions
         try:
-            header, encoded_data = image_url.split(",", 1)
-            image_data = base64.b64decode(encoded_data)
-            # Decode image dimensions using PIL
-            image = Image.open(BytesIO(image_data))
-            width, height = image.size
-        except Exception:
-            return base_token_cost  # If decoding fails, assume base token cost only
-    elif image_url.startswith("http"):
-        # Try to fetch the image and get its dimensions
-        try:
-            response = requests.get(image_url, timeout=5)
-            response.raise_for_status()
-            image = Image.open(BytesIO(response.content))
-            width, height = image.size
-        except Exception:
-            return base_token_cost + token_per_tile  # Fallback to 1 tile
-    else:
-        # Unsupported image format
-        return base_token_cost + token_per_tile  # Default to 1 tile
+            if image_url.startswith("data:image"):
+                header, encoded_data = image_url.split(",", 1)
+                image_data = base64.b64decode(encoded_data)
+                img = Image.open(BytesIO(image_data))
+            else:
+                # HTTP URL or local path
+                response = requests.get(image_url, timeout=5)
+                response.raise_for_status()
+                img = Image.open(BytesIO(response.content))
 
-    # Calculate number of tiles
-    tiles_wide = ceil(width / 512)
-    tiles_high = ceil(height / 512)
-    total_tiles = tiles_wide * tiles_high
+            width, height = img.size
+        except Exception:
+            # If we fail to decode or fetch, maybe return the base cost
+            # plus one tile as a fallback
+            return base_token_cost + token_per_tile
 
-    return base_token_cost + (token_per_tile * total_tiles)
+        # (b) Scale so neither dimension exceeds 2048
+        max_side = max(width, height)
+        if max_side > 2048:
+            scale_factor = 2048.0 / max_side
+            width = int(width * scale_factor)
+            height = int(height * scale_factor)
+
+        # (c) Upscale if shortest side < 768
+        min_side = min(width, height)
+        if min_side < 768:
+            upscale_factor = 768.0 / min_side
+            width = int(width * upscale_factor)
+            height = int(height * upscale_factor)
+
+        # (d) Count 512×512 tiles in the scaled image
+        tiles_wide = ceil(width / 512)
+        tiles_high = ceil(height / 512)
+        total_tiles = tiles_wide * tiles_high
+
+        return base_token_cost + (token_per_tile * total_tiles)
 
 
 def process_jsonl_file(jsonl_path: str) -> List[TokenCounts]:
@@ -101,10 +118,10 @@ def process_jsonl_file(jsonl_path: str) -> List[TokenCounts]:
     with open(jsonl_path, "r", encoding="utf-8") as file:
         for line in file:
             example = json.loads(line)
-            system_text_tokens = 0
-            user_text_tokens = 0
-            assistant_text_tokens = 0
-            image_tokens = 0
+            input_text_tokens = 0
+            output_text_tokens = 0
+            input_image_tokens = 0
+            output_image_tokens = 0
 
             for message in example.get("messages", []):
                 role = message.get("role")
@@ -112,24 +129,26 @@ def process_jsonl_file(jsonl_path: str) -> List[TokenCounts]:
 
                 if isinstance(content, str):
                     # Count text tokens based on role
-                    if role == "system":
-                        system_text_tokens += count_text_tokens(content)
-                    elif role == "user":
-                        user_text_tokens += count_text_tokens(content)
+                    if role in ["system", "user"]:
+                        input_text_tokens += count_text_tokens(content)
                     elif role == "assistant":
-                        assistant_text_tokens += count_text_tokens(content)
+                        output_text_tokens += count_text_tokens(content)
 
                 elif isinstance(content, list):  # Check for images in content
                     for item in content:
                         if item.get("type") == "image_url" and "image_url" in item:
                             image_url = item["image_url"]["url"]
-                            image_tokens += count_image_tokens(image_url)
+                            tokens = count_image_tokens(image_url)
+                            if role in ["system", "user"]:
+                                input_image_tokens += tokens
+                            elif role == "assistant":
+                                output_image_tokens += tokens
 
             results.append(TokenCounts(
-                system_text_tokens=system_text_tokens,
-                user_text_tokens=user_text_tokens,
-                assistant_text_tokens=assistant_text_tokens,
-                image_tokens=image_tokens
+                input_text_tokens=input_text_tokens,
+                output_text_tokens=output_text_tokens,
+                input_image_tokens=input_image_tokens,
+                output_image_tokens=output_image_tokens
             ))
 
     return results
@@ -160,117 +179,139 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
         "Text": MetricCategory(
             num_examples=0,
             total_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
-            assistant_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
+            input_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
+            output_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
             sum_total_tokens=0,
-            sum_assistant_tokens=0,
+            sum_input_tokens=0,
+            sum_output_tokens=0,
             num_examples_over_token_limit=0,
         ),
         "Image": MetricCategory(
             num_examples=0,
             total_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
-            assistant_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
+            input_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
+            output_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
             sum_total_tokens=0,
-            sum_assistant_tokens=0,
+            sum_input_tokens=0,
+            sum_output_tokens=0,
             num_examples_over_token_limit=0,
         ),
         "Total": MetricCategory(
             num_examples=0,
             total_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
-            assistant_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
+            input_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
+            output_tokens=TokenStats(min=0, max=0, mean=0, median=0, p5=0, p95=0),
             sum_total_tokens=0,
-            sum_assistant_tokens=0,
+            sum_input_tokens=0,
+            sum_output_tokens=0,
             num_examples_over_token_limit=0,
         )
     }
 
     # Accumulate token counts
-    text_total_tokens = []
-    image_total_tokens = []
-    text_assistant_tokens = []
-    image_assistant_tokens = []
-    total_tokens = []
-    total_assistant_tokens = []
+    input_text_tokens = []
+    output_text_tokens = []
+    messages_text_tokens = []
+
+    input_image_tokens = []
+    output_image_tokens = []
+    messages_image_tokens = []
+
+    input_total_tokens = []
+    output_total_tokens = []
+    messages_total_tokens = []
 
     with open(jsonl_path, "r", encoding="utf-8") as file:
         for line in file:
             example = json.loads(line)
 
-            system_text_tokens = 0
-            system_image_tokens = 0
+            input_text_tokens_example = 0
+            output_text_tokens_example = 0
 
-            user_text_tokens = 0
-            user_image_tokens = 0
-
-            assistant_text_tokens = 0
-            assistant_image_tokens = 0
+            input_image_tokens_example = 0
+            output_image_tokens_example = 0
 
             for message in example.get("messages", []):
                 role = message.get("role")
                 content = message.get("content")
 
                 if isinstance(content, str):
-                    if role == "system":
-                        system_text_tokens += count_text_tokens(content)
-                    elif role == "user":
-                        user_text_tokens += count_text_tokens(content)
+                    if role in ["system", "user"]:
+                        input_text_tokens_example += count_text_tokens(content)
                     elif role == "assistant":
-                        assistant_text_tokens += count_text_tokens(content)
+                        output_text_tokens_example += count_text_tokens(content)
                 elif isinstance(content, list):  # Handle images
                     for item in content:
                         if item.get("type") == "image_url" and "image_url" in item:
                             image_url = item["image_url"]["url"]
-                            tokens = count_image_tokens(image_url)
-                            if role == "system":
-                                system_image_tokens += tokens
-                            elif role == "user":
-                                user_image_tokens += tokens
+                            detail = item["image_url"]["detail"]
+                            tokens = count_image_tokens(image_url, detail)
+                            if role in ["system", "user"]:
+                                input_image_tokens_example += tokens
                             elif role == "assistant":
-                                assistant_image_tokens+= tokens
+                                output_image_tokens_example += tokens
+
+                        elif item.get("type") == "text":
+                            if role in ["system", "user"]:
+                                input_text_tokens_example += count_text_tokens(item["text"])
+                            elif role == "assistant":
+                                output_text_tokens_example += count_text_tokens(item["text"])
+
 
             # Calculate totals for the example
-            example_text_tokens = system_text_tokens + user_text_tokens + assistant_text_tokens
-            example_total_tokens = example_text_tokens + system_image_tokens + user_image_tokens
+            example_total_tokens = input_text_tokens_example + output_text_tokens_example + input_image_tokens_example + output_image_tokens_example
 
             # Add to accumulators
-            text_total_tokens.append(example_text_tokens)
-            text_assistant_tokens.append(assistant_text_tokens)
-            image_total_tokens.append(system_image_tokens + user_image_tokens)
-            image_assistant_tokens.append(assistant_image_tokens)
-            total_tokens.append(example_total_tokens)
-            total_assistant_tokens.append(assistant_text_tokens + assistant_image_tokens)
+            input_text_tokens.append(input_text_tokens_example)
+            output_text_tokens.append(output_text_tokens_example)
+            messages_text_tokens.append(input_text_tokens_example + output_text_tokens_example)
+
+            input_image_tokens.append(input_image_tokens_example)
+            output_image_tokens.append(output_image_tokens_example)
+            messages_image_tokens.append(input_image_tokens_example + output_image_tokens_example)
+
+            input_total_tokens.append(input_text_tokens_example + input_image_tokens_example)
+            output_total_tokens.append(output_text_tokens_example + output_image_tokens_example)
+            messages_total_tokens.append(input_text_tokens_example + output_text_tokens_example + input_image_tokens_example + output_image_tokens_example)
 
             # Count examples over token limit
-            if example_text_tokens > token_limit:
+            if input_text_tokens_example > token_limit:
                 metrics["Text"]["num_examples_over_token_limit"] += 1
-            if system_image_tokens + user_image_tokens > token_limit:
+            if input_image_tokens_example > token_limit:
                 metrics["Image"]["num_examples_over_token_limit"] += 1
             if example_total_tokens > token_limit:
                 metrics["Total"]["num_examples_over_token_limit"] += 1
                 #print(example_total_tokens, token_limit)
 
     # Update metrics for Text, Image, and Total
-    metrics["Text"]["num_examples"] = len(text_total_tokens)
-    metrics["Text"]["total_tokens"] = calculate_statistics(text_total_tokens)
-    metrics["Text"]["assistant_tokens"] = calculate_statistics(text_assistant_tokens)
-    metrics["Text"]["sum_assistant_tokens"] = sum(text_assistant_tokens)
-    metrics["Text"]["sum_total_tokens"] = sum(text_total_tokens)
+    metrics["Text"]["num_examples"] = len(input_text_tokens)
+    metrics["Text"]["total_tokens"] = calculate_statistics(messages_text_tokens)
+    metrics["Text"]["input_tokens"] = calculate_statistics(input_text_tokens)
+    metrics["Text"]["output_tokens"] = calculate_statistics(output_text_tokens)
+    metrics["Text"]["sum_input_tokens"] = sum(input_text_tokens)
+    metrics["Text"]["sum_output_tokens"] = sum(output_text_tokens)
+    metrics["Text"]["sum_total_tokens"] = sum(messages_text_tokens)
 
-    metrics["Image"]["num_examples"] = len(image_total_tokens)
-    metrics["Image"]["total_tokens"] = calculate_statistics(image_total_tokens)
-    metrics["Image"]["assistant_tokens"] = calculate_statistics(image_assistant_tokens)
-    metrics["Image"]["sum_assistant_tokens"] = sum(image_assistant_tokens)
-    metrics["Image"]["sum_total_tokens"] = sum(image_total_tokens)
+    metrics["Image"]["num_examples"] = len(input_image_tokens)
+    metrics["Image"]["total_tokens"] = calculate_statistics(messages_image_tokens)
+    metrics["Image"]["input_tokens"] = calculate_statistics(input_image_tokens)
+    metrics["Image"]["output_tokens"] = calculate_statistics(output_image_tokens)
+    metrics["Image"]["sum_input_tokens"] = sum(input_image_tokens)
+    metrics["Image"]["sum_output_tokens"] = sum(output_image_tokens)
+    metrics["Image"]["sum_total_tokens"] = sum(messages_image_tokens)
 
-    metrics["Total"]["num_examples"] = len(total_tokens)
-    metrics["Total"]["total_tokens"] = calculate_statistics(total_tokens)
-    metrics["Total"]["assistant_tokens"] = calculate_statistics(total_assistant_tokens)
-    metrics["Total"]["sum_assistant_tokens"] = sum(total_assistant_tokens)
-    metrics["Total"]["sum_total_tokens"] = sum(total_tokens)
+    metrics["Total"]["num_examples"] = len(input_total_tokens)
+    metrics["Total"]["total_tokens"] = calculate_statistics(messages_total_tokens)
+    metrics["Total"]["input_tokens"] = calculate_statistics(input_total_tokens)
+    metrics["Total"]["output_tokens"] = calculate_statistics(output_total_tokens)
+    metrics["Total"]["sum_input_tokens"] = sum(input_total_tokens)
+    metrics["Total"]["sum_output_tokens"] = sum(output_total_tokens)
+    metrics["Total"]["sum_total_tokens"] = sum(messages_text_tokens)
 
     return metrics
 
 
-def display_metrics(metrics: Metrics) -> None:
+def display_metrics(metrics: Metrics, input_token_price: Optional[float] = None, output_token_price: Optional[float] = None) -> None:
     """
     Display the metrics dictionary in a compact table with min/max, mean/median, and p5/p95 on the same row.
     """
@@ -300,67 +341,124 @@ def display_metrics(metrics: Metrics) -> None:
 
     table.add_row("")
 
-
-    # Rows for assistant_tokens
+    # Rows for input tokens
     table.add_row(
-        "Min / Max Assistant Tokens", 
-        f"{metrics['Text']['assistant_tokens']['min']:.0f} / {metrics['Text']['assistant_tokens']['max']:.0f}", 
-        f"{metrics['Image']['assistant_tokens']['min']:.0f} / {metrics['Image']['assistant_tokens']['max']:.0f}", 
-        f"{metrics['Total']['assistant_tokens']['min']:.0f} / {metrics['Total']['assistant_tokens']['max']:.0f}"
+        "Min / Max Input Tokens", 
+        f"{metrics['Text']['input_tokens']['min']:.0f} / {metrics['Text']['input_tokens']['max']:.0f}", 
+        f"{metrics['Image']['input_tokens']['min']:.0f} / {metrics['Image']['input_tokens']['max']:.0f}", 
+        f"{metrics['Total']['input_tokens']['min']:.0f} / {metrics['Total']['input_tokens']['max']:.0f}"
+    )
+    
+    table.add_row(
+        "Mean / Median Input Tokens",
+        f"{metrics['Text']['input_tokens']['mean']:.0f} / {metrics['Text']['input_tokens']['median']:.0f}",
+        f"{metrics['Image']['input_tokens']['mean']:.0f} / {metrics['Image']['input_tokens']['median']:.0f}",
+        f"{metrics['Total']['input_tokens']['mean']:.0f} / {metrics['Total']['input_tokens']['median']:.0f}"
     )
 
     table.add_row(
-        "Mean / Median Assistant Tokens", 
-        f"{metrics['Text']['assistant_tokens']['mean']:.0f} / {metrics['Text']['assistant_tokens']['median']:.0f}", 
-        f"{metrics['Image']['assistant_tokens']['mean']:.0f} / {metrics['Image']['assistant_tokens']['median']:.0f}", 
-        f"{metrics['Total']['assistant_tokens']['mean']:.0f} / {metrics['Total']['assistant_tokens']['median']:.0f}"
+        "P5 / P95 Input Tokens",
+        f"{metrics['Text']['input_tokens']['p5']:.0f} / {metrics['Text']['input_tokens']['p95']:.0f}",
+        f"{metrics['Image']['input_tokens']['p5']:.0f} / {metrics['Image']['input_tokens']['p95']:.0f}",
+        f"{metrics['Total']['input_tokens']['p5']:.0f} / {metrics['Total']['input_tokens']['p95']:.0f}"
     )
 
     table.add_row(
-        "P5 / P95 Assistant Tokens", 
-        f"{metrics['Text']['assistant_tokens']['p5']:.0f} / {metrics['Text']['assistant_tokens']['p95']:.0f}", 
-        f"{metrics['Image']['assistant_tokens']['p5']:.0f} / {metrics['Image']['assistant_tokens']['p95']:.0f}", 
-        f"{metrics['Total']['assistant_tokens']['p5']:.0f} / {metrics['Total']['assistant_tokens']['p95']:.0f}"
+        "Sum Input Tokens",
+        f"{metrics['Text']['sum_input_tokens']}",
+        f"{metrics['Image']['sum_input_tokens']}",
+        f"{metrics['Total']['sum_input_tokens']}"
+    )
+
+
+    table.add_row("")  # Empty row for spacing
+
+    # Rows for output tokens
+    table.add_row(
+        "Min / Max Output Tokens", 
+        f"{metrics['Text']['output_tokens']['min']:.0f} / {metrics['Text']['output_tokens']['max']:.0f}", 
+        f"{metrics['Image']['output_tokens']['min']:.0f} / {metrics['Image']['output_tokens']['max']:.0f}", 
+        f"{metrics['Total']['output_tokens']['min']:.0f} / {metrics['Total']['output_tokens']['max']:.0f}"
     )
 
     table.add_row(
-        "Sum Assistant Tokens", 
-        f"{metrics['Text']['sum_assistant_tokens']}", 
-        f"{metrics['Image']['sum_assistant_tokens']}", 
-        f"{metrics['Total']['sum_assistant_tokens']}"
+        "Mean / Median Output Tokens", 
+        f"{metrics['Text']['output_tokens']['mean']:.0f} / {metrics['Text']['output_tokens']['median']:.0f}", 
+        f"{metrics['Image']['output_tokens']['mean']:.0f} / {metrics['Image']['output_tokens']['median']:.0f}", 
+        f"{metrics['Total']['output_tokens']['mean']:.0f} / {metrics['Total']['output_tokens']['median']:.0f}"
+    )
+
+    table.add_row(
+        "P5 / P95 Output Tokens", 
+        f"{metrics['Text']['output_tokens']['p5']:.0f} / {metrics['Text']['output_tokens']['p95']:.0f}", 
+        f"{metrics['Image']['output_tokens']['p5']:.0f} / {metrics['Image']['output_tokens']['p95']:.0f}", 
+        f"{metrics['Total']['output_tokens']['p5']:.0f} / {metrics['Total']['output_tokens']['p95']:.0f}"
+    )
+
+    table.add_row(
+        "Sum Output Tokens", 
+        f"{metrics['Text']['sum_output_tokens']}", 
+        f"{metrics['Image']['sum_output_tokens']}", 
+        f"{metrics['Total']['sum_output_tokens']}"
     )
     
     
     table.add_row("")  # Empty row for spacing
 
-
+    # Total tokens
     table.add_row(
         "Min / Max Tokens", 
-        f"{metrics['Text']['total_tokens']['min']:.0f} / {metrics['Text']['total_tokens']['max']:.0f}", 
-        f"{metrics['Image']['total_tokens']['min']:.0f} / {metrics['Image']['total_tokens']['max']:.0f}", 
-        f"{metrics['Total']['total_tokens']['min']:.0f} / {metrics['Total']['total_tokens']['max']:.0f}"
+        f"{metrics['Text']['input_tokens']['min']:.0f} / {metrics['Text']['input_tokens']['max']:.0f}", 
+        f"{metrics['Image']['input_tokens']['min']:.0f} / {metrics['Image']['input_tokens']['max']:.0f}", 
+        f"{metrics['Total']['input_tokens']['min']:.0f} / {metrics['Total']['input_tokens']['max']:.0f}"
     )
 
     table.add_row(
         "Mean / Median Tokens", 
-        f"{metrics['Text']['total_tokens']['mean']:.0f} / {metrics['Text']['total_tokens']['median']:.0f}", 
-        f"{metrics['Image']['total_tokens']['mean']:.0f} / {metrics['Image']['total_tokens']['median']:.0f}", 
-        f"{metrics['Total']['total_tokens']['mean']:.0f} / {metrics['Total']['total_tokens']['median']:.0f}"
+        f"{metrics['Text']['input_tokens']['mean']:.0f} / {metrics['Text']['input_tokens']['median']:.0f}", 
+        f"{metrics['Image']['input_tokens']['mean']:.0f} / {metrics['Image']['input_tokens']['median']:.0f}", 
+        f"{metrics['Total']['input_tokens']['mean']:.0f} / {metrics['Total']['input_tokens']['median']:.0f}"
     )
 
     table.add_row(
         "P5 / P95 Tokens", 
-        f"{metrics['Text']['total_tokens']['p5']:.0f} / {metrics['Text']['total_tokens']['p95']:.0f}", 
-        f"{metrics['Image']['total_tokens']['p5']:.0f} / {metrics['Image']['total_tokens']['p95']:.0f}", 
-        f"{metrics['Total']['total_tokens']['p5']:.0f} / {metrics['Total']['total_tokens']['p95']:.0f}"
+        f"{metrics['Text']['input_tokens']['p5']:.0f} / {metrics['Text']['input_tokens']['p95']:.0f}", 
+        f"{metrics['Image']['input_tokens']['p5']:.0f} / {metrics['Image']['input_tokens']['p95']:.0f}", 
+        f"{metrics['Total']['input_tokens']['p5']:.0f} / {metrics['Total']['input_tokens']['p95']:.0f}"
     )
 
     table.add_row(
         "Sum Total Tokens", 
-        f"{metrics['Text']['sum_total_tokens']}", 
-        f"{metrics['Image']['sum_total_tokens']}", 
-        f"{metrics['Total']['sum_total_tokens']}"
+        f"{metrics['Text']['sum_input_tokens']}", 
+        f"{metrics['Image']['sum_input_tokens']}", 
+        f"{metrics['Total']['sum_input_tokens']}"
     )
-   
+
+
+    table.add_row("")  # Empty row for spacing
+
+    if input_token_price is not None:
+        table.add_row(
+            "Input Cost", 
+            f"{metrics['Text']['sum_input_tokens'] * input_token_price:.2f} USD", 
+            f"{metrics['Image']['sum_input_tokens'] * input_token_price:.2f} USD", 
+            f"{metrics['Total']['sum_input_tokens'] * input_token_price:.2f} USD"
+        )
+
+    if output_token_price is not None:
+        table.add_row(
+            "Output Cost", 
+            f"{metrics['Text']['sum_output_tokens'] * output_token_price:.2f} USD", 
+            f"{metrics['Image']['sum_output_tokens'] * output_token_price:.2f} USD", 
+            f"{metrics['Total']['sum_output_tokens'] * output_token_price:.2f} USD"
+        )
+
+    if input_token_price is not None and output_token_price is not None:
+        table.add_row(
+            "Total Cost", 
+            f"{metrics['Total']['sum_total_tokens'] * input_token_price:.2f} USD", 
+            f"{metrics['Total']['sum_total_tokens'] * input_token_price:.2f} USD",
+            f"{metrics['Total']['sum_total_tokens'] * input_token_price:.2f} USD") 
+
     # Print the table
     console.print(table)
