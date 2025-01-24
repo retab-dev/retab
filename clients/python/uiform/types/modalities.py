@@ -2,7 +2,7 @@ from typing import Literal
 
 
 BaseModality = Literal["text", "image", "audio", "video"]
-Modality = Literal[BaseModality, "native","native+text"]
+Modality = Literal[BaseModality, "native","image+text"]
 TYPE_FAMILIES = Literal["excel", "word", "powerpoint", "pdf", "image", "text", "email", "audio", "html", "web"]
 NativeModalities: dict[TYPE_FAMILIES, Modality] = {
     'excel': 'image',
