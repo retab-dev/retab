@@ -111,7 +111,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
     
     # TODO : Maybe at some point we could add some visualization methods... but the multimodality makes it hard... # client.datasets.plot.tsne()... # client.datasets.plot.umap()...
-    def pprint(self, dataset_path: Path, input_token_price: Optional[float] = None, output_token_price: Optional[float] = None) -> Metrics:
+    def pprint(self, dataset_path: Path | str, input_token_price: Optional[float] = None, output_token_price: Optional[float] = None) -> Metrics:
         """Print a summary of the contents and statistics of a JSONL file.
 
         This method analyzes the JSONL file and displays various metrics and statistics

@@ -306,7 +306,7 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
     metrics["Total"]["output_tokens"] = calculate_statistics(output_total_tokens)
     metrics["Total"]["sum_input_tokens"] = sum(input_total_tokens)
     metrics["Total"]["sum_output_tokens"] = sum(output_total_tokens)
-    metrics["Total"]["sum_total_tokens"] = sum(messages_text_tokens)
+    metrics["Total"]["sum_total_tokens"] = sum(messages_total_tokens)
 
     return metrics
 
@@ -456,8 +456,8 @@ def display_metrics(metrics: Metrics, input_token_price: Optional[float] = None,
     if input_token_price is not None and output_token_price is not None:
         table.add_row(
             "Total Cost", 
-            f"{metrics['Total']['sum_total_tokens'] * input_token_price:.2f} USD", 
-            f"{metrics['Total']['sum_total_tokens'] * input_token_price:.2f} USD",
+            f"{metrics['Text']['sum_total_tokens'] * input_token_price:.2f} USD", 
+            f"{metrics['Image']['sum_total_tokens'] * input_token_price:.2f} USD",
             f"{metrics['Total']['sum_total_tokens'] * input_token_price:.2f} USD") 
 
     # Print the table
