@@ -92,7 +92,23 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document: The document to process. Can be a file path (Path or str) or a file-like object.
             modality: The processing modality to use. Defaults to "native".
             text_operations: Optional dictionary of text processing operations to apply.
-            idempotency_key: Idempotency key for request
+                It has to be a dictionary with the following keys:
+                {
+                    "regex_instructions": [{
+                        "name": "VAT Number",
+                        "description": "All potential VAT numbers in the documents",
+                        "pattern": r"[Ff][Rr]\s*(\d\s*){11}"
+                    }],
+                }
+            image_operations: Optional dictionary of image processing operations to apply.
+                It has to be a dictionary with the following keys:
+                {
+                    "correct_image_orientation": True,  # Whether to auto-correct image orientation
+                    "dpi": 72,                         # DPI for image processing
+                    "image_to_text": "ocr",            # OCR engine to use
+                    "browser_canvas": "A4"             # Output page size
+                }
+            idempotency_key: Optional idempotency key for the request
         Returns:
             DocumentMessage: The processed document message containing extracted content.
 
