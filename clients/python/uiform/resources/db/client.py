@@ -18,8 +18,7 @@ from ...types.mime import MIMEData
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.modalities import Modality
 from ...types.db.files import DBFile
-from ...types.db.collections import Collection
-from ...types.db.collection_memberships import CollectionMembership
+from ...types.db.dataset_memberships import DatasetMembership
 from ...types.db.datasets import Dataset
 from ...types.db.annotations import Annotation, GenerateAnnotationRequest
 
@@ -28,27 +27,27 @@ class Files(SyncAPIResource):
 
     def create_file(self,
                     document: Path | str | IOBase | MIMEData | PIL.Image.Image,
-                    collection_id: str | None = None,
-                    collection_name: str | None = None
+                    dataset_id: str | None = None,
+                    dataset_name: str | None = None
     ) -> DBFile:
         """Upload the file to the server. 
-        We force the user to specify a collection membership when the user creates a file, to avoid orphan files.
-        But if the collection is then deleted, the file will still be there, and will have to be deleted separately if that's what the user wants.
+        We force the user to specify a dataset membership when the user creates a file, to avoid orphan files.
+        But if the dataset is then deleted, the file will still be there, and will have to be deleted separately if that's what the user wants.
 
         Args:
             document: The file to upload
-            collection_id: The ID of the collection to add the file to
-            collection_name: The name of the collection to add the file to
+            dataset_id: The ID of the dataset to add the file to
+            dataset_name: The name of the dataset to add the file to
         
 
         Returns:
             File: The created file object
         """
 
-        if collection_id is None and collection_name is None:
-            raise ValueError("Either collection_id or collection_name must be provided")
-        if collection_id is not None and collection_name is not None:
-            raise ValueError("Only one of collection_id or collection_name can be provided")
+        if dataset_id is None and dataset_name is None:
+            raise ValueError("Either dataset_id or dataset_name must be provided")
+        if dataset_id is not None and dataset_name is not None:
+            raise ValueError("Only one of dataset_id or dataset_name can be provided")
 
         mime_document = prepare_mime_document(document)
 
@@ -56,12 +55,12 @@ class Files(SyncAPIResource):
         file_data: FileData = (mime_document.name, content_binary, mime_document.mime_type)
         files: List[FileTuple] = [("file", file_data)]
 
-        # Add collection information as query parameters
+        # Add dataset information as query parameters
         params = {}
-        if collection_id:
-            params["collection_id"] = collection_id
-        if collection_name:
-            params["collection_name"] = collection_name
+        if dataset_id:
+            params["dataset_id"] = dataset_id
+        if dataset_name:
+            params["dataset_name"] = dataset_name
 
         response = self._client._request("POST", "/api/v1/db/files", files=files, params=params)
 
@@ -74,10 +73,7 @@ class Files(SyncAPIResource):
             file_id: The ID of the file to retrieve
             
         Returns:
-            File: The file object
-            
-        Raises:
-            NotImplementedError: This method is not yet implemented
+            DBFile: The file object
         """
         response = self._client._request("GET", f"/api/v1/db/files/{file_id}")
         return DBFile(**response)
@@ -91,8 +87,6 @@ class Files(SyncAPIResource):
         Returns:
             MIMEData: The file content and metadata as a MIMEData object
             
-        Raises:
-            HTTPError: If the file is not found or other API errors occur
         """
         # First get the file metadata
         file = self.get_file(file_id)
@@ -118,14 +112,12 @@ class Files(SyncAPIResource):
         Args:
             file_id: The ID of the file to delete
             
-        Raises:
-            NotImplementedError: This method is not yet implemented
         """
         self._client._request("DELETE", f"/api/v1/db/files/{file_id}")
 
     def list_files(
         self,
-        collection_id: str | None = None,
+        dataset_id: str | None = None,
         mime_type: str | None = None,
         filename: str | None = None,
         file_id: str | None = None,
@@ -134,10 +126,10 @@ class Files(SyncAPIResource):
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc"
     ) -> List[DBFile]:
-        """List files in a collection with pagination support.
+        """List files with pagination support.
 
         Args:
-            collection_id: The ID of the collection to list files from.
+            dataset_id: The ID of the dataset to list files from.
             after: An object ID that defines your place in the list. When provided,
                 returns objects after this ID. For example, if you receive 100 objects
                 ending with "obj_123", you can pass after="obj_123" to fetch the next batch.
@@ -152,8 +144,8 @@ class Files(SyncAPIResource):
             List[DBFile]: A list of file objects matching the query parameters.
         """
         params: dict[str, str | int] = {"limit": limit}
-        if collection_id:
-            params["collection_id"] = collection_id
+        if dataset_id:
+            params["dataset_id"] = dataset_id
         if mime_type:
             params["mime_type"] = mime_type
         if filename:
@@ -171,158 +163,52 @@ class Files(SyncAPIResource):
         return [DBFile(**item) for item in response["items"]]
 
 
-class Collections(SyncAPIResource):
-    """Collections API wrapper"""
 
-    def create(self, name: str, description: str | None = None) -> Collection:
-        """Create a new collection.
+class DatasetMemberships(SyncAPIResource):
+    """Dataset Memberships API wrapper for managing file associations with datasets."""
+
+    def create(self, file_id: str, dataset_id: str) -> DatasetMembership:
+        """Create a new dataset membership.
         
         Args:
-            name: Name of the collection
-            description: Optional description of the collection
+            file_id: The ID of the file to add to the dataset
+            dataset_id: The ID of the dataset to add the file to
             
         Returns:
-            Collection: The created collection object
-            
-        Raises:
-            HTTPError: If a collection with the same name already exists (409)
-        """
-        data = {
-            "name": name,
-            "description": description
-        }
-        response = self._client._request("POST", "/api/v1/db/collections", data=data, raise_for_status=True)
-        return Collection(**response)
-
-    def get(self, 
-            collection_id: str | None = None,
-            ) -> Collection:
-        """Get a collection by ID.
-        
-        Args:
-            collection_id: The ID of the collection to retrieve
-            
-        Returns:
-            Collection: The collection object
-            
-        Raises:
-            HTTPError: If the collection is not found (404)
-        """
-        response = self._client._request("GET", f"/api/v1/db/collections/{collection_id}", raise_for_status=True)
-        return Collection(**response)
-
-    def list(
-        self,
-        name: str | None = None,
-        after: str | None = None,
-        before: str | None = None,
-        limit: int = 10,
-        order: Literal["asc", "desc"] | None = "desc"
-    ) -> List[Collection]:
-        """List all collections with pagination.
-        
-        Args:
-            name: The name of the collection to filter by
-            after: An object ID that defines your place in the list
-            before: An object ID that defines your place in the list
-            limit: Maximum number of collections to return (1-100)
-            order: Sort order by creation time ("asc" or "desc")
-            
-        Returns:
-            List[Collection]: List of collection objects
-        """
-        params: dict[str, str | int] = {"limit": limit}
-        if name:
-            params["name"] = name
-        if after:
-            params["after"] = after
-        if before:
-            params["before"] = before
-        if order:
-            params["order"] = order
-            
-        response = self._client._request("GET", "/api/v1/db/collections", params=params, raise_for_status=True)
-        return [Collection(**item) for item in response["items"]]
-
-    def update(self, collection_id: str, name: str | None = None, description: str | None = None) -> Collection:
-        """Update a collection.
-        
-        Args:
-            collection_id: The ID of the collection to update
-            name: New name for the collection
-            description: New description for the collection
-            
-        Returns:
-            Collection: The updated collection object
-            
-        Raises:
-            HTTPError: If the collection is not found (404)
-        """
-        data = {}
-        if name is not None:
-            data["name"] = name
-        if description is not None:
-            data["description"] = description
-        response = self._client._request("PUT", f"/api/v1/db/collections/{collection_id}", data=data, raise_for_status=True)
-        return Collection(**response)
-
-    def delete(self, collection_id: str) -> None:
-        """Delete a collection.
-        
-        Args:
-            collection_id: The ID of the collection to delete
-            
-        Raises:
-            HTTPError: If the collection is not found (404)
-        """
-        self._client._request("DELETE", f"/api/v1/db/collections/{collection_id}", raise_for_status=True)
-
-
-class CollectionMemberships(SyncAPIResource):
-    """Collection Memberships API wrapper for managing file associations with collections."""
-
-    def create(self, file_id: str, collection_id: str) -> CollectionMembership:
-        """Create a new collection membership.
-        
-        Args:
-            file_id: The ID of the file to add to the collection
-            collection_id: The ID of the collection to add the file to
-            
-        Returns:
-            CollectionMembership: The created collection membership object
+            DatasetMembership: The created dataset membership object
         """
         data = {
             "file_id": file_id,
-            "collection_id": collection_id
+            "dataset_id": dataset_id
         }
-        response = self._client._request("POST", "/api/v1/db/collection-memberships", data=data)
-        return CollectionMembership(**response)
+        response = self._client._request("POST", "/api/v1/db/dataset-memberships", data=data)
+        return DatasetMembership(**response)
 
-    def get(self, collection_membership_id: str) -> CollectionMembership:
-        """Get a specific collection membership.
+    def get(self, dataset_membership_id: str) -> DatasetMembership:
+        """Get a specific dataset membership.
         
         Args:
-            collection_membership_id: The ID of the collection membership to retrieve
+            dataset_membership_id: The ID of the dataset membership to retrieve
             
         Returns:
-            CollectionMembership: The collection membership object
+            DatasetMembership: The dataset membership object
         """
-        response = self._client._request("GET", f"/api/v1/db/collection-memberships/{collection_membership_id}")
-        return CollectionMembership(**response)
+        response = self._client._request("GET", f"/api/v1/db/dataset-memberships/{dataset_membership_id}")
+        return DatasetMembership(**response)
 
     def list(
         self,
-        collection_id: str | None = None,
+        dataset_id: str | None = None,
         file_id: str | None = None,
         after: str | None = None,
         before: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc"
-    ) -> List[CollectionMembership]:
-        """List collection memberships with pagination.
+    ) -> List[DatasetMembership]:
+        """List dataset memberships with pagination.
         
         Args:
-            collection_id: Optional filter by collection ID
+            dataset_id: Optional filter by dataset ID
             file_id: Optional filter by file ID
             after: An object ID that defines your place in the list
             before: An object ID that defines your place in the list
@@ -330,11 +216,11 @@ class CollectionMemberships(SyncAPIResource):
             order: Sort order by creation time ("asc" or "desc")
             
         Returns:
-            List[CollectionMembership]: List of collection membership objects
+            List[DatasetMembership]: List of dataset membership objects
         """
         params: dict[str, str | int] = {"limit": limit}
-        if collection_id:
-            params["collection_id"] = collection_id
+        if dataset_id:
+            params["dataset_id"] = dataset_id
         if file_id:
             params["file_id"] = file_id
         if after:
@@ -344,31 +230,31 @@ class CollectionMemberships(SyncAPIResource):
         if order:
             params["order"] = order
             
-        response = self._client._request("GET", "/api/v1/db/collection-memberships", params=params)
-        return [CollectionMembership(**item) for item in response["items"]]
+        response = self._client._request("GET", "/api/v1/db/dataset-memberships", params=params)
+        return [DatasetMembership(**item) for item in response["items"]]
 
-    def delete(self, collection_membership_id: str) -> None:
-        """Delete a collection membership.
+    def delete(self, dataset_membership_id: str) -> None:
+        """Delete a dataset membership.
         
         Args:
-            collection_membership_id: The ID of the collection membership to delete
+            dataset_membership_id: The ID of the dataset membership to delete
         """
-        self._client._request("DELETE", f"/api/v1/db/collection-memberships/{collection_membership_id}")
+        self._client._request("DELETE", f"/api/v1/db/dataset-memberships/{dataset_membership_id}")
 
 class Datasets(SyncAPIResource):
     """Datasets API wrapper"""
 
+
+
     def create(
         self,
-        collection_id: str,
-        json_schema: Dict,
         name: str,
+        json_schema: Optional[Dict[str, Any]],
         description: str | None = None
     ) -> Dataset:
-        """Create a new dataset from a collection.
+        """Create a new dataset.
         
         Args:
-            collection_id: The ID of the collection to create the dataset from
             json_schema: The JSON schema for annotations
             name: Name of the dataset
             description: Optional description of the dataset
@@ -377,12 +263,38 @@ class Datasets(SyncAPIResource):
             Dataset: The created dataset object
         """
         data = {
-            "collection_id": collection_id,
             "json_schema": json_schema,
             "name": name,
             "description": description
         }
         response = self._client._request("POST", "/api/v1/db/datasets", data=data, raise_for_status=True)
+        return Dataset(**response)
+    
+    def clone(
+        self,
+        dataset_id: str,
+        name: str,
+        description: str | None = None,
+        json_schema: Dict[str, Any] | None = None
+    ) -> Dataset:
+        """Clone an existing dataset.
+        
+        Args:
+            dataset_id: The ID of the dataset to clone
+            name: Name for the cloned dataset
+            description: Optional description for the cloned dataset
+            json_schema: Optional JSON schema for the cloned dataset. If not provided, uses the original schema.
+            
+        Returns:
+            Dataset: The cloned dataset object
+        """
+        data = {
+            "dataset_id": dataset_id,
+            "name": name,
+            "description": description,
+            "json_schema": json_schema
+        }
+        response = self._client._request("POST", f"/api/v1/db/datasets/clone", data=data)
         return Dataset(**response)
 
     def get(self, dataset_id: str) -> Dataset:
@@ -399,7 +311,6 @@ class Datasets(SyncAPIResource):
 
     def list(
         self,
-        collection_id: str | None = None,
         schema_version: str | None = None,
         schema_data_version: str | None = None,
         dataset_id: str | None = None,
@@ -412,7 +323,6 @@ class Datasets(SyncAPIResource):
         """List datasets with pagination support.
         
         Args:
-            collection_id: Optional filter by collection ID
             schema_version: Optional filter by schema version
             schema_data_version: Optional filter by schema data version
             dataset_id: Optional filter by dataset ID
@@ -426,8 +336,6 @@ class Datasets(SyncAPIResource):
             List[Dataset]: List of dataset objects
         """
         params: dict[str, str | int] = {"limit": limit}
-        if collection_id:
-            params["collection_id"] = collection_id
         if schema_version:
             params["schema_version"] = schema_version
         if schema_data_version:
@@ -451,6 +359,7 @@ class Datasets(SyncAPIResource):
         dataset_id: str,
         name: str | None = None,
         description: str | None = None,
+        json_schema: Dict[str, Any] | None = None
     ) -> Dataset:
         """Update a dataset's properties. json_schema is not updatable. If you want to update it, you have to delete the dataset and create a new one.
         
@@ -458,11 +367,13 @@ class Datasets(SyncAPIResource):
             dataset_id: The ID of the dataset to update
             name: Optional new name for the dataset
             description: Optional new description
-            
+            json_schema: Optional new JSON schema for the dataset
         Returns:
             Dataset: The updated dataset object
         """
         data: dict[str, Any] = {}
+        if json_schema is not None:
+            data["json_schema"] = json_schema
         if name is not None:
             data["name"] = name
         if description is not None:
@@ -471,13 +382,15 @@ class Datasets(SyncAPIResource):
         response = self._client._request("PUT", f"/api/v1/db/datasets/{dataset_id}", data=data)
         return Dataset(**response)
 
-    def delete(self, dataset_id: str) -> None:
+    def delete(self, dataset_id: str, force: bool = False) -> None:
         """Delete a dataset.
         
         Args:
             dataset_id: The ID of the dataset to delete
+            force: If True, delete the dataset even if it has annotations
         """
-        self._client._request("DELETE", f"/api/v1/db/datasets/{dataset_id}")
+
+        self._client._request("DELETE", f"/api/v1/db/datasets/{dataset_id}", params={"force": force})
 
     def download(
         self,
@@ -693,8 +606,7 @@ class DB(SyncAPIResource):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.files = Files(client=client)
-        self.collections = Collections(client=client)
-        self.collection_memberships = CollectionMemberships(client=client)
+        self.dataset_memberships = DatasetMemberships(client=client)
         self.datasets = Datasets(client=client)
         self.annotations = Annotations(client=client)
 
