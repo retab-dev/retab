@@ -8,7 +8,7 @@ import backoff.types
 from pydantic_core import PydanticUndefined
 
 from .types.files_datasets import FileTuple
-from .resources import datasets, documents, files, finetuning, models, prompt_optimization, schemas, files_datasets, db
+from .resources import documents, files, finetuning, models, prompt_optimization, schemas, db
 
 class MaxRetriesExceeded(Exception): pass
 
@@ -168,9 +168,7 @@ class UiForm(BaseUiForm):
         self.prompt_optimization = prompt_optimization.PromptOptimization(client=self)
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
-        self.datasets = datasets.Datasets(client=self)
         self.schemas = schemas.Schemas(client=self)
-        self.files_datasets = files_datasets.Datasets(client=self)
         self.db = db.DB(client=self)
         
     def _request(
@@ -347,7 +345,6 @@ class AsyncUiForm(BaseUiForm):
         self.prompt_optimization = prompt_optimization.AsyncPromptOptimization(client=self)
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
-        self.datasets = datasets.AsyncDatasets(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
 
     async def _request(
