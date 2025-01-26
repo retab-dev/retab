@@ -22,10 +22,32 @@ from ...types.db.dataset_memberships import DatasetMembership
 from ...types.db.datasets import Dataset
 from ...types.db.annotations import Annotation, GenerateAnnotationRequest
 
+from ...types.files_datasets import FileLink
+
+
 class Files(SyncAPIResource):
     """Files API wrapper"""
 
-    def create_file(self,
+    def download_link(self, file_id: str) -> FileLink:
+        """
+        Get a signed URL for accessing a stored object.
+
+        Args:
+            file_id: ID of the file in storage
+
+        Returns:
+            FileLink containing:
+                - download_url: Signed URL for downloading the file
+                - expires_in: Expiration time of the URL
+                - filename: Name of the file
+        """
+        response = self._client._request(
+            "GET", 
+            f"/api/v1/db/files/{file_id}/download-link"
+        )
+        return FileLink.model_validate(response)
+
+    def create(self,
                     document: Path | str | IOBase | MIMEData | PIL.Image.Image,
                     dataset_id: str | None = None,
                     dataset_name: str | None = None
@@ -66,7 +88,7 @@ class Files(SyncAPIResource):
 
         return DBFile(**response)
     
-    def get_file(self, file_id: str) -> DBFile:
+    def get(self, file_id: str) -> DBFile:
         """Get a file by ID.
         
         Args:
@@ -78,7 +100,7 @@ class Files(SyncAPIResource):
         response = self._client._request("GET", f"/api/v1/db/files/{file_id}")
         return DBFile(**response)
     
-    def download_file(self, file_id: str) -> MIMEData:
+    def download(self, file_id: str) -> MIMEData:
         """Download a file's content by ID.
         
         Args:
@@ -89,7 +111,7 @@ class Files(SyncAPIResource):
             
         """
         # First get the file metadata
-        file = self.get_file(file_id)
+        file = self.get(file_id)
         
         # Then download the content
         response = self._client._request(
@@ -106,7 +128,7 @@ class Files(SyncAPIResource):
             mime_type=file.mime_type
         )
     
-    def delete_file(self, file_id: str) -> None:
+    def delete(self, file_id: str) -> None:
         """Delete a file by ID.
         
         Args:
@@ -115,7 +137,7 @@ class Files(SyncAPIResource):
         """
         self._client._request("DELETE", f"/api/v1/db/files/{file_id}")
 
-    def list_files(
+    def list(
         self,
         dataset_id: str | None = None,
         mime_type: str | None = None,
