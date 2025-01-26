@@ -8,7 +8,7 @@ import backoff.types
 from pydantic_core import PydanticUndefined
 
 from .types.files_datasets import FileTuple
-from .resources import datasets, documents, files, finetuning, models, prompt_optimization, schemas, files_datasets
+from .resources import datasets, documents, files, finetuning, models, prompt_optimization, schemas, files_datasets, db
 
 class MaxRetriesExceeded(Exception): pass
 
@@ -104,10 +104,9 @@ class BaseUiForm:
         if response_object.status_code in {500, 502, 503, 504}:
             response_object.raise_for_status()
         elif response_object.status_code == 422:
-            raise RuntimeError(f"Validation error: {response_object.json()}")
+            raise RuntimeError(f"Validation error (422): {response_object.json()}")
         elif not response_object.is_success:
-            raise RuntimeError(f"Request failed: {response_object.json()}")
-        
+            raise RuntimeError(f"Request failed ({response_object.status_code}): {response_object.json()}")
     def _get_headers(self, idempotency_key: str | None = None) -> dict[str, Any]:
         headers = self.headers.copy()
         if idempotency_key:
@@ -172,8 +171,11 @@ class UiForm(BaseUiForm):
         self.datasets = datasets.Datasets(client=self)
         self.schemas = schemas.Schemas(client=self)
         self.files_datasets = files_datasets.Datasets(client=self)
+        self.db = db.DB(client=self)
+        
     def _request(
-            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, files: Optional[List[FileTuple]] = None
+            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, files: Optional[List[FileTuple]] = None,
+            raise_for_status: bool = False
     ) -> Any:
         """Makes a synchronous HTTP request to the API.
 
@@ -181,6 +183,7 @@ class UiForm(BaseUiForm):
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
+            params (Optional[dict]): Query parameters
             idempotency_key (str, optional): Idempotency key for request
 
         Returns:
@@ -189,14 +192,12 @@ class UiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
-        def wrapped_request() -> Any:
+        def raw_request() -> Any:
             if method == "GET":
                 response = self.client.request(
                     method,
                     self._prepare_url(endpoint),
-                    params=data,  # Use data as query params for GET
+                    params=params,
                     headers=self._get_headers(idempotency_key)
                 )
             elif files:  # Handle requests with file uploads
@@ -205,7 +206,7 @@ class UiForm(BaseUiForm):
                 response = self.client.request(
                     method,
                     self._prepare_url(endpoint),
-                    params=data,  # Query parameters
+                    params=params,  # Add query params support for non-GET requests
                     files=files,  # File data
                     headers=headers
                  )
@@ -213,19 +214,28 @@ class UiForm(BaseUiForm):
                 response = self.client.request(
                     method,
                     self._prepare_url(endpoint),
-                    json=data,  # Use data as JSON body for non-GET
+                    json=data,
+                    params=params,  # Add query params support for non-GET requests
                     headers=self._get_headers(idempotency_key)
                 )
 
             self._validate_response(response)
+            
             return response.json()
 
-        return wrapped_request()
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        def wrapped_request() -> Any:
+            return raw_request()
+        
+        if raise_for_status:
+            return raw_request()
+        else:
+            return wrapped_request()
 
 
 
     def _request_stream(
-            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
+            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> Iterator[Any]:
         """Makes a streaming synchronous HTTP request to the API.
 
@@ -233,6 +243,7 @@ class UiForm(BaseUiForm):
             method (str): HTTP method (GET, POST, etc.) 
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
+            params (Optional[dict]): Query parameters
             idempotency_key (str, optional): Idempotency key for request
         Returns:
             Iterator[Any]: Generator yielding parsed JSON objects from the stream
@@ -242,7 +253,13 @@ class UiForm(BaseUiForm):
         """
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Iterator[Any]:
-            with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
+            with self.client.stream(
+                method, 
+                self._prepare_url(endpoint), 
+                json=data,
+                params=params,
+                headers=self._get_headers(idempotency_key)
+            ) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
                 
                 for chunk in response_ctx_manager.iter_lines():
@@ -334,7 +351,7 @@ class AsyncUiForm(BaseUiForm):
         self.schemas = schemas.AsyncSchemas(client=self)
 
     async def _request(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
+        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> Any:
         """Makes an asynchronous HTTP request to the API.
 
@@ -342,6 +359,7 @@ class AsyncUiForm(BaseUiForm):
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
+            params (Optional[dict]): Query parameters
             idempotency_key (str, optional): Idempotency key for request
         Returns:
             Any: Parsed JSON response
@@ -352,7 +370,7 @@ class AsyncUiForm(BaseUiForm):
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> Any:
             response = await self.client.request(
-                    method, self._prepare_url(endpoint), json=data, headers=self._get_headers(idempotency_key)
+                    method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key)
                 )
             self._validate_response(response)
 
@@ -361,7 +379,7 @@ class AsyncUiForm(BaseUiForm):
         return await wrapped_request()
         
     async def _request_stream(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
+        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> AsyncIterator[Any]:
         """Makes a streaming asynchronous HTTP request to the API.
 
@@ -369,6 +387,7 @@ class AsyncUiForm(BaseUiForm):
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
+            params (Optional[dict]): Query parameters
             idempotency_key (str, optional): Idempotency key for request
         Returns:
             AsyncIterator[Any]: Async generator yielding parsed JSON objects from the stream
@@ -378,7 +397,13 @@ class AsyncUiForm(BaseUiForm):
         """
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> AsyncIterator[Any]:
-            async with self.client.stream(method, self._prepare_url(endpoint), json=data, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
+            async with self.client.stream(
+                method, 
+                self._prepare_url(endpoint), 
+                json=data,
+                params=params,
+                headers=self._get_headers(idempotency_key)
+            ) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
                 async for chunk in response_ctx_manager.aiter_lines():
                     if not chunk: continue

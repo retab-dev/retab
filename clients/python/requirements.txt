@@ -27,9 +27,7 @@ httpx
 pydantic
 pydantic_core
 requests
-openai
 tqdm
-tiktoken
 backoff
 termplotlib
 Levenshtein
@@ -47,9 +45,9 @@ email_validator
 python-stdnum
 
 ########################
-## Plotting dependencies
+## AI dependencies
 ########################
-termplotlib
-
+openai
 google.generativeai
 anthropic
+tiktoken

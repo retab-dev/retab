@@ -29,3 +29,8 @@ class MIMEData(BaseMIMEData):
     def size(self) -> int:
         return len(base64.b64decode(self.content))
 
+
+    def __repr__(self) -> str:
+        return f"MIMEData(id={self.id!r}, name={self.name!r}, type={self.mime_type!r}, size={self.size!r}), content={self.content if len(self.content) < 100 else self.content[:100] + '...'})"
+
+
