@@ -50,8 +50,6 @@ class Dataset(BaseModel):
 
 class DatasetAnnotationStatus(BaseModel):
     total_files: int
-    files_without_annotations: int
-    files_without_annotation_ids: List[str]
     files_with_empty_annotations: List[str]
     files_with_incomplete_annotations: List[str]
     files_with_completed_annotations: List[str]
