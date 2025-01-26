@@ -1,4 +1,4 @@
-from typing import Literal, Dict, Any, Optional
+from typing import Literal, Dict, Any, Optional, List
 from pydantic import BaseModel, Field, computed_field
 import datetime
 import uuid
@@ -47,3 +47,11 @@ class Dataset(BaseModel):
         
         return generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
     
+
+class DatasetAnnotationStatus(BaseModel):
+    total_files: int
+    files_without_annotations: int
+    files_without_annotation_ids: List[str]
+    files_with_empty_annotations: List[str]
+    files_with_incomplete_annotations: List[str]
+    files_with_completed_annotations: List[str]

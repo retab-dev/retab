@@ -20,7 +20,7 @@ from ..types.ai_model import LLMModel
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage, convert_to_openai_format, convert_to_anthropic_format, separate_messages
 from ..types.schemas.object import Schema
 from .._resource import SyncAPIResource, AsyncAPIResource
-from .benchmarking import normalized_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics, BenchmarkMetrics, display_benchmark_metrics
+from .._utils.benchmarking import normalized_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics, BenchmarkMetrics, display_benchmark_metrics
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
