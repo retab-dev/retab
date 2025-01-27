@@ -72,7 +72,9 @@ class Emails(SyncAPIResource):
             "temperature": temperature,
             "additional_messages": additional_messages
         }
-        response = self._client._request("POST", "/api/v1/automations/mailbox", data=data)
+
+        request = MailboxConfig.model_validate(data)
+        response = self._client._request("POST", "/api/v1/emails/mailbox", data=request.model_dump(mode="json"))
         
         return MailboxConfig.model_validate(response)
 
@@ -82,7 +84,7 @@ class Emails(SyncAPIResource):
         Returns:
             List[MailboxConfig]: List of mailbox configurations
         """
-        response = self._client._request("GET", "/api/v1/automations/mailbox")
+        response = self._client._request("GET", "/api/v1/emails/mailbox")
 
         return [MailboxConfig.model_validate(mailbox) for mailbox in response]
 
@@ -95,7 +97,7 @@ class Emails(SyncAPIResource):
         Returns:
             MailboxConfig: The mailbox configuration
         """
-        response = self._client._request("GET", f"/api/v1/automations/mailbox/{email}")
+        response = self._client._request("GET", f"/api/v1/emails/mailbox/{email}")
         return MailboxConfig.model_validate(response)
 
     def update(
@@ -146,19 +148,18 @@ class Emails(SyncAPIResource):
 
         update_mailbox_request = UpdateMailBoxRequest.model_validate(data)
 
-        response = self._client._request("PUT", f"/api/v1/automations/mailbox/{email}", data=update_mailbox_request.model_dump())
+        response = self._client._request("PUT", f"/api/v1/emails/mailbox/{email}", data=update_mailbox_request.model_dump())
 
         return MailboxConfig(**response)
 
-    def delete(self, email: str) -> MailboxConfig:
+    def delete(self, email: str) -> None:
         """Delete an email automation configuration.
         
         Args:
             email: Email address of the mailbox to delete
         """
-        response = self._client._request("DELETE", f"/api/v1/automations/emails/{email}")
+        response = self._client._request("DELETE", f"/api/v1/emails/mailbox/{email}")
 
-        return MailboxConfig.model_validate(response)
 
     def list_logs(self, email: str) -> List[MailboxLog]:
         """Get logs for a specific email automation.
@@ -169,6 +170,6 @@ class Emails(SyncAPIResource):
         Returns:
             List[Dict[str, Any]]: List of log entries
         """
-        response = self._client._request("GET", f"/api/v1/automations/emails/{email}/logs")
+        response = self._client._request("GET", f"/api/v1/emails/mailbox/{email}/logs")
 
         return [MailboxLog.model_validate(log) for log in response]

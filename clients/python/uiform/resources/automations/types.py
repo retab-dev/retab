@@ -20,8 +20,8 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage, Docu
 from ...types.documents.image_operations import ImageOperations
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
 from ...types.documents.text_operations import TextOperations
-from ...types.mime import MIMEData
-
+from ...types.mime import MIMEData, BaseMIMEData
+from ...types.ai_model import LLMModel
 
 import secrets
 import string
@@ -40,9 +40,19 @@ class AutomationConfig(DocumentProcessingConfig):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     json_schema: Dict = Field(..., description="JSON schema to validate the email data")
     additional_messages: list[ChatCompletionUiformMessage] = []
-    model: str = "gpt-4o-mini"
+    model: LLMModel = "gpt-4o-mini"
     temperature: float = 0
     webhook_config: WebhookConfig
+
+class ExtractionLinkConfig(AutomationConfig):
+    object: Literal['extraction_link'] = "extraction_link"
+    id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
+    
+    name: str = Field(..., description = "Name of the link")
+    max_file_size: int = Field(default=10, description = "Maximum file size in MB")
+    protection: LinkProtection
+
+
 
 
 class WebhookOutput(BaseModel):
@@ -69,15 +79,6 @@ class LinkProtection(BaseModel):
         if self.protection_type == "password" and self.password is None:
             # Generate a random 12 character password with letters and numbers
             self.password = 'pwd_' + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
-
-class ExtractionLinkConfig(AutomationConfig):
-    object: Literal['extraction_link'] = "extraction_link"
-    id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
-    
-    name: str = Field(..., description = "Name of the link")
-    max_file_size: int = Field(default=10, description = "Maximum file size in MB")
-    protection: LinkProtection
-
 
 
 
@@ -109,7 +110,6 @@ class CronJobConfig(AutomationConfig):
     schedule: CronSchedule
 
 class ScrappingConfig(CronJobConfig):
-    object: Literal['scrapping'] = "scrapping"
     id: str = Field(default_factory=lambda: "scrapping_" + str(uuid.uuid4()), description="Unique identifier for the scrapping job")
     link: HttpUrl = Field(..., description="Link to be scrapped")
 
@@ -117,55 +117,76 @@ class ScrappingConfig(CronJobConfig):
 # ------------------------------
 # ------------------------------
 
-
-
-
-class MailboxLog(BaseModel):
-    # Logs that will be stored in the database and displayed in the frontend
+class EmailMetadata(BaseModel):
     sender: str
-    receiver: str
+    recipient: str
     subject: Optional[str]
     body: Optional[str]
     body_html: Optional[str]
     sent_at: datetime.datetime
     received_at: Optional[datetime.datetime]
     processed_at: datetime.datetime
+
+class RequestResult(BaseModel):
+    endpoint: HttpUrl
+    request_body: dict[str, Any]
+    request_headers: dict[str, str]
+    request_timestamp: datetime.datetime 
+    
+    response_body: dict[str, Any]
+    response_headers: dict[str, str]
+    response_timestamp: datetime.datetime 
+    
+    status_code: int
+    error: Optional[str] = None
+    duration_ms: float 
+
+class MailboxLog(BaseModel):
     email: str
     organization_id: str
 
+    email_metadata: EmailMetadata
+    request_result: RequestResult
+
 class ExtractionLinkLog(BaseModel):
-    # Logs that will be stored in the database and displayed in the frontend
-    sender: str
-    file_name: str
-    file_size: int  # in bytes
-    mime_type: str
-    uploaded_at: datetime.datetime
-    processed_at: datetime.datetime
-    link_id: str
+    link_id: str 
     organization_id: str
-    protection_used: bool  # whether the link was accessed with password protection
 
-class CreateMailBoxRequest(DocumentProcessingConfig):
-    email: str #= Field(..., pattern=r".*@uiform\.com$")
-    webhook_config: WebhookConfig
-    json_schema: Dict = Field(..., description="JSON schema to validate the email data")
-    model: str = "gpt-4o-mini"
-    temperature: float = 0
-    additional_messages: list[ChatCompletionUiformMessage] = []
+    name: str = Field(..., description = "Name of the link")
+    max_file_size: int = Field(default=10, description = "Maximum file size in MB")
+    protection: LinkProtection
+    file_metadata: BaseMIMEData
 
+    request_result: RequestResult
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ------------------------------
+# ------------------------------
+# ------------------------------
 
 class UpdateMailBoxRequest(BaseModel):
     webhook_config: Optional[WebhookConfig] = None
     text_operations: Optional[TextOperations] = None
     image_operations: Optional[ImageOperations] = None
-    modality: Optional[Modality] = None
-    model: Optional[str] = None
+    modality: Optional[Literal["native"]] = None
+    model: Optional[LLMModel] = None
     temperature: Optional[float] = None
     additional_messages: Optional[list[ChatCompletionUiformMessage]] = None
     json_schema: Optional[Dict] = None
-
-
-
+    
 class UpdateExtractionLinkRequest(BaseModel):
     id: str
     name: Optional[str] = None
