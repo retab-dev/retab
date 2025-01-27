@@ -1,7 +1,7 @@
 from .client import (
-    DB,
+    Automations,
 )
 
 __all__ = [
-    "DB",
+    "Automations",
 ]

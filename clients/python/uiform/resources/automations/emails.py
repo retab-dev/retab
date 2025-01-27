@@ -4,12 +4,10 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.modalities import Modality
-from ...types.db.annotations import Annotation, GenerateAnnotationRequest
 
 
-
-class Annotations(SyncAPIResource):
-    """Annotations API wrapper"""
+class Emails(SyncAPIResource):
+    """Emails API wrapper"""
 
     def create(
         self,
@@ -17,7 +15,7 @@ class Annotations(SyncAPIResource):
         dataset_id: str,
         data: dict[str, Any],
         status: Literal["empty", "incomplete", "completed"] = "completed"
-    ) -> Annotation:
+    ) -> Email:
         """Create a new annotation.
         
         Args:
