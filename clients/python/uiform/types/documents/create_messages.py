@@ -292,18 +292,10 @@ def str_messages(messages: list[ChatCompletionUiformMessage], max_length: int = 
 
     return repr(serialized)
 
-class DocumentCreateMessageRequest(BaseModel):
-    document: MIMEData
-    """The document to load."""
 
+class DocumentProcessingConfig(BaseModel):
     modality: Modality
     """The modality of the document to load."""
-
-    model: str | None = None
-    """The model to use for loading the document."""
-
-    provider: AIProvider = "OpenAI"
-    """The AI provider to use for loading the document."""
 
     text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model", examples=[{
         "regex_instructions": [{
@@ -331,27 +323,24 @@ class DocumentCreateMessageRequest(BaseModel):
     )
     """The image operations to apply to the document."""
 
-    @model_validator(mode="after")
-    def validate_model_and_provider(self) -> Self:
-        """Validate and finalize model and provider values."""
-        # If model is provided, infer provider if not explicitly set
-        if self.model:
-            inferred_provider = find_provider_from_model(self.model)
-            if self.provider == "OpenAI" and self.provider != inferred_provider:
-                self.provider = inferred_provider
-            elif self.provider != inferred_provider:
-                raise ValueError(
-                    f"Provided provider '{self.provider}' does not match "
-                    f"the provider '{inferred_provider}' inferred from model '{self.model}'."
-                )
+from typing import Dict
 
-        return self
+class MessageConfig(DocumentProcessingConfig):
+    json_schema: Dict = Field(..., description="JSON schema to validate the email data")
+    additional_messages: list[ChatCompletionUiformMessage] = []
+
+class ExtractionConfig(BaseModel):
+    model: str = "gpt-4o-mini"
+    temperature: float = 0
     
-    def __str__(self)->str:
-        return f"DocumentCreateMessageRequest(document={self.document}, model={self.model}, modality={self.modality}, provider={self.provider})"
+
+
+class DocumentCreateMessageRequest(DocumentProcessingConfig):
+    document: MIMEData
+    """The document to load."""
+
     
-    def __repr__(self)->str:
-        return f"DocumentCreateMessageRequest(document={self.document}, model={self.model}, modality={self.modality}, provider={self.provider})"
+
 
 
 class DocumentMessage(BaseModel):

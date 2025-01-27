@@ -191,7 +191,7 @@ class Datasets(SyncAPIResource):
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
-        messages: List[ChatCompletionUiformMessage] = [],
+        additional_messages: List[ChatCompletionUiformMessage] = [],
     ) -> None:
         """Download a dataset's contents to a file.
         
@@ -239,7 +239,7 @@ class Datasets(SyncAPIResource):
                 
                 # Write entry in JSONL format
                 entry = {
-                    "messages": msg_obj.messages + messages + assistant_message
+                    "messages": msg_obj.messages + additional_messages + assistant_message
                 }
                 f.write(json.dumps(entry) + '\n')
 

@@ -139,7 +139,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
-        messages: list[ChatCompletionUiformMessage] = [],
+        additional_messages: list[ChatCompletionUiformMessage] = [],
     ) -> None:
         """Save document-annotation pairs to a JSONL training set.
 
@@ -149,7 +149,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             jsonl_path: Output path for the JSONL training file
             text_operations: Optional context for prompting
             modality: The modality to use for document processing ("native" by default)
-            messages: List of additional chat messages to include
+            additional_messages: List of additional chat messages to include
         """
         json_schema = load_json_schema(json_schema)
         schema_obj = Schema(json_schema=json_schema)
@@ -167,7 +167,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     annotation = json.loads(f.read())
                 assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
                 
-                entry = {"messages": schema_obj.messages + document_message.messages + messages + [assistant_message]}
+                entry = {"messages": schema_obj.messages + document_message.messages + additional_messages + [assistant_message]}
                 file.write(json.dumps(entry) + '\n')
 
 
@@ -228,7 +228,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         dataset_path: Path | str,
         text_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
-        messages: list[ChatCompletionUiformMessage] = [],
+        additional_messages: list[ChatCompletionUiformMessage] = [],
     ) -> None:        
         
         """Stitch multiple documents and their annotations into a JSONL training set.
@@ -244,7 +244,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             jsonl_path: Output path for the JSONL training file
             text_operations: Optional context for prompting
             modality: The modality to use for document processing ("native" by default)
-            messages: List of additional chat messages to include
+            additional_messages: List of additional chat messages to include
         """
 
         json_schema = load_json_schema(json_schema)
@@ -279,7 +279,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
 
             # Add the complete message set as an entry
-            training_set.append({"messages": schema_obj.messages + document_messages + messages + [assistant_message]})
+            training_set.append({"messages": schema_obj.messages + document_messages + additional_messages + [assistant_message]})
 
         self._dump_training_set(training_set, dataset_path)
 
@@ -287,7 +287,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     ##### ENDPOINTS THAT MAKE LLM CALLS #####
     #########################################
 
-    def _initialize_model_client(self, model: str) -> tuple[OpenAI | Anthropic, str]:
+    def _initialize_model_client(self, model: LLMModel) -> tuple[OpenAI | Anthropic, str]:
         """Initialize the appropriate client based on the model provider.
         
         Args:
@@ -320,7 +320,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         provider: str,
         model: str,
         temperature: float,
-        messages: list[ChatCompletionUiformMessage],
+        additional_messages: list[ChatCompletionUiformMessage],
         schema_obj: Schema,
     ) -> str:
         """Get completion from the appropriate model provider.
@@ -341,7 +341,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             completion = client.chat.completions.create(
                 model=model,
                 temperature=temperature,
-                messages=convert_to_openai_format(messages),
+                messages=convert_to_openai_format(additional_messages),
                 response_format={
                     "type": "json_schema",
                     "json_schema": {
@@ -359,7 +359,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             gemini_completion = client.chat.completions.create(
                 model=model,
                 temperature=temperature,
-                messages=convert_to_openai_format(messages),
+                messages=convert_to_openai_format(additional_messages),
                 response_format={
                     "type": "json_schema",
                     "json_schema": {
@@ -374,7 +374,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         
         else:  # Anthropic
             assert isinstance(client, Anthropic)
-            system_messages, other_messages = convert_to_anthropic_format(messages)
+            system_messages, other_messages = convert_to_anthropic_format(additional_messages)
             anthropic_completion = client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=8192,
@@ -392,9 +392,9 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         documents: list[Path | str | IOBase],
         dataset_path: Path,
         text_operations: Optional[dict[str, Any]] = None,
-        model: str = "gpt-4o-2024-08-06",
+        model: LLMModel = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
-        messages: list[ChatCompletionUiformMessage] = [],
+        additional_messages: list[ChatCompletionUiformMessage] = [],
         batch_size: int = 5,
         max_concurrent: int = 3,
         root_dir: Path = Path("annotations"),
@@ -453,7 +453,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 provider=provider,
                 model=model,
                 temperature=temperature,
-                messages=schema_obj.messages + doc_msg.messages + messages,
+                additional_messages=schema_obj.messages + doc_msg.messages + additional_messages,
                 schema_obj=schema_obj
             )
             
@@ -500,7 +500,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         dataset_path: str | Path,
-        model: str = "gpt-4o-2024-08-06",
+        model: LLMModel = "gpt-4o-2024-08-06",
         temperature: float = 0.0, 
         batch_size: int = 5,
         max_concurrent: int = 3,
@@ -588,7 +588,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     provider=provider,
                     model=model,
                     temperature=temperature,
-                    messages=inference_messages,
+                    additional_messages=inference_messages,
                     schema_obj=schema_obj
                 )
                 
@@ -690,7 +690,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         old_dataset_path: str | Path, 
         new_dataset_path: str | Path,
-        model: str = "gpt-4o-2024-08-06",
+        model: LLMModel = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
         batch_size: int = 5,
         max_concurrent: int = 3
@@ -737,7 +737,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 provider=provider,
                 model=model,
                 temperature=temperature,
-                messages=schema_obj.messages + user_messages + [previous_annotation_message],
+                additional_messages=schema_obj.messages + user_messages + [previous_annotation_message],
                 schema_obj=schema_obj
             )
 
@@ -783,7 +783,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-mini",
         temperature: float = 0.0,
-        messages: list[ChatCompletionUiformMessage] = [],
+        additional_messages: list[ChatCompletionUiformMessage] = [],
         modality: Modality = "native",
     ) -> None:
         """Create a JSONL file containing requests for OpenAI batch processing API.
@@ -818,7 +818,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     "url": "/v1/chat/completions",
                     "body": {
                         "model": model,
-                        "messages": schema_obj.openai_messages + doc_msg.openai_messages + convert_to_openai_format(messages),
+                        "messages": schema_obj.openai_messages + doc_msg.openai_messages + convert_to_openai_format(additional_messages),
                         "temperature": temperature,
                         "response_format": {
                             "type": "json_schema",
@@ -842,7 +842,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         batch_requests_path: str | Path,
         model: str = "gpt-4o-mini",
         temperature: float = 0.0,
-        messages: list[ChatCompletionUiformMessage] = [],
+        additional_messages: list[ChatCompletionUiformMessage] = [],
     ) -> None:
         """Create a JSONL file containing requests for OpenAI batch processing API to update annotations.
         
@@ -852,7 +852,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             batch_requests_path: Output path for the updated JSONL file
             model: The model to use for processing
             temperature: Model temperature (0-1)
-            messages: Additional messages to include
+            additional_messages: Additional messages to include
             modality: The modality to use for document processing
         """
         loaded_json_schema = load_json_schema(json_schema)
@@ -880,7 +880,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     "url": "/v1/chat/completions", 
                     "body": {
                         "model": model,
-                        "messages": schema_obj.openai_messages + system_and_user_messages + [previous_annotation_message] + messages,
+                        "messages": schema_obj.openai_messages + system_and_user_messages + [previous_annotation_message] + additional_messages,
                         "temperature": temperature,
                         "response_format": {
                             "type": "json_schema",
@@ -998,7 +998,7 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         jsonl_path: Path | str,
         text_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
-        messages: list[ChatCompletionUiformMessage] = [],
+        additional_messages: list[ChatCompletionUiformMessage] = [],
     ) -> None:
         json_schema = load_json_schema(json_schema)
         training_set = []
@@ -1010,7 +1010,7 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
                 annotation = json.loads(f.read())
             assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
 
-            training_set.append({"messages": document_message.messages + messages + [assistant_message]})
+            training_set.append({"messages": document_message.messages + additional_messages + [assistant_message]})
 
         self._dump_training_set(training_set, jsonl_path)
 
@@ -1022,7 +1022,7 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
-        messages: list[ChatCompletionUiformMessage] = [],
+        additional_messages: list[ChatCompletionUiformMessage] = [],
         batch_size: int = 5,
         max_concurrent: int = 3,
         root_dir: Path = Path("annotations"),
@@ -1065,7 +1065,7 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
                         text_operations=text_operations,
                         model=model,
                         temperature=temperature,
-                        messages=messages,
+                        additional_messages=additional_messages,
                         modality=modality,
                     )
                 if result.choices[0].message.content is None:

@@ -6,52 +6,31 @@ from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ContentType
 
 from .text_operations import TextOperations, RegexInstructionResult
-from .create_messages import ChatCompletionUiformMessage
+from .create_messages import ChatCompletionUiformMessage, DocumentProcessingConfig
 from .image_operations import ImageOperations
 from ..mime import MIMEData, BaseMIMEData
 from ..modalities import Modality
-from ..ai_model import AIProvider
+from ..ai_model import AIProvider, LLMModel
 from ..standards import ErrorDetail, StreamingBaseModel
 from ..schemas.object import Schema
 from ..._utils.ai_model import find_provider_from_model
 from ..._utils.mime import generate_sha_hash_from_base64
 
 import datetime
-class DocumentExtractRequest(BaseModel):
+
+
+class DocumentExtractRequest(DocumentProcessingConfig):
     # Attributes
-    model: str = Field(..., description="Model used for chat completion")
+    model: LLMModel = Field(..., description="Model used for chat completion")
     json_schema: dict[str, object] = Field(..., description="JSON schema format used to validate the output data.")
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-    modality: Modality = Field(default="native", description="Modality of the document")
     store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
+    
     document: MIMEData | None = Field(..., description="Document to be analyzed")
-    text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model", examples=[{
-        "regex_instructions": [{
-            "name": "VAT Number",
-            "description": "All potential VAT numbers in the documents",
-            "pattern": r"[Ff][Rr]\s*(\d\s*){11}"
-        }]
-    }])
-    image_operations: ImageOperations = Field(
-        default=ImageOperations(**{
-            "correct_image_orientation": True,
-            "dpi" : 72,
-            "image_to_text": "ocr", 
-            "browser_canvas": "A4"
-        }),
-        description="Preprocessing operations applied to image before sending them to the llm",
-        examples=[{
-            "correct_image_orientation": True,
-            "dpi" : 72,
-            "image_to_text": "ocr", 
-            "browser_canvas": "A4"
-        }]
-    )
-    """The image operations to apply to the document."""
-
-    messages: list[ChatCompletionUiformMessage] = Field(..., description="Messages to be used by the AI model")
+    
+    additional_messages: list[ChatCompletionUiformMessage] = Field(default=[], description="Additional messages to be used by the AI model")
 
     # Some internal attributes (hidden from serialization)
     _regex_instruction_results: list[RegexInstructionResult] | None = PrivateAttr(default=None)
