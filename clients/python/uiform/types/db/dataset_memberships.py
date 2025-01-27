@@ -13,6 +13,7 @@ from ...types.documents.image_operations import ImageOperations
 from ...types.documents.text_operations import TextOperations
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.modalities import Modality
+from ...types.ai_model import LLMModel
 
 
 AnnotationStatus = Literal["empty", "incomplete", "completed"]
@@ -30,13 +31,20 @@ class DatasetMembership(BaseModel):
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.now, description="Timestamp for when the membership was created")
     annotation: Annotation = Field(default=Annotation(), description="Annotation of the file")
 
-class GenerateAnnotationRequest(BaseModel):
+
+class BaseGenerateAnnotationRequest(BaseModel):
     dataset_id: str
-    file_id: str
-    model: str
+    model: LLMModel
     modality: Modality = "native"
     text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model")
     image_operations: ImageOperations = Field(default=ImageOperations(), description="Preprocessing operations applied to image before sending them to the llm")
     temperature: float = 0.0
-    messages: List[ChatCompletionUiformMessage] = []
+    additional_messages: List[ChatCompletionUiformMessage] = []
     upsert: bool = Field(default=False, description="If True, the annotation will be upserted if it already exists")
+
+
+class GenerateAnnotationRequest(BaseGenerateAnnotationRequest):
+    file_id: str
+
+class GenerateAnnotationsRequest(BaseGenerateAnnotationRequest):
+    file_ids: list[str]
