@@ -21,11 +21,10 @@ from ...types.mime import MIMEData
 
 
 
-from .types import MailboxConfig, WebhookConfig, AutomationConfig, UpdateMailBoxRequest, MailboxLog
+from .types import MailboxConfig, WebhookConfig, AutomationConfig, UpdateMailBoxRequest, MailboxLog, ExtractionLinkConfig
 
-from pydantic import BaseModel
 
-class Emails(SyncAPIResource):
+class ExtractionLink(SyncAPIResource):
     """Emails API wrapper for managing email automation configurations"""
 
     def create(
