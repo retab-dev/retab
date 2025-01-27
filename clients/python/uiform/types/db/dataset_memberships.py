@@ -35,28 +35,8 @@ class GenerateAnnotationRequest(BaseModel):
     file_id: str
     model: str
     modality: Modality = "native"
-    text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model", examples=[{
-        "regex_instructions": [{
-            "name": "VAT Number",
-            "description": "All potential VAT numbers in the documents",
-            "pattern": r"[Ff][Rr]\s*(\d\s*){11}"
-        }]
-    }])
-    image_operations: ImageOperations = Field(
-        default=ImageOperations(**{
-            "correct_image_orientation": True,
-            "dpi" : 72,
-            "image_to_text": "ocr", 
-            "browser_canvas": "A4"
-        }),
-        description="Preprocessing operations applied to image before sending them to the llm",
-        examples=[{
-            "correct_image_orientation": True,
-            "dpi" : 72,
-            "image_to_text": "ocr", 
-            "browser_canvas": "A4"
-        }]
-    )
+    text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model")
+    image_operations: ImageOperations = Field(default=ImageOperations(), description="Preprocessing operations applied to image before sending them to the llm")
     temperature: float = 0.0
     messages: List[ChatCompletionUiformMessage] = []
     upsert: bool = Field(default=False, description="If True, the annotation will be upserted if it already exists")

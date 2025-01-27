@@ -14,10 +14,9 @@ import datetime
 from pydantic import HttpUrl
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
-from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.modalities import Modality
 
-from ...types.documents.create_messages import ChatCompletionUiformMessage
+from ...types.documents.create_messages import ChatCompletionUiformMessage, DocumentProcessingConfig
 from ...types.documents.image_operations import ImageOperations
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
 from ...types.documents.text_operations import TextOperations
@@ -28,34 +27,6 @@ import secrets
 import string
 
 
-class DocumentProcessingConfig(BaseModel):
-    text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model")
-    image_operations: ImageOperations = Field(default=ImageOperations(**{
-        "correct_image_orientation": True,
-        "dpi": 72,
-        "image_to_text": "ocr",
-        "browser_canvas": "A4"
-    }), description="Additional context to be used by the AI model")
-    modality: Literal["native"] = "native"
-
-    
-    
-
-class AutomationConfig(DocumentProcessingConfig):
-    id: str
-    organization_id: str
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    json_schema: Dict = Field(..., description="JSON schema to validate the email data")
-    additional_messages: list[ChatCompletionUiformMessage] = []
-    model: str = "gpt-4o-mini"
-    temperature: float = 0
-
-
-class WebhookOutput(BaseModel):
-    # The output of the webhook that the person will receive
-    mime_data: MIMEData # or some tidy version of it
-    extraction: DocumentExtractResponse
-
 class WebhookConfig(BaseModel):
     endpoint: HttpUrl = Field(..., description = "Endpoint to send the data to")
     method: Literal["POST"]= "POST"
@@ -63,33 +34,58 @@ class WebhookConfig(BaseModel):
     outgoing_ip: Literal["34.163.38.96"] = Field("34.163.38.96", description = "IP address of the server that will send the data to the endpoint")
 
 
-class MailboxConfig(AutomationConfig):
-    object: Literal['mailbox'] = "mailbox"
-    id: str = "mb_" + str(uuid.uuid4())
-    email: str = Field(..., pattern=r".*@mailbox\.uiform\.com$")
-    follow_up: bool = Field(default=False, description = "Whether to send a follow-up email to the user to confirm the success of the email forwarding")
+
+class AutomationConfig(DocumentProcessingConfig):
+    id: str
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    json_schema: Dict = Field(..., description="JSON schema to validate the email data")
+    additional_messages: list[ChatCompletionUiformMessage] = []
+    model: str = "gpt-4o-mini"
+    temperature: float = 0
     webhook_config: WebhookConfig
 
+
+class WebhookOutput(BaseModel):
+    # The output of the webhook that the person will receive
+    mime_data: MIMEData # or some tidy version of it
+    extraction: DocumentExtractResponse
+
+
+class MailboxConfig(AutomationConfig):
+    object: Literal['mailbox'] = "mailbox"
+    id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
+    email: str = Field(..., pattern=r".*@mailbox\.uiform\.com$")
+    follow_up: bool = Field(default=False, description = "Whether to send a follow-up email to the user to confirm the success of the email forwarding")
+
+from pydantic import EmailStr
+
 class LinkProtection(BaseModel): 
-    is_secured: bool = Field(default=False, description = "Whether the link is secured")
+    protection_type: Literal["none", "password", "organization", "invitations"] = "none"
     password: str | None = Field(default=None, description = "Password to access the link")
+    invitations: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
 
     def __init__(self, **data: Any)->None:
         super().__init__(**data)
-        if self.is_secured and self.password is None:
+        if self.protection_type == "password" and self.password is None:
             # Generate a random 12 character password with letters and numbers
             self.password = 'pwd_' + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
 
 class ExtractionLinkConfig(AutomationConfig):
     object: Literal['extraction_link'] = "extraction_link"
+    id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
+    
+    name: str = Field(..., description = "Name of the link")
     max_file_size: int = Field(default=10, description = "Maximum file size in MB")
     protection: LinkProtection
+
+
+
+
 
 class ReconciliationLinkConfig(AutomationConfig):
     object: Literal['reconciliation_link'] = "reconciliation_link"
     max_file_size: int = Field(default=10, description = "Maximum file size in MB")
     protection: LinkProtection
-    webhook_config: WebhookConfig
 
 
 
@@ -149,18 +145,10 @@ class ExtractionLinkLog(BaseModel):
     organization_id: str
     protection_used: bool  # whether the link was accessed with password protection
 
-class CreateMailBoxRequest(BaseModel):
+class CreateMailBoxRequest(DocumentProcessingConfig):
     email: str #= Field(..., pattern=r".*@uiform\.com$")
     webhook_config: WebhookConfig
     json_schema: Dict = Field(..., description="JSON schema to validate the email data")
-    text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model")
-    image_operations: ImageOperations = Field(default=ImageOperations(**{
-        "correct_image_orientation": True,
-        "dpi": 72,
-        "image_to_text": "ocr",
-        "browser_canvas": "A4"
-    }), description="Additional context to be used by the AI model")
-    modality: Literal["native"] = "native"
     model: str = "gpt-4o-mini"
     temperature: float = 0
     additional_messages: list[ChatCompletionUiformMessage] = []
@@ -170,8 +158,25 @@ class UpdateMailBoxRequest(BaseModel):
     webhook_config: Optional[WebhookConfig] = None
     text_operations: Optional[TextOperations] = None
     image_operations: Optional[ImageOperations] = None
-    modality: Optional[Literal["native"]] = None
+    modality: Optional[Modality] = None
     model: Optional[str] = None
     temperature: Optional[float] = None
     additional_messages: Optional[list[ChatCompletionUiformMessage]] = None
     json_schema: Optional[Dict] = None
+
+
+
+class UpdateExtractionLinkRequest(BaseModel):
+    id: str
+    name: Optional[str] = None
+    max_file_size: Optional[int] = None
+    protection: Optional[LinkProtection] = None
+    webhook_config: Optional[WebhookConfig] = None
+    text_operations: Optional[TextOperations] = None
+    image_operations: Optional[ImageOperations] = None
+    modality: Optional[Modality] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    additional_messages: Optional[list[ChatCompletionUiformMessage]] = None
+    json_schema: Optional[Dict] = None
+

@@ -5,14 +5,14 @@ import json
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .._utils.json_schema import load_json_schema
 from ..types.jobs import JobResponse
-from ..types.prompt_optimization import PromptOptimizationObject, PromptOptimizationProps, PromptOptimizationJobInputData, PromptOptimizationJob, PromptOptimizationPropsParams
+from ..types.prompt_optimization import PromptOptimizationObject, PromptOptimizationProps, PromptOptimizationJobInputData, PromptOptimizationJob
 
 MAX_TRAINING_SAMPLES = 10
 
 class PromptOptimizationJobsMixin:
     def prepare_create(self, raw_schema: dict[str, Any] | Path | str, 
                        training_file: str,
-                       schema_optimization_props: PromptOptimizationPropsParams) -> PromptOptimizationJob:
+                       schema_optimization_props: dict[str, Any]) -> PromptOptimizationJob:
         
         optimization_objects = []
         with open(training_file, "r") as f:
@@ -25,13 +25,13 @@ class PromptOptimizationJobsMixin:
             input_data=PromptOptimizationJobInputData(
                 raw_schema=load_json_schema(raw_schema),
                 optimization_objects=optimization_objects[:MAX_TRAINING_SAMPLES],
-                schema_optimization_props=PromptOptimizationProps(**schema_optimization_props)
+                schema_optimization_props=PromptOptimizationProps.model_validate(schema_optimization_props)
             )
         )
         return job
 
 class PromptOptimizationJobs(SyncAPIResource, PromptOptimizationJobsMixin):
-    def create(self, raw_schema: dict[str, Any] | Path | str, training_file: str, schema_optimization_props: PromptOptimizationPropsParams) -> JobResponse:
+    def create(self, raw_schema: dict[str, Any] | Path | str, training_file: str, schema_optimization_props: dict[str, Any]) -> JobResponse:
         """Create a new prompt optimization job"""
 
         request_data = self.prepare_create(raw_schema, training_file, schema_optimization_props)
@@ -45,7 +45,7 @@ class PromptOptimizationJobs(SyncAPIResource, PromptOptimizationJobsMixin):
         return JobResponse.model_validate(response)
 
 class AsyncPromptOptimizationJobs(AsyncAPIResource, PromptOptimizationJobsMixin):
-    async def create(self, raw_schema: dict[str, Any] | Path | str, training_file: str, schema_optimization_props: PromptOptimizationPropsParams) -> Any:
+    async def create(self, raw_schema: dict[str, Any] | Path | str, training_file: str, schema_optimization_props: dict[str, Any]) -> Any:
         """Create a new prompt optimization job"""
 
         request_data = self.prepare_create(raw_schema, training_file, schema_optimization_props)

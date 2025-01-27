@@ -11,7 +11,6 @@ from ..._utils.mime import prepare_mime_document, convert_mime_data_to_pil_image
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
 from .extractions import Extractions, AsyncExtractions
-
 from .templates.templates import Templates, AsyncTemplates
 
 class BaseDocumentsMixin:

@@ -1,5 +1,5 @@
 import asyncio
-from typing import IO, Any, Optional, TypedDict
+from typing import IO, Any, Optional, BaseModel
 import re
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
@@ -32,11 +32,11 @@ from anthropic.types.message import Message
 
 
 
-class FinetuningJSON(TypedDict):
+class FinetuningJSON(BaseModel):
     messages: list[ChatCompletionUiformMessage]
     
 FinetuningJSONL = list[FinetuningJSON]
-
+from typing import TypedDict
 class BatchJSONLResponseFormat(TypedDict):
     type: str
     json_schema: dict[str, Any]
@@ -53,30 +53,30 @@ class BatchJSONL(TypedDict):
     url: str 
     body: BatchJSONLBody
 
-class BatchJSONLResponseUsageTokenDetails(TypedDict):
+class BatchJSONLResponseUsageTokenDetails(BaseModel):
     cached_tokens: int
     audio_tokens: int
 
-class BatchJSONLResponseUsageCompletionDetails(TypedDict):
+class BatchJSONLResponseUsageCompletionDetails(BaseModel):
     reasoning_tokens: int
     audio_tokens: int
     accepted_prediction_tokens: int
     rejected_prediction_tokens: int
 
-class BatchJSONLResponseUsage(TypedDict):
+class BatchJSONLResponseUsage(BaseModel):
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
     prompt_tokens_details: BatchJSONLResponseUsageTokenDetails
     completion_tokens_details: BatchJSONLResponseUsageCompletionDetails
 
-class BatchJSONLResponseChoice(TypedDict):
+class BatchJSONLResponseChoice(BaseModel):
     index: int
     message: ChatCompletionMessageParam
     logprobs: None | Any
     finish_reason: str
 
-class BatchJSONLResponseBody(TypedDict):
+class BatchJSONLResponseBody(BaseModel):
     id: str
     object: str
     created: int
@@ -86,12 +86,12 @@ class BatchJSONLResponseBody(TypedDict):
     service_tier: str
     system_fingerprint: str
 
-class BatchJSONLResponseInner(TypedDict):
+class BatchJSONLResponseInner(BaseModel):
     status_code: int
     request_id: str
     body: BatchJSONLResponseBody
 
-class BatchJSONLResponse(TypedDict):
+class BatchJSONLResponse(BaseModel):
     id: str
     custom_id: str
     response: BatchJSONLResponseInner
@@ -537,7 +537,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
 
         # Track running metrics
-        class RunningMetrics(TypedDict): 
+        class RunningMetrics(BaseModel): 
             model: str
             accuracy: float
             levenshtein: float
@@ -546,15 +546,15 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             mismatched: float
             processed: int
 
-        running_metrics: RunningMetrics = {
-            'model': model,
-            'accuracy': 0.0,
-            'levenshtein': 0.0,
-            'jaccard': 0.0,
-            'false_positive': 0.0,
-            'mismatched': 0.0,
-            'processed': 0 # number of processed examples - used in the loop to compute the running averages
-        }
+        running_metrics: RunningMetrics = RunningMetrics(
+            model=model,
+            accuracy=0.0,
+            levenshtein=0.0,
+            jaccard=0.0,
+            false_positive=0.0,
+            mismatched=0.0,
+            processed=0 # number of processed examples - used in the loop to compute the running averages
+        )
 
         def update_running_metrics(analysis: ExtractionAnalysis) -> None:
             comparison = normalized_comparison_metrics([analysis])

@@ -297,30 +297,10 @@ class DocumentProcessingConfig(BaseModel):
     modality: Modality
     """The modality of the document to load."""
 
-    text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model", examples=[{
-        "regex_instructions": [{
-            "name": "VAT Number",
-            "description": "All potential VAT numbers in the documents",
-            "pattern": r"[Ff][Rr]\s*(\d\s*){11}"
-        }],
-    }])
+    text_operations: TextOperations = Field(default_factory=TextOperations, description="Additional context to be used by the AI model")
     """The text operations to apply to the document."""
 
-    image_operations : ImageOperations = Field(
-        default=ImageOperations(**{
-            "correct_image_orientation": True,
-            "dpi" : 72, 
-            "image_to_text" : "ocr", 
-            "browser_canvas" : "A4"
-        }),
-        description="Preprocessing operations applied to image before sending them to the llm", 
-        examples=[{
-            "correct_image_orientation": True,
-            "dpi" : 72, 
-            "image_to_text" : "ocr", 
-            "browser_canvas" : "A4"
-        }]
-    )
+    image_operations : ImageOperations = Field(default_factory=ImageOperations, description="Preprocessing operations applied to image before sending them to the llm")
     """The image operations to apply to the document."""
 
 from typing import Dict

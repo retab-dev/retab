@@ -21,30 +21,33 @@ from ...types.mime import MIMEData
 
 
 
-from .types import MailboxConfig, WebhookConfig, AutomationConfig, UpdateMailBoxRequest, MailboxLog, ExtractionLinkConfig
-
+from .types import ExtractionLinkConfig, UpdateExtractionLinkRequest, LinkProtection, WebhookConfig
 
 class ExtractionLink(SyncAPIResource):
-    """Emails API wrapper for managing email automation configurations"""
+    """Extraction Link API wrapper for managing extraction link configurations"""
 
     def create(
         self,
-        email: str,
+        name: str,
         webhook_config: Dict[str, Any],
         json_schema: Dict[str, Any],
+        protection: Optional[Dict[str, Any]] = None,
+        max_file_size: int = 10,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Literal["native"] = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         additional_messages: List[ChatCompletionUiformMessage] = []
-    ) -> MailboxConfig:
-        """Create a new email automation configuration.
+    ) -> ExtractionLinkConfig:
+        """Create a new extraction link configuration.
         
         Args:
-            email: Email address for the mailbox
-            webhook_config: Webhook configuration for forwarding processed emails
-            json_schema: JSON schema to validate extracted email data
+            name: Name of the extraction link
+            webhook_config: Webhook configuration for forwarding processed files
+            json_schema: JSON schema to validate extracted data
+            protection: Protection configuration for the link
+            max_file_size: Maximum allowed file size in MB
             text_operations: Optional text preprocessing operations
             image_operations: Optional image preprocessing operations
             modality: Processing modality (currently only "native" supported)
@@ -53,54 +56,57 @@ class ExtractionLink(SyncAPIResource):
             additional_messages: Optional additional context messages
             
         Returns:
-            MailboxConfig: The created mailbox configuration
+            ExtractionLinkConfig: The created extraction link configuration
         """
         data = {
-            "email": email,
+            "name": name,
             "webhook_config": webhook_config,
             "json_schema": json_schema,
+            "protection": protection or LinkProtection(),
+            "max_file_size": max_file_size,
             "text_operations": text_operations or TextOperations(),
-            "image_operations": image_operations or ImageOperations(
-                correct_image_orientation=True,
-                dpi=72,
-                image_to_text="ocr",
-                browser_canvas="A4"
-            ),
+            "image_operations": image_operations or ImageOperations(),
             "modality": modality,
             "model": model,
             "temperature": temperature,
             "additional_messages": additional_messages
         }
-        response = self._client._request("POST", "/api/v1/automations/mailbox", data=data)
-        
-        return MailboxConfig.model_validate(response)
 
-    def list(self) -> List[MailboxConfig]:
-        """List all email automation configurations.
+        request = ExtractionLinkConfig.model_validate(data)
+
+        response = self._client._request("POST", "/api/v1/extraction-link/extraction-link", data=request.model_dump(mode='json'))
+        
+        return ExtractionLinkConfig.model_validate(response)
+
+    def list(self) -> List[ExtractionLinkConfig]:
+        """List all extraction link configurations.
         
         Returns:
-            List[MailboxConfig]: List of mailbox configurations
+            List[ExtractionLinkConfig]: List of extraction link configurations
         """
-        response = self._client._request("GET", "/api/v1/automations/mailbox")
+        response = self._client._request("GET", "/api/v1/extraction-link")
 
-        return [MailboxConfig.model_validate(mailbox) for mailbox in response]
+        return [ExtractionLinkConfig.model_validate(link) for link in response]
 
-    def get(self, email: str) -> MailboxConfig:
-        """Get a specific email automation configuration.
+    def get(self, link_id: str) -> ExtractionLinkConfig:
+        """Get a specific extraction link configuration.
         
         Args:
-            email: Email address of the mailbox
+            link_id: ID of the extraction link
             
         Returns:
-            MailboxConfig: The mailbox configuration
+            ExtractionLinkConfig: The extraction link configuration
         """
-        response = self._client._request("GET", f"/api/v1/automations/mailbox/{email}")
-        return MailboxConfig.model_validate(response)
+        response = self._client._request("GET", f"/api/v1/extraction-link/extraction-link/{link_id}")
+        return ExtractionLinkConfig.model_validate(response)
 
     def update(
         self,
-        email: str,
+        link_id: str,
+        name: Optional[str] = None,
         webhook_config: Optional[Dict[str, Any]] = None,
+        protection: Optional[Dict[str, Any]] = None,
+        max_file_size: Optional[int] = None,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
@@ -108,12 +114,15 @@ class ExtractionLink(SyncAPIResource):
         temperature: Optional[float] = None,
         additional_messages: Optional[List[ChatCompletionUiformMessage]] = None,
         json_schema: Optional[Dict[str, Any]] = None
-    ) -> MailboxConfig:
-        """Update an email automation configuration.
+    ) -> ExtractionLinkConfig:
+        """Update an extraction link configuration.
         
         Args:
-            email: Email address of the mailbox to update
+            link_id: ID of the extraction link to update
+            name: New name for the link
             webhook_config: New webhook configuration
+            protection: New protection configuration
+            max_file_size: New maximum file size
             text_operations: New text preprocessing operations
             image_operations: New image preprocessing operations
             modality: New processing modality
@@ -123,11 +132,17 @@ class ExtractionLink(SyncAPIResource):
             json_schema: New JSON schema
             
         Returns:
-            MailboxConfig: The updated mailbox configuration
+            ExtractionLinkConfig: The updated extraction link configuration
         """
-        data: dict[str, Any] = {}
+        data: dict[str, Any] = {"id": link_id}
+        if name is not None:
+            data["name"] = name
         if webhook_config is not None:
             data["webhook_config"] = webhook_config
+        if protection is not None:
+            data["protection"] = protection
+        if max_file_size is not None:
+            data["max_file_size"] = max_file_size
         if text_operations is not None:
             data["text_operations"] = text_operations
         if image_operations is not None:
@@ -143,31 +158,19 @@ class ExtractionLink(SyncAPIResource):
         if json_schema is not None:
             data["json_schema"] = json_schema
 
-        update_mailbox_request = UpdateMailBoxRequest.model_validate(data)
+        update_request = UpdateExtractionLinkRequest.model_validate(data)
 
-        response = self._client._request("PUT", f"/api/v1/automations/mailbox/{email}", data=update_mailbox_request.model_dump())
+        response = self._client._request("PUT", f"/api/v1/extraction-link/extraction-link/{link_id}", data=update_request.model_dump())
 
-        return MailboxConfig(**response)
+        return ExtractionLinkConfig.model_validate(response)
 
-    def delete(self, email: str) -> MailboxConfig:
-        """Delete an email automation configuration.
+    def delete(self, link_id: str) -> Dict[str, str]:
+        """Delete an extraction link configuration.
         
         Args:
-            email: Email address of the mailbox to delete
-        """
-        response = self._client._request("DELETE", f"/api/v1/automations/emails/{email}")
-
-        return MailboxConfig.model_validate(response)
-
-    def list_logs(self, email: str) -> List[MailboxLog]:
-        """Get logs for a specific email automation.
-        
-        Args:
-            email: Email address of the mailbox
+            link_id: ID of the extraction link to delete
             
         Returns:
-            List[Dict[str, Any]]: List of log entries
+            Dict[str, str]: Response message confirming deletion
         """
-        response = self._client._request("GET", f"/api/v1/automations/emails/{email}/logs")
-
-        return [MailboxLog.model_validate(log) for log in response]
+        return self._client._request("DELETE", f"/api/v1/extraction-link/extraction-link/{link_id}")

@@ -1,8 +1,8 @@
-from typing import Literal, TypedDict, Any
+from typing import Literal, Any
 from pydantic import BaseModel, computed_field, field_validator
 from .mime import MIMEData
 from .schemas.object import Schema
-from ..resources.benchmarking import ExtractionAnalysis
+from .._utils.benchmarking import ExtractionAnalysis
 from fastapi.encoders import jsonable_encoder
 MAX_CONCURRENCY = 15
 
@@ -23,12 +23,7 @@ class PromptOptimizationObject(BaseModel):
 
 Metrics = Literal["levenshtein_similarity_per_field", "accuracy_per_field"]
 
-class PromptOptimizationPropsParams(TypedDict, total=True):
-    start_hierarchy_level: int
-    threshold: float
-    model: str
-    iterations_per_level: int
-    metric: Metrics
+
 
 # Insert default values for the parameters
 class PromptOptimizationProps(BaseModel):
