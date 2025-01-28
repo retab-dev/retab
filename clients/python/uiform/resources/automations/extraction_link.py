@@ -18,19 +18,29 @@ from ...types.documents.image_operations import ImageOperations
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
 from ...types.documents.text_operations import TextOperations
 
+from pydantic import EmailStr
 
-
-from .types import ExtractionLinkConfig, UpdateExtractionLinkRequest, LinkProtection
+from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest
 
 class ExtractionLink(SyncAPIResource):
     """Extraction Link API wrapper for managing extraction link configurations"""
 
     def create(
         self,
-        name: str,
-        http_config: Dict[str, Any],
         json_schema: Dict[str, Any],
-        protection: Optional[Dict[str, Any]] = None,
+        # HTTP Config
+        endpoint: HttpUrl,
+        headers: Optional[Dict[str, str]] = None,
+        max_file_size: Optional[int] = None,
+        forward_file: Optional[bool] = None,
+        # Link Config
+        name: str,
+        protection_type: Literal["none", "password", "invitations"] = "none",
+        password: str | None = None,
+        invitations: List[EmailStr] = [],
+
+
+        # DocumentExtraction Config
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Literal["native"] = "native",

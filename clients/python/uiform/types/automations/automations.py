@@ -33,20 +33,20 @@ class HttpOutput(BaseModel):
     payload: Optional[MIMEData] # Only if forward_file is true -> MIMEData forwarded to the mailbox, or to the link
     user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
 
+    
 
-class HttpConfig(BaseModel):
+class AutomationConfig(DocumentExtractionConfig):
+    object: str
+    id: str
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+    # HTTP Config
     endpoint: HttpUrl = Field(..., description = "Endpoint to send the data to")
     method: Literal["POST"]= "POST"
     headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
     outgoing_ip: Literal["34.163.38.96"] = Field("34.163.38.96", description = "IP address of the server that will send the data to the endpoint")
     max_file_size: int = Field(default=50, description = "Maximum file size in MB")
     forward_file: bool = Field(default=False, description = "Whether to forward the file to the endpoint")
-
-class AutomationConfig(DocumentExtractionConfig):
-    object: str
-    id: str
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    http_config: HttpConfig
 
 from typing import ClassVar
 import os
@@ -61,9 +61,15 @@ class MailboxConfig(AutomationConfig):
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
 
 
+LinkProtection = Literal["unprotected", "password", "invitations"]
 
-class LinkProtection(BaseModel): 
-    protection_type: Literal["none", "password", "invitations"] = "none"
+class ExtractionLinkConfig(AutomationConfig):
+    object: Literal['extraction_link'] = "extraction_link"
+    id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
+    
+    # Link Specific Config
+    name: str = Field(..., description = "Name of the link")
+    protection_type: LinkProtection = "unprotected"
     password: str | None = Field(default=None, description = "Password to access the link")
     invitations: List[EmailStr] = Field(default_factory=list, description = "List of emails allowed to access the link")
 
@@ -73,14 +79,6 @@ class LinkProtection(BaseModel):
             # Generate a random 12 character password with letters and numbers
             self.password = 'pwd_' + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
 
-
-class ExtractionLinkConfig(AutomationConfig):
-    object: Literal['extraction_link'] = "extraction_link"
-    id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
-    
-    # Link Specific Config
-    name: str = Field(..., description = "Name of the link")
-    protection: LinkProtection
 
 
 
@@ -158,7 +156,14 @@ class UpdateMailBoxRequest(BaseModel):
     follow_up: Optional[bool] = None
     authorized_domains: Optional[list[str]] = None
     authorized_emails: Optional[List[EmailStr]] = None
-    http_config: Optional[HttpConfig] = None
+
+    # ------------------------------
+    # HTTP Config
+    # ------------------------------
+    endpoint: Optional[HttpUrl] = None
+    headers: Optional[Dict[str, str]] = None
+    max_file_size: Optional[int] = None
+    forward_file: Optional[bool] = None
 
     # ------------------------------
     # DocumentExtraction Parameters
@@ -174,14 +179,27 @@ class UpdateMailBoxRequest(BaseModel):
     json_schema: Optional[Dict] = None
 
    
-    
+
 class UpdateExtractionLinkRequest(BaseModel):
     id: str
 
+    # ------------------------------
+    # Link Config
+    # ------------------------------
     name: Optional[str] = None
     protection: Optional[LinkProtection] = None
-    http_config: Optional[HttpConfig] = None
-    
+    password: Optional[str] = None
+    invitations: Optional[List[EmailStr]] = None
+
+
+    # ------------------------------
+    # HTTP Config
+    # ------------------------------
+    endpoint: Optional[HttpUrl] = None
+    headers: Optional[Dict[str, str]] = None
+    max_file_size: Optional[int] = None
+    forward_file: Optional[bool] = None
+
     # ------------------------------
     # DocumentExtraction Parameters
     # ------------------------------
