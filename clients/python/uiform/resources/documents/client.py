@@ -117,11 +117,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         """
         loading_request = self._prepare_create_messages(document, modality, text_operations, image_operations)
 
-        print(loading_request.model_dump().keys())
-        print(loading_request.modality)
-        print(loading_request.text_operations)
-        print(loading_request.image_operations)
-        print(BaseMIMEData.model_validate(loading_request.document).model_dump())
         response = self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
         return DocumentMessage.model_validate(response)
 

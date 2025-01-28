@@ -26,7 +26,6 @@ class MIMEData(BaseModel):
         return self.filename.split('.')[-1].lower()
     
     @property
-    @computed_field
     def content(self) -> str:
         if self.url.startswith('data:'):
             # Extract base64 content from data URL
@@ -36,7 +35,6 @@ class MIMEData(BaseModel):
             raise ValueError("Content is not available for this file")
     
     @property
-    @computed_field
     def mime_type(self) -> str:
         if self.url.startswith('data:'):
             return self.url.split(';')[0].split(':')[1]

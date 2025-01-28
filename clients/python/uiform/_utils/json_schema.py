@@ -660,6 +660,12 @@ def json_schema_to_inference_schema(obj: Union[dict[str, Any], list[Any]]) -> Un
                         merged.update(json_schema_to_inference_schema(subschema))
                 new_obj.update(merged)
 
+            # Handle enum fields - ensure they don't get converted to nullable
+            elif key == 'enum':
+                new_obj[key] = value
+                # Force type to be string for enum values
+                new_obj['type'] = 'string'
+
             else:
                 new_obj[key] = json_schema_to_inference_schema(value)
         
@@ -1054,7 +1060,110 @@ def extract_property_type_info(prop_schema: dict[str, Any]) -> tuple[str, Option
 
     return prop_type, prop_format, is_nullable, enum_values
 
+
+def _convert_property_schema_to_type(prop_schema: dict[str, Any]) -> Any:
+    """
+    Convert a single JSON Schema property to a Python type annotation:
+      - If 'enum' => Literal[...]
+      - If 'type=object' => nested submodel
+      - If 'type=array' => list[sub_type]
+      - If 'type=string/integer/number/boolean' => str/int/float/bool
+    """
+    # If there's an enum, return a Literal of the enum values
+    if "enum" in prop_schema:
+        # Convert each enum value to the correct Python literal
+        enum_values = prop_schema["enum"]
+        return Literal[tuple(enum_values)]  # type: ignore
+
+    # Otherwise check 'type'
+    prop_type = prop_schema.get("type")
+
+    if prop_type == "object":
+        # Nested submodel
+        # If 'properties' is missing, that might be an empty dict
+        if "properties" in prop_schema:
+            return convert_json_schema_to_basemodel(prop_schema)
+        else:
+            # fallback
+            return dict
+
+    if prop_type == "array":
+        # Look for 'items' => sub-schema
+        items_schema = prop_schema.get("items", {})
+        item_type = _convert_property_schema_to_type(items_schema)
+        return list[item_type]
+
+    if prop_type == "string":
+        return str
+    if prop_type == "boolean":
+        return bool
+    if prop_type == "integer":
+        return int
+    if prop_type == "number":
+        return float
+
+    # If the schema is "null" or unknown, fallback to `Any`
+    return Any
+
 def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
+    """
+    Create a Pydantic BaseModel dynamically from a JSON Schema:
+      - Expand refs
+      - For each property, figure out if it's required
+      - Convert 'type': 'object' => nested submodel
+      - Convert 'enum' => Literal
+      - 'array' => list[submodel or primitive]
+      - Primitives => str, int, float, bool
+    """
+    # 1) Expand references (inlines $refs)
+    schema_expanded = expand_refs(copy.deepcopy(schema))
+
+    # 2) Figure out model name
+    model_name = schema_expanded.get("title", "DynamicModel")
+
+    # 3) Collect any X-* keys for model config
+    x_keys = {k: v for k, v in schema_expanded.items() if k.startswith("X-")}
+    model_config = ConfigDict(extra="forbid", json_schema_extra=x_keys) if x_keys else ConfigDict(extra="forbid")
+
+    # 4) Build up the field definitions
+    properties = schema_expanded.get("properties", {})
+    required_props = set(schema_expanded.get("required", []))
+
+    field_definitions = {}
+    for prop_name, prop_schema in properties.items():
+        # If property is required => default=...
+        # Else => default=None
+        if prop_name in required_props:
+            default_val = prop_schema.get("default", ...)
+        else:
+            default_val = prop_schema.get("default", None)
+
+        # Convert to a Python type annotation
+        python_type = _convert_property_schema_to_type(prop_schema)
+
+        # We also keep 'description', 'title', 'X-...' extras
+        field_kwargs = {
+            "description": prop_schema.get("description"),
+            "title": prop_schema.get("title"),
+            "json_schema_extra": {k: v for k, v in prop_schema.items() if k.startswith("X-")}
+        }
+
+        # If a field is not in `required`, we typically wrap it in `Optional[...]`
+        if prop_name not in required_props:
+            python_type = Union[python_type, None]
+
+        field_definitions[prop_name] = (python_type, Field(default_val, **field_kwargs))
+
+    # 5) Build the dynamic model
+    return create_model(
+        model_name,
+        __config__=model_config,
+        __module__="__main__",
+        **field_definitions,
+    )
+
+
+def convert_json_schema_to_basemodelold(schema: dict[str, Any]) -> Type[BaseModel]:
     """
     Create a Pydantic BaseModel dynamically from a JSON Schema.
     Steps:
