@@ -11,14 +11,14 @@ from ...types.modalities import Modality
 from typing import Any, Optional, Literal, List, Dict
 import uuid
 import datetime
-from pydantic import HttpUrl, EmailStr
+from pydantic import HttpUrl
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.modalities import Modality
 
-from ...types.documents.create_messages import ChatCompletionUiformMessage 
+from ...types.documents.create_messages import ChatCompletionUiformMessage, DocumentProcessingConfig
 from ...types.documents.image_operations import ImageOperations
-from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractionConfig
+from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
 from ...types.documents.text_operations import TextOperations
 from ...types.mime import MIMEData, BaseMIMEData
 from ...types.ai_model import LLMModel
@@ -26,48 +26,45 @@ from ...types.ai_model import LLMModel
 import secrets
 import string
 
-# Never used anywhere in the logs, but will be useful
-class HttpOutput(BaseModel): 
-    extraction: dict[str,Any]
-    payload: Optional[MIMEData] # Only if forward_file is true -> MIMEData forwarded to the mailbox, or to the link
-    user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
 
 
-class HttpConfig(BaseModel):
+
+class WebhookConfig(BaseModel):
     endpoint: HttpUrl = Field(..., description = "Endpoint to send the data to")
     method: Literal["POST"]= "POST"
     headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
     outgoing_ip: Literal["34.163.38.96"] = Field("34.163.38.96", description = "IP address of the server that will send the data to the endpoint")
-    max_file_size: int = Field(default=50, description = "Maximum file size in MB")
-    forward_file: bool = Field(default=False, description = "Whether to forward the file to the endpoint")
 
-class AutomationConfig(DocumentExtractionConfig):
+
+
+class AutomationConfig(DocumentProcessingConfig):
     id: str
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    http_config: HttpConfig
+    json_schema: Dict = Field(..., description="JSON schema to validate the email data")
+    additional_messages: list[ChatCompletionUiformMessage] = []
+    model: LLMModel = "gpt-4o-mini"
+    temperature: float = 0
+    webhook_config: WebhookConfig
 
+
+class WebhookOutput(BaseModel):
+    # The output of the webhook that the person will receive
+    mime_data: MIMEData # or some tidy version of it
+    extraction: DocumentExtractResponse
 
 
 class MailboxConfig(AutomationConfig):
     object: Literal['mailbox'] = "mailbox"
     id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
-    
-    # Email Specific config
     email: str = Field(..., pattern=r".*@mailbox\.uiform\.com$")
     follow_up: bool = Field(default=False, description = "Whether to send a follow-up email to the user to confirm the success of the email forwarding")
-    authorized_domains: list[str] = Field(default_factory=list, pattern=r"^[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", description = "List of authorized domains to receive the emails from")
-    authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
-    
-    # Automation config
-    http_config: HttpConfig
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
-
+from pydantic import EmailStr
 
 class LinkProtection(BaseModel): 
-    protection_type: Literal["none", "password", "invitations"] = "none"
+    protection_type: Literal["none", "password", "organization", "invitations"] = "none"
     password: str | None = Field(default=None, description = "Password to access the link")
-    invitations: List[EmailStr] = Field(default_factory=list, description = "List of emails allowed to access the link")
+    invitations: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
 
     def __init__(self, **data: Any)->None:
         super().__init__(**data)
@@ -77,15 +74,21 @@ class LinkProtection(BaseModel):
 
 
 
+
+class ReconciliationLinkConfig(AutomationConfig):
+    object: Literal['reconciliation_link'] = "reconciliation_link"
+    max_file_size: int = Field(default=10, description = "Maximum file size in MB")
+    protection: LinkProtection
+
+
+
 class ExtractionLinkConfig(AutomationConfig):
     object: Literal['extraction_link'] = "extraction_link"
     id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
     
     name: str = Field(..., description = "Name of the link")
+    max_file_size: int = Field(default=10, description = "Maximum file size in MB")
     protection: LinkProtection
-
-    http_config: HttpConfig
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
 
@@ -116,9 +119,17 @@ class ScrappingConfig(CronJobConfig):
 # ------------------------------
 # ------------------------------
 
+class EmailMetadata(BaseModel):
+    sender: str
+    recipient: str
+    subject: Optional[str]
+    body: Optional[str]
+    body_html: Optional[str]
+    sent_at: datetime.datetime
+    received_at: Optional[datetime.datetime]
+    processed_at: datetime.datetime
 
-
-class RequestLog(BaseModel):
+class RequestResult(BaseModel):
     endpoint: HttpUrl
     request_body: dict[str, Any]
     request_headers: dict[str, str]
@@ -132,37 +143,62 @@ class RequestLog(BaseModel):
     error: Optional[str] = None
     duration_ms: float 
 
+class MailboxLog(BaseModel):
+    email: str
+    organization_id: str
 
-class AutomationLog(BaseModel):
-    id: str = Field(default_factory=lambda: "log_auto_" + str(uuid.uuid4()), description="Unique identifier for the automation log")
-    automation_id: str
+    email_metadata: EmailMetadata
+    request_result: RequestResult
 
+class ExtractionLinkLog(BaseModel):
+    link_id: str 
+    organization_id: str
+
+    name: str = Field(..., description = "Name of the link")
+    max_file_size: int = Field(default=10, description = "Maximum file size in MB")
+    protection: LinkProtection
     file_metadata: BaseMIMEData
-    user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
 
-    request_log: RequestLog
+    request_result: RequestResult
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ------------------------------
 # ------------------------------
 # ------------------------------
 
 class UpdateMailBoxRequest(BaseModel):
-    http_config: Optional[HttpConfig] = None
-
-   
+    webhook_config: Optional[WebhookConfig] = None
+    text_operations: Optional[TextOperations] = None
+    image_operations: Optional[ImageOperations] = None
+    modality: Optional[Literal["native"]] = None
+    model: Optional[LLMModel] = None
+    temperature: Optional[float] = None
+    additional_messages: Optional[list[ChatCompletionUiformMessage]] = None
+    json_schema: Optional[Dict] = None
     
 class UpdateExtractionLinkRequest(BaseModel):
     id: str
     name: Optional[str] = None
+    max_file_size: Optional[int] = None
     protection: Optional[LinkProtection] = None
-    http_config: Optional[HttpConfig] = None
-    
-     # DocumentProcessing Parameters
+    webhook_config: Optional[WebhookConfig] = None
     text_operations: Optional[TextOperations] = None
     image_operations: Optional[ImageOperations] = None
-    modality: Optional[Literal["native"]] = None
-    # DocumentExtraction Parameters
-    model: Optional[LLMModel] = None
+    modality: Optional[Modality] = None
+    model: Optional[str] = None
     temperature: Optional[float] = None
     additional_messages: Optional[list[ChatCompletionUiformMessage]] = None
     json_schema: Optional[Dict] = None

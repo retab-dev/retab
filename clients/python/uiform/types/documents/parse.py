@@ -18,19 +18,27 @@ from ..._utils.mime import generate_sha_hash_from_base64
 
 import datetime
 
+class DocumentExtractionConfig(DocumentProcessingConfig):
+    # Redeclaration of the DocumentProcessingConfig
+    modality: Modality
+    text_operations: TextOperations = Field(default_factory=TextOperations, description="Additional context to be used by the AI model")
+    image_operations : ImageOperations = Field(default_factory=ImageOperations, description="Preprocessing operations applied to image before sending them to the llm")
 
-class DocumentExtractRequest(DocumentProcessingConfig):
-    # Attributes
+    # New attributes
     model: LLMModel = Field(..., description="Model used for chat completion")
     json_schema: dict[str, object] = Field(..., description="JSON schema format used to validate the output data.")
+    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+    additional_messages: list[ChatCompletionUiformMessage] = Field(default=[], description="Additional messages to be used by the AI model")
+
+
+class DocumentExtractRequest(DocumentExtractionConfig):
+    # Attributes
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
-    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
     store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
     
     document: MIMEData | None = Field(..., description="Document to be analyzed")
     
-    additional_messages: list[ChatCompletionUiformMessage] = Field(default=[], description="Additional messages to be used by the AI model")
 
     # Some internal attributes (hidden from serialization)
     _regex_instruction_results: list[RegexInstructionResult] | None = PrivateAttr(default=None)

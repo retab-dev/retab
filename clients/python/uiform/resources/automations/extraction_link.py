@@ -174,3 +174,16 @@ class ExtractionLink(SyncAPIResource):
             Dict[str, str]: Response message confirming deletion
         """
         return self._client._request("DELETE", f"/api/v1/extraction-link/extraction-link/{link_id}")
+    
+
+    def mock(self, link_id: str) -> DocumentExtractResponse:
+        """Mock endpoint that simulates the complete extraction process with sample data.
+        
+        Args:
+            link_id: ID of the extraction link to mock
+            
+        Returns:
+            DocumentExtractResponse: The simulated extraction response
+        """
+        response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/mock/{link_id}")
+        return DocumentExtractResponse.model_validate(response)
