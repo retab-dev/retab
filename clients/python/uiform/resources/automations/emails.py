@@ -30,14 +30,28 @@ class Emails(SyncAPIResource):
     def create(
         self,
         email: str,
-        http_config: Dict[str, Any],
+
         json_schema: Dict[str, Any],
+        endpoint: HttpUrl,
+
+        # email specific opitonals Fields
+        follow_up: bool = False,
+        authorized_domains: List[str] = [],
+        authorized_emails: List[str] = [],
+        # HTTP Config Optional Fields
+        headers: Dict[str, str] = {},
+        max_file_size: int = 50 ,
+        forward_file: bool = False,
+
+
+        # DocumentExtraction Config
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Literal["native"] = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         additional_messages: List[ChatCompletionUiformMessage] = []
+
     ) -> MailboxConfig:
         """Create a new email automation configuration.
         
@@ -57,8 +71,14 @@ class Emails(SyncAPIResource):
         """
         data = {
             "email": email,
-            "http_config": http_config,
+            "endpoint": endpoint,
+            "headers": headers,
+            "max_file_size": max_file_size,
+            "forward_file": forward_file,
             "json_schema": json_schema,
+            "follow_up": follow_up,
+            "authorized_domains": authorized_domains,
+            "authorized_emails": authorized_emails,
             "text_operations": text_operations or TextOperations(),
             "image_operations": image_operations or ImageOperations(
                 correct_image_orientation=True,
@@ -102,7 +122,13 @@ class Emails(SyncAPIResource):
     def update(
         self,
         email: str,
-        http_config: Optional[Dict[str, Any]] = None,
+        endpoint: Optional[HttpUrl] = None,
+        headers: Optional[Dict[str, str]] = None,
+        max_file_size: Optional[int] = None,
+        forward_file: Optional[bool] = None,
+        follow_up: Optional[bool] = None,
+        authorized_domains: Optional[List[str]] = None,
+        authorized_emails: Optional[List[str]] = None,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
@@ -128,8 +154,20 @@ class Emails(SyncAPIResource):
             MailboxConfig: The updated mailbox configuration
         """
         data: dict[str, Any] = {}
-        if http_config is not None:
-            data["http_config"] = http_config
+        if endpoint is not None:
+            data["endpoint"] = endpoint
+        if headers is not None:
+            data["headers"] = headers
+        if max_file_size is not None:
+            data["max_file_size"] = max_file_size
+        if forward_file is not None:
+            data["forward_file"] = forward_file
+        if follow_up is not None:
+            data["follow_up"] = follow_up
+        if authorized_domains is not None:
+            data["authorized_domains"] = authorized_domains
+        if authorized_emails is not None:
+            data["authorized_emails"] = authorized_emails
         if text_operations is not None:
             data["text_operations"] = text_operations
         if image_operations is not None:

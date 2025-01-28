@@ -161,7 +161,6 @@ class AutomationLog(BaseModel):
 # ------------------------------
 
 class UpdateMailBoxRequest(BaseModel):
-    id: str
 
     follow_up: Optional[bool] = None
     authorized_domains: Optional[list[str]] = None
