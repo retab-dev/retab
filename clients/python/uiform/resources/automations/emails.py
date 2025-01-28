@@ -21,7 +21,7 @@ from ...types.mime import MIMEData
 
 
 
-from .types import MailboxConfig, WebhookConfig, AutomationConfig, UpdateMailBoxRequest, MailboxLog
+from .types import MailboxConfig, AutomationConfig, UpdateMailBoxRequest, AutomationLog
 
 from pydantic import BaseModel
 
@@ -161,7 +161,7 @@ class Emails(SyncAPIResource):
         response = self._client._request("DELETE", f"/api/v1/emails/mailbox/{email}")
 
 
-    def list_logs(self, email: str) -> List[MailboxLog]:
+    def list_logs(self, email: str) -> List[AutomationLog]:
         """Get logs for a specific email automation.
         
         Args:
@@ -172,4 +172,4 @@ class Emails(SyncAPIResource):
         """
         response = self._client._request("GET", f"/api/v1/emails/mailbox/{email}/logs")
 
-        return [MailboxLog.model_validate(log) for log in response]
+        return [AutomationLog.model_validate(log) for log in response]

@@ -42,6 +42,7 @@ class HttpConfig(BaseModel):
     forward_file: bool = Field(default=False, description = "Whether to forward the file to the endpoint")
 
 class AutomationConfig(DocumentExtractionConfig):
+    object: str
     id: str
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     http_config: HttpConfig
@@ -58,10 +59,6 @@ class MailboxConfig(AutomationConfig):
     authorized_domains: list[str] = Field(default_factory=list, pattern=r"^[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", description = "List of authorized domains to receive the emails from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
     
-    # Automation config
-    http_config: HttpConfig
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-
 
 
 class LinkProtection(BaseModel): 
@@ -76,16 +73,13 @@ class LinkProtection(BaseModel):
             self.password = 'pwd_' + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
 
 
-
 class ExtractionLinkConfig(AutomationConfig):
     object: Literal['extraction_link'] = "extraction_link"
     id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
     
+    # Link Specific Config
     name: str = Field(..., description = "Name of the link")
     protection: LinkProtection
-
-    http_config: HttpConfig
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
 
@@ -101,16 +95,24 @@ class CronSchedule(BaseModel):
         return f"{self.second or '*'} {self.minute} {self.hour} " \
                f"{self.day_of_month or '*'} {self.month or '*'} {self.day_of_week or '*'}"
 
-class CronJobConfig(AutomationConfig):
-    object: Literal['cron_job'] = "cron_job"
-    id: str = Field(default_factory=lambda: "cron_" + str(uuid.uuid4()), description="Unique identifier for the cron job")
-    organization_id: str = Field(..., description="Organization ID that owns the cron job")
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+class ScrappingConfig(AutomationConfig):
+    object: Literal['scrapping_cron'] = "scrapping_cron"
+    id: str = Field(default_factory=lambda: "scrapping_" + str(uuid.uuid4()), description="Unique identifier for the scrapping job")
+    
+    # Scrapping Specific Config
+    link: HttpUrl = Field(..., description="Link to be scrapped")
     schedule: CronSchedule
 
-class ScrappingConfig(CronJobConfig):
-    id: str = Field(default_factory=lambda: "scrapping_" + str(uuid.uuid4()), description="Unique identifier for the scrapping job")
-    link: HttpUrl = Field(..., description="Link to be scrapped")
+
+
+class ExtractionEndpointConfig(AutomationConfig):
+    object: Literal['extraction_endpoint'] = "extraction_endpoint"
+    id: str = Field(default_factory=lambda: "extraction_endpoint_" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
+    
+    # Extraction Endpoint Specific Config
+    name: str = Field(..., description="Name of the extraction endpoint")
+
 
 # ------------------------------
 # ------------------------------
@@ -147,7 +149,22 @@ class AutomationLog(BaseModel):
 # ------------------------------
 
 class UpdateMailBoxRequest(BaseModel):
+    id: str
     http_config: Optional[HttpConfig] = None
+    email: Optional[str] = None
+
+    # ------------------------------
+    # DocumentExtraction Parameters
+    # ------------------------------
+    # DocumentProcessing Parameters
+    text_operations: Optional[TextOperations] = None
+    image_operations: Optional[ImageOperations] = None
+    modality: Optional[Literal["native"]] = None
+    # Others DocumentExtraction Parameters
+    model: Optional[LLMModel] = None
+    temperature: Optional[float] = None
+    additional_messages: Optional[list[ChatCompletionUiformMessage]] = None
+    json_schema: Optional[Dict] = None
 
    
     
@@ -157,11 +174,14 @@ class UpdateExtractionLinkRequest(BaseModel):
     protection: Optional[LinkProtection] = None
     http_config: Optional[HttpConfig] = None
     
-     # DocumentProcessing Parameters
+    # ------------------------------
+    # DocumentExtraction Parameters
+    # ------------------------------
+    # DocumentProcessing Parameters
     text_operations: Optional[TextOperations] = None
     image_operations: Optional[ImageOperations] = None
     modality: Optional[Literal["native"]] = None
-    # DocumentExtraction Parameters
+    # Others DocumentExtraction Parameters
     model: Optional[LLMModel] = None
     temperature: Optional[float] = None
     additional_messages: Optional[list[ChatCompletionUiformMessage]] = None

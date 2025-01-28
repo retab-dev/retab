@@ -21,7 +21,7 @@ from ...types.mime import MIMEData
 
 
 
-from .types import ExtractionLinkConfig, UpdateExtractionLinkRequest, LinkProtection, WebhookConfig
+from .types import ExtractionLinkConfig, UpdateExtractionLinkRequest, LinkProtection
 
 class ExtractionLink(SyncAPIResource):
     """Extraction Link API wrapper for managing extraction link configurations"""
