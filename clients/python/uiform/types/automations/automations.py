@@ -48,15 +48,16 @@ class AutomationConfig(DocumentExtractionConfig):
     max_file_size: int = Field(default=50, description = "Maximum file size in MB")
     forward_file: bool = Field(default=False, description = "Whether to forward the file to the endpoint")
 
-
-    # Redeclaration of the DocumentExtractionConfig
-    modality: Modality
-    text_operations: TextOperations = Field(default_factory=TextOperations, description="Additional context to be used by the AI model")
-    image_operations : ImageOperations = Field(default_factory=ImageOperations, description="Preprocessing operations applied to image before sending them to the llm")
-    model: LLMModel = Field(..., description="Model used for chat completion")
-    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
-    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-    additional_messages: list[ChatCompletionUiformMessage] = Field(default=[], description="Additional messages to be used by the AI model")
+    def model_dump(
+        self,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        data = super().model_dump(**kwargs)
+        parent_fields = set(DocumentExtractionConfig.model_fields.keys())
+        child_keys = [k for k in data if k not in parent_fields]
+        parent_keys = [k for k in data if k in parent_fields]
+        return {k: data[k] for k in (child_keys + parent_keys)}
+    
 
 from typing import ClassVar
 import os
@@ -69,6 +70,19 @@ class MailboxConfig(AutomationConfig):
     follow_up: bool = Field(default=False, description = "Whether to send a follow-up email to the user to confirm the success of the email forwarding")
     authorized_domains: list[str] = Field(default_factory=list, description = "List of authorized domains to receive the emails from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
+
+    def model_dump(
+        self,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        data = super().model_dump(**kwargs)
+        parent_fields = set(DocumentExtractionConfig.model_fields.keys())
+        child_keys = [k for k in data if k not in parent_fields]
+        parent_keys = [k for k in data if k in parent_fields]
+        return {k: data[k] for k in (child_keys + parent_keys)}
+    
+    
+    
 
 
 LinkProtection = Literal["unprotected", "password", "invitations"]
@@ -90,6 +104,15 @@ class ExtractionLinkConfig(AutomationConfig):
             self.password = 'pwd_' + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
 
 
+    def model_dump(
+        self,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        data = super().model_dump(**kwargs)
+        parent_fields = set(DocumentExtractionConfig.model_fields.keys())
+        child_keys = [k for k in data if k not in parent_fields]
+        parent_keys = [k for k in data if k in parent_fields]
+        return {k: data[k] for k in (child_keys + parent_keys)}
 
 
 class CronSchedule(BaseModel):
