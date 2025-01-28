@@ -8,13 +8,13 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, Conte
 from .text_operations import TextOperations, RegexInstructionResult
 from .create_messages import ChatCompletionUiformMessage, DocumentProcessingConfig
 from .image_operations import ImageOperations
-from ..mime import MIMEData, BaseMIMEData
 from ..modalities import Modality
 from ..ai_model import AIProvider, LLMModel
 from ..standards import ErrorDetail, StreamingBaseModel
 from ..schemas.object import Schema
 from ..._utils.ai_model import find_provider_from_model
 from ..._utils.mime import generate_sha_hash_from_base64
+from ..mime import MIMEData, BaseMIMEData
 
 import datetime
 
@@ -37,8 +37,8 @@ class DocumentExtractRequest(DocumentExtractionConfig):
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
     
-    document: MIMEData | None = Field(..., description="Document to be analyzed")
-    
+    document: MIMEData = Field(..., description="Document to be analyzed")
+
 
     # Some internal attributes (hidden from serialization)
     _regex_instruction_results: list[RegexInstructionResult] | None = PrivateAttr(default=None)
@@ -70,16 +70,7 @@ class DocumentExtractRequest(DocumentExtractionConfig):
         assert self.json_schema, "The response format schema cannot be empty."
         return Schema(json_schema=self.json_schema)
 
-    @cached_property
-    def hashed_document(self) -> str:
-        """
-        Generates a SHA hash from the document's base64 content.
-        This property is cached after first computation.
-
-        Returns:
-            str: The SHA hash of the document's content.
-        """
-        return generate_sha_hash_from_base64(self.document.content if self.document else '')
+   
 
 class BaseDocumentExtractRequest(DocumentExtractRequest):
     document: BaseMIMEData = Field(..., description="Document analyzed (without content, for MongoDB storage)")     # type: ignore
@@ -107,7 +98,6 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     # Additional metadata fields (UIForm)
     likelihoods: Any # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
     regex_instruction_results: list[RegexInstructionResult] | None = None
-    text_operations_message: str | None = None
     schema_validation_error: ErrorDetail | None = None
     
     # Timestamps

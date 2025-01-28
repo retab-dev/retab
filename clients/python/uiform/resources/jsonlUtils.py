@@ -1,5 +1,6 @@
-import asyncio
-from typing import IO, Any, Optional, BaseModel
+
+from typing import IO, Any, Optional
+from pydantic import BaseModel
 import re
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
@@ -11,6 +12,7 @@ from io import IOBase
 import os
 import tempfile
 import shutil
+import asyncio
 
 from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
@@ -558,21 +560,21 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         def update_running_metrics(analysis: ExtractionAnalysis) -> None:
             comparison = normalized_comparison_metrics([analysis])
-            running_metrics['processed'] += 1
-            n = running_metrics['processed']
+            running_metrics.processed += 1
+            n = running_metrics.processed
             # Update running averages
-            running_metrics['accuracy'] = (running_metrics['accuracy'] * (n-1) + comparison.accuracy) / n
-            running_metrics['levenshtein'] = (running_metrics['levenshtein'] * (n-1) + comparison.levenshtein_similarity) / n
-            running_metrics['jaccard'] = (running_metrics['jaccard'] * (n-1) + comparison.jaccard_similarity) / n
-            running_metrics['false_positive'] = (running_metrics['false_positive'] * (n-1) + comparison.false_positive_rate) / n
-            running_metrics['mismatched'] = (running_metrics['mismatched'] * (n-1) + comparison.mismatched_value_rate) / n
+            running_metrics.accuracy = (running_metrics.accuracy * (n-1) + comparison.accuracy) / n
+            running_metrics.levenshtein = (running_metrics.levenshtein * (n-1) + comparison.levenshtein_similarity) / n
+            running_metrics.jaccard = (running_metrics.jaccard * (n-1) + comparison.jaccard_similarity) / n
+            running_metrics.false_positive = (running_metrics.false_positive * (n-1) + comparison.false_positive_rate) / n
+            running_metrics.mismatched = (running_metrics.mismatched * (n-1) + comparison.mismatched_value_rate) / n
             # Update progress bar description
             batch_pbar.set_description(
-                f"Processing batches | Model: {running_metrics['model']} | Acc: {running_metrics['accuracy']:.2f} | "
-                f"Lev: {running_metrics['levenshtein']:.2f} | "
-                f"IOU: {running_metrics['jaccard']:.2f} | "
-                f"FP: {running_metrics['false_positive']:.2f} | "
-                f"Mism: {running_metrics['mismatched']:.2f}"
+                f"Processing batches | Model: {running_metrics.model} | Acc: {running_metrics.accuracy:.2f} | "
+                f"Lev: {running_metrics.levenshtein:.2f} | "
+                f"IOU: {running_metrics.jaccard:.2f} | "
+                f"FP: {running_metrics.false_positive:.2f} | "
+                f"Mism: {running_metrics.mismatched:.2f}"
             )
 
         def process_example(jsonline: dict) -> ExtractionAnalysis | None:

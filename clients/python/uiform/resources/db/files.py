@@ -1,17 +1,13 @@
-from typing import Any, Optional, Literal, List, Dict
+from typing import Literal, List
 from io import BytesIO, IOBase
 from pathlib import Path
-from tqdm import tqdm
 import PIL.Image
-import base64
 
 from ..._utils.mime import prepare_mime_document
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
-from ...types.files_datasets import FileData, FileTuple, FileLink
-from ...types.db.files import DBFile
+from ...types.db.files import DBFile, FileData, FileTuple, FileLink
 from ...types.mime import MIMEData
-
 
 class Files(SyncAPIResource):
     """Files API wrapper"""
@@ -64,7 +60,7 @@ class Files(SyncAPIResource):
         mime_document = prepare_mime_document(document)
 
         content_binary = BytesIO(mime_document.content.encode('utf-8'))
-        file_data: FileData = (mime_document.name, content_binary, mime_document.mime_type)
+        file_data: FileData = (mime_document.filename, content_binary, mime_document.mime_type)
         files: List[FileTuple] = [("file", file_data)]
 
         # Add dataset information as query parameters
@@ -74,7 +70,7 @@ class Files(SyncAPIResource):
         if dataset_name:
             params["dataset_name"] = dataset_name
 
-        response = self._client._request("POST", "/api/v1/db/files", files=files, params=params)
+        response = self._client._request("POST", "/api/v1/db/files", params=params)
 
         return DBFile(**response)
     
@@ -111,12 +107,7 @@ class Files(SyncAPIResource):
         
         # Create and return MIMEData object
         # Assuming the response contains the base64 encoded content directly
-        return MIMEData(
-            id=file.id,
-            name=file.filename,
-            content=response["content"] if isinstance(response, dict) else base64.b64encode(response.content).decode(),
-            mime_type=file.mime_type
-        )
+        return MIMEData.model_validate(response)
     
     def delete(self, file_id: str) -> None:
         """Delete a file by ID.

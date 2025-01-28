@@ -9,10 +9,10 @@ from io import BytesIO
 
 from ..modalities import Modality
 from ..._utils.ai_model import find_provider_from_model
-from ..mime import BaseMIMEData, MIMEData
 from ..ai_model import AIProvider
 from .text_operations import TextOperations
 from .image_operations import ImageOperations
+from ..mime import MIMEData
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
@@ -314,12 +314,10 @@ class ExtractionConfig(BaseModel):
     temperature: float = 0
     
 
-
 class DocumentCreateMessageRequest(DocumentProcessingConfig):
     document: MIMEData
     """The document to load."""
 
-    
 
 
 
@@ -339,9 +337,6 @@ class DocumentMessage(BaseModel):
     modality: Modality
     """The modality of the document to load."""
     
-    document: BaseMIMEData
-    """The document being loaded."""
-
     @property
     def items(self) -> list[str | PIL.Image.Image]:
         """Returns the document contents as a list of strings and images.
@@ -455,8 +450,8 @@ class DocumentMessage(BaseModel):
 
     
     def __str__(self)->str:
-        return f"DocumentMessage(id={self.id}, object={self.object}, created={self.created}, messages={str_messages(self.messages)}, modality={self.modality}, document={self.document})"
+        return f"DocumentMessage(id={self.id}, object={self.object}, created={self.created}, messages={str_messages(self.messages)}, modality={self.modality})"
     
     def __repr__(self)->str:
-        return f"DocumentMessage(id={self.id}, object={self.object}, created={self.created}, messages={str_messages(self.messages)}, modality={self.modality}, document={self.document})"
+        return f"DocumentMessage(id={self.id}, object={self.object}, created={self.created}, messages={str_messages(self.messages)}, modality={self.modality})"
     

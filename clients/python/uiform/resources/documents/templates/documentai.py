@@ -9,9 +9,9 @@ from ...._utils.mime import prepare_mime_document
 from ...._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ....types.documents.create_messages import ChatCompletionUiformMessage
 from ....types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
-from ....types.mime import MIMEData
 from ....types.modalities import Modality
 from typing import Literal
+from pydantic import HttpUrl
 
 DocumentAITemplate = Literal['bank_statement', 'contract', 'driver_license', 'expense', 'identity_proofing', 'invoice', 'passport', 'pay_slip', 'w2']
 
@@ -43,7 +43,7 @@ class BaseDocumentAIMixin:
     def prepare_extraction(
         self,
         template: DocumentAITemplate,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]],
         image_operations: Optional[dict[str, Any]],
         model: str,
@@ -79,7 +79,7 @@ class BaseDocumentAIMixin:
     def prepare_parse(
         self,
         template: DocumentAITemplate,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]],
         image_operations: Optional[dict[str, Any]],
         model: str,
@@ -96,7 +96,7 @@ class BaseDocumentAIMixin:
     def prepare_stream(
         self,
         template: DocumentAITemplate,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]],
         image_operations: Optional[dict[str, Any]],
         model: str,
@@ -117,7 +117,7 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
     def parse(
         self,
         template: DocumentAITemplate,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
@@ -154,7 +154,7 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
     def stream(
         self,
         template: DocumentAITemplate,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
@@ -204,7 +204,7 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
     async def parse(
         self,
         template: DocumentAITemplate,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
@@ -236,7 +236,7 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
     async def stream(
         self,
         template: DocumentAITemplate,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",

@@ -6,7 +6,7 @@ from pydantic import HttpUrl
 
 
 from ...types.modalities import Modality
-from ...types.mime import MIMEData
+from ...types.mime import MIMEData, BaseMIMEData
 from ..._utils.mime import prepare_mime_document, convert_mime_data_to_pil_image
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
@@ -32,6 +32,7 @@ class BaseDocumentsMixin:
         if image_operations:
             data["image_operations"] = image_operations
 
+        
         return DocumentCreateMessageRequest.model_validate(data)
 
 
@@ -115,6 +116,12 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             UiformAPIError: If the API request fails.
         """
         loading_request = self._prepare_create_messages(document, modality, text_operations, image_operations)
+
+        print(loading_request.model_dump().keys())
+        print(loading_request.modality)
+        print(loading_request.text_operations)
+        print(loading_request.image_operations)
+        print(BaseMIMEData.model_validate(loading_request.document).model_dump())
         response = self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
         return DocumentMessage.model_validate(response)
 
@@ -149,6 +156,9 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             UiformAPIError: If the API request fails.
         """
         loading_request = self._prepare_create_messages(document, modality, text_operations, image_operations)
+
+        print(loading_request.model_dump().keys())
+        print(loading_request.model_dump())
         response = await self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
         return DocumentMessage.model_validate(response)
 

@@ -20,11 +20,12 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_operations import ImageOperations
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractionConfig
 from ...types.documents.text_operations import TextOperations
-from ...types.mime import MIMEData, BaseMIMEData
 from ...types.ai_model import LLMModel
 
 import secrets
 import string
+
+from ...types.mime import MIMEData, BaseMIMEData
 
 # Never used anywhere in the logs, but will be useful
 class HttpOutput(BaseModel): 
@@ -173,7 +174,7 @@ class UpdateMailBoxRequest(BaseModel):
     
 class UpdateExtractionLinkRequest(BaseModel):
     id: str
-    
+
     name: Optional[str] = None
     protection: Optional[LinkProtection] = None
     http_config: Optional[HttpConfig] = None

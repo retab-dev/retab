@@ -1,6 +1,7 @@
 from io import IOBase
 from pathlib import Path
 from typing import Any, AsyncGenerator, Generator, Optional
+from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_model import assert_valid_model_extraction
@@ -9,7 +10,6 @@ from ..._utils.mime import prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
-from ...types.mime import MIMEData
 from ...types.modalities import Modality
 
 
@@ -28,7 +28,7 @@ class BaseExtractionsMixin:
     def prepare_extraction(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]],
         image_operations: Optional[dict[str, Any]],
         model: str,
@@ -63,7 +63,7 @@ class BaseExtractionsMixin:
     def prepare_parse(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]],
         image_operations: Optional[dict[str, Any]],
         model: str,
@@ -80,7 +80,7 @@ class BaseExtractionsMixin:
     def prepare_stream(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]],
         image_operations: Optional[dict[str, Any]],
         model: str,
@@ -101,7 +101,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
     def parse(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
@@ -138,7 +138,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
     def stream(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
@@ -188,7 +188,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
     async def parse(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
@@ -220,7 +220,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
     async def stream(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | MIMEData | None,
+        document: Path | str | IOBase | HttpUrl | None,
         text_operations: Optional[dict[str, Any]] = None,
         image_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",

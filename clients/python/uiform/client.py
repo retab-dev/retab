@@ -7,7 +7,6 @@ import backoff
 import backoff.types
 from pydantic_core import PydanticUndefined
 
-from .types.files_datasets import FileTuple
 from .resources import documents, files, finetuning, models, prompt_optimization, schemas, db, automations
 
 class MaxRetriesExceeded(Exception): pass
@@ -173,7 +172,7 @@ class UiForm(BaseUiForm):
         self.automations = automations.Automations(client=self)
 
     def _request(
-            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, files: Optional[List[FileTuple]] = None,
+            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None,
             raise_for_status: bool = False
     ) -> Any:
         """Makes a synchronous HTTP request to the API.
@@ -206,7 +205,6 @@ class UiForm(BaseUiForm):
                     method,
                     self._prepare_url(endpoint),
                     params=params,  # Add query params support for non-GET requests
-                    files=files,  # File data
                     headers=headers
                  )
             else:

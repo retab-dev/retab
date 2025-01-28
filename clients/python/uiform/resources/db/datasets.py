@@ -208,14 +208,16 @@ class Datasets(SyncAPIResource):
         
         # Check annotation status
         status = self.annotation_status(dataset_id)
-        if len(status.files_without_annotation_ids) > 0 or len(status.files_with_empty_annotations) > 0 or len(status.files_with_incomplete_annotations) > 0:
-            raise ValueError(f"Dataset has files with missing or incomplete annotations: Files without annotations={len(status.files_without_annotation_ids)}, Files with empty annotations={len(status.files_with_empty_annotations)}, Files with incomplete annotations={len(status.files_with_incomplete_annotations)}, Files with completed annotations={len(status.files_with_completed_annotations)}")
+        if len(status.files_with_empty_annotations) > 0 or len(status.files_with_incomplete_annotations) > 0:
+            raise ValueError(f"Dataset has files with missing or incomplete annotations: Files with empty annotations={len(status.files_with_empty_annotations)}, Files with incomplete annotations={len(status.files_with_incomplete_annotations)}, Files with completed annotations={len(status.files_with_completed_annotations)}")
         
         # Get all files and annotations in dataset
         annotations = self._client.db.annotations.list(dataset_id=dataset_id, limit=1000000)
+        # Get all dataset memberships
+        memberships = self._client.db.dataset_memberships.list(dataset_id=dataset_id)
         
         # Create lookup of file_id -> annotation
-        file_ids = {ann.file_id: ann for ann in annotations}
+        file_ids = {m.file_id: m.annotation for m in memberships}
         
         with open(path, 'w', encoding='utf-8') as f:
             for file_id in tqdm(file_ids, desc="Processing files", position=0):
@@ -229,7 +231,7 @@ class Datasets(SyncAPIResource):
                     image_operations=image_operations
                 )
                 
-                # Get corresponding annotation 
+                # Get corresponding annotation
                 annotation = file_ids.get(file_id)
                 assert isinstance(annotation, Annotation)
 

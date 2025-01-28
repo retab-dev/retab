@@ -33,7 +33,6 @@ def generate_sha_hash_from_dict(input_dict: dict, hash_algorithm_: Literal['sha2
 
 
     
-
 def convert_pil_image_to_mime_data(image: PIL.Image.Image) -> MIMEData:
     """Convert a PIL Image object to a MIMEData object.
     
@@ -43,21 +42,18 @@ def convert_pil_image_to_mime_data(image: PIL.Image.Image) -> MIMEData:
     Returns:
         MIMEData object containing the image data
     """
-
     # Convert PIL image to base64 string
     buffered = io.BytesIO()
-    image.save(buffered, format="PNG")
+    choosen_format = image.format if (image.format and image.format.lower() in ['png', 'jpeg', 'gif', 'webp']) else "JPEG"
+    image.save(buffered, format=choosen_format)
     base64_content = base64.b64encode(buffered.getvalue()).decode("utf-8")    
 
-    
     content_hash = hashlib.sha256(base64_content.encode("utf-8")).hexdigest()
     
     # Create MIMEData object
     return MIMEData(
-        id=content_hash,
-        name=f"image_{content_hash}.png",
-        mime_type="image/png",
-        content=base64_content
+        filename=f"image_{content_hash}.{choosen_format.lower()}",
+        url=f"data:image/{choosen_format.lower()};base64,{base64_content}"
     )
 
 def convert_mime_data_to_pil_image(mime_data: MIMEData) -> PIL.Image.Image:
@@ -148,10 +144,8 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     mime_type = guessed_type or "application/octet-stream"
     # Build and return the MIMEData object
     mime_data = MIMEData(
-        id=content_hash,
-        name=filename,
-        mime_type=mime_type,
-        content=encoded_content
+        filename=filename,
+        url=f"data:{mime_type};base64,{encoded_content}"
     )
     assert_valid_file_type(mime_data.extension)  # <-- Validate extension as needed
 

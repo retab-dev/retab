@@ -17,7 +17,6 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_operations import ImageOperations
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
 from ...types.documents.text_operations import TextOperations
-from ...types.mime import MIMEData
 
 
 
@@ -29,10 +28,9 @@ class ExtractionLink(SyncAPIResource):
     def create(
         self,
         name: str,
-        webhook_config: Dict[str, Any],
+        http_config: Dict[str, Any],
         json_schema: Dict[str, Any],
         protection: Optional[Dict[str, Any]] = None,
-        max_file_size: int = 10,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Literal["native"] = "native",
@@ -44,10 +42,9 @@ class ExtractionLink(SyncAPIResource):
         
         Args:
             name: Name of the extraction link
-            webhook_config: Webhook configuration for forwarding processed files
+            http_config: Webhook configuration for forwarding processed files
             json_schema: JSON schema to validate extracted data
             protection: Protection configuration for the link
-            max_file_size: Maximum allowed file size in MB
             text_operations: Optional text preprocessing operations
             image_operations: Optional image preprocessing operations
             modality: Processing modality (currently only "native" supported)
@@ -60,10 +57,9 @@ class ExtractionLink(SyncAPIResource):
         """
         data = {
             "name": name,
-            "webhook_config": webhook_config,
+            "http_config": http_config,
             "json_schema": json_schema,
             "protection": protection or LinkProtection(),
-            "max_file_size": max_file_size,
             "text_operations": text_operations or TextOperations(),
             "image_operations": image_operations or ImageOperations(),
             "modality": modality,
@@ -104,9 +100,8 @@ class ExtractionLink(SyncAPIResource):
         self,
         link_id: str,
         name: Optional[str] = None,
-        webhook_config: Optional[Dict[str, Any]] = None,
+        http_config: Optional[Dict[str, Any]] = None,
         protection: Optional[Dict[str, Any]] = None,
-        max_file_size: Optional[int] = None,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
@@ -120,9 +115,8 @@ class ExtractionLink(SyncAPIResource):
         Args:
             link_id: ID of the extraction link to update
             name: New name for the link
-            webhook_config: New webhook configuration
+            http_config: New webhook configuration
             protection: New protection configuration
-            max_file_size: New maximum file size
             text_operations: New text preprocessing operations
             image_operations: New image preprocessing operations
             modality: New processing modality
@@ -137,12 +131,10 @@ class ExtractionLink(SyncAPIResource):
         data: dict[str, Any] = {"id": link_id}
         if name is not None:
             data["name"] = name
-        if webhook_config is not None:
-            data["webhook_config"] = webhook_config
+        if http_config is not None:
+            data["http_config"] = http_config
         if protection is not None:
             data["protection"] = protection
-        if max_file_size is not None:
-            data["max_file_size"] = max_file_size
         if text_operations is not None:
             data["text_operations"] = text_operations
         if image_operations is not None:
@@ -176,7 +168,20 @@ class ExtractionLink(SyncAPIResource):
         return self._client._request("DELETE", f"/api/v1/extraction-link/extraction-link/{link_id}")
     
 
-    def mock(self, link_id: str) -> DocumentExtractResponse:
+    def test_file_upload(self, link_id: str) -> DocumentExtractResponse:
+        """Mock endpoint that simulates the complete extraction process with sample data.
+        
+        Args:
+            link_id: ID of the extraction link to mock
+            
+        Returns:
+            DocumentExtractResponse: The simulated extraction response
+        """
+        response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/mock/{link_id}")
+        return DocumentExtractResponse.model_validate(response)
+    
+
+    def test_http_request(self, link_id: str) -> DocumentExtractResponse:
         """Mock endpoint that simulates the complete extraction process with sample data.
         
         Args:

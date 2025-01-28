@@ -17,7 +17,6 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_operations import ImageOperations
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
 from ...types.documents.text_operations import TextOperations
-from ...types.mime import MIMEData
 
 
 
@@ -31,7 +30,7 @@ class Emails(SyncAPIResource):
     def create(
         self,
         email: str,
-        webhook_config: Dict[str, Any],
+        http_config: Dict[str, Any],
         json_schema: Dict[str, Any],
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
@@ -44,7 +43,7 @@ class Emails(SyncAPIResource):
         
         Args:
             email: Email address for the mailbox
-            webhook_config: Webhook configuration for forwarding processed emails
+            http_config: Webhook configuration for forwarding processed emails
             json_schema: JSON schema to validate extracted email data
             text_operations: Optional text preprocessing operations
             image_operations: Optional image preprocessing operations
@@ -58,7 +57,7 @@ class Emails(SyncAPIResource):
         """
         data = {
             "email": email,
-            "webhook_config": webhook_config,
+            "http_config": http_config,
             "json_schema": json_schema,
             "text_operations": text_operations or TextOperations(),
             "image_operations": image_operations or ImageOperations(
@@ -103,7 +102,7 @@ class Emails(SyncAPIResource):
     def update(
         self,
         email: str,
-        webhook_config: Optional[Dict[str, Any]] = None,
+        http_config: Optional[Dict[str, Any]] = None,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
@@ -116,7 +115,7 @@ class Emails(SyncAPIResource):
         
         Args:
             email: Email address of the mailbox to update
-            webhook_config: New webhook configuration
+            http_config: New webhook configuration
             text_operations: New text preprocessing operations
             image_operations: New image preprocessing operations
             modality: New processing modality
@@ -129,8 +128,8 @@ class Emails(SyncAPIResource):
             MailboxConfig: The updated mailbox configuration
         """
         data: dict[str, Any] = {}
-        if webhook_config is not None:
-            data["webhook_config"] = webhook_config
+        if http_config is not None:
+            data["http_config"] = http_config
         if text_operations is not None:
             data["text_operations"] = text_operations
         if image_operations is not None:
