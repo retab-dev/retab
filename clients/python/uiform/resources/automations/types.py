@@ -137,7 +137,7 @@ class RequestLog(BaseModel):
 
 class AutomationLog(BaseModel):
     id: str = Field(default_factory=lambda: "log_auto_" + str(uuid.uuid4()), description="Unique identifier for the automation log")
-    automation_id: str
+    automation_snapshot: AutomationConfig # i.e MailboxConfig, ExtractionLinkConfig, ScrappingConfig, ExtractionEndpointConfig
 
     file_metadata: BaseMIMEData
     user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
@@ -150,8 +150,11 @@ class AutomationLog(BaseModel):
 
 class UpdateMailBoxRequest(BaseModel):
     id: str
+
+    follow_up: Optional[bool] = None
+    authorized_domains: Optional[list[str]] = None
+    authorized_emails: Optional[List[EmailStr]] = None
     http_config: Optional[HttpConfig] = None
-    email: Optional[str] = None
 
     # ------------------------------
     # DocumentExtraction Parameters
@@ -170,6 +173,7 @@ class UpdateMailBoxRequest(BaseModel):
     
 class UpdateExtractionLinkRequest(BaseModel):
     id: str
+    
     name: Optional[str] = None
     protection: Optional[LinkProtection] = None
     http_config: Optional[HttpConfig] = None
