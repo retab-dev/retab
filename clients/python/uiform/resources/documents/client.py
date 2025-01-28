@@ -13,6 +13,7 @@ from ...types.documents.create_messages import DocumentCreateMessageRequest, Doc
 from .extractions import Extractions, AsyncExtractions
 from .templates.templates import Templates, AsyncTemplates
 
+
 class BaseDocumentsMixin:
     def _prepare_create_messages(
         self,
