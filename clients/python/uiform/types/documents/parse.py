@@ -32,16 +32,16 @@ class DocumentExtractionConfig(DocumentProcessingConfig):
 
 
 class DocumentExtractRequest(DocumentExtractionConfig):
-    # Attributes
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    # Regular fields
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
-    
     document: MIMEData = Field(..., description="Document to be analyzed")
 
-
-    # Some internal attributes (hidden from serialization)
-    _regex_instruction_results: list[RegexInstructionResult] | None = PrivateAttr(default=None)
+    # Changed from PrivateAttr to regular field with exclude=True
+    regex_instruction_results: list[RegexInstructionResult] | None = Field(default=None, exclude=True)
 
     # Some properties (hidden from serialization)
     @property
@@ -84,16 +84,16 @@ class BaseDocumentExtractRequest(DocumentExtractRequest):
     def convert_document_to_base_mimedata(cls, v: MIMEData | BaseMIMEData, validation_info: ValidationInfo) -> BaseMIMEData:
         return BaseMIMEData(**v.model_dump())
     
-class UiParsedChatCompletionMessage(ChatCompletionMessage):
-    parsed: BaseModel | None = None
+#class UiParsedChatCompletionMessage(ChatCompletionMessage):#
+#    parsed: BaseModel | None = None
 
-class UiParsedChoice(Choice):
-    message: UiParsedChatCompletionMessage
-    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None     # type: ignore
+#class UiParsedChoice(Choice):
+#    message: UiParsedChatCompletionMessage#
+#    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None     
 
 
 class UiParsedChatCompletion(ParsedChatCompletion): 
-    choices: List[UiParsedChoice]   # type: ignore[assignment]
+    #choices: List[UiParsedChoice] 
 
     # Additional metadata fields (UIForm)
     likelihoods: Any # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.

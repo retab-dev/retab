@@ -1,9 +1,9 @@
 from typing import Any, Optional, Literal, List, Dict
-from typing import Any, Optional, Literal, List, Dict
-from datetime import datetime
-from pydantic import HttpUrl
-from pydantic import EmailStr
+from pydantic import HttpUrl, EmailStr
 import json
+from PIL.Image import Image
+from pathlib import Path
+from io import IOBase
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
@@ -12,8 +12,10 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_operations import ImageOperations
 from ...types.documents.text_operations import TextOperations
 
-
+from ..._utils.mime import prepare_mime_document
 from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest, LinkProtection, AutomationLog
+
+from ...types.mime import MIMEData
 
 class ExtractionLink(SyncAPIResource):
     """Extraction Link API wrapper for managing extraction link configurations"""
@@ -204,8 +206,9 @@ class ExtractionLink(SyncAPIResource):
 
     
 
-    def test_file_upload(self, 
+    def test_document_upload(self, 
                          link_id: str,
+                         document: Path | str | IOBase | HttpUrl | Image | MIMEData,
                          verbose: bool = True
                          ) -> AutomationLog:
         """Mock endpoint that simulates the complete extraction process with sample data.
@@ -216,7 +219,9 @@ class ExtractionLink(SyncAPIResource):
         Returns:
             DocumentExtractResponse: The simulated extraction response
         """
-        response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/test-file-upload/{link_id}")
+
+        mime_document = prepare_mime_document(document)
+        response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/test-document-upload/{link_id}", data={"document": mime_document.model_dump()})
         
         log = AutomationLog.model_validate(response)
 
