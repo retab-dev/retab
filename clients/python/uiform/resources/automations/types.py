@@ -48,18 +48,18 @@ class AutomationConfig(DocumentExtractionConfig):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     http_config: HttpConfig
 
-
-
+from typing import ClassVar
+import os
 class MailboxConfig(AutomationConfig):
+    EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
     object: Literal['mailbox'] = "mailbox"
     id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
-    
     # Email Specific config
-    email: str = Field(..., pattern=r".*@mailbox\.uiform\.com$")
+    email: str = Field(..., pattern=EMAIL_PATTERN)
     follow_up: bool = Field(default=False, description = "Whether to send a follow-up email to the user to confirm the success of the email forwarding")
-    authorized_domains: list[str] = Field(default_factory=list, pattern=r"^[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", description = "List of authorized domains to receive the emails from")
+    authorized_domains: list[str] = Field(default_factory=list, description = "List of authorized domains to receive the emails from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
-    
+
 
 
 class LinkProtection(BaseModel): 
@@ -120,30 +120,33 @@ class ExtractionEndpointConfig(AutomationConfig):
 # ------------------------------
 
 
-
-class RequestLog(BaseModel):
+class ExternalRequestLog(BaseModel):
     endpoint: HttpUrl
     request_body: dict[str, Any]
     request_headers: dict[str, str]
-    request_timestamp: datetime.datetime 
-    
+    request_timestamp: datetime.datetime
+
     response_body: dict[str, Any]
     response_headers: dict[str, str]
-    response_timestamp: datetime.datetime 
-    
+    response_timestamp: datetime.datetime
+
     status_code: int
     error: Optional[str] = None
-    duration_ms: float 
+    duration_ms: float
 
+class InternalLog(BaseModel):
+    automation_snapshot:  MailboxConfig| ExtractionLinkConfig| ScrappingConfig| ExtractionEndpointConfig
+    file_metadata: BaseMIMEData
+    extraction: DocumentExtractResponse
+    received_timestamp:datetime.datetime
 
 class AutomationLog(BaseModel):
     id: str = Field(default_factory=lambda: "log_auto_" + str(uuid.uuid4()), description="Unique identifier for the automation log")
-    automation_snapshot: AutomationConfig # i.e MailboxConfig, ExtractionLinkConfig, ScrappingConfig, ExtractionEndpointConfig
-
-    file_metadata: BaseMIMEData
     user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
+    organization_id:str
+    internal_log: InternalLog
+    external_request_log: ExternalRequestLog
 
-    request_log: RequestLog
 
 # ------------------------------
 # ------------------------------
