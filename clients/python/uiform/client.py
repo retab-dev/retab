@@ -191,30 +191,13 @@ class UiForm(BaseUiForm):
             RuntimeError: If request fails after max retries or validation error occurs
         """
         def raw_request() -> Any:
-            if method == "GET":
-                response = self.client.request(
-                    method,
-                    self._prepare_url(endpoint),
-                    params=params,
-                    headers=self._get_headers(idempotency_key)
-                )
-            elif files:  # Handle requests with file uploads
-                headers = self._get_headers(idempotency_key)
-                headers.pop("Content-Type", None)  # Remove Content-Type if present
-                response = self.client.request(
-                    method,
-                    self._prepare_url(endpoint),
-                    params=params,  # Add query params support for non-GET requests
-                    headers=headers
-                 )
-            else:
-                response = self.client.request(
-                    method,
-                    self._prepare_url(endpoint),
-                    json=data,
-                    params=params,  # Add query params support for non-GET requests
-                    headers=self._get_headers(idempotency_key)
-                )
+            response = self.client.request(
+                method,
+                json=data,
+                url=self._prepare_url(endpoint),
+                params=params,
+                headers=self._get_headers(idempotency_key)
+            )
 
             self._validate_response(response)
             
