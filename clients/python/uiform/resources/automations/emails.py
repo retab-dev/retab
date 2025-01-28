@@ -20,7 +20,7 @@ from ...types.documents.text_operations import TextOperations
 
 
 
-from .types import MailboxConfig, AutomationConfig, UpdateMailBoxRequest, AutomationLog
+from ...types.automations.automations import MailboxConfig, AutomationConfig, UpdateMailBoxRequest, AutomationLog
 
 from pydantic import BaseModel
 

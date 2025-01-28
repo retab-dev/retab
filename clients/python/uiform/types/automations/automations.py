@@ -48,6 +48,16 @@ class AutomationConfig(DocumentExtractionConfig):
     max_file_size: int = Field(default=50, description = "Maximum file size in MB")
     forward_file: bool = Field(default=False, description = "Whether to forward the file to the endpoint")
 
+
+    # Redeclaration of the DocumentExtractionConfig
+    modality: Modality
+    text_operations: TextOperations = Field(default_factory=TextOperations, description="Additional context to be used by the AI model")
+    image_operations : ImageOperations = Field(default_factory=ImageOperations, description="Preprocessing operations applied to image before sending them to the llm")
+    model: LLMModel = Field(..., description="Model used for chat completion")
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+    additional_messages: list[ChatCompletionUiformMessage] = Field(default=[], description="Additional messages to be used by the AI model")
+
 from typing import ClassVar
 import os
 class MailboxConfig(AutomationConfig):

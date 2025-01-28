@@ -20,25 +20,25 @@ from ...types.documents.text_operations import TextOperations
 
 from pydantic import EmailStr
 
-from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest
+from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest, LinkProtection
 
 class ExtractionLink(SyncAPIResource):
     """Extraction Link API wrapper for managing extraction link configurations"""
-
     def create(
         self,
+        name: str,
         json_schema: Dict[str, Any],
-        # HTTP Config
         endpoint: HttpUrl,
+
+        # HTTP Config Optional Fields
         headers: Optional[Dict[str, str]] = None,
         max_file_size: Optional[int] = None,
         forward_file: Optional[bool] = None,
-        # Link Config
-        name: str,
-        protection_type: Literal["none", "password", "invitations"] = "none",
+
+        # Link Config Optional Fields
+        protection_type: LinkProtection = "unprotected",
         password: str | None = None,
         invitations: List[EmailStr] = [],
-
 
         # DocumentExtraction Config
         text_operations: Optional[Dict[str, Any]] = None,
@@ -52,9 +52,14 @@ class ExtractionLink(SyncAPIResource):
         
         Args:
             name: Name of the extraction link
-            http_config: Webhook configuration for forwarding processed files
             json_schema: JSON schema to validate extracted data
-            protection: Protection configuration for the link
+            endpoint: Webhook endpoint for forwarding processed files
+            headers: Optional HTTP headers for webhook requests
+            max_file_size: Optional maximum file size in MB
+            forward_file: Optional flag to forward original file
+            protection_type: Protection type for the link
+            password: Optional password for protected links
+            invitations: Optional list of authorized email addresses
             text_operations: Optional text preprocessing operations
             image_operations: Optional image preprocessing operations
             modality: Processing modality (currently only "native" supported)
@@ -65,11 +70,17 @@ class ExtractionLink(SyncAPIResource):
         Returns:
             ExtractionLinkConfig: The created extraction link configuration
         """
+
         data = {
             "name": name,
-            "http_config": http_config,
+            "endpoint": endpoint,
+            "headers": headers or {},
+            "max_file_size": max_file_size or 50,
+            "forward_file": forward_file or False,
             "json_schema": json_schema,
-            "protection": protection or LinkProtection(),
+            "protection_type": protection_type,
+            "password": password,
+            "invitations": invitations,
             "text_operations": text_operations or TextOperations(),
             "image_operations": image_operations or ImageOperations(),
             "modality": modality,
@@ -110,8 +121,13 @@ class ExtractionLink(SyncAPIResource):
         self,
         link_id: str,
         name: Optional[str] = None,
-        http_config: Optional[Dict[str, Any]] = None,
-        protection: Optional[Dict[str, Any]] = None,
+        endpoint: Optional[HttpUrl] = None,
+        headers: Optional[Dict[str, str]] = None,
+        max_file_size: Optional[int] = None,
+        forward_file: Optional[bool] = None,
+        protection_type: Optional[LinkProtection] = None,
+        password: Optional[str] = None,
+        invitations: Optional[List[EmailStr]] = None,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
@@ -125,8 +141,13 @@ class ExtractionLink(SyncAPIResource):
         Args:
             link_id: ID of the extraction link to update
             name: New name for the link
-            http_config: New webhook configuration
-            protection: New protection configuration
+            endpoint: New webhook endpoint URL
+            headers: New webhook headers
+            max_file_size: New maximum file size in MB
+            forward_file: New setting for forwarding original files
+            protection_type: New protection type
+            password: New password for protected links
+            invitations: New list of authorized emails
             text_operations: New text preprocessing operations
             image_operations: New image preprocessing operations
             modality: New processing modality
@@ -138,13 +159,23 @@ class ExtractionLink(SyncAPIResource):
         Returns:
             ExtractionLinkConfig: The updated extraction link configuration
         """
-        data: dict[str, Any] = {"id": link_id}
+        data: dict[str, Any] = {}
         if name is not None:
             data["name"] = name
-        if http_config is not None:
-            data["http_config"] = http_config
-        if protection is not None:
-            data["protection"] = protection
+        if endpoint is not None:
+            data["endpoint"] = endpoint
+        if headers is not None:
+            data["headers"] = headers
+        if max_file_size is not None:
+            data["max_file_size"] = max_file_size
+        if forward_file is not None:
+            data["forward_file"] = forward_file
+        if protection_type is not None:
+            data["protection_type"] = protection_type
+        if password is not None:
+            data["password"] = password
+        if invitations is not None:
+            data["invitations"] = invitations
         if text_operations is not None:
             data["text_operations"] = text_operations
         if image_operations is not None:
@@ -160,9 +191,9 @@ class ExtractionLink(SyncAPIResource):
         if json_schema is not None:
             data["json_schema"] = json_schema
 
-        update_request = UpdateExtractionLinkRequest.model_validate(data)
+        request = UpdateExtractionLinkRequest.model_validate(data)
 
-        response = self._client._request("PUT", f"/api/v1/extraction-link/extraction-link/{link_id}", data=update_request.model_dump())
+        response = self._client._request("PUT", f"/api/v1/extraction-link/extraction-link/{link_id}", data=request.model_dump(mode='json'))
 
         return ExtractionLinkConfig.model_validate(response)
 
