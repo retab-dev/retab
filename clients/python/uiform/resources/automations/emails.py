@@ -217,9 +217,9 @@ class Emails(SyncAPIResource):
 
     def test_email_forwarding(self, 
                          email: str,
-                         document: Path | str | IOBase | HttpUrl | Image | MIMEData,
+                         document: Path | str | IOBase | HttpUrl | MIMEData,
                          verbose: bool = True
-                         ) -> AutomationLog:
+                         ) -> None:
         """Mock endpoint that simulates the complete email forwarding process with sample data.
         
         Args:
@@ -231,10 +231,34 @@ class Emails(SyncAPIResource):
         mime_document = prepare_mime_document(document)
         response = self._client._request("POST", f"/api/v1/emails/mailbox/test-email-forwarding/{email}", data={"document": mime_document.model_dump()})
         
+        if verbose:
+            print(f"\nTEST EMAIL FORWARDING RESULTS:")
+            print(f"\n#########################")
+            print(f"Status Code: {response.status_code}")
+            print(f"Duration: {response.duration_ms:.2f}ms")
+
+
+
+    def test_email_processing(self, 
+                         email: str,
+                         document: Path | str | IOBase | HttpUrl | Image | MIMEData,
+                         verbose: bool = True
+                         ) -> AutomationLog:
+        """Mock endpoint that simulates the complete email processing process with sample data.
+        
+        Args:
+            email: Email address of the mailbox to mock
+            
+        Returns:
+            DocumentExtractResponse: The simulated extraction response
+        """
+        mime_document = prepare_mime_document(document)
+        response = self._client._request("POST", f"/api/v1/emails/mailbox/test-email-processing/{email}", data={"document": mime_document.model_dump()})
+        
         log = AutomationLog.model_validate(response)
 
         if verbose:
-            print(f"\nTEST FILE UPLOAD RESULTS:")
+            print(f"\nTEST EMAIL PROCESSING RESULTS:")
             print(f"\n#########################")
             print(f"Status Code: {log.external_request_log.status_code}")
             print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
