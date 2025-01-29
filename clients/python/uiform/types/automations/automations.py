@@ -111,7 +111,7 @@ class MailboxConfig(AutomationConfig):
     
 
 
-LinkProtection = Literal["unprotected", "password", "invitations"]
+LinkProtection = Literal["unprotected", "invite-only"]
 
 class ExtractionLinkConfig(AutomationConfig):
     object: Literal['extraction_link'] = "extraction_link"
@@ -120,14 +120,7 @@ class ExtractionLinkConfig(AutomationConfig):
     # Link Specific Config
     name: str = Field(..., description = "Name of the link")
     protection_type: LinkProtection = "unprotected"
-    password: str | None = Field(default=None, description = "Password to access the link")
     invitations: List[EmailStr] = Field(default_factory=list, description = "List of emails allowed to access the link")
-
-    def __init__(self, **data: Any)->None:
-        super().__init__(**data)
-        if self.protection_type == "password" and self.password is None:
-            # Generate a random 12 character password with letters and numbers
-            self.password = 'pwd_' + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
 
 
     def model_dump(
