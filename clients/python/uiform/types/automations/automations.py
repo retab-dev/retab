@@ -58,7 +58,7 @@ class AutomationConfig(DocumentExtractionConfig):
     webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
     file_payload: Literal["metadata_only", "file"] = Field(default="metadata_only", description = "Whether to forward the file to the webhooks")
     max_file_size: int = Field(default=50, description = "Maximum file size in MB")
-
+    signature_secret: Optional[str] = Field(None, description = "Secret to sign the webhook data")
     def model_dump(
         self,
         **kwargs: Any,
