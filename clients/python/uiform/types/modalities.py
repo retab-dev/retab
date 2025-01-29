@@ -1,7 +1,7 @@
 from typing import Literal
 
 
-BaseModality = Literal["text", "image", "audio", "video"]
+BaseModality = Literal["text", "image"] # "video" , "audio"
 Modality = Literal[BaseModality, "native","image+text"]
 TYPE_FAMILIES = Literal["excel", "word", "powerpoint", "pdf", "image", "text", "email", "audio", "html", "web"]
 NativeModalities: dict[TYPE_FAMILIES, Modality] = {
@@ -14,7 +14,7 @@ NativeModalities: dict[TYPE_FAMILIES, Modality] = {
     'web': 'image',
     'text': 'text',
     'email': 'native',
-    'audio': 'audio'
+    'audio': 'text'
 }
 
 EXCEL_TYPES = Literal[".xls", ".xlsx", ".ods"]
