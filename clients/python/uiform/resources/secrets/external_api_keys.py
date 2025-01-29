@@ -68,7 +68,7 @@ class ExternalAPIKeys(SyncAPIResource):
 
     def get(self,
         provider: AIProvider,
-        display_key:bool = False ) -> ExternalAPIKeyResponse:
+    ) -> ExternalAPIKeyResponse:
         """Get an external API key configuration.
 
         Args:
@@ -79,11 +79,12 @@ class ExternalAPIKeys(SyncAPIResource):
         """
         response = self._client._request(
             "GET",
-            f"/api/v1/iam/external_api_keys/{provider}?display_key={display_key}"
+            f"/api/v1/iam/external_api_keys/{provider}"
         )
 
         return ExternalAPIKeyResponse.model_validate(response)
-    def list(self, display_keys:bool = False) -> List[ExternalAPIKeyResponse]:
+    
+    def list(self) -> List[ExternalAPIKeyResponse]:
         """List all configured external API keys.
 
         Returns:
@@ -91,7 +92,7 @@ class ExternalAPIKeys(SyncAPIResource):
         """
         response = self._client._request(
             "GET",
-            f"/api/v1/iam/external_api_keys/list?display_keys={display_keys}"
+            f"/api/v1/iam/external_api_keys/list"
         )
 
         return [ExternalAPIKeyResponse.model_validate(key) for key in response]

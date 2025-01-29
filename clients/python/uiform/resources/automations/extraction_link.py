@@ -24,16 +24,8 @@ class ExtractionLink(SyncAPIResource):
         name: str,
         json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-
-        # HTTP Config Optional Fields
         webhook_headers: Optional[Dict[str, str]] = None,
-        max_file_size: Optional[int] = None,
-        file_payload: Optional[Literal["metadata_only", "file"]] = None,
-
-        # Link Config Optional Fields
-        #protection_type: LinkProtection = "unprotected",
         password: str | None = None,
-        #invitations: List[EmailStr] = [],
 
         # DocumentExtraction Config
         text_operations: Optional[Dict[str, Any]] = None,
@@ -71,8 +63,6 @@ class ExtractionLink(SyncAPIResource):
             "name": name,
             "webhook_url": webhook_url,
             "webhook_headers": webhook_headers or {},
-            "max_file_size": max_file_size or 50,
-            "file_payload": file_payload or "metadata_only",
             "json_schema": json_schema,
             "password": password,
             "text_operations": text_operations or TextOperations(),
@@ -117,8 +107,6 @@ class ExtractionLink(SyncAPIResource):
         name: Optional[str] = None,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
-        max_file_size: Optional[int] = None,
-        file_payload: Optional[Literal["metadata_only", "file"]] = None,
         password: Optional[str] = None,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
@@ -135,8 +123,6 @@ class ExtractionLink(SyncAPIResource):
             name: New name for the link
             webhook_url: New webhook endpoint URL
             webhook_headers: New webhook headers
-            max_file_size: New maximum file size in MB
-            file_payload: New setting for forwarding original files
             password: New password for protected links
             text_operations: New text preprocessing operations
             image_operations: New image preprocessing operations
@@ -159,10 +145,6 @@ class ExtractionLink(SyncAPIResource):
             data["webhook_url"] = webhook_url
         if webhook_headers is not None:
             data["webhook_headers"] = webhook_headers
-        if max_file_size is not None:
-            data["max_file_size"] = max_file_size
-        if file_payload is not None:
-            data["file_payload"] = file_payload
         if password is not None:
             data["password"] = password
         if text_operations is not None:

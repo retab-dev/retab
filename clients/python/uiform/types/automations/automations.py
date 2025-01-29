@@ -22,32 +22,15 @@ from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResp
 from ...types.documents.text_operations import TextOperations
 from ...types.ai_model import LLMModel
 
-import secrets
-import string
 
 from ...types.mime import MIMEData, BaseMIMEData
 
 # Never used anywhere in the logs, but will be useful
 class HttpOutput(BaseModel): 
     extraction: dict[str,Any]
-    payload: Optional[MIMEData] # Only if forward_file is true -> MIMEData forwarded to the mailbox, or to the link
+    payload: Optional[MIMEData] # MIMEData forwarded to the mailbox, or to the link
     user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
 
-    
-
-#
-#    payload = request.get_data()
-#    signature_header = request.headers["WorkOS-Signature"]
-
-    # Verify the signature and process the event
-#    response = workos_client.webhooks.verify_event(
-#        event_body=payload,
-#        event_signature=signature_header,#
-#        secret=os.getenv("WEBHOOKS_SECRET"),
-#    )
-
-    #webhook_method: Literal["POST"]= "POST"
-    #webhook_outgoing_ip: Literal["34.163.38.96"] = Field("34.163.38.96", description = "IP address of the server that will send the data to the webhook")
 class AutomationConfig(DocumentExtractionConfig):
     object: str
     id: str
@@ -56,9 +39,7 @@ class AutomationConfig(DocumentExtractionConfig):
     # HTTP Config
     webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
     webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
-    file_payload: Literal["metadata_only", "file"] = Field(default="metadata_only", description = "Whether to forward the file to the webhooks")
-    max_file_size: int = Field(default=50, description = "Maximum file size in MB")
-    signature_secret: Optional[str] = Field(None, description = "Secret to sign the webhook data")
+
     def model_dump(
         self,
         **kwargs: Any,
@@ -83,9 +64,9 @@ class MailboxConfig(AutomationConfig):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'devmail.uiform.com')}$"
     object: Literal['mailbox'] = "mailbox"
     id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
+    
     # Email Specific config
     email: str = Field(..., pattern=EMAIL_PATTERN)
-    follow_up: bool = Field(default=False, description = "Whether to send a follow-up email to the user to confirm the success of the email forwarding")
     authorized_domains: list[str] = Field(default_factory=list, description = "List of authorized domains to receive the emails from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
 
@@ -119,10 +100,7 @@ class ExtractionLinkConfig(AutomationConfig):
     
     # Link Specific Config
     name: str = Field(..., description = "Name of the link")
-    #protection_type: LinkProtection = "unprotected"
-    #invitations: List[EmailStr] = Field(default_factory=list, description = "List of emails allowed to access the link")
     password: Optional[str] = Field(None, description = "Password to access the link")
-
 
     def model_dump(
         self,
@@ -164,6 +142,12 @@ class ScrappingConfig(AutomationConfig):
     schedule: CronSchedule
 
 
+class OutlookConfig(AutomationConfig):
+    object: Literal['outlook_plugin'] = "outlook_plugin"
+    id: str = Field(default_factory=lambda: "outlook_" + str(uuid.uuid4()), description="Unique identifier for the outlook account")
+    
+    authorized_domains: list[str] = Field(default_factory=list, description = "List of authorized domains to connect to the plugin from")
+    authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to connect to the plugin from")
 
 class ExtractionEndpointConfig(AutomationConfig):
     object: Literal['extraction_endpoint'] = "extraction_endpoint"
@@ -214,7 +198,6 @@ class AutomationLog(BaseModel):
 
 class UpdateMailBoxRequest(BaseModel):
 
-    follow_up: Optional[bool] = None
     authorized_domains: Optional[list[str]] = None
     authorized_emails: Optional[List[EmailStr]] = None
 
@@ -223,8 +206,6 @@ class UpdateMailBoxRequest(BaseModel):
     # ------------------------------
     webhook_url: Optional[HttpUrl] = None
     webhook_headers: Optional[Dict[str, str]] = None
-    file_payload: Optional[Literal["metadata_only", "file"]] = None
-    max_file_size: Optional[int] = None
 
     # ------------------------------
     # DocumentExtraction Parameters
@@ -249,16 +230,12 @@ class UpdateExtractionLinkRequest(BaseModel):
     # ------------------------------
     name: Optional[str] = None
     password: Optional[str] = None
-    #protection_type: Optional[LinkProtection] = None
-    #invitations: Optional[List[EmailStr]] = None
 
     # ------------------------------
     # HTTP Config
     # ------------------------------
     webhook_url: Optional[HttpUrl] = None
     webhook_headers: Optional[Dict[str, str]] = None
-    file_payload: Optional[Literal["metadata_only", "file"]] = None
-    max_file_size: Optional[int] = None
 
     # ------------------------------
     # DocumentExtraction Parameters

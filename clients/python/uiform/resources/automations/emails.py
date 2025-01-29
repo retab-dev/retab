@@ -30,14 +30,10 @@ class Emails(SyncAPIResource):
         webhook_url: HttpUrl,
 
         # email specific opitonals Fields
-        follow_up: bool = False,
         authorized_domains: List[str] = [],
         authorized_emails: List[str] = [],
         # HTTP Config Optional Fields
         webhook_headers: Dict[str, str] = {},
-        max_file_size: int = 50 ,
-        file_payload: Literal["metadata_only", "file"] = "metadata_only",
-
 
         # DocumentExtraction Config
         text_operations: Optional[Dict[str, Any]] = None,
@@ -52,8 +48,11 @@ class Emails(SyncAPIResource):
         
         Args:
             email: Email address for the mailbox
-            http_config: Webhook configuration for forwarding processed emails
             json_schema: JSON schema to validate extracted email data
+            webhook_url: Webhook URL to receive processed emails
+            webhook_headers: Webhook headers to send with processed emails
+            authorized_domains: List of authorized domains for the mailbox
+            authorized_emails: List of authorized emails for the mailbox
             text_operations: Optional text preprocessing operations
             image_operations: Optional image preprocessing operations
             modality: Processing modality (currently only "native" supported)
@@ -68,19 +67,11 @@ class Emails(SyncAPIResource):
             "email": email,
             "webhook_url": webhook_url,
             "webhook_headers": webhook_headers,
-            "max_file_size": max_file_size,
-            "file_payload": file_payload,
             "json_schema": json_schema,
-            "follow_up": follow_up,
             "authorized_domains": authorized_domains,
             "authorized_emails": authorized_emails,
             "text_operations": text_operations or TextOperations(),
-            "image_operations": image_operations or ImageOperations(
-                correct_image_orientation=True,
-                dpi=72,
-                image_to_text="ocr",
-                browser_canvas="A4"
-            ),
+            "image_operations": image_operations or ImageOperations(),
             "modality": modality,
             "model": model,
             "temperature": temperature,
@@ -119,9 +110,6 @@ class Emails(SyncAPIResource):
         email: str,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
-        max_file_size: Optional[int] = None,
-        file_payload: Optional[Literal["metadata_only", "file"]] = None,
-        follow_up: Optional[bool] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
         text_operations: Optional[Dict[str, Any]] = None,
@@ -159,12 +147,6 @@ class Emails(SyncAPIResource):
             data["webhook_url"] = webhook_url
         if webhook_headers is not None:
             data["webhook_headers"] = webhook_headers
-        if max_file_size is not None:
-            data["max_file_size"] = max_file_size
-        if file_payload is not None:
-            data["file_payload"] = file_payload
-        if follow_up is not None:
-            data["follow_up"] = follow_up
         if authorized_domains is not None:
             data["authorized_domains"] = authorized_domains
         if authorized_emails is not None:
