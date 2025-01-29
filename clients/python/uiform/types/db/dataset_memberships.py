@@ -39,7 +39,6 @@ class BaseGenerateAnnotationRequest(BaseModel):
     text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model")
     image_operations: ImageOperations = Field(default=ImageOperations(), description="Preprocessing operations applied to image before sending them to the llm")
     temperature: float = 0.0
-    additional_messages: List[ChatCompletionUiformMessage] = []
     upsert: bool = Field(default=False, description="If True, the annotation will be upserted if it already exists")
 
 

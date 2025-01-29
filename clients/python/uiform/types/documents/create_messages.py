@@ -307,7 +307,6 @@ from typing import Dict
 
 class MessageConfig(DocumentProcessingConfig):
     json_schema: Dict = Field(..., description="JSON schema to validate the email data")
-    additional_messages: list[ChatCompletionUiformMessage] = []
 
 class ExtractionConfig(BaseModel):
     model: str = "gpt-4o-mini"

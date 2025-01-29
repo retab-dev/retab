@@ -41,7 +41,6 @@ class Emails(SyncAPIResource):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
-        additional_messages: List[ChatCompletionUiformMessage] = []
 
     ) -> MailboxConfig:
         """Create a new email automation configuration.
@@ -58,7 +57,6 @@ class Emails(SyncAPIResource):
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
-            additional_messages: Optional additional context messages
             
         Returns:
             MailboxConfig: The created mailbox configuration
@@ -75,7 +73,6 @@ class Emails(SyncAPIResource):
             "modality": modality,
             "model": model,
             "temperature": temperature,
-            "additional_messages": additional_messages
         }
 
         request = MailboxConfig.model_validate(data)
@@ -117,7 +114,6 @@ class Emails(SyncAPIResource):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
-        additional_messages: Optional[List[ChatCompletionUiformMessage]] = None,
         json_schema: Optional[Dict[str, Any]] = None
     ) -> MailboxConfig:
         """Update an email automation configuration.
@@ -136,7 +132,6 @@ class Emails(SyncAPIResource):
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
-            additional_messages: New context messages
             json_schema: New JSON schema
             
         Returns:
@@ -161,8 +156,6 @@ class Emails(SyncAPIResource):
             data["model"] = model
         if temperature is not None:
             data["temperature"] = temperature
-        if additional_messages is not None:
-            data["additional_messages"] = additional_messages
         if json_schema is not None:
             data["json_schema"] = json_schema
 

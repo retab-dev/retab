@@ -28,7 +28,6 @@ class DocumentExtractionConfig(DocumentProcessingConfig):
     model: LLMModel = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-    additional_messages: list[ChatCompletionUiformMessage] = Field(default=[], description="Additional messages to be used by the AI model")
 
 
 class DocumentExtractRequest(DocumentExtractionConfig):

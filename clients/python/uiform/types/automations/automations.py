@@ -217,7 +217,6 @@ class UpdateMailBoxRequest(BaseModel):
     # Others DocumentExtraction Parameters
     model: Optional[LLMModel] = None
     temperature: Optional[float] = None
-    additional_messages: Optional[list[ChatCompletionUiformMessage]] = None
     json_schema: Optional[Dict] = None
 
    
@@ -247,6 +246,5 @@ class UpdateExtractionLinkRequest(BaseModel):
     # Others DocumentExtraction Parameters
     model: Optional[LLMModel] = None
     temperature: Optional[float] = None
-    additional_messages: Optional[list[ChatCompletionUiformMessage]] = None
     json_schema: Optional[Dict] = None
 
