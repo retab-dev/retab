@@ -35,18 +35,30 @@ class HttpOutput(BaseModel):
 
     
 
+#
+#    payload = request.get_data()
+#    signature_header = request.headers["WorkOS-Signature"]
+
+    # Verify the signature and process the event
+#    response = workos_client.webhooks.verify_event(
+#        event_body=payload,
+#        event_signature=signature_header,#
+#        secret=os.getenv("WEBHOOKS_SECRET"),
+#    )
+
+    #webhook_method: Literal["POST"]= "POST"
+    #webhook_outgoing_ip: Literal["34.163.38.96"] = Field("34.163.38.96", description = "IP address of the server that will send the data to the endpoint")
 class AutomationConfig(DocumentExtractionConfig):
     object: str
     id: str
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     # HTTP Config
-    endpoint: HttpUrl = Field(..., description = "Endpoint to send the data to")
-    method: Literal["POST"]= "POST"
-    headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
-    outgoing_ip: Literal["34.163.38.96"] = Field("34.163.38.96", description = "IP address of the server that will send the data to the endpoint")
+
+    webhook_url: HttpUrl = Field(..., description = "Endpoint to send the data to")
+    webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
+    file_payload: Literal["metadata_only", "file"] = Field(default="metadata_only", description = "Whether to forward the file to the endpoint")
     max_file_size: int = Field(default=50, description = "Maximum file size in MB")
-    forward_file: bool = Field(default=False, description = "Whether to forward the file to the endpoint")
 
     def model_dump(
         self,
@@ -62,7 +74,7 @@ class AutomationConfig(DocumentExtractionConfig):
 from typing import ClassVar
 import os
 class MailboxConfig(AutomationConfig):
-    EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
+    EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'devmail.uiform.com')}$"
     object: Literal['mailbox'] = "mailbox"
     id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
     # Email Specific config
@@ -152,7 +164,7 @@ class ExtractionEndpointConfig(AutomationConfig):
 
 
 class ExternalRequestLog(BaseModel):
-    endpoint: HttpUrl
+    endpoint: Optional[HttpUrl]
     request_body: dict[str, Any]
     request_headers: dict[str, str]
     request_timestamp: datetime.datetime
@@ -166,10 +178,10 @@ class ExternalRequestLog(BaseModel):
     duration_ms: float
 
 class InternalLog(BaseModel):
-    automation_snapshot:  MailboxConfig| ExtractionLinkConfig| ScrappingConfig| ExtractionEndpointConfig
+    automation_snapshot:  Optional[MailboxConfig| ExtractionLinkConfig| ScrappingConfig| ExtractionEndpointConfig]
     file_metadata: BaseMIMEData
-    extraction: DocumentExtractResponse
-    received_timestamp:datetime.datetime
+    extraction: Optional[DocumentExtractResponse]
+    received_timestamp: Optional[datetime.datetime]
 
 class AutomationLog(BaseModel):
     id: str = Field(default_factory=lambda: "log_auto_" + str(uuid.uuid4()), description="Unique identifier for the automation log")
@@ -192,10 +204,10 @@ class UpdateMailBoxRequest(BaseModel):
     # ------------------------------
     # HTTP Config
     # ------------------------------
-    endpoint: Optional[HttpUrl] = None
-    headers: Optional[Dict[str, str]] = None
+    webhook_url: Optional[HttpUrl] = None
+    webhook_headers: Optional[Dict[str, str]] = None
+    file_payload: Optional[Literal["metadata_only", "file"]] = None
     max_file_size: Optional[int] = None
-    forward_file: Optional[bool] = None
 
     # ------------------------------
     # DocumentExtraction Parameters
@@ -227,10 +239,10 @@ class UpdateExtractionLinkRequest(BaseModel):
     # ------------------------------
     # HTTP Config
     # ------------------------------
-    endpoint: Optional[HttpUrl] = None
-    headers: Optional[Dict[str, str]] = None
+    webhook_url: Optional[HttpUrl] = None
+    webhook_headers: Optional[Dict[str, str]] = None
+    file_payload: Optional[Literal["metadata_only", "file"]] = None
     max_file_size: Optional[int] = None
-    forward_file: Optional[bool] = None
 
     # ------------------------------
     # DocumentExtraction Parameters

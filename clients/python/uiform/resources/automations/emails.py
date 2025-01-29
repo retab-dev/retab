@@ -1,28 +1,23 @@
 from typing import Any, Optional, Literal, List, Dict
+from pydantic import HttpUrl, EmailStr
+import json
+from PIL.Image import Image
+from pathlib import Path
+from io import IOBase
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
-
-from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ...types.modalities import Modality
-
-from typing import Any, Optional, Literal, List, Dict
-from datetime import datetime
-from pydantic import HttpUrl
-
-from ..._resource import SyncAPIResource, AsyncAPIResource
-from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ...types.modalities import Modality
 
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_operations import ImageOperations
-from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
 from ...types.documents.text_operations import TextOperations
+from ...types.mime import MIMEData
+from ...types.modalities import Modality
 
+from ..._utils.mime import prepare_mime_document
 
 
 from ...types.automations.automations import MailboxConfig, AutomationConfig, UpdateMailBoxRequest, AutomationLog
 
-from pydantic import BaseModel
 
 class Emails(SyncAPIResource):
     """Emails API wrapper for managing email automation configurations"""
@@ -32,16 +27,16 @@ class Emails(SyncAPIResource):
         email: str,
 
         json_schema: Dict[str, Any],
-        endpoint: HttpUrl,
+        webhook_url: HttpUrl,
 
         # email specific opitonals Fields
         follow_up: bool = False,
         authorized_domains: List[str] = [],
         authorized_emails: List[str] = [],
         # HTTP Config Optional Fields
-        headers: Dict[str, str] = {},
+        webhook_headers: Dict[str, str] = {},
         max_file_size: int = 50 ,
-        forward_file: bool = False,
+        file_payload: Literal["metadata_only", "file"] = "metadata_only",
 
 
         # DocumentExtraction Config
@@ -71,10 +66,10 @@ class Emails(SyncAPIResource):
         """
         data = {
             "email": email,
-            "endpoint": endpoint,
-            "headers": headers,
+            "webhook_url": webhook_url,
+            "webhook_headers": webhook_headers,
             "max_file_size": max_file_size,
-            "forward_file": forward_file,
+            "file_payload": file_payload,
             "json_schema": json_schema,
             "follow_up": follow_up,
             "authorized_domains": authorized_domains,
@@ -122,10 +117,10 @@ class Emails(SyncAPIResource):
     def update(
         self,
         email: str,
-        endpoint: Optional[HttpUrl] = None,
-        headers: Optional[Dict[str, str]] = None,
+        webhook_url: Optional[HttpUrl] = None,
+        webhook_headers: Optional[Dict[str, str]] = None,
         max_file_size: Optional[int] = None,
-        forward_file: Optional[bool] = None,
+        file_payload: Optional[Literal["metadata_only", "file"]] = None,
         follow_up: Optional[bool] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
@@ -141,7 +136,13 @@ class Emails(SyncAPIResource):
         
         Args:
             email: Email address of the mailbox to update
-            http_config: New webhook configuration
+            webhook_url: New webhook configuration
+            webhook_headers: New webhook configuration
+            max_file_size: New webhook configuration
+            file_payload: New webhook configuration
+            follow_up: New webhook configuration
+            authorized_domains: New webhook configuration
+            authorized_emails: New webhook configuration
             text_operations: New text preprocessing operations
             image_operations: New image preprocessing operations
             modality: New processing modality
@@ -154,14 +155,14 @@ class Emails(SyncAPIResource):
             MailboxConfig: The updated mailbox configuration
         """
         data: dict[str, Any] = {}
-        if endpoint is not None:
-            data["endpoint"] = endpoint
-        if headers is not None:
-            data["headers"] = headers
+        if webhook_url is not None:
+            data["webhook_url"] = webhook_url
+        if webhook_headers is not None:
+            data["webhook_headers"] = webhook_headers
         if max_file_size is not None:
             data["max_file_size"] = max_file_size
-        if forward_file is not None:
-            data["forward_file"] = forward_file
+        if file_payload is not None:
+            data["file_payload"] = file_payload
         if follow_up is not None:
             data["follow_up"] = follow_up
         if authorized_domains is not None:
@@ -210,3 +211,90 @@ class Emails(SyncAPIResource):
         response = self._client._request("GET", f"/api/v1/emails/mailbox/{email}/logs")
 
         return [AutomationLog.model_validate(log) for log in response]
+
+
+
+
+    def test_document_upload(self, 
+                         email: str,
+                         document: Path | str | IOBase | HttpUrl | Image | MIMEData,
+                         verbose: bool = True
+                         ) -> AutomationLog:
+        """Mock endpoint that simulates the complete extraction process with sample data.
+        
+        Args:
+            email: Email address of the mailbox to mock
+            
+        Returns:
+            DocumentExtractResponse: The simulated extraction response
+        """
+
+        mime_document = prepare_mime_document(document)
+        response = self._client._request("POST", f"/api/v1/emails/mailbox/test-document-upload/{email}", data={"document": mime_document.model_dump()})
+        
+        log = AutomationLog.model_validate(response)
+
+        if verbose:
+            print(f"\nTEST FILE UPLOAD RESULTS:")
+            print(f"\n#########################")
+            print(f"Status Code: {log.external_request_log.status_code}")
+            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
+            
+            if log.external_request_log.error:
+                print(f"\nERROR: {log.external_request_log.error}")
+            
+            if log.external_request_log.response_body:
+                print("\n--------------")
+                print("RESPONSE BODY:")
+                print("--------------")
+
+                print(json.dumps(log.external_request_log.response_body, indent=2))
+            if log.external_request_log.response_headers:
+                print("\n--------------")
+                print("RESPONSE HEADERS:")
+                print("--------------")
+                print(json.dumps(log.external_request_log.response_headers, indent=2))
+
+
+        return log
+    
+
+    def test_http_request(self, 
+                          email: str,
+                          verbose: bool = True
+                          ) -> AutomationLog:
+        """Mock endpoint that simulates the complete extraction process with sample data.
+        
+        Args:
+            email: Email address of the mailbox to mock
+            
+        Returns:
+            DocumentExtractResponse: The simulated extraction response
+        """
+
+        response = self._client._request("POST", f"/api/v1/emails/mailbox/test-http-request/{email}")
+
+        log = AutomationLog.model_validate(response)
+
+        if verbose:
+            print(f"\nTEST HTTP REQUEST RESULTS:")
+            print(f"\n#########################")
+            print(f"Status Code: {log.external_request_log.status_code}")
+            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
+            
+            if log.external_request_log.error:
+                print(f"\nERROR: {log.external_request_log.error}")
+            
+            if log.external_request_log.response_body:
+                print("\n--------------")
+                print("RESPONSE BODY:")
+                print("--------------")
+
+                print(json.dumps(log.external_request_log.response_body, indent=2))
+            if log.external_request_log.response_headers:
+                print("\n--------------")
+                print("RESPONSE HEADERS:")
+                print("--------------")
+                print(json.dumps(log.external_request_log.response_headers, indent=2))
+
+        return log

@@ -23,12 +23,12 @@ class ExtractionLink(SyncAPIResource):
         self,
         name: str,
         json_schema: Dict[str, Any],
-        endpoint: HttpUrl,
+        webhook_url: HttpUrl,
 
         # HTTP Config Optional Fields
-        headers: Optional[Dict[str, str]] = None,
+        webhook_headers: Optional[Dict[str, str]] = None,
         max_file_size: Optional[int] = None,
-        forward_file: Optional[bool] = None,
+        file_payload: Optional[Literal["metadata_only", "file"]] = None,
 
         # Link Config Optional Fields
         protection_type: LinkProtection = "unprotected",
@@ -49,10 +49,10 @@ class ExtractionLink(SyncAPIResource):
         Args:
             name: Name of the extraction link
             json_schema: JSON schema to validate extracted data
-            endpoint: Webhook endpoint for forwarding processed files
-            headers: Optional HTTP headers for webhook requests
+            webhook_url: Webhook endpoint for forwarding processed files
+            webhook_headers: Optional HTTP headers for webhook requests
             max_file_size: Optional maximum file size in MB
-            forward_file: Optional flag to forward original file
+            file_payload: Optional flag to forward original file
             protection_type: Protection type for the link
             password: Optional password for protected links
             invitations: Optional list of authorized email addresses
@@ -69,10 +69,10 @@ class ExtractionLink(SyncAPIResource):
 
         data = {
             "name": name,
-            "endpoint": endpoint,
-            "headers": headers or {},
+            "webhook_url": webhook_url,
+            "webhook_headers": webhook_headers or {},
             "max_file_size": max_file_size or 50,
-            "forward_file": forward_file or False,
+            "file_payload": file_payload or "metadata_only",
             "json_schema": json_schema,
             "protection_type": protection_type,
             "password": password,
@@ -117,10 +117,10 @@ class ExtractionLink(SyncAPIResource):
         self,
         link_id: str,
         name: Optional[str] = None,
-        endpoint: Optional[HttpUrl] = None,
-        headers: Optional[Dict[str, str]] = None,
+        webhook_url: Optional[HttpUrl] = None,
+        webhook_headers: Optional[Dict[str, str]] = None,
         max_file_size: Optional[int] = None,
-        forward_file: Optional[bool] = None,
+        file_payload: Optional[Literal["metadata_only", "file"]] = None,
         protection_type: Optional[LinkProtection] = None,
         password: Optional[str] = None,
         invitations: Optional[List[EmailStr]] = None,
@@ -137,10 +137,10 @@ class ExtractionLink(SyncAPIResource):
         Args:
             link_id: ID of the extraction link to update
             name: New name for the link
-            endpoint: New webhook endpoint URL
-            headers: New webhook headers
+            webhook_url: New webhook endpoint URL
+            webhook_headers: New webhook headers
             max_file_size: New maximum file size in MB
-            forward_file: New setting for forwarding original files
+            file_payload: New setting for forwarding original files
             protection_type: New protection type
             password: New password for protected links
             invitations: New list of authorized emails
@@ -158,14 +158,14 @@ class ExtractionLink(SyncAPIResource):
         data: dict[str, Any] = {}
         if name is not None:
             data["name"] = name
-        if endpoint is not None:
-            data["endpoint"] = endpoint
-        if headers is not None:
-            data["headers"] = headers
+        if webhook_url is not None:
+            data["webhook_url"] = webhook_url
+        if webhook_headers is not None:
+            data["webhook_headers"] = webhook_headers
         if max_file_size is not None:
             data["max_file_size"] = max_file_size
-        if forward_file is not None:
-            data["forward_file"] = forward_file
+        if file_payload is not None:
+            data["file_payload"] = file_payload
         if protection_type is not None:
             data["protection_type"] = protection_type
         if password is not None:
@@ -222,7 +222,7 @@ class ExtractionLink(SyncAPIResource):
 
         mime_document = prepare_mime_document(document)
         response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/test-document-upload/{link_id}", data={"document": mime_document.model_dump()})
-        
+
         log = AutomationLog.model_validate(response)
 
         if verbose:
