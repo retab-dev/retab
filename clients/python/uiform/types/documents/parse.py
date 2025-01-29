@@ -5,9 +5,8 @@ from openai.types.chat.chat_completion import Choice, ChatCompletion
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ContentType
 
-from .text_operations import TextOperations, RegexInstructionResult
-from .create_messages import ChatCompletionUiformMessage, DocumentProcessingConfig
-from .image_operations import ImageOperations
+from .image_settings import ImageSettings
+from .create_messages import DocumentProcessingConfig
 from ..modalities import Modality
 from ..ai_model import AIProvider, LLMModel
 from ..standards import ErrorDetail, StreamingBaseModel
@@ -21,8 +20,7 @@ import datetime
 class DocumentExtractionConfig(DocumentProcessingConfig):
     # Redeclaration of the DocumentProcessingConfig
     modality: Modality
-    text_operations: TextOperations = Field(default_factory=TextOperations, description="Additional context to be used by the AI model")
-    image_operations : ImageOperations = Field(default_factory=ImageOperations, description="Preprocessing operations applied to image before sending them to the llm")
+    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
 
     # New attributes
     model: LLMModel = Field(..., description="Model used for chat completion")
@@ -38,9 +36,6 @@ class DocumentExtractRequest(DocumentExtractionConfig):
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
     document: MIMEData = Field(..., description="Document to be analyzed")
-
-    # Changed from PrivateAttr to regular field with exclude=True
-    regex_instruction_results: list[RegexInstructionResult] | None = Field(default=None, exclude=True)
 
     # Some properties (hidden from serialization)
     @property
@@ -96,7 +91,6 @@ class UiParsedChatCompletion(ParsedChatCompletion):
 
     # Additional metadata fields (UIForm)
     likelihoods: Any # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
-    regex_instruction_results: list[RegexInstructionResult] | None = None
     schema_validation_error: ErrorDetail | None = None
     
     # Timestamps

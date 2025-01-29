@@ -188,8 +188,7 @@ class Datasets(SyncAPIResource):
         dataset_id: str,
         path: Path | str,
         format: Literal["jsonl", "zip"] = "jsonl",
-        text_operations: Optional[dict[str, Any]] = None,
-        image_operations: Optional[dict[str, Any]] = None,
+        image_settings: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
     ) -> None:
         """Download a dataset's contents to a file.
@@ -226,8 +225,7 @@ class Datasets(SyncAPIResource):
                 msg_obj = self._client.documents.create_messages(
                     document=file_link.download_url,
                     modality=modality,
-                    text_operations=text_operations,
-                    image_operations=image_operations
+                    image_settings=image_settings
                 )
                 
                 # Get corresponding annotation

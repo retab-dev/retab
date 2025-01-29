@@ -17,9 +17,8 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.modalities import Modality
 
 from ...types.documents.create_messages import ChatCompletionUiformMessage 
-from ...types.documents.image_operations import ImageOperations
+from ...types.documents.image_settings import ImageSettings
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractionConfig
-from ...types.documents.text_operations import TextOperations
 from ...types.ai_model import LLMModel
 
 
@@ -211,8 +210,7 @@ class UpdateMailBoxRequest(BaseModel):
     # DocumentExtraction Parameters
     # ------------------------------
     # DocumentProcessing Parameters
-    text_operations: Optional[TextOperations] = None
-    image_operations: Optional[ImageOperations] = None
+    image_settings: Optional[ImageSettings] = None
     modality: Optional[Modality] = None
     # Others DocumentExtraction Parameters
     model: Optional[LLMModel] = None
@@ -240,8 +238,7 @@ class UpdateExtractionLinkRequest(BaseModel):
     # DocumentExtraction Parameters
     # ------------------------------
     # DocumentProcessing Parameters
-    text_operations: Optional[TextOperations] = None
-    image_operations: Optional[ImageOperations] = None
+    image_settings: Optional[ImageSettings] = None
     modality: Optional[Modality] = None
     # Others DocumentExtraction Parameters
     model: Optional[LLMModel] = None

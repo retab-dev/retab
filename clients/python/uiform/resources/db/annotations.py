@@ -133,8 +133,7 @@ class Annotations(SyncAPIResource):
         file_id: str,
         model: str,
         modality: Modality = "native",
-        text_operations: Optional[dict[str, Any]] = None,
-        image_operations: Optional[dict[str, Any]] = None,
+        image_settings: Optional[dict[str, Any]] = None,
         temperature: float = 0.0,
         messages: List[ChatCompletionUiformMessage] = [],
         upsert: bool = False
@@ -146,8 +145,7 @@ class Annotations(SyncAPIResource):
             file_id: The ID of the file to annotate
             model: The AI model to use for annotation
             modality: The modality to use for annotation (currently only "native" is supported)
-            text_operations: Optional text preprocessing operations
-            image_operations: Optional image preprocessing operations  
+            image_settings: Optional image preprocessing operations  
             temperature: Model temperature setting (0-1)
             messages: Optional list of messages for context
             
@@ -163,10 +161,8 @@ class Annotations(SyncAPIResource):
             "messages": messages,
             "upsert": upsert
         }
-        if text_operations:
-            data["text_operations"] = text_operations
-        if image_operations:
-            data["image_operations"] = image_operations
+        if image_settings:
+            data["image_settings"] = image_settings
 
         request = GenerateAnnotationRequest.model_validate(data)
         response = self._client._request("POST", "/api/v1/db/annotations/generate", data=request.model_dump())

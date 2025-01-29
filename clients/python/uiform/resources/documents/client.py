@@ -19,8 +19,7 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native", 
-        text_operations: dict[str, Any] | None = None,
-        image_operations: dict[str, Any] | None = None
+        image_settings: dict[str, Any] | None = None
     ) -> DocumentCreateMessageRequest:
         
         mime_document = prepare_mime_document(document)
@@ -28,10 +27,8 @@ class BaseDocumentsMixin:
             "document": mime_document.model_dump(),
             "modality": modality,
         }
-        if text_operations:
-            data["text_operations"] = text_operations
-        if image_operations:
-            data["image_operations"] = image_operations
+        if image_settings:
+            data["image_settings"] = image_settings
 
         
         return DocumentCreateMessageRequest.model_validate(data)
@@ -83,8 +80,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def create_messages(self, 
             document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
             modality: Modality = "native", 
-            text_operations: dict[str, Any] | None = None,
-            image_operations: dict[str, Any] | None = None,
+            image_settings: dict[str, Any] | None = None,
             idempotency_key: str | None = None) -> DocumentMessage:
         """
         Create document messages from a file using the UiForm API.
@@ -92,16 +88,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Args:
             document: The document to process. Can be a file path (Path or str) or a file-like object.
             modality: The processing modality to use. Defaults to "native".
-            text_operations: Optional dictionary of text processing operations to apply.
-                It has to be a dictionary with the following keys:
-                {
-                    "regex_instructions": [{
-                        "name": "VAT Number",
-                        "description": "All potential VAT numbers in the documents",
-                        "pattern": r"[Ff][Rr]\s*(\d\s*){11}"
-                    }],
-                }
-            image_operations: Optional dictionary of image processing operations to apply.
+            image_settings: Optional dictionary of image processing operations to apply.
                 It has to be a dictionary with the following keys:
                 {
                     "correct_image_orientation": True,  # Whether to auto-correct image orientation
@@ -116,7 +103,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Raises:
             UiformAPIError: If the API request fails.
         """
-        loading_request = self._prepare_create_messages(document, modality, text_operations, image_operations)
+        loading_request = self._prepare_create_messages(document, modality, image_settings)
 
         response = self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
         return DocumentMessage.model_validate(response)
@@ -134,8 +121,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     async def create_messages(self, 
             document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
             modality: Modality = "native",
-            text_operations: dict[str, Any] | None = None,
-            image_operations: dict[str, Any] | None = None,
+            image_settings: dict[str, Any] | None = None,
             idempotency_key: str | None = None) -> DocumentMessage:
         """
         Create document messages from a file using the UiForm API asynchronously.
@@ -143,7 +129,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Args:
             document: The document to process. Can be a file path (Path or str) or a file-like object.
             modality: The processing modality to use. Defaults to "native".
-            text_operations: Optional dictionary of text processing operations to apply.
             idempotency_key: Idempotency key for request
         Returns:
             DocumentMessage: The processed document message containing extracted content.
@@ -151,7 +136,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Raises:
             UiformAPIError: If the API request fails.
         """
-        loading_request = self._prepare_create_messages(document, modality, text_operations, image_operations)
+        loading_request = self._prepare_create_messages(document, modality, image_settings)
 
         print(loading_request.model_dump().keys())
         print(loading_request.model_dump())

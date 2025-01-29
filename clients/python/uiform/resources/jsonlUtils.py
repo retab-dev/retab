@@ -138,8 +138,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         document_annotation_pairs_paths: list[dict[str, Path | str]],
         dataset_path: Path | str,
-        text_operations: Optional[dict[str, Any]] = None,
-        image_operations: Optional[dict[str, Any]] = None,
+        image_settings: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
         ) -> None:
         """Save document-annotation pairs to a JSONL training set.
@@ -148,7 +147,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             json_schema: The JSON schema for validation, can be a dict, Path, or string
             document_annotation_pairs_paths: {document_fpath: Path | str, annotation_fpath: Path | str} List of dictionaries containing document and annotation file paths
             jsonl_path: Output path for the JSONL training file
-            text_operations: Optional context for prompting
             modality: The modality to use for document processing ("native" by default)
         """
         json_schema = load_json_schema(json_schema)
@@ -159,8 +157,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 document_message = self._client.documents.create_messages(
                     document=pair_paths['document_fpath'],
                     modality=modality,
-                    text_operations=text_operations,
-                    image_operations=image_operations
+                    image_settings=image_settings
                 )
                 
                 with open(pair_paths['annotation_fpath'], 'r') as f:
@@ -226,7 +223,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         pairs_paths: list[dict[str, Path | str | list[Path | str] | list[str] | list[Path]]],
         dataset_path: Path | str,
-        text_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
     ) -> None:        
         
@@ -241,7 +237,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             json_schema: The JSON schema for validation, can be a dict, Path, or string
             pairs_paths: List of dictionaries containing document and annotation file paths
             jsonl_path: Output path for the JSONL training file
-            text_operations: Optional context for prompting
             modality: The modality to use for document processing ("native" by default)
         """
 
@@ -255,8 +250,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             if isinstance(pair_paths['document_fpath'], str) or isinstance(pair_paths['document_fpath'], Path):
                 document_message = self._client.documents.create_messages(
                     document=pair_paths['document_fpath'], 
-                    modality=modality, 
-                    text_operations=text_operations
+                    modality=modality
                 )
                 document_messages.extend(document_message.messages)
 
@@ -265,8 +259,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 for document_fpath in pair_paths['document_fpath']:
                     document_message = self._client.documents.create_messages(
                         document=document_fpath, 
-                        modality=modality, 
-                        text_operations=text_operations
+                        modality=modality
                     )
                     document_messages.extend(document_message.messages)
             
@@ -389,7 +382,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         documents: list[Path | str | IOBase],
         dataset_path: Path,
-        text_operations: Optional[dict[str, Any]] = None,
         model: LLMModel = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
         batch_size: int = 5,
@@ -413,7 +405,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             json_schema: The JSON schema for validation
             documents: list of documents, each can be a Path/str or an IOBase object
             dataset_path: Output path for the JSONL training file
-            text_operations: Optional context for prompting
             model: The model to use for processing
             temperature: Model temperature (0-1)
             batch_size: Number of examples to process in each batch
@@ -440,7 +431,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
             doc_msg = self._client.documents.create_messages(
                 document=doc, 
-                text_operations=text_operations,
                 modality=modality,
             )
 
@@ -490,7 +480,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                         print(f"Error processing example: {e}")
 
         # Generate final training set from all results
-        self.save(json_schema=json_schema, text_operations=text_operations, document_annotation_pairs_paths=pairs_paths, dataset_path=dataset_path)
+        self.save(json_schema=json_schema, document_annotation_pairs_paths=pairs_paths, dataset_path=dataset_path)
 
 
     def eval(
@@ -511,7 +501,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             dataset_path: Path to the JSONL file containing test examples
             model: The model to use for benchmarking
             temperature: Model temperature setting (0-1)
-            text_operations: Optional context with regex instructions
             batch_size: Number of examples to process in each batch
             max_concurrent: Maximum number of concurrent API calls
         """
@@ -777,7 +766,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         documents: list[Path | str | IOBase],
         batch_requests_path: Path,
-        text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-mini",
         temperature: float = 0.0,
         modality: Modality = "native",
@@ -788,7 +776,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             json_schema: The JSON schema for validation
             documents: List of documents to process
             batch_requests_path: Output path for the JSONL requests file
-            text_operations: Optional context for prompting
             model: The model to use for processing
             temperature: Model temperature (0-1)
             modality: The modality to use for document processing
@@ -802,7 +789,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 # Create document messages
                 doc_msg = self._client.documents.create_messages(
                     document=doc,
-                    text_operations=text_operations,
                     modality=modality,
                 )
 
@@ -989,14 +975,13 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         pairs_paths: list[dict[str, Path | str]],
         jsonl_path: Path | str,
-        text_operations: Optional[dict[str, Any]] = None,
         modality: Modality = "native",
     ) -> None:
         json_schema = load_json_schema(json_schema)
         training_set = []
 
         for pair_paths in tqdm(pairs_paths):
-            document_message = await self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality, text_operations=text_operations)
+            document_message = await self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality)
             
             with open(pair_paths['annotation_fpath'], 'r') as f:
                 annotation = json.loads(f.read())
@@ -1011,7 +996,6 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         documents: list[Path | str | IOBase],
         jsonl_path: str | Path,
-        text_operations: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
         batch_size: int = 5,
@@ -1029,7 +1013,6 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
             json_schema: The JSON schema for validation
             documents: list of documents, each can be a Path/str or an IOBase object
             jsonl_path: Output path for the JSONL training file
-            text_operations: Optional context for prompting
             model: The model to use for processing
             temperature: Model temperature (0-1)
             batch_size: Number of examples to process in each batch
@@ -1053,7 +1036,6 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
                     result = await self._client.documents.extractions.parse(
                         json_schema=json_schema,
                         document=doc_path,  # pass the actual Path to .extract
-                        text_operations=text_operations,
                         model=model,
                         temperature=temperature,
                         modality=modality,
@@ -1089,7 +1071,6 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
                     result = await self._client.documents.extractions.parse(
                         json_schema=json_schema,
                         document=doc,  # pass the IO object directly
-                        text_operations=text_operations,
                         model=model,
                         temperature=temperature,
                         modality=modality,
@@ -1130,17 +1111,15 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
             pairs_paths = await asyncio.gather(*futures)
 
         # Generate final training set from all results
-        await self.save(json_schema=json_schema, text_operations=text_operations, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
+        await self.save(json_schema=json_schema, pairs_paths=pairs_paths, jsonl_path=jsonl_path)
 
     async def benchmark(self, **kwargs: Any) -> None:
-        #json_schema: dict[str, Any], jsonl_path: Path, text_operations: Optional[dict[str, Any]], model: str, temperature: float
 
         """Benchmark model performance on a test dataset.
 
         Args:
             json_schema: JSON schema defining the expected data structure
             jsonl_path: Path to the JSONL file containing test examples
-            text_operations: Optional context with regex instructions or other metadata
             model: The AI model to use for benchmarking
             temperature: Model temperature setting (0-1)
 
@@ -1158,7 +1137,6 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         Args:
             json_schema: JSON schema defining the data structure
             jsonl_path: Path to the JSONL file to filter
-            text_operations: Optional context with processing instructions
             output_path: Optional path for the filtered output
             inplace: Whether to modify the file in place
             filter_parameters: Parameters to filter examples by (e.g., {"confidence": 0.8})
@@ -1192,7 +1170,6 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         Args:
             json_schema: The JSON schema for validation
             jsonl_path: Path to the JSONL file
-            text_operations: Optional context with processing instructions
             output_path: Optional path for the output file
             inplace: Whether to modify the file in place
             filter_parameters: Optional parameters for filtering

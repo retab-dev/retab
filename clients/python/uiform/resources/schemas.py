@@ -22,7 +22,6 @@ class Schemas(SyncAPIResource):
     def promptify(self,
                raw_schema: dict[str, Any] | Path | str,
                documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
-               text_operations: Optional[dict[str, Any]] = None,
                model: str = "gpt-4o-2024-08-06",
                temperature: float = 0,
                modality: Modality = "native") -> Schema:
@@ -37,7 +36,6 @@ class Schemas(SyncAPIResource):
         Args:
             raw_schema: Base JSON schema to enrich
             documents: List of documents (as MIMEData) to analyze
-            text_operations: Optional context with regex instructions or other metadata
         
         Returns:
             dict[str, Any]: Enhanced JSON schema with additional field suggestions and X-Prompts
@@ -55,7 +53,6 @@ class Schemas(SyncAPIResource):
         data = {
             "raw_schema": raw_schema,
             "documents": [doc.model_dump() for doc in mime_documents],
-            "text_operations": text_operations,
             "model": model,
             "temperature": temperature,
             "modality": modality
@@ -110,7 +107,6 @@ class AsyncSchemas(AsyncAPIResource):
     async def promptify(self,
                     raw_schema: dict[str, Any] | Path | str,
                     documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
-                    text_operations: Optional[dict[str, Any]] = None,
                     model: str = "gpt-4o-2024-08-06",
                     temperature: float = 0,
                     modality: Modality = "native") -> Schema:
@@ -125,7 +121,6 @@ class AsyncSchemas(AsyncAPIResource):
         Args:
             raw_schema: Base JSON schema to enrich
             documents: List of documents (as MIMEData) to analyze
-            text_operations: Optional context with regex instructions or other metadata
         
         Returns:
             dict[str, Any]: Enhanced JSON schema with additional field suggestions and X-Prompts
@@ -143,7 +138,6 @@ class AsyncSchemas(AsyncAPIResource):
         data = {
             "raw_schema": raw_schema,
             "documents": [doc.model_dump() for doc in mime_documents],
-            "text_operations": text_operations,
             "model": model,
             "temperature": temperature,
             "modality": modality
@@ -155,7 +149,6 @@ class AsyncSchemas(AsyncAPIResource):
 
     async def generate(self,
                     documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
-                    text_operations: Optional[dict[str, Any]] = None,    
                     model: str = "gpt-4o-2024-11-20",
                     temperature: float = 0.0,
                     modality: Modality = "native") -> Schema:
@@ -169,7 +162,6 @@ class AsyncSchemas(AsyncAPIResource):
         
         Args:
             documents: List of documents (as MIMEData) to analyze
-            text_operations: Optional context with regex instructions or other metadata
         
         Returns:
             dict[str, Any]: Generated JSON schema with X-Prompts based on document analysis
@@ -184,7 +176,6 @@ class AsyncSchemas(AsyncAPIResource):
 
         data = {
             "documents": [doc.model_dump() for doc in mime_documents],
-            "text_operations": text_operations,
             "model": model,
             "temperature": temperature,
             "modality": modality

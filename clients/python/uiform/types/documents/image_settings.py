@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Literal
 
-class ImageOperations(BaseModel):
+class ImageSettings(BaseModel):
     correct_image_orientation: bool = True # Whether to correct the image orientation
     dpi : int = 72 # The DPI of the image
     image_to_text: Literal["ocr", "llm_description"] = "ocr" # Whether to convert the image to text

@@ -8,8 +8,7 @@ from io import IOBase
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
 from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ...types.documents.image_operations import ImageOperations
-from ...types.documents.text_operations import TextOperations
+from ...types.documents.image_settings import ImageSettings
 from ...types.mime import MIMEData, EmailData
 from ...types.modalities import Modality
 
@@ -36,8 +35,7 @@ class Emails(SyncAPIResource):
         webhook_headers: Dict[str, str] = {},
 
         # DocumentExtraction Config
-        text_operations: Optional[Dict[str, Any]] = None,
-        image_operations: Optional[Dict[str, Any]] = None,
+        image_settings: Optional[Dict[str, Any]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -52,8 +50,7 @@ class Emails(SyncAPIResource):
             webhook_headers: Webhook headers to send with processed emails
             authorized_domains: List of authorized domains for the mailbox
             authorized_emails: List of authorized emails for the mailbox
-            text_operations: Optional text preprocessing operations
-            image_operations: Optional image preprocessing operations
+            image_settings: Optional image preprocessing operations
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
@@ -68,8 +65,7 @@ class Emails(SyncAPIResource):
             "json_schema": json_schema,
             "authorized_domains": authorized_domains,
             "authorized_emails": authorized_emails,
-            "text_operations": text_operations or TextOperations(),
-            "image_operations": image_operations or ImageOperations(),
+            "image_settings": image_settings or ImageSettings(),
             "modality": modality,
             "model": model,
             "temperature": temperature,
@@ -109,8 +105,7 @@ class Emails(SyncAPIResource):
         webhook_headers: Optional[Dict[str, str]] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
-        text_operations: Optional[Dict[str, Any]] = None,
-        image_operations: Optional[Dict[str, Any]] = None,
+        image_settings: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -127,8 +122,7 @@ class Emails(SyncAPIResource):
             follow_up: New webhook configuration
             authorized_domains: New webhook configuration
             authorized_emails: New webhook configuration
-            text_operations: New text preprocessing operations
-            image_operations: New image preprocessing operations
+            image_settings: New image preprocessing operations
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
@@ -146,10 +140,8 @@ class Emails(SyncAPIResource):
             data["authorized_domains"] = authorized_domains
         if authorized_emails is not None:
             data["authorized_emails"] = authorized_emails
-        if text_operations is not None:
-            data["text_operations"] = text_operations
-        if image_operations is not None:
-            data["image_operations"] = image_operations
+        if image_settings is not None:
+            data["image_settings"] = image_settings
         if modality is not None:
             data["modality"] = modality
         if model is not None:

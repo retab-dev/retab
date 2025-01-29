@@ -9,8 +9,7 @@ from pydantic import BaseModel, Field
 import datetime
 import uuid
 
-from ...types.documents.image_operations import ImageOperations
-from ...types.documents.text_operations import TextOperations
+from ...types.documents.image_settings import ImageSettings
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.modalities import Modality
 from ...types.ai_model import LLMModel
@@ -36,8 +35,7 @@ class BaseGenerateAnnotationRequest(BaseModel):
     dataset_id: str
     model: LLMModel
     modality: Modality = "native"
-    text_operations: TextOperations = Field(default=TextOperations(), description="Additional context to be used by the AI model")
-    image_operations: ImageOperations = Field(default=ImageOperations(), description="Preprocessing operations applied to image before sending them to the llm")
+    image_settings: ImageSettings = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
     temperature: float = 0.0
     upsert: bool = Field(default=False, description="If True, the annotation will be upserted if it already exists")
 

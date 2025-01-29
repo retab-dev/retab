@@ -10,8 +10,7 @@ from io import BytesIO
 from ..modalities import Modality
 from ..._utils.ai_model import find_provider_from_model
 from ..ai_model import AIProvider
-from .text_operations import TextOperations
-from .image_operations import ImageOperations
+from .image_settings import ImageSettings
 from ..mime import MIMEData
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
@@ -297,10 +296,7 @@ class DocumentProcessingConfig(BaseModel):
     modality: Modality
     """The modality of the document to load."""
 
-    text_operations: TextOperations = Field(default_factory=TextOperations, description="Additional context to be used by the AI model")
-    """The text operations to apply to the document."""
-
-    image_operations : ImageOperations = Field(default_factory=ImageOperations, description="Preprocessing operations applied to image before sending them to the llm")
+    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     """The image operations to apply to the document."""
 
 from typing import Dict

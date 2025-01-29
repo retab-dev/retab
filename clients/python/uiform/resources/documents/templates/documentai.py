@@ -44,8 +44,7 @@ class BaseDocumentAIMixin:
         self,
         template: DocumentAITemplate,
         document: Path | str | IOBase | HttpUrl | None,
-        text_operations: Optional[dict[str, Any]],
-        image_operations: Optional[dict[str, Any]],
+        image_settings: Optional[dict[str, Any]],
         model: str,
         temperature: float | None,
         messages: list[ChatCompletionUiformMessage],
@@ -68,10 +67,9 @@ class BaseDocumentAIMixin:
             "messages": messages,
             "store": store,
         }
-        if text_operations:
-            data["text_operations"] = text_operations
-        if image_operations:
-            data["image_operations"] = image_operations
+
+        if image_settings:
+            data["image_settings"] = image_settings
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         return DocumentExtractRequest.model_validate(data)
@@ -80,8 +78,7 @@ class BaseDocumentAIMixin:
         self,
         template: DocumentAITemplate,
         document: Path | str | IOBase | HttpUrl | None,
-        text_operations: Optional[dict[str, Any]],
-        image_operations: Optional[dict[str, Any]],
+        image_settings: Optional[dict[str, Any]],
         model: str,
         temperature: float,
         messages: list[ChatCompletionUiformMessage],
@@ -90,15 +87,14 @@ class BaseDocumentAIMixin:
     ) -> DocumentExtractRequest:
         stream = False
         return self.prepare_extraction(
-            template, document, text_operations, image_operations, model, temperature, messages, modality, stream, store
+            template, document, image_settings, model, temperature, messages, modality, stream, store
         )
     
     def prepare_stream(
         self,
         template: DocumentAITemplate,
         document: Path | str | IOBase | HttpUrl | None,
-        text_operations: Optional[dict[str, Any]],
-        image_operations: Optional[dict[str, Any]],
+        image_settings: Optional[dict[str, Any]],
         model: str,
         temperature: float,
         messages: list[ChatCompletionUiformMessage],
@@ -107,7 +103,7 @@ class BaseDocumentAIMixin:
     ) -> DocumentExtractRequest:
         stream = True
         return self.prepare_extraction(
-            template, document, text_operations, image_operations, model, temperature, messages, modality, stream, store
+            template, document, image_settings, model, temperature, messages, modality, stream, store
         )
 
 
@@ -118,8 +114,7 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
         self,
         template: DocumentAITemplate,
         document: Path | str | IOBase | HttpUrl | None,
-        text_operations: Optional[dict[str, Any]] = None,
-        image_operations: Optional[dict[str, Any]] = None,
+        image_settings: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
@@ -135,7 +130,6 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
             document: Single document (as MIMEData) to process
             model: The AI model to use for processing
             temperature: Model temperature setting (0-1)
-            text_operations: Optional context with regex instructions or other metadata
             idempotency_key: Idempotency key for request
         Returns:
             DocumentAPIResponse
@@ -146,7 +140,7 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
         assert (document is not None) or (messages is not None), "Either document or messages must be provided"
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = self.prepare_parse(template, document, text_operations, image_operations, model, temperature, messages, modality, store)
+        request = self.prepare_parse(template, document, image_settings, model, temperature, messages, modality, store)
         response = self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
@@ -155,8 +149,7 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
         self,
         template: DocumentAITemplate,
         document: Path | str | IOBase | HttpUrl | None,
-        text_operations: Optional[dict[str, Any]] = None,
-        image_operations: Optional[dict[str, Any]] = None,
+        image_settings: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
@@ -170,7 +163,6 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
         Args:
             json_schema: JSON schema defining the expected data structure
             document: Single document (as MIMEData) to process
-            text_operations: Optional context with regex instructions or other metadata
             model: The AI model to use for processing
             temperature: Model temperature setting (0-1)
             modality: Modality of the document (e.g., native)
@@ -182,12 +174,12 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
             HTTPException if the request fails
         Usage:
         ```python
-        with uiform.documents.extractions.stream(json_schema, document, text_operations, model, temperature, messages, modality) as stream:
+        with uiform.documents.extractions.stream(json_schema, document, model, temperature, messages, modality) as stream:
             for response in stream:
                 print(response)
         ```
         """
-        request = self.prepare_stream(template, document, text_operations, image_operations, model, temperature, messages, modality, store)
+        request = self.prepare_stream(template, document, image_settings, model, temperature, messages, modality, store)
 
         # Request the stream and return a context manager
         chunk_json: Any = None
@@ -205,8 +197,7 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
         self,
         template: DocumentAITemplate,
         document: Path | str | IOBase | HttpUrl | None,
-        text_operations: Optional[dict[str, Any]] = None,
-        image_operations: Optional[dict[str, Any]] = None,
+        image_settings: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
@@ -220,7 +211,6 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
         Args:
             json_schema: JSON schema defining the expected data structure.
             document: Path, string, or file-like object representing the document.
-            text_operations: Optional additional context for the model.
             model: The AI model to use.
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
@@ -228,7 +218,7 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
         Returns:
             DocumentExtractResponse: Parsed response from the API.
         """
-        request = self.prepare_parse(template, document, text_operations, image_operations, model, temperature, messages, modality, store)
+        request = self.prepare_parse(template, document, image_settings, model, temperature, messages, modality, store)
         response = await self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
@@ -237,8 +227,7 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
         self,
         template: DocumentAITemplate,
         document: Path | str | IOBase | HttpUrl | None,
-        text_operations: Optional[dict[str, Any]] = None,
-        image_operations: Optional[dict[str, Any]] = None,
+        image_settings: Optional[dict[str, Any]] = None,
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         messages: list[ChatCompletionUiformMessage] = [],
@@ -252,7 +241,6 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
         Args:
             json_schema: JSON schema defining the expected data structure.
             document: Path, string, or file-like object representing the document.
-            text_operations: Optional additional context for the model.
             model: The AI model to use.
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
@@ -262,12 +250,12 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
 
         Usage:
         ```python
-        async with uiform.documents.extractions.stream(json_schema, document, text_operations, model, temperature, messages, modality) as stream:
+        async with uiform.documents.extractions.stream(json_schema, document, model, temperature, messages, modality) as stream:
             async for response in stream:
                 print(response)
         ```
         """
-        request = self.prepare_stream(template, document, text_operations, image_operations, model, temperature, messages, modality, store)
+        request = self.prepare_stream(template, document, image_settings, model, temperature, messages, modality, store)
         chunk_json: Any = None
         async for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:
