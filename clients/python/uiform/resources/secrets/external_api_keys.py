@@ -28,7 +28,35 @@ class ExternalAPIKeys(SyncAPIResource):
         request = ExternalAPIKey.model_validate(data)
         response = self._client._request(
             "POST",
-            "/api/v1/iam/external_api_keys",
+            "/api/v1/iam/external_api_keys/",
+            data=request.model_dump(mode="json")
+        )
+
+        return response
+
+    def update(
+        self,
+        provider: ApiProvider,
+        api_key: str
+    ) -> dict:
+        """Add or update an external API key.
+
+        Args:
+            provider: The API provider (openai, gemini, anthropic, xai)
+            api_key: The API key to store
+
+        Returns:
+            dict: Response indicating success
+        """
+        data = {
+            "provider": provider,
+            "api_key": api_key
+        }
+
+        request = ExternalAPIKey.model_validate(data)
+        response = self._client._request(
+            "PUT",
+            "/api/v1/iam/external_api_keys/",
             data=request.model_dump(mode="json")
         )
 
