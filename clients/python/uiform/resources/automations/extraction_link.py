@@ -156,6 +156,9 @@ class ExtractionLink(SyncAPIResource):
             ExtractionLinkConfig: The updated extraction link configuration
         """
         data: dict[str, Any] = {}
+        
+        if link_id is not None:
+            data["id"] = link_id
         if name is not None:
             data["name"] = name
         if webhook_url is not None:

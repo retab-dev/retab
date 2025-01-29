@@ -4,6 +4,9 @@ from ..._resource import SyncAPIResource
 from ...types.secrets.secrets import  ExternalAPIKey, ExternalAPIKeyResponse
 from ...types.ai_model import AIProvider
 
+import os
+    
+
 class ExternalAPIKeys(SyncAPIResource):
     """External API Keys management wrapper"""
 

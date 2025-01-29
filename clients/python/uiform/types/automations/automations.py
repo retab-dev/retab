@@ -247,8 +247,7 @@ class UpdateExtractionLinkRequest(BaseModel):
     # Link Config
     # ------------------------------
     name: Optional[str] = None
-    protection: Optional[LinkProtection] = None
-    password: Optional[str] = None
+    protection_type: Optional[LinkProtection] = None
     invitations: Optional[List[EmailStr]] = None
 
 
