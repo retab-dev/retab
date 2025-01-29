@@ -250,25 +250,25 @@ class ExtractionLink(SyncAPIResource):
         return log
     
 
-    def test_http_request(self, 
+    def test_webhook(self, 
                           link_id: str,
                           verbose: bool = True
                           ) -> AutomationLog:
-        """Mock endpoint that simulates the complete extraction process with sample data.
+        """Mock endpoint that simulates the complete webhook process with sample data.
         
         Args:
             link_id: ID of the extraction link to mock
             
         Returns:
-            DocumentExtractResponse: The simulated extraction response
+            AutomationLog: The simulated webhook response
         """
 
-        response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/test-http-request/{link_id}")
+        response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/test-webhook/{link_id}")
 
         log = AutomationLog.model_validate(response)
 
         if verbose:
-            print(f"\nTEST HTTP REQUEST RESULTS:")
+            print(f"\nTEST WEBHOOK RESULTS:")
             print(f"\n#########################")
             print(f"Status Code: {log.external_request_log.status_code}")
             print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")

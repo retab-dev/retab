@@ -71,3 +71,13 @@ class BaseMIMEData(MIMEData):
         if isinstance(obj, dict) and 'url' in obj:
             obj['url'] = obj['url'][:1000]  # Truncate URL to 1000 chars
         return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
+
+    def __str__(self) -> str:
+        truncated_url = self.url[:50] + '...' if len(self.url) > 50 else self.url
+        truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
+        return f"BaseMIMEData(filename='{self.filename}', url='{truncated_url}', content='{truncated_content}', mime_type='{self.mime_type}', extension='{self.extension}')"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    

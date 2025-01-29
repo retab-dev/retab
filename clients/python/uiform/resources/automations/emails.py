@@ -215,12 +215,12 @@ class Emails(SyncAPIResource):
 
 
 
-    def test_document_upload(self, 
+    def test_email_forwarding(self, 
                          email: str,
                          document: Path | str | IOBase | HttpUrl | Image | MIMEData,
                          verbose: bool = True
                          ) -> AutomationLog:
-        """Mock endpoint that simulates the complete extraction process with sample data.
+        """Mock endpoint that simulates the complete email forwarding process with sample data.
         
         Args:
             email: Email address of the mailbox to mock
@@ -228,9 +228,8 @@ class Emails(SyncAPIResource):
         Returns:
             DocumentExtractResponse: The simulated extraction response
         """
-
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/api/v1/emails/mailbox/test-document-upload/{email}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/api/v1/emails/mailbox/test-email-forwarding/{email}", data={"document": mime_document.model_dump()})
         
         log = AutomationLog.model_validate(response)
 
@@ -259,25 +258,25 @@ class Emails(SyncAPIResource):
         return log
     
 
-    def test_http_request(self, 
+    def test_webhook(self, 
                           email: str,
                           verbose: bool = True
                           ) -> AutomationLog:
-        """Mock endpoint that simulates the complete extraction process with sample data.
+        """Mock endpoint that simulates the complete webhook process with sample data.
         
         Args:
             email: Email address of the mailbox to mock
             
         Returns:
-            DocumentExtractResponse: The simulated extraction response
+            AutomationLog: The simulated webhook response
         """
 
-        response = self._client._request("POST", f"/api/v1/emails/mailbox/test-http-request/{email}")
+        response = self._client._request("POST", f"/api/v1/emails/mailbox/test-webhook/{email}")
 
         log = AutomationLog.model_validate(response)
 
         if verbose:
-            print(f"\nTEST HTTP REQUEST RESULTS:")
+            print(f"\nTEST WEBHOOK RESULTS:")
             print(f"\n#########################")
             print(f"Status Code: {log.external_request_log.status_code}")
             print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")

@@ -47,17 +47,16 @@ class HttpOutput(BaseModel):
 #    )
 
     #webhook_method: Literal["POST"]= "POST"
-    #webhook_outgoing_ip: Literal["34.163.38.96"] = Field("34.163.38.96", description = "IP address of the server that will send the data to the endpoint")
+    #webhook_outgoing_ip: Literal["34.163.38.96"] = Field("34.163.38.96", description = "IP address of the server that will send the data to the webhook")
 class AutomationConfig(DocumentExtractionConfig):
     object: str
     id: str
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     # HTTP Config
-
-    webhook_url: HttpUrl = Field(..., description = "Endpoint to send the data to")
+    webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
     webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
-    file_payload: Literal["metadata_only", "file"] = Field(default="metadata_only", description = "Whether to forward the file to the endpoint")
+    file_payload: Literal["metadata_only", "file"] = Field(default="metadata_only", description = "Whether to forward the file to the webhooks")
     max_file_size: int = Field(default=50, description = "Maximum file size in MB")
 
     def model_dump(
@@ -70,7 +69,14 @@ class AutomationConfig(DocumentExtractionConfig):
         parent_keys = [k for k in data if k in parent_fields]
         return {k: data[k] for k in (child_keys + parent_keys)}
     
-
+    def __str__(self) -> str:
+        data = self.model_dump()
+        items = [f"{k}={repr(v)}" for k, v in data.items()]
+        return f"{self.__class__.__name__}({', '.join(items)})"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
 from typing import ClassVar
 import os
 class MailboxConfig(AutomationConfig):
@@ -92,6 +98,14 @@ class MailboxConfig(AutomationConfig):
         child_keys = [k for k in data if k not in parent_fields]
         parent_keys = [k for k in data if k in parent_fields]
         return {k: data[k] for k in (child_keys + parent_keys)}
+    
+    def __str__(self) -> str:
+        data = self.model_dump()
+        items = [f"{k}={repr(v)}" for k, v in data.items()]
+        return f"{self.__class__.__name__}({', '.join(items)})"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
     
     
     
@@ -126,7 +140,14 @@ class ExtractionLinkConfig(AutomationConfig):
         parent_keys = [k for k in data if k in parent_fields]
         return {k: data[k] for k in (child_keys + parent_keys)}
 
-
+    def __str__(self) -> str:
+        data = self.model_dump()
+        items = [f"{k}={repr(v)}" for k, v in data.items()]
+        return f"{self.__class__.__name__}({', '.join(items)})"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
 class CronSchedule(BaseModel):
     second: Optional[int] = Field(0, ge=0, le=59, description="Second (0-59), defaults to 0")
     minute: int = Field(..., ge=0, le=59, description="Minute (0-59)")
@@ -164,7 +185,7 @@ class ExtractionEndpointConfig(AutomationConfig):
 
 
 class ExternalRequestLog(BaseModel):
-    endpoint: Optional[HttpUrl]
+    webhook_url: Optional[HttpUrl]
     request_body: dict[str, Any]
     request_headers: dict[str, str]
     request_timestamp: datetime.datetime
@@ -184,6 +205,7 @@ class InternalLog(BaseModel):
     received_timestamp: Optional[datetime.datetime]
 
 class AutomationLog(BaseModel):
+    object: Literal['automation_log'] = "automation_log"
     id: str = Field(default_factory=lambda: "log_auto_" + str(uuid.uuid4()), description="Unique identifier for the automation log")
     user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
     organization_id:str
