@@ -38,7 +38,7 @@ class ExtractionLink(SyncAPIResource):
         # DocumentExtraction Config
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
-        modality: Literal["native"] = "native",
+        modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         additional_messages: List[ChatCompletionUiformMessage] = []

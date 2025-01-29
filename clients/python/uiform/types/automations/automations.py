@@ -231,7 +231,7 @@ class UpdateMailBoxRequest(BaseModel):
     # DocumentProcessing Parameters
     text_operations: Optional[TextOperations] = None
     image_operations: Optional[ImageOperations] = None
-    modality: Optional[Literal["native"]] = None
+    modality: Optional[Modality] = None
     # Others DocumentExtraction Parameters
     model: Optional[LLMModel] = None
     temperature: Optional[float] = None
@@ -265,7 +265,7 @@ class UpdateExtractionLinkRequest(BaseModel):
     # DocumentProcessing Parameters
     text_operations: Optional[TextOperations] = None
     image_operations: Optional[ImageOperations] = None
-    modality: Optional[Literal["native"]] = None
+    modality: Optional[Modality] = None
     # Others DocumentExtraction Parameters
     model: Optional[LLMModel] = None
     temperature: Optional[float] = None

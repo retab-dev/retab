@@ -250,7 +250,7 @@ class Datasets(SyncAPIResource):
         self,
         dataset_id: str,
         model: str = "gpt-4",
-        modality: Literal["native"] = "native"
+        modality: Modality = "native"
     ) -> None:
         """Start an annotation job for a dataset.
         
