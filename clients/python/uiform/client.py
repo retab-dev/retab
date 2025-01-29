@@ -7,7 +7,7 @@ import backoff
 import backoff.types
 from pydantic_core import PydanticUndefined
 
-from .resources import documents, files, finetuning, models, prompt_optimization, schemas, db, automations
+from .resources import documents, files, finetuning, models, prompt_optimization, schemas, db, automations, secrets
 
 class MaxRetriesExceeded(Exception): pass
 
@@ -170,6 +170,7 @@ class UiForm(BaseUiForm):
         self.schemas = schemas.Schemas(client=self)
         self.db = db.DB(client=self)
         self.automations = automations.Automations(client=self)
+        self.secrets = secrets.Secrets(client=self)
 
     def _request(
             self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None,
