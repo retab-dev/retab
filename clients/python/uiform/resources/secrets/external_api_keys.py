@@ -1,14 +1,15 @@
 from typing import List
 
 from ..._resource import SyncAPIResource
-from ...types.secrets.secrets import ApiProvider, ExternalAPIKey, ExternalAPIKeyResponse
+from ...types.secrets.secrets import  ExternalAPIKey, ExternalAPIKeyResponse
+from ...types.ai_model import AIProvider
 
 class ExternalAPIKeys(SyncAPIResource):
     """External API Keys management wrapper"""
 
     def create(
         self,
-        provider: ApiProvider,
+        provider: AIProvider,
         api_key: str
     ) -> dict:
         """Add or update an external API key.
@@ -36,7 +37,7 @@ class ExternalAPIKeys(SyncAPIResource):
 
     def update(
         self,
-        provider: ApiProvider,
+        provider: AIProvider,
         api_key: str
     ) -> dict:
         """Add or update an external API key.
@@ -63,7 +64,7 @@ class ExternalAPIKeys(SyncAPIResource):
         return response
 
     def get(self,
-        provider: ApiProvider,
+        provider: AIProvider,
         display_key:bool = False ) -> ExternalAPIKeyResponse:
         """Get an external API key configuration.
 
@@ -94,7 +95,7 @@ class ExternalAPIKeys(SyncAPIResource):
 
 
 
-    def delete(self, provider: ApiProvider) -> dict:
+    def delete(self, provider: AIProvider) -> dict:
         """Delete an external API key configuration.
 
         Args:
