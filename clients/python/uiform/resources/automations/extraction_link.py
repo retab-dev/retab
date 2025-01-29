@@ -13,7 +13,7 @@ from ...types.documents.image_operations import ImageOperations
 from ...types.documents.text_operations import TextOperations
 
 from ..._utils.mime import prepare_mime_document
-from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest, LinkProtection, AutomationLog
+from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest, AutomationLog
 
 from ...types.mime import MIMEData
 
@@ -31,9 +31,9 @@ class ExtractionLink(SyncAPIResource):
         file_payload: Optional[Literal["metadata_only", "file"]] = None,
 
         # Link Config Optional Fields
-        protection_type: LinkProtection = "unprotected",
+        #protection_type: LinkProtection = "unprotected",
         password: str | None = None,
-        invitations: List[EmailStr] = [],
+        #invitations: List[EmailStr] = [],
 
         # DocumentExtraction Config
         text_operations: Optional[Dict[str, Any]] = None,
@@ -74,9 +74,7 @@ class ExtractionLink(SyncAPIResource):
             "max_file_size": max_file_size or 50,
             "file_payload": file_payload or "metadata_only",
             "json_schema": json_schema,
-            "protection_type": protection_type,
             "password": password,
-            "invitations": invitations,
             "text_operations": text_operations or TextOperations(),
             "image_operations": image_operations or ImageOperations(),
             "modality": modality,
@@ -121,9 +119,7 @@ class ExtractionLink(SyncAPIResource):
         webhook_headers: Optional[Dict[str, str]] = None,
         max_file_size: Optional[int] = None,
         file_payload: Optional[Literal["metadata_only", "file"]] = None,
-        protection_type: Optional[LinkProtection] = None,
         password: Optional[str] = None,
-        invitations: Optional[List[EmailStr]] = None,
         text_operations: Optional[Dict[str, Any]] = None,
         image_operations: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
@@ -141,9 +137,7 @@ class ExtractionLink(SyncAPIResource):
             webhook_headers: New webhook headers
             max_file_size: New maximum file size in MB
             file_payload: New setting for forwarding original files
-            protection_type: New protection type
             password: New password for protected links
-            invitations: New list of authorized emails
             text_operations: New text preprocessing operations
             image_operations: New image preprocessing operations
             modality: New processing modality
@@ -169,12 +163,8 @@ class ExtractionLink(SyncAPIResource):
             data["max_file_size"] = max_file_size
         if file_payload is not None:
             data["file_payload"] = file_payload
-        if protection_type is not None:
-            data["protection_type"] = protection_type
         if password is not None:
             data["password"] = password
-        if invitations is not None:
-            data["invitations"] = invitations
         if text_operations is not None:
             data["text_operations"] = text_operations
         if image_operations is not None:

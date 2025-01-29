@@ -10,7 +10,7 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_operations import ImageOperations
 from ...types.documents.text_operations import TextOperations
-from ...types.mime import MIMEData
+from ...types.mime import MIMEData, EmailData
 from ...types.modalities import Modality
 
 from ..._utils.mime import prepare_mime_document
@@ -219,7 +219,7 @@ class Emails(SyncAPIResource):
                          email: str,
                          document: Path | str | IOBase | HttpUrl | MIMEData,
                          verbose: bool = True
-                         ) -> None:
+                         ) -> EmailData:
         """Mock endpoint that simulates the complete email forwarding process with sample data.
         
         Args:
@@ -231,13 +231,24 @@ class Emails(SyncAPIResource):
         mime_document = prepare_mime_document(document)
         response = self._client._request("POST", f"/api/v1/emails/mailbox/test-email-forwarding/{email}", data={"document": mime_document.model_dump()})
         
+        email_data = EmailData.model_validate(response)
+        
         if verbose:
             print(f"\nTEST EMAIL FORWARDING RESULTS:")
             print(f"\n#########################")
-            print(f"Status Code: {response.status_code}")
-            print(f"Duration: {response.duration_ms:.2f}ms")
+            print(f"Email ID: {email_data.id}")
+            print(f"Subject: {email_data.subject}")
+            print(f"From: {email_data.sender}")
+            print(f"To: {', '.join(str(r) for r in email_data.recipients_to)}")
+            if email_data.recipients_cc:
+                print(f"CC: {', '.join(str(r) for r in email_data.recipients_cc)}")
+            print(f"Sent at: {email_data.sent_at}")
+            print(f"Attachments: {len(email_data.attachments)}")
+            if email_data.body_plain:
+                print("\nBody Preview:")
+                print(email_data.body_plain[:500] + "..." if len(email_data.body_plain) > 500 else email_data.body_plain)
 
-
+        return email_data
 
     def test_email_processing(self, 
                          email: str,

@@ -119,8 +119,9 @@ class ExtractionLinkConfig(AutomationConfig):
     
     # Link Specific Config
     name: str = Field(..., description = "Name of the link")
-    protection_type: LinkProtection = "unprotected"
-    invitations: List[EmailStr] = Field(default_factory=list, description = "List of emails allowed to access the link")
+    #protection_type: LinkProtection = "unprotected"
+    #invitations: List[EmailStr] = Field(default_factory=list, description = "List of emails allowed to access the link")
+    password: Optional[str] = Field(None, description = "Password to access the link")
 
 
     def model_dump(
@@ -247,9 +248,9 @@ class UpdateExtractionLinkRequest(BaseModel):
     # Link Config
     # ------------------------------
     name: Optional[str] = None
-    protection_type: Optional[LinkProtection] = None
-    invitations: Optional[List[EmailStr]] = None
-
+    password: Optional[str] = None
+    #protection_type: Optional[LinkProtection] = None
+    #invitations: Optional[List[EmailStr]] = None
 
     # ------------------------------
     # HTTP Config
