@@ -74,10 +74,11 @@ class MailboxConfig(AutomationConfig):
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
 
     @field_validator('authorized_domains', mode='before')
-    def validate_domain(cls, domain: str) -> str:
-        if not domain_pattern.match(domain):
-            raise ValueError(f"Invalid domain: {domain}")
-        return domain
+    def validate_domain(cls, list_domains: list[str]) -> list[str]:
+        for domain in list_domains:
+            if not domain_pattern.match(domain):
+                raise ValueError(f"Invalid domain: {domain}")
+        return list_domains
     
     def model_dump(
         self,
