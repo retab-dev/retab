@@ -17,6 +17,7 @@ from ..._utils.mime import prepare_mime_document
 
 from ...types.automations.automations import MailboxConfig, AutomationConfig, UpdateMailBoxRequest, AutomationLog
 
+from ..._utils.ai_model import assert_valid_model_extraction
 
 class Emails(SyncAPIResource):
     """Emails API wrapper for managing email automation configurations"""
@@ -58,6 +59,9 @@ class Emails(SyncAPIResource):
         Returns:
             MailboxConfig: The created mailbox configuration
         """
+
+        assert_valid_model_extraction(model)
+
         data = {
             "email": email,
             "webhook_url": webhook_url,
@@ -145,6 +149,7 @@ class Emails(SyncAPIResource):
         if modality is not None:
             data["modality"] = modality
         if model is not None:
+            assert_valid_model_extraction(model)
             data["model"] = model
         if temperature is not None:
             data["temperature"] = temperature

@@ -52,6 +52,7 @@ class BaseDocumentAIMixin:
         stream: bool,
         store: bool = False,
     ) -> DocumentExtractRequest:
+        
         assert_valid_model_extraction(model)
 
         assert template in get_args(DocumentAITemplate), "Invalid template, template must be one of the following: " + ", ".join(get_args(DocumentAITemplate))

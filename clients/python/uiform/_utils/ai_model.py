@@ -7,10 +7,10 @@ import hashlib
 import base64
 from pathlib import Path
 
-from ..types.ai_model import AIProvider, OpenAIModel, AnthropicModel, xAI_Model, GeminiModel, LLMModel
+from ..types.ai_model import AIProvider, OpenAIModel, AnthropicModel, xAI_Model, GeminiModel
 
 
-def find_provider_from_model(model: LLMModel) -> AIProvider:
+def find_provider_from_model(model: str) -> AIProvider:
     if model in get_args(OpenAIModel):
         return "OpenAI"
     elif ':' in model:

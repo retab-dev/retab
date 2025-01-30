@@ -8,7 +8,7 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, Conte
 from .image_settings import ImageSettings
 from .create_messages import DocumentProcessingConfig
 from ..modalities import Modality
-from ..ai_model import AIProvider, LLMModel
+from ..ai_model import AIProvider
 from ..standards import ErrorDetail, StreamingBaseModel
 from ..schemas.object import Schema
 from ..._utils.ai_model import find_provider_from_model
@@ -23,7 +23,7 @@ class DocumentExtractionConfig(DocumentProcessingConfig):
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
 
     # New attributes
-    model: LLMModel = Field(..., description="Model used for chat completion")
+    model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 

@@ -18,7 +18,6 @@ from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
 from .._utils.display import display_metrics, process_dataset_and_compute_metrics, Metrics
 from ..types.modalities import Modality
-from ..types.ai_model import LLMModel
 from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage, convert_to_openai_format, convert_to_anthropic_format, separate_messages
 from ..types.schemas.object import Schema
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -278,7 +277,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
     ##### ENDPOINTS THAT MAKE LLM CALLS #####
     #########################################
 
-    def _initialize_model_client(self, model: LLMModel) -> tuple[OpenAI | Anthropic, str]:
+    def _initialize_model_client(self, model: str) -> tuple[OpenAI | Anthropic, str]:
         """Initialize the appropriate client based on the model provider.
         
         Args:
@@ -382,7 +381,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         documents: list[Path | str | IOBase],
         dataset_path: Path,
-        model: LLMModel = "gpt-4o-2024-08-06",
+        model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
         batch_size: int = 5,
         max_concurrent: int = 3,
@@ -487,7 +486,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         dataset_path: str | Path,
-        model: LLMModel = "gpt-4o-2024-08-06",
+        model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0, 
         batch_size: int = 5,
         max_concurrent: int = 3,
@@ -620,7 +619,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         dataset_path: str | Path,
-        models: list[LLMModel],
+        models: list[str],
         temperature: float = 0.0,
         batch_size: int = 5,
         max_concurrent: int = 3,
@@ -676,7 +675,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         old_dataset_path: str | Path, 
         new_dataset_path: str | Path,
-        model: LLMModel = "gpt-4o-2024-08-06",
+        model: str = "gpt-4o-2024-08-06",
         temperature: float = 0.0,
         batch_size: int = 5,
         max_concurrent: int = 3

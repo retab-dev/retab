@@ -289,9 +289,8 @@ class ExtractionAnalysis(BaseModel):
             levenshtein_threshold=self.levenshtein_threshold,
         )
     
-from ..types.ai_model import LLMModel
 class BenchmarkMetrics(BaseModel): 
-    ai_model: LLMModel
+    ai_model: str
     accuracy: float
     levenshtein_similarity: float
     jaccard_similarity: float

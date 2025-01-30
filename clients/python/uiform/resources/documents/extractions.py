@@ -36,6 +36,7 @@ class BaseExtractionsMixin:
         stream: bool,
         store: bool = False,
     ) -> DocumentExtractRequest:
+        
         assert_valid_model_extraction(model)
 
         json_schema = load_json_schema(json_schema)

@@ -19,7 +19,6 @@ from ...types.modalities import Modality
 from ...types.documents.create_messages import ChatCompletionUiformMessage 
 from ...types.documents.image_settings import ImageSettings
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractionConfig
-from ...types.ai_model import LLMModel
 
 
 from ...types.mime import MIMEData, BaseMIMEData
@@ -213,7 +212,7 @@ class UpdateMailBoxRequest(BaseModel):
     image_settings: Optional[ImageSettings] = None
     modality: Optional[Modality] = None
     # Others DocumentExtraction Parameters
-    model: Optional[LLMModel] = None
+    model: Optional[str] = None
     temperature: Optional[float] = None
     json_schema: Optional[Dict] = None
 
@@ -241,7 +240,7 @@ class UpdateExtractionLinkRequest(BaseModel):
     image_settings: Optional[ImageSettings] = None
     modality: Optional[Modality] = None
     # Others DocumentExtraction Parameters
-    model: Optional[LLMModel] = None
+    model: Optional[str] = None
     temperature: Optional[float] = None
     json_schema: Optional[Dict] = None
 

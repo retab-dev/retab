@@ -12,8 +12,6 @@ import uuid
 from ...types.documents.image_settings import ImageSettings
 from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.modalities import Modality
-from ...types.ai_model import LLMModel
-
 
 AnnotationStatus = Literal["empty", "incomplete", "completed"]
 
@@ -33,7 +31,7 @@ class DatasetMembership(BaseModel):
 
 class BaseGenerateAnnotationRequest(BaseModel):
     dataset_id: str
-    model: LLMModel
+    model: str
     modality: Modality = "native"
     image_settings: ImageSettings = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
     temperature: float = 0.0

@@ -16,6 +16,8 @@ from ...types.automations.automations import ExtractionLinkConfig, UpdateExtract
 
 from ...types.mime import MIMEData
 
+from ..._utils.ai_model import assert_valid_model_extraction
+
 class ExtractionLink(SyncAPIResource):
     """Extraction Link API wrapper for managing extraction link configurations"""
     def create(
@@ -53,6 +55,8 @@ class ExtractionLink(SyncAPIResource):
         Returns:
             ExtractionLinkConfig: The created extraction link configuration
         """
+
+        assert_valid_model_extraction(model)
 
         data = {
             "name": name,
@@ -124,6 +128,7 @@ class ExtractionLink(SyncAPIResource):
         Returns:
             ExtractionLinkConfig: The updated extraction link configuration
         """
+
         data: dict[str, Any] = {}
         
         if link_id is not None:
@@ -141,6 +146,7 @@ class ExtractionLink(SyncAPIResource):
         if modality is not None:
             data["modality"] = modality
         if model is not None:
+            assert_valid_model_extraction(model)
             data["model"] = model
         if temperature is not None:
             data["temperature"] = temperature
