@@ -58,6 +58,11 @@ class AutomationConfig(DocumentExtractionConfig):
     
 from typing import ClassVar
 import os
+
+import re 
+from pydantic import field_validator
+domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
+
 class MailboxConfig(AutomationConfig):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'devmail.uiform.com')}$"
     object: Literal['mailbox'] = "mailbox"
@@ -68,6 +73,12 @@ class MailboxConfig(AutomationConfig):
     authorized_domains: list[str] = Field(default_factory=list, description = "List of authorized domains to receive the emails from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
 
+    @field_validator('authorized_domains', mode='before')
+    def validate_domain(cls, domain: str) -> str:
+        if not domain_pattern.match(domain):
+            raise ValueError(f"Invalid domain: {domain}")
+        return domain
+    
     def model_dump(
         self,
         **kwargs: Any,
