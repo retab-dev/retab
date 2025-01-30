@@ -101,7 +101,6 @@ class MailboxConfig(AutomationConfig):
     
 
 
-LinkProtection = Literal["unprotected", "invite-only"]
 
 class ExtractionLinkConfig(AutomationConfig):
     object: Literal['extraction_link'] = "extraction_link"
