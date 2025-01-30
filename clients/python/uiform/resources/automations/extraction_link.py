@@ -12,11 +12,14 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_settings import ImageSettings
 
 from ..._utils.mime import prepare_mime_document
-from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest, AutomationLog
+from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest, AutomationLog, ListExtractionLinkLogs, ListExtractionLinks
 
 from ...types.mime import MIMEData
 
 from ..._utils.ai_model import assert_valid_model_extraction
+
+
+
 
 class ExtractionLink(SyncAPIResource):
     """Extraction Link API wrapper for managing extraction link configurations"""
@@ -72,19 +75,44 @@ class ExtractionLink(SyncAPIResource):
 
         request = ExtractionLinkConfig.model_validate(data)
 
-        response = self._client._request("POST", "/api/v1/extraction-link/extraction-link", data=request.model_dump(mode='json'))
+        response = self._client._request("POST", "/api/v1/extraction-link/", data=request.model_dump(mode='json'))
         
         return ExtractionLinkConfig.model_validate(response)
 
-    def list(self) -> List[ExtractionLinkConfig]:
-        """List all extraction link configurations.
+    def list(
+        self,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        limit: Optional[int] = 10,
+        order: Optional[Literal["asc", "desc"]] = "desc"
+    ) -> ListExtractionLinks:
+        """List extraction link configurations with pagination support.
         
+        Args:
+            before: Optional cursor for pagination before a specific link ID
+            after: Optional cursor for pagination after a specific link ID
+            limit: Optional limit on number of results (max 100)
+            order: Optional sort order ("asc" or "desc")
+            
         Returns:
-            List[ExtractionLinkConfig]: List of extraction link configurations
+            ListExtractionLinks: Paginated list of extraction link configurations with metadata
         """
-        response = self._client._request("GET", "/api/v1/extraction-link/extraction-link")
+        params = {
+            "before": before,
+            "after": after,
+            "limit": limit,
+            "order": order
+        }
+        # Remove None values
+        params = {k: v for k, v in params.items() if v is not None}
+        
+        response = self._client._request(
+            "GET", 
+            "/api/v1/extraction-link/",
+            params=params
+        )
 
-        return [ExtractionLinkConfig.model_validate(link) for link in response]
+        return ListExtractionLinks.model_validate(response)
 
     def get(self, link_id: str) -> ExtractionLinkConfig:
         """Get a specific extraction link configuration.
@@ -95,7 +123,7 @@ class ExtractionLink(SyncAPIResource):
         Returns:
             ExtractionLinkConfig: The extraction link configuration
         """
-        response = self._client._request("GET", f"/api/v1/extraction-link/extraction-link/{link_id}")
+        response = self._client._request("GET", f"/api/v1/extraction-link/{link_id}")
         return ExtractionLinkConfig.model_validate(response)
 
     def update(
@@ -155,7 +183,7 @@ class ExtractionLink(SyncAPIResource):
 
         request = UpdateExtractionLinkRequest.model_validate(data)
 
-        response = self._client._request("PUT", f"/api/v1/extraction-link/extraction-link/{link_id}", data=request.model_dump(mode='json'))
+        response = self._client._request("PUT", f"/api/v1/extraction-link/{link_id}", data=request.model_dump(mode='json'))
 
         return ExtractionLinkConfig.model_validate(response)
 
@@ -172,6 +200,39 @@ class ExtractionLink(SyncAPIResource):
 
     
 
+    def list_logs(
+        self,
+        link_id: str | None = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc"
+    ) -> ListExtractionLinkLogs:
+        """Get logs for extraction links with pagination support.
+        
+        Args:
+            link_id: Optional ID of a specific extraction link to filter logs for
+            before: Optional cursor for pagination - get results before this log ID
+            after: Optional cursor for pagination - get results after this log ID  
+            limit: Maximum number of logs to return (1-100, default 10)
+            order: Sort order by creation time - "asc" or "desc" (default "desc")
+            
+        Returns:
+            ListExtractionLinkLogsResponse: Paginated list of logs and metadata
+        """
+        params = {
+            "link_id": link_id,
+            "before": before,
+            "after": after,
+            "limit": limit,
+            "order": order
+        }
+        # Remove None values
+        params = {k: v for k, v in params.items() if v is not None}
+        
+        response = self._client._request("GET", "/api/v1/extraction-link/logs/", params=params)
+        return ListExtractionLinkLogs.model_validate(response)
+
     def test_document_upload(self, 
                          link_id: str,
                          document: Path | str | IOBase | HttpUrl | Image | MIMEData,
@@ -187,7 +248,7 @@ class ExtractionLink(SyncAPIResource):
         """
 
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/test-document-upload/{link_id}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/api/v1/extraction-link/test/document-upload/{link_id}", data={"document": mime_document.model_dump()})
 
         log = AutomationLog.model_validate(response)
 
@@ -229,7 +290,7 @@ class ExtractionLink(SyncAPIResource):
             AutomationLog: The simulated webhook response
         """
 
-        response = self._client._request("POST", f"/api/v1/extraction-link/extraction-link/test-webhook/{link_id}")
+        response = self._client._request("POST", f"/api/v1/extraction-link/test/webhook/{link_id}")
 
         log = AutomationLog.model_validate(response)
 

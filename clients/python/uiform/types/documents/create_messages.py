@@ -320,7 +320,7 @@ class DocumentMessage(BaseModel):
     id: str
     """A unique identifier for the document loading."""
 
-    object: Literal["document.message"] = Field(default="document.message")
+    object: Literal["document_message"] = Field(default="document_message")
     """The type of object being loaded."""
 
     messages: List[ChatCompletionUiformMessage] 

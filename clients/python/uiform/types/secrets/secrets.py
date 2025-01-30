@@ -15,4 +15,3 @@ class ExternalAPIKeyResponse(BaseModel):
     provider: AIProvider
     is_configured: bool
     last_updated: Optional[datetime]
-    api_key: Optional[str] = None

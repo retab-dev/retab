@@ -19,7 +19,7 @@ from ...types.modalities import Modality
 from ...types.documents.create_messages import ChatCompletionUiformMessage 
 from ...types.documents.image_settings import ImageSettings
 from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractionConfig
-
+from ...types.pagination import ListMetadata
 
 from ...types.mime import MIMEData, BaseMIMEData
 
@@ -103,6 +103,7 @@ class MailboxConfig(AutomationConfig):
 
 
 
+
 class ExtractionLinkConfig(AutomationConfig):
     object: Literal['extraction_link'] = "extraction_link"
     id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
@@ -128,6 +129,10 @@ class ExtractionLinkConfig(AutomationConfig):
     
     def __repr__(self) -> str:
         return self.__str__()
+    
+class ListExtractionLinks(BaseModel):
+    data: list[ExtractionLinkConfig]
+    list_metadata: ListMetadata
     
 class CronSchedule(BaseModel):
     second: Optional[int] = Field(0, ge=0, le=59, description="Second (0-59), defaults to 0")
@@ -175,11 +180,11 @@ class ExternalRequestLog(BaseModel):
     webhook_url: Optional[HttpUrl]
     request_body: dict[str, Any]
     request_headers: dict[str, str]
-    request_timestamp: datetime.datetime
+    request_at: datetime.datetime
 
     response_body: dict[str, Any]
     response_headers: dict[str, str]
-    response_timestamp: datetime.datetime
+    response_at: datetime.datetime
 
     status_code: int
     error: Optional[str] = None
@@ -189,7 +194,7 @@ class InternalLog(BaseModel):
     automation_snapshot:  Optional[MailboxConfig| ExtractionLinkConfig| ScrappingConfig| ExtractionEndpointConfig]
     file_metadata: BaseMIMEData
     extraction: Optional[DocumentExtractResponse]
-    received_timestamp: Optional[datetime.datetime]
+    received_at: Optional[datetime.datetime]
 
 class AutomationLog(BaseModel):
     object: Literal['automation_log'] = "automation_log"
@@ -199,7 +204,9 @@ class AutomationLog(BaseModel):
     internal_log: InternalLog
     external_request_log: ExternalRequestLog
 
-
+class ListExtractionLinkLogs(BaseModel):
+    data: List[AutomationLog]
+    list_metadata: ListMetadata
 
 # ------------------------------
 # ------------------------------
