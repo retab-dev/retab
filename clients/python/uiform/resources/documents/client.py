@@ -73,7 +73,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         if not mime_document.mime_type.startswith("image/"):
             raise ValueError("Image is not a valid image")
 
-        response = self._client._request("POST", "/api/v1/documents/correct_image_orientation", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", "/v1/documents/correct_image_orientation", data={"document": mime_document.model_dump()})
         mime_response = MIMEData.model_validate(response['document'])
         return convert_mime_data_to_pil_image(mime_response)
 
@@ -105,7 +105,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         """
         loading_request = self._prepare_create_messages(document, modality, image_settings)
 
-        response = self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
+        response = self._client._request("POST", "/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
         return DocumentMessage.model_validate(response)
 
 
@@ -140,7 +140,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         print(loading_request.model_dump().keys())
         print(loading_request.model_dump())
-        response = await self._client._request("POST", "/api/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
+        response = await self._client._request("POST", "/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
         return DocumentMessage.model_validate(response)
 
     async def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
@@ -168,6 +168,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         if not mime_document.mime_type.startswith("image/"):
             raise ValueError("Image is not a valid image")
 
-        response = await self._client._request("POST", "/api/v1/documents/correct_image_orientation", data={"document": mime_document.model_dump()})
+        response = await self._client._request("POST", "/v1/documents/correct_image_orientation", data={"document": mime_document.model_dump()})
         mime_response = MIMEData.model_validate(response['document'])
         return convert_mime_data_to_pil_image(mime_response)

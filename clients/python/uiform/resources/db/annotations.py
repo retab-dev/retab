@@ -35,7 +35,7 @@ class Annotations(SyncAPIResource):
             "data": data,
             "status": status
         }
-        response = self._client._request("POST", "/api/v1/db/annotations", data=data, raise_for_status=True)
+        response = self._client._request("POST", "/v1/db/annotations", data=data, raise_for_status=True)
         return Annotation(**response)
 
     def get(self, annotation_id: str) -> Annotation:
@@ -47,7 +47,7 @@ class Annotations(SyncAPIResource):
         Returns:
             Annotation: The annotation object
         """
-        response = self._client._request("GET", f"/api/v1/db/annotations/{annotation_id}")
+        response = self._client._request("GET", f"/v1/db/annotations/{annotation_id}")
         return Annotation(**response)
 
     def list(
@@ -91,7 +91,7 @@ class Annotations(SyncAPIResource):
         if order:
             params["order"] = order
             
-        response = self._client._request("GET", "/api/v1/db/annotations", params=params, raise_for_status=True)
+        response = self._client._request("GET", "/v1/db/annotations", params=params, raise_for_status=True)
         return [Annotation(**item) for item in response["items"]]
 
     def update(
@@ -114,7 +114,7 @@ class Annotations(SyncAPIResource):
             data["status"] = status
         if data is not None:
             data["data"] = data
-        response = self._client._request("PUT", f"/api/v1/db/annotations/{annotation_id}", data=data)
+        response = self._client._request("PUT", f"/v1/db/annotations/{annotation_id}", data=data)
         return Annotation(**response)
 
     def delete(self, annotation_id: str) -> None:
@@ -123,7 +123,7 @@ class Annotations(SyncAPIResource):
         Args:
             annotation_id: The ID of the annotation to delete
         """
-        self._client._request("DELETE", f"/api/v1/db/annotations/{annotation_id}")
+        self._client._request("DELETE", f"/v1/db/annotations/{annotation_id}")
     
 
     
@@ -165,6 +165,6 @@ class Annotations(SyncAPIResource):
             data["image_settings"] = image_settings
 
         request = GenerateAnnotationRequest.model_validate(data)
-        response = self._client._request("POST", "/api/v1/db/annotations/generate", data=request.model_dump())
+        response = self._client._request("POST", "/v1/db/annotations/generate", data=request.model_dump())
 
         return Annotation(**response)

@@ -27,7 +27,7 @@ class Files(SyncAPIResource):
         """
         response = self._client._request(
             "GET", 
-            f"/api/v1/db/files/{file_id}/download-link"
+            f"/v1/db/files/{file_id}/download-link"
         )
         return FileLink.model_validate(response)
     
@@ -70,7 +70,7 @@ class Files(SyncAPIResource):
         if dataset_name:
             params["dataset_name"] = dataset_name
 
-        response = self._client._request("POST", "/api/v1/db/files", params=params)
+        response = self._client._request("POST", "/v1/db/files", params=params)
 
         return DBFile(**response)
     
@@ -83,7 +83,7 @@ class Files(SyncAPIResource):
         Returns:
             DBFile: The file object
         """
-        response = self._client._request("GET", f"/api/v1/db/files/{file_id}")
+        response = self._client._request("GET", f"/v1/db/files/{file_id}")
         return DBFile(**response)
     
     def download(self, file_id: str) -> MIMEData:
@@ -102,7 +102,7 @@ class Files(SyncAPIResource):
         # Then download the content
         response = self._client._request(
             "GET",
-            f"/api/v1/db/files/{file_id}/download",
+            f"/v1/db/files/{file_id}/download",
         )
         
         # Create and return MIMEData object
@@ -116,7 +116,7 @@ class Files(SyncAPIResource):
             file_id: The ID of the file to delete
             
         """
-        self._client._request("DELETE", f"/api/v1/db/files/{file_id}")
+        self._client._request("DELETE", f"/v1/db/files/{file_id}")
 
     def list(
         self,
@@ -162,5 +162,5 @@ class Files(SyncAPIResource):
         if order:
             params["order"] = order
             
-        response = self._client._request("GET", "/api/v1/db/files", params=params)
+        response = self._client._request("GET", "/v1/db/files", params=params)
         return [DBFile(**item) for item in response["items"]]

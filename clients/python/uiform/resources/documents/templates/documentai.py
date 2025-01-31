@@ -142,7 +142,7 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = self.prepare_parse(template, document, image_settings, model, temperature, messages, modality, store)
-        response = self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
+        response = self._client._request("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
     @as_context_manager
@@ -184,7 +184,7 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
 
         # Request the stream and return a context manager
         chunk_json: Any = None
-        for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
+        for chunk_json in self._client._request_stream("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:
                 continue
             yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
@@ -220,7 +220,7 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
             DocumentExtractResponse: Parsed response from the API.
         """
         request = self.prepare_parse(template, document, image_settings, model, temperature, messages, modality, store)
-        response = await self._client._request("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
+        response = await self._client._request("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
         return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
 
     @as_async_context_manager
@@ -258,7 +258,7 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
         """
         request = self.prepare_stream(template, document, image_settings, model, temperature, messages, modality, store)
         chunk_json: Any = None
-        async for chunk_json in self._client._request_stream("POST", "/api/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
+        async for chunk_json in self._client._request_stream("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:
                 continue
             

@@ -39,7 +39,7 @@ class Datasets(SyncAPIResource):
             "name": name,
             "description": description
         }
-        response = self._client._request("POST", "/api/v1/db/datasets", data=data, raise_for_status=True)
+        response = self._client._request("POST", "/v1/db/datasets", data=data, raise_for_status=True)
         return Dataset(**response)
     
     def clone(
@@ -66,7 +66,7 @@ class Datasets(SyncAPIResource):
             "description": description,
             "json_schema": json_schema
         }
-        response = self._client._request("POST", f"/api/v1/db/datasets/clone", data=data)
+        response = self._client._request("POST", f"/v1/db/datasets/clone", data=data)
         return Dataset(**response)
 
     def get(self, dataset_id: str) -> Dataset:
@@ -78,7 +78,7 @@ class Datasets(SyncAPIResource):
         Returns:
             Dataset: The dataset object
         """
-        response = self._client._request("GET", f"/api/v1/db/datasets/{dataset_id}")
+        response = self._client._request("GET", f"/v1/db/datasets/{dataset_id}")
         return Dataset(**response)
 
     def list(
@@ -123,7 +123,7 @@ class Datasets(SyncAPIResource):
         if order:
             params["order"] = order
             
-        response = self._client._request("GET", "/api/v1/db/datasets", params=params, raise_for_status=True)
+        response = self._client._request("GET", "/v1/db/datasets", params=params, raise_for_status=True)
         return [Dataset(**item) for item in response["items"]]
 
     def update(
@@ -151,7 +151,7 @@ class Datasets(SyncAPIResource):
         if description is not None:
             data["description"] = description
             
-        response = self._client._request("PUT", f"/api/v1/db/datasets/{dataset_id}", data=data)
+        response = self._client._request("PUT", f"/v1/db/datasets/{dataset_id}", data=data)
         return Dataset(**response)
 
     def delete(self, dataset_id: str, force: bool = False) -> None:
@@ -162,7 +162,7 @@ class Datasets(SyncAPIResource):
             force: If True, delete the dataset even if it has annotations
         """
 
-        self._client._request("DELETE", f"/api/v1/db/datasets/{dataset_id}", params={"force": force})
+        self._client._request("DELETE", f"/v1/db/datasets/{dataset_id}", params={"force": force})
 
     def annotation_status(self, dataset_id: str) -> DatasetAnnotationStatus:
         """Get annotation statistics for a dataset.
@@ -179,7 +179,7 @@ class Datasets(SyncAPIResource):
         """
         response = self._client._request(
             "GET",
-            f"/api/v1/db/datasets/{dataset_id}/annotation-status"
+            f"/v1/db/datasets/{dataset_id}/annotation-status"
         )
         return DatasetAnnotationStatus(**response)
 
@@ -273,7 +273,7 @@ class Datasets(SyncAPIResource):
         files = self._prepare_file_upload([annotations_file])
         response = self._client._request(
             "POST",
-            f"/api/v1/datasets/annotated-datasets/{annotated_dataset_id}/bulk-annotate",
+            f"/v1/datasets/annotated-datasets/{annotated_dataset_id}/bulk-annotate",
             files=[("files", files[0])]
         )
         return BulkAnnotationResponse.model_validate(response)

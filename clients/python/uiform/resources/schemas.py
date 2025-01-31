@@ -60,7 +60,7 @@ class Schemas(SyncAPIResource):
 
         PromptifyRequest.model_validate(data)
         
-        return Schema.model_validate(self._client._request("POST", "/api/v1/schemas/promptify", data=data))
+        return Schema.model_validate(self._client._request("POST", "/v1/schemas/promptify", data=data))
 
     def generate(self,
                 documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
@@ -98,7 +98,7 @@ class Schemas(SyncAPIResource):
         
         GenerateSchemaRequest.model_validate(data)
 
-        return Schema.model_validate(self._client._request("POST", "/api/v1/schemas/generate", data=data))
+        return Schema.model_validate(self._client._request("POST", "/v1/schemas/generate", data=data))
         
 
 
@@ -145,7 +145,7 @@ class AsyncSchemas(AsyncAPIResource):
 
         PromptifyRequest.model_validate(data)
         
-        return Schema.model_validate(await self._client._request("POST", "/api/v1/schemas/promptify", data=data))
+        return Schema.model_validate(await self._client._request("POST", "/v1/schemas/promptify", data=data))
 
     async def generate(self,
                     documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
@@ -183,4 +183,4 @@ class AsyncSchemas(AsyncAPIResource):
 
         GenerateSchemaRequest.model_validate(data)
 
-        return Schema.model_validate(await self._client._request("POST", "/api/v1/schemas/generate", data=data))
+        return Schema.model_validate(await self._client._request("POST", "/v1/schemas/generate", data=data))

@@ -35,13 +35,13 @@ class PromptOptimizationJobs(SyncAPIResource, PromptOptimizationJobsMixin):
         """Create a new prompt optimization job"""
 
         request_data = self.prepare_create(raw_schema, training_file, schema_optimization_props)
-        response = self._client._request("POST", "/api/v1/jobs", data=request_data.model_dump(mode="json"))
+        response = self._client._request("POST", "/v1/jobs", data=request_data.model_dump(mode="json"))
         return JobResponse.model_validate(response)
 
 
     def retrieve(self, job_id: str) -> Any:
         """Retrieve status of a prompt optimization job"""
-        response = self._client._request("GET", f"/api/v1/jobs/{job_id}")
+        response = self._client._request("GET", f"/v1/jobs/{job_id}")
         return JobResponse.model_validate(response)
 
 class AsyncPromptOptimizationJobs(AsyncAPIResource, PromptOptimizationJobsMixin):
@@ -49,13 +49,13 @@ class AsyncPromptOptimizationJobs(AsyncAPIResource, PromptOptimizationJobsMixin)
         """Create a new prompt optimization job"""
 
         request_data = self.prepare_create(raw_schema, training_file, schema_optimization_props)
-        response = await self._client._request("POST", "/api/v1/jobs/", data=request_data.model_dump(mode="json"))
+        response = await self._client._request("POST", "/v1/jobs/", data=request_data.model_dump(mode="json"))
         return JobResponse.model_validate(response)
 
     async def retrieve(self, job_id: str) -> Any:
         """Retrieve status of a prompt optimization job"""
 
-        response = await self._client._request("GET", f"/api/v1/jobs/{job_id}")
+        response = await self._client._request("GET", f"/v1/jobs/{job_id}")
         return JobResponse.model_validate(response)
 
 

@@ -24,7 +24,7 @@ class DatasetMemberships(SyncAPIResource):
             "file_id": file_id,
             "dataset_id": dataset_id
         }
-        response = self._client._request("POST", "/api/v1/db/dataset-memberships", data=data)
+        response = self._client._request("POST", "/v1/db/dataset-memberships", data=data)
         return DatasetMembership(**response)
 
     def get(self, dataset_membership_id: str) -> DatasetMembership:
@@ -36,7 +36,7 @@ class DatasetMemberships(SyncAPIResource):
         Returns:
             DatasetMembership: The dataset membership object
         """
-        response = self._client._request("GET", f"/api/v1/db/dataset-memberships/{dataset_membership_id}")
+        response = self._client._request("GET", f"/v1/db/dataset-memberships/{dataset_membership_id}")
         return DatasetMembership(**response)
 
     def list(
@@ -73,7 +73,7 @@ class DatasetMemberships(SyncAPIResource):
         if order:
             params["order"] = order
             
-        response = self._client._request("GET", "/api/v1/db/dataset-memberships", params=params)
+        response = self._client._request("GET", "/v1/db/dataset-memberships", params=params)
         return [DatasetMembership(**item) for item in response["items"]]
 
     def delete(self, dataset_membership_id: str) -> None:
@@ -82,6 +82,6 @@ class DatasetMemberships(SyncAPIResource):
         Args:
             dataset_membership_id: The ID of the dataset membership to delete
         """
-        self._client._request("DELETE", f"/api/v1/db/dataset-memberships/{dataset_membership_id}")
+        self._client._request("DELETE", f"/v1/db/dataset-memberships/{dataset_membership_id}")
 
 

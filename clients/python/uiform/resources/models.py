@@ -14,7 +14,7 @@ class Models(SyncAPIResource):
             HTTPException if the request fails
         """
 
-        return self._client._request("GET", "/api/v1/models")["content"]
+        return self._client._request("GET", "/v1/models")["content"]
 
     
 class AsyncModels(AsyncAPIResource): 
@@ -30,4 +30,4 @@ class AsyncModels(AsyncAPIResource):
             HTTPException if the request fails
         """
 
-        return (await self._client._request("GET", "/api/v1/models"))["content"]
+        return (await self._client._request("GET", "/v1/models"))["content"]
