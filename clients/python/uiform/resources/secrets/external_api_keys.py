@@ -1,7 +1,7 @@
 from typing import List
 
 from ..._resource import SyncAPIResource
-from ...types.secrets.secrets import  ExternalAPIKey, ExternalAPIKeyResponse
+from ...types.secrets.secrets import  ExternalAPIKeyRequest, ExternalAPIKey
 from ...types.ai_model import AIProvider
 
 import os
@@ -29,7 +29,7 @@ class ExternalAPIKeys(SyncAPIResource):
             "api_key": api_key
         }
 
-        request = ExternalAPIKey.model_validate(data)
+        request = ExternalAPIKeyRequest.model_validate(data)
         response = self._client._request(
             "POST",
             "/v1/iam/external_api_keys",
@@ -57,7 +57,7 @@ class ExternalAPIKeys(SyncAPIResource):
             "api_key": api_key
         }
 
-        request = ExternalAPIKey.model_validate(data)
+        request = ExternalAPIKeyRequest.model_validate(data)
         response = self._client._request(
             "PUT",
             "/v1/iam/external_api_keys",
@@ -68,34 +68,34 @@ class ExternalAPIKeys(SyncAPIResource):
 
     def get(self,
         provider: AIProvider,
-    ) -> ExternalAPIKeyResponse:
+    ) -> ExternalAPIKey:
         """Get an external API key configuration.
 
         Args:
             provider: The API provider to get the key for
 
         Returns:
-            ExternalAPIKeyResponse: The API key configuration
+            ExternalAPIKey: The API key configuration
         """
         response = self._client._request(
             "GET",
             f"/v1/iam/external_api_keys/{provider}"
         )
 
-        return ExternalAPIKeyResponse.model_validate(response)
+        return ExternalAPIKey.model_validate(response)
     
-    def list(self) -> List[ExternalAPIKeyResponse]:
+    def list(self) -> List[ExternalAPIKey]:
         """List all configured external API keys.
 
         Returns:
-            List[ExternalAPIKeyResponse]: List of API key configurations
+            List[ExternalAPIKey]: List of API key configurations
         """
         response = self._client._request(
             "GET",
             f"/v1/iam/external_api_keys"
         )
 
-        return [ExternalAPIKeyResponse.model_validate(key) for key in response]
+        return [ExternalAPIKey.model_validate(key) for key in response]
 
 
 

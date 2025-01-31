@@ -54,10 +54,10 @@ import re
 from pydantic import field_validator
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
-class MailboxConfig(BaseModel):
+class ExtractionMailbox(BaseModel):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
-    object: Literal['mailbox'] = "mailbox"
-    id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
+    object: Literal['extraction_mailbox'] = "extraction_mailbox"
+    id: str = Field(default_factory=lambda: "emb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
     
     # Email Specific config
     email: str = Field(..., pattern=EMAIL_PATTERN)
@@ -89,7 +89,7 @@ class MailboxConfig(BaseModel):
 
 
 
-class ExtractionLinkConfig(BaseModel):
+class ExtractionLink(BaseModel):
     object: Literal['extraction_link'] = "extraction_link"
     id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
     
@@ -110,7 +110,7 @@ class ExtractionLinkConfig(BaseModel):
 
     
 class ListExtractionLinks(BaseModel):
-    data: list[ExtractionLinkConfig]
+    data: list[ExtractionLink]
     list_metadata: ListMetadata
     
 class CronSchedule(BaseModel):
@@ -195,7 +195,7 @@ class ExternalRequestLog(BaseModel):
     duration_ms: float
 
 class InternalLog(BaseModel):
-    automation_snapshot:  Optional[MailboxConfig| ExtractionLinkConfig| ScrappingConfig| ExtractionEndpointConfig]
+    automation_snapshot:  Optional[ExtractionMailbox| ExtractionLink| ScrappingConfig| ExtractionEndpointConfig]
     file_metadata: BaseMIMEData
     extraction: Optional[DocumentExtractResponse]
     received_at: Optional[datetime.datetime]

@@ -5,12 +5,12 @@ from pydantic import BaseModel
 from ...types.ai_model import AIProvider
 
 
-class ExternalAPIKey(BaseModel):
+class ExternalAPIKeyRequest(BaseModel):
     """Request model for creating/updating API keys"""
     provider: AIProvider
     api_key: str
 
-class ExternalAPIKeyResponse(BaseModel):
+class ExternalAPIKey(BaseModel):
     """Response model for API key information"""
     provider: AIProvider
     is_configured: bool

@@ -15,7 +15,7 @@ from ...types.modalities import Modality
 from ..._utils.mime import prepare_mime_document
 
 
-from ...types.automations.automations import MailboxConfig, AutomationConfig, UpdateMailBoxRequest, AutomationLog
+from ...types.automations.automations import ExtractionMailbox, AutomationConfig, UpdateMailBoxRequest, AutomationLog
 
 from ..._utils.ai_model import assert_valid_model_extraction
 
@@ -41,7 +41,7 @@ class Emails(SyncAPIResource):
         model: str = "gpt-4o-mini",
         temperature: float = 0,
 
-    ) -> MailboxConfig:
+    ) -> ExtractionMailbox:
         """Create a new email automation configuration.
         
         Args:
@@ -57,7 +57,7 @@ class Emails(SyncAPIResource):
             temperature: Model temperature setting
             
         Returns:
-            MailboxConfig: The created mailbox configuration
+            ExtractionMailbox: The created mailbox configuration
         """
 
         assert_valid_model_extraction(model)
@@ -75,32 +75,32 @@ class Emails(SyncAPIResource):
             "temperature": temperature,
         }
 
-        request = MailboxConfig.model_validate(data)
-        response = self._client._request("POST", "/v1/emails", data=request.model_dump(mode="json"))
+        request = ExtractionMailbox.model_validate(data)
+        response = self._client._request("POST", "/v1/emails/", data=request.model_dump(mode="json"))
 
-        return MailboxConfig.model_validate(response)
+        return ExtractionMailbox.model_validate(response)
 
-    def list(self) -> List[MailboxConfig]:
+    def list(self) -> List[ExtractionMailbox]:
         """List all email automation configurations.
         
         Returns:
-            List[MailboxConfig]: List of mailbox configurations
+            List[ExtractionMailbox]: List of mailbox configurations
         """
         response = self._client._request("GET", "/v1/emails")
 
-        return [MailboxConfig.model_validate(mailbox) for mailbox in response]
+        return [ExtractionMailbox.model_validate(mailbox) for mailbox in response]
 
-    def get(self, email: str) -> MailboxConfig:
+    def get(self, email: str) -> ExtractionMailbox:
         """Get a specific email automation configuration.
         
         Args:
             email: Email address of the mailbox
             
         Returns:
-            MailboxConfig: The mailbox configuration
+            ExtractionMailbox: The mailbox configuration
         """
         response = self._client._request("GET", f"/v1/emails/{email}")
-        return MailboxConfig.model_validate(response)
+        return ExtractionMailbox.model_validate(response)
 
     def update(
         self,
@@ -114,7 +114,7 @@ class Emails(SyncAPIResource):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         json_schema: Optional[Dict[str, Any]] = None
-    ) -> MailboxConfig:
+    ) -> ExtractionMailbox:
         """Update an email automation configuration.
         
         Args:
@@ -133,7 +133,7 @@ class Emails(SyncAPIResource):
             json_schema: New JSON schema
             
         Returns:
-            MailboxConfig: The updated mailbox configuration
+            ExtractionMailbox: The updated mailbox configuration
         """
         data: dict[str, Any] = {}
         if webhook_url is not None:
@@ -160,7 +160,7 @@ class Emails(SyncAPIResource):
 
         response = self._client._request("PUT", f"/v1/emails/{email}", data=update_mailbox_request.model_dump())
 
-        return MailboxConfig(**response)
+        return ExtractionMailbox(**response)
 
     def delete(self, email: str) -> None:
         """Delete an email automation configuration.

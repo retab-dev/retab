@@ -12,7 +12,7 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_settings import ImageSettings
 
 from ..._utils.mime import prepare_mime_document
-from ...types.automations.automations import ExtractionLinkConfig, UpdateExtractionLinkRequest, AutomationLog, ListExtractionLinkLogs, ListExtractionLinks
+from ...types.automations.automations import ExtractionLink, UpdateExtractionLinkRequest, AutomationLog, ListExtractionLinkLogs, ListExtractionLinks
 
 from ...types.mime import MIMEData
 
@@ -37,7 +37,7 @@ class ExtractionLink(SyncAPIResource):
         model: str = "gpt-4o-mini",
         temperature: float = 0,
 
-    ) -> ExtractionLinkConfig:
+    ) -> ExtractionLink:
         """Create a new extraction link configuration.
         
         Args:
@@ -52,7 +52,7 @@ class ExtractionLink(SyncAPIResource):
             temperature: Model temperature setting
             
         Returns:
-            ExtractionLinkConfig: The created extraction link configuration
+            ExtractionLink: The created extraction link configuration
         """
 
         assert_valid_model_extraction(model)
@@ -69,13 +69,13 @@ class ExtractionLink(SyncAPIResource):
             "temperature": temperature,
         }
 
-        request = ExtractionLinkConfig.model_validate(data)
+        request = ExtractionLink.model_validate(data)
 
         response = self._client._request("POST", "/v1/extraction-link", data=request.model_dump(mode='json'))
 
         print(f"Extraction Link Created. Link available at https://uiform.com/extraction-links/{response["id"]}")
         
-        return ExtractionLinkConfig.model_validate(response)
+        return ExtractionLink.model_validate(response)
 
     def list(
         self,
@@ -122,17 +122,17 @@ class ExtractionLink(SyncAPIResource):
 
         return ListExtractionLinks.model_validate(response)
 
-    def get(self, link_id: str) -> ExtractionLinkConfig:
+    def get(self, link_id: str) -> ExtractionLink:
         """Get a specific extraction link configuration.
         
         Args:
             link_id: ID of the extraction link
             
         Returns:
-            ExtractionLinkConfig: The extraction link configuration
+            ExtractionLink: The extraction link configuration
         """
         response = self._client._request("GET", f"/v1/extraction-link/{link_id}")
-        return ExtractionLinkConfig.model_validate(response)
+        return ExtractionLink.model_validate(response)
 
     def update(
         self,
@@ -146,7 +146,7 @@ class ExtractionLink(SyncAPIResource):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         json_schema: Optional[Dict[str, Any]] = None
-    ) -> ExtractionLinkConfig:
+    ) -> ExtractionLink:
         """Update an extraction link configuration.
         
         Args:
@@ -162,7 +162,7 @@ class ExtractionLink(SyncAPIResource):
             json_schema: New JSON schema
             
         Returns:
-            ExtractionLinkConfig: The updated extraction link configuration
+            ExtractionLink: The updated extraction link configuration
         """
 
         data: dict[str, Any] = {}
@@ -193,7 +193,7 @@ class ExtractionLink(SyncAPIResource):
 
         response = self._client._request("PUT", f"/v1/extraction-link/{link_id}", data=request.model_dump(mode='json'))
 
-        return ExtractionLinkConfig.model_validate(response)
+        return ExtractionLink.model_validate(response)
 
     def delete(self, link_id: str) -> None:
         """Delete an extraction link configuration.
