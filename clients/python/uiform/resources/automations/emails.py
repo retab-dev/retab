@@ -76,7 +76,7 @@ class Emails(SyncAPIResource):
         }
 
         request = MailboxConfig.model_validate(data)
-        response = self._client._request("POST", "/v1/emails/", data=request.model_dump(mode="json"))
+        response = self._client._request("POST", "/v1/emails", data=request.model_dump(mode="json"))
 
         return MailboxConfig.model_validate(response)
 
@@ -86,7 +86,7 @@ class Emails(SyncAPIResource):
         Returns:
             List[MailboxConfig]: List of mailbox configurations
         """
-        response = self._client._request("GET", "/v1/emails/")
+        response = self._client._request("GET", "/v1/emails")
 
         return [MailboxConfig.model_validate(mailbox) for mailbox in response]
 

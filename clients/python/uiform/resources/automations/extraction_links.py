@@ -71,7 +71,7 @@ class ExtractionLink(SyncAPIResource):
 
         request = ExtractionLinkConfig.model_validate(data)
 
-        response = self._client._request("POST", "/v1/extraction-link/", data=request.model_dump(mode='json'))
+        response = self._client._request("POST", "/v1/extraction-link", data=request.model_dump(mode='json'))
 
         print(f"Extraction Link Created. Link available at https://uiform.com/extraction-links/{response["id"]}")
         
@@ -116,7 +116,7 @@ class ExtractionLink(SyncAPIResource):
         
         response = self._client._request(
             "GET", 
-            "/v1/extraction-link/",
+            "/v1/extraction-link",
             params=params
         )
 
