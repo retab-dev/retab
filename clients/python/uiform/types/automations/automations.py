@@ -1,26 +1,14 @@
-from pydantic import BaseModel, Field
-from typing import Literal, Optional, Dict
-
-from typing import Any, Optional, Literal, List, Dict
-
-from ..._resource import SyncAPIResource, AsyncAPIResource
-
-from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ...types.modalities import Modality
-
-from typing import Any, Optional, Literal, List, Dict
+from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator
+from typing import Any, Optional, Literal, List, Dict, ClassVar
 import uuid
 import datetime
-from pydantic import HttpUrl, EmailStr
+import os
+import re 
 
-from ..._resource import SyncAPIResource, AsyncAPIResource
-from ...types.modalities import Modality
-
-from ...types.documents.create_messages import ChatCompletionUiformMessage 
 from ...types.documents.image_settings import ImageSettings
-from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractionConfig
+from ...types.documents.parse import DocumentExtractResponse
 from ...types.pagination import ListMetadata
-
+from ...types.modalities import Modality
 from ...types.mime import MIMEData, BaseMIMEData
 
 # Never used anywhere in the logs, but will be useful
@@ -47,17 +35,13 @@ class AutomationConfig(BaseModel):
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
     
-from typing import ClassVar
-import os
 
-import re 
-from pydantic import field_validator
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
-class ExtractionMailbox(BaseModel):
+class Mailbox(BaseModel):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
-    object: Literal['extraction_mailbox'] = "extraction_mailbox"
-    id: str = Field(default_factory=lambda: "emb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
+    object: Literal['mailbox'] = "mailbox"
+    id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
     
     # Email Specific config
     email: str = Field(..., pattern=EMAIL_PATTERN)
@@ -89,9 +73,9 @@ class ExtractionMailbox(BaseModel):
 
 
 
-class ExtractionLink(BaseModel):
-    object: Literal['extraction_link'] = "extraction_link"
-    id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
+class Link(BaseModel):
+    object: Literal['link'] = "link"
+    id: str = Field(default_factory=lambda: "lnk_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
     
     # Link Specific Config
     name: str = Field(..., description = "Name of the link")
@@ -109,8 +93,8 @@ class ExtractionLink(BaseModel):
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
     
-class ListExtractionLinks(BaseModel):
-    data: list[ExtractionLink]
+class ListLinks(BaseModel):
+    data: list[Link]
     list_metadata: ListMetadata
     
 class CronSchedule(BaseModel):
@@ -157,8 +141,8 @@ class OutlookConfig(BaseModel):
 
 
 class ExtractionEndpointConfig(BaseModel):
-    object: Literal['extraction_endpoint'] = "extraction_endpoint"
-    id: str = Field(default_factory=lambda: "extraction_endpoint_" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
+    object: Literal['endpoint'] = "endpoint"
+    id: str = Field(default_factory=lambda: "endp" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
     
     # Extraction Endpoint Specific Config
     name: str = Field(..., description="Name of the extraction endpoint")
@@ -195,7 +179,7 @@ class ExternalRequestLog(BaseModel):
     duration_ms: float
 
 class InternalLog(BaseModel):
-    automation_snapshot:  Optional[ExtractionMailbox| ExtractionLink| ScrappingConfig| ExtractionEndpointConfig]
+    automation_snapshot:  Optional[Mailbox| Link| ScrappingConfig| ExtractionEndpointConfig]
     file_metadata: BaseMIMEData
     extraction: Optional[DocumentExtractResponse]
     received_at: Optional[datetime.datetime]
@@ -208,7 +192,7 @@ class AutomationLog(BaseModel):
     internal_log: InternalLog
     external_request_log: ExternalRequestLog
 
-class ListExtractionLinkLogs(BaseModel):
+class ListLinkLogs(BaseModel):
     data: List[AutomationLog]
     list_metadata: ListMetadata
 
@@ -216,7 +200,7 @@ class ListExtractionLinkLogs(BaseModel):
 # ------------------------------
 # ------------------------------
 
-class UpdateMailBoxRequest(BaseModel):
+class UpdateMailboxRequest(BaseModel):
 
     authorized_domains: Optional[list[str]] = None
     authorized_emails: Optional[List[EmailStr]] = None
@@ -240,7 +224,7 @@ class UpdateMailBoxRequest(BaseModel):
 
    
 
-class UpdateExtractionLinkRequest(BaseModel):
+class UpdateLinkRequest(BaseModel):
     id: str
 
     # ------------------------------

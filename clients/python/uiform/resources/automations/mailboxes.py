@@ -1,5 +1,5 @@
-from typing import Any, Optional, Literal, List, Dict
-from pydantic import HttpUrl, EmailStr
+from typing import Any, Optional, List, Dict
+from pydantic import HttpUrl
 import json
 from PIL.Image import Image
 from pathlib import Path
@@ -7,20 +7,23 @@ from io import IOBase
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
-from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_settings import ImageSettings
 from ...types.mime import MIMEData, EmailData
 from ...types.modalities import Modality
+from ...types.automations.automations import Mailbox, UpdateMailboxRequest, AutomationLog
 
 from ..._utils.mime import prepare_mime_document
-
-
-from ...types.automations.automations import ExtractionMailbox, AutomationConfig, UpdateMailBoxRequest, AutomationLog
-
 from ..._utils.ai_model import assert_valid_model_extraction
 
-class Emails(SyncAPIResource):
+
+
+
+class Mailboxes(SyncAPIResource):
     """Emails API wrapper for managing email automation configurations"""
+
+    def __init__(self, client: Any) -> None:
+        super().__init__(client=client)
+        self.tests = TestMailboxes(client=client)
 
     def create(
         self,
@@ -41,7 +44,7 @@ class Emails(SyncAPIResource):
         model: str = "gpt-4o-mini",
         temperature: float = 0,
 
-    ) -> ExtractionMailbox:
+    ) -> Mailbox:
         """Create a new email automation configuration.
         
         Args:
@@ -57,7 +60,7 @@ class Emails(SyncAPIResource):
             temperature: Model temperature setting
             
         Returns:
-            ExtractionMailbox: The created mailbox configuration
+            Mailbox: The created mailbox configuration
         """
 
         assert_valid_model_extraction(model)
@@ -75,32 +78,32 @@ class Emails(SyncAPIResource):
             "temperature": temperature,
         }
 
-        request = ExtractionMailbox.model_validate(data)
+        request = Mailbox.model_validate(data)
         response = self._client._request("POST", "/v1/automations/mailboxes/", data=request.model_dump(mode="json"))
 
-        return ExtractionMailbox.model_validate(response)
+        return Mailbox.model_validate(response)
 
-    def list(self) -> List[ExtractionMailbox]:
+    def list(self) -> List[Mailbox]:
         """List all email automation configurations.
         
         Returns:
-            List[ExtractionMailbox]: List of mailbox configurations
+            List[Mailbox]: List of mailbox configurations
         """
         response = self._client._request("GET", "/v1/automations/mailboxes")
 
-        return [ExtractionMailbox.model_validate(mailbox) for mailbox in response]
+        return [Mailbox.model_validate(mailbox) for mailbox in response]
 
-    def get(self, email: str) -> ExtractionMailbox:
+    def get(self, email: str) -> Mailbox:
         """Get a specific email automation configuration.
         
         Args:
             email: Email address of the mailbox
             
         Returns:
-            ExtractionMailbox: The mailbox configuration
+            Mailbox: The mailbox configuration
         """
         response = self._client._request("GET", f"/v1/automations/mailboxes/{email}")
-        return ExtractionMailbox.model_validate(response)
+        return Mailbox.model_validate(response)
 
     def update(
         self,
@@ -114,7 +117,7 @@ class Emails(SyncAPIResource):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         json_schema: Optional[Dict[str, Any]] = None
-    ) -> ExtractionMailbox:
+    ) -> Mailbox:
         """Update an email automation configuration.
         
         Args:
@@ -133,7 +136,7 @@ class Emails(SyncAPIResource):
             json_schema: New JSON schema
             
         Returns:
-            ExtractionMailbox: The updated mailbox configuration
+            Mailbox: The updated mailbox configuration
         """
         data: dict[str, Any] = {}
         if webhook_url is not None:
@@ -156,11 +159,11 @@ class Emails(SyncAPIResource):
         if json_schema is not None:
             data["json_schema"] = json_schema
 
-        update_mailbox_request = UpdateMailBoxRequest.model_validate(data)
+        update_mailbox_request = UpdateMailboxRequest.model_validate(data)
 
         response = self._client._request("PUT", f"/v1/automations/mailboxes/{email}", data=update_mailbox_request.model_dump())
 
-        return ExtractionMailbox(**response)
+        return Mailbox(**response)
 
     def delete(self, email: str) -> None:
         """Delete an email automation configuration.
@@ -186,12 +189,13 @@ class Emails(SyncAPIResource):
 
 
 
+class TestMailboxes(SyncAPIResource):
 
-    def test_email_forwarding(self, 
-                         email: str,
-                         document: Path | str | IOBase | HttpUrl | MIMEData,
-                         verbose: bool = True
-                         ) -> EmailData:
+    def forwarding(self, 
+                    email: str,
+                    document: Path | str | IOBase | HttpUrl | MIMEData,
+                    verbose: bool = True
+                    ) -> EmailData:
         """Mock endpoint that simulates the complete email forwarding process with sample data.
         
         Args:
@@ -201,7 +205,7 @@ class Emails(SyncAPIResource):
             DocumentExtractResponse: The simulated extraction response
         """
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/automations/mailboxes/test-email-forwarding/{email}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/v1/automations/mailboxes/tests/forwarding/{email}", data={"document": mime_document.model_dump()})
 
         email_data = EmailData.model_validate(response)
         
@@ -222,7 +226,7 @@ class Emails(SyncAPIResource):
 
         return email_data
 
-    def test_email_processing(self, 
+    def processing(self, 
                          email: str,
                          document: Path | str | IOBase | HttpUrl | Image | MIMEData,
                          verbose: bool = True
@@ -236,7 +240,7 @@ class Emails(SyncAPIResource):
             DocumentExtractResponse: The simulated extraction response
         """
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/automations/mailboxes/test-email-processing/{email}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/v1/automations/mailboxes/tests/processing/{email}", data={"document": mime_document.model_dump()})
 
         log = AutomationLog.model_validate(response)
 
@@ -265,7 +269,7 @@ class Emails(SyncAPIResource):
         return log
     
 
-    def test_webhook(self, 
+    def webhook(self, 
                           email: str,
                           verbose: bool = True
                           ) -> AutomationLog:
@@ -278,7 +282,7 @@ class Emails(SyncAPIResource):
             AutomationLog: The simulated webhook response
         """
 
-        response = self._client._request("POST", f"/v1/automations/mailboxes/test-webhook/{email}")
+        response = self._client._request("POST", f"/v1/automations/mailboxes/tests/webhook/{email}")
 
         log = AutomationLog.model_validate(response)
 

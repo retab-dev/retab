@@ -12,7 +12,7 @@ from ...types.documents.create_messages import ChatCompletionUiformMessage
 from ...types.documents.image_settings import ImageSettings
 
 from ..._utils.mime import prepare_mime_document
-from ...types.automations.automations import ExtractionLink, UpdateExtractionLinkRequest, AutomationLog, ListExtractionLinkLogs, ListExtractionLinks
+from ...types.automations.automations import Link, UpdateLinkRequest, AutomationLog, ListLinkLogs, ListLinks
 
 from ...types.mime import MIMEData
 
@@ -21,12 +21,12 @@ from ..._utils.ai_model import assert_valid_model_extraction
 
 
 
-class ExtractionLinks(SyncAPIResource):
+class Links(SyncAPIResource):
     """Extraction Link API wrapper for managing extraction link configurations"""
     
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.test = TestExtractionLinks(client=client)
+        self.tests = TestLinks(client=client)
 
     def create(
         self,
@@ -42,7 +42,7 @@ class ExtractionLinks(SyncAPIResource):
         model: str = "gpt-4o-mini",
         temperature: float = 0,
 
-    ) -> ExtractionLink:
+    ) -> Link:
         """Create a new extraction link configuration.
         
         Args:
@@ -57,7 +57,7 @@ class ExtractionLinks(SyncAPIResource):
             temperature: Model temperature setting
             
         Returns:
-            ExtractionLink: The created extraction link configuration
+            Link: The created extraction link configuration
         """
 
         assert_valid_model_extraction(model)
@@ -74,13 +74,13 @@ class ExtractionLinks(SyncAPIResource):
             "temperature": temperature,
         }
 
-        request = ExtractionLink.model_validate(data)
+        request = Link.model_validate(data)
 
-        response = self._client._request("POST", "/v1/automations/linkss", data=request.model_dump(mode='json'))
+        response = self._client._request("POST", "/v1/automations/links", data=request.model_dump(mode='json'))
 
         print(f"Extraction Link Created. Link available at https://uiform.com/extraction-links/{response["id"]}")
         
-        return ExtractionLink.model_validate(response)
+        return Link.model_validate(response)
 
     def list(
         self,   
@@ -92,7 +92,7 @@ class ExtractionLinks(SyncAPIResource):
         link_id: Optional[str] = None,
         name: Optional[str] = None,
         webhook_url: Optional[str] = None
-    ) -> ListExtractionLinks:
+    ) -> ListLinks:
         """List extraction link configurations with pagination support.
         
         Args:
@@ -105,7 +105,7 @@ class ExtractionLinks(SyncAPIResource):
             webhook_url: Optional filter by webhook URL
             
         Returns:
-            ListExtractionLinks: Paginated list of extraction link configurations with metadata
+            ListLinks: Paginated list of extraction link configurations with metadata
         """
         params = {
             "before": before,
@@ -125,19 +125,19 @@ class ExtractionLinks(SyncAPIResource):
             params=params
         )
 
-        return ListExtractionLinks.model_validate(response)
+        return ListLinks.model_validate(response)
 
-    def get(self, link_id: str) -> ExtractionLink:
+    def get(self, link_id: str) -> Link:
         """Get a specific extraction link configuration.
         
         Args:
             link_id: ID of the extraction link
             
         Returns:
-            ExtractionLink: The extraction link configuration
+            Link: The extraction link configuration
         """
-        response = self._client._request("GET", f"/v1/automations/linkss/{link_id}")
-        return ExtractionLink.model_validate(response)
+        response = self._client._request("GET", f"/v1/automations/links/{link_id}")
+        return Link.model_validate(response)
 
     def update(
         self,
@@ -151,7 +151,7 @@ class ExtractionLinks(SyncAPIResource):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         json_schema: Optional[Dict[str, Any]] = None
-    ) -> ExtractionLink:
+    ) -> Link:
         """Update an extraction link configuration.
         
         Args:
@@ -167,7 +167,7 @@ class ExtractionLinks(SyncAPIResource):
             json_schema: New JSON schema
             
         Returns:
-            ExtractionLink: The updated extraction link configuration
+            Link: The updated extraction link configuration
         """
 
         data: dict[str, Any] = {}
@@ -194,11 +194,11 @@ class ExtractionLinks(SyncAPIResource):
         if json_schema is not None:
             data["json_schema"] = json_schema
 
-        request = UpdateExtractionLinkRequest.model_validate(data)
+        request = UpdateLinkRequest.model_validate(data)
 
-        response = self._client._request("PUT", f"/v1/automations/linkss/{link_id}", data=request.model_dump(mode='json'))
+        response = self._client._request("PUT", f"/v1/automations/links/{link_id}", data=request.model_dump(mode='json'))
 
-        return ExtractionLink.model_validate(response)
+        return Link.model_validate(response)
 
     def delete(self, link_id: str) -> None:
         """Delete an extraction link configuration.
@@ -209,7 +209,7 @@ class ExtractionLinks(SyncAPIResource):
         Returns:
             Dict[str, str]: Response message confirming deletion
         """
-        self._client._request("DELETE", f"/v1/automations/linkss/{link_id}")
+        self._client._request("DELETE", f"/v1/automations/links/{link_id}")
 
     
 
@@ -220,7 +220,7 @@ class ExtractionLinks(SyncAPIResource):
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc"
-    ) -> ListExtractionLinkLogs:
+    ) -> ListLinkLogs:
         """Get logs for extraction links with pagination support.
         
         Args:
@@ -231,7 +231,7 @@ class ExtractionLinks(SyncAPIResource):
             order: Sort order by creation time - "asc" or "desc" (default "desc")
             
         Returns:
-            ListExtractionLinkLogsResponse: Paginated list of logs and metadata
+            ListLinkLogsResponse: Paginated list of logs and metadata
         """
         params = {
             "link_id": link_id,
@@ -243,17 +243,17 @@ class ExtractionLinks(SyncAPIResource):
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
         
-        response = self._client._request("GET", "/v1/automations/linkss/logs/", params=params)
-        return ListExtractionLinkLogs.model_validate(response)
+        response = self._client._request("GET", "/v1/automations/links/logs/", params=params)
+        return ListLinkLogs.model_validate(response)
 
     
 
 
 
-class TestExtractionLinks(SyncAPIResource):
+class TestLinks(SyncAPIResource):
     """Test Extraction Link API wrapper for testing extraction link configurations"""
 
-    def document_upload(self, 
+    def upload(self, 
                          link_id: str,
                          document: Path | str | IOBase | HttpUrl | Image | MIMEData,
                          verbose: bool = True
@@ -268,7 +268,7 @@ class TestExtractionLinks(SyncAPIResource):
         """
 
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/automations/linkss/test/document-upload/{link_id}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/v1/automations/links/test/upload/{link_id}", data={"document": mime_document.model_dump()})
 
         log = AutomationLog.model_validate(response)
 
@@ -310,7 +310,7 @@ class TestExtractionLinks(SyncAPIResource):
             AutomationLog: The simulated webhook response
         """
 
-        response = self._client._request("POST", f"/v1/automations/linkss/test/webhook/{link_id}")
+        response = self._client._request("POST", f"/v1/automations/links/test/webhook/{link_id}")
 
         log = AutomationLog.model_validate(response)
 

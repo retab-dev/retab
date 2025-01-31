@@ -6,7 +6,7 @@ from pydantic import HttpUrl
 
 
 from ...types.modalities import Modality
-from ...types.mime import MIMEData, BaseMIMEData
+from ...types.mime import MIMEData
 from ..._utils.mime import prepare_mime_document, convert_mime_data_to_pil_image
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
