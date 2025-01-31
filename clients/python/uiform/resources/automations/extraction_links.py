@@ -45,11 +45,7 @@ class ExtractionLink(SyncAPIResource):
             json_schema: JSON schema to validate extracted data
             webhook_url: Webhook endpoint for forwarding processed files
             webhook_headers: Optional HTTP headers for webhook requests
-            max_file_size: Optional maximum file size in MB
-            file_payload: Optional flag to forward original file
-            protection_type: Protection type for the link
             password: Optional password for protected links
-            invitations: Optional list of authorized email addresses
             image_settings: Optional image preprocessing operations
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing

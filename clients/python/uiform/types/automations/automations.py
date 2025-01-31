@@ -29,7 +29,7 @@ class HttpOutput(BaseModel):
     payload: Optional[MIMEData] # MIMEData forwarded to the mailbox, or to the link
     user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
 
-class AutomationConfig(DocumentExtractionConfig):
+class AutomationConfig(BaseModel):
     object: str
     id: str
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
@@ -38,23 +38,14 @@ class AutomationConfig(DocumentExtractionConfig):
     webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
     webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
 
-    def model_dump(
-        self,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        data = super().model_dump(**kwargs)
-        parent_fields = set(DocumentExtractionConfig.model_fields.keys())
-        child_keys = [k for k in data if k not in parent_fields]
-        parent_keys = [k for k in data if k in parent_fields]
-        return {k: data[k] for k in (child_keys + parent_keys)}
-    
-    def __str__(self) -> str:
-        data = self.model_dump()
-        items = [f"{k}={repr(v)}" for k, v in data.items()]
-        return f"{self.__class__.__name__}({', '.join(items)})"
-    
-    def __repr__(self) -> str:
-        return self.__str__()
+    modality: Modality
+    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+
+    # New attributes
+    model: str = Field(..., description="Model used for chat completion")
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+
     
 from typing import ClassVar
 import os
@@ -63,7 +54,7 @@ import re
 from pydantic import field_validator
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
-class MailboxConfig(AutomationConfig):
+class MailboxConfig(BaseModel):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
     object: Literal['mailbox'] = "mailbox"
     id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
@@ -73,6 +64,19 @@ class MailboxConfig(AutomationConfig):
     authorized_domains: list[str] = Field(default_factory=list, description = "List of authorized domains to receive the emails from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
 
+    # Automation Config
+    webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
+    webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+    # DocumentExtraction Config
+    modality: Modality
+    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    model: str = Field(..., description="Model used for chat completion")
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+
+    
     @field_validator('authorized_domains', mode='before')
     def validate_domain(cls, list_domains: list[str]) -> list[str]:
         for domain in list_domains:
@@ -80,31 +84,12 @@ class MailboxConfig(AutomationConfig):
                 raise ValueError(f"Invalid domain: {domain}")
         return list_domains
     
-    def model_dump(
-        self,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        data = super().model_dump(**kwargs)
-        parent_fields = set(DocumentExtractionConfig.model_fields.keys())
-        child_keys = [k for k in data if k not in parent_fields]
-        parent_keys = [k for k in data if k in parent_fields]
-        return {k: data[k] for k in (child_keys + parent_keys)}
-    
-    def __str__(self) -> str:
-        data = self.model_dump()
-        items = [f"{k}={repr(v)}" for k, v in data.items()]
-        return f"{self.__class__.__name__}({', '.join(items)})"
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    
     
 
 
 
 
-class ExtractionLinkConfig(AutomationConfig):
+class ExtractionLinkConfig(BaseModel):
     object: Literal['extraction_link'] = "extraction_link"
     id: str = Field(default_factory=lambda: "el_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
     
@@ -112,23 +97,17 @@ class ExtractionLinkConfig(AutomationConfig):
     name: str = Field(..., description = "Name of the link")
     password: Optional[str] = Field(None, description = "Password to access the link")
 
-    def model_dump(
-        self,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        data = super().model_dump(**kwargs)
-        parent_fields = set(DocumentExtractionConfig.model_fields.keys())
-        child_keys = [k for k in data if k not in parent_fields]
-        parent_keys = [k for k in data if k in parent_fields]
-        return {k: data[k] for k in (child_keys + parent_keys)}
+    # Automation Config
+    webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
+    webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    # DocumentExtraction Config
+    modality: Modality
+    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    model: str = Field(..., description="Model used for chat completion")
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
-    def __str__(self) -> str:
-        data = self.model_dump()
-        items = [f"{k}={repr(v)}" for k, v in data.items()]
-        return f"{self.__class__.__name__}({', '.join(items)})"
-    
-    def __repr__(self) -> str:
-        return self.__str__()
     
 class ListExtractionLinks(BaseModel):
     data: list[ExtractionLinkConfig]
@@ -156,19 +135,44 @@ class ScrappingConfig(AutomationConfig):
     schedule: CronSchedule
 
 
-class OutlookConfig(AutomationConfig):
+class OutlookConfig(BaseModel):
     object: Literal['outlook_plugin'] = "outlook_plugin"
     id: str = Field(default_factory=lambda: "outlook_" + str(uuid.uuid4()), description="Unique identifier for the outlook account")
     
     authorized_domains: list[str] = Field(default_factory=list, description = "List of authorized domains to connect to the plugin from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to connect to the plugin from")
 
-class ExtractionEndpointConfig(AutomationConfig):
+    # Automation Config
+    webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
+    webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    # DocumentExtraction Config
+    modality: Modality
+    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    model: str = Field(..., description="Model used for chat completion")
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+
+
+
+
+class ExtractionEndpointConfig(BaseModel):
     object: Literal['extraction_endpoint'] = "extraction_endpoint"
     id: str = Field(default_factory=lambda: "extraction_endpoint_" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
     
     # Extraction Endpoint Specific Config
     name: str = Field(..., description="Name of the extraction endpoint")
+
+    # Automation Config
+    webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
+    webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    # DocumentExtraction Config
+    modality: Modality
+    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    model: str = Field(..., description="Model used for chat completion")
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
 
 # ------------------------------
