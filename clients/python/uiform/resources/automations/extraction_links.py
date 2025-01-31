@@ -76,7 +76,7 @@ class ExtractionLinks(SyncAPIResource):
 
         request = ExtractionLink.model_validate(data)
 
-        response = self._client._request("POST", "/v1/extraction-links", data=request.model_dump(mode='json'))
+        response = self._client._request("POST", "/v1/automations/linkss", data=request.model_dump(mode='json'))
 
         print(f"Extraction Link Created. Link available at https://uiform.com/extraction-links/{response["id"]}")
         
@@ -121,7 +121,7 @@ class ExtractionLinks(SyncAPIResource):
         
         response = self._client._request(
             "GET", 
-            "/v1/extraction-link",
+            "/v1/automations/links",
             params=params
         )
 
@@ -136,7 +136,7 @@ class ExtractionLinks(SyncAPIResource):
         Returns:
             ExtractionLink: The extraction link configuration
         """
-        response = self._client._request("GET", f"/v1/extraction-links/{link_id}")
+        response = self._client._request("GET", f"/v1/automations/linkss/{link_id}")
         return ExtractionLink.model_validate(response)
 
     def update(
@@ -196,7 +196,7 @@ class ExtractionLinks(SyncAPIResource):
 
         request = UpdateExtractionLinkRequest.model_validate(data)
 
-        response = self._client._request("PUT", f"/v1/extraction-links/{link_id}", data=request.model_dump(mode='json'))
+        response = self._client._request("PUT", f"/v1/automations/linkss/{link_id}", data=request.model_dump(mode='json'))
 
         return ExtractionLink.model_validate(response)
 
@@ -209,7 +209,7 @@ class ExtractionLinks(SyncAPIResource):
         Returns:
             Dict[str, str]: Response message confirming deletion
         """
-        self._client._request("DELETE", f"/v1/extraction-links/{link_id}")
+        self._client._request("DELETE", f"/v1/automations/linkss/{link_id}")
 
     
 
@@ -243,7 +243,7 @@ class ExtractionLinks(SyncAPIResource):
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
         
-        response = self._client._request("GET", "/v1/extraction-links/logs/", params=params)
+        response = self._client._request("GET", "/v1/automations/linkss/logs/", params=params)
         return ListExtractionLinkLogs.model_validate(response)
 
     
@@ -268,7 +268,7 @@ class TestExtractionLinks(SyncAPIResource):
         """
 
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/extraction-links/test/document-upload/{link_id}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/v1/automations/linkss/test/document-upload/{link_id}", data={"document": mime_document.model_dump()})
 
         log = AutomationLog.model_validate(response)
 
@@ -310,7 +310,7 @@ class TestExtractionLinks(SyncAPIResource):
             AutomationLog: The simulated webhook response
         """
 
-        response = self._client._request("POST", f"/v1/extraction-links/test/webhook/{link_id}")
+        response = self._client._request("POST", f"/v1/automations/linkss/test/webhook/{link_id}")
 
         log = AutomationLog.model_validate(response)
 
