@@ -6,7 +6,7 @@ import json
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
 from .emails import Emails
-from .extraction_links import ExtractionLink
+from .extraction_links import ExtractionLinks
 
 class SignatureVerificationError(Exception):
     """Raised when webhook signature verification fails."""
@@ -18,7 +18,7 @@ class Automations(SyncAPIResource):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.emails = Emails(client=client)
-        self.extraction_links = ExtractionLink(client=client)
+        self.extraction_links = ExtractionLinks(client=client)
 
 
 
