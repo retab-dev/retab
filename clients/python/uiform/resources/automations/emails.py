@@ -76,8 +76,8 @@ class Emails(SyncAPIResource):
         }
 
         request = MailboxConfig.model_validate(data)
-        response = self._client._request("POST", "/v1/emails/mailbox", data=request.model_dump(mode="json"))
-        
+        response = self._client._request("POST", "/v1/emails/", data=request.model_dump(mode="json"))
+
         return MailboxConfig.model_validate(response)
 
     def list(self) -> List[MailboxConfig]:
@@ -86,7 +86,7 @@ class Emails(SyncAPIResource):
         Returns:
             List[MailboxConfig]: List of mailbox configurations
         """
-        response = self._client._request("GET", "/v1/emails/mailbox")
+        response = self._client._request("GET", "/v1/emails/")
 
         return [MailboxConfig.model_validate(mailbox) for mailbox in response]
 
@@ -99,7 +99,7 @@ class Emails(SyncAPIResource):
         Returns:
             MailboxConfig: The mailbox configuration
         """
-        response = self._client._request("GET", f"/v1/emails/mailbox/{email}")
+        response = self._client._request("GET", f"/v1/emails/{email}")
         return MailboxConfig.model_validate(response)
 
     def update(
@@ -158,7 +158,7 @@ class Emails(SyncAPIResource):
 
         update_mailbox_request = UpdateMailBoxRequest.model_validate(data)
 
-        response = self._client._request("PUT", f"/v1/emails/mailbox/{email}", data=update_mailbox_request.model_dump())
+        response = self._client._request("PUT", f"/v1/emails/{email}", data=update_mailbox_request.model_dump())
 
         return MailboxConfig(**response)
 
@@ -168,7 +168,7 @@ class Emails(SyncAPIResource):
         Args:
             email: Email address of the mailbox to delete
         """
-        response = self._client._request("DELETE", f"/v1/emails/mailbox/{email}")
+        response = self._client._request("DELETE", f"/v1/emails/{email}")
 
 
     def list_logs(self, email: str) -> List[AutomationLog]:
@@ -180,7 +180,7 @@ class Emails(SyncAPIResource):
         Returns:
             List[Dict[str, Any]]: List of log entries
         """
-        response = self._client._request("GET", f"/v1/emails/mailbox/{email}/logs")
+        response = self._client._request("GET", f"/v1/emails/{email}/logs")
 
         return [AutomationLog.model_validate(log) for log in response]
 
@@ -201,8 +201,8 @@ class Emails(SyncAPIResource):
             DocumentExtractResponse: The simulated extraction response
         """
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/emails/mailbox/test-email-forwarding/{email}", data={"document": mime_document.model_dump()})
-        
+        response = self._client._request("POST", f"/v1/emails/test-email-forwarding/{email}", data={"document": mime_document.model_dump()})
+
         email_data = EmailData.model_validate(response)
         
         if verbose:
@@ -236,8 +236,8 @@ class Emails(SyncAPIResource):
             DocumentExtractResponse: The simulated extraction response
         """
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/emails/mailbox/test-email-processing/{email}", data={"document": mime_document.model_dump()})
-        
+        response = self._client._request("POST", f"/v1/emails/test-email-processing/{email}", data={"document": mime_document.model_dump()})
+
         log = AutomationLog.model_validate(response)
 
         if verbose:
@@ -278,7 +278,7 @@ class Emails(SyncAPIResource):
             AutomationLog: The simulated webhook response
         """
 
-        response = self._client._request("POST", f"/v1/emails/mailbox/test-webhook/{email}")
+        response = self._client._request("POST", f"/v1/emails/test-webhook/{email}")
 
         log = AutomationLog.model_validate(response)
 
