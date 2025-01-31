@@ -298,9 +298,9 @@ class TestExtractionLinks(SyncAPIResource):
     
 
     def webhook(self, 
-                          link_id: str,
-                          verbose: bool = True
-                          ) -> AutomationLog:
+                link_id: str,
+                verbose: bool = True
+                ) -> AutomationLog:
         """Mock endpoint that simulates the complete webhook process with sample data.
         
         Args:

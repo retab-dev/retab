@@ -27,16 +27,16 @@ class DatasetMemberships(SyncAPIResource):
         response = self._client._request("POST", "/v1/db/dataset-memberships", data=data)
         return DatasetMembership(**response)
 
-    def get(self, dataset_membership_id: str) -> DatasetMembership:
+    def get(self, dataset_dataset_membership_id: str) -> DatasetMembership:
         """Get a specific dataset membership.
         
         Args:
-            dataset_membership_id: The ID of the dataset membership to retrieve
+            dataset_dataset_membership_id: The ID of the dataset membership to retrieve
             
         Returns:
             DatasetMembership: The dataset membership object
         """
-        response = self._client._request("GET", f"/v1/db/dataset-memberships/{dataset_membership_id}")
+        response = self._client._request("GET", f"/v1/db/dataset-memberships/{dataset_dataset_membership_id}")
         return DatasetMembership(**response)
 
     def list(
@@ -76,12 +76,12 @@ class DatasetMemberships(SyncAPIResource):
         response = self._client._request("GET", "/v1/db/dataset-memberships", params=params)
         return [DatasetMembership(**item) for item in response["items"]]
 
-    def delete(self, dataset_membership_id: str) -> None:
+    def delete(self, dataset_dataset_membership_id: str) -> None:
         """Delete a dataset membership.
         
         Args:
-            dataset_membership_id: The ID of the dataset membership to delete
+            dataset_dataset_membership_id: The ID of the dataset membership to delete
         """
-        self._client._request("DELETE", f"/v1/db/dataset-memberships/{dataset_membership_id}")
+        self._client._request("DELETE", f"/v1/db/dataset-memberships/{dataset_dataset_membership_id}")
 
 
