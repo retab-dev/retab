@@ -92,7 +92,7 @@ class ExternalAPIKeys(SyncAPIResource):
         """
         response = self._client._request(
             "GET",
-            f"/v1/iam/external_api_keys/list"
+            f"/v1/iam/external_api_keys"
         )
 
         return [ExternalAPIKeyResponse.model_validate(key) for key in response]

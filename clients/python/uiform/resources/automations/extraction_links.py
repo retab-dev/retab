@@ -80,7 +80,11 @@ class ExtractionLink(SyncAPIResource):
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
-        order: Optional[Literal["asc", "desc"]] = "desc"
+        order: Optional[Literal["asc", "desc"]] = "desc",
+        # Filtering parameters
+        link_id: Optional[str] = None,
+        name: Optional[str] = None,
+        webhook_url: Optional[str] = None
     ) -> ListExtractionLinks:
         """List extraction link configurations with pagination support.
         
@@ -89,6 +93,9 @@ class ExtractionLink(SyncAPIResource):
             after: Optional cursor for pagination after a specific link ID
             limit: Optional limit on number of results (max 100)
             order: Optional sort order ("asc" or "desc")
+            link_id: Optional filter by extraction link ID
+            name: Optional filter by link name
+            webhook_url: Optional filter by webhook URL
             
         Returns:
             ListExtractionLinks: Paginated list of extraction link configurations with metadata
@@ -97,7 +104,10 @@ class ExtractionLink(SyncAPIResource):
             "before": before,
             "after": after,
             "limit": limit,
-            "order": order
+            "order": order,
+            "link_id": link_id,
+            "name": name,
+            "webhook_url": webhook_url
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
