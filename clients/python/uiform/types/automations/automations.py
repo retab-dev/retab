@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator
+from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator, computed_field
 from typing import Any, Optional, Literal, List, Dict, ClassVar
 import uuid
 import datetime
@@ -10,6 +10,8 @@ from ...types.documents.parse import DocumentExtractResponse
 from ...types.pagination import ListMetadata
 from ...types.modalities import Modality
 from ...types.mime import MIMEData, BaseMIMEData
+
+from ...types.pricing.openai import Amount, compute_cost_from_model
 
 # Never used anywhere in the logs, but will be useful
 class HttpOutput(BaseModel): 
@@ -59,6 +61,16 @@ class Mailbox(BaseModel):
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+
+
+    # Normalize email fields (case-insensitive)
+    @field_validator("email", mode="before")
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
+
+    @field_validator("authorized_emails", mode="before")
+    def normalize_authorized_emails(cls, emails: List[str]) -> List[str]:
+        return [email.strip().lower() for email in emails]
 
     
     @field_validator('authorized_domains', mode='before')
@@ -182,6 +194,18 @@ class InternalLog(BaseModel):
     automation_snapshot:  Optional[Mailbox| Link| ScrappingConfig| ExtractionEndpointConfig]
     file_metadata: BaseMIMEData
     extraction: Optional[DocumentExtractResponse]
+
+    @computed_field # type: ignore
+    @property
+    def api_cost(self) -> Optional[Amount]:
+        if self.extraction and self.extraction.usage:
+            try: 
+                cost = compute_cost_from_model(self.extraction.model, self.extraction.usage)
+                return cost
+            except Exception as e:
+                print(f"Error computing cost: {e}")
+                return None
+        return None
 
 class AutomationLog(BaseModel):
     object: Literal['automation_log'] = "automation_log"

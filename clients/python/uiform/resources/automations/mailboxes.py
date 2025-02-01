@@ -174,6 +174,7 @@ class Mailboxes(SyncAPIResource):
         response = self._client._request("DELETE", f"/v1/automations/mailboxes/{email}")
 
 
+
     def list_logs(self, email: str) -> List[AutomationLog]:
         """Get logs for a specific email automation.
         
