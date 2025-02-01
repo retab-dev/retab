@@ -25,7 +25,7 @@ class Schema(BaseModel):
     object: Literal["schema"] = "schema"
     """The type of object being preprocessed."""
 
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     """The Unix timestamp (in seconds) of when the document was loaded."""
  
     json_schema: dict[str, Any] = {}

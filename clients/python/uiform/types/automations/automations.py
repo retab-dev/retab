@@ -4,6 +4,8 @@ import uuid
 import datetime
 import os
 import re 
+import copy
+import json
 
 from ...types.documents.image_settings import ImageSettings
 from ...types.documents.parse import DocumentExtractResponse
@@ -13,6 +15,8 @@ from ...types.mime import MIMEData, BaseMIMEData
 
 from ...types.usage import Amount
 from ..._utils.usage.usage import compute_cost_from_model
+from ..._utils.json_schema import clean_schema
+from ..._utils.mime import generate_sha_hash_from_string
 
 # Never used anywhere in the logs, but will be useful
 class HttpOutput(BaseModel): 
@@ -80,7 +84,31 @@ class Mailbox(BaseModel):
                 raise ValueError(f"Invalid domain: {domain}")
         return list_domains
     
-    
+    @computed_field   # type: ignore
+    @property
+    def data_id(self) -> str:
+        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
+        
+        Returns:
+            str: A SHA1 hash string representing the schema data version.
+        """
+        return "sch_data_" + generate_sha_hash_from_string(
+            json.dumps(
+                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
+                sort_keys=True).strip(), 
+            "sha1")
+
+    # This is a computed field, it is exposed when serializing the object
+    @computed_field   # type: ignore
+    @property
+    def schema_id(self) -> str:
+        """Returns the SHA1 hash of the complete schema.
+        
+        Returns:
+            str: A SHA1 hash string representing the complete schema version.
+        """
+        return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+
 
 
 
@@ -103,6 +131,31 @@ class Link(BaseModel):
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+
+    @computed_field   # type: ignore
+    @property
+    def data_id(self) -> str:
+        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
+        
+        Returns:
+            str: A SHA1 hash string representing the schema data version.
+        """
+        return "sch_data_" + generate_sha_hash_from_string(
+            json.dumps(
+                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
+                sort_keys=True).strip(), 
+            "sha1")
+
+    # This is a computed field, it is exposed when serializing the object
+    @computed_field   # type: ignore
+    @property
+    def schema_id(self) -> str:
+        """Returns the SHA1 hash of the complete schema.
+        
+        Returns:
+            str: A SHA1 hash string representing the complete schema version.
+        """
+        return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
 
     
 class ListLinks(BaseModel):
