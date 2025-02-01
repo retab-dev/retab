@@ -104,3 +104,28 @@ class Usage(SyncAPIResource):
             params=params
         )
         return Amount.model_validate(response)
+
+
+    def schema_data(self, schema_data_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> Amount:
+        """Get the total usage cost for a schema within an optional date range.
+
+            Args:
+                schema_id: The ID of the schema
+                start_date: Start date for usage calculation
+                end_date: End date for usage calculation
+
+            Returns:
+                Amount: The total usage cost
+        """
+        params = {}
+        if start_date:
+            params["start_date"] = start_date.isoformat()
+        if end_date:
+            params["end_date"] = end_date.isoformat()
+
+        response = self._client._request(
+            "GET",
+            f"/v1/schemas/{schema_data_id}/usage_data",
+            params=params
+        )
+        return Amount.model_validate(response)

@@ -86,13 +86,13 @@ class Mailbox(BaseModel):
     
     @computed_field   # type: ignore
     @property
-    def data_id(self) -> str:
+    def schema_data_id(self) -> str:
         """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
         
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return "sch_data_" + generate_sha_hash_from_string(
+        return "sch_data_id_" + generate_sha_hash_from_string(
             json.dumps(
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
                 sort_keys=True).strip(), 
@@ -134,13 +134,13 @@ class Link(BaseModel):
 
     @computed_field   # type: ignore
     @property
-    def data_id(self) -> str:
+    def schema_data_id(self) -> str:
         """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
         
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return "sch_data_" + generate_sha_hash_from_string(
+        return "sch_data_id_" + generate_sha_hash_from_string(
             json.dumps(
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
                 sort_keys=True).strip(), 
@@ -156,6 +156,7 @@ class Link(BaseModel):
             str: A SHA1 hash string representing the complete schema version.
         """
         return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+
 
     
 class ListLinks(BaseModel):
