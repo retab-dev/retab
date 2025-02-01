@@ -79,7 +79,7 @@ class Mailboxes(SyncAPIResource):
         }
 
         request = Mailbox.model_validate(data)
-        response = self._client._request("POST", "/v1/automations/mailboxes/", data=request.model_dump(mode="json"))
+        response = self._client._request("POST", "/v1/automations/mailboxes", data=request.model_dump(mode="json"))
 
         return Mailbox.model_validate(response)
 

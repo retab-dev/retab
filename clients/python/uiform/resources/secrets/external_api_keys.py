@@ -32,7 +32,7 @@ class ExternalAPIKeys(SyncAPIResource):
         request = ExternalAPIKeyRequest.model_validate(data)
         response = self._client._request(
             "POST",
-            "/v1/iam/external_api_keys",
+            "/v1/secrets",
             data=request.model_dump(mode="json")
         )
 
@@ -60,7 +60,7 @@ class ExternalAPIKeys(SyncAPIResource):
         request = ExternalAPIKeyRequest.model_validate(data)
         response = self._client._request(
             "PUT",
-            "/v1/iam/external_api_keys",
+            "/v1/secrets",
             data=request.model_dump(mode="json")
         )
 
@@ -79,7 +79,7 @@ class ExternalAPIKeys(SyncAPIResource):
         """
         response = self._client._request(
             "GET",
-            f"/v1/iam/external_api_keys/{provider}"
+            f"/v1/secrets/{provider}"
         )
 
         return ExternalAPIKey.model_validate(response)
@@ -92,7 +92,7 @@ class ExternalAPIKeys(SyncAPIResource):
         """
         response = self._client._request(
             "GET",
-            f"/v1/iam/external_api_keys"
+            f"/v1/secrets"
         )
 
         return [ExternalAPIKey.model_validate(key) for key in response]
@@ -110,7 +110,7 @@ class ExternalAPIKeys(SyncAPIResource):
         """
         response = self._client._request(
             "DELETE",
-            f"/v1/iam/external_api_keys/{provider}"
+            f"/v1/secrets/{provider}"
         )
 
         return response

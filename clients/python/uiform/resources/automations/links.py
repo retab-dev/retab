@@ -78,7 +78,7 @@ class Links(SyncAPIResource):
 
         response = self._client._request("POST", "/v1/automations/links", data=request.model_dump(mode='json'))
 
-        print(f"Extraction Link Created. Link available at https://uiform.com/extraction-links/{response["id"]}")
+        print(f"Extraction Link Created. Link available at https://uiform.com/links/{response["id"]}")
         
         return Link.model_validate(response)
 
@@ -268,7 +268,7 @@ class TestLinks(SyncAPIResource):
         """
 
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/automations/links/test/upload/{link_id}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/v1/automations/links/tests/upload/{link_id}", data={"document": mime_document.model_dump()})
 
         log = AutomationLog.model_validate(response)
 
@@ -310,7 +310,7 @@ class TestLinks(SyncAPIResource):
             AutomationLog: The simulated webhook response
         """
 
-        response = self._client._request("POST", f"/v1/automations/links/test/webhook/{link_id}")
+        response = self._client._request("POST", f"/v1/automations/links/tests/webhook/{link_id}")
 
         log = AutomationLog.model_validate(response)
 
