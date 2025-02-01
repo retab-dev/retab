@@ -71,7 +71,6 @@ class Mailbox(BaseModel):
     @field_validator("authorized_emails", mode="before")
     def normalize_authorized_emails(cls, emails: List[str]) -> List[str]:
         return [email.strip().lower() for email in emails]
-
     
     @field_validator('authorized_domains', mode='before')
     def validate_domain(cls, list_domains: list[str]) -> list[str]:
@@ -245,6 +244,10 @@ class UpdateMailboxRequest(BaseModel):
     model: Optional[str] = None
     temperature: Optional[float] = None
     json_schema: Optional[Dict] = None
+
+    @field_validator("authorized_emails", mode="before")
+    def normalize_authorized_emails(cls, emails: List[str]) -> List[str]:
+        return [email.strip().lower() for email in emails]
 
    
 
