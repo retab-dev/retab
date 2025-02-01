@@ -19,7 +19,7 @@ from .._utils.ai_model import assert_valid_model_schema_generation
 from typing import List
 
 import datetime
-from ..types.pricing.openai import Amount
+from ..types.usage import Amount
 
 total_cost = 0.0
 

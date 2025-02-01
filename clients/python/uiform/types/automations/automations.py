@@ -11,7 +11,8 @@ from ...types.pagination import ListMetadata
 from ...types.modalities import Modality
 from ...types.mime import MIMEData, BaseMIMEData
 
-from ...types.pricing.openai import Amount, compute_cost_from_model
+from ...types.usage import Amount
+from ..._utils.usage.usage import compute_cost_from_model
 
 # Never used anywhere in the logs, but will be useful
 class HttpOutput(BaseModel): 
