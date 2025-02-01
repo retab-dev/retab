@@ -16,12 +16,46 @@ from .._utils.json_schema import load_json_schema
 from .._utils.mime import prepare_mime_document_list
 from .._utils.ai_model import assert_valid_model_schema_generation
 
+from typing import List
+
+
 
 class Schemas(SyncAPIResource):
+
+    def list(self, 
+             schema_id: Optional[str] = None,
+             data_id: Optional[str] = None) -> List[Schema]:
+        """List all schemas.
+
+        Returns:
+            list[Schema]: The list of schemas
+        """
+
+        params = {}
+        if schema_id:
+            params["id"] = schema_id
+        if data_id:
+            params["data_id"] = data_id
+
+        return [Schema.model_validate(schema) for schema in self._client._request("GET", "/v1/schemas", params=params)]
+
+    def get(self, schema_id: str) -> Schema:
+        """Retrieve a schema by ID.
+
+        Args:
+            schema_id: The ID of the schema to retrieve
+
+        Returns:
+            Schema: The retrieved schema object
+        """
+        return Schema.model_validate(self._client._request("GET", f"/v1/schemas/{schema_id}"))
+
+    
+
     """Schemas API wrapper"""
     def promptify(self,
                raw_schema: dict[str, Any] | Path | str,
-               documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
+               documents: List[Path | str | bytes | IOBase | PIL.Image.Image],
                model: str = "gpt-4o-2024-08-06",
                temperature: float = 0,
                modality: Modality = "native") -> Schema:
@@ -63,7 +97,7 @@ class Schemas(SyncAPIResource):
         return Schema.model_validate(self._client._request("POST", "/v1/schemas/promptify", data=data))
 
     def generate(self,
-                documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
+                documents: List[Path | str | bytes | IOBase | PIL.Image.Image],
                 model: str = "gpt-4o-2024-11-20",
                 temperature: float = 0.0,
                 modality: Modality = "native") -> Schema:

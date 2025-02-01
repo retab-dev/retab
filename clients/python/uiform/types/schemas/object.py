@@ -16,25 +16,46 @@ from anthropic.types.message_param import MessageParam
 from anthropic._types import NotGiven
 
 from google.generativeai.types import content_types # type: ignore
+import uuid
 
-
+import datetime
 
 class Schema(BaseModel):
-
-    id: str | None = None
-    """A unique identifier for the document loading."""
 
     object: Literal["schema"] = "schema"
     """The type of object being preprocessed."""
 
-    messages: list[ChatCompletionUiformMessage] = Field(default=[], exclude=True, repr=False)
-    """A list of messages containing the system prompt and a user prompt."""
-
-    created: int | None = None
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     """The Unix timestamp (in seconds) of when the document was loaded."""
-
+ 
     json_schema: dict[str, Any] = {}
     """The JSON schema to use for loading."""
+
+    # This is a computed field, it is exposed when serializing the object
+    @computed_field   # type: ignore
+    @property
+    def data_id(self) -> str:
+        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
+        
+        Returns:
+            str: A SHA1 hash string representing the schema data version.
+        """
+        return generate_sha_hash_from_string(
+            json.dumps(
+                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
+                sort_keys=True).strip(), 
+            "sha1")
+
+    # This is a computed field, it is exposed when serializing the object
+    @computed_field   # type: ignore
+    @property
+    def id(self) -> str:
+        """Returns the SHA1 hash of the complete schema.
+        
+        Returns:
+            str: A SHA1 hash string representing the complete schema version.
+        """
+        return "sch_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
 
     pydantic_model: type[BaseModel] = Field(default=None, exclude=True, repr=False)     # type: ignore
 
@@ -61,31 +82,7 @@ class Schema(BaseModel):
         assert isinstance(inference_json_schema_, dict), "Validation Error: The inference_json_schema is not a dict"
         return inference_json_schema_
     
-    # This is a computed field, it is exposed when serializing the object
-    @computed_field   # type: ignore
-    @property
-    def schema_data_version(self) -> str:
-        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
-        
-        Returns:
-            str: A SHA1 hash string representing the schema data version.
-        """
-        return generate_sha_hash_from_string(
-            json.dumps(
-                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
-                sort_keys=True).strip(), 
-            "sha1")
-
-    # This is a computed field, it is exposed when serializing the object
-    @computed_field   # type: ignore
-    @property
-    def schema_version(self) -> str:
-        """Returns the SHA1 hash of the complete schema.
-        
-        Returns:
-            str: A SHA1 hash string representing the complete schema version.
-        """
-        return generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+   
     
     @property
     def openai_messages(self) -> list[ChatCompletionMessageParam]:
@@ -179,18 +176,6 @@ class Schema(BaseModel):
             str: The schema title or 'NoTitle' if not specified.
         """
         return self.json_schema.get("title", "NoTitle")
-
-    
-
-
-
-
-
-
-
-
-
-
 
 
     @property
@@ -403,12 +388,13 @@ class Schema(BaseModel):
 
         return data
 
+    
+    @property
+    def messages(self)-> list[ChatCompletionUiformMessage]: 
+        return [ChatCompletionUiformMessage(role="system", content=self.system_prompt)]
+
     @model_validator(mode="after")
     def model_after_validator(self) -> Self:
-        # Validate Messages
-        messages = getattr(self, "messages", [])
-        self.messages = [ChatCompletionUiformMessage(role="system", content=self.system_prompt)] + messages
-
         # Set the partial_pydantic_model
         self._partial_pydantic_model = convert_basemodel_to_partial_basemodel(self.pydantic_model)
 

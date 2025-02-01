@@ -182,7 +182,6 @@ class InternalLog(BaseModel):
     automation_snapshot:  Optional[Mailbox| Link| ScrappingConfig| ExtractionEndpointConfig]
     file_metadata: BaseMIMEData
     extraction: Optional[DocumentExtractResponse]
-    received_at: Optional[datetime.datetime]
 
 class AutomationLog(BaseModel):
     object: Literal['automation_log'] = "automation_log"
@@ -191,6 +190,7 @@ class AutomationLog(BaseModel):
     organization_id:str
     internal_log: InternalLog
     external_request_log: ExternalRequestLog
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 class ListLinkLogs(BaseModel):
     data: List[AutomationLog]
