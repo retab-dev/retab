@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional, List, Dict, Literal
 from pydantic import HttpUrl
 import json
 from PIL.Image import Image
@@ -83,13 +83,43 @@ class Mailboxes(SyncAPIResource):
 
         return Mailbox.model_validate(response)
 
-    def list(self) -> List[Mailbox]:
+    def list(self,
+            before: str | None = None,
+            after: str | None = None,
+            limit: int = 10,
+            order: Literal["asc", "desc"] | None = "desc",
+            email: Optional[str] = None,
+            webhook_url: Optional[str] = None,
+            schema_id: Optional[str] = None,
+            schema_data_id: Optional[str] = None,
+            ) -> List[Mailbox]:
         """List all email automation configurations.
+
+        Args:
+            before: Optional cursor for pagination - get results before this log ID
+            after: Optional cursor for pagination - get results after this log ID  
+            limit: Maximum number of logs to return (1-100, default 10)
+            order: Sort order by creation time - "asc" or "desc" (default "desc")
+            email: Optional email address filter
+            webhook_url: Optional webhook URL filter
+            schema_id: Optional schema ID filter
+            schema_data_id: Optional schema data ID filter
         
         Returns:
             List[Mailbox]: List of mailbox configurations
         """
-        response = self._client._request("GET", "/v1/automations/mailboxes")
+        params = {
+            "email": email,
+            "webhook_url": webhook_url,
+            "schema_id": schema_id,
+            "schema_data_id": schema_data_id,
+            "before": before,
+            "after": after,
+            "limit": limit,
+            "order": order,
+        }
+
+        response = self._client._request("GET", "/v1/automations/mailboxes", params=params)
 
         return [Mailbox.model_validate(mailbox) for mailbox in response]
 
@@ -175,16 +205,42 @@ class Mailboxes(SyncAPIResource):
 
 
 
-    def list_logs(self, email: str) -> List[AutomationLog]:
+    def logs(self, 
+                before: str | None = None,
+                after: str | None = None,
+                limit: int = 10,
+                order: Literal["asc", "desc"] | None = "desc",
+                email: Optional[str] = None,
+                webhook_url: Optional[str] = None,
+                schema_id: Optional[str] = None,
+                schema_data_id: Optional[str] = None,
+                ) -> List[AutomationLog]:
         """Get logs for a specific email automation.
         
         Args:
-            email: Email address of the mailbox
+            before: Optional cursor for pagination - get results before this log ID
+            after: Optional cursor for pagination - get results after this log ID  
+            limit: Maximum number of logs to return (1-100, default 10)
+            order: Sort order by creation time - "asc" or "desc" (default "desc")
+            email: Optional email address filter
+            webhook_url: Optional webhook URL filter
+            schema_id: Optional schema ID filter
+            schema_data_id: Optional schema data ID filter
             
         Returns:
             List[Dict[str, Any]]: List of log entries
         """
-        response = self._client._request("GET", f"/v1/automations/mailboxes/{email}/logs")
+        params = {
+            "email": email,
+            "webhook_url": webhook_url,
+            "schema_id": schema_id,
+            "schema_data_id": schema_data_id,
+            "before": before,
+            "after": after,
+            "limit": limit,
+            "order": order,
+        }
+        response = self._client._request("GET", f"/v1/automations/mailboxes/{email}/logs", params=params)
 
         return [AutomationLog.model_validate(log) for log in response]
 

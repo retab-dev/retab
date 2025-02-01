@@ -91,7 +91,9 @@ class Links(SyncAPIResource):
         # Filtering parameters
         link_id: Optional[str] = None,
         name: Optional[str] = None,
-        webhook_url: Optional[str] = None
+        webhook_url: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
     ) -> ListLinks:
         """List extraction link configurations with pagination support.
         
@@ -103,6 +105,8 @@ class Links(SyncAPIResource):
             link_id: Optional filter by extraction link ID
             name: Optional filter by link name
             webhook_url: Optional filter by webhook URL
+            schema_id: Optional filter by schema ID
+            schema_data_id: Optional filter by schema data ID
             
         Returns:
             ListLinks: Paginated list of extraction link configurations with metadata
@@ -114,7 +118,9 @@ class Links(SyncAPIResource):
             "order": order,
             "link_id": link_id,
             "name": name,
-            "webhook_url": webhook_url
+            "webhook_url": webhook_url,
+            "schema_id": schema_id,
+            "schema_data_id": schema_data_id,
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
@@ -213,28 +219,41 @@ class Links(SyncAPIResource):
 
     
 
-    def list_logs(
+    def logs(
         self,
-        link_id: str | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 10,
-        order: Literal["asc", "desc"] | None = "desc"
+        order: Literal["asc", "desc"] | None = "desc",
+        # Filtering parameters
+        link_id: Optional[str] = None,
+        name: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
     ) -> ListLinkLogs:
         """Get logs for extraction links with pagination support.
         
         Args:
-            link_id: Optional ID of a specific extraction link to filter logs for
             before: Optional cursor for pagination - get results before this log ID
             after: Optional cursor for pagination - get results after this log ID  
             limit: Maximum number of logs to return (1-100, default 10)
             order: Sort order by creation time - "asc" or "desc" (default "desc")
+            link_id: Optional ID of a specific extraction link to filter logs for
+            name: Optional filter by link name
+            webhook_url: Optional filter by webhook URL
+            schema_id: Optional filter by schema ID
+            schema_data_id: Optional filter by schema data ID
             
         Returns:
             ListLinkLogsResponse: Paginated list of logs and metadata
         """
         params = {
             "link_id": link_id,
+            "name": name,
+            "webhook_url": webhook_url,
+            "schema_id": schema_id,
+            "schema_data_id": schema_data_id,
             "before": before,
             "after": after,
             "limit": limit,
