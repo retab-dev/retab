@@ -7,8 +7,8 @@ from ...._resource import AsyncAPIResource, SyncAPIResource
 from ...._utils.ai_model import assert_valid_model_extraction
 from ...._utils.mime import prepare_mime_document
 from ...._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ....types.documents.create_messages import ChatCompletionUiformMessage
-from ....types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
+from ....types.chat import ChatCompletionUiformMessage
+from ....types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse
 from ....types.modalities import Modality
 from typing import Literal
 from pydantic import HttpUrl

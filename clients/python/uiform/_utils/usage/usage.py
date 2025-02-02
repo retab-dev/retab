@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional
 
 
 #https://platform.openai.com/docs/guides/prompt-caching
 from ...types.usage import Amount
-from openai.types.completion_usage import CompletionUsage, PromptTokensDetails, CompletionTokensDetails
+from openai.types.completion_usage import CompletionUsage
 from .openai import openai_pricing_list, compute_openai_api_call_cost
 
 # ─── PRICING MODELS ────────────────────────────────────────────────────────────

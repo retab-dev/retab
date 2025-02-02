@@ -1,41 +1,35 @@
-from pydantic import BaseModel, Field, PrivateAttr, ConfigDict, field_validator, ValidationInfo
-from typing import Any, Generic, Literal, List
-from functools import cached_property
-from openai.types.chat.chat_completion import Choice, ChatCompletion
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ContentType
+from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationInfo
+from typing import  Any
 
-from .image_settings import ImageSettings
-from .create_messages import DocumentProcessingConfig
+import datetime
+from functools import cached_property
+
+from ..._utils.ai_model import find_provider_from_model
+
 from ..modalities import Modality
 from ..ai_model import AIProvider
 from ..standards import ErrorDetail, StreamingBaseModel
-from ..schemas.object import Schema
-from ..._utils.ai_model import find_provider_from_model
-from ..._utils.mime import generate_sha_hash_from_base64
 from ..mime import MIMEData, BaseMIMEData
+from ..schemas.object import Schema
+from ..image_settings import ImageSettings
 
-import datetime
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
 
-class DocumentExtractionConfig(DocumentProcessingConfig):
-    # Redeclaration of the DocumentProcessingConfig
+
+class DocumentExtractRequest(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    document: MIMEData = Field(..., description="Document to be analyzed")
     modality: Modality
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
-
-    # New attributes
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
-
-class DocumentExtractRequest(DocumentExtractionConfig):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    
     # Regular fields
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
-    document: MIMEData = Field(..., description="Document to be analyzed")
 
     # Some properties (hidden from serialization)
     @property
@@ -84,7 +78,6 @@ class BaseDocumentExtractRequest(DocumentExtractRequest):
 #class UiParsedChoice(Choice):
 #    message: UiParsedChatCompletionMessage#
 #    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None     
-
 
 class UiParsedChatCompletion(ParsedChatCompletion): 
     #choices: List[UiParsedChoice] 

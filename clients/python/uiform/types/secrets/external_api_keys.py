@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
-from ...types.ai_model import AIProvider
+from ..ai_model import AIProvider
 
 
 class ExternalAPIKeyRequest(BaseModel):

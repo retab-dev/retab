@@ -1,0 +1,8 @@
+from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
+
+from typing import Union, Literal, Iterable, TypedDict
+
+
+class ChatCompletionUiformMessage(TypedDict):  # homemade replacement for ChatCompletionMessageParam because iterable messes the serialization with pydantic
+    role: Literal['user', 'system', 'assistant']
+    content : Union[str, list[ChatCompletionContentPartParam]]

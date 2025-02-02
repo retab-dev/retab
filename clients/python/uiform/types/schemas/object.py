@@ -1,24 +1,24 @@
+
+
 from pydantic import BaseModel, Field, computed_field, model_validator, PrivateAttr
 from typing import Any, Literal, cast, Self
-import json
 from pathlib import Path
+import datetime
 import copy
+import json
 
-from ..documents.create_messages import ChatCompletionUiformMessage
-from ..documents.create_messages import convert_to_google_genai_format, convert_to_anthropic_format
+from ..._utils.chat import convert_to_google_genai_format, convert_to_anthropic_format
+from ..chat import ChatCompletionUiformMessage
+
 from ..._utils.mime import generate_sha_hash_from_string
 from ..._utils.json_schema import clean_schema, json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-from openai.types.chat.completion_create_params import ResponseFormat
+from google.generativeai.types import content_types # type: ignore
 
 from anthropic.types.message_param import MessageParam
-from anthropic._types import NotGiven
 
-from google.generativeai.types import content_types # type: ignore
-import uuid
 
-import datetime
 
 class Schema(BaseModel):
 

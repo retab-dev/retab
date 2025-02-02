@@ -7,10 +7,11 @@ from io import IOBase
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
-from ...types.documents.image_settings import ImageSettings
+from ...types.image_settings import ImageSettings
 from ...types.mime import MIMEData, EmailData
 from ...types.modalities import Modality
-from ...types.automations.automations import Mailbox, UpdateMailboxRequest, AutomationLog
+from ...types.automations.mailboxes import Mailbox, UpdateMailboxRequest
+from ...types.logs import AutomationLog
 
 from ..._utils.mime import prepare_mime_document
 from ..._utils.ai_model import assert_valid_model_extraction
@@ -302,26 +303,26 @@ class TestMailboxes(SyncAPIResource):
         log = AutomationLog.model_validate(response)
 
         if verbose:
-            print(f"\nTEST EMAIL PROCESSING RESULTS:")
-            print(f"\n#########################")
-            print(f"Status Code: {log.external_request_log.status_code}")
-            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-            
-            if log.external_request_log.error:
-                print(f"\nERROR: {log.external_request_log.error}")
-            
-            if log.external_request_log.response_body:
-                print("\n--------------")
-                print("RESPONSE BODY:")
-                print("--------------")
+            if log.external_request_log:
+                print(f"\nTEST EMAIL PROCESSING RESULTS:")
+                print(f"\n#########################")
+                print(f"Status Code: {log.external_request_log.status_code}")
+                print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
+                
+                if log.external_request_log.error:
+                    print(f"\nERROR: {log.external_request_log.error}")
+                
+                if log.external_request_log.response_body:
+                    print("\n--------------")
+                    print("RESPONSE BODY:")
+                    print("--------------")
 
-                print(json.dumps(log.external_request_log.response_body, indent=2))
-            if log.external_request_log.response_headers:
-                print("\n--------------")
-                print("RESPONSE HEADERS:")
-                print("--------------")
-                print(json.dumps(log.external_request_log.response_headers, indent=2))
-
+                    print(json.dumps(log.external_request_log.response_body, indent=2))
+                if log.external_request_log.response_headers:
+                    print("\n--------------")
+                    print("RESPONSE HEADERS:")
+                    print("--------------")
+                    print(json.dumps(log.external_request_log.response_headers, indent=2))
 
         return log
     
@@ -344,24 +345,25 @@ class TestMailboxes(SyncAPIResource):
         log = AutomationLog.model_validate(response)
 
         if verbose:
-            print(f"\nTEST WEBHOOK RESULTS:")
-            print(f"\n#########################")
-            print(f"Status Code: {log.external_request_log.status_code}")
-            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-            
-            if log.external_request_log.error:
-                print(f"\nERROR: {log.external_request_log.error}")
-            
-            if log.external_request_log.response_body:
-                print("\n--------------")
-                print("RESPONSE BODY:")
-                print("--------------")
+            if log.external_request_log:
+                print(f"\nTEST WEBHOOK RESULTS:")
+                print(f"\n#########################")
+                print(f"Status Code: {log.external_request_log.status_code}")
+                print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
+                
+                if log.external_request_log.error:
+                    print(f"\nERROR: {log.external_request_log.error}")
+                
+                if log.external_request_log.response_body:
+                    print("\n--------------")
+                    print("RESPONSE BODY:")
+                    print("--------------")
 
-                print(json.dumps(log.external_request_log.response_body, indent=2))
-            if log.external_request_log.response_headers:
-                print("\n--------------")
-                print("RESPONSE HEADERS:")
-                print("--------------")
-                print(json.dumps(log.external_request_log.response_headers, indent=2))
+                    print(json.dumps(log.external_request_log.response_body, indent=2))
+                if log.external_request_log.response_headers:
+                    print("\n--------------")
+                    print("RESPONSE HEADERS:")
+                    print("--------------")
+                    print(json.dumps(log.external_request_log.response_headers, indent=2))
 
         return log

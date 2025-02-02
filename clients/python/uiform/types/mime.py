@@ -1,13 +1,10 @@
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, Field
 import mimetypes
 import base64
-import httpx
 from typing import Literal, Optional, Sequence, TypeAlias
 import datetime
 import re
 import hashlib
-
-from pydantic import Field
 
 def generate_sha_hash_from_bytes(bytes_: bytes, hash_algorithm_: Literal['sha256', 'sha1'] = 'sha256') -> str:
     hash_algorithm = hashlib.sha256() if hash_algorithm_ == 'sha256' else hashlib.sha1()

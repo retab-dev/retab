@@ -1,17 +1,10 @@
-from typing import Literal
+from typing import Literal, Dict, Any
 from pydantic import BaseModel, Field
 import datetime
 import uuid
 
-
-from typing import Literal, Dict, Any, List
-from pydantic import BaseModel, Field
-import datetime
-import uuid
-
-from ...types.documents.image_settings import ImageSettings
-from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ...types.modalities import Modality
+from ..image_settings import ImageSettings
+from ..modalities import Modality
 
 AnnotationStatus = Literal["empty", "incomplete", "completed"]
 

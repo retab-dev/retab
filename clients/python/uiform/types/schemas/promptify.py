@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import Any, Literal
+from typing import Any
+
 from ..modalities import Modality
 from ..mime import MIMEData
 

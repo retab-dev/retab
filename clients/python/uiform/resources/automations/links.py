@@ -8,11 +8,12 @@ from io import IOBase
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
 from ...types.modalities import Modality
-from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ...types.documents.image_settings import ImageSettings
+from ...types.image_settings import ImageSettings
 
 from ..._utils.mime import prepare_mime_document
-from ...types.automations.automations import Link, UpdateLinkRequest, AutomationLog, ListLinkLogs, ListLinks
+from ...types.automations.links import Link, UpdateLinkRequest, ListLinks
+
+from ...types.logs import AutomationLog, ListLogs
 
 from ...types.mime import MIMEData
 
@@ -231,7 +232,7 @@ class Links(SyncAPIResource):
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> ListLinkLogs:
+    ) -> ListLogs:
         """Get logs for extraction links with pagination support.
         
         Args:
@@ -263,7 +264,7 @@ class Links(SyncAPIResource):
         params = {k: v for k, v in params.items() if v is not None}
         
         response = self._client._request("GET", "/v1/automations/links/logs/", params=params)
-        return ListLinkLogs.model_validate(response)
+        return ListLogs.model_validate(response)
 
     
 
@@ -292,25 +293,26 @@ class TestLinks(SyncAPIResource):
         log = AutomationLog.model_validate(response)
 
         if verbose:
-            print(f"\nTEST FILE UPLOAD RESULTS:")
-            print(f"\n#########################")
-            print(f"Status Code: {log.external_request_log.status_code}")
-            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-            
-            if log.external_request_log.error:
-                print(f"\nERROR: {log.external_request_log.error}")
-            
-            if log.external_request_log.response_body:
-                print("\n--------------")
-                print("RESPONSE BODY:")
-                print("--------------")
+            if log.external_request_log:
+                print(f"\nTEST FILE UPLOAD RESULTS:")
+                print(f"\n#########################")
+                print(f"Status Code: {log.external_request_log.status_code}")
+                print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
+                
+                if log.external_request_log.error:
+                    print(f"\nERROR: {log.external_request_log.error}")
+                
+                if log.external_request_log.response_body:
+                    print("\n--------------")
+                    print("RESPONSE BODY:")
+                    print("--------------")
 
-                print(json.dumps(log.external_request_log.response_body, indent=2))
-            if log.external_request_log.response_headers:
-                print("\n--------------")
-                print("RESPONSE HEADERS:")
-                print("--------------")
-                print(json.dumps(log.external_request_log.response_headers, indent=2))
+                    print(json.dumps(log.external_request_log.response_body, indent=2))
+                if log.external_request_log.response_headers:
+                    print("\n--------------")
+                    print("RESPONSE HEADERS:")
+                    print("--------------")
+                    print(json.dumps(log.external_request_log.response_headers, indent=2))
 
 
         return log
@@ -334,24 +336,25 @@ class TestLinks(SyncAPIResource):
         log = AutomationLog.model_validate(response)
 
         if verbose:
-            print(f"\nTEST WEBHOOK RESULTS:")
-            print(f"\n#########################")
-            print(f"Status Code: {log.external_request_log.status_code}")
-            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-            
-            if log.external_request_log.error:
-                print(f"\nERROR: {log.external_request_log.error}")
-            
-            if log.external_request_log.response_body:
-                print("\n--------------")
-                print("RESPONSE BODY:")
-                print("--------------")
+            if log.external_request_log:
+                print(f"\nTEST WEBHOOK RESULTS:")
+                print(f"\n#########################")
+                print(f"Status Code: {log.external_request_log.status_code}")
+                print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
+                
+                if log.external_request_log.error:
+                    print(f"\nERROR: {log.external_request_log.error}")
+                
+                if log.external_request_log.response_body:
+                    print("\n--------------")
+                    print("RESPONSE BODY:")
+                    print("--------------")
 
-                print(json.dumps(log.external_request_log.response_body, indent=2))
-            if log.external_request_log.response_headers:
-                print("\n--------------")
-                print("RESPONSE HEADERS:")
-                print("--------------")
-                print(json.dumps(log.external_request_log.response_headers, indent=2))
+                    print(json.dumps(log.external_request_log.response_body, indent=2))
+                if log.external_request_log.response_headers:
+                    print("\n--------------")
+                    print("RESPONSE HEADERS:")
+                    print("--------------")
+                    print(json.dumps(log.external_request_log.response_headers, indent=2))
 
         return log

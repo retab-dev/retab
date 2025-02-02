@@ -5,7 +5,7 @@ import json
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
-from ...types.documents.create_messages import ChatCompletionUiformMessage
+from ...types.chat import ChatCompletionUiformMessage
 from ...types.modalities import Modality
 from ...types.db.datasets import Dataset, DatasetAnnotationStatus
 from ...types.db.dataset_memberships import Annotation

@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 from tqdm import tqdm
 from io import IOBase
-import os
 import tempfile
 import shutil
 import asyncio
@@ -17,20 +16,18 @@ import asyncio
 from .._utils.json_schema import load_json_schema
 from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
 from .._utils.display import display_metrics, process_dataset_and_compute_metrics, Metrics
-from ..types.modalities import Modality
-from ..types.documents.create_messages import DocumentMessage, ChatCompletionUiformMessage, convert_to_openai_format, convert_to_anthropic_format, separate_messages
-from ..types.schemas.object import Schema
+from .._utils.chat import convert_to_openai_format, convert_to_anthropic_format, separate_messages
+from .._utils.benchmarking import normalized_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, plot_comparison_metrics, BenchmarkMetrics, display_benchmark_metrics
+
 from .._resource import SyncAPIResource, AsyncAPIResource
-from .._utils.benchmarking import normalized_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, compare_dicts, plot_comparison_metrics, BenchmarkMetrics, display_benchmark_metrics
 
 from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
-from openai.types.chat.chat_completion import ChatCompletion
-
 from anthropic import Anthropic
-from anthropic.types.message import Message
 
+from ..types.schemas.object import Schema
+from ..types.modalities import Modality
+from ..types.chat import ChatCompletionUiformMessage
 
 
 class FinetuningJSON(BaseModel):
@@ -335,7 +332,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 response_format={
                     "type": "json_schema",
                     "json_schema": {
-                        "name": schema_obj.schema_version,
+                        "name": schema_obj.id,
                         "schema": schema_obj.inference_json_schema,
                         "strict": True
                     }
@@ -353,7 +350,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 response_format={
                     "type": "json_schema",
                     "json_schema": {
-                        "name": schema_obj.schema_version,
+                        "name": schema_obj.id,
                         "schema": schema_obj.inference_gemini_json_schema,
                         "strict": True
                     }
@@ -803,7 +800,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                         "response_format": {
                             "type": "json_schema",
                             "json_schema": {
-                                "name": schema_obj.schema_version,
+                                "name": schema_obj.id,
                                 "schema": schema_obj.inference_json_schema,
                                 "strict": True
                             }
@@ -863,7 +860,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                         "response_format": {
                             "type": "json_schema",
                             "json_schema": {
-                                "name": schema_obj.schema_version,
+                                "name": schema_obj.id,
                                 "schema": schema_obj.inference_json_schema,
                                 "strict": True
                             }

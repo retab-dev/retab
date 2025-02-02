@@ -8,8 +8,7 @@ from ..._utils.ai_model import assert_valid_model_extraction
 from ..._utils.json_schema import filter_reasoning_fields_json, load_json_schema
 from ..._utils.mime import prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ...types.documents.create_messages import ChatCompletionUiformMessage
-from ...types.documents.parse import DocumentExtractRequest, DocumentExtractResponse
+from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse
 from ...types.modalities import Modality
 
 

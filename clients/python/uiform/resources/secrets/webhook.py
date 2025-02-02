@@ -1,11 +1,4 @@
-from typing import List
-
 from ..._resource import SyncAPIResource
-from ...types.secrets.secrets import  ExternalAPIKeyRequest, ExternalAPIKey
-from ...types.ai_model import AIProvider
-
-import os
-    
 
 class Webhook(SyncAPIResource):
     """Webhook secret management wrapper"""

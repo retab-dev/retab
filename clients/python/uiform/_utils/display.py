@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional, Literal
 import json
 import requests
 from PIL import Image
@@ -6,13 +6,12 @@ from io import BytesIO
 import base64
 from math import ceil
 from pathlib import Path
-import tiktoken  # For text tokenization
 import json
 import numpy as np
-from typing import List, Dict
+
+import tiktoken  # For text tokenization
 from rich.table import Table
 from rich.console import Console
-from typing import Literal
 
 class TokenStats(TypedDict):
     min: float

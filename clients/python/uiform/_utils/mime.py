@@ -1,17 +1,17 @@
-from typing import IO, Any, TypeVar, Union, Literal, get_args
+from typing import TypeVar, Literal, get_args
 from pathlib import Path
 import json
 import hashlib
 import base64
-from pathlib import Path
-import io
 import mimetypes
 import PIL.Image
-from pydantic import HttpUrl
+import io
 import httpx
 
 from ..types.mime import MIMEData
 from ..types.modalities import SUPPORTED_TYPES
+
+from pydantic import HttpUrl
 
 T = TypeVar('T')
 

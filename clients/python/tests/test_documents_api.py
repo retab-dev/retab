@@ -5,7 +5,7 @@ import time
 from typing import Literal, get_args, Any
 from pydantic import BaseModel
 from uiform import UiForm, AsyncUiForm
-from uiform.types.documents.parse import DocumentExtractResponse
+from uiform.types.documents.extractions import DocumentExtractResponse
 # List of AI Providers to test
 AI_MODELS = Literal[
     "gpt-4o-mini",

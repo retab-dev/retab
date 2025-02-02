@@ -1,9 +1,8 @@
 from typing import Literal, Any
-from pydantic import BaseModel, computed_field, field_validator
+from pydantic import BaseModel, computed_field
 from .mime import MIMEData
-from .schemas.object import Schema
 from .._utils.benchmarking import ExtractionAnalysis
-from fastapi.encoders import jsonable_encoder
+
 MAX_CONCURRENCY = 15
 
 
@@ -32,8 +31,6 @@ class PromptOptimizationProps(BaseModel):
     model: str = "gpt-4o-mini"
     iterations_per_level: int = 1
     metric: Metrics = "accuracy_per_field"
-
-
 
 class PromptOptimizationJobInputData(BaseModel):
     raw_schema: dict[str, Any]

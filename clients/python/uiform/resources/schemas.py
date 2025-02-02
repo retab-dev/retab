@@ -1,10 +1,7 @@
-from typing import IO, Any, Optional
+from typing import Any, Optional
 from pathlib import Path
-import time
-from pydantic import BaseModel
-import PIL.Image
-from typing import Type, Optional
 from io import IOBase
+import PIL.Image
 
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.object import Schema

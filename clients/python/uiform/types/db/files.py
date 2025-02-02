@@ -1,7 +1,9 @@
-from typing import Literal, Optional
-from pydantic import BaseModel, Field
+from typing import Literal, Tuple, BinaryIO
+from pydantic import BaseModel, Field, HttpUrl
 import uuid
 import mimetypes
+
+
 
 class DBFile(BaseModel):
     """Represents the core file object in your new spec."""
@@ -17,20 +19,11 @@ class DBFile(BaseModel):
     def extension(self) -> str:
         return self.filename.split(".")[-1]
     
-
-
     class Config:
         from_attributes = True
 
 
-
-
-from pydantic import BaseModel, Field, HttpUrl
-from typing import List, Optional, Any, Literal, Tuple, BinaryIO
-from datetime import datetime
-
 FileData = Tuple[str, BinaryIO, str]
-# Type for (field_name, (filename, file, content_type))
 FileTuple = Tuple[str, FileData]
 
 class FileLink(BaseModel):

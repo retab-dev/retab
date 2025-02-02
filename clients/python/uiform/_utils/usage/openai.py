@@ -1,8 +1,6 @@
 
-from pydantic import BaseModel
-from typing import Literal
 from ...types.usage import Amount, TokenPrice, Pricing
-from openai.types.completion_usage import CompletionUsage, PromptTokensDetails, CompletionTokensDetails
+from openai.types.completion_usage import CompletionUsage
 
 openai_pricing_list = [
     # gpt-4o family (text-only)
