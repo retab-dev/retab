@@ -270,6 +270,18 @@ class AutomationLog(BaseModel):
     external_request_log: ExternalRequestLog
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
+
+class OpenAIRequestConfig(BaseModel):
+    model: str
+    temperature: float
+    json_schema: dict[str, Any]
+
+class OpenAILog(BaseModel): 
+    request_config: OpenAIRequestConfig
+    extraction: Optional[DocumentExtractResponse]
+
+
+
 class ListLinkLogs(BaseModel):
     data: List[AutomationLog]
     list_metadata: ListMetadata
