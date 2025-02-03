@@ -249,7 +249,7 @@ class Mailboxes(SyncAPIResource):
 
 class TestMailboxes(SyncAPIResource):
 
-    def forwarding(self, 
+    def forward(self, 
                     email: str,
                     document: Path | str | IOBase | HttpUrl | MIMEData,
                     verbose: bool = True
@@ -263,7 +263,7 @@ class TestMailboxes(SyncAPIResource):
             DocumentExtractResponse: The simulated extraction response
         """
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/automations/mailboxes/tests/forwarding/{email}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/v1/automations/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
 
         email_data = EmailData.model_validate(response)
         
@@ -284,7 +284,7 @@ class TestMailboxes(SyncAPIResource):
 
         return email_data
 
-    def processing(self, 
+    def process(self, 
                          email: str,
                          document: Path | str | IOBase | HttpUrl | Image | MIMEData,
                          verbose: bool = True
@@ -298,7 +298,7 @@ class TestMailboxes(SyncAPIResource):
             DocumentExtractResponse: The simulated extraction response
         """
         mime_document = prepare_mime_document(document)
-        response = self._client._request("POST", f"/v1/automations/mailboxes/tests/processing/{email}", data={"document": mime_document.model_dump()})
+        response = self._client._request("POST", f"/v1/automations/mailboxes/tests/process/{email}", data={"document": mime_document.model_dump()})
 
         log = AutomationLog.model_validate(response)
 
