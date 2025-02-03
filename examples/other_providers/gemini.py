@@ -65,7 +65,7 @@ completion = client.chat.completions.create(
     response_format={
         "type": "json_schema",
         "json_schema": {
-            "name": schema_obj.schema_version,
+            "name": schema_obj.id,
             "schema": schema_obj.inference_gemini_json_schema,
             "strict": True
         }

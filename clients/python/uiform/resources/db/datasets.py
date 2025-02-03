@@ -83,8 +83,8 @@ class Datasets(SyncAPIResource):
 
     def list(
         self,
-        schema_version: str | None = None,
-        schema_data_version: str | None = None,
+        schema_id: str | None = None,
+        schema_data_id: str | None = None,
         dataset_id: str | None = None,
         dataset_name: str | None = None,
         after: str | None = None,
@@ -95,8 +95,8 @@ class Datasets(SyncAPIResource):
         """List datasets with pagination support.
         
         Args:
-            schema_version: Optional filter by schema version
-            schema_data_version: Optional filter by schema data version
+            schema_id: Optional filter by schema version
+            schema_data_id: Optional filter by schema data version
             dataset_id: Optional filter by dataset ID
             dataset_name: Optional filter by dataset name
             after: An object ID that defines your place in the list
@@ -108,10 +108,10 @@ class Datasets(SyncAPIResource):
             List[Dataset]: List of dataset objects
         """
         params: dict[str, str | int] = {"limit": limit}
-        if schema_version:
-            params["schema_version"] = schema_version
-        if schema_data_version:
-            params["schema_data_version"] = schema_data_version
+        if schema_id:
+            params["schema_id"] = schema_id
+        if schema_data_id:
+            params["schema_data_id"] = schema_data_id
         if dataset_id:
             params["dataset_id"] = dataset_id
         if dataset_name:

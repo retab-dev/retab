@@ -19,7 +19,7 @@ class Dataset(BaseModel):
     
     @computed_field   # type: ignore
     @property
-    def schema_data_version(self) -> str:
+    def schema_data_id(self) -> str:
         """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
         
         Returns:
@@ -36,7 +36,7 @@ class Dataset(BaseModel):
     # This is a computed field, it is exposed when serializing the object
     @computed_field   # type: ignore
     @property
-    def schema_version(self) -> str:
+    def schema_id(self) -> str:
         """Returns the SHA1 hash of the complete schema.
         
         Returns:
