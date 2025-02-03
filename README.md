@@ -46,17 +46,18 @@ You come with your own API key from your favorite AI provider, and we handle the
 
 ---
 
-UiForm is a **modern**, **flexible**, and **AI-native** developper toolkit that helps you:
+UiForm solves three major challenges in document processing with LLMs:
 
-- Add AI-defined document processing capabilities to your app (upload links and mailboxes plugged to your backend)
-- Create prompts from JSON schemas and Pydantic models with zero boilerplate
-- Create annotated datasets to distill or finetune your models
+1. **Universal Document Processing**: Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without writing custom parsers
+2. **Structured, Schema-driven Extraction**: Get consistent, reliable outputs using schema-based prompt engineering
+3. **Automations**: Create custom mailboxes and links to process documents at scale
 
-We see it as building **Stripe** for unstructured data processing.
+We see it as building **Stripe** for document processing.
 
 Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
 
 Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
+
 
 ## Quickstart
 
