@@ -8,7 +8,7 @@ import backoff.types
 from pydantic_core import PydanticUndefined
 
 from .resources import documents, files, finetuning, models, prompt_optimization, schemas, db, automations, secrets, usage
-
+from .types.standards import PreparedRequest
 class MaxRetriesExceeded(Exception): pass
 
 
@@ -216,8 +216,6 @@ class UiForm(BaseUiForm):
         else:
             return wrapped_request()
 
-
-
     def _request_stream(
             self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> Iterator[Any]:
@@ -254,6 +252,13 @@ class UiForm(BaseUiForm):
         for item in wrapped_request():
             yield item
 
+    # Simplified request methods using standard PreparedRequest object
+    def _prepared_request(self, request: PreparedRequest) -> Any:
+        return self._request(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key)
+
+    def _prepared_request_stream(self, request: PreparedRequest) -> Iterator[Any]:
+        return self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key)
+    
     def close(self) -> None:
         """Closes the HTTP client session."""
         self.client.close()
@@ -394,6 +399,12 @@ class AsyncUiForm(BaseUiForm):
         
         async for item in wrapped_request():
             yield item
+
+    async def _prepared_request(self, request: PreparedRequest) -> Any:
+        return await self._request(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key)
+    
+    async def _prepared_request_stream(self, request: PreparedRequest) -> AsyncIterator[Any]:
+        return self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key)
 
     async def close(self) -> None:
         """Closes the async HTTP client session."""

@@ -1,4 +1,4 @@
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Literal, Generic
 from pydantic import BaseModel, Field
 
 # API Standards
@@ -24,3 +24,10 @@ class DocumentPreprocessResponseContent(BaseModel):
     json_schema: dict[str, Any] = Field(..., description="Generated JSON Schema for Structured Output OpenAI Completions")
 
 
+
+class PreparedRequest(BaseModel):
+    method: Literal["POST", "GET", "PUT", "DELETE"]
+    url: str
+    data: dict | None = None
+    params: dict | None = None
+    idempotency_key: str | None = None
