@@ -51,8 +51,8 @@ class MailBoxesMixin:
         }
 
         # Validate the data
-        Mailbox.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/automations/mailboxes", data=data)
+        mailbox_data = Mailbox.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/automations/mailboxes", data=mailbox_data.model_dump(mode="json"))
 
     def prepare_list(
         self,
@@ -114,8 +114,10 @@ class MailBoxesMixin:
             data["temperature"] = temperature
         if json_schema is not None:
             data["json_schema"] = json_schema
+
         update_mailbox_request = UpdateMailboxRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/automations/mailboxes/{email}", data=update_mailbox_request.model_dump())
+
+        return PreparedRequest(method="PUT", url=f"/v1/automations/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
 
     def prepare_delete(self, email: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/automations/mailboxes/{email}")
