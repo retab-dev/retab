@@ -1,7 +1,7 @@
 from typing import Literal
 
-AIProvider = Literal["OpenAI", "Anthropic", "xAI", "Gemini"]
-OpenAICompatibleProvider = Literal["OpenAI", "xAI", "Gemini"]
+AIProvider = Literal["OpenAI"]#, "Anthropic", "xAI", "Gemini"]
+OpenAICompatibleProvider = Literal["OpenAI"]#, "xAI", "Gemini"]
 GeminiModel = Literal[ "gemini-2.0-flash-exp",
                       "gemini-1.5-flash-8b", "gemini-1.5-flash","gemini-1.5-pro"]
 AnthropicModel = Literal["claude-3-5-sonnet-latest","claude-3-5-sonnet-20241022",
@@ -11,4 +11,4 @@ OpenAIModel = Literal["gpt-4o", "gpt-4o-mini","chatgpt-4o-latest",
                       "gpt-4o-mini-2024-07-18",
                       "o1-2024-12-17", "o1-mini-2024-09-12"]
 xAI_Model = Literal["grok-2-vision-1212", "grok-2-1212"]
-LLMModel = Literal[AnthropicModel, OpenAIModel, xAI_Model, GeminiModel]
+LLMModel = Literal[OpenAIModel]# [AnthropicModel, OpenAIModel, xAI_Model, GeminiModel]

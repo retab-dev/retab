@@ -32,13 +32,15 @@ class BaseUiForm:
         timeout (float): Request timeout in seconds. Defaults to 240.0
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
         openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
-        claude_api_key (str, optional): Claude API key. Will look for CLAUDE_API_KEY env variable if not provided
-        xai_api_key (str, optional): XAI API key. Will look for XAI_API_KEY env variable if not provided
-        gemini_api_key (str, optional): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
-
+        
     Raises:
         ValueError: If no API key is provided through arguments or environment variables
     """
+
+    #   claude_api_key (str, optional): Claude API key. Will look for CLAUDE_API_KEY env variable if not provided
+    #   xai_api_key (str, optional): XAI API key. Will look for XAI_API_KEY env variable if not provided
+    #   gemini_api_key (str, optional): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -46,9 +48,9 @@ class BaseUiForm:
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
-        claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
     ) -> None:
         if api_key is None:
             api_key = os.environ.get("UIFORM_API_KEY")
@@ -74,26 +76,26 @@ class BaseUiForm:
         if openai_api_key is PydanticUndefined:
             openai_api_key = os.environ.get("OPENAI_API_KEY")
 
-        if claude_api_key is PydanticUndefined:
-            claude_api_key = os.environ.get("CLAUDE_API_KEY")
+        #if claude_api_key is PydanticUndefined:
+        #    claude_api_key = os.environ.get("CLAUDE_API_KEY")
         
-        if xai_api_key is PydanticUndefined:
-            xai_api_key = os.environ.get("XAI_API_KEY")
+        #if xai_api_key is PydanticUndefined:
+        #    xai_api_key = os.environ.get("XAI_API_KEY")
 
-        if gemini_api_key is PydanticUndefined:
-            gemini_api_key = os.environ.get("GEMINI_API_KEY")
+        #if gemini_api_key is PydanticUndefined:
+        #    gemini_api_key = os.environ.get("GEMINI_API_KEY")
 
         if openai_api_key:
             self.headers["OpenAI-Api-Key"] = openai_api_key
 
-        if claude_api_key:
-            self.headers["Claude-Api-Key"] = claude_api_key
+        #if claude_api_key:
+        #    self.headers["Claude-Api-Key"] = claude_api_key
 
-        if xai_api_key:
-            self.headers["XAI-Api-Key"] = xai_api_key
+        #if xai_api_key:
+        #    self.headers["XAI-Api-Key"] = xai_api_key
 
-        if gemini_api_key:
-            self.headers["Gemini-Api-Key"] = gemini_api_key
+        #if gemini_api_key:
+        #    self.headers["Gemini-Api-Key"] = gemini_api_key
 
 
     def _prepare_url(self, endpoint: str) -> str:
@@ -144,9 +146,9 @@ class UiForm(BaseUiForm):
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
-        claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
 
     ) -> None:
         super().__init__(
@@ -155,9 +157,9 @@ class UiForm(BaseUiForm):
             timeout=timeout,
             max_retries=max_retries,
             openai_api_key=openai_api_key,
-            claude_api_key=claude_api_key,
-            xai_api_key=xai_api_key,
-            gemini_api_key=gemini_api_key,
+            #claude_api_key=claude_api_key,
+            #xai_api_key=xai_api_key,
+            #gemini_api_key=gemini_api_key,
         )
         
         self.client = httpx.Client(timeout=self.timeout)
@@ -308,9 +310,9 @@ class AsyncUiForm(BaseUiForm):
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
-        claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        #gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
         ) -> None:
         super().__init__(
             api_key=api_key,
@@ -318,9 +320,9 @@ class AsyncUiForm(BaseUiForm):
             timeout=timeout,
             max_retries=max_retries,
             openai_api_key=openai_api_key,
-            claude_api_key=claude_api_key,
-            xai_api_key=xai_api_key,
-            gemini_api_key=gemini_api_key,
+            #claude_api_key=claude_api_key,
+            #xai_api_key=xai_api_key,
+            #gemini_api_key=gemini_api_key,
         )
         
         self.client = httpx.AsyncClient(timeout=self.timeout)

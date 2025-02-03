@@ -160,7 +160,7 @@ class Usage(SyncAPIResource):
 
         if isinstance(response_format, dict):
             if "json_schema" in response_format:
-                json_schema = response_format["json_schema"]
+                json_schema = response_format["json_schema"] # type: ignore
                 if "schema" in json_schema:
                     log_completion_request = LogCompletionRequest(
                         json_schema=json_schema["schema"],

@@ -1,7 +1,7 @@
 
 
 from typing import get_args
-from ..types.ai_model import AIProvider, OpenAIModel, AnthropicModel, xAI_Model, GeminiModel
+from ..types.ai_model import AIProvider, OpenAIModel#, AnthropicModel, xAI_Model, GeminiModel
 
 
 def find_provider_from_model(model: str) -> AIProvider:
@@ -12,12 +12,12 @@ def find_provider_from_model(model: str) -> AIProvider:
         ft, base_model, model_id = model.split(':',2)
         if base_model in get_args(OpenAIModel):
             return "OpenAI"
-    elif model in get_args(AnthropicModel):
-        return "Anthropic"
-    elif model in get_args(xAI_Model):
-        return "xAI"
-    elif model in get_args(GeminiModel):
-        return "Gemini"
+    #elif model in get_args(AnthropicModel):
+    #    return "Anthropic"
+    #elif model in get_args(xAI_Model):
+    #    return "xAI"
+    #elif model in get_args(GeminiModel):
+    #    return "Gemini"
     raise ValueError(f"Could not determine AI provider for model: {model}")
 
     
@@ -30,18 +30,18 @@ def assert_valid_model_extraction(model: str) -> None:
         ft, base_model, model_id = model.split(':',2)
         if base_model in get_args(OpenAIModel):
             return
-    elif model in get_args(AnthropicModel):
-        return
-    elif model in get_args(xAI_Model):
-        return
-    elif model in get_args(GeminiModel):
-        return
+    #elif model in get_args(AnthropicModel):
+    #    return
+    #elif model in get_args(xAI_Model):
+    #    return
+    #elif model in get_args(GeminiModel):
+    #    return
     raise ValueError(
         f"Invalid model for extraction: {model}.\n"
         f"Valid OpenAI models: {get_args(OpenAIModel)}\n"
-        f"Valid Anthropic models: {get_args(AnthropicModel)}\n" 
-        f"Valid xAI models: {get_args(xAI_Model)}\n"
-        f"Valid Gemini models: {get_args(GeminiModel)}"
+        #f"Valid Anthropic models: {get_args(AnthropicModel)}\n" 
+        #f"Valid xAI models: {get_args(xAI_Model)}\n"
+        #f"Valid Gemini models: {get_args(GeminiModel)}"
     )
 
 def assert_valid_model_batch_processing(model: str)-> None:
