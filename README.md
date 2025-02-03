@@ -31,7 +31,7 @@ UiForm allows you to easily create document processing automations. Here is the 
 sequenceDiagram
     User ->> UiForm: File Upload
     UiForm -->> UiForm: Preprocessing
-    UiForm ->> AI Provider: Request on behalf of the user
+    UiForm ->> AI Provider: Request on your behalf
     AI Provider -->> UiForm:  Structured Generation
     UiForm ->> Webhook: Send result
     UiForm ->> User: Send Confirmation
