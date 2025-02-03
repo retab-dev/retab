@@ -1,5 +1,5 @@
 from typing import Literal, Tuple, BinaryIO
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 import uuid
 import mimetypes
 
@@ -19,8 +19,7 @@ class DBFile(BaseModel):
     def extension(self) -> str:
         return self.filename.split(".")[-1]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 FileData = Tuple[str, BinaryIO, str]
