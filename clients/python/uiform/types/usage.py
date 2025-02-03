@@ -30,3 +30,5 @@ class Pricing(BaseModel):
     model: str
     text: TokenPrice
     audio: Optional[TokenPrice] = None  # May be None if the model does not support audio tokens.
+
+
