@@ -26,7 +26,7 @@ class Schema(BaseModel):
     """The type of object being preprocessed."""
 
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    """The Unix timestamp (in seconds) of when the document was loaded."""
+    """The timestamp of when the schema was created."""
  
     json_schema: dict[str, Any] = {}
     """The JSON schema to use for loading."""
@@ -40,7 +40,7 @@ class Schema(BaseModel):
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return generate_sha_hash_from_string(
+        return "sch_data_id"+generate_sha_hash_from_string(
             json.dumps(
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
                 sort_keys=True).strip(), 
@@ -55,7 +55,7 @@ class Schema(BaseModel):
         Returns:
             str: A SHA1 hash string representing the complete schema version.
         """
-        return "sch_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+        return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
 
     pydantic_model: type[BaseModel] = Field(default=None, exclude=True, repr=False)     # type: ignore
 
