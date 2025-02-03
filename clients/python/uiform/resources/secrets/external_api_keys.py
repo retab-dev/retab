@@ -1,13 +1,58 @@
 from typing import List
 
-from ..._resource import SyncAPIResource
+from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.secrets.external_api_keys import  ExternalAPIKeyRequest, ExternalAPIKey
 from ...types.ai_model import AIProvider
+from ...types.standards import PreparedRequest
 
 import os
     
 
-class ExternalAPIKeys(SyncAPIResource):
+class ExternalAPIKeysMixin:
+    def prepare_create(self, provider: AIProvider, api_key: str) -> PreparedRequest:
+        data = {
+            "provider": provider,
+            "api_key": api_key
+        }
+        request = ExternalAPIKeyRequest.model_validate(data)
+        return PreparedRequest(
+            method="POST",
+            url="/v1/secrets/external_api_keys",
+            data=request.model_dump(mode="json")
+        )
+
+    def prepare_update(self, provider: AIProvider, api_key: str) -> PreparedRequest:
+        data = {
+            "provider": provider,
+            "api_key": api_key
+        }
+        request = ExternalAPIKeyRequest.model_validate(data)
+        return PreparedRequest(
+            method="PUT",
+            url="/v1/secrets/external_api_keys",
+            data=request.model_dump(mode="json")
+        )
+
+    def prepare_get(self, provider: AIProvider) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/v1/secrets/external_api_keys/{provider}"
+        )
+
+    def prepare_list(self) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url="/v1/secrets/external_api_keys"
+        )
+
+    def prepare_delete(self, provider: AIProvider) -> PreparedRequest:
+        return PreparedRequest(
+            method="DELETE",
+            url=f"/v1/secrets/external_api_keys/{provider}"
+        )
+
+
+class ExternalAPIKeys(SyncAPIResource, ExternalAPIKeysMixin):
     """External API Keys management wrapper"""
 
     def create(
@@ -24,18 +69,9 @@ class ExternalAPIKeys(SyncAPIResource):
         Returns:
             dict: Response indicating success
         """
-        data = {
-            "provider": provider,
-            "api_key": api_key
-        }
 
-        request = ExternalAPIKeyRequest.model_validate(data)
-        response = self._client._request(
-            "POST",
-            "/v1/secrets/external_api_keys",
-            data=request.model_dump(mode="json")
-        )
-
+        request = self.prepare_create(provider, api_key)
+        response = self._client._prepared_request(request)
         return response
 
     def update(
@@ -52,18 +88,8 @@ class ExternalAPIKeys(SyncAPIResource):
         Returns:
             dict: Response indicating success
         """
-        data = {
-            "provider": provider,
-            "api_key": api_key
-        }
-
-        request = ExternalAPIKeyRequest.model_validate(data)
-        response = self._client._request(
-            "PUT",
-            "/v1/secrets/external_api_keys",
-            data=request.model_dump(mode="json")
-        )
-
+        request = self.prepare_update(provider, api_key)
+        response = self._client._prepared_request(request)
         return response
 
     def get(self,
@@ -77,10 +103,9 @@ class ExternalAPIKeys(SyncAPIResource):
         Returns:
             ExternalAPIKey: The API key configuration
         """
-        response = self._client._request(
-            "GET",
-            f"/v1/secrets/external_api_keys/{provider}"
-        )
+        request = self.prepare_get(provider)
+        response = self._client._prepared_request(request)
+        return response
 
         return ExternalAPIKey.model_validate(response)
     
@@ -90,10 +115,8 @@ class ExternalAPIKeys(SyncAPIResource):
         Returns:
             List[ExternalAPIKey]: List of API key configurations
         """
-        response = self._client._request(
-            "GET",
-            f"/v1/secrets/external_api_keys"
-        )
+        request = self.prepare_list()
+        response = self._client._prepared_request(request)
 
         return [ExternalAPIKey.model_validate(key) for key in response]
 
@@ -108,9 +131,36 @@ class ExternalAPIKeys(SyncAPIResource):
         Returns:
             dict: Response indicating success
         """
-        response = self._client._request(
-            "DELETE",
-            f"/v1/secrets/external_api_keys/{provider}"
-        )
+        request = self.prepare_delete(provider)
+        response = self._client._prepared_request(request)
 
+        return response
+
+
+class AsyncExternalAPIKeys(AsyncAPIResource, ExternalAPIKeysMixin):
+    """External API Keys management wrapper"""
+
+    async def create(self, provider: AIProvider, api_key: str) -> dict:
+        request = self.prepare_create(provider, api_key)
+        response = await self._client._prepared_request(request)
+        return response
+    
+    async def update(self, provider: AIProvider, api_key: str) -> dict:
+        request = self.prepare_update(provider, api_key)
+        response = await self._client._prepared_request(request)
+        return response
+
+    async def get(self, provider: AIProvider) -> ExternalAPIKey:
+        request = self.prepare_get(provider)
+        response = await self._client._prepared_request(request)
+        return response
+
+    async def list(self) -> List[ExternalAPIKey]:
+        request = self.prepare_list()
+        response = await self._client._prepared_request(request)
+        return [ExternalAPIKey.model_validate(key) for key in response]
+
+    async def delete(self, provider: AIProvider) -> dict:
+        request = self.prepare_delete(provider)
+        response = await self._client._prepared_request(request)
         return response

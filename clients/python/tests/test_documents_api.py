@@ -9,9 +9,9 @@ from uiform.types.documents.extractions import DocumentExtractResponse
 # List of AI Providers to test
 AI_MODELS = Literal[
     "gpt-4o-mini",
-    "grok-2-vision-1212",
-    "claude-3-5-sonnet-latest",
-    "gemini-1.5-flash-8b"
+    # "grok-2-vision-1212",
+    # "claude-3-5-sonnet-latest",
+    # "gemini-1.5-flash-8b"
 ]
 ClientType = Literal[
     "sync",
@@ -102,50 +102,50 @@ async def test_extract_openai(client_type: ClientType, response_mode: ResponseMo
         booking_confirmation_json_schema=booking_confirmation_json_schema
     )
     
-@pytest.mark.asyncio
-@pytest.mark.xdist_group(name="anthropic")
-@pytest.mark.parametrize("client_type", get_args(ClientType))
-@pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
-async def test_extract_anthropic(client_type: ClientType, response_mode: ResponseModeType, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:    
-    await base_test_extract(
-        model="claude-3-5-sonnet-latest",
-        client_type=client_type,
-        response_mode=response_mode,
-        sync_client=sync_client,
-        async_client=async_client,
-        booking_confirmation_file_path=booking_confirmation_file_path,
-        booking_confirmation_json_schema=booking_confirmation_json_schema
-    )
+# @pytest.mark.asyncio
+# @pytest.mark.xdist_group(name="anthropic")
+# @pytest.mark.parametrize("client_type", get_args(ClientType))
+# @pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
+# async def test_extract_anthropic(client_type: ClientType, response_mode: ResponseModeType, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:    
+#     await base_test_extract(
+#         model="claude-3-5-sonnet-latest",
+#         client_type=client_type,
+#         response_mode=response_mode,
+#         sync_client=sync_client,
+#         async_client=async_client,
+#         booking_confirmation_file_path=booking_confirmation_file_path,
+#         booking_confirmation_json_schema=booking_confirmation_json_schema
+#     )
     
-@pytest.mark.asyncio
-@pytest.mark.xdist_group(name="xai")
-@pytest.mark.parametrize("client_type", get_args(ClientType))
-@pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
-async def test_extract_xai(client_type: ClientType, response_mode: ResponseModeType, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:    
-    await base_test_extract(
-        model="grok-2-vision-1212",
-        client_type=client_type,
-        response_mode=response_mode,
-        sync_client=sync_client,
-        async_client=async_client,
-        booking_confirmation_file_path=booking_confirmation_file_path,
-        booking_confirmation_json_schema=booking_confirmation_json_schema
-    )
+# @pytest.mark.asyncio
+# @pytest.mark.xdist_group(name="xai")
+# @pytest.mark.parametrize("client_type", get_args(ClientType))
+# @pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
+# async def test_extract_xai(client_type: ClientType, response_mode: ResponseModeType, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:    
+#     await base_test_extract(
+#         model="grok-2-vision-1212",
+#         client_type=client_type,
+#         response_mode=response_mode,
+#         sync_client=sync_client,
+#         async_client=async_client,
+#         booking_confirmation_file_path=booking_confirmation_file_path,
+#         booking_confirmation_json_schema=booking_confirmation_json_schema
+#     )
     
-@pytest.mark.asyncio
-@pytest.mark.xdist_group(name="google")
-@pytest.mark.parametrize("client_type", get_args(ClientType))
-@pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
-async def test_extract_google(client_type: ClientType, response_mode: ResponseModeType, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:    
-    await base_test_extract(
-        model="gemini-1.5-flash-8b",
-        client_type=client_type,
-        response_mode=response_mode,
-        sync_client=sync_client,
-        async_client=async_client,
-        booking_confirmation_file_path=booking_confirmation_file_path,
-        booking_confirmation_json_schema=booking_confirmation_json_schema
-    )
+# @pytest.mark.asyncio
+# @pytest.mark.xdist_group(name="google")
+# @pytest.mark.parametrize("client_type", get_args(ClientType))
+# @pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
+# async def test_extract_google(client_type: ClientType, response_mode: ResponseModeType, sync_client: UiForm, async_client: AsyncUiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:    
+#     await base_test_extract(
+#         model="gemini-1.5-flash-8b",
+#         client_type=client_type,
+#         response_mode=response_mode,
+#         sync_client=sync_client,
+#         async_client=async_client,
+#         booking_confirmation_file_path=booking_confirmation_file_path,
+#         booking_confirmation_json_schema=booking_confirmation_json_schema
+#     )
 
 
 

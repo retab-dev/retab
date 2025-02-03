@@ -337,6 +337,11 @@ class AsyncUiForm(BaseUiForm):
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
+        self.db = db.AsyncDB(client=self)
+        self.automations = automations.AsyncAutomations(client=self)
+        self.secrets = secrets.AsyncSecrets(client=self)
+        self.usage = usage.AsyncUsage(client=self)
+
     async def _request(
         self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
     ) -> Any:

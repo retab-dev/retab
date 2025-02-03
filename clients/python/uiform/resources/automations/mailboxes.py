@@ -404,7 +404,7 @@ class TestMailboxesMixin:
     def prepare_webhook(self, email: str) -> PreparedRequest:
         return PreparedRequest(method="POST", url=f"/v1/automations/mailboxes/tests/webhook/{email}", data=None)
 
-    def print_forward_verbose(self, email_data: EmailData):
+    def print_forward_verbose(self, email_data: EmailData) -> None:
         print(f"\nTEST EMAIL FORWARDING RESULTS:")
         print(f"\n#########################")
         print(f"Email ID: {email_data.id}")
@@ -419,7 +419,7 @@ class TestMailboxesMixin:
             print("\nBody Preview:")
             print(email_data.body_plain[:500] + "..." if len(email_data.body_plain) > 500 else email_data.body_plain)
 
-    def print_process_verbose(self, log: AutomationLog):
+    def print_process_verbose(self, log: AutomationLog) -> None:
         if log.external_request_log:
             print(f"\nTEST EMAIL PROCESSING RESULTS:")
             print(f"\n#########################")
@@ -441,7 +441,7 @@ class TestMailboxesMixin:
                 print("--------------")
                 print(json.dumps(log.external_request_log.response_headers, indent=2))
 
-    def print_webhook_verbose(self, log: AutomationLog):
+    def print_webhook_verbose(self, log: AutomationLog) -> None:
         if log.external_request_log:
             print(f"\nTEST WEBHOOK RESULTS:")
             print(f"\n#########################")

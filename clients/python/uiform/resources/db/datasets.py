@@ -9,14 +9,92 @@ from ...types.chat import ChatCompletionUiformMessage
 from ...types.modalities import Modality
 from ...types.db.datasets import Dataset, DatasetAnnotationStatus
 from ...types.db.dataset_memberships import Annotation
+from ...types.standards import PreparedRequest
 
+class DatasetsMixin:
+    def prepare_create(self,
+        name: str,
+        json_schema: Optional[Dict[str, Any]],
+        description: str | None = None) -> PreparedRequest:
+        data = {
+            "name": name,
+            "json_schema": json_schema,
+            "description": description
+        }
+        return PreparedRequest(method="POST", url="/v1/db/datasets", data=data)
 
+    def prepare_clone(
+        self,
+        dataset_id: str,
+        name: str,
+        description: str | None = None,
+        json_schema: Dict[str, Any] | None = None
+    ) -> PreparedRequest:
+        data = {
+            "dataset_id": dataset_id,
+            "name": name,
+            "description": description,
+            "json_schema": json_schema
+        }
+        return PreparedRequest(method="POST", url="/v1/db/datasets/clone", data=data)
 
+    def prepare_get(self, dataset_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/db/datasets/{dataset_id}")
 
-class Datasets(SyncAPIResource):
+    def prepare_list(
+        self,
+        schema_id: str | None = None,
+        schema_data_id: str | None = None,
+        dataset_id: str | None = None,
+        dataset_name: str | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc"
+    ) -> PreparedRequest:
+        params: dict[str, str | int] = {"limit": limit}
+        if schema_id:
+            params["schema_id"] = schema_id
+        if schema_data_id:
+            params["schema_data_id"] = schema_data_id
+        if dataset_id:
+            params["dataset_id"] = dataset_id
+        if dataset_name:
+            params["dataset_name"] = dataset_name
+        if after:
+            params["after"] = after
+        if before:
+            params["before"] = before
+        if order:
+            params["order"] = order
+        
+        return PreparedRequest(method="GET", url="/v1/db/datasets", params=params)
+
+    def prepare_update(
+        self,
+        dataset_id: str,
+        name: str | None = None,
+        description: str | None = None,
+        json_schema: Dict[str, Any] | None = None
+    ) -> PreparedRequest:
+        data: dict[str, Any] = {}
+        if json_schema is not None:
+            data["json_schema"] = json_schema
+        if name is not None:
+            data["name"] = name
+        if description is not None:
+            data["description"] = description
+        
+        return PreparedRequest(method="PUT", url=f"/v1/db/datasets/{dataset_id}", data=data)
+
+    def prepare_delete(self, dataset_id: str, force: bool = False) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/db/datasets/{dataset_id}", params={"force": force})
+
+    def prepare_annotation_status(self, dataset_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/db/datasets/{dataset_id}/annotation-status")
+
+class Datasets(SyncAPIResource, DatasetsMixin):
     """Datasets API wrapper"""
-
-
 
     def create(
         self,
@@ -34,12 +112,8 @@ class Datasets(SyncAPIResource):
         Returns:
             Dataset: The created dataset object
         """
-        data = {
-            "json_schema": json_schema,
-            "name": name,
-            "description": description
-        }
-        response = self._client._request("POST", "/v1/db/datasets", data=data, raise_for_status=True)
+        request = self.prepare_create(name, json_schema, description)
+        response = self._client._prepared_request(request)
         return Dataset(**response)
     
     def clone(
@@ -60,13 +134,8 @@ class Datasets(SyncAPIResource):
         Returns:
             Dataset: The cloned dataset object
         """
-        data = {
-            "dataset_id": dataset_id,
-            "name": name,
-            "description": description,
-            "json_schema": json_schema
-        }
-        response = self._client._request("POST", f"/v1/db/datasets/clone", data=data)
+        request = self.prepare_clone(dataset_id, name, description, json_schema)
+        response = self._client._prepared_request(request)
         return Dataset(**response)
 
     def get(self, dataset_id: str) -> Dataset:
@@ -78,7 +147,8 @@ class Datasets(SyncAPIResource):
         Returns:
             Dataset: The dataset object
         """
-        response = self._client._request("GET", f"/v1/db/datasets/{dataset_id}")
+        request = self.prepare_get(dataset_id)
+        response = self._client._prepared_request(request)
         return Dataset(**response)
 
     def list(
@@ -107,23 +177,11 @@ class Datasets(SyncAPIResource):
         Returns:
             List[Dataset]: List of dataset objects
         """
-        params: dict[str, str | int] = {"limit": limit}
-        if schema_id:
-            params["schema_id"] = schema_id
-        if schema_data_id:
-            params["schema_data_id"] = schema_data_id
-        if dataset_id:
-            params["dataset_id"] = dataset_id
-        if dataset_name:
-            params["dataset_name"] = dataset_name
-        if after:
-            params["after"] = after
-        if before:
-            params["before"] = before
-        if order:
-            params["order"] = order
-            
-        response = self._client._request("GET", "/v1/db/datasets", params=params, raise_for_status=True)
+        request = self.prepare_list(
+            schema_id, schema_data_id, dataset_id, dataset_name,
+            after, before, limit, order
+        )
+        response = self._client._prepared_request(request)
         return [Dataset(**item) for item in response["items"]]
 
     def update(
@@ -143,15 +201,8 @@ class Datasets(SyncAPIResource):
         Returns:
             Dataset: The updated dataset object
         """
-        data: dict[str, Any] = {}
-        if json_schema is not None:
-            data["json_schema"] = json_schema
-        if name is not None:
-            data["name"] = name
-        if description is not None:
-            data["description"] = description
-            
-        response = self._client._request("PUT", f"/v1/db/datasets/{dataset_id}", data=data)
+        request = self.prepare_update(dataset_id, name, description, json_schema)
+        response = self._client._prepared_request(request)
         return Dataset(**response)
 
     def delete(self, dataset_id: str, force: bool = False) -> None:
@@ -161,8 +212,8 @@ class Datasets(SyncAPIResource):
             dataset_id: The ID of the dataset to delete
             force: If True, delete the dataset even if it has annotations
         """
-
-        self._client._request("DELETE", f"/v1/db/datasets/{dataset_id}", params={"force": force})
+        request = self.prepare_delete(dataset_id, force)
+        self._client._prepared_request(request)
 
     def annotation_status(self, dataset_id: str) -> DatasetAnnotationStatus:
         """Get annotation statistics for a dataset.
@@ -177,10 +228,8 @@ class Datasets(SyncAPIResource):
                 - status_counts: Count of each annotation status
                 - files_without_annotation_ids: List of file IDs without annotations
         """
-        response = self._client._request(
-            "GET",
-            f"/v1/db/datasets/{dataset_id}/annotation-status"
-        )
+        request = self.prepare_annotation_status(dataset_id)
+        response = self._client._prepared_request(request)
         return DatasetAnnotationStatus(**response)
 
     def download(
@@ -242,7 +291,6 @@ class Datasets(SyncAPIResource):
                 }
                 f.write(json.dumps(entry) + '\n')
 
-
     def annotate(
         self,
         dataset_id: str,
@@ -279,3 +327,190 @@ class Datasets(SyncAPIResource):
         return BulkAnnotationResponse.model_validate(response)
 
         """
+
+class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
+    """Async Datasets API wrapper"""
+
+    async def create(self, name: str, json_schema: Optional[Dict[str, Any]], description: str | None = None) -> Dataset:
+        request = self.prepare_create(name, json_schema, description)
+        response = await self._client._prepared_request(request)
+        return Dataset(**response)
+
+    async def clone(
+        self,
+        dataset_id: str,
+        name: str,
+        description: str | None = None,
+        json_schema: Dict[str, Any] | None = None
+    ) -> Dataset:
+        """Clone an existing dataset.
+        
+        Args:
+            dataset_id: The ID of the dataset to clone
+            name: Name for the cloned dataset
+            description: Optional description for the cloned dataset
+            json_schema: Optional JSON schema for the cloned dataset. If not provided, uses the original schema.
+            
+        Returns:
+            Dataset: The cloned dataset object
+        """
+        request = self.prepare_clone(dataset_id, name, description, json_schema)
+        response = await self._client._prepared_request(request)
+        return Dataset(**response)
+
+    async def get(self, dataset_id: str) -> Dataset:
+        """Get a specific dataset.
+        
+        Args:
+            dataset_id: The ID of the dataset to retrieve
+            
+        Returns:
+            Dataset: The dataset object
+        """
+        request = self.prepare_get(dataset_id)
+        response = await self._client._prepared_request(request)
+        return Dataset(**response)
+
+    async def list(
+        self,
+        schema_version: str | None = None,
+        schema_data_version: str | None = None,
+        dataset_id: str | None = None,
+        dataset_name: str | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc"
+    ) -> List[Dataset]:
+        """List datasets with pagination support.
+        
+        Args:
+            schema_version: Filter by schema version
+            schema_data_version: Filter by schema data version
+            dataset_id: Filter by dataset ID
+            dataset_name: Filter by dataset name
+            after: Return results after this cursor
+            before: Return results before this cursor
+            limit: Maximum number of results to return
+            order: Sort order for results
+            
+        Returns:
+            List[Dataset]: List of dataset objects
+        """
+        request = self.prepare_list(
+            schema_version=schema_version,
+            schema_data_version=schema_data_version,
+            dataset_id=dataset_id,
+            dataset_name=dataset_name,
+            after=after,
+            before=before,
+            limit=limit,
+            order=order
+        )
+        response = await self._client._prepared_request(request)
+        return [Dataset(**item) for item in response]
+
+    async def update(
+        self,
+        dataset_id: str,
+        name: str | None = None,
+        description: str | None = None,
+        json_schema: Dict[str, Any] | None = None
+    ) -> Dataset:
+        """Update a dataset.
+        
+        Args:
+            dataset_id: The ID of the dataset to update
+            name: New name for the dataset
+            description: New description for the dataset
+            json_schema: New JSON schema for the dataset
+            
+        Returns:
+            Dataset: The updated dataset object
+        """
+        request = self.prepare_update(dataset_id, name, description, json_schema)
+        response = await self._client._prepared_request(request)
+        return Dataset(**response)
+
+    async def delete(self, dataset_id: str, force: bool = False) -> None:
+        """Delete a dataset.
+        
+        Args:
+            dataset_id: The ID of the dataset to delete
+            force: If True, force deletion even if dataset has files
+        """
+        request = self.prepare_delete(dataset_id, force)
+        await self._client._prepared_request(request)
+
+    async def annotation_status(self, dataset_id: str) -> DatasetAnnotationStatus:
+        """Get annotation status for a dataset.
+        
+        Args:
+            dataset_id: The ID of the dataset to get status for
+            
+        Returns:
+            DatasetAnnotationStatus: The annotation status object
+        """
+        request = self.prepare_annotation_status(dataset_id)
+        response = await self._client._prepared_request(request)
+        return DatasetAnnotationStatus(**response)
+    async def download(
+        self,
+        dataset_id: str,
+        path: Path | str,
+        format: Literal["jsonl", "zip"] = "jsonl",
+        image_settings: Optional[dict[str, Any]] = None,
+        modality: Modality = "native",
+    ) -> None:
+        """Download a dataset's contents to a file.
+        
+        Args:
+            dataset_id: The ID of the dataset to download
+            path: Path where to save the dataset
+            format: Output format, either "jsonl" for training data or "zip" for raw files
+            image_settings: Optional settings for image processing
+            modality: The modality to use for processing
+        
+        Raises:
+            ValueError: If any files are missing annotations or have incomplete/empty status
+        """
+        if format == "zip":
+            raise NotImplementedError("ZIP format not yet supported")
+        
+        # Check annotation status
+        status = await self.annotation_status(dataset_id)
+        if len(status.files_with_empty_annotations) > 0 or len(status.files_with_incomplete_annotations) > 0:
+            raise ValueError(f"Dataset has files with missing or incomplete annotations: Files with empty annotations={len(status.files_with_empty_annotations)}, Files with incomplete annotations={len(status.files_with_incomplete_annotations)}, Files with completed annotations={len(status.files_with_completed_annotations)}")
+        
+        # Get all files and annotations in dataset
+        annotations = await self._client.db.annotations.list(dataset_id=dataset_id, limit=1000000)
+        # Get all dataset memberships
+        memberships = await self._client.db.dataset_memberships.list(dataset_id=dataset_id)
+        
+        # Create lookup of file_id -> annotation
+        file_ids = {m.file_id: m.annotation for m in memberships}
+        
+        with open(path, 'w', encoding='utf-8') as f:
+            for file_id in tqdm(file_ids, desc="Processing files", position=0):
+                # Get file download link
+                file_link = await self._client.db.files.download_link(file_id)
+                # Create document message
+                msg_obj = await self._client.documents.create_messages(
+                    document=file_link.download_url.unicode_string(),
+                    modality=modality,
+                    image_settings=image_settings
+                )
+                
+                # Get corresponding annotation
+                annotation = file_ids.get(file_id)
+                assert isinstance(annotation, Annotation)
+
+                assistant_message: List[ChatCompletionUiformMessage] = [
+                    {"role": "assistant", "content": json.dumps(annotation.data, ensure_ascii=False, indent=2)}
+                ]
+                
+                # Write entry in JSONL format
+                entry = {
+                    "messages": msg_obj.messages + assistant_message
+                }
+                f.write(json.dumps(entry) + '\n')

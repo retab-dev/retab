@@ -1,13 +1,39 @@
 from typing import Any, Optional, Literal, List, Dict
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
-
+from ...types.standards import PreparedRequest
 from ...types.db.dataset_memberships import DatasetMembership
 
 
+class DatasetMembershipsMixin:
+    def prepare_create(self, file_id: str, dataset_id: str) -> PreparedRequest:
+        data = {
+            "file_id": file_id,
+            "dataset_id": dataset_id
+        }
+        return PreparedRequest(method="POST", url="/v1/db/dataset-memberships", data=data)
 
+    def prepare_get(self, dataset_dataset_membership_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/db/dataset-memberships/{dataset_dataset_membership_id}")
+    
+    def prepare_list(self, dataset_id: str | None = None, file_id: str | None = None, after: str | None = None, before: str | None = None, limit: int = 10, order: Literal["asc", "desc"] | None = "desc") -> PreparedRequest:
+        params: dict[str, str | int] = {"limit": limit}
+        if dataset_id:
+            params["dataset_id"] = dataset_id
+        if file_id:
+            params["file_id"] = file_id
+        if after:
+            params["after"] = after
+        if before:
+            params["before"] = before
+        if order:
+            params["order"] = order
+        return PreparedRequest(method="GET", url="/v1/db/dataset-memberships", params=params)
+    
+    def prepare_delete(self, dataset_dataset_membership_id: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/db/dataset-memberships/{dataset_dataset_membership_id}")
 
-class DatasetMemberships(SyncAPIResource):
+class DatasetMemberships(SyncAPIResource, DatasetMembershipsMixin):
     """Dataset Memberships API wrapper for managing file associations with datasets."""
 
     def create(self, file_id: str, dataset_id: str) -> DatasetMembership:
@@ -20,11 +46,8 @@ class DatasetMemberships(SyncAPIResource):
         Returns:
             DatasetMembership: The created dataset membership object
         """
-        data = {
-            "file_id": file_id,
-            "dataset_id": dataset_id
-        }
-        response = self._client._request("POST", "/v1/db/dataset-memberships", data=data)
+        request = self.prepare_create(file_id, dataset_id)
+        response = self._client._prepared_request(request)
         return DatasetMembership(**response)
 
     def get(self, dataset_dataset_membership_id: str) -> DatasetMembership:
@@ -36,7 +59,8 @@ class DatasetMemberships(SyncAPIResource):
         Returns:
             DatasetMembership: The dataset membership object
         """
-        response = self._client._request("GET", f"/v1/db/dataset-memberships/{dataset_dataset_membership_id}")
+        request = self.prepare_get(dataset_dataset_membership_id)
+        response = self._client._prepared_request(request)
         return DatasetMembership(**response)
 
     def list(
@@ -73,7 +97,8 @@ class DatasetMemberships(SyncAPIResource):
         if order:
             params["order"] = order
             
-        response = self._client._request("GET", "/v1/db/dataset-memberships", params=params)
+        request = self.prepare_list(dataset_id, file_id, after, before, limit, order)
+        response = self._client._prepared_request(request)
         return [DatasetMembership(**item) for item in response["items"]]
 
     def delete(self, dataset_dataset_membership_id: str) -> None:
@@ -82,6 +107,26 @@ class DatasetMemberships(SyncAPIResource):
         Args:
             dataset_dataset_membership_id: The ID of the dataset membership to delete
         """
-        self._client._request("DELETE", f"/v1/db/dataset-memberships/{dataset_dataset_membership_id}")
+        request = self.prepare_delete(dataset_dataset_membership_id)
+        self._client._prepared_request(request)
 
 
+class AsyncDatasetMemberships(AsyncAPIResource, DatasetMembershipsMixin):
+    async def create(self, file_id: str, dataset_id: str) -> DatasetMembership:
+        request = self.prepare_create(file_id, dataset_id)
+        response = await self._client._prepared_request(request)
+        return DatasetMembership(**response)
+
+    async def get(self, dataset_dataset_membership_id: str) -> DatasetMembership:
+        request = self.prepare_get(dataset_dataset_membership_id)
+        response = await self._client._prepared_request(request)
+        return DatasetMembership(**response)
+    
+    async def list(self, dataset_id: str | None = None, file_id: str | None = None, after: str | None = None, before: str | None = None, limit: int = 10, order: Literal["asc", "desc"] | None = "desc") -> List[DatasetMembership]:
+        request = self.prepare_list(dataset_id, file_id, after, before, limit, order)
+        response = await self._client._prepared_request(request)
+        return [DatasetMembership(**item) for item in response["items"]]
+    
+    async def delete(self, dataset_dataset_membership_id: str) -> None:
+        request = self.prepare_delete(dataset_dataset_membership_id)
+        await self._client._prepared_request(request)

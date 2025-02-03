@@ -8,11 +8,19 @@ from ..._utils.ai_model import assert_valid_model_extraction
 from ..._utils.json_schema import filter_reasoning_fields_json, load_json_schema
 from ..._utils.mime import prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse
+from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream
 from ...types.modalities import Modality
+from typing import overload
 
-
+@overload
 def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse:
+    ...
+
+@overload
+def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream:
+    ...
+
+def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse | DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponse | DocumentExtractResponseStream:
     if response.choices[0].message.content:
         try:
             if allow_partial:
@@ -133,7 +141,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         modality: Modality = "native",
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> Generator[DocumentExtractResponse, None, None]:
+    ) -> Generator[DocumentExtractResponseStream, None, None]:
         """
         Process a document using the UiForm API with streaming enabled.
 
@@ -163,8 +171,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         for chunk_json in self._client._request_stream("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:
                 continue
-            yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
-        yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json))
+            yield maybe_parse_to_pydantic(request, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
+        yield maybe_parse_to_pydantic(request, DocumentExtractResponseStream.model_validate(chunk_json))
 
 
 class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
@@ -210,7 +218,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         modality: Modality = "native",
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> AsyncGenerator[DocumentExtractResponse, None]:
+    ) -> AsyncGenerator[DocumentExtractResponseStream, None]:
         """
         Extract structured data from a document asynchronously with streaming.
 
@@ -237,6 +245,6 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             if not chunk_json:
                 continue
             
-            yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
+            yield maybe_parse_to_pydantic(request, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
         # Last chunk with full parsed response
-        yield maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(chunk_json))  
+        yield maybe_parse_to_pydantic(request, DocumentExtractResponseStream.model_validate(chunk_json))  

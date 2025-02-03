@@ -1,7 +1,14 @@
 from .._resource import SyncAPIResource, AsyncAPIResource
+from ..types.standards import PreparedRequest
 
+class ModelsMixin:
+    def prepare_list(self) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url="/v1/models"
+        )
 
-class Models(SyncAPIResource): 
+class Models(SyncAPIResource, ModelsMixin): 
     """Models API wrapper"""
 
     def list(self) -> list[str]:
@@ -14,10 +21,11 @@ class Models(SyncAPIResource):
             HTTPException if the request fails
         """
 
-        return self._client._request("GET", "/v1/models")
+        request = self.prepare_list()
+        return self._client._prepared_request(request)
 
     
-class AsyncModels(AsyncAPIResource): 
+class AsyncModels(AsyncAPIResource, ModelsMixin): 
     """Models Asyncronous API wrapper"""
     
     async def list(self) -> list[str]:
@@ -30,4 +38,5 @@ class AsyncModels(AsyncAPIResource):
             HTTPException if the request fails
         """
 
-        return (await self._client._request("GET", "/v1/models"))
+        request = self.prepare_list()
+        return await self._client._prepared_request(request)

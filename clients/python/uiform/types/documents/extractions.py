@@ -14,7 +14,8 @@ from ..schemas.object import Schema
 from ..image_settings import ImageSettings
 
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
-
+from openai.types.chat.chat_completion import Choice
+from typing import Literal, List
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -71,17 +72,8 @@ class BaseDocumentExtractRequest(DocumentExtractRequest):
     @field_validator("document")
     def convert_document_to_base_mimedata(cls, v: MIMEData | BaseMIMEData, validation_info: ValidationInfo) -> BaseMIMEData:
         return BaseMIMEData(**v.model_dump())
-    
-#class UiParsedChatCompletionMessage(ChatCompletionMessage):#
-#    parsed: BaseModel | None = None
-
-#class UiParsedChoice(Choice):
-#    message: UiParsedChatCompletionMessage#
-#    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None     
 
 class UiParsedChatCompletion(ParsedChatCompletion): 
-    #choices: List[UiParsedChoice] 
-
     # Additional metadata fields (UIForm)
     likelihoods: Any # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
     schema_validation_error: ErrorDetail | None = None
@@ -92,7 +84,11 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
 
-class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion): pass
+class UiParsedChoiceStream(Choice):
+   finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None     
+
+class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
+    choices: List[UiParsedChoiceStream] 
 
 DocumentExtractResponse = UiParsedChatCompletion
 DocumentExtractResponseStream = UiParsedChatCompletionStream
