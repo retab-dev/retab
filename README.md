@@ -5,11 +5,11 @@
 <img src="https://raw.githubusercontent.com/UiForm/uiform/refs/heads/main/uiform-logo.png" alt="UiForm Logo" width="150">
 
 
-  *The universal document processing API*
+  *The AI Automation Platform*
 
 Made with love by the team at [UiForm](https://uiform.com).
 
-[Discord](https://discord.com/invite/vc5tWRPqag) | [UiForm website](https://uiform.com) | [Twitter](https://x.com/uiformAPI)
+[Discord](https://discord.com/invite/vc5tWRPqag) | [Website](https://uiform.com) | [Twitter](https://x.com/uiformAPI)
 
 
 </div>
@@ -19,24 +19,40 @@ Made with love by the team at [UiForm](https://uiform.com).
 pip install uiform
 ```
 
-First time here? Go to our [quickstart guide](https://docs.uiform.com/get-started/introduction)
+First time here? Check our [docs](https://docs.uiform.com/get-started/introduction).
+
+---
+
+## How it works
+
+UiForm allows you to easily create document processing automations. Here is the general workflow:
+
+```mermaid
+sequenceDiagram
+    User ->> UiForm: File Upload
+    UiForm -->> UiForm: Preprocessing
+    UiForm ->> AI Provider: Request on behalf of the user
+    AI Provider -->> UiForm:  Structured Generation
+    UiForm ->> Webhook: Send result
+    UiForm ->> User: Send Confirmation
+```
 
 ---
 
 
-We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthropic](https://www.anthropic.com/api), [Gemini](https://aistudio.google.com/) and [xAI](https://x.ai/api) models.
+We currently support [OpenAI](https://platform.openai.com/docs/overview) models.
 
 You come with your own API key from your favorite AI provider, and we handle the rest.
 
 ---
 
-UiForm is a **modern**, **flexible**, and **AI-native** document processing API that helps you:
+UiForm is a **modern**, **flexible**, and **AI-native** developper toolkit that helps you:
 
-- Add AI-defined document processing capabilities to your app
+- Add AI-defined document processing capabilities to your app (upload links and mailboxes plugged to your backend)
 - Create prompts from JSON schemas and Pydantic models with zero boilerplate
 - Create annotated datasets to distill or finetune your models
 
-We see it as building **Stripe** for document processing.
+We see it as building **Stripe** for unstructured data processing.
 
 Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
 
@@ -155,6 +171,8 @@ But this minimalistic example is just the beginning. Continue reading to learn m
 
 - [Prompt Engineering Guide](https://docs.uiform.com/get-started/prompting-with-the-json-schema)
 - [General Concepts](https://docs.uiform.com/get-started/General-Concepts)
+- [Create mailboxes](https://docs.uiform.com/SDK/Automations#mailbox)
+- [Create links](https://docs.uiform.com/SDK/Automations#link)
 - Finetuning (coming soon)
 - Prompt optimization (coming soon)
 - Data-Labelling with our AI-powered annotator (coming soon)
@@ -164,9 +182,10 @@ But this minimalistic example is just the beginning. Continue reading to learn m
 ## Jupyter Notebooks
 
 You can view minimal notebooks that demonstrate how to use UiForm to process documents:
-
-- [Quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart.ipynb)
-- [Quickstart - Async](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart-Async.ipynb)
+- [Mailbox creation quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/mailboxes_quickstart.ipynb)
+- [Upload Links creation quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/links_quickstart.ipynb)
+- [Document Extractions quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart.ipynb)
+- [Document Extractions quickstart - Async](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart-Async.ipynb)
 
 --- 
 
@@ -187,12 +206,9 @@ We can't wait to see how you'll use UiForm.
 We publicly share our Roadmap with the community. Please open an issue or [contact us on X](https://x.com/sachaicb) if you have suggestions or ideas.
 
 - [ ] node client with ZOD
-- [ ] Add support for Audio formats
-- [ ] Image rotation - Launch super fast way to rotate the images in the right direction (Simple classifier with a CNN). Put it as an optional middleware for documents/create_messages 
 - [ ] Make a json-schema zoo
+- [ ] Offer tools to display tokens usage to our users
 - [ ] Launch the data-labelling API (Dataset Upload / Creation / Management / Labelling / Distillation)
 - [ ] Launch the data-labelling platform : A web app based on the data-labelling API with a nice UI
 - [ ] Launch the prompt-optimisation sdk
 - [ ] Launch the finetuning sdk 
-- [ ] Launch @UiForm/React on open-source
-- [ ] Launch the analytics section in the dashboard
