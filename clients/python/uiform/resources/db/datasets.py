@@ -373,8 +373,8 @@ class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
 
     async def list(
         self,
-        schema_version: str | None = None,
-        schema_data_version: str | None = None,
+        schema_id: str | None = None,
+        schema_data_id: str | None = None,
         dataset_id: str | None = None,
         dataset_name: str | None = None,
         after: str | None = None,
@@ -385,8 +385,8 @@ class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
         """List datasets with pagination support.
         
         Args:
-            schema_version: Filter by schema version
-            schema_data_version: Filter by schema data version
+            schema_id: Filter by schema ID
+            schema_data_id: Filter by schema data ID
             dataset_id: Filter by dataset ID
             dataset_name: Filter by dataset name
             after: Return results after this cursor
@@ -398,8 +398,8 @@ class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
             List[Dataset]: List of dataset objects
         """
         request = self.prepare_list(
-            schema_version=schema_version,
-            schema_data_version=schema_data_version,
+            schema_id=schema_id,
+            schema_data_id=schema_data_id,
             dataset_id=dataset_id,
             dataset_name=dataset_name,
             after=after,
