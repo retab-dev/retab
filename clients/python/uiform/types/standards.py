@@ -31,3 +31,4 @@ class PreparedRequest(BaseModel):
     data: dict | None = None
     params: dict | None = None
     idempotency_key: str | None = None
+    raise_for_status: bool = False

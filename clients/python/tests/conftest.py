@@ -46,33 +46,33 @@ class EnvConfig(BaseModel):
     uiform_api_key: str = Field(..., description="UiForm API key")
     uiform_api_base_url: str = Field(..., description="UiForm API base URL")
     openai_api_key: str = Field(..., description="OpenAI API key")
-    claude_api_key: str = Field(..., description="Claude API key")
-    gemini_api_key: str = Field(..., description="Gemini API key")
-    xai_api_key: str = Field(..., description="XAI API key")
+    # claude_api_key: str = Field(..., description="Claude API key")
+    # gemini_api_key: str = Field(..., description="Gemini API key")
+    # xai_api_key: str = Field(..., description="XAI API key")
 
 @pytest.fixture(scope="session")
 def api_keys(load_env: None) -> EnvConfig:  
     uiform_api_key = os.getenv("UIFORM_API_KEY")
     uiform_api_base_url = os.getenv("UIFORM_API_BASE_URL")
     openai_api_key = os.getenv("OPENAI_API_KEY")
-    claude_api_key = os.getenv("CLAUDE_API_KEY")
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    xai_api_key = os.getenv("XAI_API_KEY")
+    # claude_api_key = os.getenv("CLAUDE_API_KEY")
+    # gemini_api_key = os.getenv("GEMINI_API_KEY")
+    # xai_api_key = os.getenv("XAI_API_KEY")
 
     assert uiform_api_key is not None
     assert uiform_api_base_url is not None
     assert openai_api_key is not None
-    assert claude_api_key is not None
-    assert gemini_api_key is not None
-    assert xai_api_key is not None
+    # assert claude_api_key is not None
+    # assert gemini_api_key is not None
+    # assert xai_api_key is not None
 
     return EnvConfig(
         uiform_api_key=uiform_api_key,
         uiform_api_base_url=uiform_api_base_url,
         openai_api_key=openai_api_key,
-        claude_api_key=claude_api_key,
-        gemini_api_key=gemini_api_key,
-        xai_api_key=xai_api_key
+        # claude_api_key=claude_api_key,
+        # gemini_api_key=gemini_api_key,
+        # xai_api_key=xai_api_key
     )
 
 @pytest.fixture(scope="session")
@@ -89,9 +89,9 @@ def sync_client(base_url: str, uiform_api_key: str, api_keys: EnvConfig) -> UiFo
         api_key=uiform_api_key,
         base_url=base_url,
         openai_api_key=api_keys.openai_api_key,
-        claude_api_key=api_keys.claude_api_key,
-        gemini_api_key=api_keys.gemini_api_key,
-        xai_api_key=api_keys.xai_api_key,
+        # claude_api_key=api_keys.claude_api_key,
+        # gemini_api_key=api_keys.gemini_api_key,
+        # xai_api_key=api_keys.xai_api_key,
         max_retries=3
     )
 
@@ -101,9 +101,9 @@ def async_client(base_url: str, uiform_api_key: str, api_keys: EnvConfig) -> Asy
         api_key=uiform_api_key,
         base_url=base_url,
         openai_api_key=api_keys.openai_api_key,
-        claude_api_key=api_keys.claude_api_key,
-        gemini_api_key=api_keys.gemini_api_key,
-        xai_api_key=api_keys.xai_api_key,
+        # claude_api_key=api_keys.claude_api_key,
+        # gemini_api_key=api_keys.gemini_api_key,
+        # xai_api_key=api_keys.xai_api_key,
         max_retries=3
     )
 
