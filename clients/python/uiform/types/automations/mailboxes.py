@@ -110,7 +110,7 @@ class UpdateMailboxRequest(BaseModel):
     json_schema: Optional[Dict] = None
 
     @field_validator("authorized_emails", mode="before")
-    def normalize_authorized_emails(cls, emails: List[str]) -> List[str]:
-        return [email.strip().lower() for email in emails]
+    def normalize_authorized_emails(cls, emails: Optional[List[str]]) -> Optional[List[str]]:
+        return [email.strip().lower() for email in emails] if emails else None
 
    
