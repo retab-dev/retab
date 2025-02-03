@@ -1,11 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List
 from enum import Enum, IntEnum
-from dotenv import load_dotenv
-assert load_dotenv("../.env.production") # Load environment variables from a .env file
-from uiform import UiForm
-
-uiclient = UiForm()
 
 system_prompt = """
 Your task is to extract structured information from pitch decks based on the provided schema. Carefully analyze the content to identify relevant details and populate each field accurately while maintaining consistency across extracted data.
