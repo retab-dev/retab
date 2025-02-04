@@ -104,6 +104,8 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
         try: 
             import puremagic
             extension = puremagic.from_string(document)
+            if extension.lower() in [".jpg", ".jpeg", ".jfif"]:
+                extension = ".jpeg"
         except: 
             extension = '.txt'
         file_bytes = document
@@ -121,6 +123,8 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
             try:
                 import puremagic
                 extension = puremagic.from_string(response.content)
+                if extension.lower() in [".jpg", ".jpeg", ".jfif"]:
+                    extension = ".jpeg"
             except:
                 extension = '.txt'
             file_bytes = response.content  # Fix: Use response.content instead of document
