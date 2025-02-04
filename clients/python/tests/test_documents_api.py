@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 import httpx
+import asyncio
 from typing import Literal, get_args, Any
 from pydantic import BaseModel
 from uiform import UiForm, AsyncUiForm
@@ -154,7 +155,7 @@ async def test_extraction_with_idempotency(sync_client: UiForm, booking_confirma
     response_initial = client.documents.extractions.parse(
         json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path, model="gpt-4o-mini", modality="native", idempotency_key=idempotency_key
     )
-    time.sleep(2)
+    await asyncio.sleep(2)
     t0 = time.time()
     response_second = client.documents.extractions.parse(
         json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path, model="gpt-4o-mini", modality="native", idempotency_key=idempotency_key
@@ -202,7 +203,7 @@ async def test_extraction_with_idempotency_exceptions(
     except Exception as e:
         raised_exception_1 = e
 
-    time.sleep(2)
+    await asyncio.sleep(2)
     t0 = time.time()
     try:
         loading_request.raise_for_status = True

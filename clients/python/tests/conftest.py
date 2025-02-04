@@ -3,10 +3,13 @@ import os
 import json
 import shutil
 from typing import IO, Any
+os.environ["EMAIL_DOMAIN"] = "devmail.uiform.com"
 from uiform import UiForm, AsyncUiForm
 from typing import Generator
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+from enum import Enum
+
 
 # Get the directory containing the tests
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -41,6 +44,7 @@ def load_env(request: pytest.FixtureRequest) -> None:
         raise FileNotFoundError(f"Environment file not found: {env_path}")
     
     load_dotenv(env_path, override=True)
+    print("EMAIL_DOMAIN", os.environ["EMAIL_DOMAIN"])
 
 class EnvConfig(BaseModel):
     uiform_api_key: str = Field(..., description="UiForm API key")
@@ -131,4 +135,41 @@ def booking_confirmation_bytes(booking_confirmation_file_path: str) -> bytes:   
 def booking_confirmation_io_bytes(booking_confirmation_file_path: str) -> IO[bytes]:    # Not Working!
     with open(booking_confirmation_file_path, "rb") as f:
         return f
+
+
+@pytest.fixture(scope="session")
+def company_json_schema() -> dict[str, Any]:
+    class CompanyEnum(str, Enum):
+        school = 'school'
+        investor = 'investor'
+        startup = 'startup'
+        corporate = 'corporate'
+
+    class CompanyRelation(str, Enum):
+        founderBackground = 'founderBackground'
+        investor = 'investor'
+        competitor = 'competitor'
+        client = 'client'
+        partnership = 'partnership'
+
+    class Company(BaseModel):
+        name: str = Field(...,
+            description="Name of the identified company",
+            json_schema_extra={
+                "X-FieldPrompt": "Look for the name of the company, or derive it from the logo"
+            }
+        )
+        type: CompanyEnum = Field(...,
+            description="Type of the identified company",
+            json_schema_extra={
+                "X-FieldPrompt": "Guess the type depending on slide context"
+            }
+        )
+        relationship: CompanyRelation = Field(...,
+            description="Relationship of the identified company with the startup from the deck",
+            json_schema_extra={
+                "X-FieldPrompt": "Guess the relationship of the identified company with the startup from the deck"
+            }
+        )
+    return Company.model_json_schema()
 
