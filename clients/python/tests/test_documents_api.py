@@ -5,7 +5,7 @@ import time
 from typing import Literal, get_args, Any
 from pydantic import BaseModel
 from uiform import UiForm, AsyncUiForm
-from uiform.types.documents.extractions import DocumentExtractResponse
+from uiform.types.documents.extractions import DocumentExtractResponse, DocumentExtractResponseStream
 # List of AI Providers to test
 AI_MODELS = Literal[
     "gpt-4o-mini",
@@ -22,9 +22,9 @@ ResponseModeType = Literal[
     "parse",
 ]
 
-def validate_extraction_response(response: DocumentExtractResponse) -> None:
+def validate_extraction_response(response: DocumentExtractResponse | DocumentExtractResponseStream) -> None:
     # Assert the instance
-    assert isinstance(response, DocumentExtractResponse), f"Response should be of type DocumentExtractResponse, received {type(response)}"
+    assert isinstance(response, (DocumentExtractResponse, DocumentExtractResponseStream)), f"Response should be of type DocumentExtractResponse or DocumentExtractResponseStream, received {type(response)}"
 
     # Assert the response content is not None
     assert response.choices[0].message.content is not None, "Response content should not be None"
@@ -58,13 +58,13 @@ async def base_test_extract(model: AI_MODELS, client_type: ClientType, response_
                     for response in stream_iterator: pass
                 validate_extraction_response(response)
             else:
-                response = client.documents.extractions.parse(
+                response2 = client.documents.extractions.parse(
                     json_schema=json_schema,
                     document=document,
                     model=model,
                     modality=modality
                 )
-            validate_extraction_response(response)
+            validate_extraction_response(response2)
     
     if client_type == "async":
         async with async_client:
@@ -78,13 +78,13 @@ async def base_test_extract(model: AI_MODELS, client_type: ClientType, response_
                     response = await stream_async_iterator.__anext__()
                     async for response in stream_async_iterator: pass
             else:
-                response = await async_client.documents.extractions.parse(
+                response2 = await async_client.documents.extractions.parse(
                     json_schema=json_schema,
                     document=document,
                     model=model,
                     modality=modality
                 )
-            validate_extraction_response(response)
+            validate_extraction_response(response2)
 
 
 @pytest.mark.asyncio
