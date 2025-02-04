@@ -11,24 +11,24 @@ from ..._utils.stream_context_managers import as_async_context_manager, as_conte
 from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
+from ...types.schemas.object import Schema
 from typing import overload
 
 @overload
-def maybe_parse_to_pydantic(request_body: dict, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
+def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
 
 @overload
-def maybe_parse_to_pydantic(request_body: dict, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse: ...
+def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse: ...
 
 
-def maybe_parse_to_pydantic(request_body: dict, response: DocumentExtractResponse | DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponse | DocumentExtractResponseStream:
-    request = DocumentExtractRequest.model_validate(request_body)
+def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponse | DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponse | DocumentExtractResponseStream:
     
     if response.choices[0].message.content:
         try:
             if allow_partial:
-                response.choices[0].message.parsed = request.form_schema._partial_pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content))
+                response.choices[0].message.parsed = schema._partial_pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content))
             else:
-                response.choices[0].message.parsed = request.form_schema.pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content))
+                response.choices[0].message.parsed = schema.pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content))
         except Exception as e: 
             pass
     return response
@@ -106,8 +106,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, False, store, idempotency_key=idempotency_key)        
         response = self._client._prepared_request(request)
 
-        assert request.data is not None
-        return maybe_parse_to_pydantic(request.data, DocumentExtractResponse.model_validate(response))
+        schema = Schema(json_schema=load_json_schema(json_schema))
+        return maybe_parse_to_pydantic(schema, DocumentExtractResponse.model_validate(response))
 
     @as_context_manager
     def stream(
@@ -144,14 +144,15 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         ```
         """
         request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, True, store, idempotency_key=idempotency_key)
-        assert request.data is not None
+        schema = Schema(json_schema=load_json_schema(json_schema))
+
         # Request the stream and return a context manager
         chunk_json: Any = None
         for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            yield maybe_parse_to_pydantic(request.data, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
-        yield maybe_parse_to_pydantic(request.data, DocumentExtractResponseStream.model_validate(chunk_json))
+            yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
+        yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))
 
 
 class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
@@ -184,8 +185,8 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         """
         request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, False, store, idempotency_key=idempotency_key)
         response = await self._client._prepared_request(request)
-        assert request.data is not None
-        return maybe_parse_to_pydantic(request.data, DocumentExtractResponse.model_validate(response))
+        schema = Schema(json_schema=load_json_schema(json_schema))
+        return maybe_parse_to_pydantic(schema, DocumentExtractResponse.model_validate(response))
 
     @as_async_context_manager
     async def stream(
@@ -220,12 +221,12 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         ```
         """
         request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, True, store, idempotency_key=idempotency_key)
-        assert request.data is not None
+        schema = Schema(json_schema=load_json_schema(json_schema))
         chunk_json: Any = None
         async for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
             
-            yield maybe_parse_to_pydantic(request.data, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
+            yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
         # Last chunk with full parsed response
-        yield maybe_parse_to_pydantic(request.data, DocumentExtractResponseStream.model_validate(chunk_json))  
+        yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))  
