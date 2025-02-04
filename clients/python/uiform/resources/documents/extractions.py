@@ -13,12 +13,11 @@ from ...types.modalities import Modality
 from typing import overload
 
 @overload
-def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse:
-    ...
+def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
 
 @overload
-def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream:
-    ...
+def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse: ...
+
 
 def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse | DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponse | DocumentExtractResponseStream:
     if response.choices[0].message.content:

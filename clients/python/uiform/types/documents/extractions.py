@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationInfo
-from typing import  Any
+from typing import  Any, Literal, List
 
 import datetime
 from functools import cached_property
@@ -13,9 +13,7 @@ from ..mime import MIMEData, BaseMIMEData
 from ..schemas.object import Schema
 from ..image_settings import ImageSettings
 
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
-from openai.types.chat.chat_completion import Choice
-from typing import Literal, List
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -84,11 +82,11 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
 
-class UiParsedChoiceStream(Choice):
-   finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None     
+class UiParsedChoiceStream(ParsedChoice):
+   finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore    
 
 class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
-    choices: List[UiParsedChoiceStream] 
+    choices: List[UiParsedChoiceStream]  # type: ignore
 
 DocumentExtractResponse = UiParsedChatCompletion
 DocumentExtractResponseStream = UiParsedChatCompletionStream
