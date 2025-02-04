@@ -12,6 +12,7 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
 from .extractions import Extractions, AsyncExtractions
 from .templates.templates import Templates, AsyncTemplates
+from ...types.standards import PreparedRequest
 
 
 class BaseDocumentsMixin:
@@ -19,8 +20,9 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native", 
-        image_settings: dict[str, Any] | None = None
-    ) -> DocumentCreateMessageRequest:
+        image_settings: dict[str, Any] | None = None,
+        idempotency_key: str | None = None
+    ) -> PreparedRequest:
         
         mime_document = prepare_mime_document(document)
         data: dict[str, Any] = {
@@ -31,8 +33,25 @@ class BaseDocumentsMixin:
             data["image_settings"] = image_settings
 
         
-        return DocumentCreateMessageRequest.model_validate(data)
+        loading_request = DocumentCreateMessageRequest.model_validate(data)
+        return PreparedRequest(
+            method="POST",
+            url="/v1/documents/create_messages",
+            data=loading_request.model_dump(),
+            idempotency_key=idempotency_key
+        )
 
+    def _prepare_correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PreparedRequest:
+        mime_document = prepare_mime_document(document)
+
+        if not mime_document.mime_type.startswith("image/"):
+            raise ValueError("Image is not a valid image")
+        
+        return PreparedRequest(
+            method="POST",
+            url="/v1/documents/correct_image_orientation",
+            data={"document": mime_document.model_dump()},
+        )
 
 class Documents(SyncAPIResource, BaseDocumentsMixin): 
     """Documents API wrapper"""
@@ -68,12 +87,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             ValueError: If the input is not a valid image
             UiformAPIError: If the API request fails
         """
-        mime_document = prepare_mime_document(document)
-
-        if not mime_document.mime_type.startswith("image/"):
-            raise ValueError("Image is not a valid image")
-
-        response = self._client._request("POST", "/v1/documents/correct_image_orientation", data={"document": mime_document.model_dump()})
+        request = self._prepare_correct_image_orientation(document)
+        response = self._client._prepared_request(request)
         mime_response = MIMEData.model_validate(response['document'])
         return convert_mime_data_to_pil_image(mime_response)
 
@@ -103,9 +118,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Raises:
             UiformAPIError: If the API request fails.
         """
-        loading_request = self._prepare_create_messages(document, modality, image_settings)
-
-        response = self._client._request("POST", "/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
+        request = self._prepare_create_messages(document, modality, image_settings, idempotency_key)
+        response = self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
 
@@ -136,11 +150,11 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Raises:
             UiformAPIError: If the API request fails.
         """
-        loading_request = self._prepare_create_messages(document, modality, image_settings)
-
-        print(loading_request.model_dump().keys())
-        print(loading_request.model_dump())
-        response = await self._client._request("POST", "/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
+        request = self._prepare_create_messages(document, modality, image_settings, idempotency_key)
+        assert request.data is not None
+        print(request.data.keys())
+        print(request.data)
+        response = await self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
     async def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
@@ -163,11 +177,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             ValueError: If the input is not a valid image
             UiformAPIError: If the API request fails
         """
-        mime_document = prepare_mime_document(document)
-
-        if not mime_document.mime_type.startswith("image/"):
-            raise ValueError("Image is not a valid image")
-
-        response = await self._client._request("POST", "/v1/documents/correct_image_orientation", data={"document": mime_document.model_dump()})
+        request = self._prepare_correct_image_orientation(document)
+        response = await self._client._prepared_request(request)
         mime_response = MIMEData.model_validate(response['document'])
         return convert_mime_data_to_pil_image(mime_response)
