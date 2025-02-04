@@ -212,12 +212,13 @@ class UiForm(BaseUiForm):
             return raw_request()
         
         if raise_for_status:
+            # If raise_for_status is True, we want to raise an exception if the request fails, not retry...
             return raw_request()
         else:
             return wrapped_request()
 
     def _request_stream(
-            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
+            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, raise_for_status: bool = False
     ) -> Iterator[Any]:
         """Makes a streaming synchronous HTTP request to the API.
 
@@ -233,8 +234,7 @@ class UiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
-        def wrapped_request() -> Iterator[Any]:
+        def raw_request() -> Iterator[Any]:
             with self.client.stream(
                 method, 
                 self._prepare_url(endpoint), 
@@ -249,15 +249,23 @@ class UiForm(BaseUiForm):
                     try: yield json.loads(chunk)
                     except Exception: pass
         
-        for item in wrapped_request():
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        def wrapped_request() -> Iterator[Any]:
+            for item in raw_request():
+                yield item
+        
+        iterator_ = raw_request() if raise_for_status else wrapped_request()
+        
+        for item in iterator_:
             yield item
 
     # Simplified request methods using standard PreparedRequest object
     def _prepared_request(self, request: PreparedRequest) -> Any:
-        return self._request(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key)
+        return self._request(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status)
 
     def _prepared_request_stream(self, request: PreparedRequest) -> Iterator[Any]:
-        return self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key)
+        for item in self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key):
+            yield item
     
     def close(self) -> None:
         """Closes the HTTP client session."""
@@ -343,7 +351,7 @@ class AsyncUiForm(BaseUiForm):
         self.usage = usage.AsyncUsage(client=self)
 
     async def _request(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
+        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, raise_for_status: bool = False
     ) -> Any:
         """Makes an asynchronous HTTP request to the API.
 
@@ -359,19 +367,22 @@ class AsyncUiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
-        async def wrapped_request() -> Any:
-            response = await self.client.request(
-                    method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key)
-                )
+        async def raw_request() -> Any:
+            response = await self.client.request(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key))
             self._validate_response(response)
-
             return response.json()
 
-        return await wrapped_request()
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        async def wrapped_request() -> Any:
+            return await raw_request()
+
+        if raise_for_status:
+            return await raw_request()
+        else:
+            return await wrapped_request()
         
     async def _request_stream(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None
+        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, raise_for_status: bool = False
     ) -> AsyncIterator[Any]:
         """Makes a streaming asynchronous HTTP request to the API.
 
@@ -387,8 +398,7 @@ class AsyncUiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
-        async def wrapped_request() -> AsyncIterator[Any]:
+        async def raw_request() -> AsyncIterator[Any]:
             async with self.client.stream(
                 method, 
                 self._prepare_url(endpoint), 
@@ -401,15 +411,23 @@ class AsyncUiForm(BaseUiForm):
                     if not chunk: continue
                     try: yield json.loads(chunk)
                     except Exception: pass
+
+        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        async def wrapped_request() -> AsyncIterator[Any]:
+            async for item in raw_request():
+                yield item
+
+        async_iterator_ = raw_request() if raise_for_status else wrapped_request()
         
-        async for item in wrapped_request():
+        async for item in async_iterator_:
             yield item
 
     async def _prepared_request(self, request: PreparedRequest) -> Any:
-        return await self._request(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key)
+        return await self._request(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status)
     
     async def _prepared_request_stream(self, request: PreparedRequest) -> AsyncIterator[Any]:
-        return self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key)
+        async for item in self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status):
+            yield item
 
     async def close(self) -> None:
         """Closes the async HTTP client session."""

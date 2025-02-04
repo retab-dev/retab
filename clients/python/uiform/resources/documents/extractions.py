@@ -10,16 +10,19 @@ from ..._utils.mime import prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream
 from ...types.modalities import Modality
+from ...types.standards import PreparedRequest
 from typing import overload
 
 @overload
-def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
+def maybe_parse_to_pydantic(request_body: dict, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
 
 @overload
-def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse: ...
+def maybe_parse_to_pydantic(request_body: dict, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse: ...
 
 
-def maybe_parse_to_pydantic(request: DocumentExtractRequest, response: DocumentExtractResponse | DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponse | DocumentExtractResponseStream:
+def maybe_parse_to_pydantic(request_body: dict, response: DocumentExtractResponse | DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponse | DocumentExtractResponseStream:
+    request = DocumentExtractRequest.model_validate(request_body)
+    
     if response.choices[0].message.content:
         try:
             if allow_partial:
@@ -37,12 +40,12 @@ class BaseExtractionsMixin:
         document: Path | str | IOBase | HttpUrl | None,
         image_settings: Optional[dict[str, Any]],
         model: str,
-        temperature: float | None,
+        temperature: float,
         modality: Modality,
         stream: bool,
         store: bool = False,
-    ) -> DocumentExtractRequest:
-        
+        idempotency_key: str | None = None,
+    ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
         json_schema = load_json_schema(json_schema)
@@ -60,39 +63,14 @@ class BaseExtractionsMixin:
             data["image_settings"] = image_settings
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        return DocumentExtractRequest.model_validate(data)
+        document_extract_request = DocumentExtractRequest.model_validate(data)
 
-    def prepare_parse(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | HttpUrl | None,
-        image_settings: Optional[dict[str, Any]],
-        model: str,
-        temperature: float,
-        modality: Modality,
-        store: bool = False,
-    ) -> DocumentExtractRequest:
-        stream = False
-        return self.prepare_extraction(
-            json_schema, document, image_settings, model, temperature, modality, stream, store
+        return PreparedRequest(
+            method="POST",
+            url="/v1/documents/extractions",
+            data=document_extract_request.model_dump(),
+            idempotency_key=idempotency_key
         )
-    
-    def prepare_stream(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | HttpUrl | None,
-        image_settings: Optional[dict[str, Any]],
-        model: str,
-        temperature: float,
-        modality: Modality,
-        store: bool = False,
-    ) -> DocumentExtractRequest:
-        stream = True
-        return self.prepare_extraction(
-            json_schema, document, image_settings, model, temperature, modality, stream, store
-        )
-
-
 class Extractions(SyncAPIResource, BaseExtractionsMixin):
     """Extraction API wrapper"""
 
@@ -125,9 +103,11 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         assert (document is not None), "Either document or messages must be provided"
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = self.prepare_parse(json_schema, document, image_settings, model, temperature, modality, store)
-        response = self._client._request("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
-        return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, False, store, idempotency_key=idempotency_key)        
+        response = self._client._prepared_request(request)
+
+        assert request.data is not None
+        return maybe_parse_to_pydantic(request.data, DocumentExtractResponse.model_validate(response))
 
     @as_context_manager
     def stream(
@@ -163,15 +143,15 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
                 print(response)
         ```
         """
-        request = self.prepare_stream(json_schema, document, image_settings, model, temperature, modality, store)
-
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, True, store, idempotency_key=idempotency_key)
+        assert request.data is not None
         # Request the stream and return a context manager
         chunk_json: Any = None
-        for chunk_json in self._client._request_stream("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
+        for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            yield maybe_parse_to_pydantic(request, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
-        yield maybe_parse_to_pydantic(request, DocumentExtractResponseStream.model_validate(chunk_json))
+            yield maybe_parse_to_pydantic(request.data, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
+        yield maybe_parse_to_pydantic(request.data, DocumentExtractResponseStream.model_validate(chunk_json))
 
 
 class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
@@ -202,9 +182,10 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         Returns:
             DocumentExtractResponse: Parsed response from the API.
         """
-        request = self.prepare_parse(json_schema, document, image_settings, model, temperature, modality, store)
-        response = await self._client._request("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
-        return maybe_parse_to_pydantic(request, DocumentExtractResponse.model_validate(response))
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, False, store, idempotency_key=idempotency_key)
+        response = await self._client._prepared_request(request)
+        assert request.data is not None
+        return maybe_parse_to_pydantic(request.data, DocumentExtractResponse.model_validate(response))
 
     @as_async_context_manager
     async def stream(
@@ -238,12 +219,13 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
                 print(response)
         ```
         """
-        request = self.prepare_stream(json_schema, document, image_settings, model, temperature, modality, store)
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, True, store, idempotency_key=idempotency_key)
+        assert request.data is not None
         chunk_json: Any = None
-        async for chunk_json in self._client._request_stream("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
+        async for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
             
-            yield maybe_parse_to_pydantic(request, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
+            yield maybe_parse_to_pydantic(request.data, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
         # Last chunk with full parsed response
-        yield maybe_parse_to_pydantic(request, DocumentExtractResponseStream.model_validate(chunk_json))  
+        yield maybe_parse_to_pydantic(request.data, DocumentExtractResponseStream.model_validate(chunk_json))  
