@@ -256,4 +256,4 @@ async def test_log_extraction(
             "likelihoods": None
         }
     )
-    sync_client.documents.extractions.log_extraction(messages, completion, booking_confirmation_json_schema, "gpt-4o-mini", 0)
+    sync_client.documents.extractions.log(messages, completion, booking_confirmation_json_schema, "gpt-4o-mini", 0)
