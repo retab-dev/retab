@@ -164,7 +164,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
         yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))
 
-    def log_extraction(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> None:
+    def log(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> None:
         request = self.prepare_log_extraction(messages, completion, json_schema, model, temperature)
         self._client._prepared_request(request)
         return None
@@ -245,7 +245,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         # Last chunk with full parsed response
         yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))  
     
-    async def log_extraction(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> None:
+    async def log(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> None:
         request = self.prepare_log_extraction(messages, completion, json_schema, model, temperature)
         await self._client._prepared_request(request)
         return None
