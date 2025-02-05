@@ -10,7 +10,7 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.image_settings import ImageSettings
 from ...types.mime import MIMEData, EmailData
 from ...types.modalities import Modality
-from ...types.automations.mailboxes import Mailbox, UpdateMailboxRequest
+from ...types.automations.mailboxes import Mailbox, UpdateMailboxRequest, ListMailboxes
 from ...types.logs import AutomationLog
 
 from ..._utils.mime import prepare_mime_document
@@ -201,7 +201,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             webhook_url: Optional[str] = None,
             schema_id: Optional[str] = None,
             schema_data_id: Optional[str] = None,
-            ) -> List[Mailbox]:
+            ) -> ListMailboxes:
         """List all email automation configurations.
 
         Args:
@@ -215,11 +215,11 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             schema_data_id: Optional schema data ID filter
         
         Returns:
-            List[Mailbox]: List of mailbox configurations
+            ListMailboxes: List of mailbox configurations
         """
         request = self.prepare_list(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
-        return [Mailbox.model_validate(mailbox) for mailbox in response]
+        return ListMailboxes.model_validate(response)
 
     def get(self, email: str) -> Mailbox:
         """Get a specific email automation configuration.
@@ -340,10 +340,10 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
             webhook_url: Optional[str] = None,
             schema_id: Optional[str] = None,
             schema_data_id: Optional[str] = None,
-            ) -> List[Mailbox]:
+            ) -> ListMailboxes:
         request = self.prepare_list(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
-        return [Mailbox.model_validate(mailbox) for mailbox in response]
+        return ListMailboxes.model_validate(response)
     
     async def get(self, email: str) -> Mailbox:
         request = self.prepare_get(email)
