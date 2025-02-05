@@ -77,7 +77,7 @@ class OutlooksMixin:
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
-        
+
         return PreparedRequest(method="GET", url="/v1/automations/outlook", params=params)
 
     def prepare_get(self, id: str) -> PreparedRequest:
@@ -195,7 +195,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             after: str | None = None,
             limit: int = 10,
             order: Literal["asc", "desc"] | None = "desc",
-            id: Optional[str] = None,
+            outlook_id: Optional[str] = None,
             name: Optional[str] = None,
             webhook_url: Optional[str] = None,
             schema_id: Optional[str] = None,
@@ -208,7 +208,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             after: Optional cursor for pagination - get results after this log ID  
             limit: Maximum number of logs to return (1-100, default 10)
             order: Sort order by creation time - "asc" or "desc" (default "desc")
-            id: Optional ID filter
+            outlook_id: Optional ID filter
             name: Optional name filter
             webhook_url: Optional webhook URL filter
             schema_id: Optional schema ID filter
@@ -217,7 +217,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         Returns:
             List[Outlook]: List of outlook plugin configurations
         """
-        request = self.prepare_list(before, after, limit, order, id, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
 
@@ -236,7 +236,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
 
     def update(
         self,
-        id: str,
+        outlook_id: str,
         name: Optional[str] = None,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
@@ -251,7 +251,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         """Update an outlook automation configuration.
         
         Args:
-            id: ID of the outlook plugin to update
+            outlook_id: ID of the outlook plugin to update
             name: New name for the outlook plugin
             webhook_url: New webhook URL
             webhook_headers: New webhook headers
@@ -266,17 +266,17 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         Returns:
             Outlook: The updated outlook plugin configuration
         """
-        request = self.prepare_update(id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
+        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
         response = self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
-    def delete(self, id: str) -> None:
+    def delete(self, outlook_id: str) -> None:
         """Delete an outlook automation configuration.
         
         Args:
-            id: ID of the outlook plugin to delete
+            outlook_id: ID of the outlook plugin to delete
         """
-        request = self.prepare_delete(id)
+        request = self.prepare_delete(outlook_id)
         response = self._client._prepared_request(request)
         return None
 
@@ -285,7 +285,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
                 after: str | None = None,
                 limit: int = 10,
                 order: Literal["asc", "desc"] | None = "desc",
-                id: Optional[str] = None,
+                outlook_id: Optional[str] = None,
                 webhook_url: Optional[str] = None,
                 schema_id: Optional[str] = None,
                 schema_data_id: Optional[str] = None,
@@ -305,7 +305,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         Returns:
             List[Dict[str, Any]]: List of log entries
         """
-        request = self.prepare_logs(before, after, limit, order, id, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_logs(before, after, limit, order, outlook_id, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
         return [AutomationLog.model_validate(log) for log in response]
 
@@ -334,23 +334,23 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
             after: str | None = None,
             limit: int = 10,
             order: Literal["asc", "desc"] | None = "desc",
-            id: Optional[str] = None,
+            outlook_id: Optional[str] = None,
             name: Optional[str] = None,
             webhook_url: Optional[str] = None,
             schema_id: Optional[str] = None,
             schema_data_id: Optional[str] = None,
             ) -> ListOutlooks:
-        request = self.prepare_list(before, after, limit, order, id, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
     
-    async def get(self, id: str) -> Outlook:
-        request = self.prepare_get(id)
+    async def get(self, outlook_id: str) -> Outlook:
+        request = self.prepare_get(outlook_id)
         response = await self._client._prepared_request(request)
         return Outlook.model_validate(response)
     
     async def update(self,
-        id: str,
+        outlook_id: str,
         name: Optional[str] = None,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
@@ -362,12 +362,12 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         temperature: Optional[float] = None,
         json_schema: Optional[Dict[str, Any]] = None
     ) -> Outlook:
-        request = self.prepare_update(id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
+        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
         response = await self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
-    async def delete(self, id: str) -> None:
-        request = self.prepare_delete(id)
+    async def delete(self, outlook_id: str) -> None:
+        request = self.prepare_delete(outlook_id)
         await self._client._prepared_request(request)
         return None
     
@@ -376,11 +376,11 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
                 after: str | None = None,
                 limit: int = 10,
                 order: Literal["asc", "desc"] | None = "desc",
-                id: Optional[str] = None,
+                outlook_id: Optional[str] = None,
                 webhook_url: Optional[str] = None,
                 schema_id: Optional[str] = None,
                 schema_data_id: Optional[str] = None,
                 ) -> List[AutomationLog]:
-        request = self.prepare_logs(before, after, limit, order, id, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_logs(before, after, limit, order, outlook_id, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return [AutomationLog.model_validate(log) for log in response]
