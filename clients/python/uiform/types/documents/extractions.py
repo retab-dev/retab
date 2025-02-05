@@ -12,6 +12,7 @@ from ..standards import ErrorDetail, StreamingBaseModel
 from ..mime import MIMEData, BaseMIMEData
 from ..schemas.object import Schema
 from ..image_settings import ImageSettings
+from ..chat import ChatCompletionUiformMessage
 
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
 
@@ -87,6 +88,14 @@ class UiParsedChoiceStream(ParsedChoice):
 
 class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
     choices: List[UiParsedChoiceStream]  # type: ignore
+
+
+class LogExtractionRequest(BaseModel):
+    messages: list[ChatCompletionUiformMessage] # TODO: compatibility with Anthropic
+    completion: Any # UiParsedChatCompletion  # TODO: compatibility with Anthropic
+    response_format: dict[str, Any]
+    model: str
+    temperature: float
 
 DocumentExtractResponse = UiParsedChatCompletion
 DocumentExtractResponseStream = UiParsedChatCompletionStream
