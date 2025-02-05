@@ -7,10 +7,18 @@ from .documents.extractions import DocumentExtractResponse
 from .image_settings import ImageSettings
 from .pagination import ListMetadata
 from .modalities import Modality
-from .mime import BaseMIMEData
+from .mime import BaseMIMEData, MIMEData
 
 from .usage import Amount
 from .._utils.usage.usage import compute_cost_from_model
+
+
+
+
+class HttpOutput(BaseModel):
+    completion: DocumentExtractResponse
+    user: Optional[EmailStr] = None
+    file_payload: MIMEData
 
 
 class AutomationConfig(BaseModel):
