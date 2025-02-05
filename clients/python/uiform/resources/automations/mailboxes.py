@@ -75,8 +75,9 @@ class MailBoxesMixin:
             "schema_id": schema_id,
             "schema_data_id": schema_data_id,
         }
-        # Validate the data?
-        # not implemented yet
+        # Remove None values
+        params = {k: v for k, v in params.items() if v is not None}
+
         return PreparedRequest(method="GET", url="/v1/automations/mailboxes", params=params)
 
     def prepare_get(self, email: str) -> PreparedRequest:
