@@ -8,10 +8,11 @@ from ..._utils.ai_model import assert_valid_model_extraction
 from ..._utils.json_schema import filter_reasoning_fields_json, load_json_schema
 from ..._utils.mime import prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream
+from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream, LogExtractionRequest
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 from ...types.schemas.object import Schema
+from ...types.chat import ChatCompletionUiformMessage
 from typing import overload
 
 @overload
@@ -71,6 +72,15 @@ class BaseExtractionsMixin:
             data=document_extract_request.model_dump(),
             idempotency_key=idempotency_key
         )
+
+    def prepare_log_extraction(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> PreparedRequest:
+        return PreparedRequest(
+            method="POST",
+            url="/v1/documents/log_extraction",
+            data=LogExtractionRequest(messages=messages, completion=completion, response_format=json_schema, model=model, temperature=temperature).model_dump(),
+            raise_for_status=True
+        )
+
 class Extractions(SyncAPIResource, BaseExtractionsMixin):
     """Extraction API wrapper"""
 
@@ -154,6 +164,10 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
         yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))
 
+    def log_extraction(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> None:
+        request = self.prepare_log_extraction(messages, completion, json_schema, model, temperature)
+        self._client._prepared_request(request)
+        return None
 
 class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
     """Extraction API wrapper for asynchronous usage."""
@@ -230,3 +244,8 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
         # Last chunk with full parsed response
         yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))  
+    
+    async def log_extraction(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> None:
+        request = self.prepare_log_extraction(messages, completion, json_schema, model, temperature)
+        await self._client._prepared_request(request)
+        return None

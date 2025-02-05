@@ -8,6 +8,8 @@ from typing import Literal, get_args, Any
 from pydantic import BaseModel
 from uiform import UiForm, AsyncUiForm
 from uiform.types.documents.extractions import DocumentExtractResponse, DocumentExtractResponseStream
+from uiform.types.chat import ChatCompletionUiformMessage
+
 
 # List of AI Providers to test
 AI_MODELS = Literal[
@@ -228,3 +230,30 @@ async def test_extraction_with_idempotency_exceptions(
     assert isinstance(raised_exception_2, httpx.HTTPStatusError), "Exception should be a HTTPStatusError"
     # Assert that the message of both exceptions is the same
     assert raised_exception_1.args[0] == raised_exception_2.args[0], "Exception message should be the same"
+
+
+@pytest.mark.asyncio
+async def test_log_extraction(
+    sync_client: UiForm, booking_confirmation_json_schema: dict[str, Any]
+) -> None:
+    messages = [ChatCompletionUiformMessage(role="user", content="Hello, how are you?")]
+    completion = DocumentExtractResponse.model_validate(
+        {
+            "id": "chatcmpl-123", 
+            "object": "chat.completion",
+            "created": 1717656582,
+            "model": "gpt-4o-mini",
+            "choices": [
+                {
+                    "message": {
+                        "content": "I'm fine, thank you!",
+                        "role": "assistant"
+                    },
+                    "finish_reason": "stop",
+                    "index": 0
+                }
+            ],
+            "likelihoods": None
+        }
+    )
+    sync_client.documents.extractions.log_extraction(messages, completion, booking_confirmation_json_schema, "gpt-4o-mini", 0)
