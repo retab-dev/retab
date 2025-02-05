@@ -811,7 +811,6 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 # Write the request as a JSON line
                 f.write(json.dumps(request) + '\n')
 
-
     def save_batch_update_annotation_requests(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -843,29 +842,33 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 existing_messages = entry['messages']
                 system_and_user_messages = existing_messages[:-1]
 
-                previous_annotation_message = {
+                previous_annotation_message: ChatCompletionMessageParam = {
                     "role": "user", 
                     "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + existing_messages[-1]['content']
                 }
 
                 # Construct the request object
-                request = {
+                response_format: BatchJSONLResponseFormat = {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": schema_obj.id,
+                        "schema": schema_obj.inference_json_schema,
+                        "strict": True
+                    }
+                }
+
+                body: BatchJSONLBody = {
+                    "model": model,
+                    "messages": schema_obj.openai_messages + system_and_user_messages + [previous_annotation_message],
+                    "temperature": temperature,
+                    "response_format": response_format
+                }
+
+                request: BatchJSONL = {
                     "custom_id": f"request-{i}",
                     "method": "POST",
-                    "url": "/v1/chat/completions", 
-                    "body": {
-                        "model": model,
-                        "messages": schema_obj.openai_messages + system_and_user_messages + [previous_annotation_message],
-                        "temperature": temperature,
-                        "response_format": {
-                            "type": "json_schema",
-                            "json_schema": {
-                                "name": schema_obj.id,
-                                "schema": schema_obj.inference_json_schema,
-                                "strict": True
-                            }
-                        }
-                    }
+                    "url": "/v1/chat/completions",
+                    "body": body
                 }
 
                 # Write the request as a JSON line

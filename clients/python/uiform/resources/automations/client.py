@@ -7,7 +7,7 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 
 from .mailboxes import Mailboxes, AsyncMailboxes
 from .links import Links, AsyncLinks
-
+from .outlook import Outlooks, AsyncOutlooks
 class SignatureVerificationError(Exception):
     """Raised when webhook signature verification fails."""
     pass
@@ -46,6 +46,7 @@ class Automations(SyncAPIResource, AutomationsMixin):
         super().__init__(client=client)
         self.mailboxes = Mailboxes(client=client)
         self.links = Links(client=client)
+        self.outlook = Outlooks(client=client)
 
     def verify_event(self, body: bytes, signature: str, secret: str) -> Any:
         """
@@ -60,7 +61,7 @@ class AsyncAutomations(AsyncAPIResource, AutomationsMixin):
         super().__init__(client=client)
         self.mailboxes = AsyncMailboxes(client=client)
         self.links = AsyncLinks(client=client)
-
+        self.outlook = AsyncOutlooks(client=client)
     async def verify_event(self, body: bytes, signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.

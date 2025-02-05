@@ -1,0 +1,386 @@
+from typing import Any, Optional, List, Dict, Literal
+from pydantic import HttpUrl
+import json
+from PIL.Image import Image
+from pathlib import Path
+from io import IOBase
+
+from ..._resource import SyncAPIResource, AsyncAPIResource
+
+from ...types.image_settings import ImageSettings
+from ...types.modalities import Modality
+from ...types.automations.outlook import Outlook, UpdateOutlookRequest, ListOutlooks
+from ...types.standards import PreparedRequest
+from ...types.logs import AutomationLog
+
+from ..._utils.ai_model import assert_valid_model_extraction
+
+
+class OutlooksMixin:
+    def prepare_create(
+        self,
+        name: str,
+        json_schema: Dict[str, Any],
+        webhook_url: HttpUrl,
+        # email specific opitonals Fields
+        authorized_domains: List[str] = [],
+        authorized_emails: List[str] = [],
+        # HTTP Config Optional Fields
+        webhook_headers: Dict[str, str] = {},
+        # DocumentExtraction Config
+        image_settings: Optional[Dict[str, Any]] = None,
+        modality: Modality = "native",
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+    ) -> PreparedRequest:
+        assert_valid_model_extraction(model)
+
+        data = {
+            "name": name,
+            "webhook_url": webhook_url,
+            "webhook_headers": webhook_headers,
+            "json_schema": json_schema,
+            "authorized_domains": authorized_domains,
+            "authorized_emails": authorized_emails,
+            "image_settings": image_settings or ImageSettings(),
+            "modality": modality,
+            "model": model,
+            "temperature": temperature,
+        }
+
+        # Validate the data
+        outlook_data = Outlook.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/automations/outlook", data=outlook_data.model_dump(mode="json"))
+
+    def prepare_list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> PreparedRequest:
+        params = {
+            "before": before,
+            "after": after,
+            "limit": limit,
+            "order": order,
+            "id": id,
+            "name": name,
+            "webhook_url": webhook_url,
+            "schema_id": schema_id,
+            "schema_data_id": schema_data_id,
+        }
+        # Remove None values
+        params = {k: v for k, v in params.items() if v is not None}
+        
+        return PreparedRequest(method="GET", url="/v1/automations/outlook", params=params)
+
+    def prepare_get(self, id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/automations/outlook/{id}")
+
+    def prepare_update(self,   
+        id: str,
+        name: Optional[str] = None,
+        webhook_url: Optional[HttpUrl] = None,
+        webhook_headers: Optional[Dict[str, str]] = None,
+        authorized_domains: Optional[List[str]] = None,
+        authorized_emails: Optional[List[str]] = None,
+        image_settings: Optional[Dict[str, Any]] = None,
+        modality: Optional[Modality] = None,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        json_schema: Optional[Dict[str, Any]] = None) -> PreparedRequest:
+        
+        data: dict[str, Any] = {}
+        if name is not None:
+            data["name"] = name
+        if webhook_url is not None:
+            data["webhook_url"] = webhook_url
+        if webhook_headers is not None:
+            data["webhook_headers"] = webhook_headers
+        if authorized_domains is not None:
+            data["authorized_domains"] = authorized_domains
+        if authorized_emails is not None:
+            data["authorized_emails"] = authorized_emails
+        if image_settings is not None:
+            data["image_settings"] = image_settings
+        if modality is not None:
+            data["modality"] = modality
+        if model is not None:
+            assert_valid_model_extraction(model)
+            data["model"] = model
+        if temperature is not None:
+            data["temperature"] = temperature
+        if json_schema is not None:
+            data["json_schema"] = json_schema
+
+        update_outlook_request = UpdateOutlookRequest.model_validate(data)
+
+        return PreparedRequest(method="PUT", url=f"/v1/automations/outlook/{id}", data=update_outlook_request.model_dump(mode="json"))
+
+    def prepare_delete(self, id: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/automations/outlook/{id}")
+
+    def prepare_logs(self, 
+                before: str | None = None,
+                after: str | None = None,
+                limit: int = 10,
+                order: Literal["asc", "desc"] | None = "desc",
+                id: Optional[str] = None,
+                name: Optional[str] = None,
+                webhook_url: Optional[str] = None,
+                schema_id: Optional[str] = None,
+                schema_data_id: Optional[str] = None,) -> PreparedRequest:
+        params = {
+            "id": id,
+            "name": name,
+            "webhook_url": webhook_url,
+            "schema_id": schema_id,
+            "schema_data_id": schema_data_id,
+            "before": before,
+            "after": after,
+            "limit": limit,
+            "order": order,
+        }
+        return PreparedRequest(method="GET", url=f"/v1/automations/outlook/{id}/logs", params=params)
+
+class Outlooks(SyncAPIResource, OutlooksMixin):
+    """Outlook API wrapper for managing outlook automation configurations"""
+
+    def __init__(self, client: Any) -> None:
+        super().__init__(client=client)
+
+    def create(
+        self,
+        name: str,
+        json_schema: Dict[str, Any],
+        webhook_url: HttpUrl,
+        authorized_domains: List[str] = [],
+        authorized_emails: List[str] = [],
+        webhook_headers: Dict[str, str] = {},
+        image_settings: Optional[Dict[str, Any]] = None,
+        modality: Modality = "native",
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+    ) -> Outlook:
+        """Create a new outlook automation configuration.
+        
+        Args:
+            name: Name of the outlook plugin
+            json_schema: JSON schema to validate extracted data
+            webhook_url: Webhook URL to receive processed data
+            webhook_headers: Webhook headers to send with processed data
+            authorized_domains: List of authorized domains
+            authorized_emails: List of authorized emails
+            image_settings: Optional image preprocessing operations
+            modality: Processing modality (currently only "native" supported)
+            model: AI model to use for processing
+            temperature: Model temperature setting
+            
+        Returns:
+            Outlook: The created outlook plugin configuration
+        """
+
+        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature)
+        response = self._client._prepared_request(request)
+        return Outlook.model_validate(response)
+
+    def list(self,
+            before: str | None = None,
+            after: str | None = None,
+            limit: int = 10,
+            order: Literal["asc", "desc"] | None = "desc",
+            id: Optional[str] = None,
+            name: Optional[str] = None,
+            webhook_url: Optional[str] = None,
+            schema_id: Optional[str] = None,
+            schema_data_id: Optional[str] = None,
+            ) -> ListOutlooks:
+        """List all outlook automation configurations.
+
+        Args:
+            before: Optional cursor for pagination - get results before this log ID
+            after: Optional cursor for pagination - get results after this log ID  
+            limit: Maximum number of logs to return (1-100, default 10)
+            order: Sort order by creation time - "asc" or "desc" (default "desc")
+            id: Optional ID filter
+            name: Optional name filter
+            webhook_url: Optional webhook URL filter
+            schema_id: Optional schema ID filter
+            schema_data_id: Optional schema data ID filter
+        
+        Returns:
+            List[Outlook]: List of outlook plugin configurations
+        """
+        request = self.prepare_list(before, after, limit, order, id, name, webhook_url, schema_id, schema_data_id)
+        response = self._client._prepared_request(request)
+        return ListOutlooks.model_validate(response)
+
+    def get(self, id: str) -> Outlook:
+        """Get a specific outlook automation configuration.
+        
+        Args:
+            id: ID of the outlook plugin
+            
+        Returns:
+            Outlook: The outlook plugin configuration
+        """
+        request = self.prepare_get(id)
+        response = self._client._prepared_request(request)
+        return Outlook.model_validate(response)
+
+    def update(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        webhook_url: Optional[HttpUrl] = None,
+        webhook_headers: Optional[Dict[str, str]] = None,
+        authorized_domains: Optional[List[str]] = None,
+        authorized_emails: Optional[List[str]] = None,
+        image_settings: Optional[Dict[str, Any]] = None,
+        modality: Optional[Modality] = None,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        json_schema: Optional[Dict[str, Any]] = None
+    ) -> Outlook:
+        """Update an outlook automation configuration.
+        
+        Args:
+            id: ID of the outlook plugin to update
+            name: New name for the outlook plugin
+            webhook_url: New webhook URL
+            webhook_headers: New webhook headers
+            authorized_domains: New authorized domains
+            authorized_emails: New authorized emails
+            image_settings: New image preprocessing operations
+            modality: New processing modality
+            model: New AI model
+            temperature: New temperature setting
+            json_schema: New JSON schema
+            
+        Returns:
+            Outlook: The updated outlook plugin configuration
+        """
+        request = self.prepare_update(id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
+        response = self._client._prepared_request(request)
+        return Outlook.model_validate(response)
+
+    def delete(self, id: str) -> None:
+        """Delete an outlook automation configuration.
+        
+        Args:
+            id: ID of the outlook plugin to delete
+        """
+        request = self.prepare_delete(id)
+        response = self._client._prepared_request(request)
+        return None
+
+    def logs(self, 
+                before: str | None = None,
+                after: str | None = None,
+                limit: int = 10,
+                order: Literal["asc", "desc"] | None = "desc",
+                id: Optional[str] = None,
+                webhook_url: Optional[str] = None,
+                schema_id: Optional[str] = None,
+                schema_data_id: Optional[str] = None,
+                ) -> List[AutomationLog]:
+        """Get logs for a specific outlook automation.
+        
+        Args:
+            before: Optional cursor for pagination - get results before this log ID
+            after: Optional cursor for pagination - get results after this log ID  
+            limit: Maximum number of logs to return (1-100, default 10)
+            order: Sort order by creation time - "asc" or "desc" (default "desc")
+            id: Optional ID filter
+            webhook_url: Optional webhook URL filter
+            schema_id: Optional schema ID filter
+            schema_data_id: Optional schema data ID filter
+            
+        Returns:
+            List[Dict[str, Any]]: List of log entries
+        """
+        request = self.prepare_logs(before, after, limit, order, id, webhook_url, schema_id, schema_data_id)
+        response = self._client._prepared_request(request)
+        return [AutomationLog.model_validate(log) for log in response]
+
+class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
+    def __init__(self, client: Any) -> None:
+        super().__init__(client=client)
+
+    async def create(self,
+        name: str,
+        json_schema: Dict[str, Any],
+        webhook_url: HttpUrl,
+        authorized_domains: List[str] = [],
+        authorized_emails: List[str] = [],
+        webhook_headers: Dict[str, str] = {},
+        image_settings: Optional[Dict[str, Any]] = None,
+        modality: Modality = "native",
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+    ) -> Outlook:
+        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature)
+        response = await self._client._prepared_request(request)
+        return Outlook.model_validate(response)
+
+    async def list(self,
+            before: str | None = None,
+            after: str | None = None,
+            limit: int = 10,
+            order: Literal["asc", "desc"] | None = "desc",
+            id: Optional[str] = None,
+            name: Optional[str] = None,
+            webhook_url: Optional[str] = None,
+            schema_id: Optional[str] = None,
+            schema_data_id: Optional[str] = None,
+            ) -> ListOutlooks:
+        request = self.prepare_list(before, after, limit, order, id, name, webhook_url, schema_id, schema_data_id)
+        response = await self._client._prepared_request(request)
+        return ListOutlooks.model_validate(response)
+    
+    async def get(self, id: str) -> Outlook:
+        request = self.prepare_get(id)
+        response = await self._client._prepared_request(request)
+        return Outlook.model_validate(response)
+    
+    async def update(self,
+        id: str,
+        name: Optional[str] = None,
+        webhook_url: Optional[HttpUrl] = None,
+        webhook_headers: Optional[Dict[str, str]] = None,
+        authorized_domains: Optional[List[str]] = None,
+        authorized_emails: Optional[List[str]] = None,
+        image_settings: Optional[Dict[str, Any]] = None,
+        modality: Optional[Modality] = None,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        json_schema: Optional[Dict[str, Any]] = None
+    ) -> Outlook:
+        request = self.prepare_update(id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
+        response = await self._client._prepared_request(request)
+        return Outlook.model_validate(response)
+
+    async def delete(self, id: str) -> None:
+        request = self.prepare_delete(id)
+        await self._client._prepared_request(request)
+        return None
+    
+    async def logs(self, 
+                before: str | None = None,
+                after: str | None = None,
+                limit: int = 10,
+                order: Literal["asc", "desc"] | None = "desc",
+                id: Optional[str] = None,
+                webhook_url: Optional[str] = None,
+                schema_id: Optional[str] = None,
+                schema_data_id: Optional[str] = None,
+                ) -> List[AutomationLog]:
+        request = self.prepare_logs(before, after, limit, order, id, webhook_url, schema_id, schema_data_id)
+        response = await self._client._prepared_request(request)
+        return [AutomationLog.model_validate(log) for log in response]
