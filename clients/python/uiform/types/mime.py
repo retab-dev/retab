@@ -52,8 +52,8 @@ class MIMEData(BaseModel):
     
     def __str__(self) -> str:
         truncated_url = self.url[:50] + '...' if len(self.url) > 50 else self.url
-        truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
-        return f"MIMEData(filename='{self.filename}', url='{truncated_url}', content='{truncated_content}', mime_type='{self.mime_type}', size='{self.size}', extension='{self.extension}')"
+        # truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
+        return f"MIMEData(filename='{self.filename}', url='{truncated_url}', mime_type='{self.mime_type}', size='{self.size}', extension='{self.extension}')"
     
     def __repr__(self) -> str:
         return self.__str__()
