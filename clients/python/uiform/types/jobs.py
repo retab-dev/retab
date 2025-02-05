@@ -3,7 +3,7 @@ from typing import Literal, Optional
 import datetime
 
 
-JobType = Literal["prompt-optimization"]
+JobType = Literal["prompt-optimization","annotate-files"]
 JobName = Literal["uiform-production-backend-jobs", "uiform-staging-backend-jobs"]
 
 
