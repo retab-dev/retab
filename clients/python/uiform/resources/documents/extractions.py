@@ -77,7 +77,7 @@ class BaseExtractionsMixin:
         return PreparedRequest(
             method="POST",
             url="/v1/documents/log_extraction",
-            data=LogExtractionRequest(messages=messages, completion=completion, response_format=json_schema, model=model, temperature=temperature).model_dump(),
+            data=LogExtractionRequest(messages=messages, completion=completion, json_schema=json_schema, model=model, temperature=temperature).model_dump(),
             raise_for_status=True
         )
 

@@ -93,7 +93,7 @@ class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
 class LogExtractionRequest(BaseModel):
     messages: list[ChatCompletionUiformMessage] # TODO: compatibility with Anthropic
     completion: Any # UiParsedChatCompletion  # TODO: compatibility with Anthropic
-    response_format: dict[str, Any]
+    json_schema: dict[str, Any]
     model: str
     temperature: float
 
