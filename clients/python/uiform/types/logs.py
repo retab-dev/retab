@@ -46,6 +46,8 @@ class OpenAIRequestConfig(BaseModel):
 
 from .automations.mailboxes import Mailbox
 from .automations.links import Link
+from .automations.cron import ScrappingConfig
+from .automations.endpoint import ExtractionEndpointConfig
 
 #class OpenAILog(BaseModel): 
 #    request_config: OpenAIRequestConfig
