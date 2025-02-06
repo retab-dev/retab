@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, Literal
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, Literal
 from .batch_annotation import AnnotationProps
 
 class FineTuningInputData(BaseModel):
