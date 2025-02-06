@@ -13,7 +13,7 @@ class SignatureVerificationError(Exception):
     pass
 
 class AutomationsMixin:
-    def _verify_event(self, body: bytes, signature: str, secret: str) -> Any:
+    def _verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.
 
@@ -30,14 +30,14 @@ class AutomationsMixin:
         """
         expected_signature = hmac.new(
             secret.encode(),
-            body,
+            event_body,
             hashlib.sha256
         ).hexdigest()
 
-        if not hmac.compare_digest(signature, expected_signature):
+        if not hmac.compare_digest(event_signature, expected_signature):
             raise SignatureVerificationError("Invalid signature")
 
-        return json.loads(body.decode('utf-8'))
+        return json.loads(event_body.decode('utf-8'))
 
 class Automations(SyncAPIResource, AutomationsMixin): 
     """Automations API wrapper"""
@@ -48,11 +48,11 @@ class Automations(SyncAPIResource, AutomationsMixin):
         self.links = Links(client=client)
         self.outlook = Outlooks(client=client)
 
-    def verify_event(self, body: bytes, signature: str, secret: str) -> Any:
+    def verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.
         """
-        return self._verify_event(body, signature, secret)
+        return self._verify_event(event_body, event_signature, secret)
 
 class AsyncAutomations(AsyncAPIResource, AutomationsMixin):
     """Async Automations API wrapper"""
@@ -62,8 +62,8 @@ class AsyncAutomations(AsyncAPIResource, AutomationsMixin):
         self.mailboxes = AsyncMailboxes(client=client)
         self.links = AsyncLinks(client=client)
         self.outlook = AsyncOutlooks(client=client)
-    async def verify_event(self, body: bytes, signature: str, secret: str) -> Any:
+    async def verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.
         """
-        return self._verify_event(body, signature, secret)
+        return self._verify_event(event_body, event_signature, secret)
