@@ -7,5 +7,5 @@ class FineTuningInputData(BaseModel):
     finetuning_props : AnnotationProps
 
 class FineTuningJob(BaseModel):
-    job_type: Literal["finetune-dataset"]
+    job_type: Literal["finetune-dataset"] = "finetune-dataset"
     input_data: FineTuningInputData

@@ -5,7 +5,7 @@ import json
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .._utils.json_schema import load_json_schema
 from ..types.jobs import JobResponse
-from ..types.prompt_optimization import PromptOptimizationObject, PromptOptimizationProps, PromptOptimizationJobInputData, PromptOptimizationJob
+from ..types.jobs.prompt_optimization import PromptOptimizationObject, PromptOptimizationProps, PromptOptimizationJobInputData, PromptOptimizationJob
 
 MAX_TRAINING_SAMPLES = 10
 
