@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from ..modalities import Modality
 from ..image_settings import ImageSettings
 
-CheckPoint = Literal["input_parsed", "file_uploaded", "batch_job_created", "waiting_batch", "results_collected", "completed", "error", None]
+CheckPoint = Literal[None, "file_uploaded", "openai_job_created", "openai_job_running", "openai_job_completed", "openai_job_failed"]
 
 class AnnotationProps(BaseModel):
     model: str = "gpt-4o-mini"
