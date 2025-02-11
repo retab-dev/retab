@@ -2,8 +2,10 @@ from typing import Literal, Any, Optional
 
 from pydantic import BaseModel, Field
 
-from .modalities import Modality
-from .image_settings import ImageSettings
+from ..modalities import Modality
+from ..image_settings import ImageSettings
+
+CheckPoint = Literal["input_parsed", "file_uploaded", "batch_job_created", "waiting_batch", "results_collected", "completed", "error", None]
 
 class AnnotationProps(BaseModel):
     model: str = "gpt-4o-mini"
@@ -18,5 +20,7 @@ class AnnotationInputData(BaseModel):
     annotation_props: AnnotationProps
 
 class AnnotationJob(BaseModel):
-    job_type: Literal["annotate-files"]
+    job_type: Literal["annotate-files"] = "annotate-files"
     input_data: AnnotationInputData
+    checkpoint: CheckPoint = None
+    checkpoint_data: Optional[dict] = None

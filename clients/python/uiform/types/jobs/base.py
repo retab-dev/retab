@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field
-from typing import Literal, Optional
+from typing import Literal, Optional, Any
 import datetime
 
 
-JobType = Literal["prompt-optimization","annotate-files","finetune-dataset"]
+JobType = Literal["prompt-optimization", "annotate-files", "finetune-dataset"]
 JobName = Literal["uiform-production-backend-jobs", "uiform-staging-backend-jobs"]
 
 
@@ -23,10 +23,13 @@ class JobResponse(BaseModel):
 class JobDocument(BaseModel):
     job_id: str
     job_type: str
-    organization_id: str
+    identity: Any
     status: str
     input_data_gcs_path: str
     result: Optional[dict] = None
     error: Optional[str] = None
     created_at: Optional[datetime.datetime] = None
     updated_at: Optional[datetime.datetime] = None
+    checkpoint: Any = None  # Useful for jobs that need to be resumed
+    checkpoint_data: Optional[dict] = None
+

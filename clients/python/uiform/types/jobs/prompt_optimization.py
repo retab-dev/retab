@@ -1,7 +1,7 @@
 from typing import Literal, Any
 from pydantic import BaseModel, computed_field
-from .mime import MIMEData
-from .._utils.benchmarking import ExtractionAnalysis
+from ..mime import MIMEData
+from ..._utils.benchmarking import ExtractionAnalysis
 
 MAX_CONCURRENCY = 15
 
@@ -39,5 +39,5 @@ class PromptOptimizationJobInputData(BaseModel):
 
 
 class PromptOptimizationJob(BaseModel):
-    job_type: Literal["prompt-optimization"]
+    job_type: Literal["prompt-optimization"] = "prompt-optimization"
     input_data: PromptOptimizationJobInputData
