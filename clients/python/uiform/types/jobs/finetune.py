@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Literal
 from .batch_annotation import AnnotationProps
 
-CheckPoint = Literal[None, "file_uploaded", "openai_job_created", "openai_job_running", "openai_job_completed", "openai_job_failed"]
+CheckPoint = Literal[None, "file_uploaded", "openai_job_created", "openai_job_running", "openai_job_succeeded", "openai_job_failed", "succeeded", "failed"]
 
 class FineTuningInputData(BaseModel):
     dataset_id: str

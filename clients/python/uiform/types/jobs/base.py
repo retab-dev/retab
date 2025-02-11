@@ -23,7 +23,8 @@ class JobResponse(BaseModel):
 class JobDocument(BaseModel):
     job_id: str
     job_type: str
-    identity: Any
+    identity: Any | None = None
+    organization_id: str | None = None
     status: str
     input_data_gcs_path: str
     result: Optional[dict] = None
