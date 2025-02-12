@@ -9,7 +9,7 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 
 from ...types.image_settings import ImageSettings
 from ...types.modalities import Modality
-from ...types.automations.outlook import Outlook, UpdateOutlookRequest, ListOutlooks
+from ...types.automations.outlook import Outlook, UpdateOutlookRequest, ListOutlooks, MatchParams, FetchParams
 from ...types.standards import PreparedRequest
 from ...types.logs import AutomationLog
 
@@ -32,6 +32,9 @@ class OutlooksMixin:
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        # Optional Fields for data integration
+        match_params: Optional[List[MatchParams]] = None,
+        fetch_params: Optional[List[FetchParams]] = None,
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
@@ -48,6 +51,11 @@ class OutlooksMixin:
             "temperature": temperature,
         }
 
+        if match_params is not None:
+            data["match_params"] = match_params
+        if fetch_params is not None:
+            data["fetch_params"] = fetch_params
+
         # Validate the data
         outlook_data = Outlook.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/automations/outlook", data=outlook_data.model_dump(mode="json"))
@@ -63,6 +71,8 @@ class OutlooksMixin:
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
+        match_params: Optional[List[MatchParams]] = None,
+        fetch_params: Optional[List[FetchParams]] = None,
     ) -> PreparedRequest:
         params = {
             "before": before,
@@ -74,6 +84,8 @@ class OutlooksMixin:
             "webhook_url": webhook_url,
             "schema_id": schema_id,
             "schema_data_id": schema_data_id,
+            "match_params": match_params,
+            "fetch_params": fetch_params,
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
@@ -94,7 +106,9 @@ class OutlooksMixin:
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
-        json_schema: Optional[Dict[str, Any]] = None) -> PreparedRequest:
+        json_schema: Optional[Dict[str, Any]] = None,
+        match_params: Optional[List[MatchParams]] = None,
+        fetch_params: Optional[List[FetchParams]] = None) -> PreparedRequest:
         
         data: dict[str, Any] = {}
         if name is not None:
@@ -118,6 +132,10 @@ class OutlooksMixin:
             data["temperature"] = temperature
         if json_schema is not None:
             data["json_schema"] = json_schema
+        if match_params is not None:
+            data["match_params"] = match_params
+        if fetch_params is not None:
+            data["fetch_params"] = fetch_params
 
         update_outlook_request = UpdateOutlookRequest.model_validate(data)
 
@@ -135,7 +153,9 @@ class OutlooksMixin:
                 name: Optional[str] = None,
                 webhook_url: Optional[str] = None,
                 schema_id: Optional[str] = None,
-                schema_data_id: Optional[str] = None,) -> PreparedRequest:
+                schema_data_id: Optional[str] = None,
+                match_params: Optional[List[MatchParams]] = None,
+                fetch_params: Optional[List[FetchParams]] = None,) -> PreparedRequest:
         params = {
             "id": id,
             "name": name,
@@ -146,6 +166,8 @@ class OutlooksMixin:
             "after": after,
             "limit": limit,
             "order": order,
+            "match_params": match_params,
+            "fetch_params": fetch_params,
         }
         return PreparedRequest(method="GET", url=f"/v1/automations/outlook/{id}/logs", params=params)
 
@@ -167,6 +189,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        match_params: Optional[List[MatchParams]] = None,
+        fetch_params: Optional[List[FetchParams]] = None,
     ) -> Outlook:
         """Create a new outlook automation configuration.
         
@@ -181,12 +205,13 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
-            
+            match_params: List of match parameters for the outlook automation
+            fetch_params: List of fetch parameters for the outlook automation
         Returns:
             Outlook: The created outlook plugin configuration
         """
 
-        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature)
+        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, match_params, fetch_params)
         response = self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
@@ -200,6 +225,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             webhook_url: Optional[str] = None,
             schema_id: Optional[str] = None,
             schema_data_id: Optional[str] = None,
+            match_params: Optional[List[MatchParams]] = None,
+            fetch_params: Optional[List[FetchParams]] = None,
             ) -> ListOutlooks:
         """List all outlook automation configurations.
 
@@ -213,11 +240,12 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             webhook_url: Optional webhook URL filter
             schema_id: Optional schema ID filter
             schema_data_id: Optional schema data ID filter
-        
+            match_params: Optional list of match parameters for the outlook automation
+            fetch_params: Optional list of fetch parameters for the outlook automation
         Returns:
             List[Outlook]: List of outlook plugin configurations
         """
-        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
         response = self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
 
@@ -246,7 +274,9 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
-        json_schema: Optional[Dict[str, Any]] = None
+        json_schema: Optional[Dict[str, Any]] = None,
+        match_params: Optional[List[MatchParams]] = None,
+        fetch_params: Optional[List[FetchParams]] = None,
     ) -> Outlook:
         """Update an outlook automation configuration.
         
@@ -262,11 +292,13 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             model: New AI model
             temperature: New temperature setting
             json_schema: New JSON schema
-            
+            match_params: New match parameters for the outlook automation
+            fetch_params: New fetch parameters for the outlook automation
+
         Returns:
             Outlook: The updated outlook plugin configuration
         """
-        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
+        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema, match_params, fetch_params)
         response = self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
@@ -286,9 +318,12 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
                 limit: int = 10,
                 order: Literal["asc", "desc"] | None = "desc",
                 outlook_id: Optional[str] = None,
+                name: Optional[str] = None,
                 webhook_url: Optional[str] = None,
                 schema_id: Optional[str] = None,
                 schema_data_id: Optional[str] = None,
+                match_params: Optional[List[MatchParams]] = None,
+                fetch_params: Optional[List[FetchParams]] = None,
                 ) -> List[AutomationLog]:
         """Get logs for a specific outlook automation.
         
@@ -301,11 +336,12 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             webhook_url: Optional webhook URL filter
             schema_id: Optional schema ID filter
             schema_data_id: Optional schema data ID filter
-            
+            match_params: Optional list of match parameters for the outlook automation
+            fetch_params: Optional list of fetch parameters for the outlook automation
         Returns:
             List[Dict[str, Any]]: List of log entries
         """
-        request = self.prepare_logs(before, after, limit, order, outlook_id, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_logs(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
         response = self._client._prepared_request(request)
         return [AutomationLog.model_validate(log) for log in response]
 
@@ -324,8 +360,10 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        match_params: List[MatchParams] = [],
+        fetch_params: List[FetchParams] = [],
     ) -> Outlook:
-        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature)
+        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, match_params, fetch_params)
         response = await self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
@@ -339,8 +377,10 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
             webhook_url: Optional[str] = None,
             schema_id: Optional[str] = None,
             schema_data_id: Optional[str] = None,
+            match_params: Optional[List[MatchParams]] = None,
+            fetch_params: Optional[List[FetchParams]] = None,
             ) -> ListOutlooks:
-        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
         response = await self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
     
@@ -360,9 +400,11 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
-        json_schema: Optional[Dict[str, Any]] = None
+        json_schema: Optional[Dict[str, Any]] = None,
+        match_params: Optional[List[MatchParams]] = None,
+        fetch_params: Optional[List[FetchParams]] = None,
     ) -> Outlook:
-        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
+        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema, match_params, fetch_params)
         response = await self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
@@ -377,10 +419,13 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
                 limit: int = 10,
                 order: Literal["asc", "desc"] | None = "desc",
                 outlook_id: Optional[str] = None,
+                name: Optional[str] = None,
                 webhook_url: Optional[str] = None,
                 schema_id: Optional[str] = None,
                 schema_data_id: Optional[str] = None,
+                match_params: Optional[List[MatchParams]] = None,
+                fetch_params: Optional[List[FetchParams]] = None,
                 ) -> List[AutomationLog]:
-        request = self.prepare_logs(before, after, limit, order, outlook_id, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_logs(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
         response = await self._client._prepared_request(request)
         return [AutomationLog.model_validate(log) for log in response]

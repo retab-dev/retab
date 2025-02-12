@@ -17,14 +17,23 @@ from ..._utils.mime import generate_sha_hash_from_string
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
 
+class MatchParams(BaseModel):
+    endpoint: str = Field(..., description="Endpoint for matching parameters")
+    headers: Dict[str, str] = Field(..., description="Headers for the request")
+    path: str = Field(..., description="Path for matching parameters")
+
+class FetchParams(BaseModel):
+    endpoint: str = Field(..., description="Endpoint for fetching parameters")
+    headers: Dict[str, str] = Field(..., description="Headers for the request")
+    name: str = Field(..., description="Name of the fetch parameter")
 
 class Outlook(BaseModel):
     object: Literal['outlook'] = "outlook"
     name: str = Field(..., description="Name of the outlook plugin")
     id: str = Field(default_factory=lambda: "outlook_" + str(uuid.uuid4()), description="Unique identifier for the outlook")
 
-    authorized_domains: list[str] = Field(default_factory=list, description = "List of authorized domains to receive the emails from")
-    authorized_emails: List[EmailStr] = Field(default_factory=list, description = "List of emails to access the link")
+    authorized_domains: list[str] = Field(default_factory=list, description="List of authorized domains to receive the emails from")
+    authorized_emails: List[EmailStr] = Field(default_factory=list, description="List of emails to access the link")
 
     # Automation Config
     webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
@@ -37,6 +46,10 @@ class Outlook(BaseModel):
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+
+    # Optional Fields for data integration
+    match_params: List[MatchParams] = Field(default_factory=list, description="List of match parameters for the outlook automation")
+    fetch_params: List[FetchParams] = Field(default_factory=list, description="List of fetch parameters for the outlook automation")
 
     @computed_field   # type: ignore
     @property
@@ -74,6 +87,9 @@ class UpdateOutlookRequest(BaseModel):
 
     authorized_domains: Optional[list[str]] = None
     authorized_emails: Optional[List[EmailStr]] = None
+
+    match_params: Optional[List[MatchParams]] = None
+    fetch_params: Optional[List[FetchParams]] = None
 
     # ------------------------------
     # HTTP Config
