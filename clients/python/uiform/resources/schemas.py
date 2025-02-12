@@ -1,10 +1,10 @@
-from typing import Any, Optional, Sequence, List
+from typing import Any, Optional, Sequence, List, Generator, AsyncGenerator
 from pathlib import Path
 from io import IOBase
 import PIL.Image
 
 from ..types.schemas.generate import GenerateSchemaRequest
-from ..types.schemas.object import Schema
+from ..types.schemas.object import Schema, PartialSchemaStreaming
 from ..types.schemas.promptify import PromptifyRequest
 from ..types.modalities import Modality
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -13,6 +13,7 @@ from .._utils.json_schema import load_json_schema
 from .._utils.mime import prepare_mime_document_list
 from .._utils.ai_model import assert_valid_model_schema_generation
 from ..types.standards import PreparedRequest
+from .._utils.stream_context_managers import as_async_context_manager, as_context_manager
 
 class SchemasMixin:
     def prepare_list(self, schema_id: Optional[str] = None, data_id: Optional[str] = None) -> PreparedRequest:
@@ -26,7 +27,7 @@ class SchemasMixin:
     def prepare_get(self, schema_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/schemas/{schema_id}")
     
-    def prepare_promptify(self, raw_schema: dict[str, Any] | Path | str, documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image], model: str = "gpt-4o-2024-08-06", temperature: float = 0, modality: Modality = "native") -> PreparedRequest:
+    def prepare_promptify(self, raw_schema: dict[str, Any] | Path | str, documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image], model: str = "gpt-4o-2024-08-06", temperature: float = 0, modality: Modality = "native", stream: bool = False) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
         raw_schema = load_json_schema(raw_schema)
         mime_documents = prepare_mime_document_list(documents)
@@ -35,12 +36,13 @@ class SchemasMixin:
             "documents": [doc.model_dump() for doc in mime_documents],
             "model": model,
             "temperature": temperature,
-            "modality": modality
+            "modality": modality,
+            "stream": stream
         }
         PromptifyRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/promptify", data=data)
     
-    def prepare_generate(self, documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image], model: str = "gpt-4o-2024-11-20", temperature: float = 0, modality: Modality = "native", flat: bool = False) -> PreparedRequest:
+    def prepare_generate(self, documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image], model: str = "gpt-4o-2024-11-20", temperature: float = 0, modality: Modality = "native", flat: bool = False, stream: bool = False) -> PreparedRequest:
         assert_valid_model_schema_generation(model)      
         mime_documents = prepare_mime_document_list(documents)
         data = {
@@ -48,7 +50,8 @@ class SchemasMixin:
             "model": model,
             "temperature": temperature,
             "modality": modality,
-            "flat": flat
+            "flat": flat,
+            "stream": stream
         }
         GenerateSchemaRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/generate", data=data)
@@ -114,6 +117,23 @@ class Schemas(SyncAPIResource, SchemasMixin):
         response = self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
 
+    @as_context_manager
+    def promptify_stream(self,
+                         raw_schema: dict[str, Any] | Path | str,
+                         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
+                         model: str = "gpt-4o-2024-08-06",
+                         temperature: float = 0,
+                         modality: Modality = "native") -> Generator[PartialSchemaStreaming | Schema, None, None]:
+        prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality, stream=True)
+        chunk_json: Any = None
+        for chunk_json in self._client._prepared_request_stream(prepared_request):
+            if not chunk_json:
+                continue
+            yield PartialSchemaStreaming.model_validate(chunk_json)
+        # The last chunk should be the full schema object
+        yield Schema(created_at=chunk_json["created_at"], json_schema=chunk_json["json_schema"])
+
+
     def generate(self,
                 documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
                 model: str = "gpt-4o-2024-11-20",
@@ -142,7 +162,20 @@ class Schemas(SyncAPIResource, SchemasMixin):
         response = self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
         
-
+    @as_context_manager
+    def generate_stream(self,
+                        documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
+                        model: str = "gpt-4o-2024-11-20",
+                        temperature: float = 0.0,
+                        modality: Modality = "native",
+                        flat: bool = False) -> Generator[PartialSchemaStreaming | Schema, None, None]:
+        prepared_request = self.prepare_generate(documents, model, temperature, modality, flat, stream=True)
+        for chunk_json in self._client._prepared_request_stream(prepared_request):
+            if not chunk_json:
+                continue
+            yield PartialSchemaStreaming.model_validate(chunk_json)
+        # The last chunk should be the full schema object
+        yield Schema(created_at=chunk_json["created_at"], json_schema=chunk_json["json_schema"])
 
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     """Schemas Asyncronous API wrapper"""
@@ -201,3 +234,34 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         prepared_request = self.prepare_generate(documents, model, temperature, modality, flat)
         response = await self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
+
+
+    @as_async_context_manager
+    async def generate_stream(self,
+                             documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
+                             model: str = "gpt-4o-2024-11-20",
+                             temperature: float = 0.0,
+                             modality: Modality = "native",
+                             flat: bool = False) -> AsyncGenerator[PartialSchemaStreaming | Schema, None]:
+        prepared_request = self.prepare_generate(documents, model, temperature, modality, flat, stream=True)
+        async for chunk_json in self._client._prepared_request_stream(prepared_request):
+            if not chunk_json:
+                continue
+            yield PartialSchemaStreaming.model_validate(chunk_json)
+        # The last chunk should be the full schema object
+        yield Schema(created_at=chunk_json["created_at"], json_schema=chunk_json["json_schema"])
+
+    @as_async_context_manager
+    async def promptify_stream(self,
+                             raw_schema: dict[str, Any] | Path | str,
+                             documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
+                             model: str = "gpt-4o-2024-08-06",
+                             temperature: float = 0,
+                             modality: Modality = "native") -> AsyncGenerator[PartialSchemaStreaming | Schema, None]:
+        prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality, stream=True)
+        async for chunk_json in self._client._prepared_request_stream(prepared_request):
+            if not chunk_json:
+                continue
+            yield PartialSchemaStreaming.model_validate(chunk_json)
+        # The last chunk should be the full schema object
+        yield Schema(created_at=chunk_json["created_at"], json_schema=chunk_json["json_schema"])
