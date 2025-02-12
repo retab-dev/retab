@@ -20,3 +20,6 @@ class GenerateSchemaRequest(BaseModel):
 
     flat: bool = False
     """Whether to return a flat schema."""
+
+    stream: bool = False
+    """Whether to stream the response."""

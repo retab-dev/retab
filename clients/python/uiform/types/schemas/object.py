@@ -12,15 +12,24 @@ from ..chat import ChatCompletionUiformMessage
 
 from ..._utils.mime import generate_sha_hash_from_string
 from ..._utils.json_schema import clean_schema, json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema
+from ...types.standards import StreamingBaseModel
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from google.generativeai.types import content_types # type: ignore
 
 from anthropic.types.message_param import MessageParam
 
+class PartialSchema(BaseModel):
+    """Response from the Promptify API -- A partial Schema object with no validation"""
+    object: Literal["schema"] = "schema"
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    json_schema: dict[str, Any] = {}
 
 
-class Schema(BaseModel):
+class PartialSchemaStreaming(StreamingBaseModel, PartialSchema): pass
+
+class Schema(PartialSchema):
+    """A full Schema object with validation."""
 
     object: Literal["schema"] = "schema"
     """The type of object being preprocessed."""
