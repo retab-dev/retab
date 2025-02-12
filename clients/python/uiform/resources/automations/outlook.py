@@ -71,8 +71,6 @@ class OutlooksMixin:
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-        match_params: Optional[List[MatchParams]] = None,
-        fetch_params: Optional[List[FetchParams]] = None,
     ) -> PreparedRequest:
         params = {
             "before": before,
@@ -84,8 +82,6 @@ class OutlooksMixin:
             "webhook_url": webhook_url,
             "schema_id": schema_id,
             "schema_data_id": schema_data_id,
-            "match_params": match_params,
-            "fetch_params": fetch_params,
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
@@ -225,8 +221,6 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             webhook_url: Optional[str] = None,
             schema_id: Optional[str] = None,
             schema_data_id: Optional[str] = None,
-            match_params: Optional[List[MatchParams]] = None,
-            fetch_params: Optional[List[FetchParams]] = None,
             ) -> ListOutlooks:
         """List all outlook automation configurations.
 
@@ -245,7 +239,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         Returns:
             List[Outlook]: List of outlook plugin configurations
         """
-        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
+        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
 
@@ -377,10 +371,8 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
             webhook_url: Optional[str] = None,
             schema_id: Optional[str] = None,
             schema_data_id: Optional[str] = None,
-            match_params: Optional[List[MatchParams]] = None,
-            fetch_params: Optional[List[FetchParams]] = None,
             ) -> ListOutlooks:
-        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
+        request = self.prepare_list(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
     
