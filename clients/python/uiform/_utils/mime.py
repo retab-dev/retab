@@ -1,4 +1,4 @@
-from typing import TypeVar, Literal, get_args
+from typing import TypeVar, Literal, get_args, Sequence
 from pathlib import Path
 import json
 import hashlib
@@ -157,7 +157,7 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
 
 
 
-def prepare_mime_document_list(documents: list[Path | str | bytes | io.IOBase | PIL.Image.Image])  -> list[MIMEData]:
+def prepare_mime_document_list(documents: Sequence[Path | str | bytes | io.IOBase | PIL.Image.Image])  -> list[MIMEData]:
     """
     Convert documents (file paths or file-like objects) to MIMEData objects.
     
