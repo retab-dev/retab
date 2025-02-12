@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, List
 from pathlib import Path
 from io import IOBase
 import PIL.Image
@@ -13,7 +13,6 @@ from .._utils.json_schema import load_json_schema
 from .._utils.mime import prepare_mime_document_list
 from .._utils.ai_model import assert_valid_model_schema_generation
 
-from typing import List
 
 
 
@@ -52,7 +51,7 @@ class Schemas(SyncAPIResource):
     """Schemas API wrapper"""
     def promptify(self,
                raw_schema: dict[str, Any] | Path | str,
-               documents: List[Path | str | bytes | IOBase | PIL.Image.Image],
+               documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
                model: str = "gpt-4o-2024-08-06",
                temperature: float = 0,
                modality: Modality = "native") -> Schema:
@@ -94,7 +93,7 @@ class Schemas(SyncAPIResource):
         return Schema.model_validate(self._client._request("POST", "/v1/schemas/promptify", data=data))
 
     def generate(self,
-                documents: List[Path | str | bytes | IOBase | PIL.Image.Image],
+                documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
                 model: str = "gpt-4o-2024-11-20",
                 temperature: float = 0.0,
                 modality: Modality = "native") -> Schema:
@@ -137,7 +136,7 @@ class AsyncSchemas(AsyncAPIResource):
     """Schemas Asyncronous API wrapper"""
     async def promptify(self,
                     raw_schema: dict[str, Any] | Path | str,
-                    documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
+                    documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
                     model: str = "gpt-4o-2024-08-06",
                     temperature: float = 0,
                     modality: Modality = "native") -> Schema:
@@ -179,7 +178,7 @@ class AsyncSchemas(AsyncAPIResource):
         return Schema.model_validate(await self._client._request("POST", "/v1/schemas/promptify", data=data))
 
     async def generate(self,
-                    documents: list[Path | str | bytes | IOBase | PIL.Image.Image],
+                    documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
                     model: str = "gpt-4o-2024-11-20",
                     temperature: float = 0.0,
                     modality: Modality = "native") -> Schema:
