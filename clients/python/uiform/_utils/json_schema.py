@@ -476,13 +476,11 @@ def json_schema_to_typescript_interface(
             is_optional = prop_name not in required_fields
             field_ts = schema_to_ts_type(prop_schema, definitions or {}, processed_refs, indent, indent, add_field_description=add_field_description)
             optional_flag = "?" if is_optional else ""
-            line = f"{indentation}{prop_name}{optional_flag}: {field_ts};"
-            # comment_identation = " " * (len(line.split("\n")[-1]) + 2)
+            line = ""
             if add_field_description and "description" in prop_schema:
-                # desc = prop_schema["description"].replace("\n", f"\n{comment_identation}// ")
-                # line += f"  // {desc}"
                 desc = prop_schema["description"].replace("\n", f"\n{indentation}// ")
-                line += f"\n{indentation}// {desc}"
+                line = f"{indentation}// {desc}\n"
+            line += f"{indentation}{prop_name}{optional_flag}: {field_ts};"
             interface_lines.append(line)
 
         interface_lines.append("}")
@@ -585,13 +583,11 @@ def inline_object(schema: dict[str, Any], definitions: dict[str, dict[str, Any]]
         is_optional = prop_name not in required_fields
         ts_type = schema_to_ts_type(prop_schema, definitions, processed_refs, indent + increment, increment, add_field_description)
         optional_flag = "?" if is_optional else ""
-        line = f"{field_indentation}{prop_name}{optional_flag}: {ts_type};"
-        # field_comment_identation = " " * (len(line.split("\n")[-1]) + 2)
+        line = ""
         if add_field_description and "description" in prop_schema:
-            # desc = prop_schema["description"].replace("\n", f"\n{field_comment_identation}// ")
-            # line += f"  // {desc}"
             desc = prop_schema["description"].replace("\n", f"\n{field_indentation}// ")
-            line += f"\n{field_indentation}// {desc}"
+            line = f"{field_indentation}// {desc}\n"
+        line += f"{field_indentation}{prop_name}{optional_flag}: {ts_type};"
         lines.append(line)
     lines.append(" " * indent + "}")
     return "\n".join(lines)

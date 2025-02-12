@@ -17,3 +17,6 @@ class GenerateSchemaRequest(BaseModel):
 
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     """The image operations to apply to the document."""
+
+    flat: bool = False
+    """Whether to return a flat schema."""
