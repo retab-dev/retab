@@ -599,8 +599,8 @@ class TestLinks(SyncAPIResource, TestLinksMixin):
             webhook_response = None
             error_message = None
             status_code = None
-            response_body = {}
-            response_headers = {}
+            response_body: Dict[str, Any] = {}
+            response_headers: Dict[str, str] = {}
 
             try:
                 with httpx.Client() as client:
@@ -689,8 +689,8 @@ class AsyncTestLinks(AsyncAPIResource, TestLinksMixin):
             webhook_response = None
             error_message = None
             status_code = None
-            response_body = {}
-            response_headers = {}
+            response_body: Dict[str, Any] = {}
+            response_headers: Dict[str, str] = {}
 
             try:
                 async with httpx.AsyncClient() as client:
