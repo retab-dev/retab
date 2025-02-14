@@ -680,14 +680,27 @@ def json_schema_to_inference_schema(obj: Union[dict[str, Any], list[Any]]) -> Un
         return obj
 
 
-def clean_schema(schema: dict[str, Any], remove_custom_fields: bool = False, fields_to_remove: list[str] = ["default"]) -> dict[str, Any]:
+def clean_schema(
+    schema: dict[str, Any],
+    remove_custom_fields: bool = False,
+    fields_to_remove: list[str] = ["default", "minlength", "maxlength"]
+) -> dict[str, Any]:
     """
-    Recursively remove all default values from a JSON schema.
+    Recursively remove all default values from a JSON schema,
+    as well as minLength and maxLength fields.
+
+    Args:
+        schema: The JSON schema to be cleaned.
+        remove_custom_fields: If True, also remove fields starting with 'x-'.
+        fields_to_remove: List of keys to remove (case-insensitive check).
+
+    Returns:
+        The resulting cleaned JSON schema.
     """
     schema = schema.copy()
     for key in list(schema.keys()):
         if not isinstance(key, str):
-            # Make sure we're only removing keys that are strings
+            # Make sure we're only removing keys that are strings.
             continue
         lower_key = key.lower()
         if lower_key in fields_to_remove or key in fields_to_remove:
