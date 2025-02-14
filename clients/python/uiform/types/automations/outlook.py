@@ -84,6 +84,7 @@ class ListOutlooks(BaseModel):
 
 
 class UpdateOutlookRequest(BaseModel):
+    name: Optional[str] = None
 
     authorized_domains: Optional[list[str]] = None
     authorized_emails: Optional[List[EmailStr]] = None
