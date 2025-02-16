@@ -7,6 +7,9 @@ from ..image_settings import ImageSettings
 from ..modalities import Modality
 
 
+def scrapping_action(link: HttpUrl) -> dict[str, Any]:
+    pass
+
 class CronSchedule(BaseModel):
     second: Optional[int] = Field(0, ge=0, le=59, description="Second (0-59), defaults to 0")
     minute: int = Field(..., ge=0, le=59, description="Minute (0-59)")
@@ -26,7 +29,6 @@ class ScrappingConfig(BaseModel):
     # Scrapping Specific Config
     link: HttpUrl = Field(..., description="Link to be scrapped")
     schedule: CronSchedule
-
 
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
