@@ -13,8 +13,6 @@ from .usage import Amount
 from .._utils.usage.usage import compute_cost_from_model
 
 
-
-
 class AutomationConfig(BaseModel):
     object: str
     id: str
