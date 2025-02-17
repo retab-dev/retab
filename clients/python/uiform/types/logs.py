@@ -52,7 +52,7 @@ from .automations.outlook import Outlook
 #    request_config: OpenAIRequestConfig
 #    completion: ChatCompletion
 
-
+    
 class ExternalRequestLog(BaseModel):
     webhook_url: Optional[HttpUrl]
     request_body: dict[str, Any]

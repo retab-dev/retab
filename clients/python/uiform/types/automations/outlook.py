@@ -17,6 +17,9 @@ from ..._utils.mime import generate_sha_hash_from_string
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
 
+
+
+
 class MatchParams(BaseModel):
     endpoint: str = Field(..., description="Endpoint for matching parameters")
     headers: Dict[str, str] = Field(..., description="Headers for the request")
@@ -26,6 +29,9 @@ class FetchParams(BaseModel):
     endpoint: str = Field(..., description="Endpoint for fetching parameters")
     headers: Dict[str, str] = Field(..., description="Headers for the request")
     name: str = Field(..., description="Name of the fetch parameter")
+
+from pydantic import model_validator
+from ..._utils.json_schema import convert_schema_to_layout
 
 class Outlook(BaseModel):
     object: Literal['outlook'] = "outlook"
@@ -45,11 +51,20 @@ class Outlook(BaseModel):
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    layout_schema: Optional[dict[str, Any]] = Field(default=None, description="Layout schema format used to display the data")
+
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
     # Optional Fields for data integration
     match_params: List[MatchParams] = Field(default_factory=list, description="List of match parameters for the outlook automation")
     fetch_params: List[FetchParams] = Field(default_factory=list, description="List of fetch parameters for the outlook automation")
+
+    @model_validator(mode='before')
+    @classmethod
+    def compute_layout_schema(cls, values: dict[str, Any]) -> dict[str, Any]:
+        if values.get('layout_schema') is None:
+            values['layout_schema'] = convert_schema_to_layout(values['json_schema'])
+        return values
 
     @computed_field   # type: ignore
     @property
@@ -64,6 +79,7 @@ class Outlook(BaseModel):
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
                 sort_keys=True).strip(), 
             "sha1")
+    
 
     # This is a computed field, it is exposed when serializing the object
     @computed_field   # type: ignore
@@ -75,7 +91,6 @@ class Outlook(BaseModel):
             str: A SHA1 hash string representing the complete schema version.
         """
         return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
-
 
 
 class ListOutlooks(BaseModel):
