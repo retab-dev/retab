@@ -27,6 +27,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
             default=False,
             help="run tests against local API"
     )
+    parser.addoption(
+            "--staging",
+            action="store_true",
+            default=False,
+            help="run tests against staging API"
+        )
 
 @pytest.fixture(scope="session", autouse=True)
 def load_env(request: pytest.FixtureRequest) -> None:
@@ -35,8 +41,10 @@ def load_env(request: pytest.FixtureRequest) -> None:
         env_file = "../../.env.production"
     elif request.config.getoption("--local"):
         env_file = "../../.env.local"
+    elif request.config.getoption("--staging"):
+        env_file = "../../.env.staging"
     else:
-        raise ValueError("No environment specified. Please use --production or --local.")
+        raise ValueError("No environment specified. Please use --production or --local or --staging.")
     
     env_path = os.path.join(os.path.dirname(TEST_DIR), env_file)
     print("loading env file: ", env_path)
