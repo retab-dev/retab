@@ -86,7 +86,7 @@ class AutomationLog(BaseModel):
     completion: DocumentExtractResponse | ChatCompletion
     file_metadata: Optional[BaseMIMEData]
     external_request_log: Optional[ExternalRequestLog]
-
+    extraction_id: Optional[str]=Field(default=None, description="ID of the extraction")
     @computed_field # type: ignore
     @property
     def api_cost(self) -> Optional[Amount]:
