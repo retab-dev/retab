@@ -9,11 +9,11 @@ class WebhookRequest(BaseModel):
     completion: UiParsedChatCompletion
     user: Optional[EmailStr] = None
     file_payload: MIMEData
-    metadata: dict[str, Any]
+    metadata: Optional[dict[str, Any]] = None
 
 
 class BaseWebhookRequest(BaseModel):
     completion: UiParsedChatCompletion
     user: Optional[EmailStr] = None
     file_payload: BaseMIMEData
-    metadata: dict[str, Any]
+    metadata: Optional[dict[str, Any]] = None
