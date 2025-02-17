@@ -1069,7 +1069,6 @@ def extract_property_type_info(prop_schema: dict[str, Any]) -> tuple[str, Option
 
     return prop_type, prop_format, is_nullable, enum_values
 
-
 def _convert_property_schema_to_type(prop_schema: dict[str, Any]) -> Any:
     """
     Convert a single JSON Schema property to a Python type annotation:
@@ -1100,7 +1099,7 @@ def _convert_property_schema_to_type(prop_schema: dict[str, Any]) -> Any:
         # Look for 'items' => sub-schema
         items_schema = prop_schema.get("items", {})
         item_type = _convert_property_schema_to_type(items_schema)
-        return list[item_type]
+        return list[item_type]  # type: ignore
 
     if prop_type == "string":
         return str
@@ -1111,8 +1110,8 @@ def _convert_property_schema_to_type(prop_schema: dict[str, Any]) -> Any:
     if prop_type == "number":
         return float
 
-    # If the schema is "null" or unknown, fallback to `Any`
-    return Any
+    # If the schema is "null" or unknown, fallback to object
+    return object
 
 def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
     """
@@ -1169,7 +1168,7 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
         __config__=model_config,
         __module__="__main__",
         **field_definitions,
-    )
+    ) # type: ignore
 
 
 def convert_json_schema_to_basemodelold(schema: dict[str, Any]) -> Type[BaseModel]:
@@ -1307,7 +1306,7 @@ def convert_basemodel_to_partial_basemodel(base_model: Type[BaseModel]) -> Type[
                     container_type = list if origin is list else tuple
                     new_type = container_type[partial_inner]  # type: ignore
                 else:
-                    new_type = field_type
+                    new_type = field_type  # type: ignore
                 maybe_optional_type = Union[new_type, None]  # type: ignore
 
             # Handle Union types
@@ -1466,3 +1465,120 @@ def get_all_paths(schema: dict[str, Any]) -> list[str]:
     
     _traverse(schema)
     return paths
+
+
+
+from ..types.schemas.layout import Layout, Column, Row, RowList, FieldItem, RefObject
+
+def convert_schema_to_layout(schema: dict[str, Any]) -> Layout:
+    """
+    Convert a JSON Schema (represented as a Python dict) into a Layout object.
+    """
+    # Get the definitions from the schema (or empty dict if not provided)
+    defs = schema.get("$defs", {})
+    converted_defs: dict[str, Column] = {}
+
+    def is_object_schema(sch: dict[str, Any]) -> bool:
+        return "properties" in sch and isinstance(sch.get("properties"), dict)
+
+    def extract_ref(sch: dict[str, Any]) -> Optional[str]:
+        return sch.get("$ref")
+
+    def extract_ref_schema(ref: Optional[str], defs: dict[str, dict[str, Any]]) -> Optional[dict[str, Any]]:
+        if not ref:
+            return None
+        ref_name = ref.split("/")[-1]
+        return defs.get(ref_name)
+
+    def is_object_via_any_of(sch: dict[str, Any]) -> bool:
+        any_of = sch.get("anyOf")
+        if isinstance(any_of, list):
+            return any(
+                (extract_ref(option) and extract_ref_schema(extract_ref(option), defs))
+                or is_object_schema(option)
+                for option in any_of
+            )
+        return False
+
+    def property_is_object(prop_schema: dict[str, Any]) -> bool:
+        ref = extract_ref(prop_schema)
+        if ref:
+            ref_schema = extract_ref_schema(ref, defs)
+            return bool(ref_schema)
+        return is_object_schema(prop_schema) or is_object_via_any_of(prop_schema)
+
+    def property_is_array(prop_schema: dict[str, Any]) -> bool:
+        return prop_schema.get("type") == "array"
+
+    def handle_ref_object(prop_name: str, ref: str) -> RefObject:
+        ref_name = ref.split("/")[-1]
+        if ref_name not in converted_defs:
+            ref_schema = extract_ref_schema(ref, defs)
+            if ref_schema and is_object_schema(ref_schema):
+                result = handle_object(ref_name, ref_schema, drop_name=True)
+                assert isinstance(result, Column)
+                converted_defs[ref_name] = result
+        return RefObject(type="object", size=None, **{"$ref": ref})
+
+    def handle_object(prop_name: str, object_schema: dict[str, Any], drop_name: bool = False) -> Union[RefObject, Column]:
+        ref = extract_ref(object_schema)
+        if ref:
+            return handle_ref_object(prop_name, ref)
+        else:
+            props = object_schema.get("properties")
+            if not props:
+                # If no properties, try anyOf (skipping null types)
+                any_of = object_schema.get("anyOf")
+                if isinstance(any_of, list):
+                    for option in any_of:
+                        if option.get("type") != "null":
+                            props = option.get("properties")
+                            if props:
+                                break
+            if not props:
+                props = {}
+            items: list[Row | RowList | FieldItem | RefObject] = []
+            for p_name, p_schema in props.items():
+                if property_is_object(p_schema):
+                    # Wrap object properties in a row
+                    items.append(Row(type="row", name=p_name, items=[handle_object(p_name, p_schema)]))
+                elif property_is_array(p_schema):
+                    items.append(handle_array_items(p_name, p_schema))
+                else:
+                    items.append(FieldItem(type="field", name=p_name, size=1))
+            if drop_name:
+                return Column(type="column", size=1, items=items)
+            else:
+                return Column(type="column", size=1, items=items, name=prop_name)
+
+    def handle_array_items(prop_name: str, array_schema: dict[str, Any]) -> RowList:
+        items_schema = array_schema.get("items", {})
+        row_items: list[Column | FieldItem | RefObject] = []
+        if property_is_object(items_schema):
+            row_items.append(handle_object(prop_name, items_schema))
+        else:
+            row_items.append(FieldItem(type="field", name=prop_name, size=1))
+        return RowList(type="rowList", name=prop_name, items=row_items)
+
+    # Process definitions from $defs
+    for definition_name, definition_schema in defs.items():
+        if is_object_schema(definition_schema):
+            result = handle_object(definition_name, definition_schema, drop_name=True)
+            assert isinstance(result, Column)
+            converted_defs[definition_name] = result
+
+    # Process top-level properties
+    top_level_props = schema.get("properties", {})
+    top_level_items: list[Row | RowList | FieldItem | RefObject] = []
+    for prop_name, prop_schema in top_level_props.items():
+        if property_is_object(prop_schema):
+            top_level_items.append(
+                Row(type="row", name=prop_name, items=[handle_object(prop_name, prop_schema)])
+            )
+        elif property_is_array(prop_schema):
+            top_level_items.append(handle_array_items(prop_name, prop_schema))
+        else:
+            top_level_items.append(FieldItem(type="field", name=prop_name, size=1))
+
+    return Layout(type="column", size=1, items=top_level_items, **{"$defs": converted_defs})
+
