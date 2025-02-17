@@ -131,7 +131,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
                 continue
             yield PartialSchemaStreaming.model_validate(chunk_json)
         # The last chunk should be the full schema object
-        yield Schema(created_at=chunk_json["created_at"], json_schema=chunk_json["json_schema"])
+        yield Schema.model_validate(chunk_json)
 
 
     def generate(self,
@@ -175,7 +175,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
                 continue
             yield PartialSchemaStreaming.model_validate(chunk_json)
         # The last chunk should be the full schema object
-        yield Schema(created_at=chunk_json["created_at"], json_schema=chunk_json["json_schema"])
+        yield Schema.model_validate(chunk_json)
 
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     """Schemas Asyncronous API wrapper"""
@@ -249,7 +249,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
                 continue
             yield PartialSchemaStreaming.model_validate(chunk_json)
         # The last chunk should be the full schema object
-        yield Schema(created_at=chunk_json["created_at"], json_schema=chunk_json["json_schema"])
+        yield Schema.model_validate(chunk_json)
 
     @as_async_context_manager
     async def promptify_stream(self,
@@ -264,4 +264,4 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
                 continue
             yield PartialSchemaStreaming.model_validate(chunk_json)
         # The last chunk should be the full schema object
-        yield Schema(created_at=chunk_json["created_at"], json_schema=chunk_json["json_schema"])
+        yield Schema.model_validate(chunk_json)

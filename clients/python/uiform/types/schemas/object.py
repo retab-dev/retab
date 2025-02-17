@@ -335,31 +335,31 @@ class Schema(PartialSchema):
                 assert ref_name in definitions, "Validation Error: The $ref is not a definition reference"
 
                 # Count how many times this ref is used in the entire schema
-                ref_count = json.dumps(self.json_schema).count(ref)
+                ref_count = json.dumps(self.json_schema).count(f"\"{ref}\"")
 
                 if ref_count > 1:
-                    new_copy_names = [f"{ref_name}Copy{i+1}" for i in range(ref_count)]
-
-                    # Get the nex copy name available
-                    next_copy_name = next((name for name in new_copy_names if name not in definitions), None)
-                    assert next_copy_name is not None, "Validation Error: No available copy name found"
+                    # Create a unique copy name by appending a number
+                    copy_num = 1
+                    next_copy_name = f"{ref_name}Copy{copy_num}"
+                    while next_copy_name in definitions:
+                        copy_num += 1
+                        next_copy_name = f"{ref_name}Copy{copy_num}"
 
                     # Create a copy of the definition
                     def_copy = copy.deepcopy(definitions[ref_name])
                     
-                    # Change the title and name of the definition to avoid recursion
+                    # Change the title and name of the definition
                     if "title" in def_copy:
-                        def_copy["title"] = new_copy_names
+                        def_copy["title"] = f"{def_copy['title']} Copy {copy_num}"
                     if "name" in def_copy:
-                        def_copy["name"] = new_copy_names
+                        def_copy["name"] = next_copy_name
 
-                    # Add the new copy name to the definitions
+                    # Add the new copy to definitions
                     definitions[next_copy_name] = def_copy
 
-                    # Replace the $ref with the new copy name
+                    # Update the reference
                     current_schema["$ref"] = f"#/$defs/{next_copy_name}"
                     ref_name = next_copy_name
-
                 # Reference is used only once or a copy is created; directly navigate to the definition
                 current_schema = definitions[ref_name]
             else:
@@ -394,6 +394,7 @@ class Schema(PartialSchema):
             data['pydantic_model'] = pydantic_model
             data['json_schema'] = pydantic_model.model_json_schema() 
 
+        data['json_schema']['$defs'] = data['json_schema'].get('$defs') or {}
 
         return data
 
