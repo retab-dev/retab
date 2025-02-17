@@ -8,7 +8,7 @@ from typing import Any
 from uiform import UiForm
 
 @pytest.mark.asyncio
-async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path: str) -> None:
+async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path: str) -> None:
     name = str(uuid.uuid4())
     print("name", name)
     model = "gpt-4o-mini"

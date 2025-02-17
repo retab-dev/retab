@@ -1391,3 +1391,78 @@ def filter_reasoning_fields_json(data: str) -> dict[str, Any]:
     """
     data_dict = json.loads(data)
     return filter_reasoning_fields(data_dict)
+
+
+def get_all_paths(schema: dict[str, Any]) -> list[str]:
+    """
+    Extract all possible JSON pointer paths from a JSON Schema.
+    
+    This function traverses a JSON Schema and generates a list of all possible paths
+    that could exist in a document conforming to that schema. For arrays, it uses '*' 
+    as a wildcard index.
+
+    Args:
+        schema (dict[str, Any]): The JSON Schema to analyze
+
+    Returns:
+        list[str]: A list of dot-notation paths (e.g. ["person.name", "person.addresses.*.street"])
+        
+    Example:
+        >>> schema = {
+        ...     "type": "object",
+        ...     "properties": {
+        ...         "name": {"type": "string"},
+        ...         "addresses": {
+        ...             "type": "array",
+        ...             "items": {
+        ...                 "type": "object",
+        ...                 "properties": {
+        ...                     "street": {"type": "string"}
+        ...                 }
+        ...             }
+        ...         }
+        ...     }
+        ... }
+        >>> get_all_paths(schema)
+        ['name', 'addresses', 'addresses.*.street']
+    """
+    paths: list[str] = []
+    
+    def _traverse(current_schema: dict[str, Any], current_path: str = "") -> None:
+        if any(key in current_schema for key in ["oneOf", "allOf"]):
+            raise ValueError("OneOf and AllOf are not supported yet.")
+
+        # Handle array type schemas
+        # if current_schema.get("type") == "array":
+        if "items" in current_schema:
+            paths.append(f"{current_path}")
+            _traverse(current_schema["items"], f"{current_path}.*")
+            return
+
+        # Handle object type schemas
+        if "properties" in current_schema:
+            for prop_name, prop_schema in current_schema["properties"].items():
+                new_path = f"{current_path}.{prop_name}" if current_path else prop_name
+                
+                # If property is a leaf node (has type but no properties/items)
+                if not any(key in prop_schema for key in ["properties", "items"]):
+                    paths.append(new_path)
+                else:
+                    _traverse(prop_schema, new_path)
+                    
+        # Handle $ref schemas
+        elif "$ref" in current_schema:
+            # Skip refs for now since we don't have access to the full schema with definitions
+            pass
+            
+        # Handle anyOf/oneOf/allOf schemas
+
+        elif any(key in current_schema for key in ["anyOf", "oneOf", "allOf"]):
+            # Take first schema as representative for path generation
+            for key in ["anyOf", "oneOf", "allOf"]:
+                if key in current_schema and current_schema[key]:
+                    _traverse(current_schema[key][0], current_path)
+                    break
+    
+    _traverse(schema)
+    return paths
