@@ -10,7 +10,7 @@ import json
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 from ..pagination import ListMetadata
-
+from ..schemas.layout import Layout
 from ..._utils.json_schema import clean_schema
 from ..._utils.mime import generate_sha_hash_from_string
 
@@ -51,7 +51,7 @@ class Outlook(BaseModel):
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
-    layout_schema: Optional[dict[str, Any]] = Field(default=None, description="Layout schema format used to display the data")
+    layout_schema: Optional[Layout] = Field(default=None, description="Layout schema format used to display the data")
 
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
