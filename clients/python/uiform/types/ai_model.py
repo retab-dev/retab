@@ -12,3 +12,16 @@ OpenAIModel = Literal["gpt-4o", "gpt-4o-mini","chatgpt-4o-latest",
                       "o1", "o1-2024-12-17", "o1-mini-2024-09-12"]
 xAI_Model = Literal["grok-2-vision-1212", "grok-2-1212"]
 LLMModel = Literal[OpenAIModel]# [AnthropicModel, OpenAIModel, xAI_Model, GeminiModel]
+
+
+from pydantic import BaseModel
+import datetime
+
+class FinetunedModel(BaseModel):
+    object: Literal["finetuned_model"] = "finetuned_model"
+    model: str
+    organization_id: str
+    dataset_id: str
+    created_at: datetime.datetime
+    schema_id: str 
+    schema_data_id: str 
