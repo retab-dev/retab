@@ -27,7 +27,7 @@ class Dataset(BaseModel):
         """
         if self.json_schema is None:
             return ""
-        return generate_sha_hash_from_string(
+        return "sch_data_id_"+generate_sha_hash_from_string(
             json.dumps(
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
                 sort_keys=True).strip(), 
@@ -45,7 +45,7 @@ class Dataset(BaseModel):
         if self.json_schema is None:
             return ""
         
-        return generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+        return "sch_id_"+generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
     
 
 class DatasetAnnotationStatus(BaseModel):
