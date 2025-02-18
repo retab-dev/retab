@@ -5,15 +5,13 @@ import datetime
 
 
 
-metadata_key = Literal['user', 'organization', 'link', 'mailbox', 'cron', 'outlook', 'extraction', 'webhook']
+metadata_key = Literal['user', 'organization', 'link', 'mailbox', 'cron', 'outlook', 'extraction', 'webhook', 'schema', 'data_structure']
 
 event_type = Literal['extraction.created', 
-                     'link.created', 'link.updated', 'link.deleted',
-                     'mailbox.created', 'mailbox.updated', 'mailbox.deleted',
-                     'cron.created', 'cron.updated', 'cron.deleted',
-                     'outlook.created', 'outlook.updated', 'outlook.deleted',
-                     'user.created', 'user.updated', 'user.deleted',
-                     'organization.created', 'organization.updated', 'organization.deleted',
+                     'link.created', 'link.updated', 'link.deleted', 'link.webhook',
+                     'mailbox.created', 'mailbox.updated', 'mailbox.deleted','mailbox.webhook',
+                     'outlook.created', 'outlook.updated', 'outlook.deleted','outlook.webhook',
+                     'schema.generated', 'schema.promptified'
                      ]
 
 class Event(BaseModel):
