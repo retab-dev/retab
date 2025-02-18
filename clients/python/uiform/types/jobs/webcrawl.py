@@ -1,0 +1,14 @@
+from pydantic import BaseModel, Field
+from typing import Optional, Literal
+
+CheckPoint = Literal[None, "webcrawl_started", "webcrawl_completed", "webcrawl_failed"]
+
+class WebcrawlInputData(BaseModel):
+    url: str
+
+class WebcrawlJob(BaseModel):
+    job_type: Literal["webcrawl"] = "webcrawl"
+    input_data: WebcrawlInputData
+    checkpoint: CheckPoint = None
+    checkpoint_data: Optional[dict] = None
+

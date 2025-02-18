@@ -6,6 +6,7 @@ from .base import (
     JobExecutionDocument,
     JobTemplateCreateRequest,
     JobTemplateDocument,
+    JobTemplateUpdateRequest,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "JobExecutionDocument",
     "JobTemplateCreateRequest",
     "JobTemplateDocument",
+    "JobTemplateUpdateRequest",
 ]

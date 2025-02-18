@@ -3,7 +3,7 @@ from typing import Literal, Optional, Any
 import datetime
 
 
-JobType = Literal["prompt-optimization", "annotate-files", "finetune-dataset"]
+JobType = Literal["prompt-optimization", "annotate-files", "finetune-dataset", "webcrawl"]
 JobName = Literal["uiform-production-backend-jobs", "uiform-staging-backend-jobs"]
 
 #### JOBS ####
@@ -18,12 +18,21 @@ class JobTemplateCreateRequest(BaseModel):
 class JobTemplateDocument(BaseModel):
     job_template_id: str
     job_type: JobType
+    identity: Any | None = None
     description: Optional[str] = None
+    default_input_data: dict = Field(default_factory=dict)
     # For scheduled jobs, include a valid CRON expression (None for on-demand only jobs)
     cron: Optional[str] = None
-    default_input_data: dict = Field(default_factory=dict)
+    next_run: Optional[datetime.datetime] = None
     created_at: Optional[datetime.datetime] = None
     updated_at: Optional[datetime.datetime] = None
+    is_active: bool = True  # Change to status.
+
+class JobTemplateUpdateRequest(BaseModel):
+    cron: Optional[str] = None
+    default_input_data: Optional[dict] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None    # Change to status.
 
 
 #### EXECUTIONS ####
