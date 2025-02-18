@@ -15,10 +15,10 @@ class FineTuningJobs(SyncAPIResource):
             model=model
         )
 
-    def retrieve(self, job_id: str) -> Any:
+    def retrieve(self, fine_tuning_job_id: str) -> Any:
         """Retrieve status of a fine-tuning job"""
         openai_client = OpenAI(api_key=self._client.headers["OpenAI-Api-Key"])
-        return openai_client.fine_tuning.jobs.retrieve(job_id)
+        return openai_client.fine_tuning.jobs.retrieve(fine_tuning_job_id)
 
 
 class AsyncFineTuningJobs(AsyncAPIResource):
@@ -30,10 +30,10 @@ class AsyncFineTuningJobs(AsyncAPIResource):
                 training_file=training_file,
                 model=model
             )
-    async def retrieve(self, job_id: str) -> Any:
+    async def retrieve(self, fine_tuning_job_id: str) -> Any:
         """Retrieve status of a fine-tuning job"""
         async with AsyncOpenAI(api_key=self._client.headers["OpenAI-Api-Key"]) as openai_client:
-            return await openai_client.fine_tuning.jobs.retrieve(job_id)
+            return await openai_client.fine_tuning.jobs.retrieve(fine_tuning_job_id)
 
 class FineTuning(SyncAPIResource):
     """Fine-tuning jobs API wrapper"""
