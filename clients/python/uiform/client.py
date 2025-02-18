@@ -102,12 +102,12 @@ class BaseUiForm:
         return f"{self.base_url}/{endpoint.lstrip('/')}"
     
     def _validate_response(self, response_object: httpx.Response) -> None:
-        if response_object.status_code in {500, 502, 503, 504}:
+        if response_object.status_code >= 500:
             response_object.raise_for_status()
         elif response_object.status_code == 422:
-            raise RuntimeError(f"Validation error (422): {response_object.json()}")
+            raise RuntimeError(f"Validation error (422): {response_object.text}")
         elif not response_object.is_success:
-            raise RuntimeError(f"Request failed ({response_object.status_code}): {response_object.json()}")
+            raise RuntimeError(f"Request failed ({response_object.status_code}): {response_object.text}")
     def _get_headers(self, idempotency_key: str | None = None) -> dict[str, Any]:
         headers = self.headers.copy()
         if idempotency_key:
