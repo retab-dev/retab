@@ -1,15 +1,19 @@
 from .base import (
     JobType,
     JobName,
-    JobCreateRequest,
-    JobResponse,
-    JobDocument,
+    JobExecutionCreateRequest,
+    JobExecutionResponse,
+    JobExecutionDocument,
+    JobTemplateCreateRequest,
+    JobTemplateDocument,
 )
 
 __all__ = [
     "JobType",
     "JobName",
-    "JobCreateRequest",
-    "JobResponse",
-    "JobDocument",
+    "JobExecutionCreateRequest",
+    "JobExecutionResponse",
+    "JobExecutionDocument",
+    "JobTemplateCreateRequest",
+    "JobTemplateDocument",
 ]

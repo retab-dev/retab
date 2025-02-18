@@ -166,7 +166,7 @@ class UiForm(BaseUiForm):
 
         self.files = files.Files(client=self)
         self.fine_tuning = finetuning.FineTuning(client=self)
-        self.prompt_optimization = prompt_optimization.PromptOptimization(client=self)
+        # self.prompt_optimization = prompt_optimization.PromptOptimization(client=self)
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
@@ -341,7 +341,7 @@ class AsyncUiForm(BaseUiForm):
         self.client = httpx.AsyncClient(timeout=self.timeout)
         self.files = files.AsyncFiles(client=self)
         self.fine_tuning = finetuning.AsyncFineTuning(client=self)
-        self.prompt_optimization = prompt_optimization.AsyncPromptOptimization(client=self)
+        # self.prompt_optimization = prompt_optimization.AsyncPromptOptimization(client=self)
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
