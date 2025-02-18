@@ -49,7 +49,7 @@ class Schema(PartialSchema):
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return "sch_data_id"+generate_sha_hash_from_string(
+        return "sch_data_id_"+generate_sha_hash_from_string(
             json.dumps(
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
                 sort_keys=True).strip(), 
