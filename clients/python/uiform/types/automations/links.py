@@ -61,10 +61,8 @@ class Link(BaseModel):
         return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
 
     @field_serializer('webhook_url')
-    def url2str(self, val) -> str:
-        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
-            return str(val)
-        return val
+    def url2str(self, val: HttpUrl) -> str:
+        return str(val)
 
 class ListLinks(BaseModel):
     data: list[Link]
@@ -101,3 +99,9 @@ class UpdateLinkRequest(BaseModel):
     temperature: Optional[float] = None
     json_schema: Optional[Dict] = None
 
+
+    @field_serializer('webhook_url')
+    def url2str(self, val: HttpUrl | None) -> str | None:
+        if isinstance(val, HttpUrl):
+            return str(val)
+        return val
