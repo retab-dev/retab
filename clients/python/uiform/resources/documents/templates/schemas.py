@@ -455,10 +455,8 @@ class Invoice(BaseModel):
     net_amount: float = Field(..., description="Net amount to be paid after deductions")
 
     @field_serializer('supplier_website')
-    def url2str(self, val) -> str:
-        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
-            return str(val)
-        return val
+    def url2str(self, val: HttpUrl) -> str:
+        return str(val)
 
 
 

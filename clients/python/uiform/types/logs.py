@@ -33,10 +33,8 @@ class AutomationConfig(BaseModel):
 
     
     @field_serializer('webhook_url')
-    def url2str(self, val) -> str:
-        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
-            return str(val)
-        return val
+    def url2str(self, val: HttpUrl) -> str:
+        return str(val)
 
 
 
@@ -76,6 +74,11 @@ class ExternalRequestLog(BaseModel):
     error: Optional[str] = None
     duration_ms: float
 
+    @field_serializer('webhook_url')
+    def url2str(self, val: HttpUrl | None) -> str | None:
+        if isinstance(val, HttpUrl):
+            return str(val)
+        return val
 
 from openai.types.chat import completion_create_params
 from openai.types.chat.chat_completion import ChatCompletion

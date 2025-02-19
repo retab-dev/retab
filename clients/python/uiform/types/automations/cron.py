@@ -47,9 +47,7 @@ class ScrappingConfig(BaseModel):
 
     
     @field_serializer('webhook_url', 'link')
-    def url2str(self, val) -> str:
-        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
-            return str(val)
-        return val
+    def url2str(self, val: HttpUrl) -> str:
+        return str(val)
 
 

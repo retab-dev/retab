@@ -83,11 +83,8 @@ class Mailbox(BaseModel):
 
 
     @field_serializer('webhook_url')
-    def url2str(self, val) -> str:
-        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
-            return str(val)
-        return val
-
+    def url2str(self, val: HttpUrl) -> str:
+        return str(val)
 
 
 class ListMailboxes(BaseModel):
@@ -121,4 +118,9 @@ class UpdateMailboxRequest(BaseModel):
     def normalize_authorized_emails(cls, emails: Optional[List[str]]) -> Optional[List[str]]:
         return [email.strip().lower() for email in emails] if emails else None
 
+    @field_serializer('webhook_url')
+    def url2str(self, val: HttpUrl | None) -> str | None:
+        if isinstance(val, HttpUrl):
+            return str(val)
+        return val
    
