@@ -14,8 +14,8 @@ class Dataset(BaseModel):
     name: str = Field(description="Name of the dataset")
     description: Optional[str] = Field(default=None, description="Optional description of the dataset")
     json_schema: Optional[Dict[str, Any]] = Field(default=None, description="JSON schema defining the structure of annotations in this dataset")
-    created_at: datetime.datetime = Field(default_factory=datetime.datetime.now, description="Timestamp for when the dataset was created")
-    updated_at: datetime.datetime = Field(default_factory=datetime.datetime.now, description="Timestamp for when the dataset was last updated")
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp for when the dataset was created")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp for when the dataset was last updated")
     
     @computed_field   # type: ignore
     @property
