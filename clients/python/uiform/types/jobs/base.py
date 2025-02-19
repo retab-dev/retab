@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Literal, Optional, Any
 import datetime
 
@@ -38,9 +38,17 @@ class JobTemplateUpdateRequest(BaseModel):
 #### EXECUTIONS ####
 
 class JobExecutionCreateRequest(BaseModel):
-    job_type: JobType
+    job_type: Optional[JobType] = None
     job_template_id: Optional[str] = None
     input_data: dict = Field(default_factory=dict)
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_job_identifiers(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if bool(data.get('job_type')) == bool(data.get('job_template_id')):
+                raise ValueError("Either job_type or job_template_id must be provided")
+        return data
 
 class JobExecutionResponse(BaseModel):
     job_execution_id: str
