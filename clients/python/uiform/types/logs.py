@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field,  HttpUrl, EmailStr, computed_field
+from pydantic import BaseModel, Field,  HttpUrl, EmailStr, computed_field, field_serializer
 from typing import Any, Optional, Literal, List, Dict
 import uuid
 import datetime
+from pydantic_core import Url
 
 from .documents.extractions import DocumentExtractResponse
 from .image_settings import ImageSettings
@@ -31,6 +32,14 @@ class AutomationConfig(BaseModel):
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
     
+    @field_serializer('webhook_url')
+    def url2str(self, val) -> str:
+        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
+            return str(val)
+        return val
+
+
+
 
 class OpenAIRequestConfig(BaseModel):
     object: Literal['openai_request'] = "openai_request"

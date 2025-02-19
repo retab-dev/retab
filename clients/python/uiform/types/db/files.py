@@ -1,5 +1,6 @@
 from typing import Literal, Tuple, BinaryIO
-from pydantic import BaseModel, Field, HttpUrl, ConfigDict
+from pydantic import BaseModel, Field, HttpUrl, ConfigDict, field_serializer
+from pydantic_core import Url
 import uuid
 import mimetypes
 
@@ -29,3 +30,10 @@ class FileLink(BaseModel):
     download_url: HttpUrl = Field(description="The signed URL to download the file")
     expires_in: str = Field(description="The expiration time of the signed URL")
     filename: str = Field(description="The name of the file")
+
+    @field_serializer('download_url')
+    def url2str(self, val) -> str:
+        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
+            return str(val)
+        return val
+
