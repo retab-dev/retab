@@ -14,7 +14,7 @@ xAI_Model = Literal["grok-2-vision-1212", "grok-2-1212"]
 LLMModel = Literal[OpenAIModel]# [AnthropicModel, OpenAIModel, xAI_Model, GeminiModel]
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import datetime
 
 class FinetunedModel(BaseModel):
@@ -22,6 +22,6 @@ class FinetunedModel(BaseModel):
     model: str
     organization_id: str
     dataset_id: str
-    created_at: datetime.datetime
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     schema_id: str 
     schema_data_id: str 
