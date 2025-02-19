@@ -102,25 +102,25 @@ async def test_extract_openai(
         booking_confirmation_json_schema=booking_confirmation_json_schema,
     )
 
-# @pytest.mark.asyncio
-# @pytest.mark.parametrize("request_number", range(1, 20))
-# async def test_extract_overload(
-#     sync_client: UiForm,
-#     async_client: AsyncUiForm,
-#     booking_confirmation_file_path: str,
-#     booking_confirmation_json_schema: dict[str, Any],
-#     request_number: int,
-# ) -> None:
-#     await asyncio.sleep(request_number * 0.1)
-#     await base_test_extract(
-#         model="gpt-4o-mini",
-#         client_type="async",
-#         response_mode="parse",
-#         sync_client=sync_client,
-#         async_client=async_client,
-#         booking_confirmation_file_path=booking_confirmation_file_path,
-#         booking_confirmation_json_schema=booking_confirmation_json_schema,
-#     )
+@pytest.mark.asyncio
+@pytest.mark.parametrize("request_number", range(10))
+async def test_extract_overload(
+    sync_client: UiForm,
+    async_client: AsyncUiForm,
+    booking_confirmation_file_path: str,
+    booking_confirmation_json_schema: dict[str, Any],
+    request_number: int,
+) -> None:
+    await asyncio.sleep(request_number * 0.1)
+    await base_test_extract(
+        model="gpt-4o-mini",
+        client_type="async",
+        response_mode="parse",
+        sync_client=sync_client,
+        async_client=async_client,
+        booking_confirmation_file_path=booking_confirmation_file_path,
+        booking_confirmation_json_schema=booking_confirmation_json_schema,
+    )
 
 
 # @pytest.mark.asyncio
