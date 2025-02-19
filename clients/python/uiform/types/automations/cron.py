@@ -24,7 +24,7 @@ class CronSchedule(BaseModel):
                f"{self.day_of_month or '*'} {self.month or '*'} {self.day_of_week or '*'}"
 
 class ScrappingConfig(BaseModel):
-    object: Literal['scrapping_cron'] = "scrapping_cron"
+    object: Literal['automation.scrapping_cron'] = "automation.scrapping_cron"
     id: str = Field(default_factory=lambda: "scrapping_" + str(uuid.uuid4()), description="Unique identifier for the scrapping job")
     
     # Scrapping Specific Config

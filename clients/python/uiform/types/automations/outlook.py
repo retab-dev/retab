@@ -35,7 +35,7 @@ from pydantic import model_validator
 from ..._utils.json_schema import convert_schema_to_layout
 
 class Outlook(BaseModel):
-    object: Literal['outlook'] = "outlook"
+    object: Literal['automation.outlook'] = "automation.outlook"
     name: str = Field(..., description="Name of the outlook plugin")
     id: str = Field(default_factory=lambda: "outlook_" + str(uuid.uuid4()), description="Unique identifier for the outlook")
 
