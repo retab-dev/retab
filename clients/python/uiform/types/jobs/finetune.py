@@ -13,3 +13,4 @@ class FineTuningJob(BaseModel):
     input_data: FineTuningInputData
     checkpoint: CheckPoint = None
     checkpoint_data: Optional[dict] = None
+
