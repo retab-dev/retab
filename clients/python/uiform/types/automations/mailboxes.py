@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator, computed_field
+from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator, computed_field, field_serializer
+from pydantic_core import Url
 from typing import Any, Literal, List, Dict, ClassVar, Optional
 import uuid
 import datetime
@@ -79,6 +80,13 @@ class Mailbox(BaseModel):
             str: A SHA1 hash string representing the complete schema version.
         """
         return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+
+
+    @field_serializer('webhook_url')
+    def url2str(self, val) -> str:
+        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
+            return str(val)
+        return val
 
 
 

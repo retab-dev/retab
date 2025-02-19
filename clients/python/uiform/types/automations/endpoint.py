@@ -1,10 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from typing import Literal, Any
 import uuid
 import datetime
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 from pydantic import HttpUrl
+from pydantic_core import Url
 
 
 
@@ -25,4 +26,12 @@ class ExtractionEndpointConfig(BaseModel):
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+
+
+    @field_serializer('webhook_url')
+    def url2str(self, val) -> str:
+        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
+            return str(val)
+        return val
+
 

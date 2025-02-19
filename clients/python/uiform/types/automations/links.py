@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field,  HttpUrl, computed_field
+from pydantic import BaseModel, Field,  HttpUrl, computed_field, field_serializer
+from pydantic_core import Url
 from typing import Any, Literal, Dict, Optional
 import uuid
 import datetime
@@ -59,6 +60,11 @@ class Link(BaseModel):
         """
         return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
 
+    @field_serializer('webhook_url')
+    def url2str(self, val) -> str:
+        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
+            return str(val)
+        return val
 
 class ListLinks(BaseModel):
     data: list[Link]

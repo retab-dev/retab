@@ -3,6 +3,8 @@ from typing import List
 from pydantic import ConfigDict
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from pydantic_core import Url
+from pydantic import field_serializer
 
 from pydantic import BaseModel, Field, HttpUrl
 from typing import List
@@ -451,6 +453,14 @@ class Invoice(BaseModel):
     receiver_address: str = Field(..., description="Address of the invoice receiver")
     amount_paid_since_last_invoice: float = Field(..., description="Amount paid since the last invoice")
     net_amount: float = Field(..., description="Net amount to be paid after deductions")
+
+    @field_serializer('supplier_website')
+    def url2str(self, val) -> str:
+        if isinstance(val, Url): ### This magic! If isinstance(val, HttpUrl) - error
+            return str(val)
+        return val
+
+
 
 
 ################################################################################
