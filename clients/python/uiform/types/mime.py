@@ -21,6 +21,10 @@ class MIMEData(BaseModel):
     url: str = Field(description="The URL of the file", examples=["https://example.com/file.pdf", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."])
 
     @property
+    def id(self) -> str:
+        return f"file_{generate_sha_hash_from_base64(self.content)}"
+    
+    @property
     def extension(self) -> str:
         return self.filename.split('.')[-1].lower()
     
@@ -42,7 +46,7 @@ class MIMEData(BaseModel):
         
     @property 
     def unique_filename(self) -> str:
-        return f"{generate_sha_hash_from_base64(self.content)}.{self.extension}"
+        return f"{self.id}.{self.extension}"
 
     
     @property

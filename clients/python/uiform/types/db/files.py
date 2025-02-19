@@ -1,7 +1,5 @@
 from typing import Literal, Tuple, BinaryIO
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict, field_serializer
-from pydantic_core import Url
-import uuid
 import mimetypes
 
 
@@ -9,8 +7,8 @@ import mimetypes
 class DBFile(BaseModel):
     """Represents the core file object in your new spec."""
     object: Literal["file"] = "file"
-    id: str = Field(default_factory=lambda: f"file_{uuid.uuid4()}", description="The unique identifier of the file")
-    filename: str = Field(description="The name of the file")
+    id: str = Field(..., description="The unique identifier of the file. It is generated from the content 'file_{sha256(content)}'")
+    filename: str = Field(..., description="The name of the file")
 
     @property
     def mime_type(self) -> str:
