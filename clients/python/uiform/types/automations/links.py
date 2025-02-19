@@ -17,7 +17,7 @@ from ..._utils.mime import generate_sha_hash_from_string
 
 
 class Link(BaseModel):
-    object: Literal['link'] = "link"
+    object: Literal['automation.link'] = "automation.link"
     id: str = Field(default_factory=lambda: "lnk_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
     
     # Link Specific Config

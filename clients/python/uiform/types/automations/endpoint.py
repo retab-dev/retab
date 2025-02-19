@@ -10,7 +10,7 @@ from pydantic_core import Url
 
 
 class ExtractionEndpointConfig(BaseModel):
-    object: Literal['endpoint'] = "endpoint"
+    object: Literal['automation.endpoint'] = "automation.endpoint"
     id: str = Field(default_factory=lambda: "endp" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
     
     # Extraction Endpoint Specific Config
