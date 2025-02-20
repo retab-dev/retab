@@ -13,14 +13,23 @@ class Annotation(BaseModel):
     data: Dict[str, Any] = Field(default_factory=dict, description="Data of the annotation")
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp for when the annotation was last updated")
 
+
 class DatasetMembership(BaseModel):
-    object: Literal["dataset_membership"] = "dataset_membership"
+    """This is the base class for all dataset memberships. It contains the common fields for all dataset memberships."""
+    object: Literal["dataset_membership.default", "dataset_membership.custom"]
     id: str = Field(default_factory=lambda: f"dm_{uuid.uuid4()}", description="Unique identifier for the dataset membership")
     file_id: str = Field(description="ID of the file that belongs to the dataset")
-    dataset_id: str = Field(description="ID of the dataset that contains the file") 
+    dataset_id: str = Field(description="ID of the dataset that contains the file")
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp for when the membership was created")
     annotation: Annotation = Field(default=Annotation(), description="Annotation of the file")
 
+class DefaultDatasetMembership(DatasetMembership):
+    """This is the dataset membership class for default dataset memberships (built-in dataset memberships)."""
+    object: Literal["dataset_membership.default"] = "dataset_membership.default"
+
+class CustomDatasetMembership(DatasetMembership):
+    """This is the dataset membership class for custom dataset memberships (user-created dataset memberships)."""
+    object: Literal["dataset_membership.custom"] = "dataset_membership.custom"
 
 class BaseGenerateAnnotationRequest(BaseModel):
     dataset_id: str
