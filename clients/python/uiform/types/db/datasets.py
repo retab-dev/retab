@@ -9,11 +9,12 @@ from ..._utils.json_schema import clean_schema
 from ..._utils.mime import generate_sha_hash_from_string
 
 class Dataset(BaseModel):
-    object: Literal["dataset"] = "dataset"
+    """This is the base class for all datasets. It contains the common fields for all datasets. Mostly useful for default_datasets and custom_datasets."""
+    object: Literal["dataset.default", "dataset.custom"]
     id: str = Field(default_factory=lambda: f"ds_{uuid.uuid4()}", description="Unique identifier of the dataset")
     name: str = Field(description="Name of the dataset")
-    description: Optional[str] = Field(default=None, description="Optional description of the dataset")
     json_schema: Optional[Dict[str, Any]] = Field(default=None, description="JSON schema defining the structure of annotations in this dataset")
+    description: Optional[str] = Field(default=None, description="Optional description of the dataset")
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp for when the dataset was created")
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp for when the dataset was last updated")
     
@@ -46,7 +47,15 @@ class Dataset(BaseModel):
             return ""
         
         return "sch_id_"+generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
-    
+
+
+class DefaultDataset(Dataset):
+    """This is the dataset class for default datasets (built-in datasets)."""
+    object: Literal["dataset.default"] = "dataset.default"
+
+class CustomDataset(Dataset):
+    """This is the dataset class for custom datasets (user-created datasets)."""
+    object: Literal["dataset.custom"] = "dataset.custom"
 
 class DatasetAnnotationStatus(BaseModel):
     total_files: int
