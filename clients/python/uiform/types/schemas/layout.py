@@ -12,7 +12,6 @@ class RefObject(BaseModel):
     type: Literal["object"]
     size: Optional[int] = None
     name: Optional[str] = None
-    # Use alias "$ref" so that when exporting to JSON, the key is "$ref"
     ref: str = PydanticField(..., alias="$ref")
 
 
