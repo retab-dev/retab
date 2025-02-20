@@ -5,7 +5,7 @@ import datetime
 
 
 
-metadata_key = Literal['user', 'organization', 'link', 'mailbox', 'cron', 'outlook', 'extraction', 'webhook', 'schema', 'data_structure', 'file','dataset', 'dataset_membership']
+metadata_key = Literal['user', 'organization', 'link', 'mailbox', 'cron', 'outlook', 'extraction', 'webhook', 'schema', 'data_structure', 'file','dataset', 'dataset_membership', 'endpoint']
 
 event_type = Literal['extraction.created', 
                      'link.created', 'link.updated', 'link.deleted', 'link.webhook',

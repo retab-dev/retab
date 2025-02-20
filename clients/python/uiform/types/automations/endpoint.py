@@ -1,15 +1,15 @@
 from pydantic import BaseModel, Field, field_serializer
-from typing import Literal, Any
+from typing import Literal, Any, Optional
 import uuid
 import datetime
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 from pydantic import HttpUrl
-from pydantic_core import Url
+from ..pagination import ListMetadata
 
 
 
-class ExtractionEndpointConfig(BaseModel):
+class Endpoint(BaseModel):
     object: Literal['automation.endpoint'] = "automation.endpoint"
     id: str = Field(default_factory=lambda: "endp" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
     
@@ -31,5 +31,43 @@ class ExtractionEndpointConfig(BaseModel):
     @field_serializer('webhook_url')
     def url2str(self, val: HttpUrl) -> str:
         return str(val)
+
+
+class ListEndpoints(BaseModel):
+    data: list[Endpoint]
+    list_metadata: ListMetadata
+
+
+
+class UpdateEndpointRequest(BaseModel):
+    id: str
+
+    # ------------------------------
+    # Endpoint Config
+    # ------------------------------
+    name: Optional[str] = None
+
+    # ------------------------------
+    # HTTP Config
+    # ------------------------------
+    webhook_url: Optional[HttpUrl] = None
+    webhook_headers: Optional[dict[str, str]] = None
+
+    # ------------------------------
+    # DocumentExtraction Parameters
+    # ------------------------------
+    # DocumentProcessing Parameters
+    image_settings: Optional[ImageSettings] = None
+    modality: Optional[Modality] = None
+    # Others DocumentExtraction Parameters
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    json_schema: Optional[dict[str, Any]] = None
+
+    @field_serializer('webhook_url')
+    def url2str(self, val: HttpUrl | None) -> str | None:
+        if isinstance(val, HttpUrl):
+            return str(val)
+        return val
 
 
