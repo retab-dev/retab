@@ -11,7 +11,7 @@ from ..pagination import ListMetadata
 
 class Endpoint(BaseModel):
     object: Literal['automation.endpoint'] = "automation.endpoint"
-    id: str = Field(default_factory=lambda: "endp" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
+    id: str = Field(default_factory=lambda: "endp_" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
     
     # Extraction Endpoint Specific Config
     name: str = Field(..., description="Name of the extraction endpoint")
