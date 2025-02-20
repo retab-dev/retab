@@ -161,8 +161,11 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, 
                                     image_settings, modality, model, temperature)
         response = self._client._prepared_request(request)
-        print(f"Endpoint Created. ID: {response['id']}")
+        print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f"/v1/endpoints/{response['id']}"}")
         return Endpoint.model_validate(response)
+
+
+
 
     def list(
         self,   
@@ -266,7 +269,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers,
                                     image_settings, modality, model, temperature)
         response = await self._client._prepared_request(request)
-        print(f"Endpoint Created. ID: {response['id']}")
+        print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f"/v1/endpoints/{response['id']}"}")
         return Endpoint.model_validate(response)
     
     async def list(
