@@ -130,6 +130,7 @@ class UpdateOutlookRequest(BaseModel):
     model: Optional[str] = None
     temperature: Optional[float] = None
     json_schema: Optional[Dict] = None
+    layout_schema: Optional[Layout] = None
 
     @field_validator("authorized_emails", mode="before")
     def normalize_authorized_emails(cls, emails: Optional[List[str]]) -> Optional[List[str]]:
