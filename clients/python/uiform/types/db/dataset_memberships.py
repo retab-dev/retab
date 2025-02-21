@@ -23,14 +23,6 @@ class DatasetMembership(BaseModel):
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp for when the membership was created")
     annotation: Annotation = Field(default=Annotation(), description="Annotation of the file")
 
-class DefaultDatasetMembership(DatasetMembership):
-    """This is the dataset membership class for default dataset memberships (built-in dataset memberships)."""
-    object: Literal["dataset_membership.default"] = "dataset_membership.default"
-
-class CustomDatasetMembership(DatasetMembership):
-    """This is the dataset membership class for custom dataset memberships (user-created dataset memberships)."""
-    object: Literal["dataset_membership.custom"] = "dataset_membership.custom"
-
 class BaseGenerateAnnotationRequest(BaseModel):
     dataset_id: str
     model: str

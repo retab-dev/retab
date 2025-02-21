@@ -28,6 +28,7 @@ pydantic
 pydantic_core
 requests
 tqdm
+types-tqdm
 backoff
 termplotlib
 Levenshtein
