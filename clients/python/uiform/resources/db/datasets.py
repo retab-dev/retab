@@ -7,7 +7,7 @@ from ..._resource import SyncAPIResource, AsyncAPIResource
 
 from ...types.chat import ChatCompletionUiformMessage
 from ...types.modalities import Modality
-from ...types.db.datasets import Dataset, DatasetAnnotationStatus, CustomDataset
+from ...types.db.datasets import Dataset, DatasetAnnotationStatus
 from ...types.db.dataset_memberships import Annotation
 from ...types.standards import PreparedRequest
 
@@ -101,7 +101,7 @@ class Datasets(SyncAPIResource, DatasetsMixin):
         name: str,
         json_schema: Optional[Dict[str, Any]],
         description: str | None = None
-    ) -> CustomDataset:
+    ) -> Dataset:
         """Create a new dataset.
         
         Args:
@@ -114,7 +114,7 @@ class Datasets(SyncAPIResource, DatasetsMixin):
         """
         request = self.prepare_create(name, json_schema, description)
         response = self._client._prepared_request(request)
-        return CustomDataset(**response)
+        return Dataset(**response)
     
     def clone(
         self,
@@ -122,7 +122,7 @@ class Datasets(SyncAPIResource, DatasetsMixin):
         name: str,
         description: str | None = None,
         json_schema: Dict[str, Any] | None = None
-    ) -> CustomDataset:
+    ) -> Dataset:
         """Clone an existing dataset.
         
         Args:
@@ -136,7 +136,7 @@ class Datasets(SyncAPIResource, DatasetsMixin):
         """
         request = self.prepare_clone(dataset_id, name, description, json_schema)
         response = self._client._prepared_request(request)
-        return CustomDataset(**response)
+        return Dataset(**response)
 
     def get(self, dataset_id: str) -> Dataset:
         """Get a specific dataset.
@@ -190,7 +190,7 @@ class Datasets(SyncAPIResource, DatasetsMixin):
         name: str | None = None,
         description: str | None = None,
         json_schema: Dict[str, Any] | None = None
-    ) -> CustomDataset:
+    ) -> Dataset:
         """Update a dataset's properties. json_schema is not updatable. If you want to update it, you have to delete the dataset and create a new one.
         
         Args:
@@ -203,7 +203,7 @@ class Datasets(SyncAPIResource, DatasetsMixin):
         """
         request = self.prepare_update(dataset_id, name, description, json_schema)
         response = self._client._prepared_request(request)
-        return CustomDataset(**response)
+        return Dataset(**response)
 
     def delete(self, dataset_id: str, force: bool = False) -> None:
         """Delete a dataset.
@@ -331,10 +331,10 @@ class Datasets(SyncAPIResource, DatasetsMixin):
 class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
     """Async Datasets API wrapper"""
 
-    async def create(self, name: str, json_schema: Optional[Dict[str, Any]], description: str | None = None) -> CustomDataset:
+    async def create(self, name: str, json_schema: Optional[Dict[str, Any]], description: str | None = None) -> Dataset:
         request = self.prepare_create(name, json_schema, description)
         response = await self._client._prepared_request(request)
-        return CustomDataset(**response)
+        return Dataset(**response)
 
     async def clone(
         self,
@@ -342,7 +342,7 @@ class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
         name: str,
         description: str | None = None,
         json_schema: Dict[str, Any] | None = None
-    ) -> CustomDataset:
+    ) -> Dataset:
         """Clone an existing dataset.
         
         Args:
@@ -356,7 +356,7 @@ class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
         """
         request = self.prepare_clone(dataset_id, name, description, json_schema)
         response = await self._client._prepared_request(request)
-        return CustomDataset(**response)
+        return Dataset(**response)
 
     async def get(self, dataset_id: str) -> Dataset:
         """Get a specific dataset.
@@ -416,7 +416,7 @@ class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
         name: str | None = None,
         description: str | None = None,
         json_schema: Dict[str, Any] | None = None
-    ) -> CustomDataset:
+    ) -> Dataset:
         """Update a dataset.
         
         Args:
@@ -430,7 +430,7 @@ class AsyncDatasets(AsyncAPIResource, DatasetsMixin):
         """
         request = self.prepare_update(dataset_id, name, description, json_schema)
         response = await self._client._prepared_request(request)
-        return CustomDataset(**response)
+        return Dataset(**response)
 
     async def delete(self, dataset_id: str, force: bool = False) -> None:
         """Delete a dataset.

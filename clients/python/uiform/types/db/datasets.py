@@ -48,15 +48,6 @@ class Dataset(BaseModel):
         
         return "sch_id_"+generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
 
-
-class DefaultDataset(Dataset):
-    """This is the dataset class for default datasets (built-in datasets)."""
-    object: Literal["dataset.default"] = "dataset.default"
-
-class CustomDataset(Dataset):
-    """This is the dataset class for custom datasets (user-created datasets)."""
-    object: Literal["dataset.custom"] = "dataset.custom"
-
 class DatasetAnnotationStatus(BaseModel):
     total_files: int
     files_with_empty_annotations: List[str]
