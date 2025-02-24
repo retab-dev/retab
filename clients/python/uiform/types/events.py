@@ -5,9 +5,10 @@ import datetime
 
 
 
-metadata_key = Literal['user', 'organization', 'link', 'mailbox', 'cron', 'outlook', 'extraction', 'webhook', 'schema', 'data_structure', 'file','dataset', 'dataset_membership', 'endpoint']
+metadata_key = Literal['user', 'organization', 'link', 'mailbox', 'cron', 'outlook', 'extraction', 'webhook', 'schema', 'data_structure', 'file','dataset', 'dataset_membership', 'endpoint', 'automation']
 
 event_type = Literal['extraction.created', 
+                     'automation.created', 'automation.updated', 'automation.deleted', 'automation.webhook',
                      'link.created', 'link.updated', 'link.deleted', 'link.webhook',
                      'mailbox.created', 'mailbox.updated', 'mailbox.deleted','mailbox.webhook',
                      'outlook.created', 'outlook.updated', 'outlook.deleted','outlook.webhook',
