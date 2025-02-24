@@ -13,10 +13,10 @@ from ..pagination import ListMetadata
 from ..._utils.json_schema import clean_schema
 from ..._utils.mime import generate_sha_hash_from_string
 
+from ..logs import AutomationConfig
 
 
-
-class Link(BaseModel):
+class Link(AutomationConfig):
     object: Literal['automation.link'] = "automation.link"
     id: str = Field(default_factory=lambda: "lnk_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
     

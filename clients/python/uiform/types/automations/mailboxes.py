@@ -17,7 +17,9 @@ from ..._utils.mime import generate_sha_hash_from_string
 
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
-class Mailbox(BaseModel):
+from ..logs import AutomationConfig
+
+class Mailbox(AutomationConfig):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
     object: Literal['automation.mailbox'] = "automation.mailbox"
     id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")

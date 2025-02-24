@@ -13,7 +13,9 @@ import copy
 import json
 from pydantic import computed_field
 
-class Endpoint(BaseModel):
+from ..logs import AutomationConfig
+
+class Endpoint(AutomationConfig):
     object: Literal['automation.endpoint'] = "automation.endpoint"
     id: str = Field(default_factory=lambda: "endp_" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
     

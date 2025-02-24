@@ -9,7 +9,8 @@ from ..modalities import Modality
 
 
 def scrapping_action(link: HttpUrl) -> dict[str, Any]:
-    pass
+    raise NotImplementedError("Scrapping action not implemented")
+
 
 class CronSchedule(BaseModel):
     second: Optional[int] = Field(0, ge=0, le=59, description="Second (0-59), defaults to 0")
@@ -23,7 +24,9 @@ class CronSchedule(BaseModel):
         return f"{self.second or '*'} {self.minute} {self.hour} " \
                f"{self.day_of_month or '*'} {self.month or '*'} {self.day_of_week or '*'}"
 
-class ScrappingConfig(BaseModel):
+from ..logs import AutomationConfig
+
+class ScrappingConfig(AutomationConfig):
     object: Literal['automation.scrapping_cron'] = "automation.scrapping_cron"
     id: str = Field(default_factory=lambda: "scrapping_" + str(uuid.uuid4()), description="Unique identifier for the scrapping job")
     

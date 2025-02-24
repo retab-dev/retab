@@ -49,11 +49,11 @@ class OpenAIRequestConfig(BaseModel):
 # ------------------------------
 # ------------------------------
 
-from .automations.mailboxes import Mailbox
-from .automations.links import Link
-from .automations.cron import ScrappingConfig
-from .automations.endpoint import Endpoint
-from .automations.outlook import Outlook
+#from .automations.mailboxes import Mailbox
+#from .automations.links import Link
+#from .automations.cron import ScrappingConfig
+#from .automations.endpoint import Endpoint
+#from .automations.outlook import Outlook
 
 #class OpenAILog(BaseModel): 
 #    request_config: OpenAIRequestConfig
@@ -94,7 +94,7 @@ class AutomationLog(BaseModel):
     user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
     organization_id:str
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    automation_snapshot:  Mailbox| Link| ScrappingConfig| Endpoint | OpenAIRequestConfig | Outlook
+    automation_snapshot:  AutomationConfig
     completion: DocumentExtractResponse | ChatCompletion
     file_metadata: Optional[BaseMIMEData]
     external_request_log: Optional[ExternalRequestLog]
