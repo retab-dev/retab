@@ -5,7 +5,7 @@ import datetime
 
 JobType = Literal["prompt-optimization", "annotate-files", "finetune-dataset", "webcrawl"]
 JobName = Literal["uiform-production-backend-jobs", "uiform-staging-backend-jobs"]
-
+JobStatus = Literal["pending", "running", "completed", "failed"]
 #### JOBS ####
 
 class JobTemplateCreateRequest(BaseModel):
@@ -16,8 +16,9 @@ class JobTemplateCreateRequest(BaseModel):
 
 
 class JobTemplateDocument(BaseModel):
-    job_template_id: str
-    job_type: JobType
+    object: Literal["job_template"] = "job_template"
+    id: str
+    type: JobType
     identity: Any | None = None
     description: Optional[str] = None
     default_input_data: dict = Field(default_factory=dict)
@@ -38,8 +39,8 @@ class JobTemplateUpdateRequest(BaseModel):
 #### EXECUTIONS ####
 
 class JobExecutionCreateRequest(BaseModel):
-    job_type: Optional[JobType] = None
-    job_template_id: Optional[str] = None
+    type: JobType
+    template_id: Optional[str] = None
     input_data: dict = Field(default_factory=dict)
 
     @model_validator(mode='before')
@@ -51,21 +52,22 @@ class JobExecutionCreateRequest(BaseModel):
         return data
 
 class JobExecutionResponse(BaseModel):
-    job_execution_id: str
-    job_template_id: Optional[str] = None
-    job_type: str
-    status: str
+    id: str
+    template_id: Optional[str] = None
+    type: JobType
+    status: JobStatus
     result: Optional[dict] = None
     error: Optional[str] = None
     created_at: Optional[datetime.datetime] = None
     updated_at: Optional[datetime.datetime] = None
 
 class JobExecutionDocument(BaseModel):
-    job_execution_id: str
-    job_template_id: Optional[str] = None
-    job_type: str
+    object: Literal["job_execution"] = "job_execution"
+    id: str
+    template_id: Optional[str] = None
+    type: JobType
     identity: Any | None = None
-    status: str
+    status: JobStatus
     input_data_gcs_path: str
     result: Optional[dict] = None
     error: Optional[str] = None
@@ -73,4 +75,10 @@ class JobExecutionDocument(BaseModel):
     updated_at: Optional[datetime.datetime] = None
     checkpoint: Any = None  # Useful for jobs that need to be resumed
     checkpoint_data: Optional[dict] = None
+    runs_on: list[str] = Field(default_factory=list, description="list of jobs execution id that must be completed before this job can run")
+
+
+class Workflow(BaseModel):
+    name: str
+    jobs: list[JobExecutionDocument]
 
