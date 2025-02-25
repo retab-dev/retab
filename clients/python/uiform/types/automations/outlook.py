@@ -12,7 +12,7 @@ from ..modalities import Modality
 from ..pagination import ListMetadata
 from ..schemas.layout import Layout
 from ..._utils.json_schema import clean_schema
-from ..._utils.mime import generate_sha_hash_from_string
+from ..._utils.mime import generate_blake2b_hash_from_string
 
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
@@ -75,7 +75,7 @@ class Outlook(AutomationConfig):
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return "sch_data_id_" + generate_sha_hash_from_string(
+        return "sch_data_id_" + generate_blake2b_hash_from_string(
             json.dumps(
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
                 sort_keys=True).strip(), 
@@ -91,7 +91,7 @@ class Outlook(AutomationConfig):
         Returns:
             str: A SHA1 hash string representing the complete schema version.
         """
-        return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
 
 
     @field_serializer('webhook_url')

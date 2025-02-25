@@ -6,7 +6,7 @@ import copy
 import json
 
 from ..._utils.json_schema import clean_schema
-from ..._utils.mime import generate_sha_hash_from_string
+from ..._utils.mime import generate_blake2b_hash_from_string
 
 class Dataset(BaseModel):
     """This is the base class for all datasets. It contains the common fields for all datasets. Mostly useful for default_datasets and custom_datasets."""
@@ -28,11 +28,11 @@ class Dataset(BaseModel):
         """
         if self.json_schema is None:
             return ""
-        return "sch_data_id_"+generate_sha_hash_from_string(
+        return "sch_data_id_"+generate_blake2b_hash_from_string(
             json.dumps(
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
-                sort_keys=True).strip(), 
-            "sha1")
+                sort_keys=True).strip()
+            )
 
     # This is a computed field, it is exposed when serializing the object
     @computed_field   # type: ignore
@@ -46,7 +46,7 @@ class Dataset(BaseModel):
         if self.json_schema is None:
             return ""
         
-        return "sch_id_"+generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+        return "sch_id_"+generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
 
 class DatasetAnnotationStatus(BaseModel):
     total_files: int

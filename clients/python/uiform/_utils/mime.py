@@ -15,22 +15,17 @@ from pydantic import HttpUrl
 
 T = TypeVar('T')
 
-def generate_sha_hash_from_bytes(bytes_: bytes, hash_algorithm_: Literal['sha256', 'sha1'] = 'sha256') -> str:
-    hash_algorithm = hashlib.sha256() if hash_algorithm_ == 'sha256' else hashlib.sha1()
-    hash_algorithm.update(bytes_)
-    hash_hex = hash_algorithm.hexdigest()
-    return hash_hex
+def generate_blake2b_hash_from_bytes(bytes_: bytes) -> str:
+    return hashlib.blake2b(bytes_, digest_size=8).hexdigest()
 
-def generate_sha_hash_from_base64(base64_string: str, hash_algorithm_: Literal['sha256', 'sha1'] = 'sha256') -> str:
-    # Decode the base64 string to bytes, Generate the SHA-256 hash of the bytes, Convert the hash to a hex string
-    return generate_sha_hash_from_bytes(base64.b64decode(base64_string), hash_algorithm_=hash_algorithm_)
+def generate_blake2b_hash_from_base64(base64_string: str) -> str:
+    return generate_blake2b_hash_from_bytes(base64.b64decode(base64_string))
 
-def generate_sha_hash_from_string(input_string: str, hash_algorithm_: Literal['sha256', 'sha1'] = 'sha256') -> str:
-    return generate_sha_hash_from_bytes(input_string.encode('utf-8'), hash_algorithm_=hash_algorithm_)
+def generate_blake2b_hash_from_string(input_string: str) -> str:
+    return generate_blake2b_hash_from_bytes(input_string.encode('utf-8'))
 
-def generate_sha_hash_from_dict(input_dict: dict, hash_algorithm_: Literal['sha256', 'sha1'] = 'sha256') -> str:
-    return generate_sha_hash_from_string(json.dumps(input_dict, sort_keys=True).strip(), hash_algorithm_=hash_algorithm_)
-
+def generate_blake2b_hash_from_dict(input_dict: dict) -> str:
+    return generate_blake2b_hash_from_string(json.dumps(input_dict, sort_keys=True).strip())
 
     
 def convert_pil_image_to_mime_data(image: PIL.Image.Image) -> MIMEData:
