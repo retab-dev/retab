@@ -5,7 +5,13 @@ from typing import Literal, Optional, Sequence, TypeAlias
 import datetime
 import re
 import hashlib
-from .._utils.mime import generate_blake2b_hash_from_base64
+
+def generate_blake2b_hash_from_bytes(bytes_: bytes) -> str:
+    return hashlib.blake2b(bytes_, digest_size=8).hexdigest()
+
+def generate_blake2b_hash_from_base64(base64_string: str) -> str:
+    return generate_blake2b_hash_from_bytes(base64.b64decode(base64_string))
+
 
 class MIMEData(BaseModel):
     filename: str = Field(description="The filename of the file", examples=["file.pdf", "image.png", "data.txt"])
