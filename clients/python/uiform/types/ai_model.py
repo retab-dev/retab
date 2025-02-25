@@ -11,7 +11,7 @@ OpenAIModel = Literal["gpt-4o", "gpt-4o-mini","chatgpt-4o-latest",
                       "gpt-4o-mini-2024-07-18",
                       "o1", "o1-2024-12-17", "o1-mini-2024-09-12"]
 xAI_Model = Literal["grok-2-vision-1212", "grok-2-1212"]
-LLMModel = Literal[OpenAIModel]# [AnthropicModel, OpenAIModel, xAI_Model, GeminiModel]
+LLMModel = Literal[OpenAIModel, 'human']# [AnthropicModel, OpenAIModel, xAI_Model, GeminiModel]
 
 
 from pydantic import BaseModel, Field
