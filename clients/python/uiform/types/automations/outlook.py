@@ -78,8 +78,8 @@ class Outlook(AutomationConfig):
         return "sch_data_id_" + generate_blake2b_hash_from_string(
             json.dumps(
                 clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
-                sort_keys=True).strip(), 
-            "sha1")
+                sort_keys=True).strip()
+            )
     
 
     # This is a computed field, it is exposed when serializing the object
