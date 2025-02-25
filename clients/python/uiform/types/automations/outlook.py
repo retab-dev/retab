@@ -1,13 +1,12 @@
 from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator, computed_field, field_serializer
 from pydantic_core import Url
 from typing import Any, Literal, List, Dict, ClassVar, Optional
-import uuid
 import datetime
 import os
 import re 
 import copy
 import json
-
+import nanoid # type: ignore
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 from ..pagination import ListMetadata
@@ -38,7 +37,7 @@ from ..logs import AutomationConfig
 class Outlook(AutomationConfig):
     object: Literal['automation.outlook'] = "automation.outlook"
     name: str = Field(..., description="Name of the outlook plugin")
-    id: str = Field(default_factory=lambda: "outlook_" + str(uuid.uuid4()), description="Unique identifier for the outlook")
+    id: str = Field(default_factory=lambda: "outlook_" + nanoid.generate(), description="Unique identifier for the outlook")
 
     authorized_domains: list[str] = Field(default_factory=list, description="List of authorized domains to receive the emails from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description="List of emails to access the link")

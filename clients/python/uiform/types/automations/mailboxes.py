@@ -1,13 +1,12 @@
 from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator, computed_field, field_serializer
 from pydantic_core import Url
 from typing import Any, Literal, List, Dict, ClassVar, Optional
-import uuid
 import datetime
 import os
 import re 
 import copy
 import json
-
+import nanoid # type: ignore
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 from ..pagination import ListMetadata
@@ -22,7 +21,7 @@ from ..logs import AutomationConfig
 class Mailbox(AutomationConfig):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
     object: Literal['automation.mailbox'] = "automation.mailbox"
-    id: str = Field(default_factory=lambda: "mb_" + str(uuid.uuid4()), description="Unique identifier for the mailbox")
+    id: str = Field(default_factory=lambda: "mb_" + nanoid.generate(), description="Unique identifier for the mailbox")
     
     # Email Specific config
     email: str = Field(..., pattern=EMAIL_PATTERN)

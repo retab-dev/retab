@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field,  HttpUrl, EmailStr, computed_field, field_serializer
 from typing import Any, Optional, Literal, List, Dict
-import uuid
 import datetime
+import nanoid # type: ignore
 from pydantic_core import Url
 
 from .documents.extractions import DocumentExtractResponse
@@ -41,7 +41,7 @@ class AutomationConfig(BaseModel):
 
 class OpenAIRequestConfig(BaseModel):
     object: Literal['openai_request'] = "openai_request"
-    id: str = Field(default_factory=lambda: "openai_req_" + str(uuid.uuid4()), description="Unique identifier for the openai request")
+    id: str = Field(default_factory=lambda: "openai_req_" + nanoid.generate(), description="Unique identifier for the openai request")
     model: str
     json_schema: dict[str, Any]
 
@@ -90,7 +90,7 @@ class LogCompletionRequest(BaseModel):
 
 class AutomationLog(BaseModel):
     object: Literal['automation_log'] = "automation_log"
-    id: str = Field(default_factory=lambda: "log_auto_" + str(uuid.uuid4()), description="Unique identifier for the automation log")
+    id: str = Field(default_factory=lambda: "log_auto_" + nanoid.generate(), description="Unique identifier for the automation log")
     user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
     organization_id:str
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))

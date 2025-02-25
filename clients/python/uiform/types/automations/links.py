@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field,  HttpUrl, computed_field, field_serializer
 from pydantic_core import Url
 from typing import Any, Literal, Dict, Optional
-import uuid
 import datetime
 import copy
 import json
+import nanoid # type: ignore
 
 from ..image_settings import ImageSettings
 from ..modalities import Modality
@@ -18,7 +18,7 @@ from ..logs import AutomationConfig
 
 class Link(AutomationConfig):
     object: Literal['automation.link'] = "automation.link"
-    id: str = Field(default_factory=lambda: "lnk_" + str(uuid.uuid4()), description="Unique identifier for the extraction link")
+    id: str = Field(default_factory=lambda: "lnk_" + nanoid.generate(), description="Unique identifier for the extraction link")
     
     # Link Specific Config
     name: str = Field(..., description = "Name of the link")

@@ -6,6 +6,7 @@ CheckPoint = Literal[None, "file_uploaded", "openai_job_created", "openai_job_ru
 
 class FineTuningInputData(BaseModel):
     dataset_id: str
+    schema_id: str
     finetuning_props : AnnotationProps
 
 class FineTuningJob(BaseModel):

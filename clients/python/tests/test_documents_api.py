@@ -1,6 +1,6 @@
 import pytest
 import json
-import uuid
+import nanoid # type: ignore
 import time
 import httpx
 import asyncio
@@ -172,7 +172,7 @@ async def test_extract_overload(
 @pytest.mark.asyncio
 async def test_extraction_with_idempotency(sync_client: UiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
     client = sync_client
-    idempotency_key = str(uuid.uuid4())
+    idempotency_key = nanoid.generate()
     response_initial = client.documents.extractions.parse(
         json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path, model="gpt-4o-mini", modality="native", idempotency_key=idempotency_key
     )
@@ -199,7 +199,7 @@ async def test_extraction_with_idempotency_exceptions(
 ) -> None:
     client = sync_client
     # Now we will validate some exception scenarios
-    idempotency_key = str(uuid.uuid4())
+    idempotency_key = str(nanoid.generate())
     loading_request = client.documents.extractions.prepare_extraction(
         booking_confirmation_json_schema, booking_confirmation_file_path, None, "gpt-4o-mini", 0, "native", False, idempotency_key=idempotency_key
     )

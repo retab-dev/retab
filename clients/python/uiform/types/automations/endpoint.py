@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field, field_serializer
 from typing import Literal, Any, Optional
-import uuid
 import datetime
 from ..image_settings import ImageSettings
 from ..modalities import Modality
@@ -12,12 +11,12 @@ from ..._utils.mime import generate_sha_hash_from_string
 import copy
 import json
 from pydantic import computed_field
-
+import nanoid # type: ignore
 from ..logs import AutomationConfig
 
 class Endpoint(AutomationConfig):
     object: Literal['automation.endpoint'] = "automation.endpoint"
-    id: str = Field(default_factory=lambda: "endp_" + str(uuid.uuid4()), description="Unique identifier for the extraction endpoint")
+    id: str = Field(default_factory=lambda: "endp_" + nanoid.generate(), description="Unique identifier for the extraction endpoint")
     
     # Extraction Endpoint Specific Config
     name: str = Field(..., description="Name of the extraction endpoint")

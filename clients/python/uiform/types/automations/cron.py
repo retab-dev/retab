@@ -1,12 +1,11 @@
 from pydantic import BaseModel, Field, field_serializer
 from typing import Optional, Literal, Any
-import uuid
 import datetime
 from pydantic import HttpUrl
 from pydantic_core import Url
 from ..image_settings import ImageSettings
 from ..modalities import Modality
-
+import nanoid # type: ignore
 
 def scrapping_action(link: HttpUrl) -> dict[str, Any]:
     raise NotImplementedError("Scrapping action not implemented")
@@ -28,7 +27,7 @@ from ..logs import AutomationConfig
 
 class ScrappingConfig(AutomationConfig):
     object: Literal['automation.scrapping_cron'] = "automation.scrapping_cron"
-    id: str = Field(default_factory=lambda: "scrapping_" + str(uuid.uuid4()), description="Unique identifier for the scrapping job")
+    id: str = Field(default_factory=lambda: "scrapping_" + nanoid.generate(), description="Unique identifier for the scrapping job")
     
     # Scrapping Specific Config
     link: HttpUrl = Field(..., description="Link to be scrapped")
