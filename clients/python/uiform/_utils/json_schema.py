@@ -15,7 +15,7 @@ import datetime
 from email_validator import validate_email
 import pycountry
 import re
-from .mime import generate_sha_hash_from_string
+from .mime import generate_blake2b_hash_from_string
 # **** Validation Functions ****
 
 # 1) Special Objects
@@ -30,7 +30,7 @@ def generate_schema_data_id(json_schema: dict[str, Any]) -> str:
     Returns:
         str: A SHA1 hash string with "sch_data_id_" prefix
     """
-    return "sch_data_id_" + generate_sha_hash_from_string(
+    return "sch_data_id_" + generate_blake2b_hash_from_string(
         json.dumps(
             clean_schema(
                 copy.deepcopy(json_schema), 
@@ -38,8 +38,7 @@ def generate_schema_data_id(json_schema: dict[str, Any]) -> str:
                 fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]
             ),
             sort_keys=True
-        ).strip(), 
-        "sha1"
+        ).strip()
     )
 
 def generate_schema_id(json_schema: dict[str, Any]) -> str:
@@ -51,9 +50,8 @@ def generate_schema_id(json_schema: dict[str, Any]) -> str:
     Returns:
         str: A SHA1 hash string with "sch_id_" prefix
     """
-    return "sch_id_" + generate_sha_hash_from_string(
-        json.dumps(json_schema, sort_keys=True).strip(), 
-        "sha1"
+    return "sch_id_" + generate_blake2b_hash_from_string(
+        json.dumps(json_schema, sort_keys=True).strip()
     )
 
 def validate_currency(currency_code: Any) -> Optional[str]:
