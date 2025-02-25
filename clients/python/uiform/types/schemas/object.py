@@ -1,5 +1,3 @@
-
-
 from pydantic import BaseModel, Field, computed_field, model_validator, PrivateAttr
 from typing import Any, Literal, cast, Self
 from pathlib import Path
@@ -8,16 +6,15 @@ import copy
 import json
 
 from ..._utils.chat import convert_to_google_genai_format, convert_to_anthropic_format
-from ..chat import ChatCompletionUiformMessage
-
-from ..._utils.mime import generate_sha_hash_from_string
-from ..._utils.json_schema import clean_schema, json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema
+from ..._utils.json_schema import json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema, generate_schema_data_id, generate_schema_id
 from ...types.standards import StreamingBaseModel
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from google.generativeai.types import content_types # type: ignore
+from ..chat import ChatCompletionUiformMessage
 
 from anthropic.types.message_param import MessageParam
+
 
 class PartialSchema(BaseModel):
     """Response from the Promptify API -- A partial Schema object with no validation"""
@@ -49,11 +46,7 @@ class Schema(PartialSchema):
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return "sch_data_id_"+generate_sha_hash_from_string(
-            json.dumps(
-                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
-                sort_keys=True).strip(), 
-            "sha1")
+        return generate_schema_data_id(self.json_schema)
 
     # This is a computed field, it is exposed when serializing the object
     @computed_field   # type: ignore
@@ -64,7 +57,7 @@ class Schema(PartialSchema):
         Returns:
             str: A SHA1 hash string representing the complete schema version.
         """
-        return "sch_id_" + generate_sha_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip(), "sha1")
+        return generate_schema_id(self.json_schema)
 
     pydantic_model: type[BaseModel] = Field(default=None, exclude=True, repr=False)     # type: ignore
 
@@ -299,7 +292,7 @@ class Schema(PartialSchema):
             value (str): The value to set for the attribute
         """
         current_schema = self.json_schema
-        definitions = self.json_schema["$defs"]
+        definitions = self.json_schema.get("$defs", {})
         parts = pattern.split(".")
         path_stack: list[tuple[str, Any]] = []  # Keep track of how we navigated the schema
 
@@ -393,8 +386,6 @@ class Schema(PartialSchema):
         if pydantic_model:
             data['pydantic_model'] = pydantic_model
             data['json_schema'] = pydantic_model.model_json_schema() 
-
-        data['json_schema']['$defs'] = data['json_schema'].get('$defs') or {}
 
         return data
 

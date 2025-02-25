@@ -31,7 +31,6 @@ class DocumentExtractRequest(BaseModel):
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
 
-    # Some properties (hidden from serialization)
     @property
     def provider(self) -> AIProvider:
         """
@@ -42,23 +41,6 @@ class DocumentExtractRequest(BaseModel):
         """
         return find_provider_from_model(self.model)
     
-    # Some cached property, they are not exposed when serializing the object. They are computed once and stored in the object.
-    @cached_property
-    def form_schema(self) -> Schema:
-        """
-        Generates a Schema object from the JSON schema definition.
-        This property is cached after first computation.
-
-        Returns:
-            Schema: A Schema object representing the form's structure.
-
-        Raises:
-            AssertionError: If the json_schema is empty or None.
-        """
-        assert self.json_schema, "The response format schema cannot be empty."
-        return Schema(json_schema=self.json_schema)
-
-   
 
 class BaseDocumentExtractRequest(DocumentExtractRequest):
     document: BaseMIMEData = Field(..., description="Document analyzed (without content, for MongoDB storage)")     # type: ignore

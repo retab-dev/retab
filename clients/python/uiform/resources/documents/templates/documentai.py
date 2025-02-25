@@ -10,6 +10,7 @@ from ...._utils.stream_context_managers import as_async_context_manager, as_cont
 from ....types.chat import ChatCompletionUiformMessage
 from ....types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse
 from ....types.modalities import Modality
+from ....types.schemas.object import Schema
 from typing import Literal
 from pydantic import HttpUrl
 
@@ -142,8 +143,9 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = self.prepare_parse(template, document, image_settings, model, temperature, messages, modality, store)
+        schema_object = Schema(json_schema=request.json_schema)
         response = self._client._request("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
-        return maybe_parse_to_pydantic(request.form_schema, DocumentExtractResponse.model_validate(response))
+        return maybe_parse_to_pydantic(schema_object, DocumentExtractResponse.model_validate(response))
 
     @as_context_manager
     def stream(
@@ -181,14 +183,15 @@ class DocumentAIs(SyncAPIResource, BaseDocumentAIMixin):
         ```
         """
         request = self.prepare_stream(template, document, image_settings, model, temperature, messages, modality, store)
+        schema_object = Schema(json_schema=request.json_schema)
 
         # Request the stream and return a context manager
         chunk_json: Any = None
         for chunk_json in self._client._request_stream("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:
                 continue
-            yield maybe_parse_to_pydantic(request.form_schema, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
-        yield maybe_parse_to_pydantic(request.form_schema, DocumentExtractResponse.model_validate(chunk_json))
+            yield maybe_parse_to_pydantic(schema_object, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
+        yield maybe_parse_to_pydantic(schema_object, DocumentExtractResponse.model_validate(chunk_json))
 
 
 class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
@@ -220,8 +223,9 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
             DocumentExtractResponse: Parsed response from the API.
         """
         request = self.prepare_parse(template, document, image_settings, model, temperature, messages, modality, store)
+        schema_object = Schema(json_schema=request.json_schema)
         response = await self._client._request("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key)
-        return maybe_parse_to_pydantic(request.form_schema, DocumentExtractResponse.model_validate(response))
+        return maybe_parse_to_pydantic(schema_object, DocumentExtractResponse.model_validate(response))
 
     @as_async_context_manager
     async def stream(
@@ -257,11 +261,12 @@ class AsyncDocumentAIs(AsyncAPIResource, BaseDocumentAIMixin):
         ```
         """
         request = self.prepare_stream(template, document, image_settings, model, temperature, messages, modality, store)
+        schema_object = Schema(json_schema=request.json_schema)
         chunk_json: Any = None
         async for chunk_json in self._client._request_stream("POST", "/v1/documents/extractions", data=request.model_dump(), idempotency_key=idempotency_key):
             if not chunk_json:
                 continue
             
-            yield maybe_parse_to_pydantic(request.form_schema, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
+            yield maybe_parse_to_pydantic(schema_object, DocumentExtractResponse.model_validate(chunk_json), allow_partial=True)
         # Last chunk with full parsed response
-        yield maybe_parse_to_pydantic(request.form_schema, DocumentExtractResponse.model_validate(chunk_json))  
+        yield maybe_parse_to_pydantic(schema_object, DocumentExtractResponse.model_validate(chunk_json))  

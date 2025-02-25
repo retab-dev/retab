@@ -15,10 +15,46 @@ import datetime
 from email_validator import validate_email
 import pycountry
 import re
-
+from .mime import generate_sha_hash_from_string
 # **** Validation Functions ****
 
 # 1) Special Objects
+
+
+def generate_schema_data_id(json_schema: dict[str, Any]) -> str:
+    """Generate a SHA1 hash ID for schema data, ignoring prompt/description/default fields.
+    
+    Args:
+        json_schema: The JSON schema to generate an ID for
+        
+    Returns:
+        str: A SHA1 hash string with "sch_data_id_" prefix
+    """
+    return "sch_data_id_" + generate_sha_hash_from_string(
+        json.dumps(
+            clean_schema(
+                copy.deepcopy(json_schema), 
+                remove_custom_fields=True, 
+                fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]
+            ),
+            sort_keys=True
+        ).strip(), 
+        "sha1"
+    )
+
+def generate_schema_id(json_schema: dict[str, Any]) -> str:
+    """Generate a SHA1 hash ID for the complete schema.
+    
+    Args:
+        json_schema: The JSON schema to generate an ID for
+        
+    Returns:
+        str: A SHA1 hash string with "sch_id_" prefix
+    """
+    return "sch_id_" + generate_sha_hash_from_string(
+        json.dumps(json_schema, sort_keys=True).strip(), 
+        "sha1"
+    )
 
 def validate_currency(currency_code: Any) -> Optional[str]:
     """
