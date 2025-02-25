@@ -44,6 +44,7 @@ pycountry
 phonenumbers
 email_validator
 python-stdnum
+nanoid
 
 ########################
 ## AI dependencies

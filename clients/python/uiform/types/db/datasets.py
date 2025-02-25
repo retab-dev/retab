@@ -1,7 +1,7 @@
 from typing import Literal, Dict, Any, Optional, List
 from pydantic import BaseModel, Field, computed_field
 import datetime
-import uuid
+import nanoid # type: ignore
 import copy
 import json
 
@@ -11,7 +11,7 @@ from ..._utils.mime import generate_sha_hash_from_string
 class Dataset(BaseModel):
     """This is the base class for all datasets. It contains the common fields for all datasets. Mostly useful for default_datasets and custom_datasets."""
     object: Literal["dataset.default", "dataset.custom"]
-    id: str = Field(default_factory=lambda: f"ds_{uuid.uuid4()}", description="Unique identifier of the dataset")
+    id: str = Field(default_factory=lambda: f"ds_{nanoid.generate()}", description="Unique identifier of the dataset")
     name: str = Field(description="Name of the dataset")
     json_schema: Optional[Dict[str, Any]] = Field(default=None, description="JSON schema defining the structure of annotations in this dataset")
     description: Optional[str] = Field(default=None, description="Optional description of the dataset")

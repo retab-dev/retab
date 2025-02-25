@@ -2,14 +2,14 @@
 import pytest
 import httpx
 import base64
-import uuid
+import nanoid # type: ignore
 from pydantic import HttpUrl
 from typing import Any
 from uiform import UiForm
 
 @pytest.mark.asyncio
 async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path: str) -> None:
-    name = str(uuid.uuid4())
+    name = nanoid.generate()
     print("name", name)
     model = "gpt-4o-mini"
     webhook_url = HttpUrl('http://localhost:4000/v1/test_ingest_completion')

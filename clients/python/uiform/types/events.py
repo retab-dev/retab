@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Literal, Any, Optional
-import uuid
 import datetime
-
+import nanoid # type: ignore
 
 
 metadata_key = Literal['user', 'organization', 'link', 'mailbox', 'cron', 'outlook', 'extraction', 'webhook', 'schema', 'data_structure', 'file','dataset', 'dataset_membership', 'endpoint', 'automation']
@@ -18,7 +17,7 @@ event_type = Literal['extraction.created',
 
 class Event(BaseModel):
     object: Literal['event'] = "event"
-    id: str = Field(default_factory=lambda: "event_" + str(uuid.uuid4()), description="Unique identifier for the event")
+    id: str = Field(default_factory=lambda: "event_" + nanoid.generate(), description="Unique identifier for the event")
     event: str = Field(..., description="A string that distinguishes the event type. Ex: user.created, user.updated, user.deleted, etc.")
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     data: dict[str, Any] = Field(..., description="Event payload. Payloads match the corresponding API objects.")
