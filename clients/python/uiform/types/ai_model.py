@@ -17,11 +17,72 @@ LLMModel = Literal[OpenAIModel, 'human']# [AnthropicModel, OpenAIModel, xAI_Mode
 from pydantic import BaseModel, Field
 import datetime
 
+from uiform.types.jobs.batch_annotation import AnnotationProps
 class FinetunedModel(BaseModel):
     object: Literal["finetuned_model"] = "finetuned_model"
     model: str
     organization_id: str
     dataset_id: str
-    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     schema_id: str 
     schema_data_id: str 
+    finetuning_props : AnnotationProps
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+
+
+# Example finetuned model instances
+from uiform.types.modalities import Modality
+from uiform.types.image_settings import ImageSettings
+
+# Example 1: Document extraction model
+document_finetuned_model = FinetunedModel(
+    model="ft-document-extraction-v1",
+    organization_id="org_123456",
+    dataset_id="ds_document_extraction",
+    schema_id="schema_invoice_extraction",
+    schema_data_id="schema_data_invoice_v1",
+    finetuning_props=AnnotationProps(
+        model="gpt-4o",
+        temperature=0.1,
+        modality="native",
+        image_settings=ImageSettings()
+    )
+)
+
+# Example 2: Image classification model
+image_finetuned_model = FinetunedModel(
+    model="ft-image-classification-v2",
+    organization_id="org_789012",
+    dataset_id="ds_image_classification",
+    schema_id="schema_product_categorization",
+    schema_data_id="schema_data_products_v3",
+    finetuning_props=AnnotationProps(
+        model="gpt-4o-mini",
+        temperature=0.0,
+        modality="image",
+        image_settings=ImageSettings()
+    )
+)
+
+# Example 3: Text analysis model
+text_finetuned_model = FinetunedModel(
+    model="ft-text-analysis-v1",
+    organization_id="org_345678",
+    dataset_id="ds_text_analysis",
+    schema_id="schema_sentiment_analysis",
+    schema_data_id="schema_data_sentiment_v2",
+    finetuning_props=AnnotationProps(
+        model="o1-mini-2024-09-12",
+        temperature=0.2,
+        modality="text",
+        image_settings=ImageSettings()
+    )
+)
+
+# We should tell people to change their model for a finetuned model only if: 
+# - The schema_id match
+# - The finetuning_props modalities and image_settings are the same. 
+
+
+
+
