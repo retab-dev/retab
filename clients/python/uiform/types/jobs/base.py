@@ -75,7 +75,7 @@ class JobExecutionDocument(BaseModel):
     updated_at: Optional[datetime.datetime] = None
     checkpoint: Any = None  # Useful for jobs that need to be resumed
     checkpoint_data: Optional[dict] = None
-    runs_on: list[str] = Field(default_factory=list, description="list of jobs execution id that must be completed before this job can run")
+    needs: list[str] = Field(default_factory=list, description="list of jobs execution id that must be completed before this job can run")
 
 
 class Workflow(BaseModel):
