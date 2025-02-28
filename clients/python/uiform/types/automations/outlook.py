@@ -17,7 +17,9 @@ from ..._utils.mime import generate_blake2b_hash_from_string
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
 
-
+class AutomationLevel(BaseModel): 
+    distance_threshold: float = Field(default=0.9, description="Distance threshold for the automation")
+    score_threshold: float = Field(default=0.9, description="Score threshold for the automation")
 
 
 class MatchParams(BaseModel):

@@ -14,3 +14,15 @@ class FineTuningJob(BaseModel):
     checkpoint: CheckPoint = None
     checkpoint_data: Optional[dict] = None
 
+from typing import Any
+class Evaluation(BaseModel): 
+    dataset_id: str # or job_id: str -> You can create and evaluation job that will create annotations for the two models, and then you can evaluate the two models on the same annotations.
+    reference_model: str
+    other_model: str
+    #reference_likelihood: dict[str,Any]
+    #other_likelihood: dict[str,Any]
+    levensthein_distance: dict[str,Any]
+    #... there is another per field distance that is good : 
+    # - levensthein_distance
+    # - jaccard_distance ?
+    # - hamming_distance ?
