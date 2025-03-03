@@ -5,7 +5,6 @@ from typing import Any, Literal
 from Levenshtein import distance as levenshtein_distance
 from pydantic import BaseModel, computed_field
 from typing import Any, Optional
-import termplotlib as tpl # type: ignore
 import numpy as np
 from typing import Literal
 import pandas as pd
@@ -13,55 +12,77 @@ import pandas as pd
 
 
 ############# BENCHMARKING MODELS #############
+from itertools import zip_longest
 
-class DictionaryComparisonMetrics(BaseModel):
-    # Pure dict comparison
-    unchanged_fields: int
-    total_fields: int
-    is_equal: dict[str, bool]
-    false_positives: list[dict[str, Any]]
-    false_negatives: list[dict[str, Any]]
-    mismatched_values: list[dict[str, Any]]
-    keys_only_on_1: list[str]
-    keys_only_on_2: list[str]
+def hamming_distance_padded(s: str, t: str) -> int:
+    """
+    Compute the Hamming distance between two strings, treating spaces as wildcards.
+    
+    Args:
+        s: The first string
+        t: The second string
+        
+    Returns:
+        The Hamming distance between the two strings
+    """
+    return sum(a != b for a, b in zip_longest(s, t, fillvalue=' '))
 
-    # Some metrics
-    valid_comparisons: int
-    total_accuracy: float
-    false_positive_rate: float
-    false_negative_rate: float
-    mismatched_value_rate: float
+def hamming_similarity(str_1: str, str_2: str) -> float:
+    """
+    Compute the Hamming similarity between two strings.
+    
+    Args:
+        str_1: The first string
+        str_2: The second string
 
-    similarity_levenshtein: dict[str, float]
-    similarity_jaccard: dict[str, float]
+    Returns:
+        A float between 0 and 1, where 1 means the strings are identical
+    """
+    max_length = max(len(str_1), len(str_2))
 
-    avg_similarity_levenshtein: float
-    avg_similarity_jaccard: float
-    total_similarity_levenshtein: float
-    total_similarity_jaccard: float
+    if max_length == 0:
+        return 1.0
+        
+    dist = hamming_distance_padded(str_1, str_2)
+    return 1 - (dist / max_length)
+    
 
 
-def flatten_dict(obj: Any, prefix: str = '') -> dict[str, Any]:
-    items = []  # type: ignore
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            new_key = f"{prefix}.{k}" if prefix else k
-            items.extend(flatten_dict(v, new_key).items())
-    elif isinstance(obj, list):
-        for i, v in enumerate(obj):
-            new_key = f"{prefix}.{i}"
-            items.extend(flatten_dict(v, new_key).items())
-    else:
-        items.append((prefix, obj))
-    return dict(items)
+def jaccard_similarity(str_1: str, str_2: str) -> float:
+    """
+    Compute the Jaccard similarity between two strings.
+    
+    Args:
+        str_1: The first string
+        str_2: The second string
 
-def normalize_value(val: Any) -> str:
-    """Convert value to uppercase and remove all spacing for comparison."""
-    if val is None:
-        return ""
-    prep = re.sub(r'\s+', '', str(val).upper())
-    # Remove all accents (é -> e, etc.)
-    return unicodedata.normalize('NFKD', prep).encode('ASCII', 'ignore').decode()
+    Returns:
+        A float between 0 and 1, where 1 means the strings are identical
+    """
+    set_a = set(str_1)
+    set_b = set(str_2)
+    intersection = set_a & set_b
+    union = set_a | set_b
+    if not union:
+        return 1.0
+    return len(intersection) / len(union)
+
+
+
+def levenshtein_similarity(str_1: str, str_2: str) -> float:
+    """
+    Calculate similarity between two values using Levenshtein distance.
+    Returns a similarity score between 0.0 and 1.0.
+    """
+
+    max_length = max(len(str_1), len(str_2))
+
+    if max_length == 0:
+        return 1.0
+        
+    dist = levenshtein_distance(str_1, str_2)
+    return 1 - (dist / max_length)
+
 
 def key_normalization(key: str) -> str:
     """This method is useful to compare keys under list indexes (that refers to the same kind of error but on different list index position)"""
@@ -75,506 +96,270 @@ def key_normalization(key: str) -> str:
             new_key_parts.append(key_part)
     return ".".join(new_key_parts)
 
-def should_ignore_key(key: str, exclude_field_patterns: list[str] | None, include_field_patterns: list[str] | None = None, information_presence_per_field: dict[str, bool] | None = None) -> bool:    
-    if information_presence_per_field and information_presence_per_field.get(key) is False:
-        # If we have the information_presence_per_field dict and the key is marked as false, then we should ignore it
-        should_ignore = True
-    else:
-        # If exclude_field_patterns is None, we should not ignore any key
-        normalized_key = key_normalization(key)
-        should_ignore = any(normalized_key.startswith(key_normalization(pattern)) for pattern in exclude_field_patterns or [])
-        
-        if include_field_patterns and not should_ignore:
-            # If include_field_patterns is not None, we should ignore the key if it does not start with any of the include_field_patterns and is not in the exclude_field_patterns
-            should_ignore = not any(normalized_key.startswith(key_normalization(pattern)) for pattern in include_field_patterns)
-    
-    return should_ignore
 
-def levenshtein_similarity(val1: Any, val2: Any) -> float:
+dictionary_metrics = Literal["levenshtein_similarity", "jaccard_similarity", "hamming_similarity"]
+def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric: dictionary_metrics) -> dict[str, Any]:
     """
-    Calculate similarity between two values using Levenshtein distance.
-    Returns a similarity score between 0.0 and 1.0.
-    """
-    # Handle None/empty and general cases
-    if (val1 or "") == (val2 or ""):
-        return 1.0
-    
-    # Check if both values are numeric, compare with 5% tolerance
-    if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
-        return 1.0 if abs(val1 - val2) <= 0.05 * max(abs(val1), abs(val2)) else 0.0
-
-    # Convert to normalized strings
-    str1 = normalize_value(val1)
-    str2 = normalize_value(val2)
-    
-    if str1 == str2:
-        return 1.0
-        
-    # Calculate Levenshtein distance
-    if str1 and str2:  # Only if both strings are non-empty
-        max_len = max(len(str1), len(str2))
-        if max_len == 0:
-            return 1.0
-            
-        dist = levenshtein_distance(str1, str2)
-        return 1 - (dist / max_len)
-        
-    return 0.0
-
-def jaccard_similarity(val1: Any, val2: Any) -> float:
-    """
-    Calculate Jaccard similarity between two values.
-    Returns a similarity score between 0.0 and 1.0.
-    """
-    # Handle None/empty and general cases
-    if (val1 or "") == (val2 or ""):
-        return 1.0
-    
-    # Check if both values are numeric, compare with 5% tolerance
-    if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
-        return 1.0 if abs(val1 - val2) <= 0.05 * max(abs(val1), abs(val2)) else 0.0
-
-    # Convert to normalized strings and split into words
-    str1 = set(normalize_value(val1).split())
-    str2 = set(normalize_value(val2).split())
-    
-    if not str1 and not str2:
-        return 1.0
-    
-    # Calculate Jaccard similarity
-    intersection = len(str1.intersection(str2))
-    union = len(str1.union(str2))
-    
-    return intersection / union if union > 0 else 0.0
-
-def compare_dicts(
-        ground_truth: dict[str, Any],
-        prediction: dict[str, Any],
-        include_fields: list[str] | None = None,
-        exclude_fields: list[str] | None = None,
-        information_presence_per_field: dict[str, bool] | None = None,
-        levenshtein_threshold: float = 0.0,  # 0.0 means exact match
-    ) -> DictionaryComparisonMetrics:
-    flat_ground_truth = flatten_dict(ground_truth)
-    flat_prediction = flatten_dict(prediction)
-
-    flat_ground_truth = {k: v for k, v in flat_ground_truth.items() if not should_ignore_key(k, exclude_fields, include_fields, information_presence_per_field)}
-    flat_prediction = {k: v for k, v in flat_prediction.items() if not should_ignore_key(k, exclude_fields, include_fields, information_presence_per_field)}
-    
-    keys_ground_truth = set(flat_ground_truth.keys())
-    keys_prediction = set(flat_prediction.keys())
-    common_keys = keys_ground_truth & keys_prediction
-    
-    keys_only_on_1 = sorted(list(keys_ground_truth - keys_prediction))
-    keys_only_on_2 = sorted(list(keys_prediction - keys_ground_truth))
-    
-    total_fields = len(common_keys)
-    unchanged_fields = 0
-    is_equal_per_field = {}
-    
-    false_positives = []
-    false_negatives = []
-    mismatched_values = []
-    
-    total_similarity_levenshtein = 0.0
-    total_similarity_jaccard = 0.0
-    similarity_levenshtein_per_field = {}
-    similarity_jaccard_per_field = {}
-    
-    valid_comparisons = 0
-
-    for key in common_keys:
-        llm_value = flat_ground_truth[key]
-        extraction_value = flat_prediction[key]
-
-        coerced_llm_value = llm_value or ""
-        coerced_extraction_value = extraction_value or ""
-        
-        similarity_lev = levenshtein_similarity(llm_value, extraction_value)
-        similarity_jac = jaccard_similarity(llm_value, extraction_value)
-        #print("Jaccard similarity", similarity_jac)
-        
-        # Use Levenshtein for equality comparison (you can adjust this if needed)
-        is_equal = similarity_lev >= (1 - levenshtein_threshold)
-        
-        similarity_levenshtein_per_field[key] = similarity_lev
-        similarity_jaccard_per_field[key] = similarity_jac
-        is_equal_per_field[key] = is_equal
-        
-        # Only count non-empty comparisons for average similarity
-        if coerced_llm_value != "" and coerced_extraction_value != "":
-            total_similarity_levenshtein += similarity_lev
-            total_similarity_jaccard += similarity_jac
-            valid_comparisons += 1
-        
-        if is_equal:
-            unchanged_fields += 1
-        else:
-            if coerced_llm_value != "" and coerced_extraction_value == "":
-                false_positives.append({
-                    "key": key, 
-                    "expected": extraction_value, 
-                    "got": llm_value,
-                    "similarity": similarity_lev
-                })
-            elif coerced_llm_value == "" and coerced_extraction_value != "":
-                false_negatives.append({
-                    "key": key, 
-                    "expected": extraction_value, 
-                    "got": llm_value,
-                    "similarity": similarity_lev
-                })
-            elif coerced_llm_value != "" and coerced_extraction_value != "":
-                # Both are non-empty but not equal
-                mismatched_values.append({
-                    "key": key, 
-                    "expected": extraction_value, 
-                    "got": llm_value,
-                    "similarity": similarity_lev
-                })
-    # Some metrics
-    avg_similarity_levenshtein = total_similarity_levenshtein / valid_comparisons if valid_comparisons > 0 else 1.0
-    avg_similarity_jaccard = total_similarity_jaccard / valid_comparisons if valid_comparisons > 0 else 1.0
-    total_accuracy = unchanged_fields / total_fields if total_fields > 0 else 1.0
-    false_positive_rate = len(false_positives) / total_fields if total_fields > 0 else 0.0
-    false_negative_rate = len(false_negatives) / total_fields if total_fields > 0 else 0.0
-    mismatched_value_rate = len(mismatched_values) / total_fields if total_fields > 0 else 0.0
-
-    return DictionaryComparisonMetrics(
-        unchanged_fields=unchanged_fields,
-        total_fields=total_fields,
-        is_equal=is_equal_per_field,
-        false_positives=false_positives,
-        false_negatives=false_negatives,
-        mismatched_values = mismatched_values,
-        keys_only_on_1=keys_only_on_1,
-        keys_only_on_2=keys_only_on_2,
-        valid_comparisons=valid_comparisons,
-        total_accuracy=total_accuracy,
-        false_positive_rate=false_positive_rate,
-        false_negative_rate=false_negative_rate,
-        mismatched_value_rate=mismatched_value_rate,
-        similarity_levenshtein=similarity_levenshtein_per_field,
-        similarity_jaccard=similarity_jaccard_per_field,
-        avg_similarity_levenshtein=avg_similarity_levenshtein,
-        avg_similarity_jaccard=avg_similarity_jaccard,
-        total_similarity_levenshtein=total_similarity_levenshtein,
-        total_similarity_jaccard=total_similarity_jaccard
-    )
-
-
-class ExtractionAnalysis(BaseModel):
-    ground_truth: dict[str, Any]
-    prediction: dict[str, Any]
-    time_spent: Optional[float] = None
-    include_fields: list[str] | None = None
-    exclude_fields: list[str] | None = None
-    information_presence_per_field: dict[str, bool] | None = None
-    levenshtein_threshold: float = 0.0
-
-    @computed_field # type: ignore
-    @property
-    def comparison(self) -> DictionaryComparisonMetrics:
-        return compare_dicts(
-            self.ground_truth,
-            self.prediction,
-            include_fields=self.include_fields,
-            exclude_fields=self.exclude_fields,
-            information_presence_per_field=self.information_presence_per_field,
-            levenshtein_threshold=self.levenshtein_threshold,
-        )
-    
-class BenchmarkMetrics(BaseModel): 
-    ai_model: str
-    accuracy: float
-    levenshtein_similarity: float
-    jaccard_similarity: float
-    false_positive_rate: float
-    false_negative_rate: float
-    mismatched_value_rate: float
-
-from rich.table import Table
-from rich.console import Console
-def display_benchmark_metrics(benchmark_metrics: list[BenchmarkMetrics]) -> None:
-    """
-    Display benchmark metrics for multiple models in a formatted table.
+    Compute the difference between two dictionaries.
     
     Args:
-        benchmark_metrics: List of BenchmarkMetrics objects containing model performance data
-    """
-    console = Console(style="on grey23")
-    table = Table(title="Model Benchmark Comparison", show_lines=True)
-
-    # Add columns
-    table.add_column("Model", justify="left", style="#BDE8F6", no_wrap=True)
-    table.add_column("Accuracy", justify="right", style="#C2BDF6")
-    table.add_column("Levenshtein", justify="right", style="#F6BDBD")
-    table.add_column("Jaccard", justify="right", style="#F6E4BD")
-    table.add_column("False Positive Rate", justify="right", style="#BDF6C0")
-    table.add_column("False Negative Rate", justify="right", style="#F6BDE4")
-    table.add_column("Mismatched Value Rate", justify="right", style="#E4F6BD")
-
-   # Find best values for each metric
-    best_values = {
-        'accuracy': max(m.accuracy for m in benchmark_metrics),
-        'levenshtein': max(m.levenshtein_similarity for m in benchmark_metrics),
-        'jaccard': max(m.jaccard_similarity for m in benchmark_metrics),
-        'fp_rate': min(m.false_positive_rate for m in benchmark_metrics),
-        'fn_rate': min(m.false_negative_rate for m in benchmark_metrics),
-        'mismatch_rate': min(m.mismatched_value_rate for m in benchmark_metrics),
-    }
-
-    # Add rows for each model's metrics
-    for metrics in benchmark_metrics:
-        table.add_row(
-            metrics.ai_model,
-            f"[bold]{metrics.accuracy:.3f}[/bold]" if metrics.accuracy == best_values['accuracy'] else f"[dim]{metrics.accuracy:.3f}[/dim]",
-            f"[bold]{metrics.levenshtein_similarity:.3f}[/bold]" if metrics.levenshtein_similarity == best_values['levenshtein'] else f"[dim]{metrics.levenshtein_similarity:.3f}[/dim]",
-            f"[bold]{metrics.jaccard_similarity:.3f}[/bold]" if metrics.jaccard_similarity == best_values['jaccard'] else f"[dim]{metrics.jaccard_similarity:.3f}[/dim]",
-            f"[bold]{metrics.false_positive_rate:.3f}[/bold]" if metrics.false_positive_rate == best_values['fp_rate'] else f"[dim]{metrics.false_positive_rate:.3f}[/dim]",
-            f"[bold]{metrics.false_negative_rate:.3f}[/bold]" if metrics.false_negative_rate == best_values['fn_rate'] else f"[dim]{metrics.false_negative_rate:.3f}[/dim]",
-            f"[bold]{metrics.mismatched_value_rate:.3f}[/bold]" if metrics.mismatched_value_rate == best_values['mismatch_rate'] else f"[dim]{metrics.mismatched_value_rate:.3f}[/dim]"
-        )
-
-    # Print the table
-    console.print(table)
-
-
-class ComparisonMetrics(BaseModel):
-    # Total Values (count or sum) per Field
-    false_positive_counts: dict[str, int] = defaultdict(int)
-    false_positive_rate_per_field: dict[str, float] = defaultdict(float)
-
-    false_negative_counts: dict[str, int] = defaultdict(int)
-    false_negative_rate_per_field: dict[str, float] = defaultdict(float)
-
-    mismatched_value_counts: dict[str, int] = defaultdict(int)
-    mismatched_value_rate_per_field: dict[str, float] = defaultdict(float)
-
-    common_presence_counts: dict[str, int] = defaultdict(int)
-    accuracy_per_field: dict[str, float] = defaultdict(float)
-
-    jaccard_similarity_per_field: dict[str, float] = defaultdict(float)
-    total_jaccard_similarity_per_field: dict[str, float] = defaultdict(float)
-
-
-    levenshtein_similarity_per_field: dict[str, float] = defaultdict(float)
-    total_levenshtein_similarity_per_field: dict[str, float] = defaultdict(float)
-
-
-    @computed_field # type: ignore
-    @property
-    def accuracy(self) -> float:
-        return sum(self.accuracy_per_field.values()) / len(self.accuracy_per_field)
-    
-    @computed_field # type: ignore
-    @property
-    def levenshtein_similarity(self) -> float:
-        return sum(self.levenshtein_similarity_per_field.values()) / len(self.levenshtein_similarity_per_field)
-    
-    @computed_field # type: ignore
-    @property
-    def jaccard_similarity(self) -> float:
-        return sum(self.jaccard_similarity_per_field.values()) / len(self.jaccard_similarity_per_field)
-    
-    @computed_field # type: ignore
-    @property
-    def false_positive_rate(self) -> float:
-        return sum(self.false_positive_rate_per_field.values()) / len(self.false_positive_rate_per_field)
-    
-    @computed_field # type: ignore
-    @property
-    def false_negative_rate(self) -> float:
-        return sum(self.false_negative_rate_per_field.values()) / len(self.false_negative_rate_per_field)
-    
-    @computed_field # type: ignore
-    @property
-    def mismatched_value_rate(self) -> float:
-        return sum(self.mismatched_value_rate_per_field.values()) / len(self.mismatched_value_rate_per_field)
-
-def normalized_comparison_metrics(list_analyses: list[ExtractionAnalysis], min_freq: float = 0.2) -> ComparisonMetrics:
-    false_positive_counts: dict[str, int] = defaultdict(int)
-    false_negative_counts: dict[str, int] = defaultdict(int)
-    mismatched_value_counts: dict[str, int] = defaultdict(int)
-    common_presence_counts: dict[str, int] = defaultdict(int)
-    is_equal_per_field: dict[str, int] = defaultdict(int)
-
-    total_levenshtein_similarity_per_field: dict[str, float] = defaultdict(float)
-    total_jaccard_similarity_per_field: dict[str, float] = defaultdict(float)
-    false_positive_rate_per_field: dict[str, float] = defaultdict(float)
-    false_negative_rate_per_field: dict[str, float] = defaultdict(float)
-    mismatched_value_rate_per_field: dict[str, float] = defaultdict(float)
-
-
-    for analysis in list_analyses:
-        # Count false positives
-        for error in analysis.comparison.false_positives:
-            key = error["key"]
-            false_positive_counts[key_normalization(key)] += 1
-            
-        # Count false negatives
-        for error in analysis.comparison.false_negatives:
-            key = error["key"]
-            false_negative_counts[key_normalization(key)] += 1
+        dict1: The first dictionary
+        dict2: The second dictionary
+        metric: The metric to use for comparison ("levenshtein_similarity", "jaccard_similarity", "hamming_similarity")
         
-        # Count Wrong Predictions
-        for error in analysis.comparison.mismatched_values:
-            key = error["key"]
-            mismatched_value_counts[key_normalization(key)] += 1
-
-        # Count total errors per field (Levenshtein)
-        for key, similarity in analysis.comparison.similarity_levenshtein.items():
-            common_presence_counts[key_normalization(key)] += 1
-            total_levenshtein_similarity_per_field[key_normalization(key)] += similarity
-        
-        for key, is_equal in analysis.comparison.is_equal.items():
-            is_equal_per_field[key_normalization(key)] += int(is_equal)
-
-        # Count Jaccard Similarity
-        for key, similarity in analysis.comparison.similarity_jaccard.items():
-            total_jaccard_similarity_per_field[key_normalization(key)] += similarity
-
-    accuracy_per_field = {key: is_equal_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    levenshtein_similarity_per_field = {key: total_levenshtein_similarity_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    jaccard_similarity_per_field = {key: total_jaccard_similarity_per_field[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    false_positive_rate_per_field = {key: false_positive_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    false_negative_rate_per_field = {key: false_negative_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    mismatched_value_rate_per_field = {key: mismatched_value_counts[key] / common_presence_counts[key] for key in common_presence_counts if common_presence_counts[key] > int(min_freq * len(list_analyses))}
-    
-    return ComparisonMetrics(
-        false_positive_counts=false_positive_counts,
-        false_negative_counts=false_negative_counts,
-        mismatched_value_counts=mismatched_value_counts,
-        common_presence_counts=common_presence_counts,
-        total_levenshtein_similarity_per_field=total_levenshtein_similarity_per_field,
-        total_jaccard_similarity_per_field=total_jaccard_similarity_per_field,
-        accuracy_per_field=accuracy_per_field,
-        levenshtein_similarity_per_field=levenshtein_similarity_per_field,
-        jaccard_similarity_per_field=jaccard_similarity_per_field,
-        false_positive_rate_per_field=false_positive_rate_per_field,
-        false_negative_rate_per_field=false_negative_rate_per_field,
-        mismatched_value_rate_per_field=mismatched_value_rate_per_field
-    )
-
-
-def plot_metric(analysis: ComparisonMetrics, value_type: Literal["accuracy", "levenshtein_similarity", "jaccard_similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"] = "accuracy", top_n: int = 20, ascending: bool = False) -> None:
-    """Plot a metric from analysis results using a horizontal bar chart.
-    
-    Args:
-        analysis: ComparisonMetrics object containing the analysis results
-    """
-    # Create dataframe from accuracy data
-    df = pd.DataFrame(
-        list(analysis.__getattribute__(value_type + "_per_field").items()), 
-        columns=["field", value_type]
-    ).sort_values(by=value_type, ascending=ascending)
-
-    # Filter top n fields with the lowest accuracy
-    top_n_df = df.head(top_n)
-
-    # Create the plot
-    fig = tpl.figure()
-    fig.barh(
-        np.array(top_n_df[value_type]).round(4), 
-        np.array(top_n_df["field"]), 
-        force_ascii=False
-    )
-
-    fig.show()
-
-
-def plot_comparison_metrics(analysis: ComparisonMetrics, top_n: int = 20)-> None:
-    metric_ascendency_dict: dict[Literal["accuracy", "levenshtein_similarity", "jaccard_similarity", "false_positive_rate", "false_negative_rate", "mismatched_value_rate"], bool] = {
-        "accuracy": True,
-        "levenshtein_similarity": True,
-        "jaccard_similarity": True,
-        "false_positive_rate": False,
-        "false_negative_rate": False,
-        "mismatched_value_rate": False
-    }
-
-    print(f"#########################################")
-    print(f"############ AVERAGE METRICS ############")
-    print(f"#########################################")
-    print(f"Accuracy: {analysis.accuracy:.2f}")
-    print(f"Levenshtein Similarity: {analysis.levenshtein_similarity:.2f}")
-    print(f"Jaccard Similarity (IOU): {analysis.jaccard_similarity:.2f}")
-    print(f"False Positive Rate: {analysis.false_positive_rate:.2f}")
-    print(f"False Negative Rate: {analysis.false_negative_rate:.2f}")
-    print(f"Mismatched Value Rate: {analysis.mismatched_value_rate:.2f}")
-
-    
-    for metric, ascending in metric_ascendency_dict.items():
-        print(f"\n\n############ {metric.upper()} ############")
-        plot_metric(analysis, metric, top_n, ascending)
-
-def get_aggregation_metrics(metric: dict[str, float | int], _hierarchy_level: int) -> dict[str, float]:
-    if _hierarchy_level == 0:
-        # For level 0, aggregate all values under empty string key
-        return {"": sum(metric.values()) / len(metric)}
-        
-    aggregated_metrics: dict[str, list[float | int]] = {}
-    for key, value in metric.items():
-        # Split key and handle array notation by replacing array indices with '*'
-        key_parts: list[str] = []
-        for part in key.split('.'):
-            if part.isdigit():
-                key_parts.append('*')
-            else:
-                key_parts.append(part)
-        actual_depth = len([part for part in key_parts if part != '*'])
-        if actual_depth < _hierarchy_level:
-            continue
-    
-        used_depth = 0
-        aggregation_prefix_parts: list[str] = []
-        for part in key_parts:
-            if part == "*":
-                aggregation_prefix_parts.append("*")
-            else:
-                aggregation_prefix_parts.append(part)
-                used_depth += 1
-            if used_depth == _hierarchy_level:
-                break
-        aggregation_prefix = '.'.join(aggregation_prefix_parts)
-        
-        # Aggregate metrics
-        if aggregation_prefix not in aggregated_metrics:
-            aggregated_metrics[aggregation_prefix] = []
-        aggregated_metrics[aggregation_prefix].append(value)
-        
-    # Calculate averages
-    return {
-        key: sum(values) / len(values) if len(values) > 0 else 0
-        for key, values in aggregated_metrics.items()
-    }
-
-def get_max_depth(metric: dict[str, float | int]) -> int:
-    max_depth_upper_bound = max(len(key.split('.')) for key in metric.keys())
-    for max_depth in range(max_depth_upper_bound, 0, -1):
-        if get_aggregation_metrics(metric, max_depth):
-            return max_depth
-    return 0
-
-def aggregate_metric_per_hierarchy_level(metric: dict[str, float | int], hierarchy_level: int) -> dict[str, float | int]:
-    """Aggregates metrics by grouping and averaging values at a specified hierarchy level in the key structure.
-    
-    Args:
-        metric: Dictionary mapping hierarchical keys (dot-separated strings) to numeric values.
-               Array indices in keys are treated as wildcards.
-        hierarchy_level: The depth level at which to aggregate the metrics.
-                        E.g. level 1 aggregates at first dot separator.
-    
     Returns:
-        Dictionary mapping aggregated keys to averaged values. Keys are truncated to the specified
-        hierarchy level with array indices replaced by '*'.
-        
-    Raises:
-        ValueError: If the requested hierarchy level exceeds the maximum depth in the data.
+        A dictionary containing the difference between the two dictionaries
     """
-    max_depth = get_max_depth(metric)
+    result: dict[str, Any] = {}
+
+    if metric == "levenshtein_similarity":
+        metric_function = levenshtein_similarity
+    elif metric == "jaccard_similarity":
+        metric_function = jaccard_similarity
+    elif metric == "hamming_similarity":
+        metric_function = hamming_similarity
+    else : 
+        raise ValueError(f"Invalid metric: {metric}")
     
-    if hierarchy_level > max_depth:
-        raise ValueError(f"Hierarchy level {hierarchy_level} is greater than the maximum depth {max_depth}")
+    # Step 1: Coerce the None values to empty strings
+    dict1_coerced = {k: "" if v is None else str(v) for k, v in dict1.items()}
+    dict2_coerced = {k: "" if v is None else str(v) for k, v in dict2.items()}
     
-    return get_aggregation_metrics(metric, hierarchy_level)
+    # Step 2: Normalize the keys
+    dict1_normalized = {key_normalization(k): v for k, v in dict1_coerced.items()}
+    dict2_normalized = {key_normalization(k): v for k, v in dict2_coerced.items()}
+    
+    # Step 3: Compute the metrics
+    all_keys = set(dict1_normalized.keys()) | set(dict2_normalized.keys())
+    
+    for key in all_keys:
+        val1 = dict1_normalized.get(key, None)
+        val2 = dict2_normalized.get(key, None)
+        
+        # If the key is only in one dictionary, set the difference to None
+        if val1 is None or val2 is None:
+            result[key] = None
+            continue
+            
+        # Calculate the appropriate similarity metric
+        result[key] = metric_function(val1, val2)
+    
+    return result
+
+def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """
+    Aggregate a list of dictionary differences into a single dictionary with average values.
+    
+    Args:
+        dict_differences: A list of dictionaries containing similarity metrics
+        
+    Returns:
+        A tuple containing:
+        - A dictionary with the average similarity metrics across all input dictionaries
+        - A dictionary with the uncertainty (standard deviation) for each metric
+    """
+    if not dict_differences:
+        return {}, {}
+    
+    # Initialize counters and sum dictionaries
+    counts: dict[str, int] = defaultdict(int)
+    sums: dict[str, float] = defaultdict(float)
+    sum_squares: dict[str, float] = defaultdict(float)
+    
+    # Collect all keys across all dictionaries
+    all_keys: set[str] = set()
+    for diff_dict in dict_differences:
+        all_keys.update(diff_dict.keys())
+    
+    # Sum up values and count occurrences for each key
+    for key in all_keys:
+        for diff_dict in dict_differences:
+            if key in diff_dict and diff_dict[key] is not None:
+                value = diff_dict[key]
+                sums[key] += value
+                sum_squares[key] += value * value
+                counts[key] += 1
+    
+    # Calculate averages and uncertainties
+    result: dict[str, float | None] = {}
+    uncertainty: dict[str, float | None] = {}
+    
+    for key in all_keys:
+        if counts[key] > 0:
+            mean = sums[key] / counts[key]
+            result[key] = mean
+            
+            # Calculate standard deviation if we have more than one sample
+            if counts[key] > 1:
+                variance = (sum_squares[key] - (sums[key] * sums[key] / counts[key])) / (counts[key] - 1)
+                uncertainty[key] = max(0, variance) ** 0.5  # Ensure non-negative due to floating point errors
+            else:
+                uncertainty[key] = 0.0
+        else:
+            result[key] = None
+            uncertainty[key] = None
+    
+    return result, uncertainty
+
+
+
+
+class SingleFileEval(BaseModel):
+    """
+    A class for evaluating metrics between two dictionaries.
+    """
+    file_id: str
+    dataset_membership_id_1: str
+    dataset_membership_id_2: str
+    schema_id: str
+    schema_data_id: str
+    dict_1: dict[str, float | None]
+    dict_2: dict[str, float | None]
+
+    hamming_similarity: dict[str, float | None]
+    jaccard_similarity: dict[str, float | None]
+    levenshtein_similarity: dict[str, float | None]
+
+
+class EvalMetric(BaseModel):
+    average: dict[str, float | None]
+    std: dict[str, float | None]
+
+class EvalMetrics(BaseModel): 
+    dataset_membership_id_1: str
+    dataset_membership_id_2: str
+    schema_id: str
+    schema_data_id: str
+    distances: dict[dictionary_metrics, EvalMetric]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import pandas as pd
+import shutil
+
+def flatten_dict(d: dict[str, Any], parent_key: str = '', sep: str = '.') -> dict[str, Any]:
+    """Flatten a nested dictionary with dot-separated keys."""
+    items: list[tuple[str, Any]] = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
+def plot_metrics_with_uncertainty(
+    analysis: dict[str, float | dict],
+    uncertainties: Optional[dict[str, float | dict]] = None,
+    top_n: int = 20,
+    ascending: bool = False
+) -> None:
+    """Plot a metric from analysis results using a horizontal bar chart with uncertainty.
+    
+    Args:
+        analysis: Dictionary containing similarity scores (can be nested).
+        uncertainties: Dictionary containing uncertainty values (same structure as analysis).
+        top_n: Number of top fields to display.
+        ascending: Whether to sort in ascending order.
+    """
+    # Flatten the dictionaries
+    flattened_analysis = flatten_dict(analysis)
+    if uncertainties:
+        flattened_uncertainties = flatten_dict(uncertainties)
+    else:
+        uncertainties_list = None
+    
+    # Prepare data by matching fields
+    fields = list(flattened_analysis.keys())
+    similarities = [flattened_analysis[field] for field in fields]
+
+    if uncertainties:
+        uncertainties_list = [flattened_uncertainties.get(field, None) for field in fields]
+
+    
+    # Create a DataFrame
+    df = pd.DataFrame({
+        "field": fields,
+        "similarity": similarities,
+    })
+
+    if uncertainties: 
+        df["uncertainty"] = uncertainties_list
+    
+    # Sort by similarity and select top N
+    df = df.sort_values(by="similarity", ascending=ascending).head(top_n)
+    
+    # Calculate layout dimensions
+    label_width = max(len(field) for field in df["field"]) + 2  # Padding for alignment
+    terminal_width = shutil.get_terminal_size().columns
+    bar_width = terminal_width - label_width - 3  # Space for '| ' and extra padding
+    
+    # Determine scaling factor based on maximum similarity
+    max_similarity = df["similarity"].max()
+    scale = bar_width / max_similarity if max_similarity > 0 else 1
+    
+    # Generate and print bars
+    for index, row in df.iterrows():
+        field = row["field"]
+        similarity = row["similarity"]
+        if uncertainties:
+            uncertainty = row["uncertainty"]
+        else:
+            uncertainty = None
+        
+        if similarity is None:
+            continue  # Skip fields with no similarity value
+        
+        # Calculate bar length and uncertainty range
+        bar_len = round(similarity * scale)
+        if uncertainty is not None and uncertainty > 0:
+            uncertainty_start = max(0, round((similarity - uncertainty) * scale))
+            uncertainty_end = min(bar_width, round((similarity + uncertainty) * scale))
+        else:
+            uncertainty_start = bar_len
+            uncertainty_end = bar_len  # No uncertainty to display
+        
+        # Build the bar string
+        bar_string = ''
+        for i in range(bar_width):
+            if i < bar_len:
+                if i < uncertainty_start:
+                    char = '█'  # Solid block for certain part
+                else:
+                    char = '█'  # Lighter block for uncertainty overlap
+            else:
+                if i < uncertainty_end:
+                    char = '░'  # Dash for upper uncertainty range
+                else:
+                    char = ' '  # Space for empty area
+            bar_string += char
+        
+        # Print the label and bar
+        score_field = f'[{similarity:.4f}]'
+
+
+        print(f"{field:<{label_width}} {score_field} | {bar_string}")
+
