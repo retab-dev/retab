@@ -101,12 +101,12 @@ dictionary_metrics = Literal["levenshtein_similarity", "jaccard_similarity", "ha
 def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric: dictionary_metrics) -> dict[str, Any]:
     """
     Compute the difference between two dictionaries recursively.
-    
+
     Args:
         dict1: The first dictionary (can be nested)
         dict2: The second dictionary (can be nested)
         metric: The metric to use for comparison ("levenshtein_similarity", "jaccard_similarity", "hamming_similarity")
-        
+
     Returns:
         A dictionary containing the difference between the two dictionaries
     """
@@ -118,53 +118,105 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
         metric_function = jaccard_similarity
     elif metric == "hamming_similarity":
         metric_function = hamming_similarity
-    else : 
+    else:
         raise ValueError(f"Invalid metric: {metric}")
-    
+
     def compare_values(val1: Any, val2: Any, path: str = "") -> Any:
         # If both are dictionaries, process recursively
         if isinstance(val1, dict) and isinstance(val2, dict):
             nested_result: dict[str, Any] = {}
             all_keys = set(val1.keys()) | set(val2.keys())
-            
+
             for key in all_keys:
                 norm_key = key_normalization(key)
                 sub_val1 = val1.get(key, None)
                 sub_val2 = val2.get(key, None)
-                
+
                 if sub_val1 is None or sub_val2 is None:
                     nested_result[norm_key] = None
                 else:
                     nested_result[norm_key] = compare_values(sub_val1, sub_val2, f"{path}.{norm_key}" if path else norm_key)
-            
+
             return nested_result
-        
+
+        # If both are lists/arrays, compare items with detailed results
+        if isinstance(val1, (list, tuple)) and isinstance(val2, (list, tuple)):
+            # If both lists are empty, they're identical
+            if not val1 and not val2:
+                return 1.0
+
+            # Create a detailed element-by-element comparison
+            array_result = {}
+            similarities = []
+
+            # Process each position in both arrays
+            for i, (item1, item2) in enumerate(zip_longest(val1, val2, fillvalue=None)):
+                element_key = str(i)  # Use index as dictionary key
+                element_path = f"{path}.{i}" if path else str(i)
+
+                if item1 is None or item2 is None:
+                    # Handle lists of different lengths
+                    array_result[element_key] = None
+                    similarities.append(0.0)  # Penalize missing elements
+                else:
+                    # Compare the elements
+                    comparison_result = compare_values(item1, item2, element_path)
+                    array_result[element_key] = comparison_result
+
+                    # Extract similarity metric for this element
+                    if isinstance(comparison_result, dict):
+                        # Calculate average from nested structure
+                        numeric_values = [v for v in _extract_numeric_values(comparison_result) if v is not None]
+                        if numeric_values:
+                            similarities.append(sum(numeric_values) / len(numeric_values))
+                    elif isinstance(comparison_result, (int, float)) and comparison_result is not None:
+                        similarities.append(float(comparison_result))
+
+            # Add overall similarity as a special key
+            array_result["_similarity"] = sum(similarities) / max(len(similarities), 1) if similarities else 1.0
+
+            return array_result
+
         # If one is a dict and the other isn't, return None
-        if isinstance(val1, dict) or isinstance(val2, dict):
+        if isinstance(val1, dict) or isinstance(val2, dict) or isinstance(val1, (list, tuple)) or isinstance(val2, (list, tuple)):
             return None
-            
-        # Handle leaf nodes by converting to strings and comparing
+
+        # Handle leaf nodes (primitives) by converting to strings and comparing
         str_val1 = "" if val1 is None else str(val1)
         str_val2 = "" if val2 is None else str(val2)
-        return metric_function(str_val1, str_val2)
-    
+        return float(metric_function(str_val1, str_val2))  # Ensure we return a float
+
+    def _extract_numeric_values(d: dict) -> list[float]:
+        """Extract all numeric values from a nested dictionary."""
+        result = []
+        for k, v in d.items():
+            if isinstance(v, dict):
+                # Recursively extract from nested dictionaries
+                result.extend(_extract_numeric_values(v))
+            elif isinstance(v, (int, float)) and not isinstance(v, bool):
+                # Add numeric values
+                result.append(v)
+            # Skip non-numeric values
+        return result
+
     # Normalize top-level keys
     dict1_normalized = {key_normalization(k): v for k, v in dict1.items()}
     dict2_normalized = {key_normalization(k): v for k, v in dict2.items()}
-    
+
     # Process all keys from both dictionaries
     all_keys = set(dict1_normalized.keys()) | set(dict2_normalized.keys())
-    
+
     for key in all_keys:
         val1 = dict1_normalized.get(key, None)
         val2 = dict2_normalized.get(key, None)
-        
+
         if val1 is None or val2 is None:
             result[key] = None
         else:
             result[key] = compare_values(val1, val2, key)
-    
+
     return result
+
 
 def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
     """
