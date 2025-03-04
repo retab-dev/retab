@@ -100,11 +100,11 @@ def key_normalization(key: str) -> str:
 dictionary_metrics = Literal["levenshtein_similarity", "jaccard_similarity", "hamming_similarity"]
 def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric: dictionary_metrics) -> dict[str, Any]:
     """
-    Compute the difference between two dictionaries.
+    Compute the difference between two dictionaries recursively.
     
     Args:
-        dict1: The first dictionary
-        dict2: The second dictionary
+        dict1: The first dictionary (can be nested)
+        dict2: The second dictionary (can be nested)
         metric: The metric to use for comparison ("levenshtein_similarity", "jaccard_similarity", "hamming_similarity")
         
     Returns:
@@ -121,37 +121,58 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
     else : 
         raise ValueError(f"Invalid metric: {metric}")
     
-    # Step 1: Coerce the None values to empty strings
-    dict1_coerced = {k: "" if v is None else str(v) for k, v in dict1.items()}
-    dict2_coerced = {k: "" if v is None else str(v) for k, v in dict2.items()}
+    def compare_values(val1: Any, val2: Any, path: str = "") -> Any:
+        # If both are dictionaries, process recursively
+        if isinstance(val1, dict) and isinstance(val2, dict):
+            nested_result: dict[str, Any] = {}
+            all_keys = set(val1.keys()) | set(val2.keys())
+            
+            for key in all_keys:
+                norm_key = key_normalization(key)
+                sub_val1 = val1.get(key, None)
+                sub_val2 = val2.get(key, None)
+                
+                if sub_val1 is None or sub_val2 is None:
+                    nested_result[norm_key] = None
+                else:
+                    nested_result[norm_key] = compare_values(sub_val1, sub_val2, f"{path}.{norm_key}" if path else norm_key)
+            
+            return nested_result
+        
+        # If one is a dict and the other isn't, return None
+        if isinstance(val1, dict) or isinstance(val2, dict):
+            return None
+            
+        # Handle leaf nodes by converting to strings and comparing
+        str_val1 = "" if val1 is None else str(val1)
+        str_val2 = "" if val2 is None else str(val2)
+        return metric_function(str_val1, str_val2)
     
-    # Step 2: Normalize the keys
-    dict1_normalized = {key_normalization(k): v for k, v in dict1_coerced.items()}
-    dict2_normalized = {key_normalization(k): v for k, v in dict2_coerced.items()}
+    # Normalize top-level keys
+    dict1_normalized = {key_normalization(k): v for k, v in dict1.items()}
+    dict2_normalized = {key_normalization(k): v for k, v in dict2.items()}
     
-    # Step 3: Compute the metrics
+    # Process all keys from both dictionaries
     all_keys = set(dict1_normalized.keys()) | set(dict2_normalized.keys())
     
     for key in all_keys:
         val1 = dict1_normalized.get(key, None)
         val2 = dict2_normalized.get(key, None)
         
-        # If the key is only in one dictionary, set the difference to None
         if val1 is None or val2 is None:
             result[key] = None
-            continue
-            
-        # Calculate the appropriate similarity metric
-        result[key] = metric_function(val1, val2)
+        else:
+            result[key] = compare_values(val1, val2, key)
     
     return result
 
 def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
     """
-    Aggregate a list of dictionary differences into a single dictionary with average values.
+    Aggregate a list of dictionary differences into a single dictionary with average values,
+    handling nested dictionaries recursively.
     
     Args:
-        dict_differences: A list of dictionaries containing similarity metrics
+        dict_differences: A list of dictionaries containing similarity metrics (can be nested)
         
     Returns:
         A tuple containing:
@@ -161,45 +182,60 @@ def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[
     if not dict_differences:
         return {}, {}
     
-    # Initialize counters and sum dictionaries
-    counts: dict[str, int] = defaultdict(int)
-    sums: dict[str, float] = defaultdict(float)
-    sum_squares: dict[str, float] = defaultdict(float)
-    
-    # Collect all keys across all dictionaries
-    all_keys: set[str] = set()
-    for diff_dict in dict_differences:
-        all_keys.update(diff_dict.keys())
-    
-    # Sum up values and count occurrences for each key
-    for key in all_keys:
-        for diff_dict in dict_differences:
-            if key in diff_dict and diff_dict[key] is not None:
-                value = diff_dict[key]
-                sums[key] += value
-                sum_squares[key] += value * value
-                counts[key] += 1
-    
-    # Calculate averages and uncertainties
-    result: dict[str, float | None] = {}
-    uncertainty: dict[str, float | None] = {}
-    
-    for key in all_keys:
-        if counts[key] > 0:
-            mean = sums[key] / counts[key]
-            result[key] = mean
+    def aggregate_recursively(dicts_list: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
+        # Initialize result dictionaries
+        result: dict[str, Any] = {}
+        uncertainty: dict[str, Any] = {}
+        
+        # Collect all keys across all dictionaries
+        all_keys: set[str] = set()
+        for d in dicts_list:
+            all_keys.update(d.keys())
+        
+        for key in all_keys:
+            # Collect values for this key from all dictionaries
+            values = []
+            for d in dicts_list:
+                if key in d:
+                    values.append(d[key])
             
-            # Calculate standard deviation if we have more than one sample
-            if counts[key] > 1:
-                variance = (sum_squares[key] - (sums[key] * sums[key] / counts[key])) / (counts[key] - 1)
-                uncertainty[key] = max(0, variance) ** 0.5  # Ensure non-negative due to floating point errors
+            # Skip if no valid values
+            if not values:
+                result[key] = None
+                uncertainty[key] = None
+                continue
+                
+            # Check if values are nested dictionaries
+            if all(isinstance(v, dict) for v in values if v is not None):
+                # Filter out None values
+                nested_dicts = [v for v in values if v is not None]
+                if nested_dicts:
+                    nested_result, nested_uncertainty = aggregate_recursively(nested_dicts)
+                    result[key] = nested_result
+                    uncertainty[key] = nested_uncertainty
+                else:
+                    result[key] = None
+                    uncertainty[key] = None
             else:
-                uncertainty[key] = 0.0
-        else:
-            result[key] = None
-            uncertainty[key] = None
+                # Handle leaf nodes (numeric values)
+                numeric_values = [v for v in values if v is not None and isinstance(v, (int, float))]
+                
+                if numeric_values:
+                    mean = sum(numeric_values) / len(numeric_values)
+                    result[key] = mean
+                    
+                    if len(numeric_values) > 1:
+                        variance = sum((x - mean) ** 2 for x in numeric_values) / (len(numeric_values) - 1)
+                        uncertainty[key] = max(0, variance) ** 0.5
+                    else:
+                        uncertainty[key] = 0.0
+                else:
+                    result[key] = None
+                    uncertainty[key] = None
+        
+        return result, uncertainty
     
-    return result, uncertainty
+    return aggregate_recursively(dict_differences)
 
 
 
@@ -213,17 +249,17 @@ class SingleFileEval(BaseModel):
     dataset_membership_id_2: str
     schema_id: str
     schema_data_id: str
-    dict_1: dict[str, float | None]
-    dict_2: dict[str, float | None]
+    dict_1: dict[str, Any]
+    dict_2: dict[str, Any]
 
-    hamming_similarity: dict[str, float | None]
-    jaccard_similarity: dict[str, float | None]
-    levenshtein_similarity: dict[str, float | None]
+    hamming_similarity: dict[str, Any]
+    jaccard_similarity: dict[str, Any]
+    levenshtein_similarity: dict[str, Any]
 
 
 class EvalMetric(BaseModel):
-    average: dict[str, float | None]
-    std: dict[str, float | None]
+    average: dict[str, Any]
+    std: dict[str, Any]
 
 class EvalMetrics(BaseModel): 
     dataset_membership_id_1: str
@@ -272,8 +308,8 @@ def flatten_dict(d: dict[str, Any], parent_key: str = '', sep: str = '.') -> dic
 
 
 def plot_metrics_with_uncertainty(
-    analysis: dict[str, float | dict],
-    uncertainties: Optional[dict[str, float | dict]] = None,
+    analysis: dict[str, Any],
+    uncertainties: Optional[dict[str, Any]] = None,
     top_n: int = 20,
     ascending: bool = False
 ) -> None:
