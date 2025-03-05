@@ -290,7 +290,7 @@ def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[
     return aggregate_recursively(dict_differences)
 
 
-
+import datetime
 
 class SingleFileEval(BaseModel):
     """
@@ -303,6 +303,7 @@ class SingleFileEval(BaseModel):
     schema_data_id: str
     dict_1: dict[str, Any]
     dict_2: dict[str, Any]
+    created_at: datetime.datetime
 
     hamming_similarity: dict[str, Any]
     jaccard_similarity: dict[str, Any]
