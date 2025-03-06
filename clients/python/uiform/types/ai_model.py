@@ -17,7 +17,7 @@ LLMModel = Literal[OpenAIModel, 'human']# [AnthropicModel, OpenAIModel, xAI_Mode
 from pydantic import BaseModel, Field
 import datetime
 
-from uiform.types.jobs.batch_annotation import AnnotationProps
+from uiform.types.jobs.base import AnnotationProps
 class FinetunedModel(BaseModel):
     object: Literal["finetuned_model"] = "finetuned_model"
     model: str
