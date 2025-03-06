@@ -45,7 +45,7 @@ class DatasetSplitInputData(BaseModel):
 class AnnotationProps(BaseModel):
     model: str = "gpt-4o-mini"
     temperature: float = 0.0
-    modality: Modality
+    modality: Modality = "native"
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
 
 class AnnotationInputData(BaseModel):
@@ -63,8 +63,8 @@ class FineTuningInputData(BaseModel):
 # This is the input data for the evaluation job
 class EvaluationInputData(BaseModel):
     original_dataset_id: str
-    schema_id: str
-    schema_data_id: str
+    # schema_id: str
+    # schema_data_id: str
     annotation_props_1: AnnotationProps
     annotation_props_2: AnnotationProps
 
