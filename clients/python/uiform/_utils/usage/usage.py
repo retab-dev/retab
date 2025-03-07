@@ -13,7 +13,7 @@ from .gemini import gemini_pricing_list
 
 
 
-def compute_api_call_cost(pricing: Pricing, usage: CompletionUsage) -> Amount:
+def compute_api_call_cost(pricing: Pricing, usage: CompletionUsage, is_ft: bool = False) -> Amount:
     """
     Computes the price (as an Amount) for the given token usage, based on the pricing.
     
@@ -23,13 +23,14 @@ def compute_api_call_cost(pricing: Pricing, usage: CompletionUsage) -> Amount:
       - If details are provided, the prompt tokens are split into:
           • cached text tokens (if any),
           • audio tokens (if any), and
-          • the remaining are treated as “regular” text tokens.
+          • the remaining are treated as "regular" text tokens.
       - Similarly, completion tokens are split into audio tokens (if any) and the remaining text.
       - For text tokens, if a cached price is not explicitly provided in pricing.text.cached,
         we assume a 50% discount off the prompt price.
       - (A similar rule could be applied to audio tokens – i.e. 20% of the normal price –
        if cached audio tokens were provided. In our usage model, however, only text tokens
        are marked as cached.)
+      - If is_ft is True, the price is adjusted using the ft_price_hike multiplier.
     """
 
     
@@ -74,17 +75,30 @@ def compute_api_call_cost(pricing: Pricing, usage: CompletionUsage) -> Amount:
 
     total_cost = (total_text_cost + total_audio_cost) / 1e6
 
+    # Apply fine-tuning price hike if applicable
+    if is_ft and hasattr(pricing, 'ft_price_hike'):
+        total_cost *= pricing.ft_price_hike
+
     return Amount(value=total_cost, currency="USD")
 
 
 
 def compute_cost_from_model(model: str, usage: CompletionUsage) -> Amount:
+    # Extract base model name for fine-tuned models like "ft:gpt-4o:uiform:4389573"
+    is_ft = False
+    if model.startswith("ft:"):
+        # Split by colon and take the second part (index 1) which contains the base model
+        parts = model.split(":")
+        if len(parts) > 1:
+            model =  parts[1]
+            is_ft = True
+    
     complete_pricing_list = openai_pricing_list + anthropic_pricing_list + xai_pricing_list + gemini_pricing_list
     pricing = next((p for p in complete_pricing_list if p.model == model), None)
     if not pricing:
         raise ValueError(f"No pricing information found for model: {model}")
     
-    return compute_api_call_cost(pricing, usage)
+    return compute_api_call_cost(pricing, usage, is_ft)
 
     
 
