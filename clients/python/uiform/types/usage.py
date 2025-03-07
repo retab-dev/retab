@@ -30,5 +30,6 @@ class Pricing(BaseModel):
     model: str
     text: TokenPrice
     audio: Optional[TokenPrice] = None  # May be None if the model does not support audio tokens.
+    ft_price_hike: float = 1.0  # Price hike for fine-tuned models.
 
 
