@@ -13,7 +13,7 @@ from ..pagination import ListMetadata
 from ..._utils.json_schema import clean_schema
 from ..._utils.mime import generate_blake2b_hash_from_string
 
-from ..logs import AutomationConfig
+from ..logs import AutomationConfig, UpdateAutomationRequest
 
 
 class Link(AutomationConfig):
@@ -73,9 +73,8 @@ class ListLinks(BaseModel):
 
 
 
-class UpdateLinkRequest(BaseModel):
-    id: str
-
+# Inherits from the methods of UpdateAutomationRequest
+class UpdateLinkRequest(UpdateAutomationRequest):
     # ------------------------------
     # Link Config
     # ------------------------------

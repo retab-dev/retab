@@ -12,7 +12,7 @@ import json
 from pydantic import computed_field
 import nanoid # type: ignore
 from ..._utils.mime import generate_blake2b_hash_from_string
-from ..logs import AutomationConfig
+from ..logs import AutomationConfig, UpdateAutomationRequest
 
 
 class Endpoint(AutomationConfig):
@@ -34,46 +34,14 @@ class Endpoint(AutomationConfig):
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
 
-    @computed_field   # type: ignore
-    @property
-    def schema_data_id(self) -> str:
-        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
-        
-        Returns:
-            str: A SHA1 hash string representing the schema data version.
-        """
-        return "sch_data_id_" + generate_blake2b_hash_from_string(
-            json.dumps(
-                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
-                sort_keys=True).strip() 
-            )
-
-    # This is a computed field, it is exposed when serializing the object
-    @computed_field   # type: ignore
-    @property
-    def schema_id(self) -> str:
-        """Returns the SHA1 hash of the complete schema.
-        
-        Returns:
-            str: A SHA1 hash string representing the complete schema version.
-        """
-        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
-
-
-
-    @field_serializer('webhook_url')
-    def url2str(self, val: HttpUrl) -> str:
-        return str(val)
-
-
 class ListEndpoints(BaseModel):
     data: list[Endpoint]
     list_metadata: ListMetadata
 
 
 
-class UpdateEndpointRequest(BaseModel):
-    id: str
+# Inherits from the methods of UpdateAutomationRequest
+class UpdateEndpointRequest(UpdateAutomationRequest):
 
     # ------------------------------
     # Endpoint Config

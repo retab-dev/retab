@@ -13,6 +13,10 @@ from .mime import BaseMIMEData
 from .usage import Amount
 from .._utils.usage.usage import compute_cost_from_model
 
+from .._utils.json_schema import clean_schema
+from .._utils.mime import generate_blake2b_hash_from_string
+import copy
+import json
 
 class AutomationConfig(BaseModel):
     object: str
@@ -31,11 +35,88 @@ class AutomationConfig(BaseModel):
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
-    
+
+    @computed_field   # type: ignore
+    @property
+    def schema_data_id(self) -> str:
+        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
+        
+        Returns:
+            str: A SHA1 hash string representing the schema data version.
+        """
+        return "sch_data_id_" + generate_blake2b_hash_from_string(
+            json.dumps(
+                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
+                sort_keys=True).strip()
+            )
+
+    # This is a computed field, it is exposed when serializing the object
+    @computed_field   # type: ignore
+    @property
+    def schema_id(self) -> str:
+        """Returns the SHA1 hash of the complete schema.
+        
+        Returns:
+            str: A SHA1 hash string representing the complete schema version.
+        """
+        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
+
     @field_serializer('webhook_url')
     def url2str(self, val: HttpUrl) -> str:
         return str(val)
 
+
+class UpdateAutomationRequest(BaseModel):
+
+    # ------------------------------
+    # HTTP Config
+    # ------------------------------
+    webhook_url: Optional[HttpUrl] = None
+    webhook_headers: Optional[Dict[str, str]] = None
+
+    # ------------------------------
+    # DocumentProcessing Parameters
+    # ------------------------------
+    image_settings: Optional[ImageSettings] = None
+    modality: Optional[Modality] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    json_schema: Optional[Dict] = None
+
+    @field_serializer('webhook_url')
+    def url2str(self, val: HttpUrl | None) -> str | None:
+        if isinstance(val, HttpUrl):
+            return str(val)
+        return val
+   
+    @computed_field   # type: ignore
+    @property
+    def schema_data_id(self) -> Optional[str]:
+        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
+        
+        Returns:
+            str: A SHA1 hash string representing the schema data version.
+        """
+
+        if self.json_schema is None:
+            return None
+        return "sch_data_id_" + generate_blake2b_hash_from_string(
+            json.dumps(
+                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
+                sort_keys=True).strip()
+            )
+
+    @computed_field   # type: ignore
+    @property
+    def schema_id(self) -> Optional[str]:
+        """Returns the SHA1 hash of the complete schema.
+        
+        Returns:
+            str: A SHA1 hash string representing the complete schema version.
+        """
+        if self.json_schema is None:
+            return None
+        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
 
 
 
