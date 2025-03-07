@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator, computed_field, field_serializer
+from pydantic import BaseModel, Field,  HttpUrl, EmailStr, field_validator, computed_field, field_serializer, model_validator
 from pydantic_core import Url
 from typing import Any, Literal, List, Dict, ClassVar, Optional
 import datetime
@@ -11,9 +11,9 @@ from ..image_settings import ImageSettings
 from ..modalities import Modality
 from ..pagination import ListMetadata
 from ..schemas.layout import Layout
-from ..._utils.json_schema import clean_schema
+from ..._utils.json_schema import clean_schema, convert_schema_to_layout
 from ..._utils.mime import generate_blake2b_hash_from_string
-
+from ..logs import AutomationConfig, UpdateAutomationRequest
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
 
@@ -31,10 +31,6 @@ class FetchParams(BaseModel):
     endpoint: str = Field(..., description="Endpoint for fetching parameters")
     headers: Dict[str, str] = Field(..., description="Headers for the request")
     name: str = Field(..., description="Name of the fetch parameter")
-
-from pydantic import model_validator
-from ..._utils.json_schema import convert_schema_to_layout
-from ..logs import AutomationConfig
 
 class Outlook(AutomationConfig):
     object: Literal['automation.outlook'] = "automation.outlook"
@@ -107,7 +103,8 @@ class ListOutlooks(BaseModel):
     list_metadata: ListMetadata
 
 
-class UpdateOutlookRequest(BaseModel):
+# Inherits from the methods of UpdateAutomationRequest
+class UpdateOutlookRequest(UpdateAutomationRequest):
     name: Optional[str] = None
 
     authorized_domains: Optional[list[str]] = None
