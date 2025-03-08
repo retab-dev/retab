@@ -11,7 +11,7 @@ class TemplateSchema(BaseModel):
     name: str
     """The name of the template."""
 
-    object: Literal["schema"] = "schema"
+    object: Literal["template"] = "template"
     """The type of object being preprocessed."""
 
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
