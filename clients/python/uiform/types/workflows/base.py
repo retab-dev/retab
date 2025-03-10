@@ -16,9 +16,6 @@ class StandaloneAnnotationWorkflowInputData(AnnotationInputData): pass
 class StandaloneEvaluationWorkflowInputData(EvaluationInputData): pass
 
 
-class StandaloneFinetuningWorkflowInputData(BaseModel):
-    
-
 # This is the input data for the standalone finetuning workflow (with human in the loop)
 class FinetuningWorkflowInputData(BaseModel):
     prepare_dataset_input_data: PrepareDatasetInputData

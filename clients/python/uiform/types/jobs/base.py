@@ -62,7 +62,7 @@ class FineTuningInputData(BaseModel):
 
 # This is the input data for the evaluation job
 class EvaluationInputData(BaseModel):
-    original_dataset_id: str
+    eval_dataset_id: str
     # schema_id: str
     # schema_data_id: str
     annotation_props_1: AnnotationProps
