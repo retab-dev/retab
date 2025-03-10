@@ -7,6 +7,8 @@ import nanoid # type: ignore
 metadata_key = Literal['user', 'organization', 'link', 'mailbox', 'cron', 'outlook', 'extraction', 'webhook', 'schema', 'data_structure', 'file','dataset', 'dataset_membership', 'endpoint', 'automation', 'template']
 
 event_type = Literal['extraction.created', 
+                     'messages.created',
+                     'document.orientation_corrected',
                      'automation.created', 'automation.updated', 'automation.deleted', 'automation.webhook',
                      'link.created', 'link.updated', 'link.deleted', 'link.webhook',
                      'mailbox.created', 'mailbox.updated', 'mailbox.deleted','mailbox.webhook',
