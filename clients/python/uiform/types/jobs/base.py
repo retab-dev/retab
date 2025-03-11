@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, model_validator
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 
-SelectionMode = Literal["all", "random", "clustering"]
+SelectionMode = Literal["all", "manual"]
 
 # This is the input data for the prepare_dataset job
 class PrepareDatasetInputData(BaseModel):
