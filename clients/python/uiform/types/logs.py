@@ -22,6 +22,7 @@ class AutomationConfig(BaseModel):
     object: str
     id: str
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    default_language: str = Field(default="en", description="Default language for the automation")
 
     # HTTP Config
     webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
