@@ -4,6 +4,20 @@ from openai.types.completion_usage import CompletionUsage
 
 openai_pricing_list = [
 
+    # gpt-4.5-preview family
+    Pricing(
+        model="gpt-4.5-preview",
+        text=TokenPrice(prompt=75, cached_discount=0.5, completion=150.00),
+        audio=None,
+        ft_price_hike=1.5
+    ),
+    Pricing(
+        model="gpt-4.5-preview-2025-02-27",
+        text=TokenPrice(prompt=75, cached_discount=0.5, completion=150.00),
+        audio=None,
+        ft_price_hike=1.5
+    ),
+
     # gpt-4o family (text-only)
     Pricing(
         model="chatgpt-4o-latest",
