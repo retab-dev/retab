@@ -6,7 +6,8 @@ from uiform.types.chat import ChatCompletionUiformMessage
 from pydantic import BaseModel, Field
 from openai.types.chat import ChatCompletion
 from uiform.types.documents.extractions import DocumentExtractResponse
-
+from .image_settings import ImageSettings
+from .modalities import Modality
 
 class ExtractionSource(BaseModel):
     type: Literal["api","annotation","automation.link","automation.email","automation.cron","automation.outlook","automation.endpoint", "schema.extract"] = Field( description="Type of extraction")
@@ -24,6 +25,8 @@ class Extraction(BaseModel):
     model: str = Field(..., description="Model used for the analysis")
     temperature: float = Field(default=0.0, description="Temperature used for the analysis")
     source: ExtractionSource = Field(..., description="Source of the extraction")
+    image_settings : ImageSettings | None = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
+    modality: Modality | None = Field(default="native", description="Modality of the extraction")
     # Infered
     schema_id: str = Field(..., description="Version of the schema used for the analysis")
     schema_data_id: str = Field(..., description="Version of the schema data used for the analysis")
