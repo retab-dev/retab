@@ -25,12 +25,10 @@ class Extraction(BaseModel):
     model: str = Field(..., description="Model used for the analysis")
     temperature: float = Field(default=0.0, description="Temperature used for the analysis")
     source: ExtractionSource = Field(..., description="Source of the extraction")
-    image_settings : ImageSettings | None = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
-    modality: Modality | None = Field(default="native", description="Modality of the extraction")
+    image_settings : ImageSettings = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
+    modality: Modality = Field(default="native", description="Modality of the extraction")
     # Infered
     schema_id: str = Field(..., description="Version of the schema used for the analysis")
     schema_data_id: str = Field(..., description="Version of the schema data used for the analysis")
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     organization_id: str = Field(..., description="Organization ID of the user or application")
-
-    version: Literal[2] = 2
