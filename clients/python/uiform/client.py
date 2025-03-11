@@ -7,7 +7,7 @@ import backoff
 import backoff.types
 from pydantic_core import PydanticUndefined
 
-from .resources import documents, files, finetuning, models, prompt_optimization, schemas, db, automations, secrets, usage
+from .resources import documents, files, finetuning, models, prompt_optimization, schemas, automations, secrets, usage
 from .types.standards import PreparedRequest
 class MaxRetriesExceeded(Exception): pass
 
@@ -170,7 +170,6 @@ class UiForm(BaseUiForm):
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
-        self.db = db.DB(client=self)
         self.automations = automations.Automations(client=self)
         self.secrets = secrets.Secrets(client=self)
         self.usage = usage.Usage(client=self)
@@ -345,7 +344,6 @@ class AsyncUiForm(BaseUiForm):
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
-        self.db = db.AsyncDB(client=self)
         self.automations = automations.AsyncAutomations(client=self)
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)

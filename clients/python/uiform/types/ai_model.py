@@ -21,10 +21,9 @@ import datetime
 from uiform.types.jobs.base import AnnotationProps
 class FinetunedModel(BaseModel):
     object: Literal["finetuned_model"] = "finetuned_model"
-    model: str
     organization_id: str
-    dataset_id: str
-    schema_id: str 
+    model: str
+    schema_id: str
     schema_data_id: str 
     finetuning_props : AnnotationProps
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
@@ -39,7 +38,6 @@ from uiform.types.image_settings import ImageSettings
 document_finetuned_model = FinetunedModel(
     model="ft-document-extraction-v1",
     organization_id="org_123456",
-    dataset_id="ds_document_extraction",
     schema_id="schema_invoice_extraction",
     schema_data_id="schema_data_invoice_v1",
     finetuning_props=AnnotationProps(
@@ -54,7 +52,6 @@ document_finetuned_model = FinetunedModel(
 image_finetuned_model = FinetunedModel(
     model="ft-image-classification-v2",
     organization_id="org_789012",
-    dataset_id="ds_image_classification",
     schema_id="schema_product_categorization",
     schema_data_id="schema_data_products_v3",
     finetuning_props=AnnotationProps(
@@ -69,7 +66,6 @@ image_finetuned_model = FinetunedModel(
 text_finetuned_model = FinetunedModel(
     model="ft-text-analysis-v1",
     organization_id="org_345678",
-    dataset_id="ds_text_analysis",
     schema_id="schema_sentiment_analysis",
     schema_data_id="schema_data_sentiment_v2",
     finetuning_props=AnnotationProps(

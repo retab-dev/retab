@@ -12,7 +12,7 @@ class PrepareDatasetInputData(BaseModel):
     dataset_id: Optional[str] = None
     schema_id: Optional[str] = None
     schema_data_id: Optional[str] = None
-    
+
     selection_model: SelectionMode = "all"
 
 
@@ -24,7 +24,7 @@ class PrepareDatasetInputData(BaseModel):
         # 3. schema_data_id
         if self.dataset_id is None and self.schema_id is None and self.schema_data_id is None:
             raise ValueError("At least one of dataset_id, schema_id, or schema_data_id must be provided")
-        
+
         return self
 
 
@@ -49,20 +49,20 @@ class AnnotationProps(BaseModel):
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
 
 class AnnotationInputData(BaseModel):
-    dataset_id: str
-    upsert: bool = False
+    data_file: str
+    schema_id: str
     annotation_props: AnnotationProps
 
 
 # This is the input data for the finetune job
 class FineTuningInputData(BaseModel):
-    dataset_id: str
+    data_file: str
     finetuning_props : AnnotationProps
 
 
 # This is the input data for the evaluation job
 class EvaluationInputData(BaseModel):
-    eval_dataset_id: str
+    eval_data_file: str
     # schema_id: str
     # schema_data_id: str
     annotation_props_1: AnnotationProps
@@ -153,4 +153,3 @@ class EvaluationInputData(BaseModel):
 # class Workflow(BaseModel):
 #     name: str
 #     jobs: list[JobExecutionDocument]
-
