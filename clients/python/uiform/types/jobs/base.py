@@ -54,18 +54,14 @@ class AnnotationInputData(BaseModel):
     annotation_props: AnnotationProps
 
 
-# This is the input data for the finetune job
-class FineTuningInputData(BaseModel):
-    data_file: str
-    finetuning_props : AnnotationProps
+
 
 
 # This is the input data for the evaluation job
 class EvaluationInputData(BaseModel):
     eval_data_file: str
-    # schema_id: str
-    # schema_data_id: str
-    annotation_props_1: AnnotationProps
+    schema_id: str
+    annotation_props_1: AnnotationProps|None
     annotation_props_2: AnnotationProps
 
 
