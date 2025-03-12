@@ -13,9 +13,9 @@ event_type = Literal['extraction.created',
                      'link.created', 'link.updated', 'link.deleted', 'link.webhook',
                      'mailbox.created', 'mailbox.updated', 'mailbox.deleted','mailbox.webhook',
                      'outlook.created', 'outlook.updated', 'outlook.deleted','outlook.webhook',
-                     'schema.generated', 'schema.promptified',
+                     'schema.generated', 'schema.promptified','schema.system_prompt'
                      'file.created', 'file.updated', 'file.deleted',
-                     'template.created', 'template.deleted', 'template.sample_document_uploaded', 'template.sample_document_deleted', 'template.updated'
+                     'template.created', 'template.deleted', 'template.sample_document_uploaded', 'template.sample_document_deleted', 'template.updated',
                      ]
 
 class Event(BaseModel):
