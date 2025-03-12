@@ -297,10 +297,7 @@ class SingleFileEval(BaseModel):
     A class for evaluating metrics between two dictionaries.
     """
     file_id: str
-    dataset_membership_id_1: str
-    dataset_membership_id_2: str
     schema_id: str
-    schema_data_id: str
     dict_1: dict[str, Any]
     dict_2: dict[str, Any]
     created_at: datetime.datetime
@@ -314,31 +311,9 @@ class EvalMetric(BaseModel):
     average: dict[str, Any]
     std: dict[str, Any]
 
-class EvalMetrics(BaseModel): 
-    dataset_membership_id_1: str
-    dataset_membership_id_2: str
+class EvalMetrics(BaseModel):
     schema_id: str
-    schema_data_id: str
     distances: dict[dictionary_metrics, EvalMetric]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
