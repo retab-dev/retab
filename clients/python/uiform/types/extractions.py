@@ -8,6 +8,11 @@ from openai.types.chat import ChatCompletion
 from uiform.types.documents.extractions import DocumentExtractResponse
 from .image_settings import ImageSettings
 from .modalities import Modality
+from .usage import Amount
+from typing import Optional
+from .._utils.usage.usage import compute_cost_from_model
+
+
 
 class ExtractionSource(BaseModel):
     type: Literal["api","annotation","automation.link","automation.email","automation.cron","automation.outlook","automation.endpoint", "schema.extract"] = Field( description="Type of extraction")
@@ -32,3 +37,15 @@ class Extraction(BaseModel):
     schema_data_id: str = Field(..., description="Version of the schema data used for the analysis")
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     organization_id: str = Field(..., description="Organization ID of the user or application")
+
+    @computed_field # type: ignore
+    @property
+    def api_cost(self) -> Optional[Amount]:
+        if self.completion and self.completion.usage:
+            try: 
+                cost = compute_cost_from_model(self.completion.model, self.completion.usage)
+                return cost
+            except Exception as e:
+                print(f"Error computing cost: {e}")
+                return None
+        return None
