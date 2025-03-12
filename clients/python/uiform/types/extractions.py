@@ -3,7 +3,7 @@ import nanoid # type: ignore
 from typing import Literal, Any
 from uiform.types.documents.extractions import DocumentExtractRequest
 from uiform.types.chat import ChatCompletionUiformMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field,computed_field
 from openai.types.chat import ChatCompletion
 from uiform.types.documents.extractions import DocumentExtractResponse
 from .image_settings import ImageSettings
@@ -38,7 +38,7 @@ class Extraction(BaseModel):
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     organization_id: str = Field(..., description="Organization ID of the user or application")
 
-    @computed_field # type: ignore
+    @computed_field
     @property
     def api_cost(self) -> Optional[Amount]:
         if self.completion and self.completion.usage:
