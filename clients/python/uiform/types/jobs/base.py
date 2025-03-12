@@ -61,7 +61,7 @@ class AnnotationInputData(BaseModel):
 class EvaluationInputData(BaseModel):
     eval_data_file: str
     schema_id: str
-    annotation_props_1: AnnotationProps|None
+    annotation_props_1: AnnotationProps | None = None
     annotation_props_2: AnnotationProps
 
 
