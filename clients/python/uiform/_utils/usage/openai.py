@@ -4,6 +4,20 @@ from openai.types.completion_usage import CompletionUsage
 
 openai_pricing_list = [
 
+    # o3-mini family
+    Pricing(
+        model="o3-mini-2025-01-31",
+        text=TokenPrice(prompt=1.10, cached_discount=0.5, completion=4.40),
+        audio=None,
+        ft_price_hike=1.5
+    ),
+    Pricing(
+        model="o3-mini",
+        text=TokenPrice(prompt=1.10, cached_discount=0.5, completion=4.40),
+        audio=None,
+        ft_price_hike=1.5
+    ),
+
     # gpt-4.5-preview family
     Pricing(
         model="gpt-4.5-preview",
