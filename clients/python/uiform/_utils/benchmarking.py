@@ -210,7 +210,7 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
         val1 = dict1_normalized.get(key, None)
         val2 = dict2_normalized.get(key, None)
 
-        if val1 is None or val2 is None:
+        if (val1 is None and val2 is not None) or (val1 is not None and val2 is None):  
             result[key] = None
         else:
             result[key] = compare_values(val1, val2, key)
