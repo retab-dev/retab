@@ -14,7 +14,7 @@ from ...types.automations.mailboxes import Mailbox, UpdateMailboxRequest, ListMa
 from ...types.logs import AutomationLog
 
 from ..._utils.mime import prepare_mime_document
-from ..._utils.ai_model import assert_valid_model_extraction
+from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.standards import PreparedRequest
 
 

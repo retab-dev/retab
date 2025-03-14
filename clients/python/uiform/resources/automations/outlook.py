@@ -14,7 +14,7 @@ from ...types.standards import PreparedRequest
 from ...types.logs import AutomationLog
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from ..._utils.ai_model import assert_valid_model_extraction
+from ..._utils.ai_models import assert_valid_model_extraction
 
 
 class OutlooksMixin:

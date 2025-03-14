@@ -1,7 +1,7 @@
 
 
 from typing import get_args
-from ..types.ai_model import AIProvider, OpenAIModel#, AnthropicModel, xAI_Model, GeminiModel
+from ..types.ai_models import AIProvider, OpenAIModel#, AnthropicModel, xAI_Model, GeminiModel
 
 
 def find_provider_from_model(model: str) -> AIProvider:

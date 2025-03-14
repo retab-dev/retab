@@ -8,7 +8,7 @@ from openai.types.chat import ChatCompletion
 from uiform.types.documents.extractions import DocumentExtractResponse
 from .image_settings import ImageSettings
 from .modalities import Modality
-from .usage import Amount
+from .ai_models import Amount
 from typing import Optional
 from .._utils.usage.usage import compute_cost_from_model
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -34,7 +34,7 @@ class Extraction(BaseModel):
     modality: Modality = Field(default="native", description="Modality of the extraction")
     reasoning_effort: Optional[ChatCompletionReasoningEffort] = Field(default=None, description="The effort level for the model to reason about the input data.")
     
-    # Infered 
+    # Infered from the schema
     schema_id: str = Field(..., description="Version of the schema used for the analysis")
     schema_data_id: str = Field(..., description="Version of the schema data used for the analysis")
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))

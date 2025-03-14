@@ -10,7 +10,7 @@ from .pagination import ListMetadata
 from .modalities import Modality
 from .mime import BaseMIMEData
 
-from .usage import Amount
+from .ai_models import Amount
 from .._utils.usage.usage import compute_cost_from_model
 
 from .._utils.json_schema import clean_schema

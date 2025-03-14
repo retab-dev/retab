@@ -11,7 +11,7 @@ from ...types.mime import MIMEData
 
 from ...types.image_settings import ImageSettings
 from ...types.modalities import Modality
-from ..._utils.ai_model import assert_valid_model_extraction
+from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.standards import PreparedRequest
 
 import httpx

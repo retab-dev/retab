@@ -14,7 +14,7 @@ import shutil
 import asyncio
 
 from .._utils.json_schema import load_json_schema
-from .._utils.ai_model import assert_valid_model_extraction, find_provider_from_model
+from .._utils.ai_models import assert_valid_model_extraction, find_provider_from_model
 from .._utils.display import display_metrics, process_dataset_and_compute_metrics, Metrics
 from .._utils.chat import convert_to_openai_format, convert_to_anthropic_format, separate_messages
 from .._utils.benchmarking import normalized_comparison_metrics, ComparisonMetrics, ExtractionAnalysis, plot_comparison_metrics, BenchmarkMetrics, display_benchmark_metrics

@@ -17,7 +17,7 @@ from ...types.logs import AutomationLog, ListLogs
 
 from ...types.mime import MIMEData
 
-from ..._utils.ai_model import assert_valid_model_extraction
+from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.standards import PreparedRequest
 
 import httpx

@@ -1,7 +1,7 @@
 from typing import Any, get_args
 from openai import OpenAI, AsyncOpenAI
 
-from ..types.ai_model import OpenAIModel
+from ..types.ai_models import OpenAIModel
 from .._resource import SyncAPIResource, AsyncAPIResource
 
 

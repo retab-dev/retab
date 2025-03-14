@@ -11,7 +11,7 @@ from .._resource import SyncAPIResource, AsyncAPIResource
 
 from .._utils.json_schema import load_json_schema
 from .._utils.mime import prepare_mime_document_list
-from .._utils.ai_model import assert_valid_model_schema_generation
+from .._utils.ai_models import assert_valid_model_schema_generation
 from ..types.standards import PreparedRequest
 from .._utils.stream_context_managers import as_async_context_manager, as_context_manager
 

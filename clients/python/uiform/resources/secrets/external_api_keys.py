@@ -2,7 +2,7 @@ from typing import List
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.secrets.external_api_keys import  ExternalAPIKeyRequest, ExternalAPIKey
-from ...types.ai_model import AIProvider
+from ...types.ai_models import AIProvider
 from ...types.standards import PreparedRequest
 
 import os
