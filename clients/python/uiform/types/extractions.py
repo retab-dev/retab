@@ -11,7 +11,7 @@ from .modalities import Modality
 from .usage import Amount
 from typing import Optional
 from .._utils.usage.usage import compute_cost_from_model
-
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 
 class ExtractionSource(BaseModel):
@@ -32,7 +32,9 @@ class Extraction(BaseModel):
     source: ExtractionSource = Field(..., description="Source of the extraction")
     image_settings : ImageSettings = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
     modality: Modality = Field(default="native", description="Modality of the extraction")
-    # Infered
+    reasoning_effort: Optional[ChatCompletionReasoningEffort] = Field(default=None, description="The effort level for the model to reason about the input data.")
+    
+    # Infered 
     schema_id: str = Field(..., description="Version of the schema used for the analysis")
     schema_data_id: str = Field(..., description="Version of the schema data used for the analysis")
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))

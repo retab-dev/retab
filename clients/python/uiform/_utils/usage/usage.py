@@ -3,7 +3,7 @@ from typing import Optional
 
 
 #https://platform.openai.com/docs/guides/prompt-caching
-from ...types.usage import Amount, Pricing
+from ...types.usage import Amount, Pricing, get_model_card
 from openai.types.completion_usage import CompletionUsage
 from .openai import openai_pricing_list
 from .anthropic import anthropic_pricing_list
@@ -90,12 +90,14 @@ def compute_cost_from_model(model: str, usage: CompletionUsage) -> Amount:
         # Split by colon and take the second part (index 1) which contains the base model
         parts = model.split(":")
         if len(parts) > 1:
-            model =  parts[1]
+            model = parts[1]
             is_ft = True
     
-    complete_pricing_list = openai_pricing_list + anthropic_pricing_list + xai_pricing_list + gemini_pricing_list
-    pricing = next((p for p in complete_pricing_list if p.model == model), None)
-    if not pricing:
+    # Use the get_model_card function from types.usage instead of pricing lists
+    try:
+        model_card = get_model_card(model)
+        pricing = model_card.pricing
+    except ValueError as e:
         raise ValueError(f"No pricing information found for model: {model}")
     
     return compute_api_call_cost(pricing, usage, is_ft)
