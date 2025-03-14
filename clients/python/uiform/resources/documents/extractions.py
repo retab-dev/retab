@@ -15,6 +15,8 @@ from ...types.schemas.object import Schema
 from ...types.chat import ChatCompletionUiformMessage
 from typing import overload
 
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+
 @overload
 def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
 
@@ -43,6 +45,7 @@ class BaseExtractionsMixin:
         model: str,
         temperature: float,
         modality: Modality,
+        reasoning_effort: ChatCompletionReasoningEffort,
         stream: bool,
         store: bool = False,
         idempotency_key: str | None = None,
@@ -59,6 +62,7 @@ class BaseExtractionsMixin:
             "stream": stream,
             "modality": modality,
             "store": store,
+            "reasoning_effort": reasoning_effort
         }
         if image_settings:
             data["image_settings"] = image_settings
@@ -92,6 +96,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> DocumentExtractResponse:
@@ -103,6 +108,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             document: Single document (as MIMEData) to process
             model: The AI model to use for processing
             temperature: Model temperature setting (0-1)
+            modality: Modality of the document (e.g., native)
+            reasoning_effort: The effort level for the model to reason about the input data.
             idempotency_key: Idempotency key for request
         Returns:
             DocumentAPIResponse
@@ -113,7 +120,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         assert (document is not None), "Either document or messages must be provided"
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, False, store, idempotency_key=idempotency_key)        
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, store, idempotency_key=idempotency_key)        
         response = self._client._prepared_request(request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
@@ -128,6 +135,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> Generator[DocumentExtractResponseStream, None, None]:
@@ -141,6 +149,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             model: The AI model to use for processing
             temperature: Model temperature setting (0-1)
             modality: Modality of the document (e.g., native)
+            reasoning_effort: The effort level for the model to reason about the input data.
+
 
         Returns:
             Generator[DocumentExtractResponse]: Stream of parsed responses
@@ -148,12 +158,12 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             HTTPException if the request fails
         Usage:
         ```python
-        with uiform.documents.extractions.stream(json_schema, document, model, temperature, messages, modality) as stream:
+        with uiform.documents.extractions.stream(json_schema, document, model, temperature, reasoning_effort, modality) as stream:
             for response in stream:
                 print(response)
         ```
         """
-        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, True, store, idempotency_key=idempotency_key)
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, store, idempotency_key=idempotency_key)
         schema = Schema(json_schema=load_json_schema(json_schema))
 
         # Request the stream and return a context manager
@@ -180,6 +190,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> DocumentExtractResponse:
@@ -193,11 +204,12 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             model: The AI model to use.
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
+            reasoning_effort: The effort level for the model to reason about the input data.
 
         Returns:
             DocumentExtractResponse: Parsed response from the API.
         """
-        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, False, store, idempotency_key=idempotency_key)
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, store, idempotency_key=idempotency_key)
         response = await self._client._prepared_request(request)
         schema = Schema(json_schema=load_json_schema(json_schema))
         return maybe_parse_to_pydantic(schema, DocumentExtractResponse.model_validate(response))
@@ -211,6 +223,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> AsyncGenerator[DocumentExtractResponseStream, None]:
@@ -223,18 +236,19 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             model: The AI model to use.
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
+            reasoning_effort: The effort level for the model to reason about the input data.
             idempotency_key: Idempotency key for request
         Returns:
             AsyncGenerator[DocumentExtractResponse, None]: Stream of parsed responses.
 
         Usage:
         ```python
-        async with uiform.documents.extractions.stream(json_schema, document, model, temperature, messages, modality) as stream:
+        async with uiform.documents.extractions.stream(json_schema, document, model, temperature, reasoning_effort, modality) as stream:
             async for response in stream:
                 print(response)
         ```
         """
-        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, True, store, idempotency_key=idempotency_key)
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, store, idempotency_key=idempotency_key)
         schema = Schema(json_schema=load_json_schema(json_schema))
         chunk_json: Any = None
         async for chunk_json in self._client._prepared_request_stream(request):

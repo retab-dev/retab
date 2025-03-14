@@ -26,6 +26,8 @@ from ...types.documents.extractions import DocumentExtractResponse
 from ...types.mime import MIMEData, BaseMIMEData
 from ...types.logs import ExternalRequestLog
 
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+
 
 class LinksMixin:
 
@@ -42,7 +44,7 @@ class LinksMixin:
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
-
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
@@ -56,6 +58,7 @@ class LinksMixin:
             "modality": modality,
             "model": model,
             "temperature": temperature,
+            "reasoning_effort": reasoning_effort,
         }
 
         request = Link.model_validate(data)
@@ -112,6 +115,7 @@ class LinksMixin:
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None
     ) -> PreparedRequest:
 
@@ -138,6 +142,8 @@ class LinksMixin:
             data["temperature"] = temperature
         if json_schema is not None:
             data["json_schema"] = json_schema
+        if reasoning_effort is not None:
+            data["reasoning_effort"] = reasoning_effort
 
         request = UpdateLinkRequest.model_validate(data)
         return PreparedRequest(method="PUT", url=f"/v1/automations/links/{link_id}", data=request.model_dump(mode='json'))
@@ -215,7 +221,7 @@ class Links(SyncAPIResource, LinksMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
-
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Link:
         """Create a new extraction link configuration.
         
@@ -229,12 +235,12 @@ class Links(SyncAPIResource, LinksMixin):
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
-            
+            reasoning_effort: The effort level for the model to reason about the input data.
         Returns:
             Link: The created extraction link configuration
         """
 
-        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature)
+        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
         print(f"Extraction Link Created. Link available at https://uiform.com/links/{response['id']}")
         return Link.model_validate(response)
@@ -296,6 +302,7 @@ class Links(SyncAPIResource, LinksMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None
     ) -> Link:
         """Update an extraction link configuration.
@@ -310,13 +317,14 @@ class Links(SyncAPIResource, LinksMixin):
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
+            reasoning_effort: The effort level for the model to reason about the input data.
             json_schema: New JSON schema
             
         Returns:
             Link: The updated extraction link configuration
         """
 
-        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, json_schema)
+        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort, json_schema)
         response = self._client._prepared_request(request)
         return Link.model_validate(response)
 
@@ -385,8 +393,9 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Link:
-        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature)
+        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
         print(f"Extraction Link Created. Link available at https://uiform.com/links/{response['id']}")
         return Link.model_validate(response)
@@ -401,8 +410,8 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         response = await self._client._prepared_request(request)
         return Link.model_validate(response)
     
-    async def update(self, link_id: str, name: Optional[str] = None, webhook_url: Optional[HttpUrl] = None, webhook_headers: Optional[Dict[str, str]] = None, password: Optional[str] = None, image_settings: Optional[Dict[str, Any]] = None, modality: Optional[Modality] = None, model: Optional[str] = None, temperature: Optional[float] = None, json_schema: Optional[Dict[str, Any]] = None) -> Link:
-        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, json_schema)
+    async def update(self, link_id: str, name: Optional[str] = None, webhook_url: Optional[HttpUrl] = None, webhook_headers: Optional[Dict[str, str]] = None, password: Optional[str] = None, image_settings: Optional[Dict[str, Any]] = None, modality: Optional[Modality] = None, model: Optional[str] = None, temperature: Optional[float] = None, reasoning_effort: Optional[ChatCompletionReasoningEffort] = None, json_schema: Optional[Dict[str, Any]] = None) -> Link:
+        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort, json_schema)
         response = await self._client._prepared_request(request)
         return Link.model_validate(response)
     

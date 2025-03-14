@@ -15,6 +15,7 @@ from ..image_settings import ImageSettings
 from ..chat import ChatCompletionUiformMessage
 
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -25,7 +26,7 @@ class DocumentExtractRequest(BaseModel):
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-
+    reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
     # Regular fields
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])

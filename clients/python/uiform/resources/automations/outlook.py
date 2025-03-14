@@ -13,6 +13,7 @@ from ...types.automations.outlook import Outlook, UpdateOutlookRequest, ListOutl
 from ...types.standards import PreparedRequest
 from ...types.logs import AutomationLog
 
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from ..._utils.ai_model import assert_valid_model_extraction
 
 
@@ -32,6 +33,7 @@ class OutlooksMixin:
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
         # Optional Fields for data integration
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
@@ -49,6 +51,7 @@ class OutlooksMixin:
             "modality": modality,
             "model": model,
             "temperature": temperature,
+            "reasoning_effort": reasoning_effort,
         }
 
         if match_params is not None:
@@ -102,6 +105,7 @@ class OutlooksMixin:
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None) -> PreparedRequest:
@@ -132,6 +136,8 @@ class OutlooksMixin:
             data["match_params"] = match_params
         if fetch_params is not None:
             data["fetch_params"] = fetch_params
+        if reasoning_effort is not None:
+            data["reasoning_effort"] = reasoning_effort
 
         update_outlook_request = UpdateOutlookRequest.model_validate(data)
 
@@ -185,6 +191,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
     ) -> Outlook:
@@ -201,13 +208,14 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
+            reasoning_effort: The effort level for the model to reason about the input data.
             match_params: List of match parameters for the outlook automation
             fetch_params: List of fetch parameters for the outlook automation
         Returns:
             Outlook: The created outlook plugin configuration
         """
 
-        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, match_params, fetch_params)
+        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort, match_params, fetch_params)
         response = self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
@@ -268,6 +276,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
@@ -285,6 +294,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
+            reasoning_effort: New reasoning effort
             json_schema: New JSON schema
             match_params: New match parameters for the outlook automation
             fetch_params: New fetch parameters for the outlook automation
@@ -292,7 +302,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         Returns:
             Outlook: The updated outlook plugin configuration
         """
-        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema, match_params, fetch_params)
+        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema, match_params, fetch_params)
         response = self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
@@ -354,10 +364,11 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
         match_params: List[MatchParams] = [],
         fetch_params: List[FetchParams] = [],
     ) -> Outlook:
-        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, match_params, fetch_params)
+        request = self.prepare_create(name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort, match_params, fetch_params)
         response = await self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
@@ -392,11 +403,12 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
     ) -> Outlook:
-        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema, match_params, fetch_params)
+        request = self.prepare_update(outlook_id, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema, match_params, fetch_params)
         response = await self._client._prepared_request(request)
         return Outlook.model_validate(response)
 

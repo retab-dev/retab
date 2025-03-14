@@ -14,6 +14,7 @@ from ..schemas.layout import Layout
 from ..._utils.json_schema import clean_schema, convert_schema_to_layout
 from ..._utils.mime import generate_blake2b_hash_from_string
 from ..logs import AutomationConfig, UpdateAutomationRequest
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
 
@@ -49,6 +50,8 @@ class Outlook(AutomationConfig):
     modality: Modality
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     model: str = Field(..., description="Model used for chat completion")
+    reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
+    
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     layout_schema: Optional[Layout] = Field(default=None, description="Layout schema format used to display the data")
 
@@ -128,6 +131,8 @@ class UpdateOutlookRequest(UpdateAutomationRequest):
     # Others DocumentExtraction Parameters
     model: Optional[str] = None
     temperature: Optional[float] = None
+    reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
+
     json_schema: Optional[Dict] = None
     layout_schema: Optional[Layout] = None
 
