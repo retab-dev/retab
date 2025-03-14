@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from .._resource import SyncAPIResource, AsyncAPIResource
-from ..types.usage import Amount
+from ..types.ai_models import Amount
 from openai.types.chat import completion_create_params
 from openai.types.chat.chat_completion import ChatCompletion
 from ..types.logs import AutomationLog, LogCompletionRequest

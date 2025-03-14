@@ -1,3 +1,40 @@
+from typing import Literal
+
+AIProvider = Literal["OpenAI"]#, "Anthropic", "xAI", "Gemini"]
+OpenAICompatibleProvider = Literal["OpenAI"]#, "xAI", "Gemini"]
+GeminiModel = Literal[ "gemini-2.0-flash-exp",
+                      "gemini-1.5-flash-8b", "gemini-1.5-flash","gemini-1.5-pro"]
+AnthropicModel = Literal["claude-3-5-sonnet-latest","claude-3-5-sonnet-20241022",
+                         "claude-3-5-haiku-20241022",
+                         "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
+OpenAIModel = Literal["gpt-4o", "gpt-4o-mini","chatgpt-4o-latest",
+                      "gpt-4o-2024-11-20", "gpt-4o-2024-08-06", "gpt-4o-2024-05-13",
+                      "gpt-4o-mini-2024-07-18",
+                      "o3-mini", "o3-mini-2025-01-31",
+                      "o1", "o1-2024-12-17", "o1-preview-2024-09-12",
+                      "o1-mini", "o1-mini-2024-09-12",
+                      "gpt-4.5-preview", "gpt-4.5-preview-2025-02-27",
+                      "gpt-4o-audio-preview-2024-12-17", "gpt-4o-audio-preview-2024-10-01",
+                      "gpt-4o-realtime-preview-2024-12-17", "gpt-4o-realtime-preview-2024-10-01",
+                      "gpt-4o-mini-audio-preview-2024-12-17", "gpt-4o-mini-realtime-preview-2024-12-17"]
+xAI_Model = Literal["grok-2-vision-1212", "grok-2-1212"]
+LLMModel = Literal[OpenAIModel, 'human', AnthropicModel, xAI_Model, GeminiModel]
+
+
+from pydantic import BaseModel, Field
+import datetime
+
+from uiform.types.jobs.base import AnnotationProps
+class FinetunedModel(BaseModel):
+    object: Literal["finetuned_model"] = "finetuned_model"
+    organization_id: str
+    model: str
+    schema_id: str
+    schema_data_id: str 
+    finetuning_props : AnnotationProps
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+
 from pydantic import BaseModel
 from typing import Optional, Literal, Dict, List
 # Monthly Usage
@@ -76,9 +113,12 @@ class ModelCard(BaseModel):
     """
     Model card that includes pricing and capabilities.
     """
-    model: str
+    model: LLMModel
     pricing: Pricing
     capabilities: ModelCapabilities
+    logprobs_support: bool = True
+    temperature_support: bool = True
+    reasoning_effort_support: bool = False
 
 
 # List of model cards with pricing and capabilities
@@ -105,7 +145,10 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch"],
             features=["streaming", "function_calling", "structured_outputs"]
-        )
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
     ),
     ModelCard(
         model="o1-2024-12-17",
@@ -117,7 +160,10 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch"],
             features=["streaming", "function_calling", "structured_outputs"]
-        )
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
     ),
 
     ModelCard(
@@ -130,7 +176,10 @@ model_cards = [
             modalities=["text"],
             endpoints=["chat_completions", "responses", "assistants", "batch"],
             features=["streaming", "function_calling"]
-        )
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
     ),
 
 
@@ -147,7 +196,10 @@ model_cards = [
             modalities=["text"],
             endpoints=["chat_completions", "responses", "assistants"],
             features=["streaming"]
-        )
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
     ),
     ModelCard(
         model="o1-mini-2024-09-12",
@@ -159,7 +211,10 @@ model_cards = [
             modalities=["text"],
             endpoints=["chat_completions", "responses", "assistants"],
             features=["streaming"]
-        )
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
     ),
 
 
@@ -177,7 +232,10 @@ model_cards = [
             modalities=["text"],
             endpoints=["chat_completions", "responses", "assistants", "batch"],
             features=["streaming", "function_calling", "structured_outputs"]
-        )
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
     ),
     ModelCard(
         model="o3-mini",
@@ -190,7 +248,10 @@ model_cards = [
             modalities=["text"],
             endpoints=["chat_completions", "responses", "assistants", "batch"],
             features=["streaming", "function_calling", "structured_outputs"]
-        )
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
     ),
     
 
@@ -216,7 +277,8 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch"],
             features=["streaming", "function_calling", "structured_outputs"]
-        )
+        ),
+        logprobs_support=False,
     ),
     ModelCard(
         model="gpt-4.5-preview-2025-02-27",
@@ -229,7 +291,8 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch"],
             features=["streaming", "function_calling", "structured_outputs"]
-        )
+        ),
+        logprobs_support=False,
     ),
 
     # ----------------------
@@ -246,7 +309,7 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch", "fine_tuning"],
             features=["streaming", "function_calling", "structured_outputs", "fine_tuning", "distillation", "predicted_outputs"]
-        )
+        ),
     ),
     ModelCard(
         model="gpt-4o",
@@ -259,7 +322,7 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch", "fine_tuning"],
             features=["streaming", "function_calling", "structured_outputs", "fine_tuning", "distillation", "predicted_outputs"]
-        )
+        ),
     ),
     ModelCard(
         model="gpt-4o-2024-08-06",
@@ -272,7 +335,7 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch", "fine_tuning"],
             features=["streaming", "function_calling", "structured_outputs", "fine_tuning", "distillation", "predicted_outputs"]
-        )
+        ),
     ),
     ModelCard(
         model="gpt-4o-2024-11-20",
@@ -285,7 +348,7 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch", "fine_tuning"],
             features=["streaming", "function_calling", "structured_outputs", "fine_tuning", "distillation", "predicted_outputs"]
-        )
+        ),
     ),
     ModelCard(
         model="gpt-4o-2024-05-13",
@@ -298,7 +361,7 @@ model_cards = [
             modalities=["text", "image"],
             endpoints=["chat_completions", "responses", "assistants", "batch", "fine_tuning"],
             features=["streaming", "function_calling", "structured_outputs", "fine_tuning", "distillation", "predicted_outputs"]
-        )
+        ),
     ),
 
     # ----------------------
@@ -314,7 +377,7 @@ model_cards = [
             modalities=["text", "audio"],
             endpoints=["chat_completions"],
             features=["streaming", "function_calling"]
-        )
+        ),
     ),
     ModelCard(
         model="gpt-4o-audio-preview-2024-10-01",
@@ -326,7 +389,7 @@ model_cards = [
             modalities=["text", "audio"],
             endpoints=["chat_completions"],
             features=["streaming", "function_calling"]
-        )
+        ),
     ),
 
         ModelCard(
@@ -414,10 +477,6 @@ model_cards = [
             features=["streaming", "function_calling"]
         )
     ),
-
-    
-
-    
 ]
 
 def get_model_card(model: str) -> ModelCard:
@@ -445,3 +504,153 @@ def get_model_card(model: str) -> ModelCard:
             return card
     
     raise ValueError(f"No model card found for model: {model}")
+
+
+
+
+
+
+
+# Anthropic Model Cards
+anthropic_model_cards = [
+    ModelCard(
+        model="claude-3-5-sonnet-20241022",
+        pricing=Pricing(
+            text=TokenPrice(prompt=3.00, cached_discount=0.5, completion=15.00),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+    ModelCard(
+        model="claude-3-5-haiku-20241022",
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.80, cached_discount=0.5, completion=4.00),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+    ModelCard(
+        model="claude-3-opus-20240229",
+        pricing=Pricing(
+            text=TokenPrice(prompt=15.00, cached_discount=0.5, completion=75.00),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+    ModelCard(
+        model="claude-3-sonnet-20240229",
+        pricing=Pricing(
+            text=TokenPrice(prompt=3.00, cached_discount=0.5, completion=15.00),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+    ModelCard(
+        model="claude-3-haiku-20240307",
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.25, cached_discount=0.5, completion=1.25),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+]
+
+# xAI model cards
+xai_model_cards = [
+    ModelCard(
+        model="grok-2-vision-1212",
+        pricing=Pricing(
+            text=TokenPrice(prompt=2.00, cached_discount=0.5, completion=10.00),
+            audio=TokenPrice(prompt=2.00, cached_discount=0.5, completion=0.00)
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+    ModelCard(
+        model="grok-2-1212",
+        pricing=Pricing(
+            text=TokenPrice(prompt=2.00, cached_discount=0.5, completion=10.00),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+]
+
+# Add Gemini model cards
+gemini_model_cards = [
+    ModelCard(
+        model="gemini-1.5-flash",
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.075, cached_discount=0.5, completion=0.30),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+    ModelCard(
+        model="gemini-1.5-flash-8b",
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.0375, cached_discount=0.5, completion=0.15),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+    ModelCard(
+        model="gemini-2.0-flash-exp",
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.075, cached_discount=0.5, completion=0.30),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+    ModelCard(
+        model="gemini-1.5-pro",
+        pricing=Pricing(
+            text=TokenPrice(prompt=1.25, cached_discount=0.5, completion=5.00),
+            audio=None
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling"]
+        )
+    ),
+]

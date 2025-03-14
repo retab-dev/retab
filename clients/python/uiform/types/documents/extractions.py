@@ -4,10 +4,10 @@ from typing import  Any, Literal, List
 import datetime
 from functools import cached_property
 
-from ..._utils.ai_model import find_provider_from_model
+from ..._utils.ai_models import find_provider_from_model
 
 from ..modalities import Modality
-from ..ai_model import AIProvider
+from ..ai_models import AIProvider
 from ..standards import ErrorDetail, StreamingBaseModel
 from ..mime import MIMEData, BaseMIMEData
 from ..schemas.object import Schema

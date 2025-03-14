@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from ..modalities import Modality
 from ..mime import MIMEData
 from ..image_settings import ImageSettings
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 class GenerateSchemaRequest(BaseModel):
     """
@@ -11,6 +12,7 @@ class GenerateSchemaRequest(BaseModel):
     documents: list[MIMEData]
     model: str = "gpt-4o-mini"
     temperature: float = 0.0
+    reasoning_effort: ChatCompletionReasoningEffort = "medium"
 
     modality: Modality
     """The modality of the document to load."""

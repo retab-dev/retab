@@ -327,7 +327,7 @@ def display_benchmark_metrics(benchmark_metrics: list[BenchmarkMetrics]) -> None
     # Add rows for each model's metrics
     for metrics in benchmark_metrics:
         table.add_row(
-            metrics.ai_model,
+            metrics.ai_models,
             f"[bold]{metrics.accuracy:.3f}[/bold]" if metrics.accuracy == best_values['accuracy'] else f"[dim]{metrics.accuracy:.3f}[/dim]",
             f"[bold]{metrics.levenshtein_similarity:.3f}[/bold]" if metrics.levenshtein_similarity == best_values['levenshtein'] else f"[dim]{metrics.levenshtein_similarity:.3f}[/dim]",
             f"[bold]{metrics.jaccard_similarity:.3f}[/bold]" if metrics.jaccard_similarity == best_values['jaccard'] else f"[dim]{metrics.jaccard_similarity:.3f}[/dim]",

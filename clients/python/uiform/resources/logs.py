@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from .._resource import SyncAPIResource, AsyncAPIResource
-from ..types.usage import Amount
+from ..types.ai_models import Amount
 
 total_cost = 0.0
 

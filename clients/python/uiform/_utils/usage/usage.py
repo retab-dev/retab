@@ -3,12 +3,9 @@ from typing import Optional
 
 
 #https://platform.openai.com/docs/guides/prompt-caching
-from ...types.usage import Amount, Pricing, get_model_card
+from ...types.ai_models import Amount, Pricing, get_model_card
 from openai.types.completion_usage import CompletionUsage
-from .openai import openai_pricing_list
-from .anthropic import anthropic_pricing_list
-from .xai import xai_pricing_list
-from .gemini import gemini_pricing_list
+
 # ─── PRICING MODELS ────────────────────────────────────────────────────────────
 
 
@@ -82,7 +79,6 @@ def compute_api_call_cost(pricing: Pricing, usage: CompletionUsage, is_ft: bool 
     return Amount(value=total_cost, currency="USD")
 
 
-
 def compute_cost_from_model(model: str, usage: CompletionUsage) -> Amount:
     # Extract base model name for fine-tuned models like "ft:gpt-4o:uiform:4389573"
     is_ft = False
@@ -93,7 +89,7 @@ def compute_cost_from_model(model: str, usage: CompletionUsage) -> Amount:
             model = parts[1]
             is_ft = True
     
-    # Use the get_model_card function from types.usage instead of pricing lists
+    # Use the get_model_card function from types.ai_models
     try:
         model_card = get_model_card(model)
         pricing = model_card.pricing
