@@ -181,7 +181,36 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
         if isinstance(val1, dict) or isinstance(val2, dict) or isinstance(val1, (list, tuple)) or isinstance(val2, (list, tuple)):
             return None
 
-        # Handle leaf nodes (primitives) by converting to strings and comparing
+        # Handle leaf nodes (primitives) with type-specific comparisons
+        if val1 is None and val2 is None:
+            return 1.0  # Both None means perfect match
+        elif val1 is None or val2 is None:
+            return 0.0  # One None means no match
+        
+        # First, check if their types are not the same
+        if not (
+            (isinstance(val1, bool) and isinstance(val2, bool)) or
+            (isinstance(val1, (int, float)) and isinstance(val2, (int, float))) or
+            (isinstance(val1, str) and isinstance(val2, str))
+        ):
+            return 0.0
+
+        # From now on they have equivalent types.
+        
+        # Boolean comparison - direct equality check
+        if isinstance(val1, bool):
+            return 1.0 if val1 == val2 else 0.0
+        
+        # Numeric comparison (int, float)
+        if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
+            # For numbers close to zero, use absolute difference
+            if abs(val1) < 1e-4 and abs(val2) < 1e-4:
+                return 1.0 if abs(val1 - val2) < 1e-4 else 0.0
+            # Otherwise use relative difference
+            max_val = max(abs(val1), abs(val2))
+            return 1.0 - min(1.0, abs(val1 - val2) / max_val)
+        
+        # String comparison - use the provided metric function
         str_val1 = "" if val1 is None else str(val1)
         str_val2 = "" if val2 is None else str(val2)
         return float(metric_function(str_val1, str_val2))  # Ensure we return a float
@@ -210,6 +239,7 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
         val1 = dict1_normalized.get(key, None)
         val2 = dict2_normalized.get(key, None)
 
+        # We ignore keys that are not filled in any of the two dictionaries.
         if (val1 is None and val2 is not None) or (val1 is not None and val2 is None):  
             result[key] = None
         else:
