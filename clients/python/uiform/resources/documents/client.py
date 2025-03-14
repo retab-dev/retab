@@ -11,7 +11,6 @@ from ..._utils.mime import prepare_mime_document, convert_mime_data_to_pil_image
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
 from .extractions import Extractions, AsyncExtractions
-from .templates.templates import Templates, AsyncTemplates
 from ...types.standards import PreparedRequest
 
 
@@ -63,7 +62,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.extractions = Extractions(client=client)
-        self.templates = Templates(client=client)
         # self.batch = Batch(client=client)
 
 
@@ -130,7 +128,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.extractions = AsyncExtractions(client=client)
-        self.templates = AsyncTemplates(client=client)
 
     async def create_messages(self, 
             document: Path | str | IOBase | MIMEData | PIL.Image.Image, 

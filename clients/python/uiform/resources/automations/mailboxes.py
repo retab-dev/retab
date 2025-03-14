@@ -24,7 +24,7 @@ from ...types.documents.extractions import DocumentExtractResponse
 from ...types.mime import MIMEData, BaseMIMEData
 from ...types.logs import ExternalRequestLog
 
-
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 class MailBoxesMixin:
     def prepare_create(
@@ -42,6 +42,7 @@ class MailBoxesMixin:
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
@@ -56,6 +57,7 @@ class MailBoxesMixin:
             "modality": modality,
             "model": model,
             "temperature": temperature,
+            "reasoning_effort": reasoning_effort,
         }
 
         # Validate the data
@@ -101,6 +103,7 @@ class MailBoxesMixin:
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None) -> PreparedRequest:
         
         data: dict[str, Any] = {}
@@ -121,6 +124,8 @@ class MailBoxesMixin:
             data["model"] = model
         if temperature is not None:
             data["temperature"] = temperature
+        if reasoning_effort is not None:
+            data["reasoning_effort"] = reasoning_effort
         if json_schema is not None:
             data["json_schema"] = json_schema
 
@@ -177,6 +182,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
 
     ) -> Mailbox:
         """Create a new email automation configuration.
@@ -192,12 +198,13 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
-            
+            reasoning_effort: The effort level for the model to reason about the input data.
+
         Returns:
             Mailbox: The created mailbox configuration
         """
 
-        request = self.prepare_create(email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature)
+        request = self.prepare_create(email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
@@ -254,6 +261,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None
     ) -> Mailbox:
         """Update an email automation configuration.
@@ -271,12 +279,13 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
+            reasoning_effort: New reasoning effort
             json_schema: New JSON schema
             
         Returns:
             Mailbox: The updated mailbox configuration
         """
-        request = self.prepare_update(email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
+        request = self.prepare_update(email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema)
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
@@ -335,8 +344,9 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Mailbox:
-        request = self.prepare_create(email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature)
+        request = self.prepare_create(email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
@@ -369,9 +379,10 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None
     ) -> Mailbox:
-        request = self.prepare_update(email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, json_schema)
+        request = self.prepare_update(email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema)
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 

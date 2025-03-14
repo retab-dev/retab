@@ -6,6 +6,7 @@ from pydantic_core import Url
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 import nanoid # type: ignore
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 def scrapping_action(link: HttpUrl) -> dict[str, Any]:
     raise NotImplementedError("Scrapping action not implemented")
@@ -46,7 +47,7 @@ class ScrappingConfig(AutomationConfig):
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-
+    reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
     
     @field_serializer('webhook_url', 'link')
     def url2str(self, val: HttpUrl) -> str:

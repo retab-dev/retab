@@ -18,6 +18,11 @@ from .._utils.mime import generate_blake2b_hash_from_string
 import copy
 import json
 
+from openai import OpenAI
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+
+
+
 class AutomationConfig(BaseModel):
     object: str
     id: str
@@ -35,7 +40,7 @@ class AutomationConfig(BaseModel):
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-
+    reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
 
     @computed_field   # type: ignore
     @property
@@ -83,6 +88,7 @@ class UpdateAutomationRequest(BaseModel):
     model: Optional[str] = None
     temperature: Optional[float] = None
     json_schema: Optional[Dict] = None
+    reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
 
     @field_serializer('webhook_url')
     def url2str(self, val: HttpUrl | None) -> str | None:
@@ -126,7 +132,10 @@ class OpenAIRequestConfig(BaseModel):
     id: str = Field(default_factory=lambda: "openai_req_" + nanoid.generate(), description="Unique identifier for the openai request")
     model: str
     json_schema: dict[str, Any]
+    reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
 
+
+    
 # ------------------------------
 # ------------------------------
 # ------------------------------

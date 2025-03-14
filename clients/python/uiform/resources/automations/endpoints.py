@@ -20,7 +20,7 @@ from ...types.documents.extractions import DocumentExtractResponse
 from ...types.mime import MIMEData, BaseMIMEData
 from ...types.logs import ExternalRequestLog
 
-
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 class EndpointsMixin:
 
@@ -35,6 +35,7 @@ class EndpointsMixin:
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
@@ -47,6 +48,7 @@ class EndpointsMixin:
             "modality": modality,
             "model": model,
             "temperature": temperature,
+            "reasoning_effort": reasoning_effort,
         }
 
         request = Endpoint.model_validate(data)
@@ -99,7 +101,8 @@ class EndpointsMixin:
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
-    ) -> PreparedRequest:
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
+        ) -> PreparedRequest:
         data: dict[str, Any] = {}
         
         if endpoint_id is not None:
@@ -121,7 +124,8 @@ class EndpointsMixin:
             data["model"] = model
         if temperature is not None:
             data["temperature"] = temperature
-
+        if reasoning_effort is not None:
+            data["reasoning_effort"] = reasoning_effort
         request = UpdateEndpointRequest.model_validate(data)
         return PreparedRequest(method="PUT", url=f"/v1/automations/endpoints/{endpoint_id}", data=request.model_dump(mode='json'))
 
@@ -142,6 +146,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Endpoint:
         """Create a new endpoint configuration.
         
@@ -154,12 +159,12 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
-            
+            reasoning_effort: The effort level for the model to reason about the input data.
         Returns:
             Endpoint: The created endpoint configuration
         """
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, 
-                                    image_settings, modality, model, temperature)
+                                    image_settings, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
         print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f"/v1/endpoints/{response['id']}"}")
         return Endpoint.model_validate(response)
@@ -219,6 +224,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
     ) -> Endpoint:
         """Update an endpoint configuration.
         
@@ -232,12 +238,12 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
-            
+            reasoning_effort: The effort level for the model to reason about the input data.
         Returns:
             Endpoint: The updated endpoint configuration
         """
         request = self.prepare_update(endpoint_id, name, webhook_url, webhook_headers, 
-                                    json_schema, image_settings, modality, model, temperature)
+                                    json_schema, image_settings, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
         return Endpoint.model_validate(response)
 
@@ -265,9 +271,10 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Endpoint:
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers,
-                                    image_settings, modality, model, temperature)
+                                    image_settings, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
         print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f"/v1/endpoints/{response['id']}"}")
         return Endpoint.model_validate(response)
@@ -302,9 +309,10 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
-    ) -> Endpoint:
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
+        ) -> Endpoint:
         request = self.prepare_update(endpoint_id, name, webhook_url, webhook_headers,
-                                    json_schema, image_settings, modality, model, temperature)
+                                    json_schema, image_settings, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
         return Endpoint.model_validate(response)
     
