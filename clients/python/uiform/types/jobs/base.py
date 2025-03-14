@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field, model_validator
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+
 SelectionMode = Literal["all", "manual"]
 
 # This is the input data for the prepare_dataset job
@@ -46,15 +48,14 @@ class AnnotationProps(BaseModel):
     model: str = "gpt-4o-mini"
     temperature: float = 0.0
     modality: Modality = "native"
+    reasoning_effort: ChatCompletionReasoningEffort = "medium"
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+
 
 class AnnotationInputData(BaseModel):
     data_file: str
     schema_id: str
     annotation_props: AnnotationProps
-
-
-
 
 
 # This is the input data for the evaluation job
