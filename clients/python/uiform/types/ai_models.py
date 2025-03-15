@@ -113,7 +113,7 @@ class ModelCard(BaseModel):
     """
     Model card that includes pricing and capabilities.
     """
-    model: LLMModel
+    model: LLMModel | str # Can be a random string for finetuned models
     pricing: Pricing
     capabilities: ModelCapabilities
     logprobs_support: bool = True
