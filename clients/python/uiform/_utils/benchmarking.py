@@ -323,6 +323,7 @@ class SingleFileEval(BaseModel):
     """
     A class for evaluating metrics between two dictionaries.
     """
+    eval_id : str
     file_id: str
     schema_id: str
     dict_1: dict[str, Any]
