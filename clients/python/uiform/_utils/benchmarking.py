@@ -326,12 +326,13 @@ class SingleFileEval(BaseModel):
     eval_id : str
     file_id: str
     schema_id: str
+    schema_data_id: str
     dict_1: dict[str, Any]
     dict_2: dict[str, Any]
     annotation_props_1: AnnotationParameters
     annotation_props_2: AnnotationParameters
     created_at: datetime.datetime
-
+    organization_id: str
     hamming_similarity: dict[str, Any]
     jaccard_similarity: dict[str, Any]
     levenshtein_similarity: dict[str, Any]
