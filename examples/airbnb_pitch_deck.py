@@ -186,7 +186,8 @@ client = OpenAI()
 completion = client.beta.chat.completions.parse(
     model="gpt-4o-mini",
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
-    response_format=schema_obj.inference_pydantic_model
+    response_format=schema_obj.inference_pydantic_model,
+    store=True
 )
 
 assert completion.choices[0].message.parsed is not None
