@@ -1,13 +1,10 @@
-import re
-import unicodedata
-from collections import defaultdict
 from typing import Any, Literal
 from Levenshtein import distance as levenshtein_distance
-from pydantic import BaseModel, computed_field
-from typing import Any, Optional
-import numpy as np
-from typing import Literal
-import pandas as pd
+from pydantic import BaseModel
+from typing import Optional
+import datetime
+import pandas as pd # type: ignore
+import shutil
 # The goal is to leverage this piece of code to open a jsonl file and get an analysis of the performance of the model using a one-liner. 
 
 
@@ -121,7 +118,7 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
     else:
         raise ValueError(f"Invalid metric: {metric}")
 
-    def compare_values(val1: Any, val2: Any, path: str = "") -> Any:
+    def compare_values(val1: dict | list | tuple | str | int | float | bool | None, val2: dict | list | tuple | str | int | float | bool | None, path: str = "") -> Any:
         # If both are dictionaries, process recursively
         if isinstance(val1, dict) and isinstance(val2, dict):
             nested_result: dict[str, Any] = {}
@@ -182,24 +179,24 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
             return None
 
         # Handle leaf nodes (primitives) with type-specific comparisons
+        # Special handling for None values
         if val1 is None and val2 is None:
             return 1.0  # Both None means perfect match
-        elif val1 is None or val2 is None:
-            return 0.0  # One None means no match
-        
-        # First, check if their types are not the same
-        if not (
-            (isinstance(val1, bool) and isinstance(val2, bool)) or
-            (isinstance(val1, (int, float)) and isinstance(val2, (int, float))) or
-            (isinstance(val1, str) and isinstance(val2, str))
-        ):
+        elif val1 is None:
+            # None is compatible with False or empty string
+            if val2 is False or val2 == "":
+                return 1.0
             return 0.0
-
-        # From now on they have equivalent types.
+        elif val2 is None:
+            # None is compatible with False or empty string
+            if val1 is False or val1 == "":
+                return 1.0
+            return 0.0
+        # From now on, we can assume that val1 and val2 are not None.
         
-        # Boolean comparison - direct equality check
-        if isinstance(val1, bool):
-            return 1.0 if val1 == val2 else 0.0
+        # Type compatibility check
+        if isinstance(val1, bool) and isinstance(val2, bool):
+            return 1.0 if val1 is val2 else 0.0
         
         # Numeric comparison (int, float)
         if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
@@ -211,9 +208,11 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
             return 1.0 - min(1.0, abs(val1 - val2) / max_val)
         
         # String comparison - use the provided metric function
-        str_val1 = "" if val1 is None else str(val1)
-        str_val2 = "" if val2 is None else str(val2)
-        return float(metric_function(str_val1, str_val2))  # Ensure we return a float
+        if isinstance(val1, str) and isinstance(val2, str):
+            return float(metric_function(val1, val2))
+        
+        # If we get here, types are incompatible
+        return 0.0
 
     def _extract_numeric_values(d: dict) -> list[float]:
         """Extract all numeric values from a nested dictionary."""
@@ -233,17 +232,16 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
     dict2_normalized = {key_normalization(k): v for k, v in dict2.items()}
 
     # Process all keys from both dictionaries
-    all_keys = set(dict1_normalized.keys()) | set(dict2_normalized.keys())
+    keys_intersect = set(dict1_normalized.keys()) & set(dict2_normalized.keys())
+    keys_symmetric_difference = set(dict1_normalized.keys()) ^ set(dict2_normalized.keys())
 
-    for key in all_keys:
-        val1 = dict1_normalized.get(key, None)
-        val2 = dict2_normalized.get(key, None)
-
-        # We ignore keys that are not filled in any of the two dictionaries.
-        if (val1 is None and val2 is not None) or (val1 is not None and val2 is None):  
-            result[key] = None
-        else:
-            result[key] = compare_values(val1, val2, key)
+    for key in keys_symmetric_difference:
+        # When the key is not present in both dictionaries, we return None.
+        result[key] = None
+    
+    for key in keys_intersect:
+        # compare_values can handle None values, so we don't need to check for that.
+        result[key] = compare_values(dict1_normalized[key], dict2_normalized[key], key)
 
     return result
 
@@ -320,8 +318,6 @@ def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[
     return aggregate_recursively(dict_differences)
 
 
-import datetime
-
 class SingleFileEval(BaseModel):
     """
     A class for evaluating metrics between two dictionaries.
@@ -350,8 +346,6 @@ class EvalMetrics(BaseModel):
 
 
 
-import pandas as pd
-import shutil
 
 def flatten_dict(d: dict[str, Any], parent_key: str = '', sep: str = '.') -> dict[str, Any]:
     """Flatten a nested dictionary with dot-separated keys."""
