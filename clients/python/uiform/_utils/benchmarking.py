@@ -5,6 +5,7 @@ from typing import Optional
 import datetime
 import pandas as pd # type: ignore
 import shutil
+from ..types.db.annotations import AnnotationParameters
 # The goal is to leverage this piece of code to open a jsonl file and get an analysis of the performance of the model using a one-liner. 
 
 
@@ -326,6 +327,8 @@ class SingleFileEval(BaseModel):
     schema_id: str
     dict_1: dict[str, Any]
     dict_2: dict[str, Any]
+    annotation_props_1: AnnotationParameters
+    annotation_props_2: AnnotationParameters
     created_at: datetime.datetime
 
     hamming_similarity: dict[str, Any]
