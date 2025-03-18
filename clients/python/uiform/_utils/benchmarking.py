@@ -6,29 +6,48 @@ import datetime
 import pandas as pd # type: ignore
 import shutil
 from ..types.db.annotations import AnnotationParameters
+import re
 # The goal is to leverage this piece of code to open a jsonl file and get an analysis of the performance of the model using a one-liner. 
 
 
 ############# BENCHMARKING MODELS #############
 from itertools import zip_longest
+def normalize_string(text: str) -> str:
+    """
+    Normalize a string by removing non-alphanumeric characters and lowercasing.
+
+    Args:
+        text: Input string to normalize
+
+    Returns:
+        Normalized string with only alphanumeric characters, all lowercase
+    """
+    if not text:
+        return ""
+    # Remove all non-alphanumeric characters and convert to lowercase
+    return re.sub(r'[^a-zA-Z0-9]', '', text).lower()
 
 def hamming_distance_padded(s: str, t: str) -> int:
     """
     Compute the Hamming distance between two strings, treating spaces as wildcards.
-    
+
     Args:
         s: The first string
         t: The second string
-        
+
     Returns:
         The Hamming distance between the two strings
     """
+    # Normalize inputs
+    s = normalize_string(s)
+    t = normalize_string(t)
+
     return sum(a != b for a, b in zip_longest(s, t, fillvalue=' '))
 
 def hamming_similarity(str_1: str, str_2: str) -> float:
     """
     Compute the Hamming similarity between two strings.
-    
+
     Args:
         str_1: The first string
         str_2: The second string
@@ -36,20 +55,22 @@ def hamming_similarity(str_1: str, str_2: str) -> float:
     Returns:
         A float between 0 and 1, where 1 means the strings are identical
     """
+    # Normalize inputs
+    str_1 = normalize_string(str_1)
+    str_2 = normalize_string(str_2)
+
     max_length = max(len(str_1), len(str_2))
 
     if max_length == 0:
         return 1.0
-        
+
     dist = hamming_distance_padded(str_1, str_2)
     return 1 - (dist / max_length)
-    
-
 
 def jaccard_similarity(str_1: str, str_2: str) -> float:
     """
     Compute the Jaccard similarity between two strings.
-    
+
     Args:
         str_1: The first string
         str_2: The second string
@@ -57,6 +78,10 @@ def jaccard_similarity(str_1: str, str_2: str) -> float:
     Returns:
         A float between 0 and 1, where 1 means the strings are identical
     """
+    # Normalize inputs
+    str_1 = normalize_string(str_1)
+    str_2 = normalize_string(str_2)
+
     set_a = set(str_1)
     set_b = set(str_2)
     intersection = set_a & set_b
@@ -65,19 +90,20 @@ def jaccard_similarity(str_1: str, str_2: str) -> float:
         return 1.0
     return len(intersection) / len(union)
 
-
-
 def levenshtein_similarity(str_1: str, str_2: str) -> float:
     """
     Calculate similarity between two values using Levenshtein distance.
     Returns a similarity score between 0.0 and 1.0.
     """
+    # Normalize inputs
+    str_1 = normalize_string(str_1)
+    str_2 = normalize_string(str_2)
 
     max_length = max(len(str_1), len(str_2))
 
     if max_length == 0:
         return 1.0
-        
+
     dist = levenshtein_distance(str_1, str_2)
     return 1 - (dist / max_length)
 
