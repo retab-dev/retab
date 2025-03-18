@@ -326,7 +326,7 @@ class SingleFileEval(BaseModel):
     eval_id : str
     file_id: str
     schema_id: str
-    schema_data_id: str
+    schema_data_id: str|None = None
     dict_1: dict[str, Any]
     dict_2: dict[str, Any]
     annotation_props_1: AnnotationParameters

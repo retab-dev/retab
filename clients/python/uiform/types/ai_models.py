@@ -32,6 +32,7 @@ class FinetunedModel(BaseModel):
     schema_id: str
     schema_data_id: str 
     finetuning_props : AnnotationProps
+    eval_id: str|None = None
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
