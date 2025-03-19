@@ -31,7 +31,7 @@ class DocumentExtractRequest(BaseModel):
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=False, description="If true, the extraction will be stored in the database")
-
+    need_validation: bool = Field(default=False, description="If true, the extraction will be validated against the schema")
     @property
     def provider(self) -> AIProvider:
         """

@@ -13,6 +13,7 @@ from typing import Optional
 from .._utils.usage.usage import compute_cost_from_model
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
+ValidationsState = Literal["pending", "validated", "invalid"]
 
 class ExtractionSource(BaseModel):
     type: Literal["api","annotation","automation.link","automation.email","automation.cron","automation.outlook","automation.endpoint", "schema.extract"] = Field( description="Type of extraction")
@@ -39,7 +40,7 @@ class Extraction(BaseModel):
     schema_data_id: str = Field(..., description="Version of the schema data used for the analysis")
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     organization_id: str = Field(..., description="Organization ID of the user or application")
-
+    validation_state: Optional[ValidationsState] = Field(default=None, description="Validation state of the extraction")
     @computed_field
     @property
     def api_cost(self) -> Optional[Amount]:
