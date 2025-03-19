@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, Callable
 from Levenshtein import distance as levenshtein_distance
 from pydantic import BaseModel
 from typing import Optional
@@ -121,6 +121,41 @@ def key_normalization(key: str) -> str:
     return ".".join(new_key_parts)
 
 
+def compare_primitive_values(val1: str | int | float | bool | None, val2: str | int | float | bool | None, str_metric_function: Callable[[str, str], float]) -> float:
+    # Handle leaf nodes (primitives) with type-specific comparisons
+    # Special handling for None values
+    # Both None means perfect match
+    if val1 is None and val2 is None:
+        return 1.0
+    # One is None but the other has a value (False, "", 0, etc.)
+    elif (val1 is None and not val2) or (val2 is None and not val1):
+        return 1.0
+    # One is None but the other has non None-compatible values (True, "string", 1, 1.5, etc.)
+    elif val1 is None or val2 is None:
+        return 0.0
+    
+    # From now on, we can assume that val1 and val2 are not None.
+    # Type compatibility check
+    if isinstance(val1, bool) and isinstance(val2, bool):
+        return 1.0 if val1 is val2 else 0.0
+    
+    # Numeric comparison (int, float)
+    if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
+        # For numbers close to zero, use absolute difference
+        if abs(val1) < 1e-4 and abs(val2) < 1e-4:
+            return 1.0 if abs(val1 - val2) < 1e-4 else 0.0
+        # Otherwise use relative difference
+        max_val = max(abs(val1), abs(val2))
+        return 1.0 - min(1.0, abs(val1 - val2) / max_val)
+    
+    # String comparison - use the provided metric function
+    if isinstance(val1, str) and isinstance(val2, str):
+        return float(str_metric_function(val1, val2))
+    
+    # If we get here, types are incompatible
+    return 0.0
+
+
 dictionary_metrics = Literal["levenshtein_similarity", "jaccard_similarity", "hamming_similarity"]
 def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric: dictionary_metrics) -> dict[str, Any]:
     """
@@ -206,40 +241,7 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
             return None
 
         # Handle leaf nodes (primitives) with type-specific comparisons
-        # Special handling for None values
-        if val1 is None and val2 is None:
-            return 1.0  # Both None means perfect match
-        elif val1 is None:
-            # None is compatible with False or empty string
-            if val2 is False or val2 == "":
-                return 1.0
-            return 0.0
-        elif val2 is None:
-            # None is compatible with False or empty string
-            if val1 is False or val1 == "":
-                return 1.0
-            return 0.0
-        # From now on, we can assume that val1 and val2 are not None.
-        
-        # Type compatibility check
-        if isinstance(val1, bool) and isinstance(val2, bool):
-            return 1.0 if val1 is val2 else 0.0
-        
-        # Numeric comparison (int, float)
-        if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
-            # For numbers close to zero, use absolute difference
-            if abs(val1) < 1e-4 and abs(val2) < 1e-4:
-                return 1.0 if abs(val1 - val2) < 1e-4 else 0.0
-            # Otherwise use relative difference
-            max_val = max(abs(val1), abs(val2))
-            return 1.0 - min(1.0, abs(val1 - val2) / max_val)
-        
-        # String comparison - use the provided metric function
-        if isinstance(val1, str) and isinstance(val2, str):
-            return float(metric_function(val1, val2))
-        
-        # If we get here, types are incompatible
-        return 0.0
+        return compare_primitive_values(val1, val2, metric_function)
 
     def _extract_numeric_values(d: dict) -> list[float]:
         """Extract all numeric values from a nested dictionary."""
