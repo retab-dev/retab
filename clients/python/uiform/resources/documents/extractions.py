@@ -47,6 +47,7 @@ class BaseExtractionsMixin:
         modality: Modality,
         reasoning_effort: ChatCompletionReasoningEffort,
         stream: bool,
+        n_consensus: int = 1,
         store: bool = False,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
@@ -62,7 +63,8 @@ class BaseExtractionsMixin:
             "stream": stream,
             "modality": modality,
             "store": store,
-            "reasoning_effort": reasoning_effort
+            "reasoning_effort": reasoning_effort,
+            "n_consensus": n_consensus
         }
         if image_settings:
             data["image_settings"] = image_settings
@@ -97,6 +99,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        n_consensus: int = 1,
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> DocumentExtractResponse:
@@ -110,7 +113,9 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             temperature: Model temperature setting (0-1)
             modality: Modality of the document (e.g., native)
             reasoning_effort: The effort level for the model to reason about the input data.
+            n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             idempotency_key: Idempotency key for request
+            store: Whether to store the document in the UiForm database
         Returns:
             DocumentAPIResponse
         Raises:
@@ -120,7 +125,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         assert (document is not None), "Either document or messages must be provided"
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, store, idempotency_key=idempotency_key)        
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key)        
         response = self._client._prepared_request(request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
@@ -136,6 +141,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        n_consensus: int = 1,
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> Generator[DocumentExtractResponseStream, None, None]:
@@ -150,7 +156,9 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             temperature: Model temperature setting (0-1)
             modality: Modality of the document (e.g., native)
             reasoning_effort: The effort level for the model to reason about the input data.
-
+            n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
+            idempotency_key: Idempotency key for request
+            store: Whether to store the document in the UiForm database
 
         Returns:
             Generator[DocumentExtractResponse]: Stream of parsed responses
@@ -163,7 +171,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
                 print(response)
         ```
         """
-        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, store, idempotency_key=idempotency_key)
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key)
         schema = Schema(json_schema=load_json_schema(json_schema))
 
         # Request the stream and return a context manager
@@ -191,6 +199,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        n_consensus: int = 1,
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> DocumentExtractResponse:
@@ -205,11 +214,13 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
             reasoning_effort: The effort level for the model to reason about the input data.
-
+            n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
+            idempotency_key: Idempotency key for request
+            store: Whether to store the document in the UiForm database
         Returns:
             DocumentExtractResponse: Parsed response from the API.
         """
-        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, store, idempotency_key=idempotency_key)
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key)
         response = await self._client._prepared_request(request)
         schema = Schema(json_schema=load_json_schema(json_schema))
         return maybe_parse_to_pydantic(schema, DocumentExtractResponse.model_validate(response))
@@ -224,6 +235,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        n_consensus: int = 1,
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> AsyncGenerator[DocumentExtractResponseStream, None]:
@@ -237,7 +249,9 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
             reasoning_effort: The effort level for the model to reason about the input data.
+            n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             idempotency_key: Idempotency key for request
+            store: Whether to store the document in the UiForm database
         Returns:
             AsyncGenerator[DocumentExtractResponse, None]: Stream of parsed responses.
 
@@ -248,7 +262,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
                 print(response)
         ```
         """
-        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, store, idempotency_key=idempotency_key)
+        request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key)
         schema = Schema(json_schema=load_json_schema(json_schema))
         chunk_json: Any = None
         async for chunk_json in self._client._prepared_request_stream(request):
