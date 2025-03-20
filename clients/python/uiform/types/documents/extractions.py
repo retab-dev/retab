@@ -43,6 +43,13 @@ class DocumentExtractRequest(BaseModel):
         """
         return find_provider_from_model(self.model)
     
+    # Add a model validator that rejects n_consensus > 1 if temperature is 0
+    @field_validator("n_consensus")
+    def check_n_consensus(cls, v: int, info: ValidationInfo) -> int:
+        if v > 1 and info.data.get("temperature") == 0:
+            raise ValueError("n_consensus must be 1 if temperature is 0")
+        return v
+
 
 class BaseDocumentExtractRequest(DocumentExtractRequest):
     document: BaseMIMEData = Field(..., description="Document analyzed (without content, for MongoDB storage)")     # type: ignore
