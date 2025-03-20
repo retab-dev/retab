@@ -94,9 +94,7 @@ def convert_to_google_genai_format(
     
     return formatted_inputs
     
-def convert_to_anthropic_format(
-    messages: List[ChatCompletionUiformMessage]
-) -> tuple[str, List[MessageParam]]:
+def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> tuple[str, List[MessageParam]]:
     """
     Converts a list of ChatCompletionUiformMessage to a format compatible with the Anthropic SDK.
 
@@ -211,9 +209,66 @@ def convert_to_anthropic_format(
 
     return system_message, formatted_messages
 
+
+def convert_from_anthropic_format(messages: list[MessageParam], system_prompt: str) -> list[ChatCompletionUiformMessage]:
+    """
+    Converts a list of Anthropic MessageParam to a list of ChatCompletionUiformMessage.
+    """
+    formatted_messages: list[ChatCompletionUiformMessage] = [
+        ChatCompletionUiformMessage(role="system", content=system_prompt)
+    ]
+    
+    for message in messages:
+        role = message["role"]
+        content_blocks = message["content"]
+        
+        # Handle different content structures
+        if isinstance(content_blocks, list) and len(content_blocks) == 1 and isinstance(content_blocks[0], dict) and content_blocks[0].get("type") == "text":
+            # Simple text message
+            formatted_messages.append(cast(ChatCompletionUiformMessage, {
+                "role": role,
+                "content": content_blocks[0].get("text", "")
+            }))
+        elif isinstance(content_blocks, list):
+            # Message with multiple content parts or non-text content
+            formatted_content: list[ChatCompletionContentPartParam] = []
+            
+            for block in content_blocks:
+                if isinstance(block, dict):
+                    if block.get("type") == "text":
+                        formatted_content.append(cast(ChatCompletionContentPartParam, {
+                            "type": "text",
+                            "text": block.get("text", "")
+                        }))
+                    elif block.get("type") == "image":
+                        source = block.get("source", {})
+                        if isinstance(source, dict) and source.get("type") == "base64":
+                            # Convert base64 image to data URL format
+                            media_type = source.get("media_type", "image/jpeg")
+                            data = source.get("data", "")
+                            image_url = f"data:{media_type};base64,{data}"
+                            
+                            formatted_content.append(cast(ChatCompletionContentPartParam, {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": image_url
+                                }
+                            }))
+            
+            formatted_messages.append(cast(ChatCompletionUiformMessage, {
+                "role": role,
+                "content": formatted_content
+            }))
+    
+    return formatted_messages
+
+
 def convert_to_openai_format(messages: List[ChatCompletionUiformMessage]) -> List[ChatCompletionMessageParam]:
     return cast(list[ChatCompletionMessageParam], messages)
     
+
+def convert_from_openai_format(messages: list[ChatCompletionMessageParam]) -> list[ChatCompletionUiformMessage]:
+    return cast(list[ChatCompletionUiformMessage], messages)
 
 
 def separate_messages(messages: list[ChatCompletionUiformMessage]) -> tuple[Optional[ChatCompletionUiformMessage], list[ChatCompletionUiformMessage], list[ChatCompletionUiformMessage]]:

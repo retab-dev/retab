@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationInfo, model_validator
 from typing import  Any, Literal, List
 
 import datetime
+import base64
 from functools import cached_property
 
 from ..._utils.ai_models import find_provider_from_model
@@ -14,8 +15,11 @@ from ..schemas.object import Schema
 from ..image_settings import ImageSettings
 from ..chat import ChatCompletionUiformMessage
 
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice, ChatCompletion
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from anthropic.types.message import Message
+from anthropic.types.message_param import MessageParam
+from openai.types.chat import ChatCompletionMessageParam
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -109,11 +113,37 @@ class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
 
 
 class LogExtractionRequest(BaseModel):
-    messages: list[ChatCompletionUiformMessage] # TODO: compatibility with Anthropic
-    completion: Any # UiParsedChatCompletion  # TODO: compatibility with Anthropic
+    messages: list[ChatCompletionUiformMessage] | None = None  # TODO: compatibility with Anthropic
+    openai_messages: list[ChatCompletionMessageParam] | None = None
+    anthropic_messages: list[MessageParam] | None = None
+    anthropic_system_prompt: str | None = None
+    document: MIMEData = Field(
+        default=MIMEData(
+            filename="dummy.txt",
+            # url is a base64 encoded string with the mime type and the content. For the dummy one we will send a .txt file with the text "No document provided"
+            url="data:text/plain;base64," + base64.b64encode(b"No document provided").decode("utf-8"),
+        ),
+        description="Document analyzed, if not provided a dummy one will be created with the text 'No document provided'",
+    )
+    completion: dict | UiParsedChatCompletion | Message | ParsedChatCompletion | ChatCompletion
     json_schema: dict[str, Any]
     model: str
     temperature: float
+
+    # Validate that at least one of the messages, openai_messages, anthropic_messages is provided using model_validator
+    @model_validator(mode="before")
+    def check_messages(cls, data: Any) -> Any:
+        if data.get("messages") is None and data.get("openai_messages") is None and data.get("anthropic_messages") is None:
+            raise ValueError("At least one of the messages, openai_messages, anthropic_messages must be provided")
+        # Validate that if anthropic_messages is provided, anthropic_system_prompt is also provided
+        if data.get("anthropic_messages") is not None and data.get("anthropic_system_prompt") is None:
+            raise ValueError("anthropic_system_prompt must be provided if anthropic_messages is provided")
+        return data
+
+class LogExtractionResponse(BaseModel):
+    extraction_id: str | None = None    # None only in case of error
+    status: Literal["success", "error"]
+    error_message: str | None = None
 
 DocumentExtractResponse = UiParsedChatCompletion
 DocumentExtractResponseStream = UiParsedChatCompletionStream

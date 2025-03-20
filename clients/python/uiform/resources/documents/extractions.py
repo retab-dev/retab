@@ -2,11 +2,11 @@ from io import IOBase
 from pathlib import Path
 from typing import Any, AsyncGenerator, Generator, Optional
 from pydantic import HttpUrl
-
+import base64
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.json_schema import filter_reasoning_fields_json, load_json_schema
-from ..._utils.mime import prepare_mime_document
+from ..._utils.mime import prepare_mime_document, MIMEData
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream, LogExtractionRequest
 from ...types.modalities import Modality
@@ -16,6 +16,8 @@ from ...types.chat import ChatCompletionUiformMessage
 from typing import overload
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from openai.types.chat import ChatCompletionMessageParam
+from anthropic.types.message_param import MessageParam
 
 @overload
 def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
@@ -79,13 +81,43 @@ class BaseExtractionsMixin:
             idempotency_key=idempotency_key
         )
 
-    def prepare_log_extraction(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> PreparedRequest:
+    def prepare_log_extraction(
+        self,
+        document: Path | str | IOBase | HttpUrl | None,
+        completion: Any,
+        json_schema: dict[str, Any],
+        model: str,
+        temperature: float,
+        # The messages can be provided in different formats, we will convert them to the UiForm-compatible format
+        messages: list[ChatCompletionUiformMessage] | None = None, 
+        openai_messages: list[ChatCompletionMessageParam] | None = None,
+        anthropic_messages: list[MessageParam] | None = None,
+        anthropic_system_prompt: str | None = None,
+    ) -> PreparedRequest:
+        if document is None:
+            mime_document = MIMEData(
+                filename="dummy.txt",
+                # url is a base64 encoded string with the mime type and the content. For the dummy one we will send a .txt file with the text "No document provided"
+                url="data:text/plain;base64," + base64.b64encode(b"No document provided").decode("utf-8"),
+            )
+
         return PreparedRequest(
             method="POST",
             url="/v1/documents/log_extraction",
-            data=LogExtractionRequest(messages=messages, completion=completion, json_schema=json_schema, model=model, temperature=temperature).model_dump(),
-            raise_for_status=True
+            data=LogExtractionRequest(
+                document=prepare_mime_document(document) if document else mime_document,
+                messages=messages,
+                openai_messages=openai_messages,
+                anthropic_messages=anthropic_messages,
+                anthropic_system_prompt=anthropic_system_prompt,
+                completion=completion,
+                json_schema=json_schema,
+                model=model,
+                temperature=temperature,
+            ).model_dump(mode="json"),
+            raise_for_status=True,
         )
+
 
 class Extractions(SyncAPIResource, BaseExtractionsMixin):
     """Extraction API wrapper"""
@@ -182,10 +214,30 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
         yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))
 
-    def log(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> None:
-        request = self.prepare_log_extraction(messages, completion, json_schema, model, temperature)
-        self._client._prepared_request(request)
-        return None
+    def log(
+        self,
+        document: Path | str | IOBase | HttpUrl | None,
+        completion: Any,
+        json_schema: dict[str, Any],
+        model: str,
+        temperature: float,
+        messages: list[ChatCompletionUiformMessage] | None = None,
+        openai_messages: list[ChatCompletionMessageParam] | None = None,
+        anthropic_messages: list[MessageParam] | None = None,
+        anthropic_system_prompt: str | None = None,
+    ) -> None:
+        request = self.prepare_log_extraction(
+            document,
+            completion,
+            json_schema,
+            model,
+            temperature,
+            messages=messages,
+            openai_messages=openai_messages,
+            anthropic_messages=anthropic_messages,
+            anthropic_system_prompt=anthropic_system_prompt,
+        )
+        return self._client._prepared_request(request)
 
 class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
     """Extraction API wrapper for asynchronous usage."""
@@ -271,9 +323,29 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             
             yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
         # Last chunk with full parsed response
-        yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))  
-    
-    async def log(self, messages: list[ChatCompletionUiformMessage], completion: Any, json_schema: dict[str, Any], model: str, temperature: float) -> None:
-        request = self.prepare_log_extraction(messages, completion, json_schema, model, temperature)
-        await self._client._prepared_request(request)
-        return None
+        yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))
+
+    async def log(
+        self,
+        document: Path | str | IOBase | HttpUrl | None,
+        completion: Any,
+        json_schema: dict[str, Any],
+        model: str,
+        temperature: float,
+        messages: list[ChatCompletionUiformMessage] | None = None,
+        openai_messages: list[ChatCompletionMessageParam] | None = None,
+        anthropic_messages: list[MessageParam] | None = None,
+        anthropic_system_prompt: str | None = None,
+    ) -> None:
+        request = self.prepare_log_extraction(
+            document,
+            completion,
+            json_schema,
+            model,
+            temperature,
+            messages=messages,
+            openai_messages=openai_messages,
+            anthropic_messages=anthropic_messages,
+            anthropic_system_prompt=anthropic_system_prompt,
+        )
+        return await self._client._prepared_request(request)
