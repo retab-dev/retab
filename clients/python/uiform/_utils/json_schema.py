@@ -667,8 +667,8 @@ def json_schema_to_inference_schema(obj: Union[dict[str, Any], list[Any]]) -> Un
     if isinstance(obj, dict):
         new_obj: dict[str, Any] = {}
         for key, value in obj.items():
-            # Remove 'default' and 'format' fields
-            if key in ['default', 'format']:
+            # Remove 'default', 'format', and translation fields
+            if key in ['default', 'format', 'X-FieldTranslation', 'X-EnumTranslation']:
                 continue
             
             # Switch 'integer' for 'number' ('integer' isn't a supported type)
