@@ -51,17 +51,44 @@ class DocumentExtractRequest(BaseModel):
         return v
 
 
-class BaseDocumentExtractRequest(DocumentExtractRequest):
-    document: BaseMIMEData = Field(..., description="Document analyzed (without content, for MongoDB storage)")     # type: ignore
+class ConsensusSettings(BaseModel):
+    treat_list_of_primitives_as_primitive: bool = False
+    treat_list_of_dicts_as_primitive: bool = False
 
-    model_config = ConfigDict(
-        json_schema_extra={"document": {"metadata": False}}
-    )
+class ConsensusModel(BaseModel):
+    model: str = Field(description="Model name")
+    temperature: float = Field(default=0.0, description="Temperature for consensus")
+    reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
 
-    # Add a field validator that converts the input document to BaseMIMEData
-    @field_validator("document")
-    def convert_document_to_base_mimedata(cls, v: MIMEData | BaseMIMEData, validation_info: ValidationInfo) -> BaseMIMEData:
-        return BaseMIMEData(**v.model_dump())
+    @property
+    def provider(self) -> AIProvider:
+        """
+        Determines the AI provider based on the model specified.
+
+        Returns:
+            AIProvider: The AI provider corresponding to the given model.
+        """
+        return find_provider_from_model(self.model)
+    
+
+class DocumentExtractRequestWithConsensus(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    # General fields
+    document: MIMEData = Field(..., description="Document to be analyzed")
+    modality: Modality
+    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+
+    # Consensus fields
+    consensus_models: list[ConsensusModel] = Field(default=[], description="List of models to use for consensus")
+    consensus_settings: ConsensusSettings = Field(default_factory=ConsensusSettings, description="Settings for consensus")
+    include_individual_model_results: bool = Field(default=True, description="If true, the results of the individual models will be included in the response (additionnal choices from idx=1 to idx=len(consensus_models))")
+
+    # Regular fields
+    stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
+    seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
+
 
 class UiParsedChatCompletion(ParsedChatCompletion): 
     # Additional metadata fields (UIForm)
