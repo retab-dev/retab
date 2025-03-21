@@ -6,6 +6,7 @@ import base64
 from functools import cached_property
 
 from ..._utils.ai_models import find_provider_from_model
+from ..ai_models import get_model_card
 
 from ..modalities import Modality
 from ..ai_models import AIProvider
@@ -50,7 +51,8 @@ class DocumentExtractRequest(BaseModel):
     # Add a model validator that rejects n_consensus > 1 if temperature is 0
     @field_validator("n_consensus")
     def check_n_consensus(cls, v: int, info: ValidationInfo) -> int:
-        if v > 1 and info.data.get("temperature") == 0:
+        model_card = get_model_card(info.data["model"])
+        if model_card.temperature_support and (v > 1 and info.data.get("temperature") == 0):
             raise ValueError("n_consensus must be 1 if temperature is 0")
         return v
 
