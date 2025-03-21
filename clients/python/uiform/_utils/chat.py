@@ -118,7 +118,7 @@ def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> 
         # -----------------------
         # Handle system message
         # -----------------------
-        if message["role"] == "system":
+        if message["role"] in ("system", "developer"):
             assert isinstance(message["content"], str), "System message content must be a string."
             if system_message != "":
                 raise ValueError("Only one system message is allowed per chat.")
@@ -215,7 +215,7 @@ def convert_from_anthropic_format(messages: list[MessageParam], system_prompt: s
     Converts a list of Anthropic MessageParam to a list of ChatCompletionUiformMessage.
     """
     formatted_messages: list[ChatCompletionUiformMessage] = [
-        ChatCompletionUiformMessage(role="system", content=system_prompt)
+        ChatCompletionUiformMessage(role="developer", content=system_prompt)
     ]
     
     for message in messages:
@@ -289,7 +289,7 @@ def separate_messages(messages: list[ChatCompletionUiformMessage]) -> tuple[Opti
     assistant_messages = []
 
     for message in messages:
-        if message["role"] == "system":
+        if message["role"] in ("system", "developer"):
             system_message = message
         elif message["role"] == "user":
             user_messages.append(message)

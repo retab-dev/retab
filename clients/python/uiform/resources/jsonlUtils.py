@@ -200,7 +200,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     messages = entry.get("messages", [])
 
                     # Remove existing system prompt if it exists
-                    if messages and messages[0].get("role") == "system":
+                    if messages and messages[0].get("role") in ("developer", "system"):
                         messages = messages[1:]
 
                     # Add the new system prompt from schema_obj.messages
