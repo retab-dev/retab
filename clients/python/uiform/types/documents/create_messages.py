@@ -136,7 +136,7 @@ class DocumentMessage(BaseModel):
         return convert_to_openai_completions_api_format(self.messages)
 
     @property
-    def openai_responses_messages(self) -> list[ResponseInputItemParam]:
+    def openai_responses_input(self) -> list[ResponseInputItemParam]:
         """Returns the messages formatted for OpenAI's Responses API.
 
         Converts the internal message format to OpenAI's expected format for
