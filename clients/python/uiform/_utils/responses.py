@@ -64,7 +64,7 @@ def convert_to_openai_format(messages: list[ChatCompletionUiformMessage]) -> lis
     return formatted_messages
 
 
-def convert_from_openai_format(messages: list[EasyInputMessageParam]) -> list[ChatCompletionUiformMessage]:
+def convert_from_openai_format(messages: list[ResponseInputItemParam]) -> list[ChatCompletionUiformMessage]:
     """
     Converts messages from OpenAI ResponseInputParam format to ChatCompletionUiformMessage format.
 
@@ -77,6 +77,13 @@ def convert_from_openai_format(messages: list[EasyInputMessageParam]) -> list[Ch
     formatted_messages: list[ChatCompletionUiformMessage] = []
 
     for message in messages:
+        if "type" not in message:
+            # The type is required by all other sub-types of ResponseInputItemParam except for EasyInputMessageParam and Message, which are messages.
+            message["type"] = "message"
+
+        if message["type"] != "message":
+            print(f"Not supported message type: {message['type']}... Skipping...")
+            continue
         role = message["role"]
         content = message["content"]
         formatted_content: str | list[ChatCompletionContentPartParam]

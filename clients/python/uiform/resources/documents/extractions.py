@@ -18,6 +18,8 @@ from typing import overload
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from openai.types.chat import ChatCompletionMessageParam
 from anthropic.types.message_param import MessageParam
+from openai.types.responses.response import Response
+from openai.types.responses.response_input_param import ResponseInputItemParam
 
 @overload
 def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
@@ -84,15 +86,18 @@ class BaseExtractionsMixin:
     def prepare_log_extraction(
         self,
         document: Path | str | IOBase | HttpUrl | None,
-        completion: Any,
         json_schema: dict[str, Any],
         model: str,
         temperature: float,
+        completion: Any | None = None,
         # The messages can be provided in different formats, we will convert them to the UiForm-compatible format
         messages: list[ChatCompletionUiformMessage] | None = None, 
         openai_messages: list[ChatCompletionMessageParam] | None = None,
         anthropic_messages: list[MessageParam] | None = None,
         anthropic_system_prompt: str | None = None,
+        # New fields for the Responses API
+        openai_responses_input: list[ResponseInputItemParam] | None = None,
+        openai_responses_output: Response | None = None,
     ) -> PreparedRequest:
         if document is None:
             mime_document = MIMEData(
@@ -111,10 +116,12 @@ class BaseExtractionsMixin:
                 anthropic_messages=anthropic_messages,
                 anthropic_system_prompt=anthropic_system_prompt,
                 completion=completion,
+                openai_responses_input=openai_responses_input,
+                openai_responses_output=openai_responses_output,
                 json_schema=json_schema,
                 model=model,
                 temperature=temperature,
-            ).model_dump(mode="json"),
+            ).model_dump(mode="json", by_alias=True),   # by_alias is necessary to enable serialization/deserialization ('schema' was being converted to 'schema_')
             raise_for_status=True,
         )
 
@@ -217,25 +224,31 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
     def log(
         self,
         document: Path | str | IOBase | HttpUrl | None,
-        completion: Any,
         json_schema: dict[str, Any],
         model: str,
         temperature: float,
-        messages: list[ChatCompletionUiformMessage] | None = None,
+        completion: Any | None = None,
+        # The messages can be provided in different formats, we will convert them to the UiForm-compatible format
+        messages: list[ChatCompletionUiformMessage] | None = None, 
         openai_messages: list[ChatCompletionMessageParam] | None = None,
         anthropic_messages: list[MessageParam] | None = None,
         anthropic_system_prompt: str | None = None,
+        # New fields for the Responses API
+        openai_responses_input: list[ResponseInputItemParam] | None = None,
+        openai_responses_output: Response | None = None,
     ) -> None:
         request = self.prepare_log_extraction(
             document,
-            completion,
             json_schema,
             model,
             temperature,
+            completion=completion,
             messages=messages,
             openai_messages=openai_messages,
             anthropic_messages=anthropic_messages,
             anthropic_system_prompt=anthropic_system_prompt,
+            openai_responses_input=openai_responses_input,
+            openai_responses_output=openai_responses_output,
         )
         return self._client._prepared_request(request)
 
@@ -328,24 +341,30 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
     async def log(
         self,
         document: Path | str | IOBase | HttpUrl | None,
-        completion: Any,
         json_schema: dict[str, Any],
         model: str,
         temperature: float,
-        messages: list[ChatCompletionUiformMessage] | None = None,
+        completion: Any | None = None,
+        # The messages can be provided in different formats, we will convert them to the UiForm-compatible format
+        messages: list[ChatCompletionUiformMessage] | None = None, 
         openai_messages: list[ChatCompletionMessageParam] | None = None,
         anthropic_messages: list[MessageParam] | None = None,
         anthropic_system_prompt: str | None = None,
+        # New fields for the Responses API
+        openai_responses_input: list[ResponseInputItemParam] | None = None,
+        openai_responses_output: Response | None = None,
     ) -> None:
         request = self.prepare_log_extraction(
             document,
-            completion,
             json_schema,
             model,
             temperature,
+            completion=completion,
             messages=messages,
             openai_messages=openai_messages,
             anthropic_messages=anthropic_messages,
             anthropic_system_prompt=anthropic_system_prompt,
+            openai_responses_input=openai_responses_input,
+            openai_responses_output=openai_responses_output,
         )
         return await self._client._prepared_request(request)
