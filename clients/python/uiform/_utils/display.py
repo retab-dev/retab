@@ -128,7 +128,7 @@ def process_jsonl_file(jsonl_path: str) -> List[TokenCounts]:
 
                 if isinstance(content, str):
                     # Count text tokens based on role
-                    if role in ["system", "user"]:
+                    if role in ["developer", "system", "user"]:
                         input_text_tokens += count_text_tokens(content)
                     elif role == "assistant":
                         output_text_tokens += count_text_tokens(content)
@@ -138,7 +138,7 @@ def process_jsonl_file(jsonl_path: str) -> List[TokenCounts]:
                         if item.get("type") == "image_url" and "image_url" in item:
                             image_url = item["image_url"]["url"]
                             tokens = count_image_tokens(image_url)
-                            if role in ["system", "user"]:
+                            if role in ["developer", "system", "user"]:
                                 input_image_tokens += tokens
                             elif role == "assistant":
                                 output_image_tokens += tokens
@@ -235,7 +235,7 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
                 content = message.get("content")
 
                 if isinstance(content, str):
-                    if role in ["system", "user"]:
+                    if role in ["developer", "system", "user"]:
                         input_text_tokens_example += count_text_tokens(content)
                     elif role == "assistant":
                         output_text_tokens_example += count_text_tokens(content)
@@ -245,13 +245,13 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
                             image_url = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
                             tokens = count_image_tokens(image_url, detail)
-                            if role in ["system", "user"]:
+                            if role in ["developer", "system", "user"]:
                                 input_image_tokens_example += tokens
                             elif role == "assistant":
                                 output_image_tokens_example += tokens
 
                         elif item.get("type") == "text":
-                            if role in ["system", "user"]:
+                            if role in ["developer", "system", "user"]:
                                 input_text_tokens_example += count_text_tokens(item["text"])
                             elif role == "assistant":
                                 output_text_tokens_example += count_text_tokens(item["text"])

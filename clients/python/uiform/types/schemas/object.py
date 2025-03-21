@@ -392,7 +392,7 @@ class Schema(PartialSchema):
     
     @property
     def messages(self)-> list[ChatCompletionUiformMessage]: 
-        return [ChatCompletionUiformMessage(role="system", content=self.system_prompt)]
+        return [ChatCompletionUiformMessage(role="developer", content=self.system_prompt)]
 
     @model_validator(mode="after")
     def model_after_validator(self) -> Self:

@@ -4,5 +4,5 @@ from typing import Union, Literal, Iterable, TypedDict
 
 
 class ChatCompletionUiformMessage(TypedDict):  # homemade replacement for ChatCompletionMessageParam because iterable messes the serialization with pydantic
-    role: Literal['user', 'system', 'assistant']
+    role: Literal['user', 'system', 'assistant', 'developer']
     content : Union[str, list[ChatCompletionContentPartParam]]

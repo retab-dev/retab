@@ -133,7 +133,7 @@ class Usage(SyncAPIResource):
         completion = client.beta.chat.completions.parse(
             model="gpt-4o-2024-08-06",
             messages=[
-                {"role": "system", "content": "Extract the event information."},
+                {"role": "developer", "content": "Extract the event information."},
                 {"role": "user", "content": "Alice and Bob are going to a science fair on Friday."},
             ],
             response_format=CalendarEvent,
