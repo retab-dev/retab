@@ -5,11 +5,13 @@ import datetime
 import copy
 import json
 
-from ..._utils.chat import convert_to_google_genai_format, convert_to_anthropic_format
+from ..._utils.chat import convert_to_google_genai_format, convert_to_anthropic_format, convert_to_openai_format as convert_to_openai_completions_api_format
+from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
 from ..._utils.json_schema import json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema, generate_schema_data_id, generate_schema_id
 from ...types.standards import StreamingBaseModel
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
+from openai.types.responses.response_input_param import ResponseInputItemParam
 from google.generativeai.types import content_types # type: ignore
 from ..chat import ChatCompletionUiformMessage
 
@@ -93,8 +95,17 @@ class Schema(PartialSchema):
         Returns:
             list[ChatCompletionMessageParam]: List of messages in OpenAI's format.
         """
-        return cast(list[ChatCompletionMessageParam], self.messages)
+        return convert_to_openai_completions_api_format(self.messages)
             
+
+    @property
+    def openai_responses_messages(self) -> list[ResponseInputItemParam]:
+        """Returns the messages formatted for OpenAI's Responses API.
+        
+        Returns:
+            list[ResponseInputItemParam]: List of messages in OpenAI's Responses API format.
+        """
+        return convert_to_openai_responses_api_format(self.messages)
 
     @property
     def anthropic_system_prompt(self) -> str:

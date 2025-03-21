@@ -6,14 +6,15 @@ import PIL.Image
 import requests
 from io import BytesIO
 
-from ..._utils.chat import convert_to_openai_format, convert_to_anthropic_format, convert_to_google_genai_format, str_messages
-
+from ..._utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format, convert_to_anthropic_format, convert_to_google_genai_format, str_messages
+from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
 from ..modalities import Modality
 from ..mime import MIMEData
 from ..chat import ChatCompletionUiformMessage
 from ..image_settings import ImageSettings
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
+from openai.types.responses.response_input_param import ResponseInputItemParam
 from google.generativeai.types import content_types  # type: ignore
 from anthropic.types.message_param import MessageParam
 
@@ -132,8 +133,19 @@ class DocumentMessage(BaseModel):
         Returns:
             list[ChatCompletionMessageParam]: Messages formatted for OpenAI's chat completion API.
         """
-        return convert_to_openai_format(self.messages)
+        return convert_to_openai_completions_api_format(self.messages)
 
+    @property
+    def openai_responses_messages(self) -> list[ResponseInputItemParam]:
+        """Returns the messages formatted for OpenAI's Responses API.
+
+        Converts the internal message format to OpenAI's expected format for
+        responses.
+
+        Returns:
+            list[ResponseInputItemParam]: Messages formatted for OpenAI's responses API.
+        """
+        return convert_to_openai_responses_api_format(self.messages)
 
     @property
     def anthropic_messages(self) -> list[MessageParam]:

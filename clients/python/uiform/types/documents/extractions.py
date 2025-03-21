@@ -3,7 +3,6 @@ from typing import  Any, Literal, List
 
 import datetime
 import base64
-from functools import cached_property
 
 from ..._utils.ai_models import find_provider_from_model
 from ..ai_models import get_model_card
@@ -11,12 +10,12 @@ from ..ai_models import get_model_card
 from ..modalities import Modality
 from ..ai_models import AIProvider
 from ..standards import ErrorDetail, StreamingBaseModel
-from ..mime import MIMEData, BaseMIMEData
-from ..schemas.object import Schema
+from ..mime import MIMEData
 from ..image_settings import ImageSettings
 from ..chat import ChatCompletionUiformMessage
 
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice, ChatCompletion
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from anthropic.types.message import Message
 from anthropic.types.message_param import MessageParam
