@@ -1156,6 +1156,7 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
       - Convert 'enum' => Literal
       - 'array' => list[submodel or primitive]
       - Primitives => str, int, float, bool
+      - Preserves anyOf/oneOf structure for nullable fields
     """
     # 1) Expand references (inlines $refs)
     schema_expanded = expand_refs(copy.deepcopy(schema))
@@ -1180,18 +1181,46 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
         else:
             default_val = prop_schema.get("default", None)
 
-        # Convert to a Python type annotation
-        python_type = _convert_property_schema_to_type(prop_schema)
-
-        # We also keep 'description', 'title', 'X-...' extras
+        # We also keep 'description', 'title', 'X-...' and everything else
+        # that's needed to preserve schema structure for round-trip conversion
         field_kwargs = {
             "description": prop_schema.get("description"),
             "title": prop_schema.get("title"),
-            "json_schema_extra": {k: v for k, v in prop_schema.items() if k.startswith("X-")}
         }
+        
+        # Include all original schema structure for proper round-trip conversion
+        schema_extra = {}
+        for k, v in prop_schema.items():
+            if k not in {"description", "title", "default"} and not k.startswith("$"):
+                schema_extra[k] = v
+                
+        if schema_extra:
+            field_kwargs["json_schema_extra"] = schema_extra
+
+        # Handle anyOf for nullable types specially
+        if "anyOf" in prop_schema:
+            # Check if it's a standard nullable pattern: [type, null]
+            sub_schemas = prop_schema["anyOf"]
+            null_schemas = [s for s in sub_schemas if s.get("type") == "null"]
+            non_null_schemas = [s for s in sub_schemas if s.get("type") != "null"]
+            
+            if len(null_schemas) == 1 and len(non_null_schemas) == 1:
+                # Standard nullable field pattern
+                non_null_schema = non_null_schemas[0]
+                inner_type = _convert_property_schema_to_type(non_null_schema)
+                python_type = Union[inner_type, None]
+            else:
+                # More complex anyOf structure - preserve it in schema_extra
+                python_type = object
+                
+            field_definitions[prop_name] = (python_type, Field(default_val, **field_kwargs))
+            continue
+
+        # Convert to a Python type annotation
+        python_type = _convert_property_schema_to_type(prop_schema)
 
         # If a field is not in `required`, we typically wrap it in `Optional[...]`
-        if prop_name not in required_props:
+        if prop_name not in required_props and not is_already_optional(python_type):
             python_type = Union[python_type, None]
 
         field_definitions[prop_name] = (python_type, Field(default_val, **field_kwargs))
