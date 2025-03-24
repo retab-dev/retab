@@ -1056,6 +1056,67 @@ def flatten_dict(obj: Any, prefix: str = '') -> dict[str, Any]:
         items.append((prefix, obj))
     return dict(items)
 
+def convert_dict_to_list_recursively(_obj: Any) -> Any:
+    """
+    Recursively converts dict[int, Any] to list[Any] if the keys are sequential integers starting from 0.
+    """
+    if not isinstance(_obj, dict):
+        return _obj
+        
+    # Process all nested dictionaries first
+    for key in list(_obj.keys()):
+        _obj[key] = convert_dict_to_list_recursively(_obj[key])
+        
+    # Check if this dictionary should be converted to a list
+    if _obj and all(isinstance(k, int) for k in _obj.keys()):
+        # Check if keys are sequential starting from 0
+        keys = sorted(_obj.keys())
+        if keys[0] == 0 and keys[-1] == len(keys) - 1:
+            # Convert to list
+            return [_obj[i] for i in range(len(keys))]
+    
+    return _obj
+
+def unflatten_dict(obj: dict[str, Any]) -> Any:
+    """
+    Unflattens a dictionary by recursively converting keys with dots into nested dictionaries.
+    After building the nested structure, converts dict[int, Any] to list[Any] if the keys
+    are sequential integers starting from 0.
+    
+    Args:
+        obj: The dictionary to unflatten.
+        
+    Returns:
+        The unflattened dictionary with appropriate dict[int, Any] converted to list[Any].
+    """
+    # First, validate that the dict is indeed flat
+    assert flatten_dict(obj) == obj, "Dictionary is not flat"
+
+    # First pass: build everything as nested dictionaries
+    result = {}
+    for key, value in obj.items():
+        parts = key.split('.')
+        current = result
+        
+        for i, part in enumerate(parts):
+            # Check if the part is an integer (for list indices)
+            is_int = part.isdigit()
+            if is_int:
+                part = int(part)
+                
+            # If we're at the last part, set the value
+            if i == len(parts) - 1:
+                current[part] = value
+            else:
+                # Create the container if it doesn't exist
+                if part not in current:
+                    current[part] = {}
+                
+                current = current[part]
+    
+    # Second pass: convert appropriate dict[int, Any] to list[Any] if the keys are sequential integers starting from 0.
+    return convert_dict_to_list_recursively(result)
+
 
 def extract_property_type_info(prop_schema: dict[str, Any]) -> tuple[str, Optional[str], bool, list[Any] | None]:
     """

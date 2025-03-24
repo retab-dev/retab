@@ -22,7 +22,7 @@ from ...types.standards import PreparedRequest
 
 import httpx
 import datetime
-from ...types.documents.extractions import DocumentExtractResponse
+from ...types.documents.extractions import UiParsedChatCompletion
 from ...types.mime import MIMEData, BaseMIMEData
 from ...types.logs import ExternalRequestLog
 
@@ -482,7 +482,7 @@ class TestLinksMixin:
 
 
 
-clean_response = DocumentExtractResponse.model_validate({
+clean_response = UiParsedChatCompletion.model_validate({
                 'id': 'chatcmpl-xxxxxxxxxx',
                 'choices': [{
                     'finish_reason': 'stop',

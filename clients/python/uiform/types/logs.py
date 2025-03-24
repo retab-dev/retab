@@ -4,7 +4,7 @@ import datetime
 import nanoid # type: ignore
 from pydantic_core import Url
 
-from .documents.extractions import DocumentExtractResponse
+from .documents.extractions import UiParsedChatCompletion
 from .image_settings import ImageSettings
 from .pagination import ListMetadata
 from .modalities import Modality
@@ -186,7 +186,7 @@ class AutomationLog(BaseModel):
     organization_id:str
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     automation_snapshot:  AutomationConfig
-    completion: DocumentExtractResponse | ChatCompletion
+    completion: UiParsedChatCompletion | ChatCompletion
     file_metadata: Optional[BaseMIMEData]
     external_request_log: Optional[ExternalRequestLog]
     extraction_id: Optional[str]=Field(default=None, description="ID of the extraction")
