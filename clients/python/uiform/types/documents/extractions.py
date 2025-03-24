@@ -172,15 +172,16 @@ class LogExtractionResponse(BaseModel):
 
 
 # We build from the openai.types.chat.chat_completion_chunk.ChatCompletionChunk adding just two three additional fields:
-# - missing_content: str              #  The missing content (to be concatenated to the cumulated content to create a potentially valid JSON)
-# - is_valid_json: bool               #  Whether the total accumulated content is a valid JSON
+# - missing_content: list[str]              #  The missing content (to be concatenated to the cumulated content to create a potentially valid JSON), it should be aligned with the choices index
+# - is_valid_json: list[bool]               #  Whether the total accumulated content is a valid JSON
 # - likelihoods: dict[str, float]     #  The delta of the flattened likelihoods (to be merged with the cumulated likelihoods)
 # - schema_validation_error: ErrorDetail | None = None #  The error in the schema validation of the total accumulated content
 class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     # Make all fields with a default value to easily build the object from a ChatCompletionChunk
     likelihoods: dict[str, float] = {}
-    missing_content: str = ""
-    is_valid_json: bool = False
+    # We do this to avoid modifying OpenAI's Choice object
+    missing_content: list[str] = [""]
+    is_valid_json: list[bool] = [False]
     schema_validation_error: ErrorDetail | None = None
 
     # Timestamps
