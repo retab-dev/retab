@@ -243,7 +243,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.likelihoods}
             
             # Update the ui_parsed_completion object
-            ui_parsed_completion.choices[0].message.content = current_content
+            ui_parsed_completion.choices[0].message.content = current_content + ui_parsed_chat_completion_chunk.missing_content
             ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
 
             yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
@@ -393,7 +393,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.likelihoods}
             
             # Update the ui_parsed_completion object
-            ui_parsed_completion.choices[0].message.content = current_content
+            ui_parsed_completion.choices[0].message.content = current_content + ui_parsed_chat_completion_chunk.missing_content
             ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
 
             yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
