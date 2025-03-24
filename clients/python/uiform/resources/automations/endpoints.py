@@ -16,7 +16,7 @@ from ...types.standards import PreparedRequest
 
 import httpx
 import datetime
-from ...types.documents.extractions import DocumentExtractResponse
+# from ...types.documents.extractions import DocumentExtractResponse
 from ...types.mime import MIMEData, BaseMIMEData
 from ...types.logs import ExternalRequestLog
 

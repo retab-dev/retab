@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationInfo, model_validator
-from typing import  Any, Literal, List
+from typing import  Any, Literal
 
 import datetime
 import base64
@@ -22,6 +22,7 @@ from anthropic.types.message_param import MessageParam
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.responses.response import Response
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -97,7 +98,12 @@ class DocumentExtractRequestWithConsensus(BaseModel):
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
 
 
-class UiParsedChatCompletion(ParsedChatCompletion): 
+class UiParsedChoice(ParsedChoice):
+   # Adaptable ParsedChoice that allows None for the finish_reason
+   finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore    
+
+class UiParsedChatCompletion(ParsedChatCompletion):
+    choices: list[UiParsedChoice]
     # Additional metadata fields (UIForm)
     likelihoods: Any # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
     schema_validation_error: ErrorDetail | None = None
@@ -108,11 +114,11 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
 
-class UiParsedChoiceStream(ParsedChoice):
-   finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore    
+# class UiParsedChoiceStream(ParsedChoice):
+#    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore    
 
-class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
-    choices: List[UiParsedChoiceStream]  # type: ignore
+# class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
+#     choices: List[UiParsedChoiceStream]  # type: ignore
 
 
 class LogExtractionRequest(BaseModel):
@@ -159,5 +165,28 @@ class LogExtractionResponse(BaseModel):
     status: Literal["success", "error"]
     error_message: str | None = None
 
-DocumentExtractResponse = UiParsedChatCompletion
-DocumentExtractResponseStream = UiParsedChatCompletionStream
+# DocumentExtractResponse = UiParsedChatCompletion
+
+
+###### I'll place here for now -- New Streaming API 
+
+
+# We build from the openai.types.chat.chat_completion_chunk.ChatCompletionChunk adding just two three additional fields:
+# - missing_content: str              #  The missing content (to be concatenated to the cumulated content to create a potentially valid JSON)
+# - is_valid_json: bool               #  Whether the total accumulated content is a valid JSON
+# - likelihoods: dict[str, float]     #  The delta of the flattened likelihoods (to be merged with the cumulated likelihoods)
+# - schema_validation_error: ErrorDetail | None = None #  The error in the schema validation of the total accumulated content
+class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
+    # Make all fields with a default value to easily build the object from a ChatCompletionChunk
+    likelihoods: dict[str, float] = {}
+    missing_content: str = ""
+    is_valid_json: bool = False
+    schema_validation_error: ErrorDetail | None = None
+
+    # Timestamps
+    request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
+    first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
+    last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
+
+# DocumentExtractResponseStream = UiParsedChatCompletionStream
+# DocumentExtractResponseStream = UiParsedChatCompletionStream

@@ -8,11 +8,13 @@ from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.json_schema import filter_reasoning_fields_json, load_json_schema
 from ..._utils.mime import prepare_mime_document, MIMEData
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream, LogExtractionRequest
+# from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream, LogExtractionRequest
+from ...types.documents.extractions import DocumentExtractRequest, UiParsedChatCompletion, UiParsedChatCompletionChunk, LogExtractionRequest, UiParsedChoice
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 from ...types.schemas.object import Schema
 from ...types.chat import ChatCompletionUiformMessage
+from ..._utils.json_schema import unflatten_dict
 from typing import overload
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -20,15 +22,9 @@ from openai.types.chat import ChatCompletionMessageParam
 from anthropic.types.message_param import MessageParam
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 
-@overload
-def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponseStream: ...
-
-@overload
-def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponse, allow_partial: bool = False) -> DocumentExtractResponse: ...
-
-
-def maybe_parse_to_pydantic(schema: Schema, response: DocumentExtractResponse | DocumentExtractResponseStream, allow_partial: bool = False) -> DocumentExtractResponse | DocumentExtractResponseStream:
+def maybe_parse_to_pydantic(schema: Schema, response: UiParsedChatCompletion, allow_partial: bool = False) -> UiParsedChatCompletion:
     
     if response.choices[0].message.content:
         try:
@@ -141,7 +137,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         n_consensus: int = 1,
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> DocumentExtractResponse:
+    ) -> UiParsedChatCompletion:
         """
         Process a document using the UiForm API.
 
@@ -168,7 +164,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         response = self._client._prepared_request(request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
-        return maybe_parse_to_pydantic(schema, DocumentExtractResponse.model_validate(response))
+        return maybe_parse_to_pydantic(schema, UiParsedChatCompletion.model_validate(response))
 
     @as_context_manager
     def stream(
@@ -183,7 +179,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         n_consensus: int = 1,
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> Generator[DocumentExtractResponseStream, None, None]:
+    ) -> Generator[UiParsedChatCompletion, None, None]:
         """
         Process a document using the UiForm API with streaming enabled.
 
@@ -214,12 +210,47 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         schema = Schema(json_schema=load_json_schema(json_schema))
 
         # Request the stream and return a context manager
-        chunk_json: Any = None
+        current_content: str = ""
+        flatten_likelihoods: dict[str, float] = {}
+        ui_parsed_chat_completion_chunk: UiParsedChatCompletionChunk | None = None
+        # Initialize the UiParsedChatCompletion object
+        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
+            id="",
+            created=0,
+            model="",
+            object="chat.completion",
+            likelihoods=unflatten_dict(flatten_likelihoods),
+            choices=[
+                UiParsedChoice(
+                    index=0,
+                    message=ParsedChatCompletionMessage(content=current_content, role="assistant"),
+                    finish_reason=None,
+                    logprobs=None,
+                )
+            ],
+        )
         for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
-        yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))
+            ui_parsed_chat_completion_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json)
+            # Basic stuff
+            ui_parsed_completion.id = ui_parsed_chat_completion_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
+            
+            # Accumulate the content and likelihoods
+            current_content += ui_parsed_chat_completion_chunk.choices[0].delta.content or ""
+            flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.likelihoods}
+            
+            # Update the ui_parsed_completion object
+            ui_parsed_completion.choices[0].message.content = current_content
+            ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
+
+            yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
+        
+        # change the finish_reason to stop
+        ui_parsed_completion.choices[0].finish_reason = "stop"
+        yield maybe_parse_to_pydantic(schema, ui_parsed_completion)
 
     def log(
         self,
@@ -267,7 +298,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         n_consensus: int = 1,
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> DocumentExtractResponse:
+    ) -> UiParsedChatCompletion:
         """
         Extract structured data from a document asynchronously.
 
@@ -288,7 +319,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key)
         response = await self._client._prepared_request(request)
         schema = Schema(json_schema=load_json_schema(json_schema))
-        return maybe_parse_to_pydantic(schema, DocumentExtractResponse.model_validate(response))
+        return maybe_parse_to_pydantic(schema, UiParsedChatCompletion.model_validate(response))
 
     @as_async_context_manager
     async def stream(
@@ -303,7 +334,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         n_consensus: int = 1,
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> AsyncGenerator[DocumentExtractResponseStream, None]:
+    ) -> AsyncGenerator[UiParsedChatCompletion, None]:
         """
         Extract structured data from a document asynchronously with streaming.
 
@@ -329,14 +360,47 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         """
         request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key)
         schema = Schema(json_schema=load_json_schema(json_schema))
-        chunk_json: Any = None
+        current_content: str = ""
+        flatten_likelihoods: dict[str, float] = {}
+        ui_parsed_chat_completion_chunk: UiParsedChatCompletionChunk | None = None
+        # Initialize the UiParsedChatCompletion object
+        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
+            id="",
+            created=0,
+            model="",
+            object="chat.completion",
+            likelihoods=unflatten_dict(flatten_likelihoods),
+            choices=[
+                UiParsedChoice(
+                    index=0,
+                    message=ParsedChatCompletionMessage(content=current_content, role="assistant"),
+                    finish_reason=None,
+                    logprobs=None,
+                )
+            ],
+        )
         async for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
+            ui_parsed_chat_completion_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json)
+            # Basic stuff
+            ui_parsed_completion.id = ui_parsed_chat_completion_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
             
-            yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json), allow_partial=True)
-        # Last chunk with full parsed response
-        yield maybe_parse_to_pydantic(schema, DocumentExtractResponseStream.model_validate(chunk_json))
+            # Accumulate the content and likelihoods
+            current_content += ui_parsed_chat_completion_chunk.choices[0].delta.content or ""
+            flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.likelihoods}
+            
+            # Update the ui_parsed_completion object
+            ui_parsed_completion.choices[0].message.content = current_content
+            ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
+
+            yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
+        
+        # change the finish_reason to stop
+        ui_parsed_completion.choices[0].finish_reason = "stop"
+        yield maybe_parse_to_pydantic(schema, ui_parsed_completion)
 
     async def log(
         self,

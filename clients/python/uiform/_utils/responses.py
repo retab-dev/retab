@@ -5,7 +5,7 @@ from jiter import from_json
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam, ImageURL
 from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
 from openai.types.chat.chat_completion_content_part_text_param import ChatCompletionContentPartTextParam
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage, ParsedChoice
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from openai.types.completion_usage import CompletionTokensDetails, CompletionUsage, PromptTokensDetails
 from openai.types.responses.easy_input_message_param import EasyInputMessageParam
 
@@ -17,7 +17,7 @@ from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.responses.response_input_text_param import ResponseInputTextParam
 
 from ..types.chat import ChatCompletionUiformMessage
-from ..types.documents.extractions import UiParsedChatCompletion
+from ..types.documents.extractions import UiParsedChatCompletion, UiParsedChoice
 
 
 def convert_to_openai_format(messages: list[ChatCompletionUiformMessage]) -> list[ResponseInputItemParam]:
@@ -142,7 +142,7 @@ def parse_openai_responses_response(response: Response) -> UiParsedChatCompletio
     result_object = from_json(bytes(output_text, "utf-8"), partial_mode=True)  # Attempt to parse the result even if EOF is reached
 
     choices.append(
-        ParsedChoice(
+        UiParsedChoice(
             index=0,
             message=ParsedChatCompletionMessage(
                 role="assistant",
