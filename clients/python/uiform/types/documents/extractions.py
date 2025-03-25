@@ -22,7 +22,8 @@ from anthropic.types.message_param import MessageParam
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.responses.response import Response
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, Choice as ChoiceChunk, ChoiceDelta as ChoiceDeltaChunk
+
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -176,18 +177,19 @@ class LogExtractionResponse(BaseModel):
 # - is_valid_json: list[bool]               #  Whether the total accumulated content is a valid JSON
 # - likelihoods: dict[str, float]     #  The delta of the flattened likelihoods (to be merged with the cumulated likelihoods)
 # - schema_validation_error: ErrorDetail | None = None #  The error in the schema validation of the total accumulated content
-class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
-    # Make all fields with a default value to easily build the object from a ChatCompletionChunk
-    likelihoods: dict[str, float] = {}
-    # We do this to avoid modifying OpenAI's Choice object
-    missing_content: list[str] = [""]
-    is_valid_json: list[bool] = [False]
-    schema_validation_error: ErrorDetail | None = None
 
+class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
+    flat_likelihoods: dict[str, float] = {}
+    flat_parsed: dict[str, Any] = {}
+    missing_content: str = ""
+    is_valid_json: bool = False
+class UiParsedChoiceChunk(ChoiceChunk):
+    delta: UiParsedChoiceDeltaChunk
+
+class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
+    choices: list[UiParsedChoiceChunk]
+    schema_validation_error: ErrorDetail | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
-
-# DocumentExtractResponseStream = UiParsedChatCompletionStream
-# DocumentExtractResponseStream = UiParsedChatCompletionStream
