@@ -1,4 +1,5 @@
 from io import IOBase
+import json
 from pathlib import Path
 from typing import Any, AsyncGenerator, Generator, Optional
 from pydantic import HttpUrl
@@ -210,7 +211,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         schema = Schema(json_schema=load_json_schema(json_schema))
 
         # Request the stream and return a context manager
-        current_content: str = ""
+        flatten_parsed: dict[str, Any] = {}
         flatten_likelihoods: dict[str, float] = {}
         ui_parsed_chat_completion_chunk: UiParsedChatCompletionChunk | None = None
         # Initialize the UiParsedChatCompletion object
@@ -223,7 +224,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             choices=[
                 UiParsedChoice(
                     index=0,
-                    message=ParsedChatCompletionMessage(content=current_content, role="assistant"),
+                    message=ParsedChatCompletionMessage(content="", role="assistant"),
                     finish_reason=None,
                     logprobs=None,
                 )
@@ -239,11 +240,13 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
             
             # Accumulate the content and likelihoods
-            current_content += ui_parsed_chat_completion_chunk.choices[0].delta.content or ""
-            flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.likelihoods}
+            flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
+            flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
             
             # Update the ui_parsed_completion object
-            ui_parsed_completion.choices[0].message.content = current_content + ui_parsed_chat_completion_chunk.missing_content[0]
+            parsed = unflatten_dict(flatten_parsed)
+            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
+            ui_parsed_completion.choices[0].message.parsed = parsed
             ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
 
             yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
@@ -360,7 +363,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         """
         request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key)
         schema = Schema(json_schema=load_json_schema(json_schema))
-        current_content: str = ""
+        flatten_parsed: dict[str, Any] = {}
         flatten_likelihoods: dict[str, float] = {}
         ui_parsed_chat_completion_chunk: UiParsedChatCompletionChunk | None = None
         # Initialize the UiParsedChatCompletion object
@@ -369,11 +372,11 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             created=0,
             model="",
             object="chat.completion",
-            likelihoods=unflatten_dict(flatten_likelihoods),
+            likelihoods={},
             choices=[
                 UiParsedChoice(
                     index=0,
-                    message=ParsedChatCompletionMessage(content=current_content, role="assistant"),
+                    message=ParsedChatCompletionMessage(content="", role="assistant"),
                     finish_reason=None,
                     logprobs=None,
                 )
@@ -389,11 +392,13 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
             
             # Accumulate the content and likelihoods
-            current_content += ui_parsed_chat_completion_chunk.choices[0].delta.content or ""
-            flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.likelihoods}
+            flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
+            flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
             
             # Update the ui_parsed_completion object
-            ui_parsed_completion.choices[0].message.content = current_content + ui_parsed_chat_completion_chunk.missing_content[0]
+            parsed = unflatten_dict(flatten_parsed)
+            ui_parsed_completion.choices[0].message.parsed = parsed
+            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
             ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
 
             yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
