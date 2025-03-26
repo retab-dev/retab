@@ -15,7 +15,8 @@ import datetime
 from email_validator import validate_email
 import pycountry
 import re
-from .mime import generate_blake2b_hash_from_string
+from uiform._utils.mime import generate_blake2b_hash_from_string
+from uiform.types.schemas.layout import Layout, Column, Row, RowList, FieldItem, RefObject
 # **** Validation Functions ****
 
 # 1) Special Objects
@@ -387,20 +388,33 @@ def merge_descriptions(outer_schema: dict[str, Any], inner_schema: dict[str, Any
     merged = copy.deepcopy(inner_schema)
 
     # Outer description preferred if present
-    if "description" in outer_schema:
+    if outer_schema.get("description", "").strip():
         merged["description"] = outer_schema["description"]
 
     # Outer reasoning preferred if present
-    if "X-ReasoningPrompt" in outer_schema:
+    if outer_schema.get("X-ReasoningPrompt", "").strip():
         merged["X-ReasoningPrompt"] = outer_schema["X-ReasoningPrompt"]
-    elif "X-ReasoningPrompt" in inner_schema:
+    elif inner_schema.get("X-ReasoningPrompt", "").strip():
         merged["X-ReasoningPrompt"] = inner_schema["X-ReasoningPrompt"]
+
+    if not merged.get("X-ReasoningPrompt", "").strip():
+        # delete it
+        merged.pop("X-ReasoningPrompt", None)
     
     # Outer LLM Description preferred if present
-    if "X-FieldPrompt" in outer_schema:
+    if outer_schema.get("X-FieldPrompt", "").strip():
         merged["X-FieldPrompt"] = outer_schema["X-FieldPrompt"]
-    elif "X-FieldPrompt" in inner_schema:
+    elif inner_schema.get("X-FieldPrompt", "").strip():
         merged["X-FieldPrompt"] = inner_schema["X-FieldPrompt"]
+
+    if not merged.get("X-FieldPrompt", "").strip():
+        # delete it
+        merged.pop("X-FieldPrompt", None)
+
+    # System-Prompt
+    if not merged.get("X-SystemPrompt", "").strip():
+        # delete it
+        merged.pop("X-SystemPrompt", None)
 
     return merged
 
@@ -442,33 +456,33 @@ def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] |
             raise ValueError(f"Unsupported reference format: {ref}")
 
     result: dict[str, Any] = {}
-    for k, v in schema.items():
-        if k in ["properties", "$defs"]:
-            if isinstance(v, dict):
+    for annotation, subschema in schema.items():
+        if annotation in ["properties", "$defs"]:
+            if isinstance(subschema, dict):
                 new_dict = {}
-                for pk, pv in v.items():
+                for pk, pv in subschema.items():
                     new_dict[pk] = expand_refs(pv, definitions)
-                result[k] = new_dict
+                result[annotation] = new_dict
             else:
-                result[k] = v
-        elif k == "items":
-            if isinstance(v, list):
-                result[k] = [expand_refs(item, definitions) for item in v]
+                result[annotation] = subschema
+        elif annotation == "items":
+            if isinstance(subschema, list):
+                result[annotation] = [expand_refs(item, definitions) for item in subschema]
             else:
-                result[k] = expand_refs(v, definitions)
+                result[annotation] = expand_refs(subschema, definitions)
         else:
-            if isinstance(v, dict):
-                result[k] = expand_refs(v, definitions)
-            elif isinstance(v, list):
+            if isinstance(subschema, dict):
+                result[annotation] = expand_refs(subschema, definitions)
+            elif isinstance(subschema, list):
                 new_list = []
-                for item in v:
+                for item in subschema:
                     if isinstance(item, dict):
                         new_list.append(expand_refs(item, definitions))
                     else:
                         new_list.append(item)
-                result[k] = new_list
+                result[annotation] = new_list
             else:
-                result[k] = v
+                result[annotation] = subschema
 
     return result
 
@@ -720,8 +734,7 @@ def clean_schema(
     fields_to_remove: list[str] = ["default", "minlength", "maxlength"]
 ) -> dict[str, Any]:
     """
-    Recursively remove all default values from a JSON schema,
-    as well as minLength and maxLength fields.
+    Recursively remove specified fields from a JSON schema.
 
     Args:
         schema: The JSON schema to be cleaned.
@@ -737,7 +750,7 @@ def clean_schema(
             # Make sure we're only removing keys that are strings.
             continue
         lower_key = key.lower()
-        if lower_key in fields_to_remove or key in fields_to_remove:
+        if lower_key in [f.lower() for f in fields_to_remove] or key in fields_to_remove:
             schema.pop(key)
         if remove_custom_fields and lower_key.startswith("x-"):
             schema.pop(key)
@@ -818,11 +831,32 @@ def _insert_reasoning_fields_inner(schema: dict[str, Any]) -> tuple[dict[str, An
                 new_defs[dk] = updated_def_schema
             schema["$defs"] = new_defs
 
-    elif node_type == "array":
+    elif node_type == "array" and "items" in schema:
         # Recurse into items if present
-        if "items" in schema:
-            updated_items, _ = _insert_reasoning_fields_inner(schema["items"])
-            schema["items"] = updated_items
+        updated_items, item_reasoning = _insert_reasoning_fields_inner(schema["items"])
+        schema["items"] = updated_items
+        
+        # If the item schema has a reasoning prompt, create a reasoning field inside the item
+        if item_reasoning and updated_items.get("type") == "object":
+            # Create reasoning field for array items
+            if "properties" not in updated_items:
+                updated_items["properties"] = {}
+                
+            # Add the reasoning field as first property
+            reasoning_key = "reasoning___item"
+            new_properties = {reasoning_key: {"type": "string", "description": item_reasoning}}
+            
+            # Add the rest of the properties
+            for key, value in updated_items["properties"].items():
+                new_properties[key] = value
+                
+            updated_items["properties"] = new_properties
+            
+            # Add to required if we have required fields
+            if "required" in updated_items:
+                updated_items["required"].insert(0, reasoning_key)
+            else:
+                updated_items["required"] = [reasoning_key]
 
     return schema, reasoning_desc
 
@@ -856,6 +890,7 @@ def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
     # Resolve refs first to get expanded schema
     definitions = raw_schema.get("$defs", {})
     resolved = expand_refs(copy.deepcopy(raw_schema), definitions)
+    resolved.pop("$defs", None)
 
     expanded_schema = copy.deepcopy(resolved)
 
@@ -1622,8 +1657,6 @@ def get_all_paths(schema: dict[str, Any]) -> list[str]:
     return paths
 
 
-
-from ..types.schemas.layout import Layout, Column, Row, RowList, FieldItem, RefObject
 
 def convert_schema_to_layout(schema: dict[str, Any]) -> Layout:
     """
