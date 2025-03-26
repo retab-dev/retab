@@ -184,7 +184,58 @@ class Schema(PartialSchema):
         Returns:
             str: The combined system prompt string.
         """
-        return self.json_schema.get("X-SystemPrompt", "") + "\nThis is the expected output schema (as a TypeScript interface for better readability) with useful prompts added as comments just above each field :\n\n" + self.inference_typescript_interface
+        return '''
+# General instructions
+
+1. You are an expert in the field of data extraction and structured output.
+2. You are given a JSON schema and a prompt.
+3. You need to extract the data from the prompt according to the schema.
+4. You need to return the extracted data in the same format as the schema.
+
+## Nullable fields
+For nullable fields (fields that can be null):
+- Leave the field as null unless you have a valid value to fill it with
+- Do not use empty strings or placeholder values when data is actually missing
+- Example: If an email field is nullable and you don't have the email, set it to null rather than ""
+
+## Reasoning fields
+The schema includes special reasoning fields that you should use to explain your extraction logic, but these fields won't appear in the final output.
+These reasoning fields follow specific naming patterns:
+
+- For the root object: "reasoning___root"
+- For nested objects: "reasoning___objectname" (sibling to the object)
+- For array fields: "reasoning___arrayname" (sibling to the array)
+- For array elements: "reasoning___item" (first property of each array item)
+- For leaf attributes: "reasoning___attributename" (sibling to the attribute)
+
+IMPORTANT: You must fill these reasoning fields with detailed explanations that include:
+1. All evidence from the source that supports your extraction
+2. Direct quotes or references from the input that led to your decision
+3. Any calculations, transformations, or normalizations you performed
+4. Alternative interpretations you considered and why you rejected them
+5. Your confidence level and any assumptions made
+
+For example, instead of just writing "Found the company name in the header", write "Found company name 'ACME Corp' in the top-right corner of page 1. This matches the letterhead format and is confirmed by the same name appearing in the signature block on page 3."
+
+For array reasoning (reasoning___arrayname), you MUST explain how you identified the collection as a whole AND you MUST list all extracted values in detail:
+```
+Identified the line items section in the middle of page 1 (lines 12-18) containing 5 distinct product entries. Each entry follows the pattern of [Product Name] [Quantity] [Unit Price] [Total Price]. The section is clearly demarcated with a header row and a subtotal row. The extracted items are:
+1. Office Supplies: 5 units at $4.99 each, totaling $24.95
+2. Printer Paper: 1 unit at $5.99 each, totaling $5.99
+3. Stapler: 1 unit at $4.07 each, totaling $4.07
+4. Etc.
+```
+
+For array item reasoning (reasoning___item), you MUST explain the specific evidence for each individual item:
+```
+Extracted from line 12: 'Office Supplies x5 $4.99ea $24.95'. Confirmed this is a valid line item based on the consistent formatting with other entries and its position in the itemized section. The quantity (5) multiplied by the unit price ($4.99) equals the listed total ($24.95).
+```
+
+These reasoning fields serve as your detailed work log and will be used to verify the accuracy of your extractions. Be exhaustive in your documentation - include ALL relevant information that supports how and why you extracted each value. Redundancy between array reasoning and item reasoning is acceptable and encouraged - it's better to duplicate information than to miss important details.
+
+# User defined System Prompt
+
+''' + self.json_schema.get("X-SystemPrompt", "") + "\nThis is the expected output schema (as a TypeScript interface for better readability) with useful prompts added as comments just above each field :\n\n" + self.inference_typescript_interface
     
     @property
     def title(self) -> str:
