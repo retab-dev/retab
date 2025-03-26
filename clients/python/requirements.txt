@@ -36,6 +36,7 @@ pandas
 numpy
 motor
 rich
+puremagic
 
 ########################
 ## Validation dependencies
