@@ -4,12 +4,12 @@ from io import IOBase
 import PIL.Image
 
 from ..types.schemas.generate import GenerateSchemaRequest
-from ..types.schemas.object import Schema, PartialSchemaStreaming
+from ..types.schemas.object import Schema, PartialSchemaChunk, PartialSchema
 from ..types.schemas.promptify import PromptifyRequest
 from ..types.modalities import Modality
 from .._resource import SyncAPIResource, AsyncAPIResource
 
-from .._utils.json_schema import load_json_schema
+from .._utils.json_schema import load_json_schema, unflatten_dict
 from .._utils.mime import prepare_mime_document_list
 from .._utils.ai_models import assert_valid_model_schema_generation
 from ..types.standards import PreparedRequest
@@ -123,21 +123,35 @@ class Schemas(SyncAPIResource, SchemasMixin):
                          documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
                          model: str = "gpt-4o-2024-08-06",
                          temperature: float = 0,
-                         modality: Modality = "native") -> Generator[PartialSchemaStreaming | Schema, None, None]:
+                         modality: Modality = "native") -> Generator[PartialSchema | Schema, None, None]:
         prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality, stream=True)
         chunk_json: Any = None
+        flat_json_schema = {}
+        
         for chunk_json in self._client._prepared_request_stream(prepared_request):
             if not chunk_json:
                 continue
-            yield PartialSchemaStreaming.model_validate(chunk_json)
-        # The last chunk should be the full schema object
-        yield Schema.model_validate(chunk_json)
-
+            
+            schema_chunk = PartialSchemaChunk.model_validate(chunk_json)
+            
+            # Accumulate the delta updates
+            flat_json_schema = {**flat_json_schema, **schema_chunk.delta_json_schema_flat}
+            
+            # Unflatten the schema to get proper nested structure
+            json_schema = unflatten_dict(flat_json_schema)
+            
+            # Yield a PartialSchema with the current accumulated state
+            yield PartialSchema(json_schema=json_schema)
+        
+        # The last chunk should yield the full schema object
+        if chunk_json:
+            final_schema = Schema(json_schema=unflatten_dict(flat_json_schema))
+            yield final_schema
 
     def generate(self,
                 documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
                 model: str = "gpt-4o-2024-11-20",
-                temperature: float = 0.0,
+                temperature: float = 0,
                 modality: Modality = "native",
                 flat: bool = False) -> Schema:
         """
@@ -168,14 +182,30 @@ class Schemas(SyncAPIResource, SchemasMixin):
                         model: str = "gpt-4o-2024-11-20",
                         temperature: float = 0.0,
                         modality: Modality = "native",
-                        flat: bool = False) -> Generator[PartialSchemaStreaming | Schema, None, None]:
+                        flat: bool = False) -> Generator[PartialSchema | Schema, None, None]:
         prepared_request = self.prepare_generate(documents, model, temperature, modality, flat, stream=True)
+        chunk_json: Any = None
+        flat_json_schema = {}
+        
         for chunk_json in self._client._prepared_request_stream(prepared_request):
             if not chunk_json:
                 continue
-            yield PartialSchemaStreaming.model_validate(chunk_json)
-        # The last chunk should be the full schema object
-        yield Schema.model_validate(chunk_json)
+            
+            schema_chunk = PartialSchemaChunk.model_validate(chunk_json)
+            
+            # Accumulate the delta updates
+            flat_json_schema = {**flat_json_schema, **schema_chunk.delta_json_schema_flat}
+            
+            # Unflatten the schema to get proper nested structure
+            json_schema = unflatten_dict(flat_json_schema)
+            
+            # Yield a PartialSchema with the current accumulated state
+            yield PartialSchema(json_schema=json_schema)
+        
+        # The last chunk should yield the full schema object
+        if chunk_json:
+            final_schema = Schema(json_schema=unflatten_dict(flat_json_schema))
+            yield final_schema
 
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     """Schemas Asyncronous API wrapper"""
@@ -242,14 +272,30 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
                              model: str = "gpt-4o-2024-11-20",
                              temperature: float = 0.0,
                              modality: Modality = "native",
-                             flat: bool = False) -> AsyncGenerator[PartialSchemaStreaming | Schema, None]:
+                             flat: bool = False) -> AsyncGenerator[PartialSchema | Schema, None]:
         prepared_request = self.prepare_generate(documents, model, temperature, modality, flat, stream=True)
+        chunk_json: Any = None
+        flat_json_schema = {}
+        
         async for chunk_json in self._client._prepared_request_stream(prepared_request):
             if not chunk_json:
                 continue
-            yield PartialSchemaStreaming.model_validate(chunk_json)
-        # The last chunk should be the full schema object
-        yield Schema.model_validate(chunk_json)
+            
+            schema_chunk = PartialSchemaChunk.model_validate(chunk_json)
+            
+            # Accumulate the delta updates
+            flat_json_schema = {**flat_json_schema, **schema_chunk.delta_json_schema_flat}
+            
+            # Unflatten the schema to get proper nested structure
+            json_schema = unflatten_dict(flat_json_schema)
+            
+            # Yield a PartialSchema with the current accumulated state
+            yield PartialSchema(json_schema=json_schema)
+        
+        # The last chunk should yield the full schema object
+        if chunk_json:
+            final_schema = Schema(json_schema=unflatten_dict(flat_json_schema))
+            yield final_schema
 
     @as_async_context_manager
     async def promptify_stream(self,
@@ -257,11 +303,27 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
                              documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
                              model: str = "gpt-4o-2024-08-06",
                              temperature: float = 0,
-                             modality: Modality = "native") -> AsyncGenerator[PartialSchemaStreaming | Schema, None]:
+                             modality: Modality = "native") -> AsyncGenerator[PartialSchema | Schema, None]:
         prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality, stream=True)
+        chunk_json: Any = None
+        flat_json_schema = {}
+        
         async for chunk_json in self._client._prepared_request_stream(prepared_request):
             if not chunk_json:
                 continue
-            yield PartialSchemaStreaming.model_validate(chunk_json)
-        # The last chunk should be the full schema object
-        yield Schema.model_validate(chunk_json)
+            
+            schema_chunk = PartialSchemaChunk.model_validate(chunk_json)
+            
+            # Accumulate the delta updates
+            flat_json_schema = {**flat_json_schema, **schema_chunk.delta_json_schema_flat}
+            
+            # Unflatten the schema to get proper nested structure
+            json_schema = unflatten_dict(flat_json_schema)
+            
+            # Yield a PartialSchema with the current accumulated state
+            yield PartialSchema(json_schema=json_schema)
+        
+        # The last chunk should yield the full schema object
+        if chunk_json:
+            final_schema = Schema(json_schema=unflatten_dict(flat_json_schema))
+            yield final_schema

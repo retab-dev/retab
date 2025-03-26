@@ -25,7 +25,12 @@ class PartialSchema(BaseModel):
     json_schema: dict[str, Any] = {}
 
 
-class PartialSchemaStreaming(StreamingBaseModel, PartialSchema): pass
+class PartialSchemaChunk(StreamingBaseModel):
+    object: Literal["schema.chunk"] = "schema.chunk"
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    delta_json_schema_flat: dict[str, Any] = {}
+
+# class PartialSchemaStreaming(StreamingBaseModel, PartialSchema): pass
 
 class Schema(PartialSchema):
     """A full Schema object with validation."""
