@@ -240,9 +240,10 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
             
             # Accumulate the content and likelihoods
-            flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
-            flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
-            
+            if ui_parsed_chat_completion_chunk.choices:
+                flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
+                flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
+                
             # Update the ui_parsed_completion object
             parsed = unflatten_dict(flatten_parsed)
             ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
@@ -392,8 +393,9 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
             
             # Accumulate the content and likelihoods
-            flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
-            flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
+            if ui_parsed_chat_completion_chunk.choices:
+                flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
+                flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
             
             # Update the ui_parsed_completion object
             parsed = unflatten_dict(flatten_parsed)

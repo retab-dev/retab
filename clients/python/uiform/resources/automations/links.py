@@ -82,7 +82,7 @@ class LinksMixin:
             "after": after,
             "limit": limit,
             "order": order,
-            "link_id": link_id,
+            "automation_id": link_id,
             "name": name,
             "webhook_url": webhook_url,
             "schema_id": schema_id,
@@ -91,7 +91,7 @@ class LinksMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
         
-        return PreparedRequest(method="GET", url="/v1/automations/links", params=params)
+        return PreparedRequest(method="GET", url="/v1/automations", params=params)
 
     def prepare_get(self, link_id: str) -> PreparedRequest:
         """Get a specific extraction link configuration.
@@ -102,7 +102,7 @@ class LinksMixin:
         Returns:
             Link: The extraction link configuration
         """
-        return PreparedRequest(method="GET", url=f"/v1/automations/links/{link_id}")
+        return PreparedRequest(method="GET", url=f"/v1/automations/{link_id}")
 
     def prepare_update(
         self,
@@ -146,11 +146,11 @@ class LinksMixin:
             data["reasoning_effort"] = reasoning_effort
 
         request = UpdateLinkRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/automations/links/{link_id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/automations/{link_id}", data=request.model_dump(mode='json'))
 
 
     def prepare_delete(self, link_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/automations/links/{link_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/automations/links/{link_id}", raise_for_status=True)
 
     
 
@@ -184,7 +184,7 @@ class LinksMixin:
             ListLinkLogsResponse: Paginated list of logs and metadata
         """
         params = {
-            "link_id": link_id,
+            "automation_id": link_id,
             "name": name,
             "webhook_url": webhook_url,
             "schema_id": schema_id,
@@ -197,7 +197,7 @@ class LinksMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
         
-        return PreparedRequest(method="GET", url="/v1/automations/links/logs/", params=params)
+        return PreparedRequest(method="GET", url="/v1/automations/logs", params=params)
 
     
 

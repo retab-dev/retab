@@ -134,7 +134,7 @@ class MailBoxesMixin:
         return PreparedRequest(method="PUT", url=f"/v1/automations/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
 
     def prepare_delete(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/automations/mailboxes/{email}")
+        return PreparedRequest(method="DELETE", url=f"/v1/automations/mailboxes/{email}", raise_for_status=True)
 
     def prepare_logs(self, 
                 before: str | None = None,

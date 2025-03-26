@@ -7,7 +7,7 @@ import asyncio
 from typing import Literal, get_args, Any
 from pydantic import BaseModel
 from uiform import UiForm, AsyncUiForm
-from uiform.types.documents.extractions import DocumentExtractResponse, DocumentExtractResponseStream
+from uiform.types.documents.extractions import UiParsedChatCompletion
 
 
 # List of AI Providers to test
@@ -27,10 +27,10 @@ ResponseModeType = Literal[
 ]
 
 
-def validate_extraction_response(response: DocumentExtractResponse | DocumentExtractResponseStream | None) -> None:
+def validate_extraction_response(response: UiParsedChatCompletion | None) -> None:
     # Assert the instance
-    assert isinstance(response, (DocumentExtractResponse, DocumentExtractResponseStream)), (
-        f"Response should be of type DocumentExtractResponse or DocumentExtractResponseStream, received {type(response)}"
+    assert isinstance(response, UiParsedChatCompletion), (
+        f"Response should be of type UiParsedChatCompletion, received {type(response)}"
     )
 
     # Assert the response content is not None
@@ -42,7 +42,6 @@ def validate_extraction_response(response: DocumentExtractResponse | DocumentExt
         assert False, "Response content should be a valid JSON object"
     # Assert that the response.choices[0].message.parsed is a valid pydantic BaseModel instance
     assert isinstance(response.choices[0].message.parsed, BaseModel), "Response parsed should be a valid pydantic BaseModel instance"
-
 
 # Test the extraction endpoint
 async def base_test_extract(
@@ -57,7 +56,7 @@ async def base_test_extract(
     json_schema = booking_confirmation_json_schema
     document = booking_confirmation_file_path
     modality: Literal["text"] = "text"
-    response: DocumentExtractResponse | DocumentExtractResponseStream | None = None
+    response: UiParsedChatCompletion | None = None
     # Wait a random amount of time between 0 and 2 seconds (to avoid sending multiple requests to the same provider at the same time)
     if client_type == "sync":
         with sync_client as client:
@@ -201,7 +200,17 @@ async def test_extraction_with_idempotency_exceptions(
     # Now we will validate some exception scenarios
     idempotency_key = str(nanoid.generate())
     loading_request = client.documents.extractions.prepare_extraction(
-        booking_confirmation_json_schema, booking_confirmation_file_path, None, "gpt-4o-mini", 0, "native", False, idempotency_key=idempotency_key
+        json_schema=booking_confirmation_json_schema,
+        document=booking_confirmation_file_path,
+        image_settings=None,
+        model="gpt-4o-mini",
+        temperature=0,
+        modality="native",
+        reasoning_effort="medium",
+        stream=False,
+        n_consensus=1,
+        store=False,
+        idempotency_key=idempotency_key,
     )
     assert loading_request.data is not None, "Loading request should not be None"
 
