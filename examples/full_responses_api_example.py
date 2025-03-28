@@ -58,7 +58,7 @@ client = OpenAI()
 response = client.responses.create(
     model = model,
     temperature = temperature,
-    input = schema_obj.openai_messages + doc_msg.openai_messages, # type: ignore
+    input = schema_obj.openai_messages + doc_msg.openai_messages,
     text ={
         "format": {
             "type": "json_schema",
