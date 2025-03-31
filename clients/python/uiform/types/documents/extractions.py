@@ -103,12 +103,14 @@ class UiParsedChoice(ParsedChoice):
    # Adaptable ParsedChoice that allows None for the finish_reason
    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore    
 
+LikelihoodsSource = Literal["consensus", "log_probs"]
+
 class UiParsedChatCompletion(ParsedChatCompletion):
     choices: list[UiParsedChoice]
     # Additional metadata fields (UIForm)
     likelihoods: Any # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
     schema_validation_error: ErrorDetail | None = None
-    
+    likelihoods_source : LikelihoodsSource = "log_probs"
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
@@ -189,6 +191,7 @@ class UiParsedChoiceChunk(ChoiceChunk):
 class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     choices: list[UiParsedChoiceChunk]
     schema_validation_error: ErrorDetail | None = None
+    likelihoods_source : LikelihoodsSource = "log_probs"
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")

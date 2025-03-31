@@ -42,6 +42,7 @@ class AutomationConfig(BaseModel):
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
     reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
     need_validation:bool = Field(default=False, description="If the automation needs to be validated before running")
+    n_consensus: int  = Field(default=1, description="Number of consensus required to validate the data")
     @computed_field   # type: ignore
     @property
     def schema_data_id(self) -> str:
@@ -90,7 +91,7 @@ class UpdateAutomationRequest(BaseModel):
     json_schema: Optional[Dict] = None
     reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
     need_validation: Optional[bool] = None
-
+    n_consensus: Optional[int] = None
     @field_serializer('webhook_url')
     def url2str(self, val: HttpUrl | None) -> str | None:
         if isinstance(val, HttpUrl):
