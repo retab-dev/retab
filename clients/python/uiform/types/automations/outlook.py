@@ -51,7 +51,7 @@ class Outlook(AutomationConfig):
     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     model: str = Field(..., description="Model used for chat completion")
     reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
-    
+    n_consensus: int  = Field(default=1, description="Number of consensus required to validate the data")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     layout_schema: Optional[Layout] = Field(default=None, description="Layout schema format used to display the data")
 
