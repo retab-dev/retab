@@ -1,0 +1,3 @@
+git+https://github.com/UiForm/uiform.git@main#subdirectory=clients/python
+mcp
+httpx
