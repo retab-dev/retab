@@ -58,15 +58,15 @@ client = OpenAI()
 response = client.responses.create(
     model = model,
     temperature = temperature,
-    input = schema_obj.openai_messages + doc_msg.openai_messages,
-    text ={
+    input = schema_obj.openai_responses_input + doc_msg.openai_responses_input,
+    text = {
         "format": {
             "type": "json_schema",
             "name": schema_obj.id,
             "schema": schema_obj.inference_json_schema,
             "strict": True
-            }
         }
+    }
 )
 
 # Validate the response - updated to use the new response format
