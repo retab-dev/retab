@@ -1,0 +1,14 @@
+[project]
+name = "python"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp>=1.6.0",
+    "uiform",
+]
+
+[tool.uv.sources]
+uiform = { git = "https://github.com/UiForm/uiform.git", subdirectory = "clients/python", rev = "main" }
