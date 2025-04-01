@@ -1,5 +1,6 @@
 from .._resource import SyncAPIResource, AsyncAPIResource
 from ..types.standards import PreparedRequest
+from openai.types.model import Model
 
 class ModelsMixin:
     def prepare_list(self) -> PreparedRequest:
@@ -11,7 +12,7 @@ class ModelsMixin:
 class Models(SyncAPIResource, ModelsMixin): 
     """Models API wrapper"""
 
-    def list(self) -> list[str]:
+    def list(self) -> list[Model]:
         """
         List all available models.
         
@@ -22,13 +23,14 @@ class Models(SyncAPIResource, ModelsMixin):
         """
 
         request = self.prepare_list()
-        return self._client._prepared_request(request)
+        output = self._client._prepared_request(request)
+        return [Model(**model) for model in output["data"]]
 
     
 class AsyncModels(AsyncAPIResource, ModelsMixin): 
     """Models Asyncronous API wrapper"""
     
-    async def list(self) -> list[str]:
+    async def list(self) -> list[Model]:
         """
         List all available models.
         
@@ -39,4 +41,5 @@ class AsyncModels(AsyncAPIResource, ModelsMixin):
         """
 
         request = self.prepare_list()
-        return await self._client._prepared_request(request)
+        output = await self._client._prepared_request(request)
+        return [Model(**model) for model in output["data"]]
