@@ -15,7 +15,7 @@
 # functools
 # base64
 # hashlib
-# PIL
+Pillow
 # io
 # math
 # time
