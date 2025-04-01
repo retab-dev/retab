@@ -56,6 +56,20 @@ class SchemasMixin:
         GenerateSchemaRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/generate", data=data)
 
+    def prepare_system_prompt(self, raw_schema: dict[str, Any] | Path | str, documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image], model: str = "gpt-4o-2024-11-20", temperature: float = 0, modality: Modality = "native", stream: bool = False) -> PreparedRequest:
+        assert_valid_model_schema_generation(model)
+        mime_documents = prepare_mime_document_list(documents)
+        data = {
+            "raw_schema": raw_schema,
+            "documents": [doc.model_dump() for doc in mime_documents],
+            "model": model,
+            "temperature": temperature,
+            "modality": modality,
+            "stream": stream
+        }
+        PromptifyRequest.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/schemas/system_prompt", data=data)
+
 class Schemas(SyncAPIResource, SchemasMixin):
     """Schemas API wrapper"""
 
@@ -207,6 +221,28 @@ class Schemas(SyncAPIResource, SchemasMixin):
             final_schema = Schema(json_schema=unflatten_dict(flat_json_schema))
             yield final_schema
 
+    def system_prompt(self,
+                      raw_schema: dict[str, Any] | Path | str,
+                      documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
+                      model: str = "gpt-4o-2024-11-20",
+                      temperature: float = 0,
+                      modality: Modality = "native",
+                      stream: bool = False) -> str:
+        prepared_request = self.prepare_system_prompt(raw_schema, documents, model, temperature, modality, stream)
+        response = self._client._prepared_request(prepared_request)
+        return response
+
+    @as_context_manager
+    def system_prompt_stream(self,
+                            raw_schema: dict[str, Any] | Path | str,
+                            documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
+                            model: str = "gpt-4o-2024-11-20",
+                            temperature: float = 0,
+                            modality: Modality = "native") -> Generator[str, None, None]:
+        prepared_request = self.prepare_system_prompt(raw_schema, documents, model, temperature, modality, stream=True)
+        for chunk in self._client._prepared_request_stream(prepared_request):
+            yield chunk
+
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     """Schemas Asyncronous API wrapper"""
     async def promptify(self,
@@ -327,3 +363,25 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         if chunk_json:
             final_schema = Schema(json_schema=unflatten_dict(flat_json_schema))
             yield final_schema
+
+    async def system_prompt(self,
+                      raw_schema: dict[str, Any] | Path | str,
+                      documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
+                      model: str = "gpt-4o-2024-11-20",
+                      temperature: float = 0,
+                      modality: Modality = "native",
+                      stream: bool = False) -> str:
+        prepared_request = self.prepare_system_prompt(raw_schema, documents, model, temperature, modality, stream)
+        response = await self._client._prepared_request(prepared_request)
+        return response
+
+    @as_async_context_manager
+    async def system_prompt_stream(self,
+                            raw_schema: dict[str, Any] | Path | str,
+                            documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
+                            model: str = "gpt-4o-2024-11-20",
+                            temperature: float = 0,
+                            modality: Modality = "native") -> AsyncGenerator[str, None]:    
+        prepared_request = self.prepare_system_prompt(raw_schema, documents, model, temperature, modality, stream=True)
+        async for chunk in self._client._prepared_request_stream(prepared_request):
+            yield chunk
