@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, computed_field, model_validator, PrivateAttr
-from typing import Any, Literal, cast, Self
+from typing import Any, Literal, cast, Self, Iterable
 from pathlib import Path
 import datetime
 import copy
@@ -9,10 +9,10 @@ from ..._utils.chat import convert_to_google_genai_format, convert_to_anthropic_
 from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
 from ..._utils.json_schema import json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema, generate_schema_data_id, generate_schema_id
 from ...types.standards import StreamingBaseModel
-
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
-from google.generativeai.types import content_types # type: ignore
+# from google.generativeai.types import content_types # type: ignore
+from google.genai.types import ContentUnionDict # type: ignore
 from ..chat import ChatCompletionUiformMessage
 
 from anthropic.types.message_param import MessageParam
@@ -130,14 +130,16 @@ class Schema(PartialSchema):
         """
         return convert_to_anthropic_format(self.messages)[1]
     
+
     @property
-    def gemini_messages(self) -> content_types.ContentsType:
+    def gemini_system_prompt(self) -> str:
+        return convert_to_google_genai_format(self.messages)[0]
+
+    @property
+    def gemini_messages(self) -> list[ContentUnionDict]:
         """Returns the messages formatted for Google's Gemini API.
-        
-        Returns:
-            content_types.ContentsType: Messages formatted for Gemini.
         """
-        return convert_to_google_genai_format(self.messages)
+        return convert_to_google_genai_format(self.messages)[1]
 
 
 
@@ -146,24 +148,39 @@ class Schema(PartialSchema):
         # Like OpenAI but does not accept "anyOf" typing, all fields must not be nullable
         inference_json_schema_ = copy.deepcopy(self.inference_json_schema)
         def remove_optional_types_rec(schema: dict[str, Any]) -> None:
-            if "properties" in schema:
-                for prop_schema in schema["properties"].values():
-                    remove_optional_types_rec(prop_schema)
-            if "items" in schema:
-                remove_optional_types_rec(schema["items"])
             if "$defs" in schema:
                 for def_schema in schema["$defs"].values():
                     remove_optional_types_rec(def_schema)
             if "anyOf" in schema:
                 any_of = schema.pop("anyOf")
-                # Get the non-nullable type
-                any_of_types = [s["type"] for s in any_of if s["type"] != "null"]
-                # Set the non-nullable type
-                if "type" not in schema and len(any_of_types) > 0:
-                    schema["type"] = any_of_types[0]
+                is_nullable = any(s.get("type") == "null" for s in any_of)
+                # Get the non-null subschemas
+                non_null_schemas = [s for s in any_of if s.get("type") != "null"]
+                
+                if non_null_schemas:
+                    subschema = non_null_schemas[0]
+                    remove_optional_types_rec(subschema)
+                    # Take the first non-null subschema and merge it into the parent schema
+                    schema.update(subschema)
+                else:
+                    raise ValueError("No non-null subschemas found within anyOf")
+                
+                if is_nullable and schema.get("type") not in ["object", "array"]:
+                    schema["nullable"] = True
+            
             if "allOf" in schema:
                 for allof_schema in schema["allOf"]:
                     remove_optional_types_rec(allof_schema)
+            
+            if "properties" in schema:
+                for prop_schema in schema["properties"].values():
+                    remove_optional_types_rec(prop_schema)
+                schema["propertyOrdering"] = list(schema["properties"].keys())
+            if "items" in schema:
+                remove_optional_types_rec(schema["items"])
+            # remove any additionalProperties key if present
+            schema.pop("additionalProperties", None)
+
         remove_optional_types_rec(inference_json_schema_)
         return inference_json_schema_
 

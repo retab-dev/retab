@@ -1,7 +1,7 @@
 
 
 from typing import get_args
-from ..types.ai_models import AIProvider, OpenAIModel#, AnthropicModel, xAI_Model, GeminiModel
+from ..types.ai_models import AIProvider, OpenAIModel, GeminiModel#, AnthropicModel, xAI_Model
 
 
 def find_provider_from_model(model: str) -> AIProvider:
@@ -16,8 +16,8 @@ def find_provider_from_model(model: str) -> AIProvider:
     #    return "Anthropic"
     #elif model in get_args(xAI_Model):
     #    return "xAI"
-    #elif model in get_args(GeminiModel):
-    #    return "Gemini"
+    elif model in get_args(GeminiModel):
+       return "Gemini"
     raise ValueError(f"Could not determine AI provider for model: {model}")
 
     
