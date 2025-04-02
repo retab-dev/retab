@@ -1,3 +1,4 @@
+import io
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
 from openai.types.chat.chat_completion_content_part_text_param import ChatCompletionContentPartTextParam
@@ -16,7 +17,9 @@ from anthropic.types.tool_result_block_param import ToolResultBlockParam
 import logging
 import base64
 import requests
+from PIL import Image
 from typing import Union, Literal, cast, List, Optional
+from google.genai.types import PartDict, BlobDict, ContentDict, ContentUnionDict # type: ignore
 
 from ..types.chat import ChatCompletionUiformMessage
 
@@ -25,7 +28,7 @@ MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 def convert_to_google_genai_format(
     messages: List[ChatCompletionUiformMessage]
-) -> content_types.ContentsType:
+) -> tuple[str, list[ContentUnionDict]]:
     """
     Converts a list of ChatCompletionUiFormMessage to a format compatible with the google.genai SDK.
 
@@ -52,47 +55,50 @@ def convert_to_google_genai_format(
     Returns:
         List[Union[Dict[str, str], str]]: A list of formatted inputs for the google.genai SDK.
     """
-
-    formatted_inputs: content_types.ContentsType = []
-    
+    system_message: str = ""
+    formatted_content: list[ContentUnionDict] = []
     for message in messages:
-        if isinstance(message['content'], str):
+        # -----------------------
+        # Handle system message
+        # -----------------------
+        if message["role"] in ("system", "developer"):
+            assert isinstance(message["content"], str), "System message content must be a string."
+            if system_message != "":
+                raise ValueError("Only one system message is allowed per chat.")
+            system_message+= message["content"]
+            continue
+        parts: list[PartDict] = []
+
+        message_content = message['content']
+        if isinstance(message_content, str):
             # Direct string content is treated as the prompt for the SDK
-            formatted_inputs.append(message['content']) # type: ignore
-        elif isinstance(message['content'], list):
+            parts.append(PartDict(text=message_content))
+        elif isinstance(message_content, list):
             # Handle structured content
-            for part in message['content']:
-                if 'text' in part : 
-                    if isinstance(part.get('text', None), str):
-                        # If the part has a text key, treat it as plain text
-                        formatted_inputs.append(part['text'])  # type: ignore
-                if 'data' in part: 
-                    if isinstance(part.get('data', None), bytes):
-                        # Handle binary data
-                        formatted_inputs.append({ # type: ignore
-                            "mime_type": part.get("mime_type", "application/octet-stream"), # type: ignore
-                            "data": base64.b64encode(part["data"]).decode('utf-8') # type: ignore
-                        }) # type: ignore
-                elif 'data' in part: 
-                    if isinstance(part.get('data', None), str):
-                        # Handle string data with a mime_type
-                        formatted_inputs.append({ # type: ignore
-                            "mime_type": part.get("mime_type", "text/plain"), # type: ignore
-                            "data": part["data"] # type: ignore
-                        }) # type: ignore
-                if part.get('type') == 'image_url':
-                    if 'image_url' in part:
-                        # Handle image URLs containing base64-encoded data
-                        url = part['image_url'].get('url', '')  # type: ignore
-                        if url.startswith('data:image/jpeg;base64,'):
-                            # Extract base64 data and add it to the formatted inputs
-                            base64_data = url.replace('data:image/jpeg;base64,', '')
-                            formatted_inputs.append({ # type: ignore
-                                "mime_type": "image/jpeg",
-                                "data": base64_data # type: ignore
-                            }) # type: ignore   
+            for part in message_content:
+                if part["type"] == "text":
+                    parts.append(PartDict(text=part["text"]))
+                elif part["type"] == "image_url":
+                    url = part['image_url'].get('url', '')  # type: ignore
+                    if url.startswith('data:image'):
+                        # Extract base64 data and add it to the formatted inputs
+                        media_type, data_content = url.split(";base64,")
+                        media_type = media_type.split("data:")[-1]  # => "image/jpeg"
+                        base64_data = data_content
+
+                        # Try to convert to PIL.Image and append it to the formatted inputs
+                        try:
+                            image_bytes = base64.b64decode(base64_data)
+                            parts.append(PartDict(inline_data=BlobDict(data=image_bytes, mime_type=media_type)))
+                        except Exception:
+                            pass
+                elif part["type"] == "input_audio": pass
+                elif part["type"] == "file": pass
+                else: pass
     
-    return formatted_inputs
+        formatted_content.append(ContentDict(parts=parts, role=("user" if message["role"] == "user" else "model")))
+
+    return system_message, formatted_content
     
 def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> tuple[str, List[MessageParam]]:
     """

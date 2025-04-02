@@ -1,9 +1,13 @@
 from typing import Literal
 
-AIProvider = Literal["OpenAI"]#, "Anthropic", "xAI", "Gemini"]
-OpenAICompatibleProvider = Literal["OpenAI"]#, "xAI", "Gemini"]
-GeminiModel = Literal[ "gemini-2.0-flash-exp",
-                      "gemini-1.5-flash-8b", "gemini-1.5-flash","gemini-1.5-pro"]
+AIProvider = Literal["OpenAI", "Gemini"]#, "Anthropic", "xAI"]
+OpenAICompatibleProvider = Literal["OpenAI", "Gemini"]#, "xAI"]
+GeminiModel = Literal[
+    "gemini-2.5-pro-exp-03-25",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-pro",
+]
 AnthropicModel = Literal["claude-3-5-sonnet-latest","claude-3-5-sonnet-20241022",
                          "claude-3-5-haiku-20241022",
                          "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
@@ -123,7 +127,7 @@ class ModelCard(BaseModel):
 
 
 # List of model cards with pricing and capabilities
-model_cards = [
+openai_model_cards = [
 
     ########################
     ########################
@@ -480,38 +484,6 @@ model_cards = [
     ),
 ]
 
-def get_model_card(model: str) -> ModelCard:
-    """
-    Get the model card for a specific model.
-    
-    Args:
-        model: The model name to look up
-        
-    Returns:
-        The ModelCard for the specified model
-        
-    Raises:
-        ValueError: If no model card is found for the specified model
-    """
-    # Extract base model name for fine-tuned models like "ft:gpt-4o:uiform:4389573"
-    if model.startswith("ft:"):
-        # Split by colon and take the second part (index 1) which contains the base model
-        parts = model.split(":")
-        if len(parts) > 1:
-            model = parts[1]
-    
-    for card in model_cards:
-        if card.model == model:
-            return card
-    
-    raise ValueError(f"No model card found for model: {model}")
-
-
-
-
-
-
-
 # Anthropic Model Cards
 anthropic_model_cards = [
     ModelCard(
@@ -607,42 +579,6 @@ xai_model_cards = [
 # Add Gemini model cards
 gemini_model_cards = [
     ModelCard(
-        model="gemini-1.5-flash",
-        pricing=Pricing(
-            text=TokenPrice(prompt=0.075, cached_discount=0.5, completion=0.30),
-            audio=None
-        ),
-        capabilities=ModelCapabilities(
-            modalities=["text", "image"],
-            endpoints=["chat_completions"],
-            features=["streaming", "function_calling"]
-        )
-    ),
-    ModelCard(
-        model="gemini-1.5-flash-8b",
-        pricing=Pricing(
-            text=TokenPrice(prompt=0.0375, cached_discount=0.5, completion=0.15),
-            audio=None
-        ),
-        capabilities=ModelCapabilities(
-            modalities=["text", "image"],
-            endpoints=["chat_completions"],
-            features=["streaming", "function_calling"]
-        )
-    ),
-    ModelCard(
-        model="gemini-2.0-flash-exp",
-        pricing=Pricing(
-            text=TokenPrice(prompt=0.075, cached_discount=0.5, completion=0.30),
-            audio=None
-        ),
-        capabilities=ModelCapabilities(
-            modalities=["text", "image"],
-            endpoints=["chat_completions"],
-            features=["streaming", "function_calling"]
-        )
-    ),
-    ModelCard(
         model="gemini-1.5-pro",
         pricing=Pricing(
             text=TokenPrice(prompt=1.25, cached_discount=0.5, completion=5.00),
@@ -651,7 +587,80 @@ gemini_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"],
             endpoints=["chat_completions"],
-            features=["streaming", "function_calling"]
-        )
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False
+    ),
+
+
+    # ----------------------
+    # gemini-2.5-pro-exp-03-25 family
+    # ----------------------
+    ModelCard(
+        model="gemini-2.5-pro-exp-03-25",
+        pricing=Pricing(text=TokenPrice(prompt=0.1, cached_discount=0.25, completion=0.40), audio=TokenPrice(prompt=0.7, cached_discount=0.25, completion=1000)),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False
+    ),
+    # ----------------------
+    # gemini-2.0-flash family
+    # ----------------------
+    ModelCard(
+        model="gemini-2.0-flash",
+        pricing=Pricing(text=TokenPrice(prompt=0.1, cached_discount=0.25, completion=0.40), audio=TokenPrice(prompt=0.7, cached_discount=0.25, completion=1000)),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False
+    ),
+    ModelCard(
+        model="gemini-2.0-flash-lite",
+        pricing=Pricing(text=TokenPrice(prompt=0.075, cached_discount=0.00, completion=0.30), audio=TokenPrice(prompt=0.075, cached_discount=0.00, completion=1000)),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image", "audio"],
+            endpoints=["chat_completions"],
+            features=["streaming", "structured_outputs"],
+        ),
+        logprobs_support=False,
+        temperature_support=False
     ),
 ]
+
+
+model_cards = openai_model_cards + gemini_model_cards
+
+def get_model_card(model: str) -> ModelCard:
+    """
+    Get the model card for a specific model.
+    
+    Args:
+        model: The model name to look up
+        
+    Returns:
+        The ModelCard for the specified model
+        
+    Raises:
+        ValueError: If no model card is found for the specified model
+    """
+    # Extract base model name for fine-tuned models like "ft:gpt-4o:uiform:4389573"
+    if model.startswith("ft:"):
+        # Split by colon and take the second part (index 1) which contains the base model
+        parts = model.split(":")
+        if len(parts) > 1:
+            model = parts[1]
+    
+    for card in model_cards:
+        if card.model == model:
+            return card
+    
+    raise ValueError(f"No model card found for model: {model}")
+

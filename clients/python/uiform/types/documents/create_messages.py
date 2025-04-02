@@ -15,7 +15,7 @@ from ..image_settings import ImageSettings
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
-from google.generativeai.types import content_types  # type: ignore
+from google.genai.types import ContentUnionDict # type: ignore
 from anthropic.types.message_param import MessageParam
 
 
@@ -160,16 +160,16 @@ class DocumentMessage(BaseModel):
         return convert_to_anthropic_format(self.messages)[1]
     
     @property
-    def gemini_messages(self) -> content_types.ContentsType:
+    def gemini_messages(self) -> list[ContentUnionDict]:
         """Returns the messages formatted for Google's Gemini API.
 
         Converts the internal message format to Gemini's expected format,
         handling various content types including text and images.
 
         Returns:
-            content_types.ContentsType: Messages formatted for Gemini's API.
+            list[PartDict]: Messages formatted for Gemini's API.
         """
-        return convert_to_google_genai_format(self.messages)
+        return convert_to_google_genai_format(self.messages)[1]
 
     
     def __str__(self)->str:
