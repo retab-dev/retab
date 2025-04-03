@@ -7,7 +7,7 @@ import json
 
 from ..._utils.chat import convert_to_google_genai_format, convert_to_anthropic_format, convert_to_openai_format as convert_to_openai_completions_api_format
 from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
-from ..._utils.json_schema import json_schema_to_inference_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema, generate_schema_data_id, generate_schema_id
+from ..._utils.json_schema import json_schema_to_strict_openai_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema, generate_schema_data_id, generate_schema_id
 from ...types.standards import StreamingBaseModel
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
@@ -23,6 +23,7 @@ class PartialSchema(BaseModel):
     object: Literal["schema"] = "schema"
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     json_schema: dict[str, Any] = {}
+    strict: bool = True
 
 
 class PartialSchemaChunk(StreamingBaseModel):
@@ -87,9 +88,12 @@ class Schema(PartialSchema):
         Returns:
             dict[str, Any]: The schema formatted for structured output processing.
         """
-        inference_json_schema_ = json_schema_to_inference_schema(copy.deepcopy(self._reasoning_object_schema))
-        assert isinstance(inference_json_schema_, dict), "Validation Error: The inference_json_schema is not a dict"
-        return inference_json_schema_
+        if self.strict:
+            inference_json_schema_ = json_schema_to_strict_openai_schema(copy.deepcopy(self._reasoning_object_schema))
+            assert isinstance(inference_json_schema_, dict), "Validation Error: The inference_json_schema is not a dict"
+            return inference_json_schema_
+        else:
+            return copy.deepcopy(self._reasoning_object_schema)
     
    
     
@@ -146,11 +150,11 @@ class Schema(PartialSchema):
     @property
     def inference_gemini_json_schema(self) -> dict[str, Any]:
         # Like OpenAI but does not accept "anyOf" typing, all fields must not be nullable
-        inference_json_schema_ = copy.deepcopy(self.inference_json_schema)
-        def remove_optional_types_rec(schema: dict[str, Any]) -> None:
+        inference_json_schema_ = copy.deepcopy(self._reasoning_object_schema)
+        def json_schema_to_gemini_schema(schema: dict[str, Any]) -> None:
             if "$defs" in schema:
                 for def_schema in schema["$defs"].values():
-                    remove_optional_types_rec(def_schema)
+                    json_schema_to_gemini_schema(def_schema)
             if "anyOf" in schema:
                 any_of = schema.pop("anyOf")
                 is_nullable = any(s.get("type") == "null" for s in any_of)
@@ -159,7 +163,7 @@ class Schema(PartialSchema):
                 
                 if non_null_schemas:
                     subschema = non_null_schemas[0]
-                    remove_optional_types_rec(subschema)
+                    json_schema_to_gemini_schema(subschema)
                     # Take the first non-null subschema and merge it into the parent schema
                     schema.update(subschema)
                 else:
@@ -170,18 +174,20 @@ class Schema(PartialSchema):
             
             if "allOf" in schema:
                 for allof_schema in schema["allOf"]:
-                    remove_optional_types_rec(allof_schema)
+                    json_schema_to_gemini_schema(allof_schema)
             
-            if "properties" in schema:
+            if schema.get("type") == "object" and "properties" in schema:
                 for prop_schema in schema["properties"].values():
-                    remove_optional_types_rec(prop_schema)
+                    json_schema_to_gemini_schema(prop_schema)
                 schema["propertyOrdering"] = list(schema["properties"].keys())
-            if "items" in schema:
-                remove_optional_types_rec(schema["items"])
-            # remove any additionalProperties key if present
-            schema.pop("additionalProperties", None)
+            
+            if schema.get("type") == "array" and "items" in schema:
+                json_schema_to_gemini_schema(schema["items"])
+            # Remove not allowed fields
+            for key in ["additionalProperties", "format"]:
+                schema.pop(key, None)
 
-        remove_optional_types_rec(inference_json_schema_)
+        json_schema_to_gemini_schema(inference_json_schema_)
         return inference_json_schema_
 
 
@@ -360,7 +366,7 @@ When performing extraction, explicitly follow these core principles:
         """Returns the schema with all references expanded inline.
         
         Returns:
-            dict[str, Any]: The expanded schema with resolved references.
+            dict[str, Any]: The expanded schema with resolved references. If the schema is not expandable, it is returned as is.
         """
         return expand_refs(copy.deepcopy(self.json_schema))
 

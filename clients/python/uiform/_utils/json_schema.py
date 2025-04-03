@@ -419,6 +419,70 @@ def merge_descriptions(outer_schema: dict[str, Any], inner_schema: dict[str, Any
     return merged
 
 
+def has_cyclic_refs(schema: dict[str, Any]) -> bool:
+    """Check if the JSON Schema contains cyclic references.
+    
+    The function recursively traverses all nested objects and arrays in the schema.
+    It follows any "$ref" that points to a definition (i.e. "#/$defs/<name>")
+    and uses DFS with a current-path stack to detect cycles.
+    """
+    definitions = schema.get("$defs", {})
+    if not definitions:
+        return False
+
+    # Memoize results for each definition to avoid repeated work.
+    memo: dict[str, bool] = {}
+
+    def dfs(def_name: str, stack: set[str]) -> bool:
+        """Perform DFS on a definition (by name) using 'stack' to detect cycles."""
+        if def_name in stack:
+            return True
+        if def_name in memo:
+            return memo[def_name]
+        
+        # Add to current path and traverse the definition.
+        stack.add(def_name)
+        node = definitions.get(def_name)
+        if node is None:
+            # No such definition, so nothing to do.
+            stack.remove(def_name)
+            memo[def_name] = False
+            return False
+
+        result = traverse(node, stack)
+        stack.remove(def_name)
+        memo[def_name] = result
+        return result
+
+    def traverse(node: Any, stack: set[str]) -> bool:
+        """Recursively traverse an arbitrary JSON Schema node."""
+        if isinstance(node, dict):
+            # If we see a "$ref", try to follow it.
+            if "$ref" in node:
+                ref = node["$ref"]
+                if ref.startswith("#/$defs/"):
+                    target = ref[len("#/$defs/"):]
+                    if dfs(target, stack):
+                        return True
+            # Recursively check all values in the dictionary.
+            for key, value in node.items():
+                # Skip "$ref" as it has already been processed.
+                if key == "$ref":
+                    continue
+                if traverse(value, stack):
+                    return True
+        elif isinstance(node, list):
+            for item in node:
+                if traverse(item, stack):
+                    return True
+        return False
+
+    # Start DFS on each top-level definition.
+    for def_name in definitions:
+        if dfs(def_name, set()):
+            return True
+
+    return False
 
 def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """
@@ -427,6 +491,16 @@ def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] |
     """
     if not isinstance(schema, dict):
         return schema
+    
+    # First, we will verify if this schema is expandable, we do this by checking if there are cyclic $refs (infinite loop)
+    # If there are, we will return the schema as is
+    
+
+    if has_cyclic_refs(schema):
+        print("Cyclic refs found, keeping it as is")
+        return schema
+
+
     
     if definitions is None:
         definitions = schema.pop("$defs", {})
@@ -674,56 +748,60 @@ def resolve_ref(ref: str, definitions: dict[str, dict[str, Any]]) -> Optional[di
 
 
 
-
-def json_schema_to_inference_schema(obj: Union[dict[str, Any], list[Any]]) -> Union[dict[str, Any], list[Any]]:
+def json_schema_to_strict_openai_schema(obj: Union[dict[str, Any], list[Any]]) -> Union[dict[str, Any], list[Any]]:
     # Gets a json supported by GPT Structured Output from a pydantic Basemodel
 
     if isinstance(obj, dict):
-        new_obj: dict[str, Any] = {}
-        for key, value in obj.items():
-            # Remove 'default', 'format', and translation fields
-            if key in ['default', 'format', 'X-FieldTranslation', 'X-EnumTranslation']:
-                continue
-            
-            # Switch 'integer' for 'number' ('integer' isn't a supported type)
-            if key == 'type':
-                if value == 'integer':
-                    new_obj[key] = 'number'
-                elif isinstance(value, list):
-                    new_obj[key] = ['number' if t == 'integer' else t for t in value]
-                else:
-                    new_obj[key] = value
-
-            # Remove 'allOf' field
-            elif key == 'allOf':
-                merged: dict[str, Any] = {}
-                for subschema in value:
-                    if '$ref' in subschema:
-                        merged.update({'$ref': subschema['$ref']})
-                    else:
-                        merged.update(json_schema_to_inference_schema(subschema))
-                new_obj.update(merged)
-
-            # Handle enum fields - ensure they don't get converted to nullable
-            elif key == 'enum':
-                new_obj[key] = value
-                # Force type to be string for enum values
-                new_obj['type'] = 'string'
-
-            else:
-                new_obj[key] = json_schema_to_inference_schema(value)
+        new_obj: dict[str, Any] = copy.deepcopy(obj)
         
-        # Add 'required' and 'additionalProperties' if 'properties' is present
-        if 'properties' in new_obj:
+        # Remove some not-supported fields
+        for key in  ['default', 'format', 'X-FieldTranslation', 'X-EnumTranslation']:
+            new_obj.pop(key, None)
+
+        # Handle integer type
+        if "type" in new_obj:
+            if new_obj["type"] == "integer":
+                new_obj["type"] = "number"
+            elif isinstance(new_obj["type"], list):
+                new_obj["type"] = ['number' if t == 'integer' else t for t in new_obj["type"]]
+
+        # Handle allOf
+        if "allOf" in new_obj:
+            subschemas = new_obj.pop("allOf")
+            merged: dict[str, Any] = {}
+            for subschema in subschemas:
+                if '$ref' in subschema:
+                    merged.update({'$ref': subschema['$ref']})
+                else:
+                    merged.update(json_schema_to_strict_openai_schema(subschema))
+            new_obj.update(merged)
+
+        # Handle anyOf
+        if "anyOf" in new_obj:
+            new_obj["anyOf"] = [json_schema_to_strict_openai_schema(subschema) for subschema in new_obj["anyOf"]]
+
+        # Handle enum (force type to string)
+        if "enum" in new_obj:
+            new_obj["enum"] = [str(e) for e in new_obj["enum"]]
+            new_obj["type"] = "string"
+
+        # Handle object type
+        if new_obj.get("type") == "object" and 'properties' in new_obj and isinstance(new_obj['properties'], dict):
             new_obj['required'] = list(new_obj['properties'].keys())
             new_obj['additionalProperties'] = False
-        
-        if '$ref' in new_obj:
-            return {'$ref': new_obj['$ref']}
+            new_obj['properties'] = {k: json_schema_to_strict_openai_schema(v) for k, v in new_obj['properties'].items()}
+
+        # Handle array type
+        if new_obj.get("type") == "array" and "items" in new_obj:
+            new_obj["items"] = json_schema_to_strict_openai_schema(new_obj["items"])
+
+        # Handle defs
+        if "$defs" in new_obj:
+            new_obj["$defs"] = {k: json_schema_to_strict_openai_schema(v) for k, v in new_obj["$defs"].items()}
         
         return new_obj
     elif isinstance(obj, list):
-        return [json_schema_to_inference_schema(item) for item in obj]
+        return [json_schema_to_strict_openai_schema(item) for item in obj]
     else:
         return obj
 
@@ -890,7 +968,7 @@ def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
     # Resolve refs first to get expanded schema
     definitions = raw_schema.get("$defs", {})
     resolved = expand_refs(copy.deepcopy(raw_schema), definitions)
-    resolved.pop("$defs", None)
+    # resolved.pop("$defs", None)
 
     expanded_schema = copy.deepcopy(resolved)
 
@@ -907,17 +985,14 @@ def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
             updated_schema["required"].append("reasoning___root")
 
     # Clean up $defs from inference_schema if desired (optional)
-    if "$defs" in updated_schema:
-        updated_schema.pop("$defs", None)
+    # if "$defs" in updated_schema:
+    #     updated_schema.pop("$defs", None)
 
     # Replace description with X-FieldPrompt if present
     updated_schema = _rec_replace_description_with_llm_description(updated_schema)
-
-    # Pop X-SystemPrompt if present
-    updated_schema.pop("X-SystemPrompt", None)
     
     # Clean the schema (remove defaults, etc)
-    updated_schema = clean_schema(updated_schema)
+    updated_schema = clean_schema(updated_schema, remove_custom_fields=True)
     return updated_schema
 
 
