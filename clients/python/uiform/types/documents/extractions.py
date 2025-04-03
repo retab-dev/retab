@@ -184,6 +184,7 @@ class LogExtractionResponse(BaseModel):
 class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     flat_likelihoods: dict[str, float] = {}
     flat_parsed: dict[str, Any] = {}
+    flat_deleted_keys: list[str] = []
     missing_content: str = ""
     is_valid_json: bool = False
 class UiParsedChoiceChunk(ChoiceChunk):
