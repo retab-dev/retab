@@ -216,6 +216,8 @@ When provided with a **JSON schema** and a **document**, you must:
 
 1. Carefully extract all relevant data from the provided document according to the given schema.
 2. Return extracted data strictly formatted according to the provided schema.
+3. Make sure that the extracted values are **UTF-8** encodable strings.
+4. Avoid generating bytes, binary data, base64 encoded data, or other non-UTF-8 encodable data.
 
 ---
 
