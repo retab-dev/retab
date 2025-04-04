@@ -16,7 +16,7 @@ class DBFile(BaseModel):
     
     @property
     def extension(self) -> str:
-        return self.filename.split(".")[-1]
+        return self.filename.split(".")[-1].lower()
     
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
