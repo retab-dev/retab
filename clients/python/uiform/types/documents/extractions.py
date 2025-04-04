@@ -60,11 +60,6 @@ class DocumentExtractRequest(BaseModel):
             info.data["temperature"] = 0.5
         return v
 
-
-class ConsensusSettings(BaseModel):
-    treat_list_of_primitives_as_primitive: bool = False
-    treat_list_of_dicts_as_primitive: bool = False
-
 class ConsensusModel(BaseModel):
     model: str = Field(description="Model name")
     temperature: float = Field(default=0.0, description="Temperature for consensus")
@@ -81,23 +76,23 @@ class ConsensusModel(BaseModel):
         return find_provider_from_model(self.model)
     
 
-class DocumentExtractRequestWithConsensus(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+# class DocumentExtractRequestWithConsensus(BaseModel):
+#     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    # General fields
-    document: MIMEData = Field(..., description="Document to be analyzed")
-    modality: Modality
-    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
-    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+#     # General fields
+#     document: MIMEData = Field(..., description="Document to be analyzed")
+#     modality: Modality
+#     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+#     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
 
-    # Consensus fields
-    consensus_models: list[ConsensusModel] = Field(default=[], description="List of models to use for consensus")
-    consensus_settings: ConsensusSettings = Field(default_factory=ConsensusSettings, description="Settings for consensus")
-    include_individual_model_results: bool = Field(default=True, description="If true, the results of the individual models will be included in the response (additionnal choices from idx=1 to idx=len(consensus_models))")
+#     # Consensus fields
+#     consensus_models: list[ConsensusModel] = Field(default=[], description="List of models to use for consensus")
+#     consensus_settings: ConsensusSettings = Field(default_factory=ConsensusSettings, description="Settings for consensus")
+#     include_individual_model_results: bool = Field(default=True, description="If true, the results of the individual models will be included in the response (additionnal choices from idx=1 to idx=len(consensus_models))")
 
-    # Regular fields
-    stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
-    seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
+#     # Regular fields
+#     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
+#     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
 
 
 class UiParsedChoice(ParsedChoice):
