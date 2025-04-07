@@ -209,15 +209,9 @@ class Schema(PartialSchema):
         """
         return json_schema_to_nlp_data_structure(self._reasoning_object_schema)
 
-
     @property
-    def system_prompt(self) -> str:
-        """Returns the system prompt combining custom prompt and TypeScript interface.
-        
-        Returns:
-            str: The combined system prompt string.
-        """
-        general_instructions = '''
+    def developer_system_prompt(self) -> str:
+        return '''
 # General Instructions
 
 You are an expert in data extraction and structured data outputs.
@@ -359,10 +353,25 @@ When performing extraction, explicitly follow these core principles:
 # User Defined System Prompt
 
 ''' 
-        user_system_prompt = self.json_schema.get("X-SystemPrompt", "")
-        json_schema_prompt = self.inference_nlp_data_structure + "\n---\n"
-        json_schema_prompt += "## Expected output schema as a TypeScript interface for better readability:\n\n" + self.inference_typescript_interface
-        return general_instructions + "\n\n" + user_system_prompt + "\n\n" + json_schema_prompt
+
+
+    @property
+    def user_system_prompt(self) -> str:
+        return self.json_schema.get("X-SystemPrompt", "")
+
+    @property
+    def schema_system_prompt(self) -> str:
+        return self.inference_nlp_data_structure + "\n---\n" + "## Expected output schema as a TypeScript interface for better readability:\n\n" + self.inference_typescript_interface
+
+
+    @property
+    def system_prompt(self) -> str:
+        """Returns the system prompt combining custom prompt and TypeScript interface.
+        
+        Returns:
+            str: The combined system prompt string.
+        """
+        return self.developer_system_prompt + "\n\n" + self.user_system_prompt + "\n\n" + self.schema_system_prompt
     
     @property
     def title(self) -> str:
