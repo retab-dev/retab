@@ -7,7 +7,7 @@ import json
 
 from ..._utils.chat import convert_to_google_genai_format, convert_to_anthropic_format, convert_to_openai_format as convert_to_openai_completions_api_format
 from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
-from ..._utils.json_schema import json_schema_to_strict_openai_schema, json_schema_to_typescript_interface, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema, generate_schema_data_id, generate_schema_id
+from ..._utils.json_schema import json_schema_to_strict_openai_schema, json_schema_to_typescript_interface, json_schema_to_nlp_data_structure, expand_refs, create_reasoning_schema, schema_to_ts_type, convert_json_schema_to_basemodel, convert_basemodel_to_partial_basemodel, load_json_schema, generate_schema_data_id, generate_schema_id
 from ...types.standards import StreamingBaseModel
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
@@ -198,7 +198,17 @@ class Schema(PartialSchema):
         Returns:
             str: A string containing the TypeScript interface definition.
         """
-        return json_schema_to_typescript_interface(self._reasoning_object_schema, add_field_description=True)
+        return json_schema_to_typescript_interface(self._reasoning_object_schema, add_field_description=False)
+
+    @property
+    def inference_nlp_data_structure(self) -> str:
+        """Returns the NLP data structure representation of the inference schema, that is more readable than the JSON schema.
+        
+        Returns:
+            str: A string containing the NLP data structure definition.
+        """
+        return json_schema_to_nlp_data_structure(self._reasoning_object_schema)
+
 
     @property
     def system_prompt(self) -> str:
@@ -350,7 +360,8 @@ When performing extraction, explicitly follow these core principles:
 
 ''' 
         user_system_prompt = self.json_schema.get("X-SystemPrompt", "")
-        json_schema_prompt = "This is the expected output schema (as a TypeScript interface for better readability) with useful prompts added as comments just above each field :\n\n" + self.inference_typescript_interface
+        json_schema_prompt = self.inference_nlp_data_structure + "\n---\n"
+        json_schema_prompt += "## Expected output schema as a TypeScript interface for better readability:\n\n" + self.inference_typescript_interface
         return general_instructions + "\n\n" + user_system_prompt + "\n\n" + json_schema_prompt
     
     @property

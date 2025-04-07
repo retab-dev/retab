@@ -1845,3 +1845,98 @@ def convert_schema_to_layout(schema: dict[str, Any]) -> Layout:
 
     return Layout(type="column", size=1, items=top_level_items, **{"$defs": converted_defs})
 
+
+### Json Schema to NLP Data Structure
+
+
+def get_type_str(field_schema):
+    """
+    Recursively determine the type string for a given schema field.
+    Handles 'anyOf' unions, enums, arrays, and simple types.
+    """
+    if "anyOf" in field_schema:
+        types = []
+        for sub_schema in field_schema["anyOf"]:
+            types.append(get_type_str(sub_schema))
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_types = []
+        for t in types:
+            if t not in seen:
+                seen.add(t)
+                unique_types.append(t)
+        return " | ".join(unique_types)
+    elif "enum" in field_schema:
+        # Create a union of the literal enum values (as JSON strings)
+        return " | ".join(json.dumps(val) for val in field_schema["enum"])
+    elif "type" in field_schema:
+        typ = field_schema["type"]
+        if typ == "array" and "items" in field_schema:
+            # For arrays, indicate the type of the items
+            item_type = get_type_str(field_schema["items"])
+            return f"array of {item_type}"
+        return typ
+    else:
+        return "unknown"
+
+def process_schema_field(field_name, field_schema, level, new_line_sep: str = "\n", field_name_prefix: str = ""):
+    """
+    Process a single field in the JSON schema.
+    'level' indicates the header level (e.g., 3 for root, 4 for nested, etc.).
+    Returns a markdown string representing the field.
+    """
+    md = ""
+    field_name_complete = field_name_prefix + field_name
+
+
+    # Extract type information
+    type_str = get_type_str(field_schema)
+    # md += f"**Type**: {type_str}{new_line_sep}"
+
+    header = "#" * level + f" {field_name_complete} ({type_str})"
+    md += header + new_line_sep
+    
+    # Extract description (or use a placeholder if not provided)
+    description = field_schema.get("description", "")
+    if description:
+        md += f"<Description>\n{description}\n</Description>{new_line_sep}"
+    else:
+        md += f"<Description></Description>{new_line_sep}"
+    
+    
+    # Extract default value if defined (as JSON), otherwise note that it is not defined.
+    if "default" in field_schema:
+        default_val = json.dumps(field_schema["default"])
+        md += f"<Default value>{default_val}</Default value>{new_line_sep}"
+    
+    md += new_line_sep
+    
+    # If the field is an object with its own properties, process those recursively.
+    if field_schema.get("type") == "object" and "properties" in field_schema:
+        for sub_field_name, sub_field_schema in field_schema["properties"].items():
+            md += process_schema_field(sub_field_name, sub_field_schema, level + 1, field_name_prefix=field_name_complete + ".")
+    
+    # If the field is an array and its items are objects with properties, process them.
+    elif field_schema.get("type") == "array" and "items" in field_schema:
+        items_schema = field_schema["items"]
+        if items_schema.get("type") == "object" and "properties" in items_schema:
+            md += process_schema_field("items", items_schema, level + 1, field_name_prefix=field_name_complete + ".")
+    
+    return md
+
+def json_schema_to_nlp_data_structure(schema: dict) -> str:
+    """
+    Receives a JSON schema (without $defs or $ref) and returns a markdown string
+    that documents each field with its name, description, type (including unions and enums),
+    and default value (if defined). Root-level fields use 3 hashtags, and nested fields
+    add one hashtag per level.
+    """
+    schema_title = schema.get("title", schema.get("name", "Schema"))
+    md = f"## {schema_title} -- NLP Data Structure\n\n"
+    # Assume the root schema is an object with properties.
+    if schema.get("type") == "object" and "properties" in schema:
+        for field_name, field_schema in schema["properties"].items():
+            md += process_schema_field(field_name, field_schema, 3)
+    else:
+        md += process_schema_field("root", schema, 3)
+    return md
