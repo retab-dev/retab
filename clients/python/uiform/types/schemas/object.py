@@ -486,7 +486,7 @@ When performing extraction, explicitly follow these core principles:
         return current_schema.get(attribute)
 
 
-    def _set_pattern_attribute(self, pattern: str, attribute: Literal['X-FieldPrompt', 'X-ReasoningPrompt', 'X-SystemPrompt'], value: str) -> None:
+    def _set_pattern_attribute(self, pattern: str, attribute: Literal['X-FieldPrompt', 'X-ReasoningPrompt', 'X-SystemPrompt', 'description'], value: str) -> None:
         """Sets an attribute value at a specific path in the schema.
         
         Args:

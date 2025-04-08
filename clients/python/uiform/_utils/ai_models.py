@@ -34,8 +34,8 @@ def assert_valid_model_extraction(model: str) -> None:
     #    return
     #elif model in get_args(xAI_Model):
     #    return
-    #elif model in get_args(GeminiModel):
-    #    return
+    elif model in get_args(GeminiModel):
+       return
     raise ValueError(
         f"Invalid model for extraction: {model}.\n"
         f"Valid OpenAI models: {get_args(OpenAIModel)}\n"

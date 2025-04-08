@@ -7,7 +7,7 @@ import backoff
 import backoff.types
 from pydantic_core import PydanticUndefined
 
-from .resources import documents, files, finetuning, models, prompt_optimization, schemas, automations, secrets, usage
+from .resources import documents, files, finetuning, models, schemas, automations, secrets, usage, completions
 from .types.standards import PreparedRequest
 class MaxRetriesExceeded(Exception): pass
 
@@ -48,9 +48,9 @@ class BaseUiForm:
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
+        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
         #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
         #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
     ) -> None:
         if api_key is None:
             api_key = os.environ.get("UIFORM_API_KEY")
@@ -82,8 +82,8 @@ class BaseUiForm:
         #if xai_api_key is PydanticUndefined:
         #    xai_api_key = os.environ.get("XAI_API_KEY")
 
-        #if gemini_api_key is PydanticUndefined:
-        #    gemini_api_key = os.environ.get("GEMINI_API_KEY")
+        if gemini_api_key is PydanticUndefined:
+           gemini_api_key = os.environ.get("GEMINI_API_KEY")
 
         if openai_api_key:
             self.headers["OpenAI-Api-Key"] = openai_api_key
@@ -94,8 +94,8 @@ class BaseUiForm:
         #if xai_api_key:
         #    self.headers["XAI-Api-Key"] = xai_api_key
 
-        #if gemini_api_key:
-        #    self.headers["Gemini-Api-Key"] = gemini_api_key
+        if gemini_api_key:
+           self.headers["Gemini-Api-Key"] = gemini_api_key
 
 
     def _prepare_url(self, endpoint: str) -> str:
@@ -146,9 +146,9 @@ class UiForm(BaseUiForm):
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
+        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
         #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
         #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
 
     ) -> None:
         super().__init__(
@@ -157,9 +157,9 @@ class UiForm(BaseUiForm):
             timeout=timeout,
             max_retries=max_retries,
             openai_api_key=openai_api_key,
+            gemini_api_key=gemini_api_key,
             #claude_api_key=claude_api_key,
             #xai_api_key=xai_api_key,
-            #gemini_api_key=gemini_api_key,
         )
         
         self.client = httpx.Client(timeout=self.timeout)
@@ -173,6 +173,7 @@ class UiForm(BaseUiForm):
         self.automations = automations.Automations(client=self)
         self.secrets = secrets.Secrets(client=self)
         self.usage = usage.Usage(client=self)
+        self.completions = completions.Completions(client=self)
 
     def _request(
             self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None,
@@ -322,9 +323,9 @@ class AsyncUiForm(BaseUiForm):
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
+        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
         #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
         #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
         ) -> None:
         super().__init__(
             api_key=api_key,
@@ -332,9 +333,9 @@ class AsyncUiForm(BaseUiForm):
             timeout=timeout,
             max_retries=max_retries,
             openai_api_key=openai_api_key,
+            gemini_api_key=gemini_api_key,
             #claude_api_key=claude_api_key,
             #xai_api_key=xai_api_key,
-            #gemini_api_key=gemini_api_key,
         )
         
         self.client = httpx.AsyncClient(timeout=self.timeout)
@@ -347,7 +348,7 @@ class AsyncUiForm(BaseUiForm):
         self.automations = automations.AsyncAutomations(client=self)
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)
-
+        self.completions = completions.AsyncCompletions(client=self)
     async def _request(
         self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, raise_for_status: bool = False
     ) -> Any:
