@@ -17,6 +17,7 @@ import pycountry
 import re
 from uiform._utils.mime import generate_blake2b_hash_from_string
 from uiform.types.schemas.layout import Layout, Column, Row, RowList, FieldItem, RefObject
+import re
 # **** Validation Functions ****
 
 # 1) Special Objects
@@ -1897,19 +1898,13 @@ def process_schema_field(field_name, field_schema, level, new_line_sep: str = "\
     md += header + new_line_sep
     
     # Extract description (or use a placeholder if not provided)
-    description = field_schema.get("description", "")
-    if description:
-        md += f"<Description>\n{description}\n</Description>{new_line_sep}"
+    description = field_schema.get("description", None)
+    if description is not None:
+        md += f"<Description>\n{description}\n</Description>"
     else:
-        md += f"<Description></Description>{new_line_sep}"
+        md += "<Description></Description>"
     
-    
-    # Extract default value if defined (as JSON), otherwise note that it is not defined.
-    if "default" in field_schema:
-        default_val = json.dumps(field_schema["default"])
-        md += f"<Default value>{default_val}</Default value>{new_line_sep}"
-    
-    md += new_line_sep
+    md += new_line_sep * 2
     
     # If the field is an object with its own properties, process those recursively.
     if field_schema.get("type") == "object" and "properties" in field_schema:
@@ -1920,7 +1915,7 @@ def process_schema_field(field_name, field_schema, level, new_line_sep: str = "\
     elif field_schema.get("type") == "array" and "items" in field_schema:
         items_schema = field_schema["items"]
         if items_schema.get("type") == "object" and "properties" in items_schema:
-            md += process_schema_field("items", items_schema, level + 1, field_name_prefix=field_name_complete + ".")
+            md += process_schema_field("*", items_schema, level + 1, field_name_prefix=field_name_complete + ".")
     
     return md
 
@@ -1940,3 +1935,56 @@ def json_schema_to_nlp_data_structure(schema: dict) -> str:
     else:
         md += process_schema_field("root", schema, 3)
     return md
+
+
+
+def nlp_data_structure_to_field_descriptions(nlp_data_structure: str) -> dict:
+    """
+    This function updates the JSON schema with the descriptions from the NLP data structure.
+    
+    Args:
+        schema: The original JSON schema dictionary
+        nlp_data_structure: A markdown string created by json_schema_to_nlp_data_structure, potentially with updated descriptions
+        
+    Returns:
+        A new schema with updated descriptions from the NLP data structure
+    """
+    
+    # Pattern to match headers and extract field_name and type
+    # Example: "### field_name (type)" or "#### parent.child (type)"
+    header_pattern = re.compile(r'^(#+)\s+([^\s(]+)\s*\(([^)]*)\)')
+    
+    # Pattern to extract description between tags
+    description_pattern = re.compile(r'<Description>(.*?)</Description>', re.DOTALL)
+    
+    # Split the markdown by lines
+    lines = nlp_data_structure.split('\n')
+    
+    # Process the markdown to extract field names and descriptions
+    field_descriptions = {}
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        
+        # Check if this line is a header
+        header_match = header_pattern.match(line)
+        if header_match:
+            field_path = header_match.group(2)  # Field name or path
+            
+            # Look for description in subsequent lines until next header
+            desc_start = i + 1
+            while desc_start < len(lines) and not header_pattern.match(lines[desc_start]):
+                desc_start += 1
+                
+            # Extract description from the block of text
+            description_block = "\n".join(lines[i+1:desc_start])
+            desc_match = description_pattern.search(description_block)
+            if desc_match:
+                description_text = desc_match.group(1).strip()
+                field_descriptions[field_path] = description_text
+            
+            i = desc_start - 1  # Will be incremented in the loop
+        
+        i += 1
+    return field_descriptions
