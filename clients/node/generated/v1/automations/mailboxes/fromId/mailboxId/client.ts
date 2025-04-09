@@ -11,8 +11,7 @@ export default class APIMailboxId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/mailboxes/from_id/${mailboxId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -1,13 +1,13 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIExternalApiKeys from "./externalApiKeys/client";
-import APIApiKeys from "./apiKeys/client";
+import APIExternalApiKeysSub from "./externalApiKeys/client";
+import APIApiKeysSub from "./apiKeys/client";
 
 export default class APISecrets extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  externalApiKeys = new APIExternalApiKeys(this);
-  apiKeys = new APIApiKeys(this);
+  externalApiKeys = new APIExternalApiKeysSub(this._client);
+  apiKeys = new APIApiKeysSub(this._client);
 
 }

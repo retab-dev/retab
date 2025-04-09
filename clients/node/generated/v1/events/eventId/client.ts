@@ -11,8 +11,7 @@ export default class APIEventId extends CompositionClient {
     return this._fetch({
       url: `/v1/events/${eventId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

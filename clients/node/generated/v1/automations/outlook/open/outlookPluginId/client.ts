@@ -11,8 +11,6 @@ export default class APIOutlookPluginId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/open/${outlookPluginId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
     });
   }
   

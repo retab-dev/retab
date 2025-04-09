@@ -1,13 +1,13 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIUpload from "./upload/client";
-import APIWebhook from "./webhook/client";
+import APIUploadSub from "./upload/client";
+import APIWebhookSub from "./webhook/client";
 
 export default class APITests extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  upload = new APIUpload(this);
-  webhook = new APIWebhook(this);
+  upload = new APIUploadSub(this._client);
+  webhook = new APIWebhookSub(this._client);
 
 }

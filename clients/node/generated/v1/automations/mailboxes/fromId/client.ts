@@ -1,11 +1,11 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIMailboxId from "./mailboxId/client";
+import APIMailboxIdSub from "./mailboxId/client";
 
 export default class APIFromId extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  mailboxId = new APIMailboxId(this);
+  mailboxId = new APIMailboxIdSub(this._client);
 
 }

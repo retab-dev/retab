@@ -10,8 +10,7 @@ export default class APICreatePortalSession extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/payments/create-portal-session`,
       method: "POST",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

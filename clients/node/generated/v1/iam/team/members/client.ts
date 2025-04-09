@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIMemberId from "./memberId/client";
+import APIMemberIdSub from "./memberId/client";
 import { TeamMember } from "@/types";
 
 export default class APIMembers extends CompositionClient {
@@ -7,14 +7,13 @@ export default class APIMembers extends CompositionClient {
     super(client);
   }
 
-  memberId = new APIMemberId(this);
+  memberId = new APIMemberIdSub(this._client);
 
   async get(): Promise<TeamMember[]> {
     return this._fetch({
       url: `/v1/iam/team/members`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

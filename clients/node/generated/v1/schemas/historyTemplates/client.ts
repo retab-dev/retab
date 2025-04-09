@@ -1,11 +1,11 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APITemplateId from "./templateId/client";
+import APITemplateIdSub from "./templateId/client";
 
 export default class APIHistoryTemplates extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  templateId = new APITemplateId(this);
+  templateId = new APITemplateIdSub(this._client);
 
 }

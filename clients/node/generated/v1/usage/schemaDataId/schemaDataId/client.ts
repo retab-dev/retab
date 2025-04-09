@@ -7,12 +7,12 @@ export default class APISchemaDataId extends CompositionClient {
   }
 
 
-  async get(schemaDataId: string, { startDate, endDate }: { startDate?: Date | null, endDate?: Date | null }): Promise<Amount> {
+  async get(schemaDataId: string, { startDate, endDate }: { startDate?: Date | null, endDate?: Date | null } = {}): Promise<Amount> {
     return this._fetch({
       url: `/v1/usage/schema_data_id/${schemaDataId}`,
       method: "GET",
       params: { "start_date": startDate, "end_date": endDate },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

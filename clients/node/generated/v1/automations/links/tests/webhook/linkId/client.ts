@@ -11,8 +11,6 @@ export default class APILinkId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/links/tests/webhook/${linkId}`,
       method: "POST",
-      params: {  },
-      headers: {  },
     });
   }
   

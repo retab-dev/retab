@@ -12,9 +12,9 @@ export default class APIPromptify extends CompositionClient {
       url: `/v1/schemas/promptify`,
       method: "POST",
       params: { "idempotency_key": idempotencyKey },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

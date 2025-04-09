@@ -6,12 +6,12 @@ export default class APIWebhook extends CompositionClient {
   }
 
 
-  async post({ IdempotencyKey }: { IdempotencyKey?: string | null }): Promise<any> {
+  async post({ idempotencyKey }: { idempotencyKey?: string | null } = {}): Promise<any> {
     return this._fetch({
       url: `/v1/automations/mailboxes/webhook`,
       method: "POST",
-      params: {  },
-      headers: { "Idempotency-Key": IdempotencyKey },
+      headers: { "Idempotency-Key": idempotencyKey },
+      auth: ["HTTPBasic"],
     });
   }
   

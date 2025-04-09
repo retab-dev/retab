@@ -11,8 +11,6 @@ export default class APIEmail extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/tests/process/${email}`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
     });

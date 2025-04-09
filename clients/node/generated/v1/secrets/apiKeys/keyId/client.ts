@@ -10,8 +10,7 @@ export default class APIKeyId extends CompositionClient {
     return this._fetch({
       url: `/v1/secrets/api_keys/${keyId}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

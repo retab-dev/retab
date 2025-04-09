@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APISchemaId from "./schemaId/client";
+import APISchemaIdSub from "./schemaId/client";
 import { StoredSchema } from "@/types";
 
 export default class APIDataId extends CompositionClient {
@@ -7,14 +7,13 @@ export default class APIDataId extends CompositionClient {
     super(client);
   }
 
-  schemaId = new APISchemaId(this);
+  schemaId = new APISchemaIdSub(this._client);
 
   async get(dataId: string): Promise<StoredSchema> {
     return this._fetch({
       url: `/v1/schemas/${dataId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

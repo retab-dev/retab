@@ -1,11 +1,11 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIFieldPath from "./fieldPath/client";
+import APIFieldPathSub from "./fieldPath/client";
 
 export default class APIFieldMetrics extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  fieldPath = new APIFieldPath(this);
+  fieldPath = new APIFieldPathSub(this._client);
 
 }

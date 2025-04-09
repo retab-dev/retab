@@ -1,11 +1,11 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIOutlookPluginId from "./outlookPluginId/client";
+import APIOutlookPluginIdSub from "./outlookPluginId/client";
 
 export default class APIOpen extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  outlookPluginId = new APIOutlookPluginId(this);
+  outlookPluginId = new APIOutlookPluginIdSub(this._client);
 
 }

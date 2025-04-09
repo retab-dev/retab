@@ -11,8 +11,7 @@ export default class APILinkId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/links/${linkId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -20,8 +19,7 @@ export default class APILinkId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/links/${linkId}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -10,8 +10,7 @@ export default class APIGetToken extends CompositionClient {
     return this._fetch({
       url: `/v1/integrations/oauth/google/get-token`,
       method: "POST",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

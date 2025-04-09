@@ -1,14 +1,14 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APITemplates from "./templates/client";
-import APIDefaultTemplates from "./defaultTemplates/client";
-import APIHistoryTemplates from "./historyTemplates/client";
-import APIPromptify from "./promptify/client";
-import APIGenerate from "./generate/client";
-import APISchema from "./schema/client";
-import APIExtractionCount from "./extractionCount/client";
-import APIDataId from "./dataId/client";
-import APISchemaId from "./schemaId/client";
-import APISystemPrompt from "./systemPrompt/client";
+import APITemplatesSub from "./templates/client";
+import APIDefaultTemplatesSub from "./defaultTemplates/client";
+import APIHistoryTemplatesSub from "./historyTemplates/client";
+import APIPromptifySub from "./promptify/client";
+import APIGenerateSub from "./generate/client";
+import APISchemaSub from "./schema/client";
+import APIExtractionCountSub from "./extractionCount/client";
+import APIDataIdSub from "./dataId/client";
+import APISchemaIdSub from "./schemaId/client";
+import APISystemPromptSub from "./systemPrompt/client";
 import { ListSchemas } from "@/types";
 
 export default class APISchemas extends CompositionClient {
@@ -16,23 +16,23 @@ export default class APISchemas extends CompositionClient {
     super(client);
   }
 
-  templates = new APITemplates(this);
-  defaultTemplates = new APIDefaultTemplates(this);
-  historyTemplates = new APIHistoryTemplates(this);
-  promptify = new APIPromptify(this);
-  generate = new APIGenerate(this);
-  schema = new APISchema(this);
-  extractionCount = new APIExtractionCount(this);
-  dataId = new APIDataId(this);
-  schemaId = new APISchemaId(this);
-  systemPrompt = new APISystemPrompt(this);
+  templates = new APITemplatesSub(this._client);
+  defaultTemplates = new APIDefaultTemplatesSub(this._client);
+  historyTemplates = new APIHistoryTemplatesSub(this._client);
+  promptify = new APIPromptifySub(this._client);
+  generate = new APIGenerateSub(this._client);
+  schema = new APISchemaSub(this._client);
+  extractionCount = new APIExtractionCountSub(this._client);
+  dataId = new APIDataIdSub(this._client);
+  schemaId = new APISchemaIdSub(this._client);
+  systemPrompt = new APISystemPromptSub(this._client);
 
-  async get({ before, after, limit, order, name, sortBy }: { before?: string | null, after?: string | null, limit?: number, order?: "asc" | "desc", name?: string | null, sortBy?: string }): Promise<ListSchemas> {
+  async get({ before, after, limit, order, name, sortBy }: { before?: string | null, after?: string | null, limit?: number, order?: "asc" | "desc", name?: string | null, sortBy?: string } = {}): Promise<ListSchemas> {
     return this._fetch({
       url: `/v1/schemas`,
       method: "GET",
       params: { "before": before, "after": after, "limit": limit, "order": order, "name": name, "sort_by": sortBy },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

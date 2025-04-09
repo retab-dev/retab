@@ -11,8 +11,6 @@ export default class APIExtractComparison extends CompositionClient {
     return this._fetch({
       url: `/v1/benchmarking/extract-comparison`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
     });

@@ -10,8 +10,6 @@ export default class APILinkId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/links/verify-password/${linkId}`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
     });

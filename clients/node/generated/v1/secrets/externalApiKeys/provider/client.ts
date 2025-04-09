@@ -11,8 +11,7 @@ export default class APIProvider extends CompositionClient {
     return this._fetch({
       url: `/v1/secrets/external_api_keys/${provider}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -20,8 +19,7 @@ export default class APIProvider extends CompositionClient {
     return this._fetch({
       url: `/v1/secrets/external_api_keys/${provider}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

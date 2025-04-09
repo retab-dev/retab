@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIAutomations from "./automations/client";
+import APIAutomationsSub from "./automations/client";
 import { Branding, BrandingUpdateRequest, Branding } from "@/types";
 
 export default class APIBranding extends CompositionClient {
@@ -7,14 +7,13 @@ export default class APIBranding extends CompositionClient {
     super(client);
   }
 
-  automations = new APIAutomations(this);
+  automations = new APIAutomationsSub(this._client);
 
   async get(): Promise<Branding> {
     return this._fetch({
       url: `/v1/branding`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -22,10 +21,9 @@ export default class APIBranding extends CompositionClient {
     return this._fetch({
       url: `/v1/branding`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -33,8 +31,7 @@ export default class APIBranding extends CompositionClient {
     return this._fetch({
       url: `/v1/branding`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

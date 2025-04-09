@@ -10,8 +10,6 @@ export default class APIOutlookId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/manifest/${outlookId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
     });
   }
   

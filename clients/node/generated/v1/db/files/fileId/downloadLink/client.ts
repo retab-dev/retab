@@ -11,8 +11,7 @@ export default class APIDownloadLink extends CompositionClient {
     return this._fetch({
       url: `/v1/db/files/${fileId}/download-link`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

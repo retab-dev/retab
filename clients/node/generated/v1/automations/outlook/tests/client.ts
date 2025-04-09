@@ -1,17 +1,17 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIForward from "./forward/client";
-import APIProcess from "./process/client";
-import APIWebhook from "./webhook/client";
-import APIEmailForwardingDefault from "./emailForwardingDefault/client";
+import APIForwardSub from "./forward/client";
+import APIProcessSub from "./process/client";
+import APIWebhookSub from "./webhook/client";
+import APIEmailForwardingDefaultSub from "./emailForwardingDefault/client";
 
 export default class APITests extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  forward = new APIForward(this);
-  process = new APIProcess(this);
-  webhook = new APIWebhook(this);
-  emailForwardingDefault = new APIEmailForwardingDefault(this);
+  forward = new APIForwardSub(this._client);
+  process = new APIProcessSub(this._client);
+  webhook = new APIWebhookSub(this._client);
+  emailForwardingDefault = new APIEmailForwardingDefaultSub(this._client);
 
 }

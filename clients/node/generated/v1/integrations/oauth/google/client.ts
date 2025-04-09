@@ -1,13 +1,13 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIGetAuthUrl from "./getAuthUrl/client";
-import APIGetToken from "./getToken/client";
+import APIGetAuthUrlSub from "./getAuthUrl/client";
+import APIGetTokenSub from "./getToken/client";
 
 export default class APIGoogle extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  getAuthUrl = new APIGetAuthUrl(this);
-  getToken = new APIGetToken(this);
+  getAuthUrl = new APIGetAuthUrlSub(this._client);
+  getToken = new APIGetTokenSub(this._client);
 
 }

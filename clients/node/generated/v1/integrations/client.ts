@@ -1,15 +1,15 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APICheckOauthToken from "./checkOauthToken/client";
-import APIOauth from "./oauth/client";
-import APIGoogleSheets from "./googleSheets/client";
+import APICheckOauthTokenSub from "./checkOauthToken/client";
+import APIOauthSub from "./oauth/client";
+import APIGoogleSheetsSub from "./googleSheets/client";
 
 export default class APIIntegrations extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  checkOauthToken = new APICheckOauthToken(this);
-  oauth = new APIOauth(this);
-  googleSheets = new APIGoogleSheets(this);
+  checkOauthToken = new APICheckOauthTokenSub(this._client);
+  oauth = new APIOauthSub(this._client);
+  googleSheets = new APIGoogleSheetsSub(this._client);
 
 }

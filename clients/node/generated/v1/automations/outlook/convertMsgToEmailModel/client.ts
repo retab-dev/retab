@@ -12,7 +12,6 @@ export default class APIConvertMsgToEmailModel extends CompositionClient {
       url: `/v1/automations/outlook/convert_msg_to_email_model`,
       method: "POST",
       params: { "return_inline_body": returnInlineBody },
-      headers: {  },
       body: body,
       bodyMime: "multipart/form-data",
     });

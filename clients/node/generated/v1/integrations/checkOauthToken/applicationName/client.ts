@@ -10,8 +10,7 @@ export default class APIApplicationName extends CompositionClient {
     return this._fetch({
       url: `/v1/integrations/check_oauth_token/${applicationName}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

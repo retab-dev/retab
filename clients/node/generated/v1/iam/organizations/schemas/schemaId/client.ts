@@ -11,8 +11,7 @@ export default class APISchemaId extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/organizations/schemas/${schemaId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -20,10 +19,9 @@ export default class APISchemaId extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/organizations/schemas/${schemaId}`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

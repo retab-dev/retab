@@ -3,14 +3,15 @@ import { AbstractClient, APIError } from "@/client";
 export * from "@/client";
 
 type UiFormClientOptions = {
-  baseUrl?: string;
-  auth?: { "bearer": string } | { "masterKey": string } | { "apiKey": string };
+  baseUrl?: string,
+  auth?: { "bearer": string } | { "masterKey": string } | { "apiKey": string },
+  basicAuth?: { username: string, password: string },
 }
 
 class UiFormClientFetcher implements AbstractClient {
   options: UiFormClientOptions;
-  constructor(options: UiFormClientOptions) {
-    this.options = options;
+  constructor(options?: UiFormClientOptions) {
+    this.options = options || {};
   }
 
   async _fetch<T>(params: {
@@ -19,13 +20,18 @@ class UiFormClientFetcher implements AbstractClient {
     params?: Record<string, any>;
     headers?: Record<string, any>;
     bodyMime?: "application/json" | "multipart/form-data";
-    body?: Record<string, any>
+    body?: Record<string, any>,
+    auth?: string[];
   }): Promise<T> {
     let query = "";
     if (params.params) {
-      query = "?" + new URLSearchParams(params.params).toString();
+      query = "?" + new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(params.params).filter(([k, v]) => v !== undefined)
+        )
+      ).toString();
     }
-    let url = (this.options.baseUrl || "https://uiform.com") + params.url + query;
+    let url = (this.options.baseUrl || "https://api.uiform.com") + params.url + query;
     let headers = params.headers || {};
     let init: RequestInit = {
       method: params.method,
@@ -42,6 +48,23 @@ class UiFormClientFetcher implements AbstractClient {
         init.body = formData;
       }
     }
+    if (params.auth) {
+      let bearerToken = this.options.auth?.["bearer"] || process.env["UIFORM_BEARER_TOKEN"];
+      let masterKey = this.options.auth?.["masterKey"] || process.env["UIFORM_MASTER_KEY"];
+      let apiKey = this.options.auth?.["apiKey"] || process.env["UIFORM_API_KEY"];
+      let basicUsername = this.options.basicAuth?.username || process.env["UIFORM_BASIC_USERNAME"];
+      let basicPassword = this.options.basicAuth?.password || process.env["UIFORM_BASIC_PASSWORD"];
+
+      if (params.auth.includes("HTTPBearer") && bearerToken) {
+        headers["Authorization"] = `Bearer ${bearerToken}`;
+      } else if (params.auth.includes("Master Key") && masterKey) {
+        headers["Master-Key"] = masterKey;
+      } else if (params.auth.includes("API Key") && apiKey) {
+        headers["Api-Key"] = apiKey;
+      } else if (params.auth.includes("HTTPBasic") && basicUsername && basicPassword) {
+        headers["Authorization"] = `Basic ${btoa(`${basicUsername}:${basicPassword}`)}`;
+      }
+    }
     init.headers = headers;
     let res = await fetch(url, init);
     if (res.status >= 200 && res.status < 300) {
@@ -52,7 +75,7 @@ class UiFormClientFetcher implements AbstractClient {
 }
 
 export class UiFormClient extends APIGenerated {
-  constructor(options: UiFormClientOptions) {
+  constructor(options?: UiFormClientOptions) {
     super(new UiFormClientFetcher(options));
   }
 }

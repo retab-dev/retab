@@ -10,8 +10,6 @@ export default class APIWebhook extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/payments/webhook`,
       method: "POST",
-      params: {  },
-      headers: {  },
     });
   }
   

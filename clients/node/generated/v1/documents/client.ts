@@ -1,25 +1,25 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIMonthlyUsage from "./monthlyUsage/client";
-import APIExtractions from "./extractions/client";
-import APILogExtraction from "./logExtraction/client";
-import APICreateMessagesMock from "./createMessagesMock/client";
-import APICreateMessages from "./createMessages/client";
-import APICreateInputs from "./createInputs/client";
-import APICorrectImageOrientation from "./correctImageOrientation/client";
-import APIEmailExtraction from "./emailExtraction/client";
+import APIMonthlyUsageSub from "./monthlyUsage/client";
+import APIExtractionsSub from "./extractions/client";
+import APILogExtractionSub from "./logExtraction/client";
+import APICreateMessagesMockSub from "./createMessagesMock/client";
+import APICreateMessagesSub from "./createMessages/client";
+import APICreateInputsSub from "./createInputs/client";
+import APICorrectImageOrientationSub from "./correctImageOrientation/client";
+import APIEmailExtractionSub from "./emailExtraction/client";
 
 export default class APIDocuments extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  monthlyUsage = new APIMonthlyUsage(this);
-  extractions = new APIExtractions(this);
-  logExtraction = new APILogExtraction(this);
-  createMessagesMock = new APICreateMessagesMock(this);
-  createMessages = new APICreateMessages(this);
-  createInputs = new APICreateInputs(this);
-  correctImageOrientation = new APICorrectImageOrientation(this);
-  emailExtraction = new APIEmailExtraction(this);
+  monthlyUsage = new APIMonthlyUsageSub(this._client);
+  extractions = new APIExtractionsSub(this._client);
+  logExtraction = new APILogExtractionSub(this._client);
+  createMessagesMock = new APICreateMessagesMockSub(this._client);
+  createMessages = new APICreateMessagesSub(this._client);
+  createInputs = new APICreateInputsSub(this._client);
+  correctImageOrientation = new APICorrectImageOrientationSub(this._client);
+  emailExtraction = new APIEmailExtractionSub(this._client);
 
 }

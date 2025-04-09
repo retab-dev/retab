@@ -1,7 +1,7 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIKeyId from "./keyId/client";
-import APIWebhookSignature from "./webhookSignature/client";
-import APIGetOneApiKey from "./getOneApiKey/client";
+import APIKeyIdSub from "./keyId/client";
+import APIWebhookSignatureSub from "./webhookSignature/client";
+import APIGetOneApiKeySub from "./getOneApiKey/client";
 import { APIKeyInfo, APIKeyCreate, APIKeyResponse } from "@/types";
 
 export default class APIApiKeys extends CompositionClient {
@@ -9,16 +9,15 @@ export default class APIApiKeys extends CompositionClient {
     super(client);
   }
 
-  keyId = new APIKeyId(this);
-  webhookSignature = new APIWebhookSignature(this);
-  getOneApiKey = new APIGetOneApiKey(this);
+  keyId = new APIKeyIdSub(this._client);
+  webhookSignature = new APIWebhookSignatureSub(this._client);
+  getOneApiKey = new APIGetOneApiKeySub(this._client);
 
   async get(): Promise<APIKeyInfo[]> {
     return this._fetch({
       url: `/v1/secrets/api_keys`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -26,10 +25,9 @@ export default class APIApiKeys extends CompositionClient {
     return this._fetch({
       url: `/v1/secrets/api_keys`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

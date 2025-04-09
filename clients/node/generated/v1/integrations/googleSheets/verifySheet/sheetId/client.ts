@@ -10,8 +10,7 @@ export default class APISheetId extends CompositionClient {
     return this._fetch({
       url: `/v1/integrations/google_sheets/verify-sheet/${sheetId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

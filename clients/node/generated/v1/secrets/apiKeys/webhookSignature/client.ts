@@ -11,8 +11,7 @@ export default class APIWebhookSignature extends CompositionClient {
     return this._fetch({
       url: `/v1/secrets/api_keys/webhook-signature`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -20,8 +19,7 @@ export default class APIWebhookSignature extends CompositionClient {
     return this._fetch({
       url: `/v1/secrets/api_keys/webhook-signature`,
       method: "PUT",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -29,8 +27,7 @@ export default class APIWebhookSignature extends CompositionClient {
     return this._fetch({
       url: `/v1/secrets/api_keys/webhook-signature`,
       method: "POST",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

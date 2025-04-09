@@ -11,10 +11,9 @@ export default class APICorrectImageOrientation extends CompositionClient {
     return this._fetch({
       url: `/v1/documents/correct_image_orientation`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

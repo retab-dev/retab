@@ -11,8 +11,6 @@ export default class APIAutomationId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/tests/upload/${automationId}`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "multipart/form-data",
     });

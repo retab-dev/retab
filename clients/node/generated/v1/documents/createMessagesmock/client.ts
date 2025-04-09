@@ -10,8 +10,6 @@ export default class APICreateMessagesMock extends CompositionClient {
     return this._fetch({
       url: `/v1/documents/create_messagesMock`,
       method: "POST",
-      params: {  },
-      headers: {  },
     });
   }
   

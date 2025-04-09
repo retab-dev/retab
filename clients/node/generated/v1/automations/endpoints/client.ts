@@ -1,8 +1,8 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APILogs from "./logs/client";
-import APIOpen from "./open/client";
-import APIEndpointId from "./endpointId/client";
-import APIProcess from "./process/client";
+import APILogsSub from "./logs/client";
+import APIOpenSub from "./open/client";
+import APIEndpointIdSub from "./endpointId/client";
+import APIProcessSub from "./process/client";
 import { EndpointInput, EndpointOutput, ListEndpoints } from "@/types";
 
 export default class APIEndpoints extends CompositionClient {
@@ -10,28 +10,27 @@ export default class APIEndpoints extends CompositionClient {
     super(client);
   }
 
-  logs = new APILogs(this);
-  open = new APIOpen(this);
-  endpointId = new APIEndpointId(this);
-  process = new APIProcess(this);
+  logs = new APILogsSub(this._client);
+  open = new APIOpenSub(this._client);
+  endpointId = new APIEndpointIdSub(this._client);
+  process = new APIProcessSub(this._client);
 
   async post({ ...body }: EndpointInput): Promise<EndpointOutput> {
     return this._fetch({
       url: `/v1/automations/endpoints`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
-  async get({ before, after, limit, order, endpointId, name, webhookUrl, schemaId, schemaDataId }: { before?: string | null, after?: string | null, limit?: number | null, order?: "asc" | "desc" | null, endpointId?: string | null, name?: string | null, webhookUrl?: string | null, schemaId?: string | null, schemaDataId?: string | null }): Promise<ListEndpoints> {
+  async get({ before, after, limit, order, endpointId, name, webhookUrl, schemaId, schemaDataId }: { before?: string | null, after?: string | null, limit?: number | null, order?: "asc" | "desc" | null, endpointId?: string | null, name?: string | null, webhookUrl?: string | null, schemaId?: string | null, schemaDataId?: string | null } = {}): Promise<ListEndpoints> {
     return this._fetch({
       url: `/v1/automations/endpoints`,
       method: "GET",
       params: { "before": before, "after": after, "limit": limit, "order": order, "endpoint_id": endpointId, "name": name, "webhook_url": webhookUrl, "schema_id": schemaId, "schema_data_id": schemaDataId },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

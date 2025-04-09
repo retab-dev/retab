@@ -1,7 +1,7 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIDataStructureVersions from "./dataStructureVersions/client";
-import APISchemaId from "./schemaId/client";
-import APIVersion from "./version/client";
+import APIDataStructureVersionsSub from "./dataStructureVersions/client";
+import APISchemaIdSub from "./schemaId/client";
+import APIVersionSub from "./version/client";
 import { OrganizationSchemaEntry, CreateSchemaEntry, OrganizationSchemaEntry } from "@/types";
 
 export default class APISchemas extends CompositionClient {
@@ -9,16 +9,16 @@ export default class APISchemas extends CompositionClient {
     super(client);
   }
 
-  dataStructureVersions = new APIDataStructureVersions(this);
-  schemaId = new APISchemaId(this);
-  version = new APIVersion(this);
+  dataStructureVersions = new APIDataStructureVersionsSub(this._client);
+  schemaId = new APISchemaIdSub(this._client);
+  version = new APIVersionSub(this._client);
 
-  async get({ dataStructureVersion, isCurrent, isActive }: { dataStructureVersion?: string | null, isCurrent?: boolean | null, isActive?: boolean | null }): Promise<OrganizationSchemaEntry[]> {
+  async get({ dataStructureVersion, isCurrent, isActive }: { dataStructureVersion?: string | null, isCurrent?: boolean | null, isActive?: boolean | null } = {}): Promise<OrganizationSchemaEntry[]> {
     return this._fetch({
       url: `/v1/iam/organizations/schemas/`,
       method: "GET",
       params: { "data_structure_version": dataStructureVersion, "is_current": isCurrent, "is_active": isActive },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -26,10 +26,9 @@ export default class APISchemas extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/organizations/schemas/`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

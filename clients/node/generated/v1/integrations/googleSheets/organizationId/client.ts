@@ -10,8 +10,7 @@ export default class APIOrganizationId extends CompositionClient {
     return this._fetch({
       url: `/v1/integrations/google_sheets/organization_id`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

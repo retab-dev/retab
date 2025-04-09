@@ -11,8 +11,7 @@ export default class APISchemaId extends CompositionClient {
     return this._fetch({
       url: `/v1/schemas/extraction_count/${schemaId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -10,8 +10,7 @@ export default class APIFields extends CompositionClient {
     return this._fetch({
       url: `/v1/extractions_logs/fields`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

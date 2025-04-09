@@ -7,12 +7,11 @@ export default class APIEndpointId extends CompositionClient {
   }
 
 
-  async post(endpointId: string, { IdempotencyKey, ...body }: { IdempotencyKey?: string | null } & BodyHandleEndpointProcessingV1AutomationsEndpointsProcessEndpointIdPost): Promise<AutomationLog> {
+  async post(endpointId: string, { idempotencyKey, ...body }: { idempotencyKey?: string | null } & BodyHandleEndpointProcessingV1AutomationsEndpointsProcessEndpointIdPost): Promise<AutomationLog> {
     return this._fetch({
       url: `/v1/automations/endpoints/process/${endpointId}`,
       method: "POST",
-      params: {  },
-      headers: { "Idempotency-Key": IdempotencyKey },
+      headers: { "Idempotency-Key": idempotencyKey },
       body: body,
       bodyMime: "multipart/form-data",
     });

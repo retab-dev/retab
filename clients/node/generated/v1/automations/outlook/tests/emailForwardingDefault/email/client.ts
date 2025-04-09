@@ -10,8 +10,7 @@ export default class APIEmail extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/tests/email-forwarding-default/${email}`,
       method: "POST",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

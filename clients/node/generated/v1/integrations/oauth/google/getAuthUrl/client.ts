@@ -10,8 +10,7 @@ export default class APIGetAuthUrl extends CompositionClient {
     return this._fetch({
       url: `/v1/integrations/oauth/google/get-auth-url`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -11,8 +11,7 @@ export default class APIJobExecutionId extends CompositionClient {
     return this._fetch({
       url: `/v1/job_system/job_executions/${jobExecutionId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -20,10 +19,9 @@ export default class APIJobExecutionId extends CompositionClient {
     return this._fetch({
       url: `/v1/job_system/job_executions/${jobExecutionId}`,
       method: "PUT",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

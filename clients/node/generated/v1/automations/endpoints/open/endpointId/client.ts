@@ -11,8 +11,6 @@ export default class APIEndpointId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/endpoints/open/${endpointId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
     });
   }
   

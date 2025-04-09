@@ -11,10 +11,9 @@ export default class APIIterations extends CompositionClient {
     return this._fetch({
       url: `/v1/experiments/${experimentId}/iterations`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

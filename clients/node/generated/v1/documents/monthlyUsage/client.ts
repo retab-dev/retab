@@ -11,8 +11,7 @@ export default class APIMonthlyUsage extends CompositionClient {
     return this._fetch({
       url: `/v1/documents/monthly-usage`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

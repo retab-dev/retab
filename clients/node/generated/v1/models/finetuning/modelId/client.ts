@@ -11,8 +11,7 @@ export default class APIModelId extends CompositionClient {
     return this._fetch({
       url: `/v1/models/finetuning/${modelId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

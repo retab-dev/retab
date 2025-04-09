@@ -1,11 +1,11 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIAutomationId from "./automationId/client";
+import APIAutomationIdSub from "./automationId/client";
 
 export default class APIAutomations extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  automationId = new APIAutomationId(this);
+  automationId = new APIAutomationIdSub(this._client);
 
 }

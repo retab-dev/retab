@@ -1,6 +1,6 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIFinetuning from "./finetuning/client";
-import APIModelCards from "./modelCards/client";
+import APIFinetuningSub from "./finetuning/client";
+import APIModelCardsSub from "./modelCards/client";
 import { ModelsResponse } from "@/types";
 
 export default class APIModels extends CompositionClient {
@@ -8,15 +8,15 @@ export default class APIModels extends CompositionClient {
     super(client);
   }
 
-  finetuning = new APIFinetuning(this);
-  modelCards = new APIModelCards(this);
+  finetuning = new APIFinetuningSub(this._client);
+  modelCards = new APIModelCardsSub(this._client);
 
-  async get({ finetuning }: { finetuning?: boolean }): Promise<ModelsResponse> {
+  async get({ finetuning }: { finetuning?: boolean } = {}): Promise<ModelsResponse> {
     return this._fetch({
       url: `/v1/models`,
       method: "GET",
       params: { "finetuning": finetuning },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

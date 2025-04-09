@@ -1,11 +1,11 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIExtract from "./extract/client";
+import APIExtractSub from "./extract/client";
 
 export default class APISchemaId extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  extract = new APIExtract(this);
+  extract = new APIExtractSub(this._client);
 
 }

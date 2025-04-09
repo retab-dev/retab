@@ -11,8 +11,6 @@ export default class APILinkId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/links/open/${linkId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
     });
   }
   
