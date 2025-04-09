@@ -11,8 +11,7 @@ export default class APIEndpointId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/endpoints/${endpointId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -20,10 +19,9 @@ export default class APIEndpointId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/endpoints/${endpointId}`,
       method: "PUT",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -31,8 +29,7 @@ export default class APIEndpointId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/endpoints/${endpointId}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

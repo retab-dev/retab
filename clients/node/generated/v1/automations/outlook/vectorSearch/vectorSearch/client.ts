@@ -11,10 +11,9 @@ export default class APIVectorSearch extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/vector_search/vector_search`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

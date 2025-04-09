@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIIterations from "./iterations/client";
+import APIIterationsSub from "./iterations/client";
 import { Experiment } from "@/types";
 
 export default class APIExperimentId extends CompositionClient {
@@ -7,14 +7,13 @@ export default class APIExperimentId extends CompositionClient {
     super(client);
   }
 
-  iterations = new APIIterations(this);
+  iterations = new APIIterationsSub(this._client);
 
   async get(experimentId: string): Promise<Experiment> {
     return this._fetch({
       url: `/v1/experiments/${experimentId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

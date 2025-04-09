@@ -7,8 +7,8 @@ function capitalise(str: string): string {
 
 function camelCase(str: string): string {
   return str.split(/[-_ ]/).map((word, index) => {
-    if (index === 0) return word;
     if (word.length === 0) return "";
+    if (index === 0) return word.charAt(0).toLowerCase() + word.slice(1);
     return word.charAt(0).toUpperCase() + word.slice(1);
   }).join("");
 }
@@ -114,12 +114,12 @@ for (const path of Object.keys(schema.paths)) {
     const operation = methods[method];
     let arrayPath = path.split("/").filter(Boolean).map(i => i.startsWith("{") ? i.slice(1, -1) : i).map(i => camelCase(i));
     arrayPath.push(method);
-    console.log(`Path: ${arrayPath}; Method: ${method};`);
     schemaToTsImports = [];
     let functionDef = `async ${arrayPath[arrayPath.length-1]}(`;
     let functionParams = [];
     let otherParamsNames = [];
     let otherParamsTypes = [];
+    let otherParamTypesOptional = true;
     let bodyType = undefined;
     for (let param of operation.parameters || []) {
       if (param.in === "path") {
@@ -127,6 +127,7 @@ for (const path of Object.keys(schema.paths)) {
       } else {
         otherParamsNames.push(`${camelCase(param.name)}`);
         otherParamsTypes.push(`${camelCase(param.name)}${param.required ? "" : "?"}: ${schemaToTs(param.schema, schema)}`);
+        if (param.required) otherParamTypesOptional = false;
       }
     }
     if (operation.requestBody) {
@@ -145,17 +146,26 @@ for (const path of Object.keys(schema.paths)) {
       if (bodyType) {
         types.push(bodyType);
       }
-      functionParams.push(`{ ${otherParamsNames.join(", ")} }: ${types.join(" & ")}`);
+      functionParams.push(`{ ${otherParamsNames.join(", ")} }: ${types.join(" & ")}${!bodyType && otherParamTypesOptional ? " = {}" : ""}`);
     }
     functionDef += functionParams.join(", ") + `): Promise<${schemaToTs(operation.responses["200"].content["application/json"].schema, schema)}> {\n`;
     functionDef += `  return this._fetch({\n`;
     functionDef += `    url: \`${path.split("/").map(i => i.startsWith("{") ? `\${${camelCase(i.slice(1, -1))}}` : i).join("/")}\`,\n`;
     functionDef += `    method: "${method.toUpperCase()}",\n`;
-    functionDef += `    params: { ${(operation.parameters || []).filter(p => p.in === "query").map(p => `${JSON.stringify(p.name)}: ${camelCase(p.name)}`).join(", ")} },\n`;
-    functionDef += `    headers: { ${(operation.parameters || []).filter(p => p.in === "header").map(p => `${JSON.stringify(p.name)}: ${camelCase(p.name)}`).join(", ")} },\n`;
+    let queryParams = (operation.parameters || []).filter(p => p.in === "query");
+    if (queryParams.length > 0) {
+      functionDef += `    params: { ${queryParams.map(p => `${JSON.stringify(p.name)}: ${camelCase(p.name)}`).join(", ")} },\n`;
+    }
+    let headerParams = (operation.parameters || []).filter(p => p.in === "header");
+    if (headerParams.length > 0) {
+      functionDef += `    headers: { ${headerParams.map(p => `${JSON.stringify(p.name)}: ${camelCase(p.name)}`).join(", ")} },\n`;
+    }
     if (bodyType) {
       functionDef += `    body: body,\n`;
       functionDef += `    bodyMime: "${Object.keys(operation.requestBody.content)[0]}",\n`;
+    }
+    if (operation.security) {
+      functionDef += `    auth: [${operation.security.map(s => JSON.stringify(Object.keys(s)[0])).join(", ")}],\n`;
     }
     functionDef += `  });\n`;
     functionDef += `}\n`;
@@ -180,8 +190,8 @@ function generateClass(name: string, path: string, structure: Record<string, any
   }\n\n`;
   for (const [key, value] of Object.entries(structure)) {
     if (!Array.isArray(value)) {
-      imports.push(`import API${capitalise(key)} from "./${key}/client";`);
-      classDef += `  ${key} = new API${capitalise(key)}(this);\n`;
+      imports.push(`import API${capitalise(key)}Sub from "./${key}/client";`);
+      classDef += `  ${key} = new API${capitalise(key)}Sub(this._client);\n`;
       generateClass(key, path + "/" + key, value);
     }
   }

@@ -11,8 +11,7 @@ export default class APIAutomationId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/${automationId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -20,10 +19,9 @@ export default class APIAutomationId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/${automationId}`,
       method: "PUT",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

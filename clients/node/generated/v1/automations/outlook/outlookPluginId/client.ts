@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APISubmit from "./submit/client";
+import APISubmitSub from "./submit/client";
 import { OutlookOutput, UpdateOutlookRequest, OutlookOutput } from "@/types";
 
 export default class APIOutlookPluginId extends CompositionClient {
@@ -7,14 +7,13 @@ export default class APIOutlookPluginId extends CompositionClient {
     super(client);
   }
 
-  submit = new APISubmit(this);
+  submit = new APISubmitSub(this._client);
 
   async get(outlookPluginId: string): Promise<OutlookOutput> {
     return this._fetch({
       url: `/v1/automations/outlook/${outlookPluginId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -22,10 +21,9 @@ export default class APIOutlookPluginId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/${outlookPluginId}`,
       method: "PUT",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -33,8 +31,7 @@ export default class APIOutlookPluginId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/${outlookPluginId}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

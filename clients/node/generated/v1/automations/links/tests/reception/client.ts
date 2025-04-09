@@ -10,8 +10,6 @@ export default class APIReception extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/links/tests/reception`,
       method: "POST",
-      params: {  },
-      headers: {  },
     });
   }
   

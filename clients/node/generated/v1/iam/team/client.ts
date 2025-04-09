@@ -1,17 +1,17 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APICreateAndLinkOrganization from "./createAndLinkOrganization/client";
-import APIMembers from "./members/client";
-import APIOrganizations from "./organizations/client";
-import APIInvitations from "./invitations/client";
+import APICreateAndLinkOrganizationSub from "./createAndLinkOrganization/client";
+import APIMembersSub from "./members/client";
+import APIOrganizationsSub from "./organizations/client";
+import APIInvitationsSub from "./invitations/client";
 
 export default class APITeam extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  createAndLinkOrganization = new APICreateAndLinkOrganization(this);
-  members = new APIMembers(this);
-  organizations = new APIOrganizations(this);
-  invitations = new APIInvitations(this);
+  createAndLinkOrganization = new APICreateAndLinkOrganizationSub(this._client);
+  members = new APIMembersSub(this._client);
+  organizations = new APIOrganizationsSub(this._client);
+  invitations = new APIInvitationsSub(this._client);
 
 }

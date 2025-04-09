@@ -1,17 +1,17 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APILog from "./log/client";
-import APITimeSeries from "./timeSeries/client";
-import APISchemaDataId from "./schemaDataId/client";
-import APIAutomation from "./automation/client";
+import APILogSub from "./log/client";
+import APITimeSeriesSub from "./timeSeries/client";
+import APISchemaDataIdSub from "./schemaDataId/client";
+import APIAutomationSub from "./automation/client";
 
 export default class APIUsage extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  log = new APILog(this);
-  timeSeries = new APITimeSeries(this);
-  schemaDataId = new APISchemaDataId(this);
-  automation = new APIAutomation(this);
+  log = new APILogSub(this._client);
+  timeSeries = new APITimeSeriesSub(this._client);
+  schemaDataId = new APISchemaDataIdSub(this._client);
+  automation = new APIAutomationSub(this._client);
 
 }

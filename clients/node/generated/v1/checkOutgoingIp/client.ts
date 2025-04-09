@@ -10,8 +10,6 @@ export default class APICheckOutgoingIp extends CompositionClient {
     return this._fetch({
       url: `/v1/check-outgoing-ip`,
       method: "GET",
-      params: {  },
-      headers: {  },
     });
   }
   

@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APISampleDocument from "./sampleDocument/client";
+import APISampleDocumentSub from "./sampleDocument/client";
 import { TemplateSchema, UpdateTemplateRequest, TemplateSchema } from "@/types";
 
 export default class APITemplateId extends CompositionClient {
@@ -7,14 +7,13 @@ export default class APITemplateId extends CompositionClient {
     super(client);
   }
 
-  sampleDocument = new APISampleDocument(this);
+  sampleDocument = new APISampleDocumentSub(this._client);
 
   async get(templateId: string): Promise<TemplateSchema> {
     return this._fetch({
       url: `/v1/schemas/default_templates/${templateId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -22,8 +21,7 @@ export default class APITemplateId extends CompositionClient {
     return this._fetch({
       url: `/v1/schemas/default_templates/${templateId}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -31,10 +29,9 @@ export default class APITemplateId extends CompositionClient {
     return this._fetch({
       url: `/v1/schemas/default_templates/${templateId}`,
       method: "PUT",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -1,19 +1,18 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIDefault from "./default/client";
+import APIDefaultSub from "./default/client";
 
 export default class APIDomainId extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  default = new APIDefault(this);
+  default = new APIDefaultSub(this._client);
 
   async delete(domainId: string): Promise<any> {
     return this._fetch({
       url: `/v1/iam/domains/${domainId}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

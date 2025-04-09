@@ -10,8 +10,7 @@ export default class APIInvitationId extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/team/invitations/${invitationId}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

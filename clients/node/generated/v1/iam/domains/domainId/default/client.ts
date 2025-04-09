@@ -10,8 +10,7 @@ export default class APIDefault extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/domains/${domainId}/default`,
       method: "PUT",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

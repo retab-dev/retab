@@ -11,7 +11,7 @@ export default class APIVersion extends CompositionClient {
       url: `/v1/iam/organizations/schemas/${version}`,
       method: "DELETE",
       params: { "schema_id": schemaId },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

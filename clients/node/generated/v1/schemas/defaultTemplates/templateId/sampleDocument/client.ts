@@ -10,8 +10,7 @@ export default class APISampleDocument extends CompositionClient {
     return this._fetch({
       url: `/v1/schemas/default_templates/${templateId}/sample-document`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

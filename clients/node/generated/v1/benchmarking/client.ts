@@ -1,11 +1,11 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIExtractComparison from "./extractComparison/client";
+import APIExtractComparisonSub from "./extractComparison/client";
 
 export default class APIBenchmarking extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  extractComparison = new APIExtractComparison(this);
+  extractComparison = new APIExtractComparisonSub(this._client);
 
 }

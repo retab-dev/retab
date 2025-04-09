@@ -11,8 +11,6 @@ export default class APILinkId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/links/tests/upload/${linkId}`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
     });

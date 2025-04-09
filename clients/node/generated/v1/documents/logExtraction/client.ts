@@ -7,14 +7,14 @@ export default class APILogExtraction extends CompositionClient {
   }
 
 
-  async post({ IdempotencyKey, ...body }: { IdempotencyKey?: string | null } & LogExtractionRequest): Promise<LogExtractionResponse> {
+  async post({ idempotencyKey, ...body }: { idempotencyKey?: string | null } & LogExtractionRequest): Promise<LogExtractionResponse> {
     return this._fetch({
       url: `/v1/documents/log_extraction`,
       method: "POST",
-      params: {  },
-      headers: { "Idempotency-Key": IdempotencyKey },
+      headers: { "Idempotency-Key": idempotencyKey },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -12,7 +12,6 @@ export default class APIWebhook extends CompositionClient {
       url: `/v1/integrations/google_sheets/webhook`,
       method: "POST",
       params: { "spreadsheet_id": spreadsheetId, "sheet_id": sheetId, "organization_id": organizationId, "list_field_name": listFieldName, "color_by_likelihood": colorByLikelihood, "append_likelihoods": appendLikelihoods },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
     });

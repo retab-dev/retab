@@ -10,8 +10,7 @@ export default class APIGetOneApiKey extends CompositionClient {
     return this._fetch({
       url: `/v1/secrets/api_keys/get_one_api_key`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

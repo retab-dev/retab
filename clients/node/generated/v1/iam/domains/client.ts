@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIDomainId from "./domainId/client";
+import APIDomainIdSub from "./domainId/client";
 import { ListDomainsResponse, AddDomainRequest, CustomDomain } from "@/types";
 
 export default class APIDomains extends CompositionClient {
@@ -7,14 +7,13 @@ export default class APIDomains extends CompositionClient {
     super(client);
   }
 
-  domainId = new APIDomainId(this);
+  domainId = new APIDomainIdSub(this._client);
 
   async get(): Promise<ListDomainsResponse> {
     return this._fetch({
       url: `/v1/iam/domains`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -22,10 +21,9 @@ export default class APIDomains extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/domains/`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -11,8 +11,6 @@ export default class APIUpdateEmailData extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/update_email_data`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
     });

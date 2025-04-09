@@ -11,8 +11,7 @@ export default class APIEmail extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/mailboxes/${email}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -20,10 +19,9 @@ export default class APIEmail extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/mailboxes/${email}`,
       method: "PUT",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -31,8 +29,7 @@ export default class APIEmail extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/mailboxes/${email}`,
       method: "DELETE",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

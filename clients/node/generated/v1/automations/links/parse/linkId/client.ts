@@ -7,12 +7,11 @@ export default class APILinkId extends CompositionClient {
   }
 
 
-  async post(linkId: string, { IdempotencyKey, ...body }: { IdempotencyKey?: string | null } & BodyHandleLinkWebhookV1AutomationsLinksParseLinkIdPost): Promise<AutomationLog> {
+  async post(linkId: string, { idempotencyKey, ...body }: { idempotencyKey?: string | null } & BodyHandleLinkWebhookV1AutomationsLinksParseLinkIdPost): Promise<AutomationLog> {
     return this._fetch({
       url: `/v1/automations/links/parse/${linkId}`,
       method: "POST",
-      params: {  },
-      headers: { "Idempotency-Key": IdempotencyKey },
+      headers: { "Idempotency-Key": idempotencyKey },
       body: body,
       bodyMime: "multipart/form-data",
     });

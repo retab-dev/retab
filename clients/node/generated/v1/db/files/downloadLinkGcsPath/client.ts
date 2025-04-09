@@ -12,7 +12,7 @@ export default class APIDownloadLinkGcsPath extends CompositionClient {
       url: `/v1/db/files/download-link-gcs-path`,
       method: "GET",
       params: { "gcs_path": gcsPath },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

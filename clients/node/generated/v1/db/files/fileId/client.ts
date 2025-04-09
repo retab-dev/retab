@@ -1,8 +1,8 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIDownloadLink from "./downloadLink/client";
-import APISampleDocument from "./sampleDocument/client";
-import APIDownload from "./download/client";
-import APIGetMimeData from "./getMimeData/client";
+import APIDownloadLinkSub from "./downloadLink/client";
+import APISampleDocumentSub from "./sampleDocument/client";
+import APIDownloadSub from "./download/client";
+import APIGetMimeDataSub from "./getMimeData/client";
 import { DBFile } from "@/types";
 
 export default class APIFileId extends CompositionClient {
@@ -10,17 +10,16 @@ export default class APIFileId extends CompositionClient {
     super(client);
   }
 
-  downloadLink = new APIDownloadLink(this);
-  sampleDocument = new APISampleDocument(this);
-  download = new APIDownload(this);
-  getMimeData = new APIGetMimeData(this);
+  downloadLink = new APIDownloadLinkSub(this._client);
+  sampleDocument = new APISampleDocumentSub(this._client);
+  download = new APIDownloadSub(this._client);
+  getMimeData = new APIGetMimeDataSub(this._client);
 
   async get(fileId: string): Promise<DBFile> {
     return this._fetch({
       url: `/v1/db/files/${fileId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

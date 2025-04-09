@@ -7,12 +7,12 @@ export default class APIModelCards extends CompositionClient {
   }
 
 
-  async get({ finetuning }: { finetuning?: boolean }): Promise<ModelCardsResponse> {
+  async get({ finetuning }: { finetuning?: boolean } = {}): Promise<ModelCardsResponse> {
     return this._fetch({
       url: `/v1/models/model_cards`,
       method: "GET",
       params: { "finetuning": finetuning },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

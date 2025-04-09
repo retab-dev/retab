@@ -11,8 +11,7 @@ export default class APIGetMimeData extends CompositionClient {
     return this._fetch({
       url: `/v1/db/files/${fileId}/get_mime_data`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

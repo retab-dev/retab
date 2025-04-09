@@ -11,8 +11,6 @@ export default class APIConvertEmlBytesToEmailModel extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/convert_eml_bytes_to_email_model`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
     });

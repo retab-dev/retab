@@ -12,7 +12,7 @@ export default class APIAutomationId extends CompositionClient {
       url: `/v1/usage/time_series/automation_id/${automationId}`,
       method: "GET",
       params: { "time_range": timeRange },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

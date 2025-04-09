@@ -11,10 +11,9 @@ export default class APICreateMessages extends CompositionClient {
     return this._fetch({
       url: `/v1/documents/create_messages`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

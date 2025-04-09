@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APITemplateId from "./templateId/client";
+import APITemplateIdSub from "./templateId/client";
 import { ListTemplates, CubeServerServicesV1SchemasTemplatesRoutesCreateTemplateRequest, TemplateSchema } from "@/types";
 
 export default class APITemplates extends CompositionClient {
@@ -7,14 +7,14 @@ export default class APITemplates extends CompositionClient {
     super(client);
   }
 
-  templateId = new APITemplateId(this);
+  templateId = new APITemplateIdSub(this._client);
 
-  async get({ before, after, limit, order, name, id, dataId, sortBy }: { before?: string | null, after?: string | null, limit?: number, order?: "asc" | "desc", name?: string | null, id?: string | null, dataId?: string | null, sortBy?: string }): Promise<ListTemplates> {
+  async get({ before, after, limit, order, name, id, dataId, sortBy }: { before?: string | null, after?: string | null, limit?: number, order?: "asc" | "desc", name?: string | null, id?: string | null, dataId?: string | null, sortBy?: string } = {}): Promise<ListTemplates> {
     return this._fetch({
       url: `/v1/schemas/templates`,
       method: "GET",
       params: { "before": before, "after": after, "limit": limit, "order": order, "name": name, "id": id, "data_id": dataId, "sort_by": sortBy },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
@@ -22,10 +22,9 @@ export default class APITemplates extends CompositionClient {
     return this._fetch({
       url: `/v1/schemas/templates`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "application/json",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -12,7 +12,6 @@ export default class APIConvertToEmailDataAndUploadFile extends CompositionClien
       url: `/v1/automations/outlook/convert_to_email_data_and_upload_file`,
       method: "POST",
       params: { "return_inline_body": returnInlineBody },
-      headers: {  },
       body: body,
       bodyMime: "multipart/form-data",
     });

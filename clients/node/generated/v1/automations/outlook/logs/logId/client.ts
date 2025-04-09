@@ -11,8 +11,7 @@ export default class APILogId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/logs/${logId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

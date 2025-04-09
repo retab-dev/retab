@@ -11,10 +11,9 @@ export default class APIBatch extends CompositionClient {
     return this._fetch({
       url: `/v1/db/files/batch`,
       method: "POST",
-      params: {  },
-      headers: {  },
       body: body,
       bodyMime: "multipart/form-data",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

@@ -1,15 +1,15 @@
 import { AbstractClient, CompositionClient } from '@/client';
-import APIDatasets from "./datasets/client";
-import APIFiles from "./files/client";
-import APIEvals from "./evals/client";
+import APIDatasetsSub from "./datasets/client";
+import APIFilesSub from "./files/client";
+import APIEvalsSub from "./evals/client";
 
 export default class APIDb extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }
 
-  datasets = new APIDatasets(this);
-  files = new APIFiles(this);
-  evals = new APIEvals(this);
+  datasets = new APIDatasetsSub(this._client);
+  files = new APIFilesSub(this._client);
+  evals = new APIEvalsSub(this._client);
 
 }

@@ -11,8 +11,7 @@ export default class APIOrganizations extends CompositionClient {
     return this._fetch({
       url: `/v1/iam/team/organizations`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   

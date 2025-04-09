@@ -11,8 +11,7 @@ export default class APIFileId extends CompositionClient {
     return this._fetch({
       url: `/v1/automations/outlook/vector_search/file_scores/${fileId}`,
       method: "GET",
-      params: {  },
-      headers: {  },
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
   }
   
