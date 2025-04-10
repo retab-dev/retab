@@ -1,5 +1,5 @@
 import { UiFormClient } from "@/index";
-import req from "./req.json";
+import fs from "fs";
 
 // Bearer token authentication:
 // UIFORM_BEARER_TOKEN=<token> or new UiFormClient({ auth: { bearer: "<token>" } })
@@ -14,6 +14,8 @@ const client = new UiFormClient().v1;
   console.log(await client.iam.payments.subscriptionStatus.get());
   console.log(await client.db.files.get());
 
+  let data = fs.readFileSync("test.pdf");
+  let base64 = data.toString("base64");
   let gen = await client.documents.extractions.stream.post({
     json_schema: {
       type: "object",
@@ -28,7 +30,7 @@ const client = new UiFormClient().v1;
     modality: "text",
     document: {
       filename: "test.pdf",
-      url: "data:application/pdf;base64,...",
+      url: "data:application/pdf;base64," + base64,
     },
   });
   console.log("Streaming...");
