@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { EndpointOutput } from "@/types";
 
 export default class APIEndpointId extends CompositionClient {
@@ -8,10 +8,12 @@ export default class APIEndpointId extends CompositionClient {
 
 
   async get(endpointId: string): Promise<EndpointOutput> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/endpoints/open/${endpointId}`,
       method: "GET",
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

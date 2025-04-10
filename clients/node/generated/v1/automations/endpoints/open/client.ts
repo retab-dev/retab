@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIEndpointIdSub from "./endpointId/client";
 
 export default class APIOpen extends CompositionClient {

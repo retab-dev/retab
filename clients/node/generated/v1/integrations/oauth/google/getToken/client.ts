@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 
 export default class APIGetToken extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -7,11 +7,13 @@ export default class APIGetToken extends CompositionClient {
 
 
   async post(): Promise<object> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/integrations/oauth/google/get-token`,
       method: "POST",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

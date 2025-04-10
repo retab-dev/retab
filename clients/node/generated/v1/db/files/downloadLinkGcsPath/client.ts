@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { FileLink } from "@/types";
 
 export default class APIDownloadLinkGcsPath extends CompositionClient {
@@ -8,12 +8,14 @@ export default class APIDownloadLinkGcsPath extends CompositionClient {
 
 
   async get({ gcsPath }: { gcsPath: string }): Promise<FileLink> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/db/files/download-link-gcs-path`,
       method: "GET",
       params: { "gcs_path": gcsPath },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APITestsSub from "./tests/client";
 import APILogsSub from "./logs/client";
 import APILinkIdSub from "./linkId/client";
@@ -20,13 +20,15 @@ export default class APILinks extends CompositionClient {
   open = new APIOpenSub(this._client);
 
   async post({ ...body }: LinkInput): Promise<LinkOutput> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/links`,
       method: "POST",
       body: body,
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

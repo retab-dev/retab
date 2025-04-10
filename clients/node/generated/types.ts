@@ -436,6 +436,23 @@ export type ChoiceOutput = {
   message: ChatCompletionMessageOutput,
 };
 
+export type ChoiceDeltaFunctionCall = {
+  arguments?: string | null,
+  name?: string | null,
+};
+
+export type ChoiceDeltaToolCall = {
+  index: number,
+  id?: string | null,
+  function?: ChoiceDeltaToolCallFunction | null,
+  type?: string | null,
+};
+
+export type ChoiceDeltaToolCallFunction = {
+  arguments?: string | null,
+  name?: string | null,
+};
+
 export type ChoiceLogprobsInput = {
   content?: ChatCompletionTokenLogprob[] | null,
   refusal?: ChatCompletionTokenLogprob[] | null,
@@ -1436,8 +1453,9 @@ export type Organization = {
   created_at: string,
   updated_at: string,
   allow_profiles_outside_organization: boolean,
-  lookup_key?: string | null,
   stripe_customer_id?: string | null,
+  external_id?: string | null,
+  metadata?: object,
 };
 
 export type OrganizationDomain = {
@@ -2054,6 +2072,16 @@ export type URLPDFSourceParam = {
   url: string,
 };
 
+export type UiChatCompletionsParseRequest = {
+  model: string,
+  messages: ChatCompletionUiformMessageInput[],
+  json_schema: object,
+  temperature?: number,
+  reasoning_effort?: "low" | "medium" | "high" | null,
+  stream?: boolean,
+  seed?: number | null,
+};
+
 export type UiParsedChatCompletionInput = {
   id: string,
   choices: UiParsedChoiceInput[],
@@ -2088,6 +2116,23 @@ export type UiParsedChatCompletionOutput = {
   last_token_at?: Date | null,
 };
 
+export type UiParsedChatCompletionChunk = {
+  id: string,
+  choices: UiParsedChoiceChunk[],
+  created: number,
+  model: string,
+  object: string,
+  service_tier?: "scale" | "default" | null,
+  system_fingerprint?: string | null,
+  usage?: CompletionUsage | null,
+  streaming_error?: ErrorDetail | null,
+  schema_validation_error?: ErrorDetail | null,
+  likelihoods_source?: "consensus" | "log_probs",
+  request_at?: Date | null,
+  first_token_at?: Date | null,
+  last_token_at?: Date | null,
+};
+
 export type UiParsedChoiceInput = {
   finish_reason?: "stop" | "length" | "tool_calls" | "content_filter" | "function_call" | null,
   index: number,
@@ -2100,6 +2145,26 @@ export type UiParsedChoiceOutput = {
   index: number,
   logprobs?: ChoiceLogprobsOutput | null,
   message: ParsedChatCompletionMessageOutput,
+};
+
+export type UiParsedChoiceChunk = {
+  delta: UiParsedChoiceDeltaChunk,
+  finish_reason?: "stop" | "length" | "tool_calls" | "content_filter" | "function_call" | null,
+  index: number,
+  logprobs?: ChoiceLogprobsOutput | null,
+};
+
+export type UiParsedChoiceDeltaChunk = {
+  content?: string | null,
+  function_call?: ChoiceDeltaFunctionCall | null,
+  refusal?: string | null,
+  role?: "developer" | "system" | "user" | "assistant" | "tool" | null,
+  tool_calls?: ChoiceDeltaToolCall[] | null,
+  flat_likelihoods?: object,
+  flat_parsed?: object,
+  flat_deleted_keys?: string[],
+  missing_content?: string,
+  is_valid_json?: boolean,
 };
 
 export type UpdateEmailDataRequest = {
@@ -2218,8 +2283,11 @@ export type User = {
   last_name?: string | null,
   email_verified: boolean,
   profile_picture_url?: string | null,
+  last_sign_in_at?: string | null,
   created_at: string,
   updated_at: string,
+  external_id?: string | null,
+  metadata?: object,
   parameters: UserParameters,
 };
 

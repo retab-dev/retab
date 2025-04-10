@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APICreateCheckoutSessionSub from "./createCheckoutSession/client";
 import APICreatePortalSessionSub from "./createPortalSession/client";
 import APISubscriptionStatusSub from "./subscriptionStatus/client";

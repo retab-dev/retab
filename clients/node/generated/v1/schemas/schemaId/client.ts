@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIExtractSub from "./extract/client";
 
 export default class APISchemaId extends CompositionClient {

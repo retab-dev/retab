@@ -148,8 +148,17 @@ for (const path of Object.keys(schema.paths)) {
       }
       functionParams.push(`{ ${otherParamsNames.join(", ")} }: ${types.join(" & ")}${!bodyType && otherParamTypesOptional ? " = {}" : ""}`);
     }
-    functionDef += functionParams.join(", ") + `): Promise<${schemaToTs(operation.responses["200"].content["application/json"].schema, schema)}> {\n`;
-    functionDef += `  return this._fetch({\n`;
+    let returnTypes = Object.entries(operation.responses["200"].content).map(([contentType, value]) => {
+      if (contentType === "application/json") {
+        return schemaToTs(value.schema, schema);
+      }
+      if (contentType === "application/stream+json") {
+        return `AsyncGenerator<${schemaToTs(value.schema, schema)}>`;
+      }
+      throw new Error(`Unsupported content type ${contentType}`);
+    });
+    functionDef += functionParams.join(", ") + `): Promise<${returnTypes.join(" | ")}> {\n`;
+    functionDef += `  let res = await this._fetch({\n`;
     functionDef += `    url: \`${path.split("/").map(i => i.startsWith("{") ? `\${${camelCase(i.slice(1, -1))}}` : i).join("/")}\`,\n`;
     functionDef += `    method: "${method.toUpperCase()}",\n`;
     let queryParams = (operation.parameters || []).filter(p => p.in === "query");
@@ -168,6 +177,19 @@ for (const path of Object.keys(schema.paths)) {
       functionDef += `    auth: [${operation.security.map(s => JSON.stringify(Object.keys(s)[0])).join(", ")}],\n`;
     }
     functionDef += `  });\n`;
+    Object.entries(operation.responses["200"].content).forEach(([contentType, value]) => {
+      if (contentType === "application/json") {
+        functionDef += `  if (res.headers.get("Content-Type") === "application/json") return res.json();\n`;
+        return;
+      }
+      if (contentType === "application/stream+json") {
+        functionDef += `  if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res);\n`;
+        return;
+      }
+    });
+    functionDef += `  throw new Error("Bad content type");\n`;
+
+
     functionDef += `}\n`;
     arrayPath.reduce((acc, v, i) => {
       if (i === arrayPath.length - 1) {
@@ -183,7 +205,7 @@ for (const path of Object.keys(schema.paths)) {
 
 function generateClass(name: string, path: string, structure: Record<string, any>) {
   let typeImports = [];
-  let imports = ["import { AbstractClient, CompositionClient } from '@/client';"];
+  let imports = ["import { AbstractClient, CompositionClient, streamResponse } from '@/client';"];
   let classDef = `export default class API${capitalise(name)} extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);

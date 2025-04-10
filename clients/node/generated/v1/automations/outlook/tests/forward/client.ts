@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIEmailSub from "./email/client";
 
 export default class APIForward extends CompositionClient {

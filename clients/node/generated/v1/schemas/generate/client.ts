@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { GenerateSchemaRequest, PartialSchema } from "@/types";
 
 export default class APIGenerate extends CompositionClient {
@@ -8,7 +8,7 @@ export default class APIGenerate extends CompositionClient {
 
 
   async post({ idempotencyKey, ...body }: { idempotencyKey?: string | null } & GenerateSchemaRequest): Promise<PartialSchema> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/schemas/generate`,
       method: "POST",
       headers: { "Idempotency-Key": idempotencyKey },
@@ -16,6 +16,8 @@ export default class APIGenerate extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

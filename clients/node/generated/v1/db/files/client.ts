@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIDownloadLinkGcsPathSub from "./downloadLinkGcsPath/client";
 import APIBatchSub from "./batch/client";
 import APIFileIdSub from "./fileId/client";
@@ -14,22 +14,26 @@ export default class APIFiles extends CompositionClient {
   fileId = new APIFileIdSub(this._client);
 
   async get({ before, after, limit, order, filename, mimeType, includeEmbeddings, sortBy }: { before?: string | null, after?: string | null, limit?: number, order?: "asc" | "desc", filename?: string | null, mimeType?: string | null, includeEmbeddings?: boolean, sortBy?: string } = {}): Promise<ListFiles> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/db/files`,
       method: "GET",
       params: { "before": before, "after": after, "limit": limit, "order": order, "filename": filename, "mime_type": mimeType, "include_embeddings": includeEmbeddings, "sort_by": sortBy },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
   async post({ ...body }: BodyCreateFileV1DbFilesPost): Promise<DBFile> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/db/files`,
       method: "POST",
       body: body,
       bodyMime: "multipart/form-data",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APITestsSub from "./tests/client";
 import APIVectorSearchSub from "./vectorSearch/client";
 import APILogsSub from "./logs/client";
@@ -28,22 +28,26 @@ export default class APIOutlook extends CompositionClient {
   manifest = new APIManifestSub(this._client);
 
   async post({ ...body }: OutlookInput): Promise<OutlookOutput> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/outlook`,
       method: "POST",
       body: body,
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
   async get({ before, after, limit, order, id, name, webhookUrl, schemaId, schemaDataId }: { before?: string | null, after?: string | null, limit?: number | null, order?: "asc" | "desc" | null, id?: string | null, name?: string | null, webhookUrl?: string | null, schemaId?: string | null, schemaDataId?: string | null } = {}): Promise<PaginatedList> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/outlook`,
       method: "GET",
       params: { "before": before, "after": after, "limit": limit, "order": order, "id": id, "name": name, "webhook_url": webhookUrl, "schema_id": schemaId, "schema_data_id": schemaDataId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

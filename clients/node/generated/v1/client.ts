@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIDocumentsSub from "./documents/client";
 import APISchemasSub from "./schemas/client";
 import APIIamSub from "./iam/client";
@@ -16,6 +16,7 @@ import APIUsageschemaIdSub from "./usageschemaId/client";
 import APIBenchmarkingSub from "./benchmarking/client";
 import APIFinetunedModelsSub from "./finetunedModels/client";
 import APIExperimentsSub from "./experiments/client";
+import APICompletionsSub from "./completions/client";
 import APIJobSystemSub from "./jobSystem/client";
 import APICheckOutgoingIpSub from "./checkOutgoingIp/client";
 import APIEndpointIdSub from "./endpointId/client";
@@ -42,6 +43,7 @@ export default class APIV1 extends CompositionClient {
   benchmarking = new APIBenchmarkingSub(this._client);
   finetunedModels = new APIFinetunedModelsSub(this._client);
   experiments = new APIExperimentsSub(this._client);
+  completions = new APICompletionsSub(this._client);
   jobSystem = new APIJobSystemSub(this._client);
   checkOutgoingIp = new APICheckOutgoingIpSub(this._client);
   endpointId = new APIEndpointIdSub(this._client);

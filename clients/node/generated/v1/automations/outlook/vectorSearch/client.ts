@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIVectorSearchSub from "./vectorSearch/client";
 import APIFileScoresSub from "./fileScores/client";
 import APIAutomationDecisionSub from "./automationDecision/client";

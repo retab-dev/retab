@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 
 export default class APIWebhook extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -7,12 +7,14 @@ export default class APIWebhook extends CompositionClient {
 
 
   async post({ idempotencyKey }: { idempotencyKey?: string | null } = {}): Promise<any> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/mailboxes/webhook`,
       method: "POST",
       headers: { "Idempotency-Key": idempotencyKey },
       auth: ["HTTPBasic"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

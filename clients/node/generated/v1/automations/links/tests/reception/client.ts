@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 
 export default class APIReception extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -7,10 +7,12 @@ export default class APIReception extends CompositionClient {
 
 
   async post(): Promise<object> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/links/tests/reception`,
       method: "POST",
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

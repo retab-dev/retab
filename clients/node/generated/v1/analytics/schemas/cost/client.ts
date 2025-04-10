@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { SchemaCost } from "@/types";
 
 export default class APICost extends CompositionClient {
@@ -8,12 +8,14 @@ export default class APICost extends CompositionClient {
 
 
   async get({ startDate, endDate }: { startDate?: Date | null, endDate?: Date | null } = {}): Promise<SchemaCost[]> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/analytics/schemas/cost`,
       method: "GET",
       params: { "start_date": startDate, "end_date": endDate },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

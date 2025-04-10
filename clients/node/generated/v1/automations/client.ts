@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIMailboxesSub from "./mailboxes/client";
 import APILinksSub from "./links/client";
 import APIOutlookSub from "./outlook/client";
@@ -24,12 +24,14 @@ export default class APIAutomations extends CompositionClient {
   reviewExtraction = new APIReviewExtractionSub(this._client);
 
   async get({ before, after, limit, order, automationId, webhookUrl, model, schemaId, schemaDataId }: { before?: string | null, after?: string | null, limit?: number, order?: "asc" | "desc", automationId?: string | null, webhookUrl?: string | null, model?: string | null, schemaId?: string | null, schemaDataId?: string | null } = {}): Promise<ListAutomations> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations`,
       method: "GET",
       params: { "before": before, "after": after, "limit": limit, "order": order, "automation_id": automationId, "webhook_url": webhookUrl, "model": model, "schema_id": schemaId, "schema_data_id": schemaDataId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

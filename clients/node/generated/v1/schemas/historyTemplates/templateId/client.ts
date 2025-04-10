@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APISampleDocumentSub from "./sampleDocument/client";
 
 export default class APITemplateId extends CompositionClient {

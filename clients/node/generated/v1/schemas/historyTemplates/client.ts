@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APITemplateIdSub from "./templateId/client";
 
 export default class APIHistoryTemplates extends CompositionClient {
