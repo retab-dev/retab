@@ -14,7 +14,23 @@ const client = new UiFormClient().v1;
   console.log(await client.iam.payments.subscriptionStatus.get());
   console.log(await client.db.files.get());
 
-  let gen = await client.documents.extractions.stream.post(req);
+  let gen = await client.documents.extractions.stream.post({
+    json_schema: {
+      type: "object",
+      properties: {
+        summary: {
+          type: "string",
+          description: "Summary of the document",
+        },
+      }
+    },
+    model: "receipt",
+    modality: "text",
+    document: {
+      filename: "test.pdf",
+      url: "data:application/pdf;base64,...",
+    },
+  });
   console.log("Streaming...");
   for await (const chunk of gen) {
     console.log("Chunk: ", JSON.stringify(chunk, null, 2));
