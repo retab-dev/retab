@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIV1Sub from "./v1/client";
 
 export default class APIGenerated extends CompositionClient {

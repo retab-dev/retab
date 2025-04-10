@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 
 export default class APIOutlookId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -7,10 +7,12 @@ export default class APIOutlookId extends CompositionClient {
 
 
   async get(outlookId: string): Promise<any> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/outlook/manifest/${outlookId}`,
       method: "GET",
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

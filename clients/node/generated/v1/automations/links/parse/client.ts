@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APILinkIdSub from "./linkId/client";
 
 export default class APIParse extends CompositionClient {

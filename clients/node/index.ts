@@ -14,7 +14,7 @@ class UiFormClientFetcher implements AbstractClient {
     this.options = options || {};
   }
 
-  async _fetch<T>(params: {
+  async _fetch(params: {
     url: string;
     method: string;
     params?: Record<string, any>;
@@ -22,7 +22,7 @@ class UiFormClientFetcher implements AbstractClient {
     bodyMime?: "application/json" | "multipart/form-data";
     body?: Record<string, any>,
     auth?: string[];
-  }): Promise<T> {
+  }): Promise<Response> {
     let query = "";
     if (params.params) {
       query = "?" + new URLSearchParams(
@@ -67,10 +67,10 @@ class UiFormClientFetcher implements AbstractClient {
     }
     init.headers = headers;
     let res = await fetch(url, init);
-    if (res.status >= 200 && res.status < 300) {
-      return res.json();
+    if (!res.ok) {
+      throw new APIError(res.status, await res.text());
     }
-    throw new APIError(res.status, await res.json());
+    return res;
   }
 }
 

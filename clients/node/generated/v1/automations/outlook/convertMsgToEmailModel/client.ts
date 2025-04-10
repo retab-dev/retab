@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { BodyConvertMsgToEmailModelV1AutomationsOutlookConvertMsgToEmailModelPost, EmailDataOutput } from "@/types";
 
 export default class APIConvertMsgToEmailModel extends CompositionClient {
@@ -8,13 +8,15 @@ export default class APIConvertMsgToEmailModel extends CompositionClient {
 
 
   async post({ returnInlineBody, ...body }: { returnInlineBody?: boolean } & BodyConvertMsgToEmailModelV1AutomationsOutlookConvertMsgToEmailModelPost): Promise<EmailDataOutput> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/outlook/convert_msg_to_email_model`,
       method: "POST",
       params: { "return_inline_body": returnInlineBody },
       body: body,
       bodyMime: "multipart/form-data",
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { AutomationLog } from "@/types";
 
 export default class APIAutomationId extends CompositionClient {
@@ -8,10 +8,12 @@ export default class APIAutomationId extends CompositionClient {
 
 
   async post(automationId: string): Promise<AutomationLog> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/tests/webhook/${automationId}`,
       method: "POST",
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

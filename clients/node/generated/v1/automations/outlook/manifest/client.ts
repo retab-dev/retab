@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIOutlookIdSub from "./outlookId/client";
 
 export default class APIManifest extends CompositionClient {

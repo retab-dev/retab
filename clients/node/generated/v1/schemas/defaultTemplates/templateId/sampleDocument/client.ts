@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 
 export default class APISampleDocument extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -7,11 +7,13 @@ export default class APISampleDocument extends CompositionClient {
 
 
   async get(templateId: string): Promise<any> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/schemas/default_templates/${templateId}/sample-document`,
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

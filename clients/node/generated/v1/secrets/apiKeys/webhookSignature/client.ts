@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { WebhookSignature, WebhookSignature } from "@/types";
 
 export default class APIWebhookSignature extends CompositionClient {
@@ -8,27 +8,33 @@ export default class APIWebhookSignature extends CompositionClient {
 
 
   async get(): Promise<object> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/secrets/api_keys/webhook-signature`,
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
   async put(): Promise<WebhookSignature> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/secrets/api_keys/webhook-signature`,
       method: "PUT",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
   async post(): Promise<WebhookSignature> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/secrets/api_keys/webhook-signature`,
       method: "POST",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

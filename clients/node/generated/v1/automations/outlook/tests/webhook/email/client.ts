@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { AutomationLog } from "@/types";
 
 export default class APIEmail extends CompositionClient {
@@ -8,10 +8,12 @@ export default class APIEmail extends CompositionClient {
 
 
   async post(email: string): Promise<AutomationLog> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/outlook/tests/webhook/${email}`,
       method: "POST",
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

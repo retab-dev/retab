@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIMonthlyUsageSub from "./monthlyUsage/client";
 import APIExtractionsSub from "./extractions/client";
 import APILogExtractionSub from "./logExtraction/client";

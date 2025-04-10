@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIMailboxIdSub from "./mailboxId/client";
 
 export default class APIFromId extends CompositionClient {

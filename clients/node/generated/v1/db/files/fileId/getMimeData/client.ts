@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { UiformTypesMimeMIMEData } from "@/types";
 
 export default class APIGetMimeData extends CompositionClient {
@@ -8,11 +8,13 @@ export default class APIGetMimeData extends CompositionClient {
 
 
   async get(fileId: string): Promise<UiformTypesMimeMIMEData> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/db/files/${fileId}/get_mime_data`,
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

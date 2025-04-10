@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { BodyTestDocumentUploadV1AutomationsTestsUploadAutomationIdPost, AutomationLog } from "@/types";
 
 export default class APIAutomationId extends CompositionClient {
@@ -8,12 +8,14 @@ export default class APIAutomationId extends CompositionClient {
 
 
   async post(automationId: string, { ...body }: BodyTestDocumentUploadV1AutomationsTestsUploadAutomationIdPost): Promise<AutomationLog> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/tests/upload/${automationId}`,
       method: "POST",
       body: body,
       bodyMime: "multipart/form-data",
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

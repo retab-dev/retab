@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { LinkOutput } from "@/types";
 
 export default class APILinkId extends CompositionClient {
@@ -8,19 +8,23 @@ export default class APILinkId extends CompositionClient {
 
 
   async get(linkId: string): Promise<LinkOutput> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/links/${linkId}`,
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
   async delete(linkId: string): Promise<object> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/automations/links/${linkId}`,
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

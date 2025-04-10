@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIGetAuthUrlSub from "./getAuthUrl/client";
 import APIGetTokenSub from "./getToken/client";
 

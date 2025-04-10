@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIAutomationIdSub from "./automationId/client";
 
 export default class APIAutomation extends CompositionClient {

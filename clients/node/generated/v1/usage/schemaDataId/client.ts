@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APISchemaDataIdSub from "./schemaDataId/client";
 
 export default class APISchemaDataId extends CompositionClient {

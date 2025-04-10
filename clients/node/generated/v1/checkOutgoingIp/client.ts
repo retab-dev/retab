@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 
 export default class APICheckOutgoingIp extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -7,10 +7,12 @@ export default class APICheckOutgoingIp extends CompositionClient {
 
 
   async get(): Promise<object> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/check-outgoing-ip`,
       method: "GET",
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIFieldPathSub from "./fieldPath/client";
 
 export default class APIFieldMetrics extends CompositionClient {

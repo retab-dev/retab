@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIJobExecutionsSub from "./jobExecutions/client";
 import APIWorkflowExecutionsSub from "./workflowExecutions/client";
 

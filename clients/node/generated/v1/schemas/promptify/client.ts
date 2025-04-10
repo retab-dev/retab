@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { PromptifyRequest, PartialSchema } from "@/types";
 
 export default class APIPromptify extends CompositionClient {
@@ -8,7 +8,7 @@ export default class APIPromptify extends CompositionClient {
 
 
   async post({ idempotencyKey, ...body }: { idempotencyKey?: string | null } & PromptifyRequest): Promise<PartialSchema> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/schemas/promptify`,
       method: "POST",
       params: { "idempotency_key": idempotencyKey },
@@ -16,6 +16,8 @@ export default class APIPromptify extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }

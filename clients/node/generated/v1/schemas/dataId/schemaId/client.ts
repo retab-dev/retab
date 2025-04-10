@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import { StoredSchema } from "@/types";
 
 export default class APISchemaId extends CompositionClient {
@@ -8,11 +8,13 @@ export default class APISchemaId extends CompositionClient {
 
 
   async get(dataId: string, schemaId: string): Promise<StoredSchema> {
-    return this._fetch({
+    let res = await this._fetch({
       url: `/v1/schemas/${dataId}/${schemaId}`,
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
+    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    throw new Error("Bad content type");
   }
   
 }
