@@ -32,6 +32,7 @@ const client = new UiFormClient().v1;
       filename: "test.pdf",
       url: "data:application/pdf;base64," + base64,
     },
+    stream: true,
   });
   console.log("Streaming...");
   for await (const chunk of gen) {
