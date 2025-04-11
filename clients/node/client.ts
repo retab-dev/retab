@@ -49,7 +49,6 @@ export async function* streamResponse<T>(response: Response): AsyncGenerator<T> 
     let string = String.fromCharCode(...chunk.value);
     let prevBodyLength = body.length;
     body += string;
-    console.log("Got length: ", string.length);
     for (let i = 0; i < string.length; i++) {
       let char = string[i];
       if (char === '"') {
@@ -65,7 +64,6 @@ export async function* streamResponse<T>(response: Response): AsyncGenerator<T> 
         } else if (char === "}") {
           depth--;
           if (depth === 0) {
-            console.log("Yielded");
             yield JSON.parse(body.slice(0, prevBodyLength + i + 1)) as T;
             body = body.slice(prevBodyLength + i + 1);
             prevBodyLength = -i - 1;
