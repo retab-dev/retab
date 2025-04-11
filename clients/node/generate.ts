@@ -1,4 +1,3 @@
-import schema from "./openapi.json";
 import fs from "fs";
 
 function capitalise(str: string): string {
@@ -102,146 +101,151 @@ function schemaToTs(schema: any, context: any, ignoreNamed: boolean = false): st
   return "any";
 }
 
-let classStructure: Record<string, any> = {};
+function processSchema(schema: any) {
 
-for (const path of Object.keys(schema.paths)) {
-  if (!path.startsWith("/v1")) continue;
-  // @ts-ignore
-  const methods = schema.paths[path];
-  const multipleMethods = Object.keys(methods).length > 1;
-  for (const method of Object.keys(methods)) {
+  let classStructure: Record<string, any> = {};
+
+  for (const path of Object.keys(schema.paths)) {
+    if (!path.startsWith("/v1")) continue;
     // @ts-ignore
-    const operation = methods[method];
-    let arrayPath = path.split("/").filter(Boolean).map(i => i.startsWith("{") ? i.slice(1, -1) : i).map(i => camelCase(i));
-    arrayPath.push(method);
-    schemaToTsImports = [];
-    let functionDef = `async ${arrayPath[arrayPath.length-1]}(`;
-    let functionParams = [];
-    let otherParamsNames = [];
-    let otherParamsTypes = [];
-    let otherParamTypesOptional = true;
-    let bodyType = undefined;
-    for (let param of operation.parameters || []) {
-      if (param.in === "path") {
-        functionParams.push(`${camelCase(param.name)}: ${schemaToTs(param.schema, schema)}`);
-      } else {
-        otherParamsNames.push(`${camelCase(param.name)}`);
-        otherParamsTypes.push(`${camelCase(param.name)}${param.required ? "" : "?"}: ${schemaToTs(param.schema, schema)}`);
-        if (param.required) otherParamTypesOptional = false;
+    const methods = schema.paths[path];
+    const multipleMethods = Object.keys(methods).length > 1;
+    for (const method of Object.keys(methods)) {
+      // @ts-ignore
+      const operation = methods[method];
+      let arrayPath = path.split("/").filter(Boolean).map(i => i.startsWith("{") ? i.slice(1, -1) : i).map(i => camelCase(i));
+      arrayPath.push(method);
+      schemaToTsImports = [];
+      let functionDef = `async ${arrayPath[arrayPath.length - 1]}(`;
+      let functionParams = [];
+      let otherParamsNames = [];
+      let otherParamsTypes = [];
+      let otherParamTypesOptional = true;
+      let bodyType = undefined;
+      for (let param of operation.parameters || []) {
+        if (param.in === "path") {
+          functionParams.push(`${camelCase(param.name)}: ${schemaToTs(param.schema, schema)}`);
+        } else {
+          otherParamsNames.push(`${camelCase(param.name)}`);
+          otherParamsTypes.push(`${camelCase(param.name)}${param.required ? "" : "?"}: ${schemaToTs(param.schema, schema)}`);
+          if (param.required) otherParamTypesOptional = false;
+        }
       }
-    }
-    if (operation.requestBody) {
-      otherParamsNames.push("...body");
-      if (Object.keys(operation.requestBody.content).length !== 1) {
-        throw new Error("Multiple content types are not supported");
+      if (operation.requestBody) {
+        otherParamsNames.push("...body");
+        if (Object.keys(operation.requestBody.content).length !== 1) {
+          throw new Error("Multiple content types are not supported");
+        }
+        let contentType = Object.keys(operation.requestBody.content)[0];
+        bodyType = schemaToTs(operation.requestBody.content[contentType].schema, schema);
       }
-      let contentType = Object.keys(operation.requestBody.content)[0];
-      bodyType = schemaToTs(operation.requestBody.content[contentType].schema, schema);
-    }
-    if (otherParamsNames.length > 0) {
-      let types = [];
-      if (otherParamsTypes.length > 0) {
-        types.push(`{ ${otherParamsTypes.join(", ")} }`);
+      if (otherParamsNames.length > 0) {
+        let types = [];
+        if (otherParamsTypes.length > 0) {
+          types.push(`{ ${otherParamsTypes.join(", ")} }`);
+        }
+        if (bodyType) {
+          types.push(bodyType);
+        }
+        functionParams.push(`{ ${otherParamsNames.join(", ")} }: ${types.join(" & ")}${!bodyType && otherParamTypesOptional ? " = {}" : ""}`);
+      }
+      let returnTypes = Object.entries(operation.responses["200"].content).map(([contentType, value]) => {
+        if (contentType === "application/json") {
+          return schemaToTs(value.schema, schema);
+        }
+        if (contentType === "application/stream+json") {
+          return `AsyncGenerator<${schemaToTs(value.schema, schema)}>`;
+        }
+        throw new Error(`Unsupported content type ${contentType}`);
+      });
+      functionDef += functionParams.join(", ") + `): Promise<${returnTypes.join(" | ")}> {\n`;
+      functionDef += `  let res = await this._fetch({\n`;
+      functionDef += `    url: \`${path.split("/").map(i => i.startsWith("{") ? `\${${camelCase(i.slice(1, -1))}}` : i).join("/")}\`,\n`;
+      functionDef += `    method: "${method.toUpperCase()}",\n`;
+      let queryParams = (operation.parameters || []).filter(p => p.in === "query");
+      if (queryParams.length > 0) {
+        functionDef += `    params: { ${queryParams.map(p => `${JSON.stringify(p.name)}: ${camelCase(p.name)}`).join(", ")} },\n`;
+      }
+      let headerParams = (operation.parameters || []).filter(p => p.in === "header");
+      if (headerParams.length > 0) {
+        functionDef += `    headers: { ${headerParams.map(p => `${JSON.stringify(p.name)}: ${camelCase(p.name)}`).join(", ")} },\n`;
       }
       if (bodyType) {
-        types.push(bodyType);
+        functionDef += `    body: body,\n`;
+        functionDef += `    bodyMime: "${Object.keys(operation.requestBody.content)[0]}",\n`;
       }
-      functionParams.push(`{ ${otherParamsNames.join(", ")} }: ${types.join(" & ")}${!bodyType && otherParamTypesOptional ? " = {}" : ""}`);
-    }
-    let returnTypes = Object.entries(operation.responses["200"].content).map(([contentType, value]) => {
-      if (contentType === "application/json") {
-        return schemaToTs(value.schema, schema);
+      if (operation.security) {
+        functionDef += `    auth: [${operation.security.map(s => JSON.stringify(Object.keys(s)[0])).join(", ")}],\n`;
       }
-      if (contentType === "application/stream+json") {
-        return `AsyncGenerator<${schemaToTs(value.schema, schema)}>`;
-      }
-      throw new Error(`Unsupported content type ${contentType}`);
-    });
-    functionDef += functionParams.join(", ") + `): Promise<${returnTypes.join(" | ")}> {\n`;
-    functionDef += `  let res = await this._fetch({\n`;
-    functionDef += `    url: \`${path.split("/").map(i => i.startsWith("{") ? `\${${camelCase(i.slice(1, -1))}}` : i).join("/")}\`,\n`;
-    functionDef += `    method: "${method.toUpperCase()}",\n`;
-    let queryParams = (operation.parameters || []).filter(p => p.in === "query");
-    if (queryParams.length > 0) {
-      functionDef += `    params: { ${queryParams.map(p => `${JSON.stringify(p.name)}: ${camelCase(p.name)}`).join(", ")} },\n`;
-    }
-    let headerParams = (operation.parameters || []).filter(p => p.in === "header");
-    if (headerParams.length > 0) {
-      functionDef += `    headers: { ${headerParams.map(p => `${JSON.stringify(p.name)}: ${camelCase(p.name)}`).join(", ")} },\n`;
-    }
-    if (bodyType) {
-      functionDef += `    body: body,\n`;
-      functionDef += `    bodyMime: "${Object.keys(operation.requestBody.content)[0]}",\n`;
-    }
-    if (operation.security) {
-      functionDef += `    auth: [${operation.security.map(s => JSON.stringify(Object.keys(s)[0])).join(", ")}],\n`;
-    }
-    functionDef += `  });\n`;
-    Object.entries(operation.responses["200"].content).forEach(([contentType, value]) => {
-      if (contentType === "application/json") {
-        functionDef += `  if (res.headers.get("Content-Type") === "application/json") return res.json();\n`;
-        return;
-      }
-      if (contentType === "application/stream+json") {
-        functionDef += `  if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res);\n`;
-        return;
-      }
-    });
-    functionDef += `  throw new Error("Bad content type");\n`;
+      functionDef += `  });\n`;
+      Object.entries(operation.responses["200"].content).forEach(([contentType, value]) => {
+        if (contentType === "application/json") {
+          functionDef += `  if (res.headers.get("Content-Type") === "application/json") return res.json();\n`;
+          return;
+        }
+        if (contentType === "application/stream+json") {
+          functionDef += `  if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res);\n`;
+          return;
+        }
+      });
+      functionDef += `  throw new Error("Bad content type");\n`;
 
 
-    functionDef += `}\n`;
-    arrayPath.reduce((acc, v, i) => {
-      if (i === arrayPath.length - 1) {
-        acc[v] = [functionDef, schemaToTsImports];
-      }
-      if (!acc[v]) {
-        acc[v] = {};
-      }
-      return acc[v];
-    }, classStructure);
+      functionDef += `}\n`;
+      arrayPath.reduce((acc, v, i) => {
+        if (i === arrayPath.length - 1) {
+          acc[v] = [functionDef, schemaToTsImports];
+        }
+        if (!acc[v]) {
+          acc[v] = {};
+        }
+        return acc[v];
+      }, classStructure);
+    }
   }
-}
 
-function generateClass(name: string, path: string, structure: Record<string, any>) {
-  let typeImports = [];
-  let imports = ["import { AbstractClient, CompositionClient, streamResponse } from '@/client';"];
-  let classDef = `export default class API${capitalise(name)} extends CompositionClient {
+  function generateClass(name: string, path: string, structure: Record<string, any>) {
+    let typeImports = [];
+    let imports = ["import { AbstractClient, CompositionClient, streamResponse } from '@/client';"];
+    let classDef = `export default class API${capitalise(name)} extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
   }\n\n`;
-  for (const [key, value] of Object.entries(structure)) {
-    if (!Array.isArray(value)) {
-      imports.push(`import API${capitalise(key)}Sub from "./${key}/client";`);
-      classDef += `  ${key} = new API${capitalise(key)}Sub(this._client);\n`;
-      generateClass(key, path + "/" + key, value);
+    for (const [key, value] of Object.entries(structure)) {
+      if (!Array.isArray(value)) {
+        imports.push(`import API${capitalise(key)}Sub from "./${key}/client";`);
+        classDef += `  ${key} = new API${capitalise(key)}Sub(this._client);\n`;
+        generateClass(key, path + "/" + key, value);
+      }
+    }
+    classDef += "\n";
+    for (const [key, value] of Object.entries(structure)) {
+      if (Array.isArray(value)) {
+        let [code, codeImports] = value;
+        typeImports.push(...codeImports);
+        classDef += code.split("\n").map(line => `  ${line}`).join("\n") + "\n";
+      }
+    }
+    classDef += `}\n`;
+    if (typeImports.length > 0) {
+      imports.push(`import { ${typeImports.join(", ")} } from "@/types";`);
+    }
+    if (imports.length > 0) {
+      classDef = imports.join("\n") + "\n\n" + classDef;
+    }
+    fs.mkdirSync(path, { recursive: true });
+    fs.writeFileSync(`${path}/client.ts`, classDef);
+  }
+
+  generateClass("generated", "generated", classStructure);
+
+  let schemas = "";
+  for (const [key, value] of Object.entries(schema.components.schemas)) {
+    if (isNamedSchemaName(key)) {
+      schemas += `export type ${capitalise(camelCase(key))} = ${schemaToTs(value, schema, true)};\n\n`;
     }
   }
-  classDef += "\n";
-  for (const [key, value] of Object.entries(structure)) {
-    if (Array.isArray(value)) {
-      let [code, codeImports] = value;
-      typeImports.push(...codeImports);
-      classDef += code.split("\n").map(line => `  ${line}`).join("\n") + "\n";
-    }
-  }
-  classDef += `}\n`;
-  if (typeImports.length > 0) {
-    imports.push(`import { ${typeImports.join(", ")} } from "@/types";`);
-  }
-  if (imports.length > 0) {
-    classDef = imports.join("\n") + "\n\n" + classDef;
-  }
-  fs.mkdirSync(path, { recursive: true });
-  fs.writeFileSync(`${path}/client.ts`, classDef);
+  fs.writeFileSync("generated/types.ts", schemas);
 }
 
-generateClass("generated", "generated", classStructure);
-
-let schemas = "";
-for (const [key, value] of Object.entries(schema.components.schemas)) {
-  if (isNamedSchemaName(key)) {
-    schemas += `export type ${capitalise(camelCase(key))} = ${schemaToTs(value, schema, true)};\n\n`;
-  }
-}
-fs.writeFileSync("generated/types.ts", schemas);
+fetch("https://api.uiform.com/openapi.json").then(r => r.json()).then(processSchema);

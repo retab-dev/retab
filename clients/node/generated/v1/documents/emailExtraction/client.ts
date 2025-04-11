@@ -1,4 +1,5 @@
 import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import APIStreamSub from "./stream/client";
 import { EmailExtractRequest, UiParsedChatCompletionOutput } from "@/types";
 
 export default class APIEmailExtraction extends CompositionClient {
@@ -6,6 +7,7 @@ export default class APIEmailExtraction extends CompositionClient {
     super(client);
   }
 
+  stream = new APIStreamSub(this._client);
 
   async post({ idempotencyKey, ...body }: { idempotencyKey?: string | null } & EmailExtractRequest): Promise<UiParsedChatCompletionOutput> {
     let res = await this._fetch({

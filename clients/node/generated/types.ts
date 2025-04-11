@@ -596,6 +596,17 @@ export type CompoundFilter = {
   type: "and" | "or",
 };
 
+export type ComputeDictSimilarityRequest = {
+  dict1: object,
+  dict2: object,
+  string_similarity_method: "levenshtein" | "jaccard" | "hamming" | "embeddings",
+};
+
+export type ComputeDictSimilarityResponse = {
+  per_element_similarity: object,
+  total_similarity: number,
+};
+
 export type ComputerCallOutput = {
   call_id: string,
   output: ResponseComputerToolCallOutputScreenshotParam,
@@ -680,6 +691,15 @@ export type DatasetClusteringResponsePoint = {
   file_id: string,
   point: [number, number],
   label: number,
+};
+
+export type DictConsensusRequest = {
+  values: object[],
+};
+
+export type DictConsensusResponse = {
+  consensus: object,
+  likelihoods: object,
 };
 
 export type DisplayMetadata = {
@@ -1380,7 +1400,7 @@ export type MessageParam = {
 export type MetricResult = {
   item_metrics: ItemMetric[],
   mean_similarity: number,
-  metric_type: "levenshtein_similarity" | "jaccard_similarity" | "hamming_similarity",
+  metric_type: "levenshtein" | "jaccard" | "hamming",
 };
 
 export type MetricsResponse = {
@@ -1650,6 +1670,10 @@ export type RankingOptions = {
 export type Reasoning = {
   effort?: "low" | "medium" | "high" | null,
   generate_summary?: "concise" | "detailed" | null,
+};
+
+export type RecursiveAlignmentRequestResponse = {
+  values: any[],
 };
 
 export type RedactedThinkingBlock = {
