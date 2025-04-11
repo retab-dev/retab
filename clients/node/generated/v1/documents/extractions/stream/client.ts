@@ -9,14 +9,14 @@ export default class APIStream extends CompositionClient {
 
   async post({ idempotencyKey, ...body }: { idempotencyKey?: string | null } & DocumentExtractRequest): Promise<AsyncGenerator<UiParsedChatCompletionChunk>> {
     let res = await this._fetch({
-      url: `/v1/documents/extractions`,
+      url: `/v1/documents/extractions/stream`,
       method: "POST",
       headers: { "Idempotency-Key": idempotencyKey },
       body: body,
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return streamResponse(res);
+    if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res);
     throw new Error("Bad content type");
   }
   

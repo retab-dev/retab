@@ -17,6 +17,7 @@ import APIBenchmarkingSub from "./benchmarking/client";
 import APIFinetunedModelsSub from "./finetunedModels/client";
 import APIExperimentsSub from "./experiments/client";
 import APICompletionsSub from "./completions/client";
+import APIMiscellaneousSub from "./miscellaneous/client";
 import APIJobSystemSub from "./jobSystem/client";
 import APICheckOutgoingIpSub from "./checkOutgoingIp/client";
 import APIEndpointIdSub from "./endpointId/client";
@@ -44,6 +45,7 @@ export default class APIV1 extends CompositionClient {
   finetunedModels = new APIFinetunedModelsSub(this._client);
   experiments = new APIExperimentsSub(this._client);
   completions = new APICompletionsSub(this._client);
+  miscellaneous = new APIMiscellaneousSub(this._client);
   jobSystem = new APIJobSystemSub(this._client);
   checkOutgoingIp = new APICheckOutgoingIpSub(this._client);
   endpointId = new APIEndpointIdSub(this._client);
