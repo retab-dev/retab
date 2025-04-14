@@ -193,3 +193,63 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
+
+    def chunk_accumulator(self, previous_cumulated_chunk: 'UiParsedChatCompletionChunk | None' = None) -> 'UiParsedChatCompletionChunk':
+        """
+        Accumulate the chunk into the state, returning a new UiParsedChatCompletionChunk with the accumulated content that could be yielded alone to generate the same state.
+        """
+
+        def safe_get_delta(chnk: 'UiParsedChatCompletionChunk | None', index: int) -> UiParsedChoiceDeltaChunk:
+            if chnk is not None and index < len(chnk.choices):
+                return chnk.choices[index].delta
+            else:
+                return UiParsedChoiceDeltaChunk(
+                    content="",
+                    flat_parsed={},
+                    flat_likelihoods={},
+                    missing_content="",
+                    is_valid_json=False,
+                )
+
+        max_choices = max(len(self.choices), len(previous_cumulated_chunk.choices)) if previous_cumulated_chunk is not None else len(self.choices)
+
+        # Get the current chunk missing content, flat_deleted_keys and is_valid_json
+        acc_missing_content = [safe_get_delta(self, i).missing_content or "" for i in range(max_choices)]
+        acc_flat_deleted_keys = [safe_get_delta(self, i).flat_deleted_keys for i in range(max_choices)]
+        acc_is_valid_json = [safe_get_delta(self, i).is_valid_json for i in range(max_choices)]
+        # Accumulate the flat_parsed and flat_likelihoods
+        acc_content = [(safe_get_delta(previous_cumulated_chunk, i).content or "") + (safe_get_delta(self, i).content or "") for i in range(max_choices)]
+        acc_flat_parsed = [safe_get_delta(previous_cumulated_chunk, i).flat_parsed | safe_get_delta(self, i).flat_parsed for i in range(max_choices)]
+        acc_flat_likelihoods = [safe_get_delta(previous_cumulated_chunk, i).flat_likelihoods | safe_get_delta(self, i).flat_likelihoods for i in range(max_choices)]
+
+        usage = self.usage
+        first_token_at = self.first_token_at
+        last_token_at = self.last_token_at
+        request_at = self.request_at
+
+        return UiParsedChatCompletionChunk(
+            id=self.id,
+            created=self.created,
+            model=self.model,
+            object=self.object,
+            usage=usage,
+            choices=[
+                UiParsedChoiceChunk(
+                    delta=UiParsedChoiceDeltaChunk(
+                        content=acc_content[i],
+                        flat_parsed=acc_flat_parsed[i],
+                        flat_likelihoods=acc_flat_likelihoods[i],
+                        flat_deleted_keys=acc_flat_deleted_keys[i],
+                        missing_content=acc_missing_content[i],
+                        is_valid_json=acc_is_valid_json[i],
+                    ),
+                    index=i,
+                )
+                for i in range(max_choices)
+            ],
+            schema_validation_error=self.schema_validation_error,
+            likelihoods_source=self.likelihoods_source,
+            request_at=request_at,
+            first_token_at=first_token_at,
+            last_token_at=last_token_at,
+        )
