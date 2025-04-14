@@ -217,11 +217,18 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         acc_missing_content = [safe_get_delta(self, i).missing_content or "" for i in range(max_choices)]
         acc_flat_deleted_keys = [safe_get_delta(self, i).flat_deleted_keys for i in range(max_choices)]
         acc_is_valid_json = [safe_get_delta(self, i).is_valid_json for i in range(max_choices)]
+        # Delete from previous_cumulated_chunk.choices[i].delta.flat_parsed the keys that are in safe_get_delta(self, i).flat_deleted_keys
+        for i in range(max_choices):
+            previous_delta = safe_get_delta(previous_cumulated_chunk, i)
+            current_delta = safe_get_delta(self, i)
+            for deleted_key in current_delta.flat_deleted_keys:
+                previous_delta.flat_parsed.pop(deleted_key, None)
+                previous_delta.flat_likelihoods.pop(deleted_key, None)
         # Accumulate the flat_parsed and flat_likelihoods
-        acc_content = [(safe_get_delta(previous_cumulated_chunk, i).content or "") + (safe_get_delta(self, i).content or "") for i in range(max_choices)]
         acc_flat_parsed = [safe_get_delta(previous_cumulated_chunk, i).flat_parsed | safe_get_delta(self, i).flat_parsed for i in range(max_choices)]
         acc_flat_likelihoods = [safe_get_delta(previous_cumulated_chunk, i).flat_likelihoods | safe_get_delta(self, i).flat_likelihoods for i in range(max_choices)]
 
+        acc_content = [(safe_get_delta(previous_cumulated_chunk, i).content or "") + (safe_get_delta(self, i).content or "") for i in range(max_choices)]
         usage = self.usage
         first_token_at = self.first_token_at
         last_token_at = self.last_token_at
