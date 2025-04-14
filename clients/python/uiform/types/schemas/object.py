@@ -179,7 +179,7 @@ class Schema(PartialSchema):
             if schema.get("type") == "object" and "properties" in schema:
                 for prop_schema in schema["properties"].values():
                     json_schema_to_gemini_schema(prop_schema)
-                schema["propertyOrdering"] = list(schema["properties"].keys())
+                schema["propertyOrdering"] = schema["required"] = list(schema["properties"].keys())
             
             if schema.get("type") == "array" and "items" in schema:
                 json_schema_to_gemini_schema(schema["items"])
