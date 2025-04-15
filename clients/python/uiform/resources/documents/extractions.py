@@ -9,14 +9,12 @@ from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.json_schema import filter_reasoning_fields_json, load_json_schema
 from ..._utils.mime import prepare_mime_document, MIMEData
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
-# from ...types.documents.extractions import DocumentExtractRequest, DocumentExtractResponse, DocumentExtractResponseStream, LogExtractionRequest
 from ...types.documents.extractions import DocumentExtractRequest, UiParsedChatCompletion, UiParsedChatCompletionChunk, LogExtractionRequest, UiParsedChoice
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 from ...types.schemas.object import Schema
 from ...types.chat import ChatCompletionUiformMessage
 from ..._utils.json_schema import unflatten_dict
-from typing import overload
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from openai.types.chat import ChatCompletionMessageParam
@@ -211,16 +209,14 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         schema = Schema(json_schema=load_json_schema(json_schema))
 
         # Request the stream and return a context manager
-        flatten_parsed: dict[str, Any] = {}
-        flatten_likelihoods: dict[str, float] = {}
-        ui_parsed_chat_completion_chunk: UiParsedChatCompletionChunk | None = None
+        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
         # Initialize the UiParsedChatCompletion object
         ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
             id="",
             created=0,
             model="",
             object="chat.completion",
-            likelihoods=unflatten_dict(flatten_likelihoods),
+            likelihoods={},
             choices=[
                 UiParsedChoice(
                     index=0,
@@ -233,22 +229,17 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            ui_parsed_chat_completion_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json)
+            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
             # Basic stuff
-            ui_parsed_completion.id = ui_parsed_chat_completion_chunk.id
-            ui_parsed_completion.created = ui_parsed_chat_completion_chunk.created
-            ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
-            
-            # Accumulate the content and likelihoods
-            if ui_parsed_chat_completion_chunk.choices:
-                flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
-                flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
-                
+            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model    
             # Update the ui_parsed_completion object
-            parsed = unflatten_dict(flatten_parsed)
+            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
+            likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
             ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
             ui_parsed_completion.choices[0].message.parsed = parsed
-            ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
+            ui_parsed_completion.likelihoods = likelihoods
 
             yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
         
@@ -364,9 +355,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         """
         request = self.prepare_extraction(json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key)
         schema = Schema(json_schema=load_json_schema(json_schema))
-        flatten_parsed: dict[str, Any] = {}
-        flatten_likelihoods: dict[str, float] = {}
-        ui_parsed_chat_completion_chunk: UiParsedChatCompletionChunk | None = None
+        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
         # Initialize the UiParsedChatCompletion object
         ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
             id="",
@@ -382,26 +371,23 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
                     logprobs=None,
                 )
             ],
-        )
+        )        
+
         async for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            ui_parsed_chat_completion_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json)
+            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
             # Basic stuff
-            ui_parsed_completion.id = ui_parsed_chat_completion_chunk.id
-            ui_parsed_completion.created = ui_parsed_chat_completion_chunk.created
-            ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
-            
-            # Accumulate the content and likelihoods
-            if ui_parsed_chat_completion_chunk.choices:
-                flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
-                flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
+            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
             
             # Update the ui_parsed_completion object
-            parsed = unflatten_dict(flatten_parsed)
-            ui_parsed_completion.choices[0].message.parsed = parsed
+            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
+            likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
             ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
-            ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
+            ui_parsed_completion.choices[0].message.parsed = parsed
+            ui_parsed_completion.likelihoods = likelihoods
 
             yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
         
