@@ -43,15 +43,15 @@ sequenceDiagram
 
 ### Out goal
 
-Our goal is to:
+What we want for you is:
 
-- **Document Processing**
+- **Smarter Document Processing**
 > Helping you leverage LLMs' APIs to do document processing tasks with structured generations
 
-- **Automation**
+- **Scalable Workflow Automation**
 > Create custom mailboxes and links connected to your webhooks to process documents at scale
 
-- **Optimization**
+- **Model Efficiency & Cost Optimization**
 > Identify the most used automations and help you finetune models to reduce costs and improve performance
 
 We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthropic](https://www.anthropic.com/api), [Gemini](https://aistudio.google.com/prompts/new_chat) and [xAI](https://x.ai/api) models.
@@ -82,19 +82,19 @@ Many people haven't yet realized how powerful LLMs have become at document proce
 ## Quickstart
 
 1. **Setup the Python SDK**
-    Install the UiForm Python SDK and configure your API keys to start processing documents with your preferred AI provider
+> Install the UiForm Python SDK and configure your API keys to start processing documents with your preferred AI provider
 
 2. **Create your JSON schema**
-    Define the structure of the data you want to extract from your documents using our schema format with custom prompting capabilities
+> Define the structure of the data you want to extract from your documents using our schema format with custom prompting capabilities
 
 3. **Create your FastAPI server with a webhook**
-    Set up an endpoint that will receive the structured data extracted from your documents after processing
+> Set up an endpoint that will receive the structured data extracted from your documents after processing
 
 4. **Create your automation**
-    Configure an automation (mailbox or link) that will automatically process incoming documents using your schema and send results to your webhook
+> Configure an automation (mailbox or link) that will automatically process incoming documents using your schema and send results to your webhook
 
 5. **Test your automation**
-    Validate your setup by sending test documents through your automation and verify the extracted data matches your requirements
+> Validate your setup by sending test documents through your automation and verify the extracted data matches your requirements
 
 ### Step 1: Setup of the Python SDK
 
