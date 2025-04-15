@@ -27,7 +27,7 @@ class SchemasMixin:
     def prepare_get(self, schema_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/schemas/{schema_id}")
     
-    def prepare_promptify(self, raw_schema: dict[str, Any] | Path | str, documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image], model: str = "gpt-4o-2024-08-06", temperature: float = 0, modality: Modality = "native", stream: bool = False) -> PreparedRequest:
+    def prepare_promptify(self, raw_schema: dict[str, Any] | Path | str, documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image], model: str, temperature: float = 0, modality: Modality = "native", stream: bool = False) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
         raw_schema = load_json_schema(raw_schema)
         mime_documents = prepare_mime_document_list(documents)
@@ -105,7 +105,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
     def promptify(self,
                raw_schema: dict[str, Any] | Path | str,
                documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
-               model: str = "gpt-4o-2024-08-06",
+               model: str,
                temperature: float = 0,
                modality: Modality = "native") -> Schema:
         """
@@ -135,7 +135,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
     def promptify_stream(self,
                          raw_schema: dict[str, Any] | Path | str,
                          documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
-                         model: str = "gpt-4o-2024-08-06",
+                         model: str,
                          temperature: float = 0,
                          modality: Modality = "native") -> Generator[PartialSchema | Schema, None, None]:
         prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality, stream=True)
@@ -248,7 +248,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     async def promptify(self,
                     raw_schema: dict[str, Any] | Path | str,
                     documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
-                    model: str = "gpt-4o-2024-08-06",
+                    model: str,
                     temperature: float = 0,
                     modality: Modality = "native") -> Schema:
         """
@@ -337,7 +337,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     async def promptify_stream(self,
                              raw_schema: dict[str, Any] | Path | str,
                              documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
-                             model: str = "gpt-4o-2024-08-06",
+                             model: str,
                              temperature: float = 0,
                              modality: Modality = "native") -> AsyncGenerator[PartialSchema | Schema, None]:
         prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality, stream=True)
