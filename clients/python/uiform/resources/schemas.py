@@ -2,6 +2,7 @@ from typing import Any, Optional, Sequence, List, Generator, AsyncGenerator
 from pathlib import Path
 from io import IOBase
 import PIL.Image
+from pydantic import BaseModel
 
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.object import Schema, PartialSchemaChunk, PartialSchema
@@ -71,35 +72,18 @@ class SchemasMixin:
         return PreparedRequest(method="POST", url="/v1/schemas/system_prompt", data=data)
 
 class Schemas(SyncAPIResource, SchemasMixin):
-    """Schemas API wrapper"""
-
-    def list(self, 
-             schema_id: Optional[str] = None,
-             data_id: Optional[str] = None) -> List[Schema]:
-        """List all schemas.
-
-        Returns:
-            list[Schema]: The list of schemas
-        """
-        prepared_request = self.prepare_list(schema_id, data_id)
-        response = self._client._prepared_request(prepared_request)
-        return [Schema.model_validate(schema) for schema in response]
-
-    def get(self, schema_id: str) -> Schema:
-        """Retrieve a schema by ID.
+    def load(self, json_schema: dict[str, Any] | Path | str | None = None, pydantic_model: type[BaseModel] | None = None) -> Schema:
+        """Load a schema from a JSON schema.
 
         Args:
-            schema_id: The ID of the schema to retrieve
-
-        Returns:
-            Schema: The retrieved schema object
+            json_schema: The JSON schema to load
         """
-        
-        prepared_request = self.prepare_get(schema_id)
-        response = self._client._prepared_request(prepared_request)
-        return Schema.model_validate(response)
-
-    
+        if json_schema:
+            return Schema(json_schema=load_json_schema(json_schema))
+        elif pydantic_model:
+            return Schema(pydantic_model=pydantic_model)
+        else:
+            raise ValueError("Either json_schema or pydantic_model must be provided")
 
     """Schemas API wrapper"""
     def promptify(self,
@@ -244,7 +228,47 @@ class Schemas(SyncAPIResource, SchemasMixin):
             yield chunk
 
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
+    async def load(self, json_schema: dict[str, Any] | Path | str | None = None, pydantic_model: type[BaseModel] | None = None) -> Schema:
+        """Load a schema from a JSON schema.
+
+        Args:
+            json_schema: The JSON schema to load
+            pydantic_model: The Pydantic model to load
+        """
+        if json_schema:
+            return Schema(json_schema=load_json_schema(json_schema))
+        elif pydantic_model:
+            return Schema(pydantic_model=pydantic_model)
+        else:
+            raise ValueError("Either json_schema or pydantic_model must be provided")
+    
     """Schemas Asyncronous API wrapper"""
+    async def list(self, 
+             schema_id: Optional[str] = None,
+             data_id: Optional[str] = None) -> List[Schema]:
+        """List all schemas.
+
+        Returns:
+            list[Schema]: The list of schemas
+        """
+        prepared_request = self.prepare_list(schema_id, data_id)
+        response = await self._client._prepared_request(prepared_request)
+        return [Schema.model_validate(schema) for schema in response]
+
+    async def get(self, schema_id: str) -> Schema:
+        """Retrieve a schema by ID.
+
+        Args:
+            schema_id: The ID of the schema to retrieve
+
+        Returns:
+            Schema: The retrieved schema object
+        """
+        
+        prepared_request = self.prepare_get(schema_id)
+        response = await self._client._prepared_request(prepared_request)
+        return Schema.model_validate(response)
+
     async def promptify(self,
                     raw_schema: dict[str, Any] | Path | str,
                     documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],

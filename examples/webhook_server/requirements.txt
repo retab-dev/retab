@@ -1,0 +1,5 @@
+fastapi
+pyngrok
+uvicorn
+git+https://github.com/UiForm/uiform.git@main#subdirectory=clients/python
+google-genai
