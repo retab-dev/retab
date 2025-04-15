@@ -12,6 +12,7 @@ AnthropicModel = Literal["claude-3-5-sonnet-latest","claude-3-5-sonnet-20241022"
                          "claude-3-5-haiku-20241022",
                          "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
 OpenAIModel = Literal["gpt-4o", "gpt-4o-mini","chatgpt-4o-latest",
+                      "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano",
                       "gpt-4o-2024-11-20", "gpt-4o-2024-08-06", "gpt-4o-2024-05-13",
                       "gpt-4o-mini-2024-07-18",
                       "o3-mini", "o3-mini-2025-01-31",
@@ -268,6 +269,59 @@ openai_model_cards = [
     ########################
     ########################
 
+    # ----------------------
+    # gpt-4.1 family
+    # ----------------------
+    ModelCard(
+        model="gpt-4.1",
+        pricing=Pricing(
+            text=TokenPrice(prompt=2.00, cached_discount=0.25, completion=8.00),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
+    ),
+    ModelCard(
+        model="gpt-4.1-mini",
+        
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.40, cached_discount=0.25, completion=1.60),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+            capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
+    ),
+
+    ModelCard(
+        model="gpt-4.1-nano",
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.10, cached_discount=0.25, completion=0.40),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
+    ),
     # ----------------------
     # gpt-4.5 family
     # ----------------------
