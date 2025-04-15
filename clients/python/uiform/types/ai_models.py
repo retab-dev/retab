@@ -286,7 +286,7 @@ openai_model_cards = [
         ),
         logprobs_support=False,
         temperature_support=False,
-        reasoning_effort_support=True
+        reasoning_effort_support=False
     ),
     ModelCard(
         model="gpt-4.1-mini",
@@ -303,7 +303,7 @@ openai_model_cards = [
         ),
         logprobs_support=False,
         temperature_support=False,
-        reasoning_effort_support=True
+        reasoning_effort_support=False
     ),
 
     ModelCard(
@@ -320,39 +320,39 @@ openai_model_cards = [
         ),
         logprobs_support=False,
         temperature_support=False,
-        reasoning_effort_support=True
+        reasoning_effort_support=False
     ),
     # ----------------------
     # gpt-4.5 family
     # ----------------------
-    ModelCard(
-        model="gpt-4.5-preview",
-        pricing=Pricing(
-            text=TokenPrice(prompt=75, cached_discount=0.5, completion=150.00),
-            audio=None,
-            ft_price_hike=1.5
-        ),
-        capabilities=ModelCapabilities(
-            modalities=["text", "image"],
-            endpoints=["chat_completions", "responses", "assistants", "batch"],
-            features=["streaming", "function_calling", "structured_outputs"]
-        ),
-        logprobs_support=False,
-    ),
-    ModelCard(
-        model="gpt-4.5-preview-2025-02-27",
-        pricing=Pricing(
-            text=TokenPrice(prompt=75, cached_discount=0.5, completion=150.00),
-            audio=None,
-            ft_price_hike=1.5
-        ),
-        capabilities=ModelCapabilities(
-            modalities=["text", "image"],
-            endpoints=["chat_completions", "responses", "assistants", "batch"],
-            features=["streaming", "function_calling", "structured_outputs"]
-        ),
-        logprobs_support=False,
-    ),
+    # ModelCard(
+    #     model="gpt-4.5-preview",
+    #     pricing=Pricing(
+    #         text=TokenPrice(prompt=75, cached_discount=0.5, completion=150.00),
+    #         audio=None,
+    #         ft_price_hike=1.5
+    #     ),
+    #     capabilities=ModelCapabilities(
+    #         modalities=["text", "image"],
+    #         endpoints=["chat_completions", "responses", "assistants", "batch"],
+    #         features=["streaming", "function_calling", "structured_outputs"]
+    #     ),
+    #     logprobs_support=False,
+    # ),
+    # ModelCard(
+    #     model="gpt-4.5-preview-2025-02-27",
+    #     pricing=Pricing(
+    #         text=TokenPrice(prompt=75, cached_discount=0.5, completion=150.00),
+    #         audio=None,
+    #         ft_price_hike=1.5
+    #     ),
+    #     capabilities=ModelCapabilities(
+    #         modalities=["text", "image"],
+    #         endpoints=["chat_completions", "responses", "assistants", "batch"],
+    #         features=["streaming", "function_calling", "structured_outputs"]
+    #     ),
+    #     logprobs_support=False,
+    # ),
 
     # ----------------------
     # gpt-4o family
