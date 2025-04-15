@@ -134,7 +134,7 @@ class LogExtractionRequest(BaseModel):
         ),
         description="Document analyzed, if not provided a dummy one will be created with the text 'No document provided'",
     )
-    completion: Any = None
+    completion: dict | UiParsedChatCompletion | Message | ParsedChatCompletion | ChatCompletion | None = None
     openai_responses_output: Response | None = None
     json_schema: dict[str, Any]
     model: str
