@@ -41,38 +41,39 @@ sequenceDiagram
 
 ## General philosophy
 
-Our goal:
+### Out goal
+
+Our goal is to:
 
 - **Document Processing**
-    Helping you leverage LLMs' APIs to do document processing tasks with structured generations
+> Helping you leverage LLMs' APIs to do document processing tasks with structured generations
 
 - **Automation**
-    Create custom mailboxes and links connected to your webhooks to process documents at scale
+> Create custom mailboxes and links connected to your webhooks to process documents at scale
 
 - **Optimization**
-    Identify the most used automations and help you finetune models to reduce costs and improve performance
-
+> Identify the most used automations and help you finetune models to reduce costs and improve performance
 
 We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthropic](https://www.anthropic.com/api), [Gemini](https://aistudio.google.com/prompts/new_chat) and [xAI](https://x.ai/api) models.
 
 You come with your own API key from your favorite AI provider, and we handle the rest.
 
-
+### What UiForm solves
 
 UiForm solves **three major challenges in document processing with LLMs**:
 
 1. **Universal Document Processing**
-    Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without writing custom parsers
+> Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without writing custom parsers
 
 2. **Structured, Schema-driven Extraction**
-    Get consistent, reliable outputs using schema-based prompt engineering
+> Get consistent, reliable outputs using schema-based prompt engineering
 
 3. **Automations**
-    Create custom mailboxes and links to process documents at scale
+> Create custom mailboxes and links to process documents at scale
 
 We see it as building **Stripe** for document processing.
 
-Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
+UiForm makes the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
 
 Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
 
