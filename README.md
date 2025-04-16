@@ -14,11 +14,6 @@ Made with love by the team at [UiForm](https://uiform.com) 🤍.
 
 </div>
 
-
-``` bash
-pip install uiform
-```
-
 ---
 
 ## How It Works
@@ -76,7 +71,7 @@ You can create your first automations easily 🚀!
 
 ---
 
-## Dev Mode
+## Dev Mode 🔧
 
 You need more control? You can access the [Documentation](https://docs.uiform.com/get-started/introduction) of our **Python SDK**.
 
