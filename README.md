@@ -2,14 +2,14 @@
 
 <div align="center" style="margin-bottom: 1em;">
 
-<img src="https://raw.githubusercontent.com/UiForm/uiform/refs/heads/main/uiform-logo.png" alt="UiForm Logo" width="150">
+<img src="https://raw.githubusercontent.com/UiForm/uiform/refs/heads/main/assets/uiform-logo.png" alt="UiForm Logo" width="150">
 
 
   *The AI Automation Platform*
 
 Made with love by the team at [UiForm](https://uiform.com) 🤍.
 
-[Discord](https://discord.com/invite/vc5tWRPqag) | [Website](https://uiform.com) | [Twitter](https://x.com/uiformAPI)
+[Our Website](https://uiform.com) | [Documentation](https://docs.uiform.com/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/uiformAPI)
 
 
 </div>
@@ -18,8 +18,6 @@ Made with love by the team at [UiForm](https://uiform.com) 🤍.
 ``` bash
 pip install uiform
 ```
-
-First time here? Check our [Documentation](https://docs.uiform.com/get-started/introduction).
 
 ---
 
@@ -41,45 +39,46 @@ sequenceDiagram
 
 ## General philosophy
 
-### Out goal
+Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
 
-What we want for you is:
+We see our project as building **Stripe** for document processing.
 
 - **Smarter Document Processing**
-> Helping you leverage LLMs' APIs to do document processing tasks with structured generations
+> Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without touching any line of code
 
 - **Scalable Workflow Automation**
-> Create custom mailboxes and links connected to your webhooks to process documents at scale
+> Create custom automation loops to process documents at scale
 
 - **Model Efficiency & Cost Optimization**
-> Identify the most used automations and help you finetune models to reduce costs and improve performance
+> Get consistent, reliable outputs using schema-based prompt engineering to reduce costs and improve performance
+
+You come with your own API key from your favorite AI provider, and we handle the rest in an **easy** and **transparent** way.
 
 We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthropic](https://www.anthropic.com/api), [Gemini](https://aistudio.google.com/prompts/new_chat) and [xAI](https://x.ai/api) models.
 
-You come with your own API key from your favorite AI provider, and we handle the rest.
-
-### What UiForm solves
-
-UiForm solves **three major challenges in document processing with LLMs**:
-
-1. **Universal Document Processing**
-> Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without writing custom parsers
-
-2. **Structured, Schema-driven Extraction**
-> Get consistent, reliable outputs using schema-based prompt engineering
-
-3. **Automations**
-> Create custom mailboxes and links to process documents at scale
-
-We see it as building **Stripe** for document processing.
-
-UiForm makes the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
-
-Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/UiForm/uiform/refs/heads/main/assets/supported_models.png" alt="Supported Models" width="600">
+</p>
 
 ---
 
 ## Quickstart
+
+Explore our [Playground](https://www.uiform.com/dashboard/playground).
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/UiForm/uiform/refs/heads/main/assets/uiform-playground.png" alt="UiForm Playground" width="600">
+</p>
+
+You can create your first automations easily 🚀!
+
+---
+
+---
+
+## Dev Mode
+
+You need more control? You can access the [Documentation](https://docs.uiform.com/get-started/introduction) of our **Python SDK**.
 
 1. **Setup the Python SDK**
 > Install the UiForm Python SDK and configure your API keys to start processing documents with your preferred AI provider
