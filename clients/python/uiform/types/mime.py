@@ -72,6 +72,10 @@ class BaseMIMEData(MIMEData):
             obj['url'] = obj['url'][:1000]  # Truncate URL to 1000 chars
         return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
 
+    @property
+    def id(self) -> str:
+        raise NotImplementedError("id is not implemented for BaseMIMEData - id is the hash of the content, so it's not possible to generate it from the base class")
+
     def __str__(self) -> str:
         truncated_url = self.url[:50] + '...' if len(self.url) > 50 else self.url
         truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
