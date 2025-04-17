@@ -46,7 +46,8 @@ class Extraction(BaseModel):
     # Infered from the schema
     schema_id: str = Field(..., description="Version of the schema used for the analysis")
     schema_data_id: str = Field(..., description="Version of the schema data used for the analysis")
-    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp of the creation of the extraction object")
+    request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the extraction request if provided.")
     organization_id: str = Field(..., description="Organization ID of the user or application")
     validation_state: Optional[ValidationsState] = Field(default=None, description="Validation state of the extraction")
     @computed_field
