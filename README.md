@@ -34,18 +34,18 @@ sequenceDiagram
 
 ## General philosophy
 
-Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
+Many people haven't yet realized how powerful LLMs have become at document processing tasks - **we're here to help you unlock these capabilities**.
 
-We see our project as building **Stripe** for document processing.
+Our mission can be described as follows:
 
 - **Smarter Document Processing**
-> Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without touching any line of code
+> Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without touching any line of code.
 
 - **Scalable Workflow Automation**
-> Create custom automation loops to process documents at scale
+> Create custom automation loops to process documents at scale.
 
 - **Model Efficiency & Cost Optimization**
-> Get consistent, reliable outputs using schema-based prompt engineering to reduce costs and improve performance
+> Get consistent, reliable outputs using schema-based prompt engineering to reduce costs and improve performance.
 
 You come with your own API key from your favorite AI provider, and we handle the rest in an **easy** and **transparent** way.
 
@@ -59,13 +59,11 @@ We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthr
 
 ## Quickstart
 
-Explore our [Playground](https://www.uiform.com/dashboard/playground).
+Explore our [Playground](https://www.uiform.com/dashboard/playground) and create your first automations easily 🚀!
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/UiForm/uiform/refs/heads/main/assets/uiform-playground.png" alt="UiForm Playground" width="600">
 </p>
-
-You can create your first automations easily 🚀!
 
 ---
 
@@ -76,19 +74,19 @@ You can create your first automations easily 🚀!
 You need more control? You can access the [Documentation](https://docs.uiform.com/get-started/introduction) of our **Python SDK**.
 
 1. **Setup the Python SDK**
-> Install the UiForm Python SDK and configure your API keys to start processing documents with your preferred AI provider
+> Install the UiForm Python SDK and configure your API keys to start processing documents with your preferred AI provider.
 
 2. **Create your JSON schema**
-> Define the structure of the data you want to extract from your documents using our schema format with custom prompting capabilities
+> Define the structure of the data you want to extract from your documents using our schema format with custom prompting capabilities.
 
 3. **Create your FastAPI server with a webhook**
-> Set up an endpoint that will receive the structured data extracted from your documents after processing
+> Set up an endpoint that will receive the structured data extracted from your documents after processing.
 
 4. **Create your automation**
-> Configure an automation (mailbox or link) that will automatically process incoming documents using your schema and send results to your webhook
+> Configure an automation (mailbox or link) that will automatically process incoming documents using your schema and send results to your webhook.
 
 5. **Test your automation**
-> Validate your setup by sending test documents through your automation and verify the extracted data matches your requirements
+> Validate your setup by sending test documents through your automation and verify the extracted data matches your requirements.
 
 ### Step 1: Setup of the Python SDK
 
@@ -99,7 +97,9 @@ pip install uiform
 ```
 
 Then, [create your API key on uiform.com](https://www.uiform.com).
+
 Create another API key by you favorite API key provider. 
+
 **Reminder**: We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthropic](https://www.anthropic.com/api), [Gemini](https://aistudio.google.com/prompts/new_chat) and [xAI](https://x.ai/api) models.
 
 As we will use your API key to make requests to OpenAI on your behalf within an automation, you need to store your API key in the UiForm secrets manager:
@@ -121,9 +121,7 @@ uiclient.secrets.external_api_keys.create(
 )
 ```
 
-#### Process your first document
-
-Here is how to process your first document with the create_messages method:
+#### Process your first document with the create_messages method:
 
 ```bash
 from uiform import UiForm
@@ -153,7 +151,9 @@ completion = client.chat.completions.create(
 
 We use a standard JSON Schema with custom annotations (`X-SystemPrompt`, `X-FieldPrompt`, and `X-ReasoningPrompt`) as a prompt-engineering framework for the extraction process.
 
-These annotations help guide the LLM’s behavior and improve extraction accuracy. You can learn more about these in our [JSON Schema documentation](https://docs.uiform.com/get-started/prompting-with-the-JSON-schema).
+These annotations help guide the LLM’s behavior and improve extraction accuracy. 
+
+You can learn more about these in our [JSON Schema documentation](https://docs.uiform.com/get-started/prompting-with-the-JSON-schema).
 
 ```bash
 from uiform import UiForm
@@ -212,7 +212,9 @@ print("Extracted data without the reasoning fields:", extraction)
 
 ### Step 3: Create your FastAPI server with a webhook
 
-Next, set up a FastAPI route that will handle incoming webhook POST requests. Below is an example of a simple FastAPI application with a webhook endpoint:
+Next, set up a FastAPI route that will handle incoming webhook POST requests. 
+
+Below is an example of a simple FastAPI application with a webhook endpoint:
 
 ```bash
 from fastapi import FastAPI, Request
@@ -235,7 +237,7 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
-You can test the webhook endpoint locally with a tool like curl or Postman. For example, using curl:
+You can test the webhook endpoint locally with a tool like curl or Postman - for example, using curl:
 
 ```bash
 curl -X POST "http://localhost:8000/webhook" \
@@ -248,7 +250,9 @@ curl -X POST "http://localhost:8000/webhook" \
 
 ### Step 4: Create your automation
 
-Finally, integrate the webhook with your automation system using the `uiform` client. This example demonstrates how to create an automation that triggers the webhook when a matching event occurs:
+Finally, integrate the webhook with your automation system using the `uiform` client. 
+
+This example demonstrates how to create an automation that triggers the webhook when a matching event occurs:
 
 ```bash
 from uiform import UiForm
@@ -314,7 +318,9 @@ log = uiclient.automations.mailboxes.tests.webhook(
 And that's it! You can start processing documents at scale! 
 You have 1000 free requests to get started, and you can [subscribe](https://www.uiform.com) to the pro plan to get more.
 
-But this minimalistic example is just the beginning. Continue reading to learn more about how to use UiForm **to its full potential**.
+But this minimalistic example is just the beginning. 
+
+Continue reading to learn more about how to use UiForm **to its full potential** 🔥.
 
 ---
 
