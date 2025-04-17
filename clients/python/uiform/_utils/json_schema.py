@@ -18,6 +18,7 @@ import re
 from uiform._utils.mime import generate_blake2b_hash_from_string
 from uiform.types.schemas.layout import Layout, Column, Row, RowList, FieldItem, RefObject
 import re
+from typing import Union, MutableMapping, MutableSequence, Tuple, Any
 # **** Validation Functions ****
 
 # 1) Special Objects
@@ -1988,3 +1989,48 @@ def nlp_data_structure_to_field_descriptions(nlp_data_structure: str) -> dict:
         
         i += 1
     return field_descriptions
+
+##### JSON Schema Sanitization  #####
+
+SchemaPath = Tuple[Union[str, int], ...]          # e.g. ('address', 'city') or ('items', 3)
+
+def __sanitize_instance(instance: Any, schema: dict[str, Any], path: SchemaPath = ()) -> Any:
+    """
+    Return a **new** instance where every string that violates ``maxLength``
+    has been sliced to that length.  Mutates nothing in‑place.
+    """
+
+    # ------------- objects -----------------
+    if schema.get("type") == "object" and isinstance(instance, MutableMapping):
+        props = schema.get("properties", {})
+        return {
+            k: __sanitize_instance(v, props.get(k, {}), path + (k,))
+            for k, v in instance.items()
+        }
+
+    # ------------- arrays ------------------
+    if schema.get("type") == "array" and isinstance(instance, MutableSequence):
+        item_schema = schema.get("items", {})
+        return [
+            __sanitize_instance(v, item_schema, path + (i,))
+            for i, v in enumerate(instance)
+        ]
+
+    # ------------- primitive strings -------
+    if schema.get("type") == "string" and isinstance(instance, str):
+        max_len = schema.get("maxLength")
+        if max_len is not None and len(instance) > max_len:
+            print(
+                "Trimmed %s from %d→%d characters",
+                ".".join(map(str, path)) or "<root>",
+                len(instance),
+                max_len,
+            )
+            return instance[:max_len]
+
+    # ------------- all other primitives ----
+    return instance
+
+def sanitize(instance: Any, schema: dict[str, Any]) -> Any:
+    expanded_schema = expand_refs(schema)
+    return __sanitize_instance(instance, expanded_schema)
