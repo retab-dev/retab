@@ -18,6 +18,8 @@ OpenAIModel = Literal["gpt-4o", "gpt-4o-mini","chatgpt-4o-latest",
                       "o3-mini", "o3-mini-2025-01-31",
                       "o1", "o1-2024-12-17", "o1-preview-2024-09-12",
                       "o1-mini", "o1-mini-2024-09-12",
+                      "o3", "o3-2025-04-16",
+                      "o4-mini", "o4-mini-2025-04-16",
                       "gpt-4.5-preview", "gpt-4.5-preview-2025-02-27",
                       "gpt-4o-audio-preview-2024-12-17", "gpt-4o-audio-preview-2024-10-01",
                       "gpt-4o-realtime-preview-2024-12-17", "gpt-4o-realtime-preview-2024-10-01",
@@ -223,6 +225,42 @@ openai_model_cards = [
         reasoning_effort_support=True
     ),
 
+    # ----------------------
+    # o3 family
+    # ----------------------
+    ModelCard(
+        model="o3",
+        pricing=Pricing(
+            text=TokenPrice(prompt=10.0, cached_discount=2.5/10.0, completion=40.0),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
+    ),
+    ModelCard(
+        model="o3-2025-04-16",
+        pricing=Pricing(
+            text=TokenPrice(prompt=10.0, cached_discount=2.5/10.0, completion=40.0),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
+    ),
+    
 
     # ----------------------
     # o3-mini family
@@ -259,6 +297,44 @@ openai_model_cards = [
         temperature_support=False,
         reasoning_effort_support=True
     ),
+
+    # ----------------------
+    # o4-mini family
+    # ----------------------
+    ModelCard(
+        model="o4-mini",
+        pricing=Pricing(
+            text=TokenPrice(prompt=1.10, cached_discount=0.275/1.1, completion=4.40),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
+    ),
+    ModelCard(
+        model="o4-mini-2025-04-16",
+        pricing=Pricing(
+            text=TokenPrice(prompt=1.10, cached_discount=0.275/1.1, completion=4.40),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=True
+    ),
+    
+
     
 
     ########################
