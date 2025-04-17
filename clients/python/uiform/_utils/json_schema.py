@@ -1994,11 +1994,43 @@ def nlp_data_structure_to_field_descriptions(nlp_data_structure: str) -> dict:
 
 SchemaPath = Tuple[Union[str, int], ...]          # e.g. ('address', 'city') or ('items', 3)
 
+def _pick_subschema(schemas: list[dict[str, Any]], value: Any) -> dict[str, Any]:
+    """
+    Return the first subschema in *schemas* that
+      • explicitly allows the Python type of *value*, or
+      • has no "type" at all (acts as a wildcard).
+
+    Fallback: the first subschema (so we *always* return something).
+    """
+    pytypes_to_json = {
+        str:    "string",
+        int:    "integer",
+        float:  "number",
+        bool:   "boolean",
+        type(None): "null",
+        dict:   "object",
+        list:   "array",
+    }
+    jstype = pytypes_to_json.get(type(value))
+
+    for sub in schemas:
+        allowed = sub.get("type")
+        if allowed is None or allowed == jstype or (
+            isinstance(allowed, list) and jstype in allowed
+        ):
+            return sub
+    return schemas[0]          # last resort
+
 def __sanitize_instance(instance: Any, schema: dict[str, Any], path: SchemaPath = ()) -> Any:
     """
     Return a **new** instance where every string that violates ``maxLength``
     has been sliced to that length.  Mutates nothing in‑place.
     """
+
+    # ------------- unwrap anyOf ------------------------------------
+    if "anyOf" in schema:
+        schema = _pick_subschema(schema["anyOf"], instance)
+        # (We recurse *once*; nested anyOfs will be handled the same way)
 
     # ------------- objects -----------------
     if schema.get("type") == "object" and isinstance(instance, MutableMapping):
@@ -2020,12 +2052,12 @@ def __sanitize_instance(instance: Any, schema: dict[str, Any], path: SchemaPath 
     if schema.get("type") == "string" and isinstance(instance, str):
         max_len = schema.get("maxLength")
         if max_len is not None and len(instance) > max_len:
+            print("="*100)
+            _path = ".".join(map(str, path)) or "<root>"
             print(
-                "Trimmed %s from %d→%d characters",
-                ".".join(map(str, path)) or "<root>",
-                len(instance),
-                max_len,
+                f"Trimmed {_path} from {len(instance)}→{max_len} characters",
             )
+            print("="*100)
             return instance[:max_len]
 
     # ------------- all other primitives ----
