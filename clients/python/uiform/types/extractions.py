@@ -19,6 +19,13 @@ class ExtractionSource(BaseModel):
     type: Literal["api","annotation","automation.link","automation.email","automation.cron","automation.outlook","automation.endpoint", "schema.extract"] = Field( description="Type of extraction")
     id: str|None = Field( default=None,description="ID the trigger of the extraction")
 
+ExtractionSteps = Literal['prepare_messages', 'yield_first_token', 'completion']    # Steps are meant to not overlap
+class ExtractionTimingStep(BaseModel):
+    name: ExtractionSteps
+    duration: float     # in seconds
+    notes: str | None = None
+
+
 class Extraction(BaseModel):
     id: str = Field(default_factory=lambda: "extr_" + nanoid.generate(), description="Unique identifier of the analysis")
     messages: list[ChatCompletionUiformMessage] = Field(default_factory=list)
@@ -34,6 +41,7 @@ class Extraction(BaseModel):
     image_settings : ImageSettings = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
     modality: Modality = Field(default="native", description="Modality of the extraction")
     reasoning_effort: Optional[ChatCompletionReasoningEffort] = Field(default=None, description="The effort level for the model to reason about the input data.")
+    timings: list[ExtractionTimingStep] = Field(default_factory=list, description="Timings of the extraction")
     
     # Infered from the schema
     schema_id: str = Field(..., description="Version of the schema used for the analysis")

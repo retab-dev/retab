@@ -729,7 +729,7 @@ gemini_model_cards = [
     # ----------------------
     ModelCard(
         model="gemini-2.5-pro-exp-03-25",
-        pricing=Pricing(text=TokenPrice(prompt=0.1, cached_discount=0.25, completion=0.40), audio=TokenPrice(prompt=0.7, cached_discount=0.25, completion=1000)),
+        pricing=Pricing(text=TokenPrice(prompt=2.5, cached_discount=1.0, completion=10.0), audio=None),
         capabilities=ModelCapabilities(
             modalities=["text", "image"],
             endpoints=["chat_completions"],
@@ -743,7 +743,7 @@ gemini_model_cards = [
     # ----------------------
     ModelCard(
         model="gemini-2.0-flash",
-        pricing=Pricing(text=TokenPrice(prompt=0.1, cached_discount=0.25, completion=0.40), audio=TokenPrice(prompt=0.7, cached_discount=0.25, completion=1000)),
+        pricing=Pricing(text=TokenPrice(prompt=0.1, cached_discount=0.025/0.1, completion=0.40), audio=TokenPrice(prompt=0.7, cached_discount=0.175/0.7, completion=1000)),
         capabilities=ModelCapabilities(
             modalities=["text", "image"],
             endpoints=["chat_completions"],
@@ -754,7 +754,7 @@ gemini_model_cards = [
     ),
     ModelCard(
         model="gemini-2.0-flash-lite",
-        pricing=Pricing(text=TokenPrice(prompt=0.075, cached_discount=0.00, completion=0.30), audio=TokenPrice(prompt=0.075, cached_discount=0.00, completion=1000)),
+        pricing=Pricing(text=TokenPrice(prompt=0.075, cached_discount=1.0, completion=0.30), audio=TokenPrice(prompt=0.075, cached_discount=1.0, completion=1000)),
         capabilities=ModelCapabilities(
             modalities=["text", "image", "audio"],
             endpoints=["chat_completions"],
