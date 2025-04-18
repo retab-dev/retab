@@ -880,6 +880,21 @@ def add_reasoning_sibling_inplace(properties: dict[str, Any], field_name: str, r
     properties.clear()
     properties.update(new_properties)
 
+def add_quote_sibling_inplace(properties: dict[str, Any], field_name: str) -> None:
+    """
+    Add a quote sibling for a given property field_name into properties dict.
+    We'll use the naming convention quote___<field_name>.
+    If the field_name is 'root', we add 'quote___root'.
+    """
+    quote_key = f"quote___{field_name}"
+    new_properties: dict[str, Any] = {}
+    for key, value in properties.items():
+        if key == field_name:
+            new_properties[quote_key] = {"type": "string"}
+        new_properties[key] = value
+    properties.clear()
+    properties.update(new_properties)
+
 def _insert_reasoning_fields_inner(schema: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
     """
     Inner function that returns (updated_schema, reasoning_desc_for_this_node).
@@ -940,6 +955,48 @@ def _insert_reasoning_fields_inner(schema: dict[str, Any]) -> tuple[dict[str, An
 
     return schema, reasoning_desc
 
+def _insert_quote_fields_inner(schema: dict[str, Any]) -> dict[str, Any]:
+    """
+    Inner function that processes a schema and adds quote___ fields for leaf nodes with X-ReferenceQuote: true.
+    Only applies to leaf fields, never to the root.
+    """
+    if not isinstance(schema, dict):
+        return schema
+    
+    # Create a copy to avoid modifying the original
+    new_schema = copy.deepcopy(schema)
+    
+    # Process children recursively
+    if "properties" in new_schema and isinstance(new_schema["properties"], dict):
+        new_props = {}
+        for property_key, property_value in new_schema["properties"].items():
+            updated_prop_schema_value = _insert_quote_fields_inner(property_value)
+            new_props[property_key] = updated_prop_schema_value
+            has_quote_field = (updated_prop_schema_value.get("X-ReferenceQuote") is True)
+            
+            # Check if this property is a leaf with X-ReferenceQuote: true
+            if has_quote_field:
+                # Add the quote field
+                quote_key = f"quote___{property_key}"
+                new_props[quote_key] = {"type": "string"}
+                
+                # Add the quote field to required if the property is required
+                if "required" in new_schema and property_key in new_schema["required"]:
+                    # add the quote field to required just before the property_key
+                    new_schema["required"].insert(new_schema["required"].index(property_key), quote_key)
+                
+                # Remove the X-ReferenceQuote field
+                updated_prop_schema_value.pop("X-ReferenceQuote", None)
+                
+        new_schema["properties"] = new_props
+
+    elif "items" in new_schema:
+        # Recurse into items if present
+        updated_items = _insert_quote_fields_inner(new_schema["items"])
+        new_schema["items"] = updated_items
+    
+    return new_schema
+
 def _rec_replace_description_with_llm_description(schema: dict[str, Any]) -> dict[str, Any]:
     """
     Recursively replace the description field with X-ReasoningPrompt if present.
@@ -985,6 +1042,9 @@ def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
         add_reasoning_sibling_inplace(updated_schema["properties"], "root", root_reasoning)
         if "required" in updated_schema:
             updated_schema["required"].append("reasoning___root")
+    
+    # Insert quote fields for leaf nodes with X-ReferenceQuote: true
+    updated_schema = _insert_quote_fields_inner(updated_schema)
 
     # Clean up $defs from inference_schema if desired (optional)
     # if "$defs" in updated_schema:

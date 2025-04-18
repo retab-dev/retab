@@ -348,6 +348,24 @@ When performing extraction, explicitly follow these core principles:
 - **Conservatism**: Set explicitly fields as `null` when data is explicitly missing or ambiguous—never fabricate or guess.
 - **Structure Preservation**: Always maintain explicitly the full schema structure, even when entire nested objects lack data (leaf attributes as null).
 
+
+## Source Fields
+
+Some leaf fields require you to explicitly provide the source of the data (verbatim from the document).
+The idea is to simply provide a verbatim quote from the document, without any additional formatting or commentary, keeping it as close as possible to the original text.
+Make sure to reasonably include some surrounding text to provide context about the quote.
+
+You can easily identify the fields that require a source by the `quote___[attributename]` naming pattern.
+
+**Example:**
+
+```json
+{
+  "quote___name": "NAME:\nJohn Doe",
+  "name": "John Doe"
+}
+```
+
 ---
 
 # User Defined System Prompt
