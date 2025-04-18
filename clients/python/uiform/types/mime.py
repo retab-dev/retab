@@ -1,10 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 import mimetypes
 import base64
-from typing import Literal, Optional, Sequence, TypeAlias
+from typing import Optional, Sequence
 import datetime
 import re
 import hashlib
+from typing import Any, Self
 
 def generate_blake2b_hash_from_bytes(bytes_: bytes) -> str:
     return hashlib.blake2b(bytes_, digest_size=8).hexdigest()
@@ -13,9 +14,44 @@ def generate_blake2b_hash_from_base64(base64_string: str) -> str:
     return generate_blake2b_hash_from_bytes(base64.b64decode(base64_string))
 
 
+# **** OCR DATACLASSES (DocumentAI-compatible) ****
+class Point(BaseModel):
+    x: int
+    y: int
+class TextBox(BaseModel):
+    width: int
+    height: int
+    center: Point
+    vertices: tuple[Point, Point, Point, Point] = Field(description="(top-left, top-right, bottom-right, bottom-left)")
+    text: str
+
+    @field_validator('width', 'height')
+    @classmethod
+    def check_positive_dimensions(cls, v: int) -> int:
+        if not isinstance(v, int) or v <= 0:
+            raise ValueError(f"Dimension must be a positive integer, got {v}")
+        return v
+class Page(BaseModel):
+    page_number: int
+    width: int
+    height: int
+    blocks: list[TextBox]
+    lines: list[TextBox]
+
+    @field_validator('width', 'height')
+    @classmethod
+    def check_positive_dimensions(cls, v: int) -> int:
+        if not isinstance(v, int) or v <= 0:
+            raise ValueError(f"Page dimension must be a positive integer, got {v}")
+        return v
+class OCR(BaseModel):
+    pages: list[Page]
+class MIMEMetadata(BaseModel):
+    ocr: Optional[OCR] = Field(default=None, description="OCR result of the attachment, if available.")
 class MIMEData(BaseModel):
     filename: str = Field(description="The filename of the file", examples=["file.pdf", "image.png", "data.txt"])
-    url: str = Field(description="The URL of the file", examples=["https://example.com/file.pdf", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."])
+    url: str = Field(description="The URL of the file in base64 format", examples=["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."])
+    metadata: MIMEMetadata = Field(MIMEMetadata(), description="Additional metadata about the attachment.")
 
     @property
     def id(self) -> str:
@@ -60,7 +96,6 @@ class MIMEData(BaseModel):
         return self.__str__()
 
     
-from typing import Any, Self
 
 class BaseMIMEData(MIMEData):
     @classmethod
@@ -88,18 +123,9 @@ class BaseMIMEData(MIMEData):
 
 
 # **** MIME DATACLASSES ****
-
-DisplayType: TypeAlias = Literal["image", "pdf", "txt"]
-
-class DisplayMetadata(BaseModel):
-    url: str = Field(..., description="URL of the attachment for display purposes.")
-    type : DisplayType = Field(..., description="Type of the attachment, determining how it should be handled.")
-
-class AttachmentMetadata(BaseModel):
+class AttachmentMetadata(MIMEMetadata):
     is_inline: bool = Field(default=False, description="Whether the attachment is inline or not.")
     inline_cid: Optional[str] = Field(default=None, description="CID reference for inline attachments.")
-    url: Optional[str] = Field(default=None, description="URL of the attachment.")
-    display_metadata: Optional[DisplayMetadata] = Field(default=None, description="Display Metadata")
     source: Optional[str] = Field(default=None, description="Source of the attachment in dot notation attachment_id, or email_id.attachment_id, allow us to keep track of the origin of the attachment, for search purposes. ")
 
 class BaseAttachmentMIMEData(BaseMIMEData):
