@@ -6,6 +6,7 @@ import pandas as pd
 from rich.table import Table
 from rich.console import Console
 
+
 def normalize_value(val: Any) -> str:
     """Convert a value to uppercase and remove all spacing and accents for comparison."""
     if val is None:
@@ -15,10 +16,11 @@ def normalize_value(val: Any) -> str:
     # Remove accents (e.g. é -> E)
     return unicodedata.normalize('NFKD', prep).encode('ASCII', 'ignore').decode()
 
+
 def levenshtein_similarity(val1: Any, val2: Any) -> float:
     """
-    Calculate similarity between two values using the Levenshtein distance.
     Returns a similarity score between 0.0 and 1.0.
+    Calculate similarity between two values using the Levenshtein distance.
     """
     # If both values are "empty" or equal
     if (val1 or "") == (val2 or ""):
@@ -43,6 +45,7 @@ def levenshtein_similarity(val1: Any, val2: Any) -> float:
         return 1 - (dist / max_len)
         
     return 0.0
+
 
 from typing import TypedDict
 
@@ -92,6 +95,7 @@ def find_top_k_neighbors(
     # Sort by descending similarity and return the top k results
     results.sort(key=lambda x: x["similarity"], reverse=True)
     return results[:k]
+
 
 def print_results_table(results: List[MatchResult]) -> None:
     """Print results in a formatted table"""

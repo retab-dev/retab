@@ -1,10 +1,23 @@
+# ---------------------------------------------
+## Example: Define and use a CalendarEvent schema using JSON Schema (manual)
+# ---------------------------------------------
+
+from dotenv import load_dotenv
+assert load_dotenv(".env") # Load environment variables from a .env file
+
 from uiform import UiForm, Schema
 from openai import OpenAI
+import json
 
-uiclient = UiForm()
+import os
+api_key = os.getenv("OPENAI_API_KEY")
+uiform_api_key = os.getenv("UIFORM_API_KEY")
+
+uiclient = UiForm(api_key=uiform_api_key)
 doc_msg = uiclient.documents.create_messages(
-    document = "document_1.xlsx"
+    document = "../../assets/calendar_event.xlsx"
 )
+
 schema_obj = Schema(
     json_schema = {
         'X-SystemPrompt': 'You are a useful assistant extracting information from documents.',
@@ -29,7 +42,7 @@ schema_obj = Schema(
 )
 
 # Now you can use your favorite model to analyze your document
-client = OpenAI()
+client = OpenAI(api_key=api_key)
 completion = client.chat.completions.create(
     model="gpt-4o",
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
@@ -50,4 +63,5 @@ extraction = schema_obj.pydantic_model.model_validate(
     filter_reasoning_fields_json(completion.choices[0].message.content)
 )
 
-print("Result:",extraction)
+print("\n✅ Extracted Calendar Event:")
+print(json.dumps(extraction.model_dump(), indent=2))

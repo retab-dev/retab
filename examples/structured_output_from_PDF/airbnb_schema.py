@@ -1,9 +1,13 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List
-from dotenv import load_dotenv
-assert load_dotenv(".env.production") # Load environment variables from a .env file
-from uiform import UiForm
-from typing import Literal
+from enum import Enum
+
+
+class BusinessModel(str, Enum):
+    B2B = "B2B"
+    B2C = "B2C"
+    C2C = "C2C"
+
 
 system_prompt = """
 Your task is to extract structured information from pitch decks based on the provided schema. Carefully analyze the content to identify relevant details and populate each field accurately while maintaining consistency across extracted data.
@@ -36,9 +40,6 @@ Extraction Output:
 
 By following these principles, the extracted information will be comprehensive, accurate, and aligned with the expected data structure for further processing and analysis.
 """
-
-BusinessModel = Literal["B2B", "B2C", "C2C"]
-
 
 class TeamMember(BaseModel):
     firstName: str = Field(...,description="First name of the team member")
@@ -94,43 +95,3 @@ class PitchDeck(BaseModel):
     )
 
 
-
-from uiform import UiForm, Schema
-from openai import OpenAI
-from pydantic import BaseModel, Field, ConfigDict
-import json
-
-uiclient = UiForm()
-doc_msg = uiclient.documents.create_messages(
-    document = "airbnb_pitch_deck.pdf"
-)
-
-schema_obj =Schema(
-    pydantic_model = PitchDeck
-)
-
-print("\n\nJSON Schema:")
-print(json.dumps(PitchDeck.model_json_schema(), indent=2))
-
-# Now you can use your favorite model to analyze your document
-client = OpenAI()
-completion = client.beta.chat.completions.parse(
-    model="gpt-4o-mini",
-    messages=schema_obj.openai_messages + doc_msg.openai_messages,
-    response_format=schema_obj.inference_pydantic_model,
-    store=True
-)
-
-assert completion.choices[0].message.parsed is not None
-print(json.dumps(completion.choices[0].message.parsed.model_dump(), indent=2))
-
-
-# ------------------------------------------------------------------------------------------------
-
-# Eventually: validate the response against the original schema if you want to remove the reasoning fields
-from uiform._utils.json_schema import filter_reasoning_fields_json
-assert completion.choices[0].message.content is not None
-extraction = schema_obj.pydantic_model.model_validate(
-    filter_reasoning_fields_json(completion.choices[0].message.content)
-)
-print(json.dumps(extraction.model_dump(), indent=2))
