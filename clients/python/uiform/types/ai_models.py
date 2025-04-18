@@ -365,7 +365,40 @@ openai_model_cards = [
         reasoning_effort_support=False
     ),
     ModelCard(
+        model="gpt-4.1-2025-04-14",
+        pricing=Pricing(
+            text=TokenPrice(prompt=2.00, cached_discount=0.25, completion=8.00),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=False
+    ),
+    ModelCard(
         model="gpt-4.1-mini",
+        
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.40, cached_discount=0.25, completion=1.60),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+            capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=False
+    ),
+    ModelCard(
+        model="gpt-4.1-mini-2025-04-14",
         
         pricing=Pricing(
             text=TokenPrice(prompt=0.40, cached_discount=0.25, completion=1.60),
@@ -384,6 +417,22 @@ openai_model_cards = [
 
     ModelCard(
         model="gpt-4.1-nano",
+        pricing=Pricing(
+            text=TokenPrice(prompt=0.10, cached_discount=0.25, completion=0.40),
+            audio=None,
+            ft_price_hike=1.5
+        ),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions", "responses", "assistants", "batch"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False,
+        reasoning_effort_support=False
+    ),
+    ModelCard(
+        model="gpt-4.1-nano-2025-04-14",
         pricing=Pricing(
             text=TokenPrice(prompt=0.10, cached_discount=0.25, completion=0.40),
             audio=None,
