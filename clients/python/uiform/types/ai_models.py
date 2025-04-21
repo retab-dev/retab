@@ -757,28 +757,13 @@ xai_model_cards = [
 
 # Add Gemini model cards
 gemini_model_cards = [
-    ModelCard(
-        model="gemini-1.5-pro",
-        pricing=Pricing(
-            text=TokenPrice(prompt=1.25, cached_discount=0.5, completion=5.00),
-            audio=None
-        ),
-        capabilities=ModelCapabilities(
-            modalities=["text", "image"],
-            endpoints=["chat_completions"],
-            features=["streaming", "function_calling", "structured_outputs"]
-        ),
-        logprobs_support=False,
-        temperature_support=False
-    ),
-
-
     # ----------------------
     # gemini-2.5-pro-exp-03-25 family
     # ----------------------
+
     ModelCard(
         model="gemini-2.5-pro-exp-03-25",
-        pricing=Pricing(text=TokenPrice(prompt=2.5, cached_discount=1.0, completion=10.0), audio=None),
+        pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
         capabilities=ModelCapabilities(
             modalities=["text", "image"],
             endpoints=["chat_completions"],
@@ -787,6 +772,31 @@ gemini_model_cards = [
         logprobs_support=False,
         temperature_support=False
     ),
+
+    ModelCard(
+        model="gemini-2.5-pro-preview-03-25",
+        pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False
+    ),
+
+    ModelCard(
+        model="gemini-2.5-flash-preview-04-17",
+        pricing=Pricing(text=TokenPrice(prompt=0.15, cached_discount=0.25, completion=0.60), audio=None),
+        capabilities=ModelCapabilities(
+            modalities=["text", "image"],
+            endpoints=["chat_completions"],
+            features=["streaming", "function_calling", "structured_outputs"]
+        ),
+        logprobs_support=False,
+        temperature_support=False
+    ),
+
     # ----------------------
     # gemini-2.0-flash family
     # ----------------------
