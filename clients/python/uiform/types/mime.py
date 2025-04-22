@@ -7,8 +7,10 @@ import re
 import hashlib
 from typing import Any, Self
 
+
 def generate_blake2b_hash_from_bytes(bytes_: bytes) -> str:
     return hashlib.blake2b(bytes_, digest_size=8).hexdigest()
+
 
 def generate_blake2b_hash_from_base64(base64_string: str) -> str:
     return generate_blake2b_hash_from_bytes(base64.b64decode(base64_string))
@@ -18,6 +20,8 @@ def generate_blake2b_hash_from_base64(base64_string: str) -> str:
 class Point(BaseModel):
     x: int
     y: int
+
+
 class TextBox(BaseModel):
     width: int
     height: int
@@ -31,6 +35,8 @@ class TextBox(BaseModel):
         if not isinstance(v, int) or v <= 0:
             raise ValueError(f"Dimension must be a positive integer, got {v}")
         return v
+
+
 class Page(BaseModel):
     page_number: int
     width: int
@@ -44,23 +50,29 @@ class Page(BaseModel):
         if not isinstance(v, int) or v <= 0:
             raise ValueError(f"Page dimension must be a positive integer, got {v}")
         return v
+
+
 class OCR(BaseModel):
     pages: list[Page]
+
+
 class MIMEMetadata(BaseModel):
     ocr: Optional[OCR] = Field(default=None, description="OCR result of the attachment, if available.")
+
+
 class MIMEData(BaseModel):
     filename: str = Field(description="The filename of the file", examples=["file.pdf", "image.png", "data.txt"])
     url: str = Field(description="The URL of the file in base64 format", examples=["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."])
-    metadata: MIMEMetadata = Field(MIMEMetadata(), description="Additional metadata about the attachment.")
+    metadata: MIMEMetadata = Field(default=MIMEMetadata(), description="Additional metadata about the attachment.")
 
     @property
     def id(self) -> str:
         return f"file_{generate_blake2b_hash_from_base64(self.content)}"
-    
+
     @property
     def extension(self) -> str:
         return self.filename.split('.')[-1].lower()
-    
+
     @property
     def content(self) -> str:
         if self.url.startswith('data:'):
@@ -69,33 +81,31 @@ class MIMEData(BaseModel):
             return base64_content
         else:
             raise ValueError("Content is not available for this file")
-    
+
     @property
     def mime_type(self) -> str:
         if self.url.startswith('data:'):
             return self.url.split(';')[0].split(':')[1]
         else:
             return mimetypes.guess_type(self.filename)[0] or "application/octet-stream"
-        
-    @property 
+
+    @property
     def unique_filename(self) -> str:
         return f"{self.id}.{self.extension}"
 
-    
     @property
     def size(self) -> int:
         # size in bytes
         return len(base64.b64decode(self.content))
-    
+
     def __str__(self) -> str:
         truncated_url = self.url[:50] + '...' if len(self.url) > 50 else self.url
         # truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
         return f"MIMEData(filename='{self.filename}', url='{truncated_url}', mime_type='{self.mime_type}', size='{self.size}', extension='{self.extension}')"
-    
+
     def __repr__(self) -> str:
         return self.__str__()
 
-    
 
 class BaseMIMEData(MIMEData):
     @classmethod
@@ -115,29 +125,31 @@ class BaseMIMEData(MIMEData):
         truncated_url = self.url[:50] + '...' if len(self.url) > 50 else self.url
         truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
         return f"BaseMIMEData(filename='{self.filename}', url='{truncated_url}', content='{truncated_content}', mime_type='{self.mime_type}', extension='{self.extension}')"
-    
+
     def __repr__(self) -> str:
         return self.__str__()
-
-    
 
 
 # **** MIME DATACLASSES ****
 class AttachmentMetadata(MIMEMetadata):
     is_inline: bool = Field(default=False, description="Whether the attachment is inline or not.")
     inline_cid: Optional[str] = Field(default=None, description="CID reference for inline attachments.")
-    source: Optional[str] = Field(default=None, description="Source of the attachment in dot notation attachment_id, or email_id.attachment_id, allow us to keep track of the origin of the attachment, for search purposes. ")
+    source: Optional[str] = Field(
+        default=None,
+        description="Source of the attachment in dot notation attachment_id, or email_id.attachment_id, allow us to keep track of the origin of the attachment, for search purposes. ",
+    )
+
 
 class BaseAttachmentMIMEData(BaseMIMEData):
-    metadata: AttachmentMetadata = Field(AttachmentMetadata(), description="Additional metadata about the attachment.")
+    metadata: AttachmentMetadata = Field(default=AttachmentMetadata(), description="Additional metadata about the attachment.")
+
 
 class AttachmentMIMEData(MIMEData):
-    metadata: AttachmentMetadata = Field(AttachmentMetadata(), description="Additional metadata about the attachment.")
-
-
+    metadata: AttachmentMetadata = Field(default=AttachmentMetadata(), description="Additional metadata about the attachment.")
 
 
 # **** EMAIL DATACLASSES ****
+
 
 class EmailAddressData(BaseModel):
     email: str = Field(..., description="The email address")
@@ -145,9 +157,10 @@ class EmailAddressData(BaseModel):
 
     def __str__(self) -> str:
         if self.display_name:
-            return (f"{self.display_name} <{self.email}>")
+            return f"{self.display_name} <{self.email}>"
         else:
-            return (f"<{self.email}>")
+            return f"<{self.email}>"
+
 
 # Light EmailData object that can conveniently be stored in mongoDB for search
 class BaseEmailData(BaseModel):
@@ -163,11 +176,11 @@ class BaseEmailData(BaseModel):
     recipients_bcc: list[EmailAddressData] = Field(default=[], description="List of blind carbon copy recipients' email address information")
     sent_at: datetime.datetime = Field(..., description="The date and time when the email was sent")
     received_at: Optional[datetime.datetime] = Field(default=None, description="The date and time when the email was received")
- 
+
     in_reply_to: Optional[str] = Field(default=None, description="The Message-ID of the email this is replying to")
     references: list[str] = Field(default=[], description="List of Message-IDs this email references")
     headers: dict[str, str] = Field(default={}, description="Dictionary of email headers")
-    
+
     url: Optional[str] = Field(default=None, description="URL where the email content can be accessed")
 
     attachments: Sequence[BaseAttachmentMIMEData] = Field(default=[], description="List of email attachments")
@@ -176,14 +189,14 @@ class BaseEmailData(BaseModel):
     def unique_filename(self) -> str:
         cleaned_id = re.sub(r'[\s<>]', '', self.id)
         return f"{cleaned_id}.eml"
-    
+
     def __repr__(self) -> str:
         recipient_count = len(self.recipients_to) + len(self.recipients_cc) + len(self.recipients_bcc)
         attachment_count = len(self.attachments)
-        
+
         subject_preview = self.subject
         body_preview = self.body_plain[:5000] + '...' if self.body_plain and len(self.body_plain) > 5000 else self.body_plain
-        
+
         return (
             f"BaseEmailData("
             f"id='{self.id}', "
@@ -195,10 +208,10 @@ class BaseEmailData(BaseModel):
             f"sent_at='{self.sent_at.strftime('%Y-%m-%d %H:%M:%S')}'"
             f")"
         )
-    
+
     def __str__(self) -> str:
         return self.__repr__()
 
-class EmailData(BaseEmailData):
-    attachments: Sequence[AttachmentMIMEData] = Field([], description="List of email attachments") # type: ignore
 
+class EmailData(BaseEmailData):
+    attachments: Sequence[AttachmentMIMEData] = Field([], description="List of email attachments")  # type: ignore
