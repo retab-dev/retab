@@ -1,10 +1,23 @@
+# ---------------------------------------------
+## Full example: Extract structured data using UiForm + OpenAI Chat Completion + JSON Schema
+# ---------------------------------------------
+
+import os
+from dotenv import load_dotenv
 from uiform import UiForm, Schema
 from openai import OpenAI
+from uiform._utils.json_schema import filter_reasoning_fields_json
 
+# Load environment variables
+load_dotenv()
 
-# ---------------------------------------------
-## Variables DEFINITION
-# ---------------------------------------------
+api_key = os.getenv("OPENAI_API_KEY")
+uiform_api_key = os.getenv("UIFORM_API_KEY")
+
+assert api_key, "Missing OPENAI_API_KEY"
+assert uiform_api_key, "Missing UIFORM_API_KEY"
+
+# Define schema
 json_schema = {
     'X-SystemPrompt': 'You are a useful assistant extracting information from documents.',
     'properties': {
@@ -26,6 +39,7 @@ json_schema = {
     'type': 'object'
 }
 
+# Optional image processing settings
 image_settings = {
     "correct_image_orientation": True,
     "dpi": 72,
@@ -33,29 +47,25 @@ image_settings = {
     "browser_canvas": "A4"
 }
 
+# Define model and modality
 model = "gpt-4o"
 modality = "native"
 temperature = 0.0
 
-
-# ---------------------------------------------
-# ---------------------------------------------
-
-uiclient = UiForm()
+# UiForm Setup
+uiclient = UiForm(api_key=uiform_api_key)
 doc_msg = uiclient.documents.create_messages(
-    document = "document_1.xlsx",
-    modality = modality,
-    image_settings = image_settings,
+    document="../../assets/calendar_event.xlsx",
+    modality=modality,
+    image_settings=image_settings,
 )
-schema_obj = Schema(
-    json_schema = json_schema,
-)
+schema_obj = Schema(json_schema=json_schema)
 
-# Now you can use your favorite model to analyze your document
-client = OpenAI()
+# OpenAI Chat Completion with schema-based prompting
+client = OpenAI(api_key=api_key)
 completion = client.chat.completions.create(
-    model = model,
-    temperature = temperature,
+    model=model,
+    temperature=temperature,
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
     response_format={
         "type": "json_schema",
@@ -67,11 +77,12 @@ completion = client.chat.completions.create(
     }
 )
 
-# Validate the response against the original schema if you want to remove the reasoning fields
-from uiform._utils.json_schema import filter_reasoning_fields_json
+# Validate and clean the output
 assert completion.choices[0].message.content is not None
 extraction = schema_obj.pydantic_model.model_validate(
     filter_reasoning_fields_json(completion.choices[0].message.content)
 )
 
-print("Result:",extraction)
+# Output
+print("\n✅ Extracted Result:")
+print(extraction.model_dump_json(indent=2))

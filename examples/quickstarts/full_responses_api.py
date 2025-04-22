@@ -1,12 +1,23 @@
+# ---------------------------------------------
+## Full example: Use UiForm with OpenAI's Responses API and JSON Schema extraction.
+# ---------------------------------------------
+
+import os
+from dotenv import load_dotenv
 from uiform import UiForm, Schema
 from openai import OpenAI
-from openai.types.responses.response_text_config_param import ResponseTextConfigParam
-from openai.types.responses.response_format_text_json_schema_config_param import ResponseFormatTextJSONSchemaConfigParam
+from uiform._utils.json_schema import filter_reasoning_fields_json
 
+# Load environment variables
+load_dotenv()
 
-# ---------------------------------------------
-## Variables DEFINITION
-# ---------------------------------------------
+api_key = os.getenv("OPENAI_API_KEY")
+uiform_api_key = os.getenv("UIFORM_API_KEY")
+
+assert api_key, "Missing OPENAI_API_KEY"
+assert uiform_api_key, "Missing UIFORM_API_KEY"
+
+# Define schema
 json_schema = {
     'X-SystemPrompt': 'You are a useful assistant extracting information from documents.',
     'properties': {
@@ -28,6 +39,7 @@ json_schema = {
     'type': 'object'
 }
 
+# Optional image preprocessing
 image_settings = {
     "correct_image_orientation": True,
     "dpi": 72,
@@ -35,31 +47,27 @@ image_settings = {
     "browser_canvas": "A4"
 }
 
+# Configuration
 model = "gpt-4o"
 modality = "native"
 temperature = 0.0
 
-
-# ---------------------------------------------
-# ---------------------------------------------
-
-uiclient = UiForm()
+# UiForm Setup
+uiclient = UiForm(api_key=uiform_api_key)
 doc_msg = uiclient.documents.create_messages(
-    document = "document_1.xlsx",
-    modality = modality,
-    image_settings = image_settings,
+    document="../../assets/calendar_event.xlsx",
+    modality=modality,
+    image_settings=image_settings,
 )
-schema_obj = Schema(
-    json_schema = json_schema,
-)
+schema_obj = Schema(json_schema=json_schema)
 
-# Updated to use Responses API instead of Chat Completions
-client = OpenAI()
+# OpenAI Responses API call
+client = OpenAI(api_key=api_key)
 response = client.responses.create(
-    model = model,
-    temperature = temperature,
-    input = schema_obj.openai_responses_input + doc_msg.openai_responses_input,
-    text = {
+    model=model,
+    temperature=temperature,
+    input=schema_obj.openai_responses_input + doc_msg.openai_responses_input,
+    text={
         "format": {
             "type": "json_schema",
             "name": schema_obj.id,
@@ -69,10 +77,11 @@ response = client.responses.create(
     }
 )
 
-# Validate the response - updated to use the new response format
-from uiform._utils.json_schema import filter_reasoning_fields_json
+# Validate response and remove reasoning fields
 extraction = schema_obj.pydantic_model.model_validate(
     filter_reasoning_fields_json(response.output_text)
 )
 
-print("Result:", extraction)
+# Output
+print("\n✅ Extracted Result (Responses API):")
+print(extraction.model_dump_json(indent=2))

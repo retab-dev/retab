@@ -1,14 +1,26 @@
+# ---------------------------------------------
+## Quick example: Extract structured data using UiForm’s all-in-one `.parse()` method.
+# ---------------------------------------------
+
+import os
+from dotenv import load_dotenv
 from uiform import UiForm
 
-uiclient = UiForm()
+# Load environment variables
+load_dotenv()
 
-# Or use our all-in-one API
-# Returns a standard OpenAI response
-with open("freight/booking_confirmation.jpg", "rb") as f:
-        response = uiclient.documents.extractions.parse(
-            document = f, 
-            model="gpt-4o-mini",
-            json_schema = {
+uiform_api_key = os.getenv("UIFORM_API_KEY")
+assert uiform_api_key, "Missing UIFORM_API_KEY"
+
+# UiForm Setup
+uiclient = UiForm(api_key=uiform_api_key)
+
+# Document Extraction via UiForm API
+with open("../../assets/booking_confirmation.jpg", "rb") as f:
+    response = uiclient.documents.extractions.parse(
+        document=f,
+        model="gpt-4o-mini",
+        json_schema={
             'X-SystemPrompt': 'You are a useful assistant.',
             'properties': {
                 'name': {
@@ -29,9 +41,8 @@ with open("freight/booking_confirmation.jpg", "rb") as f:
             'type': 'object'
         },
         modality="text"
-        )
+    )
 
+# Output
+print("\n✅ Extracted Result:")
 print(response.choices[0].message.content)
-
-
-
