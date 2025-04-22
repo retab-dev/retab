@@ -1,28 +1,35 @@
+# ---------------------------------------------
+## FastAPI app to receive UiForm webhook events (with ngrok tunnel)
+# ---------------------------------------------
+
 from fastapi import FastAPI
-from pyngrok import ngrok   # type: ignore
+from pyngrok import ngrok
+from dotenv import load_dotenv
 import os
 import json
+
 from uiform.types.automations.webhooks import WebhookRequest
 from uiform.types.documents.extractions import UiParsedChatCompletion, UiParsedChoice
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from uiform.types.mime import MIMEData
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI()
 
 @app.on_event("startup")
 async def startup_event():
-    # Configure ngrok
     auth_token = os.getenv("NGROK_AUTH_TOKEN")
     if not auth_token:
         raise ValueError("NGROK_AUTH_TOKEN environment variable is required")
-    
+
     ngrok.set_auth_token(auth_token)
-    
-    # Start ngrok tunnel
     http_tunnel = ngrok.connect("8000")
     public_url = http_tunnel.public_url
     webhook_url = f"{public_url}/webhook"
 
+    # Print example curl
     example_body = WebhookRequest(
         completion=UiParsedChatCompletion(
             id="id",
@@ -33,7 +40,7 @@ async def startup_event():
             choices=[
                 UiParsedChoice(
                     index=0,
-                    message=ParsedChatCompletionMessage(content="{\"message\" : \"Hello, World!\"}", role="assistant"),
+                    message=ParsedChatCompletionMessage(content="{\"message\": \"Hello, World!\"}", role="assistant"),
                     finish_reason=None,
                     logprobs=None,
                 )
@@ -44,25 +51,21 @@ async def startup_event():
             url="data:application/pdf;base64,the_content_of_the_pdf_file",
         ),
     )
-    example_body_json = example_body.model_dump_json(exclude_unset=True, exclude_defaults=True)
-    
-    print("🌍 Ngrok tunnel established!")
-    print(f"📬 Webhook URL: {webhook_url}")
-    print("📬 Simple curl for testing:")
-    print("-"*100)
-    print("curl -X POST", webhook_url, "-H", "\"Content-Type: application/json\"", "-d", f"'{example_body_json}'")
-    print("-"*100)
 
+    print("\n🌍 Ngrok tunnel established!")
+    print(f"📬 Webhook URL: {webhook_url}")
+    print("\n📬 Test with curl:")
+    print("-" * 80)
+    print(f"curl -X POST {webhook_url} -H \"Content-Type: application/json\" -d '{example_body.model_dump_json()}'")
+    print("-" * 80)
 
 @app.post("/webhook")
 async def webhook(request: WebhookRequest):
-    invoice_object = json.loads(request.completion.choices[0].message.content or "{}") # The parsed object is the same Invoice object as the one you defined in the Pydantic model
-    print("📬 Webhook received:", invoice_object)
-    return {"status": "success", "data": invoice_object}
+    parsed_data = json.loads(request.completion.choices[0].message.content or "{}")
+    print("\n✅ Webhook received:")
+    print(json.dumps(parsed_data, indent=2))
+    return {"status": "success", "data": parsed_data}
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-# To run the FastAPI app locally, use the command:
-# uvicorn your_module_name:app --reload
