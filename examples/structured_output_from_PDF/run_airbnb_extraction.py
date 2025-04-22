@@ -1,20 +1,28 @@
-from dotenv import load_dotenv
-assert load_dotenv(".env") # Load environment variables from a .env file
+# ---------------------------------------------
+## Example using OpenAI with UiForm to extract structured data from a document.
+# ---------------------------------------------
 
+import os
+from dotenv import load_dotenv
 from airbnb_schema import PitchDeck
 from uiform import UiForm, Schema
 from openai import OpenAI
 import json
 
-import os
+# Load environment variables
+load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 uiform_api_key = os.getenv("UIFORM_API_KEY")
+
+assert api_key, "Missing OPENAI_API_KEY"
+assert uiform_api_key, "Missing UIFORM_API_KEY"
 
 uiclient = UiForm(api_key=uiform_api_key)
 doc_msg = uiclient.documents.create_messages(
     document = "../../assets/airbnb_pitch_deck.pdf"
 )
 
+# Define schema
 schema_obj =Schema(
     pydantic_model = PitchDeck
 )

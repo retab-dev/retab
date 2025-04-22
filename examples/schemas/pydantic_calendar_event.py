@@ -2,22 +2,26 @@
 ## Example: Define and use a CalendarEvent schema using Pydantic (recommended for Python devs)
 # ---------------------------------------------
 
+import os
 from dotenv import load_dotenv
-assert load_dotenv(".env") # Load environment variables from a .env file
-
 from uiform import UiForm, Schema
 from openai import OpenAI
 from pydantic import BaseModel, Field, ConfigDict
 
-import os
+# Load environment variables
+load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 uiform_api_key = os.getenv("UIFORM_API_KEY")
+
+assert api_key, "Missing OPENAI_API_KEY"
+assert uiform_api_key, "Missing UIFORM_API_KEY"
 
 uiclient = UiForm(api_key=uiform_api_key)
 doc_msg = uiclient.documents.create_messages(
     document = "../../assets/calendar_event.xlsx"
 )
 
+# Define schema
 class CalendarEvent(BaseModel):
     model_config = ConfigDict(json_schema_extra = {"X-SystemPrompt": "You are a useful assistant."})
 
