@@ -43,6 +43,7 @@ class Page(BaseModel):
     height: int
     blocks: list[TextBox]
     lines: list[TextBox]
+    tokens: list[TextBox]
 
     @field_validator('width', 'height')
     @classmethod
