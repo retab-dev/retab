@@ -81,28 +81,21 @@ class ConsensusModel(BaseModel):
         return find_provider_from_model(self.model)
 
 
-# class DocumentExtractRequestWithConsensus(BaseModel):
-#     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-#     # General fields
-#     document: MIMEData = Field(..., description="Document to be analyzed")
-#     modality: Modality
-#     image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
-#     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
-
-#     # Consensus fields
-#     consensus_models: list[ConsensusModel] = Field(default=[], description="List of models to use for consensus")
-#     consensus_settings: ConsensusSettings = Field(default_factory=ConsensusSettings, description="Settings for consensus")
-#     include_individual_model_results: bool = Field(default=True, description="If true, the results of the individual models will be included in the response (additionnal choices from idx=1 to idx=len(consensus_models))")
-
-#     # Regular fields
-#     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
-#     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
+# For location of fields in the document (OCR)
+class FieldLocation(BaseModel):
+    label: str = Field(..., description="The label of the field")
+    value: str = Field(..., description="The extracted value of the field")
+    quote: str = Field(..., description="The quote of the field (verbatim from the document)")
+    page: int | None = Field(default=None, description="The page number of the field (1-indexed)")
+    bboxes_normalized: list[tuple[float, float, float, float]] | None = Field(default=None, description="The normalized bounding boxes of the field")
+    score: float | None = Field(default=None, description="The score of the field")
+    match_level: Literal["token", "line", "block"] | None = Field(default=None, description="The level of the match (token, line, block)")
 
 
 class UiParsedChoice(ParsedChoice):
     # Adaptable ParsedChoice that allows None for the finish_reason
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
+    field_locations: list[FieldLocation] | None = Field(default=None, description="The locations of the fields in the document, if available")
 
 
 LikelihoodsSource = Literal["consensus", "log_probs"]
@@ -118,13 +111,6 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
-
-
-# class UiParsedChoiceStream(ParsedChoice):
-#    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore
-
-# class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
-#     choices: List[UiParsedChoiceStream]  # type: ignore
 
 
 class LogExtractionRequest(BaseModel):
