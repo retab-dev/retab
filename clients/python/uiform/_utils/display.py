@@ -1,17 +1,17 @@
-from typing import TypedDict, List, Optional, Literal
-import json
-import requests
-from PIL import Image
-from io import BytesIO
 import base64
+import json
+from io import BytesIO
 from math import ceil
 from pathlib import Path
-import json
-import numpy as np
+from typing import List, Literal, Optional, TypedDict
 
+import numpy as np
+import requests
 import tiktoken  # For text tokenization
-from rich.table import Table
+from PIL import Image
 from rich.console import Console
+from rich.table import Table
+
 
 class TokenStats(TypedDict):
     min: float
@@ -21,11 +21,13 @@ class TokenStats(TypedDict):
     p5: float
     p95: float
 
+
 class TokenCounts(TypedDict):
     input_text_tokens: int
     output_text_tokens: int
     input_image_tokens: int
     output_image_tokens: int
+
 
 class MetricCategory(TypedDict):
     num_examples: int
@@ -36,6 +38,7 @@ class MetricCategory(TypedDict):
     sum_input_tokens: float
     sum_output_tokens: float
     num_examples_over_token_limit: int
+
 
 class Metrics(TypedDict):
     Text: MetricCategory
@@ -51,19 +54,16 @@ def count_text_tokens(content: str, encoding_name: str = "cl100k_base") -> int:
     return len(enc.encode(content))
 
 
-def count_image_tokens(
-    image_url: str, 
-    detail: Literal["low", "high", "auto"] = "high"
-) -> int:
-    base_token_cost = 85       # cost for all images
-    token_per_tile = 170       # cost per 512×512 tile in high detail
+def count_image_tokens(image_url: str, detail: Literal["low", "high", "auto"] = "high") -> int:
+    base_token_cost = 85  # cost for all images
+    token_per_tile = 170  # cost per 512×512 tile in high detail
 
     # 1. Decide detail=low or detail=high
     #    If detail=auto, figure out from user input or some heuristic
     if detail == "low":
         # 2. Low detail => always 85 tokens
         return base_token_cost
-    else: 
+    else:
         assert detail == "high" or detail == "auto"
         # 3. High detail => 2-step scaling + tile-based cost
 
@@ -143,12 +143,11 @@ def process_jsonl_file(jsonl_path: str) -> List[TokenCounts]:
                             elif role == "assistant":
                                 output_image_tokens += tokens
 
-            results.append(TokenCounts(
-                input_text_tokens=input_text_tokens,
-                output_text_tokens=output_text_tokens,
-                input_image_tokens=input_image_tokens,
-                output_image_tokens=output_image_tokens
-            ))
+            results.append(
+                TokenCounts(
+                    input_text_tokens=input_text_tokens, output_text_tokens=output_text_tokens, input_image_tokens=input_image_tokens, output_image_tokens=output_image_tokens
+                )
+            )
 
     return results
 
@@ -159,7 +158,7 @@ def calculate_statistics(data: List[int]) -> TokenStats:
     """
     if not data:
         return {"min": 0, "max": 0, "mean": 0, "median": 0, "p5": 0, "p95": 0}
-    
+
     return {
         "min": float(min(data)),
         "max": float(max(data)),
@@ -168,6 +167,7 @@ def calculate_statistics(data: List[int]) -> TokenStats:
         "p5": float(np.percentile(data, 5)),
         "p95": float(np.percentile(data, 95)),
     }
+
 
 def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int = 128000) -> Metrics:
     """
@@ -204,7 +204,7 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
             sum_input_tokens=0,
             sum_output_tokens=0,
             num_examples_over_token_limit=0,
-        )
+        ),
     }
 
     # Accumulate token counts
@@ -256,7 +256,6 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
                             elif role == "assistant":
                                 output_text_tokens_example += count_text_tokens(item["text"])
 
-
             # Calculate totals for the example
             example_total_tokens = input_text_tokens_example + output_text_tokens_example + input_image_tokens_example + output_image_tokens_example
 
@@ -280,7 +279,7 @@ def process_dataset_and_compute_metrics(jsonl_path: Path | str, token_limit: int
                 metrics["Image"]["num_examples_over_token_limit"] += 1
             if example_total_tokens > token_limit:
                 metrics["Total"]["num_examples_over_token_limit"] += 1
-                #print(example_total_tokens, token_limit)
+                # print(example_total_tokens, token_limit)
 
     # Update metrics for Text, Image, and Total
     metrics["Text"]["num_examples"] = len(input_text_tokens)
@@ -324,140 +323,118 @@ def display_metrics(metrics: Metrics, input_token_price: Optional[float] = None,
     table.add_column("Total", justify="right", style="#F6E4BD")
 
     # Add rows
+    table.add_row("Num Examples", str(metrics["Text"]["num_examples"]), str(metrics["Image"]["num_examples"]), str(metrics["Total"]["num_examples"]))
+
     table.add_row(
-        "Num Examples", 
-        str(metrics["Text"]["num_examples"]), 
-        str(metrics["Image"]["num_examples"]), 
-        str(metrics["Total"]["num_examples"])
-    )
-    
-    table.add_row(
-        "Examples Over Limit", 
-        str(metrics["Text"]["num_examples_over_token_limit"]), 
-        str(metrics["Image"]["num_examples_over_token_limit"]), 
-        str(metrics["Total"]["num_examples_over_token_limit"])
+        "Examples Over Limit",
+        str(metrics["Text"]["num_examples_over_token_limit"]),
+        str(metrics["Image"]["num_examples_over_token_limit"]),
+        str(metrics["Total"]["num_examples_over_token_limit"]),
     )
 
     table.add_row("")
 
     # Rows for input tokens
     table.add_row(
-        "Min / Max Input Tokens", 
-        f"{metrics['Text']['input_tokens']['min']:.0f} / {metrics['Text']['input_tokens']['max']:.0f}", 
-        f"{metrics['Image']['input_tokens']['min']:.0f} / {metrics['Image']['input_tokens']['max']:.0f}", 
-        f"{metrics['Total']['input_tokens']['min']:.0f} / {metrics['Total']['input_tokens']['max']:.0f}"
+        "Min / Max Input Tokens",
+        f"{metrics['Text']['input_tokens']['min']:.0f} / {metrics['Text']['input_tokens']['max']:.0f}",
+        f"{metrics['Image']['input_tokens']['min']:.0f} / {metrics['Image']['input_tokens']['max']:.0f}",
+        f"{metrics['Total']['input_tokens']['min']:.0f} / {metrics['Total']['input_tokens']['max']:.0f}",
     )
-    
+
     table.add_row(
         "Mean / Median Input Tokens",
         f"{metrics['Text']['input_tokens']['mean']:.0f} / {metrics['Text']['input_tokens']['median']:.0f}",
         f"{metrics['Image']['input_tokens']['mean']:.0f} / {metrics['Image']['input_tokens']['median']:.0f}",
-        f"{metrics['Total']['input_tokens']['mean']:.0f} / {metrics['Total']['input_tokens']['median']:.0f}"
+        f"{metrics['Total']['input_tokens']['mean']:.0f} / {metrics['Total']['input_tokens']['median']:.0f}",
     )
 
     table.add_row(
         "P5 / P95 Input Tokens",
         f"{metrics['Text']['input_tokens']['p5']:.0f} / {metrics['Text']['input_tokens']['p95']:.0f}",
         f"{metrics['Image']['input_tokens']['p5']:.0f} / {metrics['Image']['input_tokens']['p95']:.0f}",
-        f"{metrics['Total']['input_tokens']['p5']:.0f} / {metrics['Total']['input_tokens']['p95']:.0f}"
+        f"{metrics['Total']['input_tokens']['p5']:.0f} / {metrics['Total']['input_tokens']['p95']:.0f}",
     )
 
-    table.add_row(
-        "Sum Input Tokens",
-        f"{metrics['Text']['sum_input_tokens']}",
-        f"{metrics['Image']['sum_input_tokens']}",
-        f"{metrics['Total']['sum_input_tokens']}"
-    )
-
+    table.add_row("Sum Input Tokens", f"{metrics['Text']['sum_input_tokens']}", f"{metrics['Image']['sum_input_tokens']}", f"{metrics['Total']['sum_input_tokens']}")
 
     table.add_row("")  # Empty row for spacing
 
     # Rows for output tokens
     table.add_row(
-        "Min / Max Output Tokens", 
-        f"{metrics['Text']['output_tokens']['min']:.0f} / {metrics['Text']['output_tokens']['max']:.0f}", 
-        f"{metrics['Image']['output_tokens']['min']:.0f} / {metrics['Image']['output_tokens']['max']:.0f}", 
-        f"{metrics['Total']['output_tokens']['min']:.0f} / {metrics['Total']['output_tokens']['max']:.0f}"
+        "Min / Max Output Tokens",
+        f"{metrics['Text']['output_tokens']['min']:.0f} / {metrics['Text']['output_tokens']['max']:.0f}",
+        f"{metrics['Image']['output_tokens']['min']:.0f} / {metrics['Image']['output_tokens']['max']:.0f}",
+        f"{metrics['Total']['output_tokens']['min']:.0f} / {metrics['Total']['output_tokens']['max']:.0f}",
     )
 
     table.add_row(
-        "Mean / Median Output Tokens", 
-        f"{metrics['Text']['output_tokens']['mean']:.0f} / {metrics['Text']['output_tokens']['median']:.0f}", 
-        f"{metrics['Image']['output_tokens']['mean']:.0f} / {metrics['Image']['output_tokens']['median']:.0f}", 
-        f"{metrics['Total']['output_tokens']['mean']:.0f} / {metrics['Total']['output_tokens']['median']:.0f}"
+        "Mean / Median Output Tokens",
+        f"{metrics['Text']['output_tokens']['mean']:.0f} / {metrics['Text']['output_tokens']['median']:.0f}",
+        f"{metrics['Image']['output_tokens']['mean']:.0f} / {metrics['Image']['output_tokens']['median']:.0f}",
+        f"{metrics['Total']['output_tokens']['mean']:.0f} / {metrics['Total']['output_tokens']['median']:.0f}",
     )
 
     table.add_row(
-        "P5 / P95 Output Tokens", 
-        f"{metrics['Text']['output_tokens']['p5']:.0f} / {metrics['Text']['output_tokens']['p95']:.0f}", 
-        f"{metrics['Image']['output_tokens']['p5']:.0f} / {metrics['Image']['output_tokens']['p95']:.0f}", 
-        f"{metrics['Total']['output_tokens']['p5']:.0f} / {metrics['Total']['output_tokens']['p95']:.0f}"
+        "P5 / P95 Output Tokens",
+        f"{metrics['Text']['output_tokens']['p5']:.0f} / {metrics['Text']['output_tokens']['p95']:.0f}",
+        f"{metrics['Image']['output_tokens']['p5']:.0f} / {metrics['Image']['output_tokens']['p95']:.0f}",
+        f"{metrics['Total']['output_tokens']['p5']:.0f} / {metrics['Total']['output_tokens']['p95']:.0f}",
     )
 
-    table.add_row(
-        "Sum Output Tokens", 
-        f"{metrics['Text']['sum_output_tokens']}", 
-        f"{metrics['Image']['sum_output_tokens']}", 
-        f"{metrics['Total']['sum_output_tokens']}"
-    )
-    
-    
+    table.add_row("Sum Output Tokens", f"{metrics['Text']['sum_output_tokens']}", f"{metrics['Image']['sum_output_tokens']}", f"{metrics['Total']['sum_output_tokens']}")
+
     table.add_row("")  # Empty row for spacing
 
     # Total tokens
     table.add_row(
-        "Min / Max Tokens", 
-        f"{metrics['Text']['input_tokens']['min']:.0f} / {metrics['Text']['input_tokens']['max']:.0f}", 
-        f"{metrics['Image']['input_tokens']['min']:.0f} / {metrics['Image']['input_tokens']['max']:.0f}", 
-        f"{metrics['Total']['input_tokens']['min']:.0f} / {metrics['Total']['input_tokens']['max']:.0f}"
+        "Min / Max Tokens",
+        f"{metrics['Text']['input_tokens']['min']:.0f} / {metrics['Text']['input_tokens']['max']:.0f}",
+        f"{metrics['Image']['input_tokens']['min']:.0f} / {metrics['Image']['input_tokens']['max']:.0f}",
+        f"{metrics['Total']['input_tokens']['min']:.0f} / {metrics['Total']['input_tokens']['max']:.0f}",
     )
 
     table.add_row(
-        "Mean / Median Tokens", 
-        f"{metrics['Text']['input_tokens']['mean']:.0f} / {metrics['Text']['input_tokens']['median']:.0f}", 
-        f"{metrics['Image']['input_tokens']['mean']:.0f} / {metrics['Image']['input_tokens']['median']:.0f}", 
-        f"{metrics['Total']['input_tokens']['mean']:.0f} / {metrics['Total']['input_tokens']['median']:.0f}"
+        "Mean / Median Tokens",
+        f"{metrics['Text']['input_tokens']['mean']:.0f} / {metrics['Text']['input_tokens']['median']:.0f}",
+        f"{metrics['Image']['input_tokens']['mean']:.0f} / {metrics['Image']['input_tokens']['median']:.0f}",
+        f"{metrics['Total']['input_tokens']['mean']:.0f} / {metrics['Total']['input_tokens']['median']:.0f}",
     )
 
     table.add_row(
-        "P5 / P95 Tokens", 
-        f"{metrics['Text']['input_tokens']['p5']:.0f} / {metrics['Text']['input_tokens']['p95']:.0f}", 
-        f"{metrics['Image']['input_tokens']['p5']:.0f} / {metrics['Image']['input_tokens']['p95']:.0f}", 
-        f"{metrics['Total']['input_tokens']['p5']:.0f} / {metrics['Total']['input_tokens']['p95']:.0f}"
+        "P5 / P95 Tokens",
+        f"{metrics['Text']['input_tokens']['p5']:.0f} / {metrics['Text']['input_tokens']['p95']:.0f}",
+        f"{metrics['Image']['input_tokens']['p5']:.0f} / {metrics['Image']['input_tokens']['p95']:.0f}",
+        f"{metrics['Total']['input_tokens']['p5']:.0f} / {metrics['Total']['input_tokens']['p95']:.0f}",
     )
 
-    table.add_row(
-        "Sum Total Tokens", 
-        f"{metrics['Text']['sum_input_tokens']}", 
-        f"{metrics['Image']['sum_input_tokens']}", 
-        f"{metrics['Total']['sum_input_tokens']}"
-    )
-
+    table.add_row("Sum Total Tokens", f"{metrics['Text']['sum_input_tokens']}", f"{metrics['Image']['sum_input_tokens']}", f"{metrics['Total']['sum_input_tokens']}")
 
     table.add_row("")  # Empty row for spacing
 
     if input_token_price is not None:
         table.add_row(
-            "Input Cost", 
-            f"{metrics['Text']['sum_input_tokens'] * input_token_price:.2f} USD", 
-            f"{metrics['Image']['sum_input_tokens'] * input_token_price:.2f} USD", 
-            f"{metrics['Total']['sum_input_tokens'] * input_token_price:.2f} USD"
+            "Input Cost",
+            f"{metrics['Text']['sum_input_tokens'] * input_token_price:.2f} USD",
+            f"{metrics['Image']['sum_input_tokens'] * input_token_price:.2f} USD",
+            f"{metrics['Total']['sum_input_tokens'] * input_token_price:.2f} USD",
         )
 
     if output_token_price is not None:
         table.add_row(
-            "Output Cost", 
-            f"{metrics['Text']['sum_output_tokens'] * output_token_price:.2f} USD", 
-            f"{metrics['Image']['sum_output_tokens'] * output_token_price:.2f} USD", 
-            f"{metrics['Total']['sum_output_tokens'] * output_token_price:.2f} USD"
+            "Output Cost",
+            f"{metrics['Text']['sum_output_tokens'] * output_token_price:.2f} USD",
+            f"{metrics['Image']['sum_output_tokens'] * output_token_price:.2f} USD",
+            f"{metrics['Total']['sum_output_tokens'] * output_token_price:.2f} USD",
         )
 
     if input_token_price is not None and output_token_price is not None:
         table.add_row(
-            "Total Cost", 
-            f"{metrics['Text']['sum_total_tokens'] * input_token_price:.2f} USD", 
+            "Total Cost",
+            f"{metrics['Text']['sum_total_tokens'] * input_token_price:.2f} USD",
             f"{metrics['Image']['sum_total_tokens'] * input_token_price:.2f} USD",
-            f"{metrics['Total']['sum_total_tokens'] * input_token_price:.2f} USD") 
+            f"{metrics['Total']['sum_total_tokens'] * input_token_price:.2f} USD",
+        )
 
     # Print the table
     console.print(table)

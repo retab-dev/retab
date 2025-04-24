@@ -1,17 +1,18 @@
 import datetime
+from typing import Any, Literal, Optional
+
 import nanoid  # type: ignore
-from typing import Literal, Any
-from uiform.types.documents.extractions import DocumentExtractRequest
-from uiform.types.chat import ChatCompletionUiformMessage
-from pydantic import BaseModel, Field, computed_field
 from openai.types.chat import ChatCompletion
-from uiform.types.documents.extractions import UiParsedChatCompletion
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from pydantic import BaseModel, Field, computed_field
+
+from uiform.types.chat import ChatCompletionUiformMessage
+from uiform.types.documents.extractions import DocumentExtractRequest, UiParsedChatCompletion
+
+from .._utils.usage.usage import compute_cost_from_model
+from .ai_models import Amount
 from .image_settings import ImageSettings
 from .modalities import Modality
-from .ai_models import Amount
-from typing import Optional
-from .._utils.usage.usage import compute_cost_from_model
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 ValidationsState = Literal["pending", "validated", "invalid"]
 

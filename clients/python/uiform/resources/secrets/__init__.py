@@ -1,6 +1,6 @@
 from .client import (
-    Secrets,
     AsyncSecrets,
+    Secrets,
 )
 
 __all__ = [

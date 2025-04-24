@@ -1,7 +1,8 @@
-from typing import AsyncGenerator, Callable, TypeVar, Any, Union, Generator
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
+from typing import Any, AsyncGenerator, Callable, Generator, TypeVar, Union
 
 T = TypeVar('T')
+
 
 class AsyncGeneratorContextManager(AbstractAsyncContextManager[AsyncGenerator[T, None]]):
     def __init__(self, generator_func: Callable[..., AsyncGenerator[T, None]], *args: Any, **kwargs: Any):
@@ -20,6 +21,7 @@ class AsyncGeneratorContextManager(AbstractAsyncContextManager[AsyncGenerator[T,
         if self.iterator is not None:
             await self.iterator.aclose()
 
+
 class GeneratorContextManager(AbstractContextManager[Generator[T, None, None]]):
     def __init__(self, generator_func: Callable[..., Generator[T, None, None]], *args: Any, **kwargs: Any):
         self.generator_func = generator_func
@@ -35,12 +37,16 @@ class GeneratorContextManager(AbstractContextManager[Generator[T, None, None]]):
         if self.iterator is not None:
             self.iterator.close()
 
+
 def as_async_context_manager(func: Callable[..., AsyncGenerator[T, None]]) -> Callable[..., AsyncGeneratorContextManager[T]]:
     def wrapper(*args: Any, **kwargs: Any) -> AsyncGeneratorContextManager[T]:
         return AsyncGeneratorContextManager(func, *args, **kwargs)
+
     return wrapper
+
 
 def as_context_manager(func: Callable[..., Generator[T, None, None]]) -> Callable[..., GeneratorContextManager[T]]:
     def wrapper(*args: Any, **kwargs: Any) -> GeneratorContextManager[T]:
         return GeneratorContextManager(func, *args, **kwargs)
+
     return wrapper

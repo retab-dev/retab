@@ -10,16 +10,16 @@
 # MAX_TRAINING_SAMPLES = 10
 
 # class PromptOptimizationJobsMixin:
-#     def prepare_create(self, raw_schema: dict[str, Any] | Path | str, 
+#     def prepare_create(self, raw_schema: dict[str, Any] | Path | str,
 #                        training_file: str,
 #                        schema_optimization_props: dict[str, Any]) -> PromptOptimizationJob:
-        
+
 #         optimization_objects = []
 #         with open(training_file, "r") as f:
 #             for line in f:
 #                 optimization_objects.append(PromptOptimizationObject(**json.loads(line)))
-        
-        
+
+
 #         job = PromptOptimizationJob(
 #             job_type="prompt-optimization",
 #             input_data=PromptOptimizationJobInputData(
@@ -74,4 +74,3 @@
 #     def __init__(self, *args: Any, **kwargs: Any):
 #         super().__init__(*args, **kwargs)
 #         self._jobs = AsyncPromptOptimizationJobs(client=self._client)
-   

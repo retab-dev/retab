@@ -1,18 +1,14 @@
-from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.standards import PreparedRequest
+
 
 class WebhookMixin:
     def prepare_create(self) -> PreparedRequest:
-        return PreparedRequest(
-            method="POST",
-            url="/v1/secrets/webhook"
-        )
-    
+        return PreparedRequest(method="POST", url="/v1/secrets/webhook")
+
     def prepare_delete(self) -> PreparedRequest:
-        return PreparedRequest(
-            method="DELETE",
-            url="/v1/secrets/webhook"
-        )
+        return PreparedRequest(method="DELETE", url="/v1/secrets/webhook")
+
 
 class Webhook(SyncAPIResource, WebhookMixin):
     """Webhook secret management wrapper"""
@@ -30,8 +26,6 @@ class Webhook(SyncAPIResource, WebhookMixin):
 
         return response
 
-
-
     def delete(self) -> dict:
         """Delete a webhook secret.
 
@@ -42,6 +36,7 @@ class Webhook(SyncAPIResource, WebhookMixin):
         response = self._client._prepared_request(request)
 
         return response
+
 
 class AsyncWebhook(AsyncAPIResource, WebhookMixin):
     """Webhook secret management wrapper"""
@@ -65,4 +60,3 @@ class AsyncWebhook(AsyncAPIResource, WebhookMixin):
         request = self.prepare_delete()
         response = await self._client._prepared_request(request)
         return response
-    

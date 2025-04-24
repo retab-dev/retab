@@ -1,8 +1,10 @@
-from pydantic import BaseModel
-from typing import Optional, Any
-from ..mime import MIMEData, BaseMIMEData
+from typing import Any, Optional
+
+from pydantic import BaseModel, EmailStr
+
 from uiform.types.documents.extractions import UiParsedChatCompletion
-from pydantic import EmailStr
+
+from ..mime import BaseMIMEData, MIMEData
 
 
 class WebhookRequest(BaseModel):

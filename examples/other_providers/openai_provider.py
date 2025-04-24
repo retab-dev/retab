@@ -3,10 +3,12 @@
 # ---------------------------------------------
 
 import os
+
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, ConfigDict
-from uiform import UiForm, Schema
 from openai import OpenAI
+from pydantic import BaseModel, ConfigDict, Field
+
+from uiform import Schema, UiForm
 
 # Load environment variables
 load_dotenv()
@@ -16,11 +18,13 @@ uiform_api_key = os.getenv("UIFORM_API_KEY")
 assert api_key, "Missing OPENAI_API_KEY"
 assert uiform_api_key, "Missing UIFORM_API_KEY"
 
+
 # Define schema
 class CalendarEvent(BaseModel):
     model_config = ConfigDict(json_schema_extra={"X-SystemPrompt": "You are a useful assistant."})
     name: str = Field(..., description="Event name", json_schema_extra={"X-FieldPrompt": "Provide a descriptive and concise name for the event."})
     date: str = Field(..., description="Date in ISO 8601", json_schema_extra={"X-ReasoningPrompt": "Infer the date from vague formats like 'next week' or 'tomorrow'."})
+
 
 # UiForm setup
 uiclient = UiForm(api_key=uiform_api_key)
@@ -61,9 +65,7 @@ completion = client.chat.completions.create(
 """
 
 completion = client.beta.chat.completions.parse(
-    model="gpt-4o-mini",
-    messages=schema_obj.openai_messages + doc_msg.openai_messages,
-    response_format=schema_obj.inference_pydantic_model
+    model="gpt-4o-mini", messages=schema_obj.openai_messages + doc_msg.openai_messages, response_format=schema_obj.inference_pydantic_model
 )
 
 # --- Does not work with beta.chat.completions.parse !

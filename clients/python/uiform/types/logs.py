@@ -1,26 +1,23 @@
-from pydantic import BaseModel, Field,  HttpUrl, EmailStr, computed_field, field_serializer
-from typing import Any, Optional, Literal, List, Dict
+import copy
 import datetime
-import nanoid # type: ignore
+import json
+from typing import Any, Dict, List, Literal, Optional
+
+import nanoid  # type: ignore
+from openai import OpenAI
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_serializer
 from pydantic_core import Url
-
-from .documents.extractions import UiParsedChatCompletion
-from .image_settings import ImageSettings
-from .pagination import ListMetadata
-from .modalities import Modality
-from .mime import BaseMIMEData
-
-from .ai_models import Amount
-from .._utils.usage.usage import compute_cost_from_model
 
 from .._utils.json_schema import clean_schema
 from .._utils.mime import generate_blake2b_hash_from_string
-import copy
-import json
-
-from openai import OpenAI
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-
+from .._utils.usage.usage import compute_cost_from_model
+from .ai_models import Amount
+from .documents.extractions import UiParsedChatCompletion
+from .image_settings import ImageSettings
+from .mime import BaseMIMEData
+from .modalities import Modality
+from .pagination import ListMetadata
 
 
 class AutomationConfig(BaseModel):
@@ -30,39 +27,47 @@ class AutomationConfig(BaseModel):
     default_language: str = Field(default="en", description="Default language for the automation")
 
     # HTTP Config
-    webhook_url: HttpUrl = Field(..., description = "Url of the webhook to send the data to")
-    webhook_headers: Dict[str, str] = Field(default_factory=dict, description = "Headers to send with the request")
+    webhook_url: HttpUrl = Field(..., description="Url of the webhook to send the data to")
+    webhook_headers: Dict[str, str] = Field(default_factory=dict, description="Headers to send with the request")
 
     modality: Modality
-    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
 
     # New attributes
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-    reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
-    need_validation:bool = Field(default=False, description="If the automation needs to be validated before running")
-    n_consensus: int  = Field(default=1, description="Number of consensus required to validate the data")
-    @computed_field   # type: ignore
+    reasoning_effort: ChatCompletionReasoningEffort = Field(
+        default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
+    )
+    need_validation: bool = Field(default=False, description="If the automation needs to be validated before running")
+    n_consensus: int = Field(default=1, description="Number of consensus required to validate the data")
+
+    @computed_field  # type: ignore
     @property
     def schema_data_id(self) -> str:
         """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
-        
+
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
         return "sch_data_id_" + generate_blake2b_hash_from_string(
             json.dumps(
-                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
-                sort_keys=True).strip()
-            )
+                clean_schema(
+                    copy.deepcopy(self.json_schema),
+                    remove_custom_fields=True,
+                    fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"],
+                ),
+                sort_keys=True,
+            ).strip()
+        )
 
     # This is a computed field, it is exposed when serializing the object
-    @computed_field   # type: ignore
+    @computed_field  # type: ignore
     @property
     def schema_id(self) -> str:
         """Returns the SHA1 hash of the complete schema.
-        
+
         Returns:
             str: A SHA1 hash string representing the complete schema version.
         """
@@ -74,7 +79,6 @@ class AutomationConfig(BaseModel):
 
 
 class UpdateAutomationRequest(BaseModel):
-
     # ------------------------------
     # HTTP Config
     # ------------------------------
@@ -92,17 +96,18 @@ class UpdateAutomationRequest(BaseModel):
     reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
     need_validation: Optional[bool] = None
     n_consensus: Optional[int] = None
+
     @field_serializer('webhook_url')
     def url2str(self, val: HttpUrl | None) -> str | None:
         if isinstance(val, HttpUrl):
             return str(val)
         return val
-   
-    @computed_field   # type: ignore
+
+    @computed_field  # type: ignore
     @property
     def schema_data_id(self) -> Optional[str]:
         """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
-        
+
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
@@ -111,22 +116,26 @@ class UpdateAutomationRequest(BaseModel):
             return None
         return "sch_data_id_" + generate_blake2b_hash_from_string(
             json.dumps(
-                clean_schema(copy.deepcopy(self.json_schema), remove_custom_fields=True, fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]),
-                sort_keys=True).strip()
-            )
+                clean_schema(
+                    copy.deepcopy(self.json_schema),
+                    remove_custom_fields=True,
+                    fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"],
+                ),
+                sort_keys=True,
+            ).strip()
+        )
 
-    @computed_field   # type: ignore
+    @computed_field  # type: ignore
     @property
     def schema_id(self) -> Optional[str]:
         """Returns the SHA1 hash of the complete schema.
-        
+
         Returns:
             str: A SHA1 hash string representing the complete schema version.
         """
         if self.json_schema is None:
             return None
         return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
-
 
 
 class OpenAIRequestConfig(BaseModel):
@@ -137,21 +146,20 @@ class OpenAIRequestConfig(BaseModel):
     reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
 
 
-    
 # ------------------------------
 # ------------------------------
 # ------------------------------
 
-#from .automations.mailboxes import Mailbox
-#from .automations.links import Link
-#from .automations.cron import ScrappingConfig
-#from .automations.outlook import Outlook
+# from .automations.mailboxes import Mailbox
+# from .automations.links import Link
+# from .automations.cron import ScrappingConfig
+# from .automations.outlook import Outlook
 
-#class OpenAILog(BaseModel): 
+# class OpenAILog(BaseModel):
 #    request_config: OpenAIRequestConfig
 #    completion: ChatCompletion
 
-    
+
 class ExternalRequestLog(BaseModel):
     webhook_url: Optional[HttpUrl]
     request_body: dict[str, Any]
@@ -172,8 +180,10 @@ class ExternalRequestLog(BaseModel):
             return str(val)
         return val
 
+
 from openai.types.chat import completion_create_params
 from openai.types.chat.chat_completion import ChatCompletion
+
 
 class LogCompletionRequest(BaseModel):
     json_schema: dict[str, Any]
@@ -183,19 +193,20 @@ class LogCompletionRequest(BaseModel):
 class AutomationLog(BaseModel):
     object: Literal['automation_log'] = "automation_log"
     id: str = Field(default_factory=lambda: "log_auto_" + nanoid.generate(), description="Unique identifier for the automation log")
-    user_email: Optional[EmailStr] # When the user is logged or when he forwards an email
-    organization_id:str
+    user_email: Optional[EmailStr]  # When the user is logged or when he forwards an email
+    organization_id: str
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    automation_snapshot:  AutomationConfig
+    automation_snapshot: AutomationConfig
     completion: UiParsedChatCompletion | ChatCompletion
     file_metadata: Optional[BaseMIMEData]
     external_request_log: Optional[ExternalRequestLog]
-    extraction_id: Optional[str]=Field(default=None, description="ID of the extraction")
-    @computed_field # type: ignore
+    extraction_id: Optional[str] = Field(default=None, description="ID of the extraction")
+
+    @computed_field  # type: ignore
     @property
     def api_cost(self) -> Optional[Amount]:
         if self.completion and self.completion.usage:
-            try: 
+            try:
                 cost = compute_cost_from_model(self.completion.model, self.completion.usage)
                 return cost
             except Exception as e:
@@ -203,7 +214,7 @@ class AutomationLog(BaseModel):
                 return None
         return None
 
+
 class ListLogs(BaseModel):
     data: List[AutomationLog]
     list_metadata: ListMetadata
-

@@ -1,30 +1,25 @@
-from typing import Any, Optional, List, Dict, Literal
-from pydantic import HttpUrl
+import datetime
 import json
-from PIL.Image import Image
-from pathlib import Path
 from io import IOBase
-
-from ..._resource import SyncAPIResource, AsyncAPIResource
-
-from ...types.image_settings import ImageSettings
-from ...types.mime import MIMEData, EmailData
-from ...types.modalities import Modality
-from ...types.automations.mailboxes import Mailbox, UpdateMailboxRequest, ListMailboxes
-from ...types.logs import AutomationLog
-
-from ..._utils.mime import prepare_mime_document
-from ..._utils.ai_models import assert_valid_model_extraction
-from ...types.standards import PreparedRequest
-
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional
 
 import httpx
-import datetime
-from ...types.documents.extractions import UiParsedChatCompletion
-from ...types.mime import MIMEData, BaseMIMEData
-from ...types.logs import ExternalRequestLog
-
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from PIL.Image import Image
+from pydantic import HttpUrl
+
+from ..._resource import AsyncAPIResource, SyncAPIResource
+from ..._utils.ai_models import assert_valid_model_extraction
+from ..._utils.mime import prepare_mime_document
+from ...types.automations.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
+from ...types.documents.extractions import UiParsedChatCompletion
+from ...types.image_settings import ImageSettings
+from ...types.logs import AutomationLog, ExternalRequestLog
+from ...types.mime import BaseMIMEData, EmailData, MIMEData
+from ...types.modalities import Modality
+from ...types.standards import PreparedRequest
+
 
 class MailBoxesMixin:
     def prepare_create(
@@ -93,7 +88,8 @@ class MailBoxesMixin:
     def prepare_get(self, email: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/automations/mailboxes/{email}")
 
-    def prepare_update(self,   
+    def prepare_update(
+        self,
         email: str,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
@@ -104,8 +100,8 @@ class MailBoxesMixin:
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None) -> PreparedRequest:
-        
+        json_schema: Optional[Dict[str, Any]] = None,
+    ) -> PreparedRequest:
         data: dict[str, Any] = {}
         if webhook_url is not None:
             data["webhook_url"] = webhook_url
@@ -136,15 +132,17 @@ class MailBoxesMixin:
     def prepare_delete(self, email: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/automations/mailboxes/{email}", raise_for_status=True)
 
-    def prepare_logs(self, 
-                before: str | None = None,
-                after: str | None = None,
-                limit: int = 10,
-                order: Literal["asc", "desc"] | None = "desc",
-                email: Optional[str] = None,
-                webhook_url: Optional[str] = None,
-                schema_id: Optional[str] = None,
-                schema_data_id: Optional[str] = None,) -> PreparedRequest:
+    def prepare_logs(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        email: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> PreparedRequest:
         params = {
             "email": email,
             "webhook_url": webhook_url,
@@ -157,6 +155,7 @@ class MailBoxesMixin:
         }
         return PreparedRequest(method="GET", url=f"/v1/automations/mailboxes/{email}/logs", params=params)
 
+
 class Mailboxes(SyncAPIResource, MailBoxesMixin):
     """Emails API wrapper for managing email automation configurations"""
 
@@ -167,26 +166,22 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
     def create(
         self,
         email: str,
-
         json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-
         # email specific opitonals Fields
         authorized_domains: List[str] = [],
         authorized_emails: List[str] = [],
         # HTTP Config Optional Fields
         webhook_headers: Dict[str, str] = {},
-
         # DocumentExtraction Config
         image_settings: Optional[Dict[str, Any]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-
     ) -> Mailbox:
         """Create a new email automation configuration.
-        
+
         Args:
             email: Email address for the mailbox
             json_schema: JSON schema to validate extracted email data
@@ -204,32 +199,35 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             Mailbox: The created mailbox configuration
         """
 
-        request = self.prepare_create(email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(
+            email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort
+        )
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
-    def list(self,
-            before: str | None = None,
-            after: str | None = None,
-            limit: int = 10,
-            order: Literal["asc", "desc"] | None = "desc",
-            email: Optional[str] = None,
-            webhook_url: Optional[str] = None,
-            schema_id: Optional[str] = None,
-            schema_data_id: Optional[str] = None,
-            ) -> ListMailboxes:
+    def list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        email: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> ListMailboxes:
         """List all email automation configurations.
 
         Args:
             before: Optional cursor for pagination - get results before this log ID
-            after: Optional cursor for pagination - get results after this log ID  
+            after: Optional cursor for pagination - get results after this log ID
             limit: Maximum number of logs to return (1-100, default 10)
             order: Sort order by creation time - "asc" or "desc" (default "desc")
             email: Optional email address filter
             webhook_url: Optional webhook URL filter
             schema_id: Optional schema ID filter
             schema_data_id: Optional schema data ID filter
-        
+
         Returns:
             ListMailboxes: List of mailbox configurations
         """
@@ -239,10 +237,10 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
 
     def get(self, email: str) -> Mailbox:
         """Get a specific email automation configuration.
-        
+
         Args:
             email: Email address of the mailbox
-            
+
         Returns:
             Mailbox: The mailbox configuration
         """
@@ -262,10 +260,10 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None
+        json_schema: Optional[Dict[str, Any]] = None,
     ) -> Mailbox:
         """Update an email automation configuration.
-        
+
         Args:
             email: Email address of the mailbox to update
             webhook_url: New webhook configuration
@@ -281,17 +279,19 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             temperature: New temperature setting
             reasoning_effort: New reasoning effort
             json_schema: New JSON schema
-            
+
         Returns:
             Mailbox: The updated mailbox configuration
         """
-        request = self.prepare_update(email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema)
+        request = self.prepare_update(
+            email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema
+        )
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
     def delete(self, email: str) -> None:
         """Delete an email automation configuration.
-        
+
         Args:
             email: Email address of the mailbox to delete
         """
@@ -299,28 +299,29 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         response = self._client._prepared_request(request)
         return None
 
-    def logs(self, 
-                before: str | None = None,
-                after: str | None = None,
-                limit: int = 10,
-                order: Literal["asc", "desc"] | None = "desc",
-                email: Optional[str] = None,
-                webhook_url: Optional[str] = None,
-                schema_id: Optional[str] = None,
-                schema_data_id: Optional[str] = None,
-                ) -> List[AutomationLog]:
+    def logs(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        email: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> List[AutomationLog]:
         """Get logs for a specific email automation.
-        
+
         Args:
             before: Optional cursor for pagination - get results before this log ID
-            after: Optional cursor for pagination - get results after this log ID  
+            after: Optional cursor for pagination - get results after this log ID
             limit: Maximum number of logs to return (1-100, default 10)
             order: Sort order by creation time - "asc" or "desc" (default "desc")
             email: Optional email address filter
             webhook_url: Optional webhook URL filter
             schema_id: Optional schema ID filter
             schema_data_id: Optional schema data ID filter
-            
+
         Returns:
             List[Dict[str, Any]]: List of log entries
         """
@@ -328,12 +329,14 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         response = self._client._prepared_request(request)
         return [AutomationLog.model_validate(log) for log in response]
 
+
 class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.tests = AsyncTestMailboxes(client=client)
 
-    async def create(self,
+    async def create(
+        self,
         email: str,
         json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
@@ -346,30 +349,34 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Mailbox:
-        request = self.prepare_create(email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(
+            email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort
+        )
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
-    async def list(self,
-            before: str | None = None,
-            after: str | None = None,
-            limit: int = 10,
-            order: Literal["asc", "desc"] | None = "desc",
-            email: Optional[str] = None,
-            webhook_url: Optional[str] = None,
-            schema_id: Optional[str] = None,
-            schema_data_id: Optional[str] = None,
-            ) -> ListMailboxes:
+    async def list(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        email: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> ListMailboxes:
         request = self.prepare_list(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return ListMailboxes.model_validate(response)
-    
+
     async def get(self, email: str) -> Mailbox:
         request = self.prepare_get(email)
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)
-    
-    async def update(self,
+
+    async def update(
+        self,
         email: str,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
@@ -380,9 +387,11 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None
+        json_schema: Optional[Dict[str, Any]] = None,
     ) -> Mailbox:
-        request = self.prepare_update(email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema)
+        request = self.prepare_update(
+            email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema
+        )
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
@@ -390,34 +399,34 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         request = self.prepare_delete(email)
         await self._client._prepared_request(request)
         return None
-    
-    async def logs(self, 
-                before: str | None = None,
-                after: str | None = None,
-                limit: int = 10,
-                order: Literal["asc", "desc"] | None = "desc",
-                email: Optional[str] = None,
-                webhook_url: Optional[str] = None,
-                schema_id: Optional[str] = None,
-                schema_data_id: Optional[str] = None,
-                ) -> List[AutomationLog]:
+
+    async def logs(
+        self,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        email: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> List[AutomationLog]:
         request = self.prepare_logs(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return [AutomationLog.model_validate(log) for log in response]
 
+
 class TestMailboxesMixin:
-    def prepare_forward(self,
-                        email: str,
-                        document: Path | str | IOBase | HttpUrl | MIMEData,
-                        verbose: bool = True,
-                        ) -> PreparedRequest:
+    def prepare_forward(
+        self,
+        email: str,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
+        verbose: bool = True,
+    ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
         return PreparedRequest(method="POST", url=f"/v1/automations/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
 
-    def prepare_process(self, 
-                         email: str,
-                         document: Path | str | IOBase | HttpUrl | Image | MIMEData
-                         ) -> PreparedRequest:
+    def prepare_process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
         return PreparedRequest(method="POST", url=f"/v1/automations/mailboxes/tests/process/{email}", data={"document": mime_document.model_dump()})
 
@@ -445,10 +454,10 @@ class TestMailboxesMixin:
             print(f"\n#########################")
             print(f"Status Code: {log.external_request_log.status_code}")
             print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-            
+
             if log.external_request_log.error:
                 print(f"\nERROR: {log.external_request_log.error}")
-            
+
             if log.external_request_log.response_body:
                 print("\n--------------")
                 print("RESPONSE BODY:")
@@ -467,10 +476,10 @@ class TestMailboxesMixin:
             print(f"\n#########################")
             print(f"Status Code: {log.external_request_log.status_code}")
             print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-            
+
             if log.external_request_log.error:
                 print(f"\nERROR: {log.external_request_log.error}")
-            
+
             if log.external_request_log.response_body:
                 print("\n--------------")
                 print("RESPONSE BODY:")
@@ -484,49 +493,40 @@ class TestMailboxesMixin:
                 print(json.dumps(log.external_request_log.response_headers, indent=2))
 
 
-
-clean_response = UiParsedChatCompletion.model_validate({
-                'id': 'chatcmpl-xxxxxxxxxx',
-                'choices': [{
-                    'finish_reason': 'stop',
-                    'index': 0,
-                    'logprobs': None,
-                    'message': {
-                        'content': '{"name": "ACME Corporation", "type": "corporate", "relationship": "client"}',
-                        'refusal': None,
-                        'role': 'assistant',
-                        'audio': None,
-                        'function_call': None,
-                        'tool_calls': [],
-                        'parsed': {}
-                    }
-                }],
-                'created': 1738084776,
-                'model': 'gpt-4o-mini-2024-07-18',
-                'object': 'chat.completion',
-                'service_tier': 'default',
-                'system_fingerprint': 'fp_xxxxxx',
-                'usage': {
-                    'completion_tokens': 17,
-                    'prompt_tokens': 663,
-                    'total_tokens': 680,
-                    'completion_tokens_details': {
-                        'accepted_prediction_tokens': 0,
-                        'audio_tokens': 0,
-                        'reasoning_tokens': 0,
-                        'rejected_prediction_tokens': 0
-                    },
-                    'prompt_tokens_details': {
-                        'audio_tokens': 0,
-                        'cached_tokens': 0
-                    }
+clean_response = UiParsedChatCompletion.model_validate(
+    {
+        'id': 'chatcmpl-xxxxxxxxxx',
+        'choices': [
+            {
+                'finish_reason': 'stop',
+                'index': 0,
+                'logprobs': None,
+                'message': {
+                    'content': '{"name": "ACME Corporation", "type": "corporate", "relationship": "client"}',
+                    'refusal': None,
+                    'role': 'assistant',
+                    'audio': None,
+                    'function_call': None,
+                    'tool_calls': [],
+                    'parsed': {},
                 },
-                'likelihoods': {
-                    'name': 1.0,
-                    'type': 0.9999993295729247,
-                    'relationship': 0.9999920581810364
-                }
-            })
+            }
+        ],
+        'created': 1738084776,
+        'model': 'gpt-4o-mini-2024-07-18',
+        'object': 'chat.completion',
+        'service_tier': 'default',
+        'system_fingerprint': 'fp_xxxxxx',
+        'usage': {
+            'completion_tokens': 17,
+            'prompt_tokens': 663,
+            'total_tokens': 680,
+            'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0},
+            'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0},
+        },
+        'likelihoods': {'name': 1.0, 'type': 0.9999993295729247, 'relationship': 0.9999920581810364},
+    }
+)
 
 
 invoice_file_content = b"""
@@ -552,20 +552,20 @@ invoice_file_content = b"""
             Payment Terms: Net 30
             Due Date: April 14, 2024
             """
-            
+
 
 class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
-
-    def forward(self, 
-                    email: str,
-                    document: Path | str | IOBase | HttpUrl | MIMEData,
-                    verbose: bool = True,
-                    ) -> EmailData:
+    def forward(
+        self,
+        email: str,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
+        verbose: bool = True,
+    ) -> EmailData:
         """Mock endpoint that simulates the complete email forwarding process with sample data.
-        
+
         Args:
             email: Email address of the mailbox to mock
-            
+
         Returns:
             DocumentExtractResponse: The simulated extraction response
         """
@@ -573,21 +573,17 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
         response = self._client._prepared_request(request)
 
         email_data = EmailData.model_validate(response)
-        
+
         if verbose:
             self.print_forward_verbose(email_data)
         return email_data
 
-    def process(self, 
-                         email: str,
-                         document: Path | str | IOBase | HttpUrl | Image | MIMEData,
-                         verbose: bool = True
-                         ) -> AutomationLog:
+    def process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
         """Mock endpoint that simulates the complete email processing process with sample data.
-        
+
         Args:
             email: Email address of the mailbox to mock
-            
+
         Returns:
             DocumentExtractResponse: The simulated extraction response
         """
@@ -599,18 +595,15 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
         if verbose:
             self.print_process_verbose(log)
         return log
-    def webhook(self, 
-                          email: str,
-                          webhook_url: HttpUrl | None = None,
-                          verbose: bool = True
-                          ) -> AutomationLog:
+
+    def webhook(self, email: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
         """Mock endpoint that simulates the complete webhook process with sample data.
-        
+
         Args:
             email: Email address of the mailbox to mock
             webhook_url: Optional URL to send webhook to. If provided, will send to this URL instead of the configured one
             verbose: Whether to print verbose output
-            
+
         Returns:
             AutomationLog: The simulated webhook response
         """
@@ -620,9 +613,8 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
 
             # Create MIME document
             mime_document = prepare_mime_document(invoice_file_content)
-            
+
             # Create sample extraction response
-            
 
             # Send webhook request
             start_time = datetime.datetime.now(datetime.timezone.utc)
@@ -636,10 +628,7 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
                 with httpx.Client() as client:
                     webhook_response = client.post(
                         str(webhook_url),
-                        json={
-                            "completion": clean_response.model_dump(mode="json"),
-                            "file_payload": BaseMIMEData.model_validate(mime_document).model_dump(mode="json")
-                        }
+                        json={"completion": clean_response.model_dump(mode="json"), "file_payload": BaseMIMEData.model_validate(mime_document).model_dump(mode="json")},
                     )
                     webhook_response.raise_for_status()
                     status_code = webhook_response.status_code
@@ -669,8 +658,8 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
                     response_at=end_time,
                     status_code=status_code or 0,
                     error=error_message,
-                    duration_ms=(end_time - start_time).total_seconds() * 1000
-                )
+                    duration_ms=(end_time - start_time).total_seconds() * 1000,
+                ),
             )
 
             if verbose:
@@ -687,23 +676,20 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
 
 
 class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
-    async def forward(self, 
-                    email: str,
-                    document: Path | str | IOBase | HttpUrl | MIMEData,
-                    verbose: bool = True,
-                    ) -> EmailData:
+    async def forward(
+        self,
+        email: str,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
+        verbose: bool = True,
+    ) -> EmailData:
         request = self.prepare_forward(email, document, verbose)
         response = await self._client._prepared_request(request)
         email_data = EmailData.model_validate(response)
         if verbose:
             self.print_forward_verbose(email_data)
         return email_data
-    
-    async def process(self, 
-                      email: str,
-                      document: Path | str | IOBase | HttpUrl | Image | MIMEData,
-                      verbose: bool = True
-                      ) -> AutomationLog:
+
+    async def process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
         request = self.prepare_process(email, document)
         response = await self._client._prepared_request(request)
         log = AutomationLog.model_validate(response)
@@ -711,18 +697,14 @@ class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
             self.print_process_verbose(log)
         return log
 
-    async def webhook(self, 
-                      email: str,
-                      webhook_url: HttpUrl | None = None,
-                      verbose: bool = True
-                      ) -> AutomationLog:
+    async def webhook(self, email: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
         """Mock endpoint that simulates the complete webhook process with sample data.
-        
+
         Args:
             email: Email address of the mailbox to mock
             webhook_url: Optional URL to send webhook to. If provided, will send to this URL instead of the configured one
             verbose: Whether to print verbose output
-            
+
         Returns:
             AutomationLog: The simulated webhook response
         """
@@ -745,10 +727,7 @@ class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
                 async with httpx.AsyncClient() as client:
                     webhook_response = await client.post(
                         str(webhook_url),
-                        json={
-                            "completion": clean_response.model_dump(mode="json"),
-                            "file_payload": BaseMIMEData.model_validate(mime_document).model_dump(mode="json")
-                        }
+                        json={"completion": clean_response.model_dump(mode="json"), "file_payload": BaseMIMEData.model_validate(mime_document).model_dump(mode="json")},
                     )
                     webhook_response.raise_for_status()
                     status_code = webhook_response.status_code
@@ -778,8 +757,8 @@ class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
                     response_at=end_time,
                     status_code=status_code or 0,
                     error=error_message,
-                    duration_ms=(end_time - start_time).total_seconds() * 1000
-                )
+                    duration_ms=(end_time - start_time).total_seconds() * 1000,
+                ),
             )
 
             if verbose:

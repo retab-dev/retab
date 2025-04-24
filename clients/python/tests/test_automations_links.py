@@ -1,11 +1,13 @@
-
-import pytest
-import httpx
 import base64
-import nanoid # type: ignore
-from pydantic import HttpUrl
 from typing import Any
+
+import httpx
+import nanoid  # type: ignore
+import pytest
+from pydantic import HttpUrl
+
 from uiform import UiForm
+
 
 @pytest.mark.asyncio
 async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path: str) -> None:
@@ -15,8 +17,8 @@ async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, An
     webhook_url = HttpUrl('http://localhost:4000/v1/test_ingest_completion')
     # Create
     link = sync_client.automations.links.create(
-        name, 
-        company_json_schema, 
+        name,
+        company_json_schema,
         webhook_url,
         model=model,
     )
@@ -39,16 +41,9 @@ async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, An
                 headers = {
                     "Authorization": f"Basic {usr_pwd_enc}",
                 }
-                files = {
-                    "file": f
-                }
-                response = await client.post(
-                    sync_client.base_url + f"/v1/automations/links/parse/{link_id}",
-                    files=files,
-                    headers=headers
-                )
+                files = {"file": f}
+                response = await client.post(sync_client.base_url + f"/v1/automations/links/parse/{link_id}", files=files, headers=headers)
                 assert response.status_code == 200
-
 
         # Delete
         sync_client.automations.links.delete(link_id)

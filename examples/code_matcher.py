@@ -2,13 +2,14 @@
 ## Utility: Find and display fuzzy matches between structured records using Levenshtein distance
 # ---------------------------------------------
 
-from typing import Any, List, Dict, Hashable, TypedDict
 import re
 import unicodedata
-from Levenshtein import distance as levenshtein_distance
+from typing import Any, Dict, Hashable, List, TypedDict
+
 import pandas as pd
-from rich.table import Table
+from Levenshtein import distance as levenshtein_distance
 from rich.console import Console
+from rich.table import Table
 
 
 def normalize_value(val: Any) -> str:
@@ -49,11 +50,7 @@ class MatchResult(TypedDict):
     similarity: float
 
 
-def find_top_k_neighbors(
-    query: Dict[str, Any],
-    database: List[Dict[Hashable, Any]],
-    k: int = 5
-) -> List[MatchResult]:
+def find_top_k_neighbors(query: Dict[str, Any], database: List[Dict[Hashable, Any]], k: int = 5) -> List[MatchResult]:
     """Find top k closest matches in a dataset using Levenshtein similarity."""
     compare_fields = list(query.keys())
     results: List[MatchResult] = []
@@ -71,10 +68,7 @@ def find_top_k_neighbors(
 
         if count > 0:
             avg_sim = score_sum / count
-            results.append({
-                "record": record,
-                "similarity": avg_sim
-            })
+            results.append({"record": record, "similarity": avg_sim})
 
     results.sort(key=lambda x: x["similarity"], reverse=True)
     return results[:k]
@@ -117,7 +111,7 @@ def example_usage() -> None:
         'Ville': 'PARIS',
         'Pays': 'FR',
         'Num TVA': 'FR00348236132',
-        'SIRET': '32323219080032'
+        'SIRET': '32323219080032',
     }
 
     results = find_top_k_neighbors(query, database, k=5)

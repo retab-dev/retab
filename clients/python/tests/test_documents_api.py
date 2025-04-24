@@ -1,14 +1,15 @@
-import pytest
-import json
-import nanoid # type: ignore
-import time
-import httpx
 import asyncio
-from typing import Literal, get_args, Any
-from pydantic import BaseModel
-from uiform import UiForm, AsyncUiForm
-from uiform.types.documents.extractions import UiParsedChatCompletion
+import json
+import time
+from typing import Any, Literal, get_args
 
+import httpx
+import nanoid  # type: ignore
+import pytest
+from pydantic import BaseModel
+
+from uiform import AsyncUiForm, UiForm
+from uiform.types.documents.extractions import UiParsedChatCompletion
 
 # List of AI Providers to test
 AI_MODELS = Literal[
@@ -29,9 +30,7 @@ ResponseModeType = Literal[
 
 def validate_extraction_response(response: UiParsedChatCompletion | None) -> None:
     # Assert the instance
-    assert isinstance(response, UiParsedChatCompletion), (
-        f"Response should be of type UiParsedChatCompletion, received {type(response)}"
-    )
+    assert isinstance(response, UiParsedChatCompletion), f"Response should be of type UiParsedChatCompletion, received {type(response)}"
 
     # Assert the response content is not None
     assert response.choices[0].message.content is not None, "Response content should not be None"
@@ -42,6 +41,7 @@ def validate_extraction_response(response: UiParsedChatCompletion | None) -> Non
         assert False, "Response content should be a valid JSON object"
     # Assert that the response.choices[0].message.parsed is a valid pydantic BaseModel instance
     assert isinstance(response.choices[0].message.parsed, BaseModel), "Response parsed should be a valid pydantic BaseModel instance"
+
 
 # Test the extraction endpoint
 async def base_test_extract(
@@ -100,6 +100,7 @@ async def test_extract_openai(
         booking_confirmation_file_path=booking_confirmation_file_path,
         booking_confirmation_json_schema=booking_confirmation_json_schema,
     )
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("request_number", range(10))
@@ -258,5 +259,3 @@ async def test_extraction_with_idempotency_exceptions(
     assert isinstance(raised_exception_2, httpx.HTTPStatusError), "Exception should be a HTTPStatusError"
     # Assert that the message of both exceptions is the same
     assert raised_exception_1.args[0] == raised_exception_2.args[0], "Exception message should be the same"
-
-

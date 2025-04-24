@@ -1,27 +1,25 @@
-from pydantic import BaseModel, Field
-from typing import  Literal, List
-
 import base64
+from io import BytesIO
+from typing import List, Literal
+
 import PIL.Image
 import requests
-from io import BytesIO
-
-from ..._utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format, convert_to_anthropic_format, convert_to_google_genai_format, str_messages
-from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
-from ..modalities import Modality
-from ..mime import MIMEData
-from ..chat import ChatCompletionUiformMessage
-from ..image_settings import ImageSettings
-
+from anthropic.types.message_param import MessageParam
+from google.genai.types import ContentUnionDict  # type: ignore
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
-from google.genai.types import ContentUnionDict # type: ignore
-from anthropic.types.message_param import MessageParam
+from pydantic import BaseModel, Field
 
-
-
+from ..._utils.chat import convert_to_anthropic_format, convert_to_google_genai_format, str_messages
+from ..._utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format
+from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
+from ..chat import ChatCompletionUiformMessage
+from ..image_settings import ImageSettings
+from ..mime import MIMEData
+from ..modalities import Modality
 
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
+
 
 class DocumentCreateMessageRequest(BaseModel):
     document: MIMEData
@@ -30,8 +28,9 @@ class DocumentCreateMessageRequest(BaseModel):
     modality: Modality
     """The modality of the document to load."""
 
-    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     """The image operations to apply to the document."""
+
 
 class DocumentMessage(BaseModel):
     id: str
@@ -40,7 +39,7 @@ class DocumentMessage(BaseModel):
     object: Literal["document_message"] = Field(default="document_message")
     """The type of object being loaded."""
 
-    messages: List[ChatCompletionUiformMessage] 
+    messages: List[ChatCompletionUiformMessage]
     """A list of messages containing the document content and metadata."""
 
     created: int
@@ -48,7 +47,7 @@ class DocumentMessage(BaseModel):
 
     modality: Modality
     """The modality of the document to load."""
-    
+
     @property
     def items(self) -> list[str | PIL.Image.Image]:
         """Returns the document contents as a list of strings and images.
@@ -66,7 +65,7 @@ class DocumentMessage(BaseModel):
                 return their URLs as strings instead.
         """
         results: list[str | PIL.Image.Image] = []
-        
+
         for msg in self.messages:
             if isinstance(msg["content"], str):
                 results.append(msg["content"])
@@ -80,7 +79,7 @@ class DocumentMessage(BaseModel):
                     # If item is an image
                     if item_type == "image_url":
                         assert "image_url" in content_item, "image_url is required in ChatCompletionContentPartImageParam"
-                        image_data_url = content_item["image_url"]["url"] # type: ignore
+                        image_data_url = content_item["image_url"]["url"]  # type: ignore
 
                         # 1) Base64 inline data
                         if image_data_url.startswith("data:image/"):
@@ -114,7 +113,7 @@ class DocumentMessage(BaseModel):
                     elif item_type == "input_audio":
                         # Handle audio input content
                         if "input_audio" in content_item:
-                            audio_data = content_item["input_audio"]["data"] # type: ignore
+                            audio_data = content_item["input_audio"]["data"]  # type: ignore
                             results.append(f"Audio data: {audio_data[:100]}...")  # Truncate long audio data
 
                     else:
@@ -158,7 +157,7 @@ class DocumentMessage(BaseModel):
             list[MessageParam]: Messages formatted for Claude's API.
         """
         return convert_to_anthropic_format(self.messages)[1]
-    
+
     @property
     def gemini_messages(self) -> list[ContentUnionDict]:
         """Returns the messages formatted for Google's Gemini API.
@@ -171,12 +170,8 @@ class DocumentMessage(BaseModel):
         """
         return convert_to_google_genai_format(self.messages)[1]
 
-    
-    def __str__(self)->str:
+    def __str__(self) -> str:
         return f"DocumentMessage(id={self.id}, object={self.object}, created={self.created}, messages={str_messages(self.messages)}, modality={self.modality})"
-    
-    def __repr__(self)->str:
+
+    def __repr__(self) -> str:
         return f"DocumentMessage(id={self.id}, object={self.object}, created={self.created}, messages={str_messages(self.messages)}, modality={self.modality})"
-    
-
-

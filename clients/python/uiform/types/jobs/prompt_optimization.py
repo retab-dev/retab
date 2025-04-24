@@ -17,11 +17,9 @@
 #         if self.extracted is None:
 #             return None
 #         return ExtractionAnalysis(ground_truth=self.target, prediction=self.extracted)
-    
 
 
 # Metrics = Literal["levenshtein_similarity_per_field", "accuracy_per_field"]
-
 
 
 # # Insert default values for the parameters

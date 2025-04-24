@@ -1,24 +1,22 @@
+import copy
+import datetime
+import json
+import re
 import types
-from typing import Any, Optional, Union, Literal, Callable, Type, Annotated, Optional, get_origin, get_args, cast
+from collections import defaultdict
+from pathlib import Path
+from typing import Annotated, Any, Callable, Literal, MutableMapping, MutableSequence, Optional, Tuple, Type, Union, cast, get_args, get_origin
+
+import phonenumbers
+import pycountry
+import stdnum.eu.vat  # type: ignore
+from email_validator import validate_email
 from pydantic import BaseModel, BeforeValidator, Field, create_model
 from pydantic.config import ConfigDict
-from collections import defaultdict
 
-from pathlib import Path
-import copy
-import json
-import datetime
-
-import stdnum.eu.vat  # type: ignore
-import phonenumbers
-import datetime
-from email_validator import validate_email
-import pycountry
-import re
 from uiform._utils.mime import generate_blake2b_hash_from_string
-from uiform.types.schemas.layout import Layout, Column, Row, RowList, FieldItem, RefObject
-import re
-from typing import Union, MutableMapping, MutableSequence, Tuple, Any
+from uiform.types.schemas.layout import Column, FieldItem, Layout, RefObject, Row, RowList
+
 # **** Validation Functions ****
 
 # 1) Special Objects
@@ -26,36 +24,36 @@ from typing import Union, MutableMapping, MutableSequence, Tuple, Any
 
 def generate_schema_data_id(json_schema: dict[str, Any]) -> str:
     """Generate a SHA1 hash ID for schema data, ignoring prompt/description/default fields.
-    
+
     Args:
         json_schema: The JSON schema to generate an ID for
-        
+
     Returns:
         str: A SHA1 hash string with "sch_data_id_" prefix
     """
     return "sch_data_id_" + generate_blake2b_hash_from_string(
         json.dumps(
             clean_schema(
-                copy.deepcopy(json_schema), 
-                remove_custom_fields=True, 
-                fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"]
+                copy.deepcopy(json_schema),
+                remove_custom_fields=True,
+                fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"],
             ),
-            sort_keys=True
+            sort_keys=True,
         ).strip()
     )
 
+
 def generate_schema_id(json_schema: dict[str, Any]) -> str:
     """Generate a SHA1 hash ID for the complete schema.
-    
+
     Args:
         json_schema: The JSON schema to generate an ID for
-        
+
     Returns:
         str: A SHA1 hash string with "sch_id_" prefix
     """
-    return "sch_id_" + generate_blake2b_hash_from_string(
-        json.dumps(json_schema, sort_keys=True).strip()
-    )
+    return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(json_schema, sort_keys=True).strip())
+
 
 def validate_currency(currency_code: Any) -> Optional[str]:
     """
@@ -215,10 +213,7 @@ def validate_adr_tunnel_code(v: Any) -> Optional[str]:
     if v is None:
         return None
     v_str = str(v).strip().upper()  # unify for set comparison
-    valid_codes = {
-        'B', 'B1000C', 'B/D', 'B/E', 'C', 'C5000D', 'C/D', 'C/E',
-        'D', 'D/E', 'E', '-'
-    }
+    valid_codes = {'B', 'B1000C', 'B/D', 'B/E', 'C', 'C5000D', 'C/D', 'C/E', 'D', 'D/E', 'E', '-'}
     return v_str if v_str in valid_codes else None
 
 
@@ -234,6 +229,7 @@ def validate_un_packing_group(v: Any) -> Optional[str]:
 
 
 # 2) General Objects
+
 
 def validate_integer(v: Any) -> Optional[int]:
     """
@@ -355,6 +351,7 @@ def validate_strold(v: Any) -> Optional[str]:
         return None
     return v_str
 
+
 def validate_str(v: Any) -> Optional[str]:
     """
     Return a stripped string unless it's invalid (e.g., placeholders like 'null'), else None.
@@ -402,7 +399,7 @@ def merge_descriptions(outer_schema: dict[str, Any], inner_schema: dict[str, Any
     if not merged.get("X-ReasoningPrompt", "").strip():
         # delete it
         merged.pop("X-ReasoningPrompt", None)
-    
+
     # Outer LLM Description preferred if present
     if outer_schema.get("X-FieldPrompt", "").strip():
         merged["X-FieldPrompt"] = outer_schema["X-FieldPrompt"]
@@ -423,7 +420,7 @@ def merge_descriptions(outer_schema: dict[str, Any], inner_schema: dict[str, Any
 
 def has_cyclic_refs(schema: dict[str, Any]) -> bool:
     """Check if the JSON Schema contains cyclic references.
-    
+
     The function recursively traverses all nested objects and arrays in the schema.
     It follows any "$ref" that points to a definition (i.e. "#/$defs/<name>")
     and uses DFS with a current-path stack to detect cycles.
@@ -441,7 +438,7 @@ def has_cyclic_refs(schema: dict[str, Any]) -> bool:
             return True
         if def_name in memo:
             return memo[def_name]
-        
+
         # Add to current path and traverse the definition.
         stack.add(def_name)
         node = definitions.get(def_name)
@@ -463,7 +460,7 @@ def has_cyclic_refs(schema: dict[str, Any]) -> bool:
             if "$ref" in node:
                 ref = node["$ref"]
                 if ref.startswith("#/$defs/"):
-                    target = ref[len("#/$defs/"):]
+                    target = ref[len("#/$defs/") :]
                     if dfs(target, stack):
                         return True
             # Recursively check all values in the dictionary.
@@ -486,6 +483,7 @@ def has_cyclic_refs(schema: dict[str, Any]) -> bool:
 
     return False
 
+
 def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """
     Recursively resolve $ref in the given schema.
@@ -493,29 +491,23 @@ def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] |
     """
     if not isinstance(schema, dict):
         return schema
-    
+
     # First, we will verify if this schema is expandable, we do this by checking if there are cyclic $refs (infinite loop)
     # If there are, we will return the schema as is
-    
 
     if has_cyclic_refs(schema):
         print("Cyclic refs found, keeping it as is")
         return schema
 
-
-    
     if definitions is None:
         definitions = schema.pop("$defs", {})
 
     assert isinstance(definitions, dict)
 
-
     if "allOf" in schema:
         # Some schemas (notably the one converted from a pydantic model) have allOf. We only accept one element in allOf
         if len(schema["allOf"]) != 1:
-            raise ValueError(
-                f"Property schema must have a single element in 'allOf'. Found: {schema['allOf']}"
-            )
+            raise ValueError(f"Property schema must have a single element in 'allOf'. Found: {schema['allOf']}")
         schema.update(schema.pop("allOf", [{}])[0])
 
     if "$ref" in schema:
@@ -749,15 +741,14 @@ def resolve_ref(ref: str, definitions: dict[str, dict[str, Any]]) -> Optional[di
     return None
 
 
-
 def json_schema_to_strict_openai_schema(obj: Union[dict[str, Any], list[Any]]) -> Union[dict[str, Any], list[Any]]:
     # Gets a json supported by GPT Structured Output from a pydantic Basemodel
 
     if isinstance(obj, dict):
         new_obj: dict[str, Any] = copy.deepcopy(obj)
-        
+
         # Remove some not-supported fields
-        for key in  ['default', 'format', 'X-FieldTranslation', 'X-EnumTranslation']:
+        for key in ['default', 'format', 'X-FieldTranslation', 'X-EnumTranslation']:
             new_obj.pop(key, None)
 
         # Handle integer type
@@ -800,7 +791,7 @@ def json_schema_to_strict_openai_schema(obj: Union[dict[str, Any], list[Any]]) -
         # Handle defs
         if "$defs" in new_obj:
             new_obj["$defs"] = {k: json_schema_to_strict_openai_schema(v) for k, v in new_obj["$defs"].items()}
-        
+
         return new_obj
     elif isinstance(obj, list):
         return [json_schema_to_strict_openai_schema(item) for item in obj]
@@ -808,11 +799,7 @@ def json_schema_to_strict_openai_schema(obj: Union[dict[str, Any], list[Any]]) -
         return obj
 
 
-def clean_schema(
-    schema: dict[str, Any],
-    remove_custom_fields: bool = False,
-    fields_to_remove: list[str] = ["default", "minlength", "maxlength"]
-) -> dict[str, Any]:
+def clean_schema(schema: dict[str, Any], remove_custom_fields: bool = False, fields_to_remove: list[str] = ["default", "minlength", "maxlength"]) -> dict[str, Any]:
     """
     Recursively remove specified fields from a JSON schema.
 
@@ -843,22 +830,14 @@ def clean_schema(
     if "items" in schema:
         schema["items"] = clean_schema(schema["items"], fields_to_remove=fields_to_remove, remove_custom_fields=remove_custom_fields)
     if "$defs" in schema:
-        schema["$defs"] = {
-            k: clean_schema(v, fields_to_remove=fields_to_remove, remove_custom_fields=remove_custom_fields)
-            for k, v in schema["$defs"].items()
-        }
+        schema["$defs"] = {k: clean_schema(v, fields_to_remove=fields_to_remove, remove_custom_fields=remove_custom_fields) for k, v in schema["$defs"].items()}
     if "allOf" in schema:
-        schema["allOf"] = [
-            clean_schema(subschema, fields_to_remove=fields_to_remove, remove_custom_fields=remove_custom_fields)
-            for subschema in schema["allOf"]
-        ]
+        schema["allOf"] = [clean_schema(subschema, fields_to_remove=fields_to_remove, remove_custom_fields=remove_custom_fields) for subschema in schema["allOf"]]
     if "anyOf" in schema:
-        schema["anyOf"] = [
-            clean_schema(subschema, fields_to_remove=fields_to_remove, remove_custom_fields=remove_custom_fields)
-            for subschema in schema["anyOf"]
-        ]
+        schema["anyOf"] = [clean_schema(subschema, fields_to_remove=fields_to_remove, remove_custom_fields=remove_custom_fields) for subschema in schema["anyOf"]]
 
     return schema
+
 
 def add_reasoning_sibling_inplace(properties: dict[str, Any], field_name: str, reasoning_desc: str) -> None:
     """
@@ -880,6 +859,7 @@ def add_reasoning_sibling_inplace(properties: dict[str, Any], field_name: str, r
     properties.clear()
     properties.update(new_properties)
 
+
 def add_quote_sibling_inplace(properties: dict[str, Any], field_name: str) -> None:
     """
     Add a quote sibling for a given property field_name into properties dict.
@@ -894,6 +874,7 @@ def add_quote_sibling_inplace(properties: dict[str, Any], field_name: str) -> No
         new_properties[key] = value
     properties.clear()
     properties.update(new_properties)
+
 
 def _insert_reasoning_fields_inner(schema: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
     """
@@ -930,23 +911,23 @@ def _insert_reasoning_fields_inner(schema: dict[str, Any]) -> tuple[dict[str, An
         # Recurse into items if present
         updated_items, item_reasoning = _insert_reasoning_fields_inner(schema["items"])
         schema["items"] = updated_items
-        
+
         # If the item schema has a reasoning prompt, create a reasoning field inside the item
         if item_reasoning and updated_items.get("type") == "object":
             # Create reasoning field for array items
             if "properties" not in updated_items:
                 updated_items["properties"] = {}
-                
+
             # Add the reasoning field as first property
             reasoning_key = "reasoning___item"
             new_properties = {reasoning_key: {"type": "string", "description": item_reasoning}}
-            
+
             # Add the rest of the properties
             for key, value in updated_items["properties"].items():
                 new_properties[key] = value
-                
+
             updated_items["properties"] = new_properties
-            
+
             # Add to required if we have required fields
             if "required" in updated_items:
                 updated_items["required"].insert(0, reasoning_key)
@@ -955,6 +936,7 @@ def _insert_reasoning_fields_inner(schema: dict[str, Any]) -> tuple[dict[str, An
 
     return schema, reasoning_desc
 
+
 def _insert_quote_fields_inner(schema: dict[str, Any]) -> dict[str, Any]:
     """
     Inner function that processes a schema and adds quote___ fields for leaf nodes with X-ReferenceQuote: true.
@@ -962,40 +944,41 @@ def _insert_quote_fields_inner(schema: dict[str, Any]) -> dict[str, Any]:
     """
     if not isinstance(schema, dict):
         return schema
-    
+
     # Create a copy to avoid modifying the original
     new_schema = copy.deepcopy(schema)
-    
+
     # Process children recursively
     if "properties" in new_schema and isinstance(new_schema["properties"], dict):
         new_props = {}
         for property_key, property_value in new_schema["properties"].items():
             updated_prop_schema_value = _insert_quote_fields_inner(property_value)
             new_props[property_key] = updated_prop_schema_value
-            has_quote_field = (updated_prop_schema_value.get("X-ReferenceQuote") is True)
-            
+            has_quote_field = updated_prop_schema_value.get("X-ReferenceQuote") is True
+
             # Check if this property is a leaf with X-ReferenceQuote: true
             if has_quote_field:
                 # Add the quote field
                 quote_key = f"quote___{property_key}"
                 new_props[quote_key] = {"type": "string"}
-                
+
                 # Add the quote field to required if the property is required
                 if "required" in new_schema and property_key in new_schema["required"]:
                     # add the quote field to required just before the property_key
                     new_schema["required"].insert(new_schema["required"].index(property_key), quote_key)
-                
+
                 # Remove the X-ReferenceQuote field
                 updated_prop_schema_value.pop("X-ReferenceQuote", None)
-                
+
         new_schema["properties"] = new_props
 
     elif "items" in new_schema:
         # Recurse into items if present
         updated_items = _insert_quote_fields_inner(new_schema["items"])
         new_schema["items"] = updated_items
-    
+
     return new_schema
+
 
 def _rec_replace_description_with_llm_description(schema: dict[str, Any]) -> dict[str, Any]:
     """
@@ -1023,6 +1006,7 @@ def _rec_replace_description_with_llm_description(schema: dict[str, Any]) -> dic
 
     return new_schema
 
+
 def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
     # Resolve refs first to get expanded schema
     definitions = raw_schema.get("$defs", {})
@@ -1042,7 +1026,7 @@ def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
         add_reasoning_sibling_inplace(updated_schema["properties"], "root", root_reasoning)
         if "required" in updated_schema:
             updated_schema["required"].append("reasoning___root")
-    
+
     # Insert quote fields for leaf nodes with X-ReferenceQuote: true
     updated_schema = _insert_quote_fields_inner(updated_schema)
 
@@ -1052,7 +1036,7 @@ def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
 
     # Replace description with X-FieldPrompt if present
     updated_schema = _rec_replace_description_with_llm_description(updated_schema)
-    
+
     # Clean the schema (remove defaults, etc)
     updated_schema = clean_schema(updated_schema, remove_custom_fields=True)
     return updated_schema
@@ -1073,7 +1057,9 @@ def cleanup_reasoning(output_data: Any, reasoning_preffix: str = "reasoning___")
     else:
         return output_data
 
+
 # Other utils
+
 
 def cast_all_leaves_from_json_schema_to_type(leaf: dict[str, Any], new_type: Literal['string', 'boolean'], is_optional: bool = True) -> dict[str, Any]:
     new_leaf: dict[str, Any] = {}
@@ -1100,9 +1086,12 @@ SCHEMA_TYPES = Literal["string", "integer", "number", "boolean", "array", "objec
 # SCHEMA_STRING_DATETIME_FORMATS = Literal["datetime", "iso-datetime"]
 # SCHEMA_STRING_CUSTOM_FORMATS = Literal["email", "phone-number", "vat-number"]
 
-def get_pydantic_primitive_field_type(type_: SCHEMA_TYPES | str, format_: str | None, is_nullable: bool = False, validator_func: Callable | None = None, enum_values: list[Any] | None = None) -> Any:
+
+def get_pydantic_primitive_field_type(
+    type_: SCHEMA_TYPES | str, format_: str | None, is_nullable: bool = False, validator_func: Callable | None = None, enum_values: list[Any] | None = None
+) -> Any:
     python_base_type: Any
-    
+
     if enum_values is not None:
         python_base_type = Literal[tuple(enum_values)]  # type: ignore
     elif type_ == "string":
@@ -1126,10 +1115,8 @@ def get_pydantic_primitive_field_type(type_: SCHEMA_TYPES | str, format_: str | 
         python_base_type = dict
     else:
         raise ValueError(f"Unsupported schema type: {type_}")
-    
-    field_kwargs: Any = {
-        "json_schema_extra": {"format": format_}
-    } if format_ is not None else {}
+
+    field_kwargs: Any = {"json_schema_extra": {"format": format_}} if format_ is not None else {}
 
     final_type: Any = Annotated[python_base_type, Field(..., **field_kwargs)]
     final_type = Optional[final_type] if is_nullable or validator_func is not None else final_type
@@ -1151,6 +1138,7 @@ KNOWN_COERCIONS: dict[tuple[str | None, str | None], Callable[[Any], Any]] = def
     ("boolean", None): validate_bool,
     ("string", None): validate_str,
 }
+
 
 def object_format_coercion(instance: dict[str, Any], schema: dict[str, Any]) -> dict[str, Any]:
     """
@@ -1209,10 +1197,10 @@ def object_format_coercion(instance: dict[str, Any], schema: dict[str, Any]) -> 
 
         return _instance  # Return as-is if no coercion is required
 
-
     expanded_schema = expand_refs(schema)
     coerced = recursive_coercion(instance, expanded_schema)
     return coerced if coerced is not None else {}
+
 
 def flatten_dict(obj: Any, prefix: str = '') -> dict[str, Any]:
     items = []  # type: ignore
@@ -1228,6 +1216,7 @@ def flatten_dict(obj: Any, prefix: str = '') -> dict[str, Any]:
         items.append((prefix, obj))
     return dict(items)
 
+
 def convert_dict_to_list_recursively(_obj: Any) -> Any:
     """
     Recursively converts dict[int, Any] to list[Any] if the keys are sequential integers starting from 0.
@@ -1236,14 +1225,14 @@ def convert_dict_to_list_recursively(_obj: Any) -> Any:
     # Handle non-dict types
     if not isinstance(_obj, dict):
         return _obj
-    
+
     # Create a copy to avoid modifying the original
     result = {}
-        
+
     # Process all nested dictionaries first
     for key, value in _obj.items():
         result[key] = convert_dict_to_list_recursively(value)
-        
+
     # Check if this dictionary should be converted to a list
     if result and all(isinstance(k, int) for k in result.keys()):
         # Check if keys are sequential starting from 0
@@ -1251,28 +1240,29 @@ def convert_dict_to_list_recursively(_obj: Any) -> Any:
         if keys[0] == 0 and keys[-1] == len(keys) - 1:
             # Convert to list
             return [result[i] for i in keys]
-    
+
     return result
+
 
 def unflatten_dict(obj: dict[str, Any]) -> Any:
     """
     Unflattens a dictionary by recursively converting keys with dots into nested dictionaries.
     After building the nested structure, converts dict[int, Any] to list[Any] if the keys
     are sequential integers starting from 0.
-    
+
     Args:
         obj: The dictionary to unflatten.
-        
+
     Returns:
         The unflattened dictionary with appropriate dict[int, Any] converted to list[Any].
     """
     # Handle empty input
     if not obj:
         return obj
-    
+
     # Create a copy of the input object to avoid modifying it
     input_copy = dict(obj)
-    
+
     # Optionally validate that the dict is indeed flat
     # Commented out to avoid potential equality issues with key ordering
     # assert flatten_dict(input_copy) == input_copy, "Dictionary is not flat"
@@ -1283,16 +1273,16 @@ def unflatten_dict(obj: dict[str, Any]) -> Any:
         # Skip invalid keys
         if not isinstance(key, str):
             continue
-            
+
         parts = key.split('.')
         # Filter out empty parts
         valid_parts = [p for p in parts if p]
         if not valid_parts:
             result[key] = value
             continue
-            
+
         current = result
-        
+
         for i, part in enumerate(valid_parts):
             # Check if the part is an integer (for list indices)
             try:
@@ -1302,7 +1292,7 @@ def unflatten_dict(obj: dict[str, Any]) -> Any:
             except (ValueError, AttributeError):
                 # If conversion fails, keep as string
                 pass
-                
+
             # If at the last part, set the value
             if i == len(valid_parts) - 1:
                 current[part] = value
@@ -1314,9 +1304,9 @@ def unflatten_dict(obj: dict[str, Any]) -> Any:
                     # Handle case where we're trying to nest under a non-dict
                     # This is a conflict - the path is both a value and used as a prefix
                     current[part] = {}
-                
+
                 current = current[part]
-    
+
     # Second pass: convert appropriate dict[int, Any] to list[Any]
     return convert_dict_to_list_recursively(result)
 
@@ -1324,7 +1314,7 @@ def unflatten_dict(obj: dict[str, Any]) -> Any:
 def extract_property_type_info(prop_schema: dict[str, Any]) -> tuple[str, Optional[str], bool, list[Any] | None]:
     """
     Extract the property type, possible 'format'/'X-format', and nullability from a property schema.
-    - If an 'anyOf' with exactly one 'null' type is used, we unify it into a single schema 
+    - If an 'anyOf' with exactly one 'null' type is used, we unify it into a single schema
       (i.e., prop_schema plus is_nullable=True).
     - This ensures 'enum', 'format', etc. are preserved from the non-null sub-schema.
 
@@ -1350,15 +1340,11 @@ def extract_property_type_info(prop_schema: dict[str, Any]) -> tuple[str, Option
             # Remove the anyOf now that it's merged
             prop_schema.pop("anyOf", None)
         else:
-            raise ValueError(
-                f"'anyOf' structure not supported or doesn't match a single null type. Found: {sub_schemas}"
-            )
-    
+            raise ValueError(f"'anyOf' structure not supported or doesn't match a single null type. Found: {sub_schemas}")
+
     # At this point, we expect a single 'type' in the property
     if "type" not in prop_schema:
-        raise ValueError(
-            "Property schema must have a 'type' or a supported 'anyOf' pattern."
-        )
+        raise ValueError("Property schema must have a 'type' or a supported 'anyOf' pattern.")
 
     prop_type = prop_schema["type"]
     # Pop 'format' or 'X-format' if any
@@ -1366,6 +1352,7 @@ def extract_property_type_info(prop_schema: dict[str, Any]) -> tuple[str, Option
     enum_values = prop_schema.get("enum", None)
 
     return prop_type, prop_format, is_nullable, enum_values
+
 
 def _convert_property_schema_to_type(prop_schema: dict[str, Any]) -> Any:
     """
@@ -1411,6 +1398,7 @@ def _convert_property_schema_to_type(prop_schema: dict[str, Any]) -> Any:
     # If the schema is "null" or unknown, fallback to object
     return object
 
+
 def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
     """
     Create a Pydantic BaseModel dynamically from a JSON Schema:
@@ -1451,13 +1439,13 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
             "description": prop_schema.get("description"),
             "title": prop_schema.get("title"),
         }
-        
+
         # Include all original schema structure for proper round-trip conversion
         schema_extra = {}
         for k, v in prop_schema.items():
             if k not in {"description", "title", "default"} and not k.startswith("$"):
                 schema_extra[k] = v
-                
+
         if schema_extra:
             field_kwargs["json_schema_extra"] = schema_extra
 
@@ -1467,7 +1455,7 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
             sub_schemas = prop_schema["anyOf"]
             null_schemas = [s for s in sub_schemas if s.get("type") == "null"]
             non_null_schemas = [s for s in sub_schemas if s.get("type") != "null"]
-            
+
             if len(null_schemas) == 1 and len(non_null_schemas) == 1:
                 # Standard nullable field pattern
                 non_null_schema = non_null_schemas[0]
@@ -1476,7 +1464,7 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
             else:
                 # More complex anyOf structure - preserve it in schema_extra
                 python_type = object
-                
+
             field_definitions[prop_name] = (python_type, Field(default_val, **field_kwargs))
             continue
 
@@ -1495,7 +1483,7 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
         __config__=model_config,
         __module__="__main__",
         **field_definitions,
-    ) # type: ignore
+    )  # type: ignore
 
 
 def convert_json_schema_to_basemodelold(schema: dict[str, Any]) -> Type[BaseModel]:
@@ -1528,10 +1516,7 @@ def convert_json_schema_to_basemodelold(schema: dict[str, Any]) -> Type[BaseMode
             "description": prop_schema.get("description"),
             "title": prop_schema.get("title"),
             # Put all schema extras, including 'enum', 'format', 'X-...' etc. into json_schema_extra
-            "json_schema_extra": {
-                k: v for k, v in prop_schema.items()
-                if k.startswith("X-")
-            },
+            "json_schema_extra": {k: v for k, v in prop_schema.items() if k.startswith("X-")},
         }
 
         # c) Determine the default or whether it's required
@@ -1543,9 +1528,7 @@ def convert_json_schema_to_basemodelold(schema: dict[str, Any]) -> Type[BaseMode
         # d) Dispatch based on prop_type
         if prop_type == "object":
             if "properties" not in prop_schema:
-                raise ValueError(
-                    f"Schema for object '{prop_name}' must have 'properties' to build a submodel."
-                )
+                raise ValueError(f"Schema for object '{prop_name}' must have 'properties' to build a submodel.")
             sub_model = convert_json_schema_to_basemodel(prop_schema)
             final_type = sub_model if not is_nullable else Optional[sub_model]
 
@@ -1563,18 +1546,11 @@ def convert_json_schema_to_basemodelold(schema: dict[str, Any]) -> Type[BaseMode
             else:
                 # Handle array of primitives
                 item_python_type = get_pydantic_primitive_field_type(
-                    item_type, 
-                    item_format, 
-                    is_nullable=item_nullable,
-                    validator_func=KNOWN_COERCIONS.get((item_type, item_format), None),
-                    enum_values=item_enum
+                    item_type, item_format, is_nullable=item_nullable, validator_func=KNOWN_COERCIONS.get((item_type, item_format), None), enum_values=item_enum
                 )
                 array_type = list[item_python_type]  # type: ignore
 
-            field_definitions[prop_name] = (
-                array_type if not is_nullable else Optional[array_type],
-                Field(default_val, **field_kwargs)
-            )
+            field_definitions[prop_name] = (array_type if not is_nullable else Optional[array_type], Field(default_val, **field_kwargs))
 
         else:
             # e) Primitive
@@ -1599,12 +1575,11 @@ def convert_json_schema_to_basemodelold(schema: dict[str, Any]) -> Type[BaseMode
 def is_basemodel_subclass(t: Any) -> bool:
     return isinstance(t, type) and issubclass(t, BaseModel)
 
+
 def is_already_optional(t: Any) -> bool:
     """Return True if type t is Optional[...] or includes None in a Union."""
-    return (
-        (get_origin(t) in {Union, types.UnionType})
-        and type(None) in get_args(t)
-    )
+    return (get_origin(t) in {Union, types.UnionType}) and type(None) in get_args(t)
+
 
 def convert_basemodel_to_partial_basemodel(base_model: Type[BaseModel]) -> Type[BaseModel]:
     """
@@ -1659,24 +1634,19 @@ def convert_basemodel_to_partial_basemodel(base_model: Type[BaseModel]) -> Type[
         field_definitions[field_name] = (cast(type, maybe_optional_type), None)
 
     # Dynamically create a new model
-    return create_model(
-        f"Partial{base_model.__name__}",
-        __config__=base_model.model_config,
-        __module__="__main__",
-        **field_definitions
-    )
+    return create_model(f"Partial{base_model.__name__}", __config__=base_model.model_config, __module__="__main__", **field_definitions)
 
 
 def load_json_schema(json_schema: Union[dict[str, Any], Path, str]) -> dict[str, Any]:
     """
     Load a JSON schema from either a dictionary or a file path.
-    
+
     Args:
         json_schema: Either a dictionary containing the schema or a path to a JSON file
-        
+
     Returns:
         dict[str, Any]: The loaded JSON schema
-        
+
     Raises:
         JSONDecodeError: If the schema file contains invalid JSON
         FileNotFoundError: If the schema file doesn't exist
@@ -1685,7 +1655,6 @@ def load_json_schema(json_schema: Union[dict[str, Any], Path, str]) -> dict[str,
         with open(json_schema) as f:
             return json.load(f)
     return json_schema
-
 
 
 def filter_reasoning_fields(data: dict[str, Any]) -> dict[str, Any]:
@@ -1701,10 +1670,7 @@ def filter_reasoning_fields(data: dict[str, Any]) -> dict[str, Any]:
             if isinstance(value, dict):
                 filtered[key] = filter_reasoning_fields(value)
             elif isinstance(value, list):
-                filtered[key] = [
-                    filter_reasoning_fields(item) if isinstance(item, dict) else item 
-                    for item in value
-                ]
+                filtered[key] = [filter_reasoning_fields(item) if isinstance(item, dict) else item for item in value]
             else:
                 filtered[key] = value
 
@@ -1722,9 +1688,9 @@ def filter_reasoning_fields_json(data: str) -> dict[str, Any]:
 def get_all_paths(schema: dict[str, Any]) -> list[str]:
     """
     Extract all possible JSON pointer paths from a JSON Schema.
-    
+
     This function traverses a JSON Schema and generates a list of all possible paths
-    that could exist in a document conforming to that schema. For arrays, it uses '*' 
+    that could exist in a document conforming to that schema. For arrays, it uses '*'
     as a wildcard index.
 
     Args:
@@ -1732,7 +1698,7 @@ def get_all_paths(schema: dict[str, Any]) -> list[str]:
 
     Returns:
         list[str]: A list of dot-notation paths (e.g. ["person.name", "person.addresses.*.street"])
-        
+
     Example:
         >>> schema = {
         ...     "type": "object",
@@ -1753,7 +1719,7 @@ def get_all_paths(schema: dict[str, Any]) -> list[str]:
         ['name', 'addresses', 'addresses.*.street']
     """
     paths: list[str] = []
-    
+
     def _traverse(current_schema: dict[str, Any], current_path: str = "") -> None:
         if any(key in current_schema for key in ["oneOf", "allOf"]):
             raise ValueError("OneOf and AllOf are not supported yet.")
@@ -1769,18 +1735,18 @@ def get_all_paths(schema: dict[str, Any]) -> list[str]:
         if "properties" in current_schema:
             for prop_name, prop_schema in current_schema["properties"].items():
                 new_path = f"{current_path}.{prop_name}" if current_path else prop_name
-                
+
                 # If property is a leaf node (has type but no properties/items)
                 if not any(key in prop_schema for key in ["properties", "items"]):
                     paths.append(new_path)
                 else:
                     _traverse(prop_schema, new_path)
-                    
+
         # Handle $ref schemas
         elif "$ref" in current_schema:
             # Skip refs for now since we don't have access to the full schema with definitions
             pass
-            
+
         # Handle anyOf/oneOf/allOf schemas
 
         elif any(key in current_schema for key in ["anyOf", "oneOf", "allOf"]):
@@ -1789,10 +1755,9 @@ def get_all_paths(schema: dict[str, Any]) -> list[str]:
                 if key in current_schema and current_schema[key]:
                     _traverse(current_schema[key][0], current_path)
                     break
-    
+
     _traverse(schema)
     return paths
-
 
 
 def convert_schema_to_layout(schema: dict[str, Any]) -> Layout:
@@ -1818,11 +1783,7 @@ def convert_schema_to_layout(schema: dict[str, Any]) -> Layout:
     def is_object_via_any_of(sch: dict[str, Any]) -> bool:
         any_of = sch.get("anyOf")
         if isinstance(any_of, list):
-            return any(
-                (extract_ref(option) and extract_ref_schema(extract_ref(option), defs))
-                or is_object_schema(option)
-                for option in any_of
-            )
+            return any((extract_ref(option) and extract_ref_schema(extract_ref(option), defs)) or is_object_schema(option) for option in any_of)
         return False
 
     def property_is_object(prop_schema: dict[str, Any]) -> bool:
@@ -1897,9 +1858,7 @@ def convert_schema_to_layout(schema: dict[str, Any]) -> Layout:
     top_level_items: list[Row | RowList | FieldItem | RefObject] = []
     for prop_name, prop_schema in top_level_props.items():
         if property_is_object(prop_schema):
-            top_level_items.append(
-                Row(type="row", name=prop_name, items=[handle_object(prop_name, prop_schema)])
-            )
+            top_level_items.append(Row(type="row", name=prop_name, items=[handle_object(prop_name, prop_schema)]))
         elif property_is_array(prop_schema):
             top_level_items.append(handle_array_items(prop_name, prop_schema))
         else:
@@ -1941,6 +1900,7 @@ def get_type_str(field_schema):
     else:
         return "unknown"
 
+
 def process_schema_field(field_name, field_schema, level, new_line_sep: str = "\n", field_name_prefix: str = ""):
     """
     Process a single field in the JSON schema.
@@ -1950,35 +1910,35 @@ def process_schema_field(field_name, field_schema, level, new_line_sep: str = "\
     md = ""
     field_name_complete = field_name_prefix + field_name
 
-
     # Extract type information
     type_str = get_type_str(field_schema)
     # md += f"**Type**: {type_str}{new_line_sep}"
 
     header = "#" * level + f" {field_name_complete} ({type_str})"
     md += header + new_line_sep
-    
+
     # Extract description (or use a placeholder if not provided)
     description = field_schema.get("description", None)
     if description is not None:
         md += f"<Description>\n{description}\n</Description>"
     else:
         md += "<Description></Description>"
-    
+
     md += new_line_sep * 2
-    
+
     # If the field is an object with its own properties, process those recursively.
     if field_schema.get("type") == "object" and "properties" in field_schema:
         for sub_field_name, sub_field_schema in field_schema["properties"].items():
             md += process_schema_field(sub_field_name, sub_field_schema, level + 1, field_name_prefix=field_name_complete + ".")
-    
+
     # If the field is an array and its items are objects with properties, process them.
     elif field_schema.get("type") == "array" and "items" in field_schema:
         items_schema = field_schema["items"]
         if items_schema.get("type") == "object" and "properties" in items_schema:
             md += process_schema_field("*", items_schema, level + 1, field_name_prefix=field_name_complete + ".")
-    
+
     return md
+
 
 def json_schema_to_nlp_data_structure(schema: dict) -> str:
     """
@@ -1998,61 +1958,62 @@ def json_schema_to_nlp_data_structure(schema: dict) -> str:
     return md
 
 
-
 def nlp_data_structure_to_field_descriptions(nlp_data_structure: str) -> dict:
     """
     This function updates the JSON schema with the descriptions from the NLP data structure.
-    
+
     Args:
         schema: The original JSON schema dictionary
         nlp_data_structure: A markdown string created by json_schema_to_nlp_data_structure, potentially with updated descriptions
-        
+
     Returns:
         A new schema with updated descriptions from the NLP data structure
     """
-    
+
     # Pattern to match headers and extract field_name and type
     # Example: "### field_name (type)" or "#### parent.child (type)"
     header_pattern = re.compile(r'^(#+)\s+([^\s(]+)\s*\(([^)]*)\)')
-    
+
     # Pattern to extract description between tags
     description_pattern = re.compile(r'<Description>(.*?)</Description>', re.DOTALL)
-    
+
     # Split the markdown by lines
     lines = nlp_data_structure.split('\n')
-    
+
     # Process the markdown to extract field names and descriptions
     field_descriptions = {}
-    
+
     i = 0
     while i < len(lines):
         line = lines[i]
-        
+
         # Check if this line is a header
         header_match = header_pattern.match(line)
         if header_match:
             field_path = header_match.group(2)  # Field name or path
-            
+
             # Look for description in subsequent lines until next header
             desc_start = i + 1
             while desc_start < len(lines) and not header_pattern.match(lines[desc_start]):
                 desc_start += 1
-                
+
             # Extract description from the block of text
-            description_block = "\n".join(lines[i+1:desc_start])
+            description_block = "\n".join(lines[i + 1 : desc_start])
             desc_match = description_pattern.search(description_block)
             if desc_match:
                 description_text = desc_match.group(1).strip()
                 field_descriptions[field_path] = description_text
-            
+
             i = desc_start - 1  # Will be incremented in the loop
-        
+
         i += 1
     return field_descriptions
 
+
 ##### JSON Schema Sanitization  #####
 
-SchemaPath = Tuple[Union[str, int], ...]          # e.g. ('address', 'city') or ('items', 3)
+SchemaPath = Tuple[Union[str, int], ...]  # e.g. ('address', 'city') or ('items', 3)
+
 
 def _pick_subschema(schemas: list[dict[str, Any]], value: Any) -> dict[str, Any]:
     """
@@ -2063,23 +2024,22 @@ def _pick_subschema(schemas: list[dict[str, Any]], value: Any) -> dict[str, Any]
     Fallback: the first subschema (so we *always* return something).
     """
     pytypes_to_json = {
-        str:    "string",
-        int:    "integer",
-        float:  "number",
-        bool:   "boolean",
+        str: "string",
+        int: "integer",
+        float: "number",
+        bool: "boolean",
         type(None): "null",
-        dict:   "object",
-        list:   "array",
+        dict: "object",
+        list: "array",
     }
     jstype = pytypes_to_json.get(type(value))
 
     for sub in schemas:
         allowed = sub.get("type")
-        if allowed is None or allowed == jstype or (
-            isinstance(allowed, list) and jstype in allowed
-        ):
+        if allowed is None or allowed == jstype or (isinstance(allowed, list) and jstype in allowed):
             return sub
-    return schemas[0]          # last resort
+    return schemas[0]  # last resort
+
 
 def __sanitize_instance(instance: Any, schema: dict[str, Any], path: SchemaPath = ()) -> Any:
     """
@@ -2095,33 +2055,28 @@ def __sanitize_instance(instance: Any, schema: dict[str, Any], path: SchemaPath 
     # ------------- objects -----------------
     if schema.get("type") == "object" and isinstance(instance, MutableMapping):
         props = schema.get("properties", {})
-        return {
-            k: __sanitize_instance(v, props.get(k, {}), path + (k,))
-            for k, v in instance.items()
-        }
+        return {k: __sanitize_instance(v, props.get(k, {}), path + (k,)) for k, v in instance.items()}
 
     # ------------- arrays ------------------
     if schema.get("type") == "array" and isinstance(instance, MutableSequence):
         item_schema = schema.get("items", {})
-        return [
-            __sanitize_instance(v, item_schema, path + (i,))
-            for i, v in enumerate(instance)
-        ]
+        return [__sanitize_instance(v, item_schema, path + (i,)) for i, v in enumerate(instance)]
 
     # ------------- primitive strings -------
     if schema.get("type") == "string" and isinstance(instance, str):
         max_len = schema.get("maxLength")
         if max_len is not None and len(instance) > max_len:
-            print("="*100)
+            print("=" * 100)
             _path = ".".join(map(str, path)) or "<root>"
             print(
                 f"Trimmed {_path} from {len(instance)}→{max_len} characters",
             )
-            print("="*100)
+            print("=" * 100)
             return instance[:max_len]
 
     # ------------- all other primitives ----
     return instance
+
 
 def sanitize(instance: Any, schema: dict[str, Any]) -> Any:
     expanded_schema = expand_refs(schema)

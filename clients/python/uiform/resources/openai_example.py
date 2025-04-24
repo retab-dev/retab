@@ -1,12 +1,14 @@
-from pydantic import BaseModel
 from openai import OpenAI
+from pydantic import BaseModel
 
 client = OpenAI()
+
 
 class CalendarEvent(BaseModel):
     name: str
     date: str
     participants: list[str]
+
 
 completion = client.beta.chat.completions.parse(
     model="gpt-4o-2024-08-06",

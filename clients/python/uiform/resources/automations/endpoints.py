@@ -1,29 +1,24 @@
-from typing import Any, Optional, Literal, Dict
-from pydantic import HttpUrl
+import datetime
 from pathlib import Path
-
-from ..._resource import SyncAPIResource, AsyncAPIResource
-from ...types.standards import PreparedRequest
-from ...types.automations.endpoints import Endpoint, UpdateEndpointRequest, ListEndpoints
-
-from ...types.mime import MIMEData
-
-
-from ...types.image_settings import ImageSettings
-from ...types.modalities import Modality
-from ..._utils.ai_models import assert_valid_model_extraction
-from ...types.standards import PreparedRequest
+from typing import Any, Dict, Literal, Optional
 
 import httpx
-import datetime
-# from ...types.documents.extractions import DocumentExtractResponse
-from ...types.mime import MIMEData, BaseMIMEData
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from pydantic import HttpUrl
+
+from ..._resource import AsyncAPIResource, SyncAPIResource
+from ..._utils.ai_models import assert_valid_model_extraction
+from ...types.automations.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
+from ...types.image_settings import ImageSettings
 from ...types.logs import ExternalRequestLog
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+# from ...types.documents.extractions import DocumentExtractResponse
+from ...types.mime import BaseMIMEData, MIMEData
+from ...types.modalities import Modality
+from ...types.standards import PreparedRequest
+
 
 class EndpointsMixin:
-
     def prepare_create(
         self,
         name: str,
@@ -55,7 +50,7 @@ class EndpointsMixin:
         return PreparedRequest(method="POST", url="/v1/automations/endpoints", data=request.model_dump(mode='json'))
 
     def prepare_list(
-        self,   
+        self,
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
@@ -76,15 +71,15 @@ class EndpointsMixin:
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
-        
+
         return PreparedRequest(method="GET", url="/v1/automations/endpoints", params=params)
 
     def prepare_get(self, endpoint_id: str) -> PreparedRequest:
         """Get a specific endpoint configuration.
-        
+
         Args:
             endpoint_id: ID of the endpoint
-            
+
         Returns:
             Endpoint: The endpoint configuration
         """
@@ -102,9 +97,9 @@ class EndpointsMixin:
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        ) -> PreparedRequest:
+    ) -> PreparedRequest:
         data: dict[str, Any] = {}
-        
+
         if endpoint_id is not None:
             data["id"] = endpoint_id
         if name is not None:
@@ -132,9 +127,10 @@ class EndpointsMixin:
     def prepare_delete(self, endpoint_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/automations/endpoints/{endpoint_id}")
 
+
 class Endpoints(SyncAPIResource, EndpointsMixin):
     """Endpoints API wrapper for managing endpoint configurations"""
-    
+
     def create(
         self,
         name: str,
@@ -149,7 +145,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Endpoint:
         """Create a new endpoint configuration.
-        
+
         Args:
             name: Name of the endpoint
             webhook_url: Webhook endpoint URL
@@ -163,17 +159,13 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         Returns:
             Endpoint: The created endpoint configuration
         """
-        request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, 
-                                    image_settings, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_settings, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
-        print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f"/v1/endpoints/{response['id']}"}")
+        print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f'/v1/endpoints/{response["id"]}'}")
         return Endpoint.model_validate(response)
 
-
-
-
     def list(
-        self,   
+        self,
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
@@ -183,7 +175,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         webhook_url: Optional[str] = None,
     ) -> ListEndpoints:
         """List endpoint configurations with pagination support.
-        
+
         Args:
             before: Optional cursor for pagination before a specific endpoint ID
             after: Optional cursor for pagination after a specific endpoint ID
@@ -192,7 +184,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
             endpoint_id: Optional filter by endpoint ID
             name: Optional filter by endpoint name
             webhook_url: Optional filter by webhook URL
-            
+
         Returns:
             ListEndpoints: Paginated list of endpoint configurations with metadata
         """
@@ -202,10 +194,10 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
 
     def get(self, endpoint_id: str) -> Endpoint:
         """Get a specific endpoint configuration.
-        
+
         Args:
             endpoint_id: ID of the endpoint
-            
+
         Returns:
             Endpoint: The endpoint configuration
         """
@@ -227,7 +219,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
     ) -> Endpoint:
         """Update an endpoint configuration.
-        
+
         Args:
             endpoint_id: ID of the endpoint to update
             name: New name for the endpoint
@@ -242,20 +234,20 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         Returns:
             Endpoint: The updated endpoint configuration
         """
-        request = self.prepare_update(endpoint_id, name, webhook_url, webhook_headers, 
-                                    json_schema, image_settings, modality, model, temperature, reasoning_effort)
+        request = self.prepare_update(endpoint_id, name, webhook_url, webhook_headers, json_schema, image_settings, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
         return Endpoint.model_validate(response)
 
     def delete(self, endpoint_id: str) -> None:
         """Delete an endpoint configuration.
-        
+
         Args:
             endpoint_id: ID of the endpoint to delete
         """
         request = self.prepare_delete(endpoint_id)
         self._client._prepared_request(request)
         print(f"Endpoint Deleted. ID: {endpoint_id}")
+
 
 class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
     """Async Endpoints API wrapper for managing endpoint configurations"""
@@ -273,12 +265,11 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Endpoint:
-        request = self.prepare_create(name, webhook_url, json_schema, webhook_headers,
-                                    image_settings, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_settings, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
-        print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f"/v1/endpoints/{response['id']}"}")
+        print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f'/v1/endpoints/{response["id"]}'}")
         return Endpoint.model_validate(response)
-    
+
     async def list(
         self,
         before: Optional[str] = None,
@@ -292,12 +283,12 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         request = self.prepare_list(before, after, limit, order, endpoint_id, name, webhook_url)
         response = await self._client._prepared_request(request)
         return ListEndpoints.model_validate(response)
-    
+
     async def get(self, endpoint_id: str) -> Endpoint:
         request = self.prepare_get(endpoint_id)
         response = await self._client._prepared_request(request)
         return Endpoint.model_validate(response)
-    
+
     async def update(
         self,
         endpoint_id: str,
@@ -310,12 +301,11 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        ) -> Endpoint:
-        request = self.prepare_update(endpoint_id, name, webhook_url, webhook_headers,
-                                    json_schema, image_settings, modality, model, temperature, reasoning_effort)
+    ) -> Endpoint:
+        request = self.prepare_update(endpoint_id, name, webhook_url, webhook_headers, json_schema, image_settings, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
         return Endpoint.model_validate(response)
-    
+
     async def delete(self, endpoint_id: str) -> None:
         request = self.prepare_delete(endpoint_id)
         await self._client._prepared_request(request)

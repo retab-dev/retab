@@ -1,28 +1,27 @@
-from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationInfo, model_validator
-from typing import  Any, Literal
-
-import datetime
 import base64
+import datetime
+from typing import Any, Literal
 
-from ..._utils.ai_models import find_provider_from_model
-from ..ai_models import get_model_card
-
-from ..modalities import Modality
-from ..ai_models import AIProvider
-from ..standards import ErrorDetail, StreamingBaseModel
-from ..mime import MIMEData
-from ..image_settings import ImageSettings
-from ..chat import ChatCompletionUiformMessage
-
-from openai.types.chat.chat_completion import ChatCompletion
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from anthropic.types.message import Message
 from anthropic.types.message_param import MessageParam
 from openai.types.chat import ChatCompletionMessageParam
-from openai.types.responses.response_input_param import ResponseInputItemParam
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+from openai.types.chat.chat_completion_chunk import Choice as ChoiceChunk
+from openai.types.chat.chat_completion_chunk import ChoiceDelta as ChoiceDeltaChunk
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
 from openai.types.responses.response import Response
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, Choice as ChoiceChunk, ChoiceDelta as ChoiceDeltaChunk
+from openai.types.responses.response_input_param import ResponseInputItemParam
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
+
+from ..._utils.ai_models import find_provider_from_model
+from ..ai_models import AIProvider, get_model_card
+from ..chat import ChatCompletionUiformMessage
+from ..image_settings import ImageSettings
+from ..mime import MIMEData
+from ..modalities import Modality
+from ..standards import ErrorDetail, StreamingBaseModel
 
 
 class DocumentExtractRequest(BaseModel):
@@ -30,17 +29,20 @@ class DocumentExtractRequest(BaseModel):
 
     document: MIMEData = Field(..., description="Document to be analyzed")
     modality: Modality
-    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-    reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
+    reasoning_effort: ChatCompletionReasoningEffort = Field(
+        default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
+    )
     n_consensus: int = Field(default=1, description="Number of consensus models to use for extraction. If greater than 1 the temperature cannot be 0.")
     # Regular fields
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=True, description="If true, the extraction will be stored in the database")
     need_validation: bool = Field(default=False, description="If true, the extraction will be validated against the schema")
+
     @property
     def provider(self) -> AIProvider:
         """
@@ -50,7 +52,7 @@ class DocumentExtractRequest(BaseModel):
             AIProvider: The AI provider corresponding to the given model.
         """
         return find_provider_from_model(self.model)
-    
+
     # Add a model validator that rejects n_consensus > 1 if temperature is 0
     @field_validator("n_consensus")
     def check_n_consensus(cls, v: int, info: ValidationInfo) -> int:
@@ -60,10 +62,13 @@ class DocumentExtractRequest(BaseModel):
             info.data["temperature"] = 0.5
         return v
 
+
 class ConsensusModel(BaseModel):
     model: str = Field(description="Model name")
     temperature: float = Field(default=0.0, description="Temperature for consensus")
-    reasoning_effort: ChatCompletionReasoningEffort = Field(default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used.")
+    reasoning_effort: ChatCompletionReasoningEffort = Field(
+        default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
+    )
 
     @property
     def provider(self) -> AIProvider:
@@ -74,7 +79,7 @@ class ConsensusModel(BaseModel):
             AIProvider: The AI provider corresponding to the given model.
         """
         return find_provider_from_model(self.model)
-    
+
 
 # class DocumentExtractRequestWithConsensus(BaseModel):
 #     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -96,17 +101,19 @@ class ConsensusModel(BaseModel):
 
 
 class UiParsedChoice(ParsedChoice):
-   # Adaptable ParsedChoice that allows None for the finish_reason
-   finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore    
+    # Adaptable ParsedChoice that allows None for the finish_reason
+    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
+
 
 LikelihoodsSource = Literal["consensus", "log_probs"]
+
 
 class UiParsedChatCompletion(ParsedChatCompletion):
     choices: list[UiParsedChoice]
     # Additional metadata fields (UIForm)
-    likelihoods: Any # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
+    likelihoods: Any  # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
     schema_validation_error: ErrorDetail | None = None
-    likelihoods_source : LikelihoodsSource = "log_probs"
+    likelihoods_source: LikelihoodsSource = "log_probs"
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
@@ -114,7 +121,7 @@ class UiParsedChatCompletion(ParsedChatCompletion):
 
 
 # class UiParsedChoiceStream(ParsedChoice):
-#    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore    
+#    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None      # type: ignore
 
 # class UiParsedChatCompletionStream(StreamingBaseModel, UiParsedChatCompletion):
 #     choices: List[UiParsedChoiceStream]  # type: ignore
@@ -159,15 +166,17 @@ class LogExtractionRequest(BaseModel):
 
         return data
 
+
 class LogExtractionResponse(BaseModel):
-    extraction_id: str | None = None    # None only in case of error
+    extraction_id: str | None = None  # None only in case of error
     status: Literal["success", "error"]
     error_message: str | None = None
+
 
 # DocumentExtractResponse = UiParsedChatCompletion
 
 
-###### I'll place here for now -- New Streaming API 
+###### I'll place here for now -- New Streaming API
 
 
 # We build from the openai.types.chat.chat_completion_chunk.ChatCompletionChunk adding just two three additional fields:
@@ -176,19 +185,23 @@ class LogExtractionResponse(BaseModel):
 # - likelihoods: dict[str, float]     #  The delta of the flattened likelihoods (to be merged with the cumulated likelihoods)
 # - schema_validation_error: ErrorDetail | None = None #  The error in the schema validation of the total accumulated content
 
+
 class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     flat_likelihoods: dict[str, float] = {}
     flat_parsed: dict[str, Any] = {}
     flat_deleted_keys: list[str] = []
     missing_content: str = ""
     is_valid_json: bool = False
+
+
 class UiParsedChoiceChunk(ChoiceChunk):
     delta: UiParsedChoiceDeltaChunk
+
 
 class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     choices: list[UiParsedChoiceChunk]
     schema_validation_error: ErrorDetail | None = None
-    likelihoods_source : LikelihoodsSource = "log_probs"
+    likelihoods_source: LikelihoodsSource = "log_probs"
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")

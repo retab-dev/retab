@@ -3,9 +3,11 @@
 # ---------------------------------------------
 
 import os
+
 from dotenv import load_dotenv
-from uiform import UiForm, Schema
 from openai import OpenAI
+
+from uiform import Schema, UiForm
 from uiform._utils.json_schema import filter_reasoning_fields_json
 
 # Load environment variables
@@ -21,31 +23,21 @@ assert uiform_api_key, "Missing UIFORM_API_KEY"
 json_schema = {
     'X-SystemPrompt': 'You are a useful assistant extracting information from documents.',
     'properties': {
-        'name': {
-            'X-FieldPrompt': 'Provide a descriptive and concise name for the event.',
-            'description': 'The name of the calendar event.',
-            'title': 'Name',
-            'type': 'string'
-        },
+        'name': {'X-FieldPrompt': 'Provide a descriptive and concise name for the event.', 'description': 'The name of the calendar event.', 'title': 'Name', 'type': 'string'},
         'date': {
             'X-ReasoningPrompt': 'The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.',
             'description': 'The date of the calendar event in ISO 8601 format.',
             'title': 'Date',
-            'type': 'string'
-        }
+            'type': 'string',
+        },
     },
     'required': ['name', 'date'],
     'title': 'CalendarEvent',
-    'type': 'object'
+    'type': 'object',
 }
 
 # Optional image preprocessing
-image_settings = {
-    "correct_image_orientation": True,
-    "dpi": 72,
-    "image_to_text": "ocr",
-    "browser_canvas": "A4"
-}
+image_settings = {"correct_image_orientation": True, "dpi": 72, "image_to_text": "ocr", "browser_canvas": "A4"}
 
 # Configuration
 model = "gpt-4o"
@@ -67,20 +59,11 @@ response = client.responses.create(
     model=model,
     temperature=temperature,
     input=schema_obj.openai_responses_input + doc_msg.openai_responses_input,
-    text={
-        "format": {
-            "type": "json_schema",
-            "name": schema_obj.id,
-            "schema": schema_obj.inference_json_schema,
-            "strict": True
-        }
-    }
+    text={"format": {"type": "json_schema", "name": schema_obj.id, "schema": schema_obj.inference_json_schema, "strict": True}},
 )
 
 # Validate response and remove reasoning fields
-extraction = schema_obj.pydantic_model.model_validate(
-    filter_reasoning_fields_json(response.output_text)
-)
+extraction = schema_obj.pydantic_model.model_validate(filter_reasoning_fields_json(response.output_text))
 
 # Output
 print("\n✅ Extracted Result (Responses API):")

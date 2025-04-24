@@ -1,34 +1,30 @@
+import base64
 import io
-from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
-from openai.types.chat.chat_completion_content_part_text_param import ChatCompletionContentPartTextParam
+import logging
+from typing import List, Literal, Optional, Union, cast
+
+import requests
+from anthropic.types.content_block import ContentBlock
+from anthropic.types.image_block_param import ImageBlockParam, Source
+from anthropic.types.message_param import MessageParam
+from anthropic.types.text_block_param import TextBlockParam
+from anthropic.types.tool_result_block_param import ToolResultBlockParam
+from anthropic.types.tool_use_block_param import ToolUseBlockParam
+from google.genai.types import BlobDict, ContentDict, ContentUnionDict, PartDict  # type: ignore
+from google.generativeai.types import content_types  # type: ignore
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam
 from openai.types.chat.chat_completion_content_part_input_audio_param import ChatCompletionContentPartInputAudioParam
-
-from google.generativeai.types import content_types  # type: ignore
-
-from anthropic.types.message_param import MessageParam
-from anthropic.types.content_block import ContentBlock
-from anthropic.types.text_block_param import TextBlockParam
-from anthropic.types.image_block_param import ImageBlockParam, Source
-from anthropic.types.tool_use_block_param import ToolUseBlockParam
-from anthropic.types.tool_result_block_param import ToolResultBlockParam
-
-import logging
-import base64
-import requests
+from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
+from openai.types.chat.chat_completion_content_part_text_param import ChatCompletionContentPartTextParam
+from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from PIL import Image
-from typing import Union, Literal, cast, List, Optional
-from google.genai.types import PartDict, BlobDict, ContentDict, ContentUnionDict # type: ignore
 
 from ..types.chat import ChatCompletionUiformMessage
 
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 
-def convert_to_google_genai_format(
-    messages: List[ChatCompletionUiformMessage]
-) -> tuple[str, list[ContentUnionDict]]:
+def convert_to_google_genai_format(messages: List[ChatCompletionUiformMessage]) -> tuple[str, list[ContentUnionDict]]:
     """
     Converts a list of ChatCompletionUiFormMessage to a format compatible with the google.genai SDK.
 
@@ -36,16 +32,16 @@ def convert_to_google_genai_format(
     Example:
         ```python
         import google.generativeai as genai
-        
+
         # Configure the Gemini client
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-        
+
         # Initialize the model
         model = genai.GenerativeModel("gemini-2.0-flash")
-        
+
         # Get messages in Gemini format
         gemini_messages = document_message.gemini_messages
-        
+
         # Generate a response
         ```
 
@@ -65,7 +61,7 @@ def convert_to_google_genai_format(
             assert isinstance(message["content"], str), "System message content must be a string."
             if system_message != "":
                 raise ValueError("Only one system message is allowed per chat.")
-            system_message+= message["content"]
+            system_message += message["content"]
             continue
         parts: list[PartDict] = []
 
@@ -92,14 +88,18 @@ def convert_to_google_genai_format(
                             parts.append(PartDict(inline_data=BlobDict(data=image_bytes, mime_type=media_type)))
                         except Exception:
                             pass
-                elif part["type"] == "input_audio": pass
-                elif part["type"] == "file": pass
-                else: pass
-    
+                elif part["type"] == "input_audio":
+                    pass
+                elif part["type"] == "file":
+                    pass
+                else:
+                    pass
+
         formatted_content.append(ContentDict(parts=parts, role=("user" if message["role"] == "user" else "model")))
 
     return system_message, formatted_content
-    
+
+
 def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> tuple[str, List[MessageParam]]:
     """
     Converts a list of ChatCompletionUiformMessage to a format compatible with the Anthropic SDK.
@@ -128,7 +128,7 @@ def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> 
             assert isinstance(message["content"], str), "System message content must be a string."
             if system_message != "":
                 raise ValueError("Only one system message is allowed per chat.")
-            system_message+= message["content"]
+            system_message += message["content"]
             continue
 
         # -----------------------
@@ -136,20 +136,24 @@ def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> 
         # -----------------------
         if isinstance(message['content'], str):
             # Direct string content is treated as a single text block
-            content_blocks.append({
-                "type": "text",
-                "text": message['content'],
-            })
+            content_blocks.append(
+                {
+                    "type": "text",
+                    "text": message['content'],
+                }
+            )
 
         elif isinstance(message['content'], list):
             # Handle structured content
             for part in message['content']:
                 if part["type"] == "text":
                     part = cast(ChatCompletionContentPartTextParam, part)
-                    content_blocks.append({
-                        "type": "text",
-                        "text": part['text'],  # type: ignore
-                    })
+                    content_blocks.append(
+                        {
+                            "type": "text",
+                            "text": part['text'],  # type: ignore
+                        }
+                    )
 
                 elif part["type"] == "input_audio":
                     part = cast(ChatCompletionContentPartInputAudioParam, part)
@@ -176,9 +180,7 @@ def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> 
                             # fallback "image/jpeg" if no Content-Type given
 
                             # Only keep recognized image/* for anthropic
-                            if content_type not in (
-                                "image/jpeg", "image/png", "image/gif", "image/webp"
-                            ):
+                            if content_type not in ("image/jpeg", "image/png", "image/gif", "image/webp"):
                                 logging.warning(
                                     "Unrecognized Content-Type '%s' - defaulting to image/jpeg",
                                     content_type,
@@ -199,19 +201,23 @@ def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> 
                             continue
 
                     # Finally, append to content blocks
-                    content_blocks.append({
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": cast(MediaType, media_type),
-                            "data": base64_data,
+                    content_blocks.append(
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": cast(MediaType, media_type),
+                                "data": base64_data,
+                            },
                         }
-                    })
+                    )
 
-        formatted_messages.append(MessageParam(
-            role=message["role"],  # type: ignore
-            content=content_blocks
-        ))
+        formatted_messages.append(
+            MessageParam(
+                role=message["role"],  # type: ignore
+                content=content_blocks,
+            )
+        )
 
     return system_message, formatted_messages
 
@@ -220,32 +226,24 @@ def convert_from_anthropic_format(messages: list[MessageParam], system_prompt: s
     """
     Converts a list of Anthropic MessageParam to a list of ChatCompletionUiformMessage.
     """
-    formatted_messages: list[ChatCompletionUiformMessage] = [
-        ChatCompletionUiformMessage(role="developer", content=system_prompt)
-    ]
-    
+    formatted_messages: list[ChatCompletionUiformMessage] = [ChatCompletionUiformMessage(role="developer", content=system_prompt)]
+
     for message in messages:
         role = message["role"]
         content_blocks = message["content"]
-        
+
         # Handle different content structures
         if isinstance(content_blocks, list) and len(content_blocks) == 1 and isinstance(content_blocks[0], dict) and content_blocks[0].get("type") == "text":
             # Simple text message
-            formatted_messages.append(cast(ChatCompletionUiformMessage, {
-                "role": role,
-                "content": content_blocks[0].get("text", "")
-            }))
+            formatted_messages.append(cast(ChatCompletionUiformMessage, {"role": role, "content": content_blocks[0].get("text", "")}))
         elif isinstance(content_blocks, list):
             # Message with multiple content parts or non-text content
             formatted_content: list[ChatCompletionContentPartParam] = []
-            
+
             for block in content_blocks:
                 if isinstance(block, dict):
                     if block.get("type") == "text":
-                        formatted_content.append(cast(ChatCompletionContentPartParam, {
-                            "type": "text",
-                            "text": block.get("text", "")
-                        }))
+                        formatted_content.append(cast(ChatCompletionContentPartParam, {"type": "text", "text": block.get("text", "")}))
                     elif block.get("type") == "image":
                         source = block.get("source", {})
                         if isinstance(source, dict) and source.get("type") == "base64":
@@ -253,31 +251,25 @@ def convert_from_anthropic_format(messages: list[MessageParam], system_prompt: s
                             media_type = source.get("media_type", "image/jpeg")
                             data = source.get("data", "")
                             image_url = f"data:{media_type};base64,{data}"
-                            
-                            formatted_content.append(cast(ChatCompletionContentPartParam, {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": image_url
-                                }
-                            }))
-            
-            formatted_messages.append(cast(ChatCompletionUiformMessage, {
-                "role": role,
-                "content": formatted_content
-            }))
-    
+
+                            formatted_content.append(cast(ChatCompletionContentPartParam, {"type": "image_url", "image_url": {"url": image_url}}))
+
+            formatted_messages.append(cast(ChatCompletionUiformMessage, {"role": role, "content": formatted_content}))
+
     return formatted_messages
 
 
 def convert_to_openai_format(messages: List[ChatCompletionUiformMessage]) -> List[ChatCompletionMessageParam]:
     return cast(list[ChatCompletionMessageParam], messages)
-    
+
 
 def convert_from_openai_format(messages: list[ChatCompletionMessageParam]) -> list[ChatCompletionUiformMessage]:
     return cast(list[ChatCompletionUiformMessage], messages)
 
 
-def separate_messages(messages: list[ChatCompletionUiformMessage]) -> tuple[Optional[ChatCompletionUiformMessage], list[ChatCompletionUiformMessage], list[ChatCompletionUiformMessage]]:
+def separate_messages(
+    messages: list[ChatCompletionUiformMessage],
+) -> tuple[Optional[ChatCompletionUiformMessage], list[ChatCompletionUiformMessage], list[ChatCompletionUiformMessage]]:
     """
     Separates messages into system, user and assistant messages.
 
@@ -316,6 +308,7 @@ def str_messages(messages: list[ChatCompletionUiformMessage], max_length: int = 
     Returns:
         str: A string representation of the messages with applied truncation.
     """
+
     def truncate(text: str, max_len: int) -> str:
         """Truncate text to max_len with ellipsis."""
         return text if len(text) <= max_len else f"{text[:max_len]}..."

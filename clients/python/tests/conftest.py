@@ -1,38 +1,28 @@
-import pytest
-import os
 import json
+import os
 import shutil
 from typing import IO, Any
+
+import pytest
+
 os.environ["EMAIL_DOMAIN"] = "devmail.uiform.com"
-from uiform import UiForm, AsyncUiForm
+from enum import Enum
 from typing import Generator
+
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-from enum import Enum
 
+from uiform import AsyncUiForm, UiForm
 
 # Get the directory containing the tests
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption(
-            "--production",
-            action="store_true",
-            default=False,
-            help="run tests against production API"
-        )
-    parser.addoption(
-            "--local",
-            action="store_true",
-            default=False,
-            help="run tests against local API"
-    )
-    parser.addoption(
-            "--staging",
-            action="store_true",
-            default=False,
-            help="run tests against staging API"
-        )
+    parser.addoption("--production", action="store_true", default=False, help="run tests against production API")
+    parser.addoption("--local", action="store_true", default=False, help="run tests against local API")
+    parser.addoption("--staging", action="store_true", default=False, help="run tests against staging API")
+
 
 @pytest.fixture(scope="session", autouse=True)
 def load_env(request: pytest.FixtureRequest) -> None:
@@ -45,14 +35,15 @@ def load_env(request: pytest.FixtureRequest) -> None:
         env_file = "../../.env.staging"
     else:
         raise ValueError("No environment specified. Please use --production or --local or --staging.")
-    
+
     env_path = os.path.join(os.path.dirname(TEST_DIR), env_file)
     print("loading env file: ", env_path)
     if not os.path.exists(env_path):
         raise FileNotFoundError(f"Environment file not found: {env_path}")
-    
+
     load_dotenv(env_path, override=True)
     print("EMAIL_DOMAIN", os.environ["EMAIL_DOMAIN"])
+
 
 class EnvConfig(BaseModel):
     uiform_api_key: str = Field(..., description="UiForm API key")
@@ -62,8 +53,9 @@ class EnvConfig(BaseModel):
     # gemini_api_key: str = Field(..., description="Gemini API key")
     # xai_api_key: str = Field(..., description="XAI API key")
 
+
 @pytest.fixture(scope="session")
-def api_keys(load_env: None) -> EnvConfig:  
+def api_keys(load_env: None) -> EnvConfig:
     uiform_api_key = os.getenv("UIFORM_API_KEY")
     uiform_api_base_url = os.getenv("UIFORM_API_BASE_URL")
     openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -87,13 +79,16 @@ def api_keys(load_env: None) -> EnvConfig:
         # xai_api_key=xai_api_key
     )
 
+
 @pytest.fixture(scope="session")
 def base_url(request: pytest.FixtureRequest, api_keys: EnvConfig) -> str:
     return api_keys.uiform_api_base_url
 
+
 @pytest.fixture(scope="session")
 def uiform_api_key(api_keys: EnvConfig) -> str:
     return api_keys.uiform_api_key
+
 
 @pytest.fixture(scope="function")
 def sync_client(base_url: str, uiform_api_key: str, api_keys: EnvConfig) -> UiForm:
@@ -104,8 +99,9 @@ def sync_client(base_url: str, uiform_api_key: str, api_keys: EnvConfig) -> UiFo
         # claude_api_key=api_keys.claude_api_key,
         # gemini_api_key=api_keys.gemini_api_key,
         # xai_api_key=api_keys.xai_api_key,
-        max_retries=3
+        max_retries=3,
     )
+
 
 @pytest.fixture(scope="function")
 def async_client(base_url: str, uiform_api_key: str, api_keys: EnvConfig) -> AsyncUiForm:
@@ -116,13 +112,15 @@ def async_client(base_url: str, uiform_api_key: str, api_keys: EnvConfig) -> Asy
         # claude_api_key=api_keys.claude_api_key,
         # gemini_api_key=api_keys.gemini_api_key,
         # xai_api_key=api_keys.xai_api_key,
-        max_retries=3
+        max_retries=3,
     )
+
 
 @pytest.fixture(scope="session")
 def test_data_dir() -> str:
     """Return the path to the test data directory"""
     return os.path.join(TEST_DIR, "data")
+
 
 @pytest.fixture(scope="session")
 def booking_confirmation_json_schema(test_data_dir: str) -> dict[str, Any]:
@@ -130,17 +128,20 @@ def booking_confirmation_json_schema(test_data_dir: str) -> dict[str, Any]:
     with open(schema_path) as f:
         return json.load(f)
 
+
 @pytest.fixture(scope="session")
 def booking_confirmation_file_path(test_data_dir: str) -> str:
     return os.path.join(test_data_dir, "freight", "booking_confirmation.jpg")
 
+
 @pytest.fixture(scope="session")
-def booking_confirmation_bytes(booking_confirmation_file_path: str) -> bytes:   # Not Working!
+def booking_confirmation_bytes(booking_confirmation_file_path: str) -> bytes:  # Not Working!
     with open(booking_confirmation_file_path, "rb") as f:
         return f.read()
 
+
 @pytest.fixture(scope="session")
-def booking_confirmation_io_bytes(booking_confirmation_file_path: str) -> IO[bytes]:    # Not Working!
+def booking_confirmation_io_bytes(booking_confirmation_file_path: str) -> IO[bytes]:  # Not Working!
     with open(booking_confirmation_file_path, "rb") as f:
         return f
 
@@ -161,23 +162,12 @@ def company_json_schema() -> dict[str, Any]:
         partnership = 'partnership'
 
     class Company(BaseModel):
-        name: str = Field(...,
-            description="Name of the identified company",
-            json_schema_extra={
-                "X-FieldPrompt": "Look for the name of the company, or derive it from the logo"
-            }
-        )
-        type: CompanyEnum = Field(...,
-            description="Type of the identified company",
-            json_schema_extra={
-                "X-FieldPrompt": "Guess the type depending on slide context"
-            }
-        )
-        relationship: CompanyRelation = Field(...,
+        name: str = Field(..., description="Name of the identified company", json_schema_extra={"X-FieldPrompt": "Look for the name of the company, or derive it from the logo"})
+        type: CompanyEnum = Field(..., description="Type of the identified company", json_schema_extra={"X-FieldPrompt": "Guess the type depending on slide context"})
+        relationship: CompanyRelation = Field(
+            ...,
             description="Relationship of the identified company with the startup from the deck",
-            json_schema_extra={
-                "X-FieldPrompt": "Guess the relationship of the identified company with the startup from the deck"
-            }
+            json_schema_extra={"X-FieldPrompt": "Guess the relationship of the identified company with the startup from the deck"},
         )
-    return Company.model_json_schema()
 
+    return Company.model_json_schema()
