@@ -860,22 +860,6 @@ def add_reasoning_sibling_inplace(properties: dict[str, Any], field_name: str, r
     properties.update(new_properties)
 
 
-def add_quote_sibling_inplace(properties: dict[str, Any], field_name: str) -> None:
-    """
-    Add a quote sibling for a given property field_name into properties dict.
-    We'll use the naming convention quote___<field_name>.
-    If the field_name is 'root', we add 'quote___root'.
-    """
-    quote_key = f"quote___{field_name}"
-    new_properties: dict[str, Any] = {}
-    for key, value in properties.items():
-        if key == field_name:
-            new_properties[quote_key] = {"type": "string"}
-        new_properties[key] = value
-    properties.clear()
-    properties.update(new_properties)
-
-
 def _insert_reasoning_fields_inner(schema: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
     """
     Inner function that returns (updated_schema, reasoning_desc_for_this_node).
@@ -953,7 +937,6 @@ def _insert_quote_fields_inner(schema: dict[str, Any]) -> dict[str, Any]:
         new_props = {}
         for property_key, property_value in new_schema["properties"].items():
             updated_prop_schema_value = _insert_quote_fields_inner(property_value)
-            new_props[property_key] = updated_prop_schema_value
             has_quote_field = updated_prop_schema_value.get("X-ReferenceQuote") is True
 
             # Check if this property is a leaf with X-ReferenceQuote: true
@@ -970,6 +953,7 @@ def _insert_quote_fields_inner(schema: dict[str, Any]) -> dict[str, Any]:
                 # Remove the X-ReferenceQuote field
                 updated_prop_schema_value.pop("X-ReferenceQuote", None)
 
+            new_props[property_key] = updated_prop_schema_value
         new_schema["properties"] = new_props
 
     elif "items" in new_schema:
