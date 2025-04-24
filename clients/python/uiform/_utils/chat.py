@@ -11,7 +11,6 @@ from anthropic.types.text_block_param import TextBlockParam
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
 from google.genai.types import BlobDict, ContentDict, ContentUnionDict, PartDict  # type: ignore
-from google.generativeai.types import content_types  # type: ignore
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam
 from openai.types.chat.chat_completion_content_part_input_audio_param import ChatCompletionContentPartInputAudioParam
 from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
@@ -31,7 +30,7 @@ def convert_to_google_genai_format(messages: List[ChatCompletionUiformMessage]) 
 
     Example:
         ```python
-        import google.generativeai as genai
+        import google.genai as genai
 
         # Configure the Gemini client
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])

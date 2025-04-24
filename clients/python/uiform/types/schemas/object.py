@@ -6,7 +6,6 @@ from typing import Any, Iterable, Literal, Self, cast
 
 from anthropic.types.message_param import MessageParam
 
-# from google.generativeai.types import content_types # type: ignore
 from google.genai.types import ContentUnionDict  # type: ignore
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
