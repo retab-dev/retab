@@ -1,5 +1,8 @@
-from typing import List, Union, Dict, Optional, Literal, Any
-from pydantic import BaseModel, Field as PydanticField
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from pydantic import BaseModel
+from pydantic import Field as PydanticField
+
 
 # Terminal items
 class FieldItem(BaseModel):
@@ -22,10 +25,7 @@ class Column(BaseModel):
     items: List[Union["Row", FieldItem, RefObject, "RowList"]] = PydanticField(default_factory=list)
     name: Optional[str] = None
 
-    model_config = {
-        "arbitrary_types_allowed": True
-    }
-
+    model_config = {"arbitrary_types_allowed": True}
 
 
 class Row(BaseModel):
@@ -33,18 +33,15 @@ class Row(BaseModel):
     name: Optional[str] = None
     items: List[Column | FieldItem | RefObject]
 
-    model_config = {
-        "arbitrary_types_allowed": True
-    }
+    model_config = {"arbitrary_types_allowed": True}
+
 
 class RowList(BaseModel):
     type: Literal["rowList"]
     name: Optional[str] = None
     items: List[Column | FieldItem | RefObject] = PydanticField(default_factory=list)
 
-    model_config = {
-        "arbitrary_types_allowed": True
-    }
+    model_config = {"arbitrary_types_allowed": True}
 
 
 # Root Layout type
@@ -55,8 +52,7 @@ class Layout(BaseModel):
     size: int
     items: List[Row | RowList | FieldItem | RefObject] = PydanticField(default_factory=list)
 
-    model_config = {
-        "arbitrary_types_allowed": True
-    }
+    model_config = {"arbitrary_types_allowed": True}
+
 
 Column.model_rebuild()

@@ -2,21 +2,23 @@
 ## FastAPI app to receive UiForm webhook events (with ngrok tunnel)
 # ---------------------------------------------
 
-from fastapi import FastAPI
-from pyngrok import ngrok
-from dotenv import load_dotenv
-import os
 import json
+import os
+
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
+from pyngrok import ngrok
 
 from uiform.types.automations.webhooks import WebhookRequest
 from uiform.types.documents.extractions import UiParsedChatCompletion, UiParsedChoice
 from uiform.types.mime import MIMEData
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 
 # Load environment variables
 load_dotenv()
 
 app = FastAPI()
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -59,6 +61,7 @@ async def startup_event():
     print(f"curl -X POST {webhook_url} -H \"Content-Type: application/json\" -d '{example_body.model_dump_json()}'")
     print("-" * 80)
 
+
 @app.post("/webhook")
 async def webhook(request: WebhookRequest):
     parsed_data = json.loads(request.completion.choices[0].message.content or "{}")
@@ -66,6 +69,8 @@ async def webhook(request: WebhookRequest):
     print(json.dumps(parsed_data, indent=2))
     return {"status": "success", "data": parsed_data}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,21 +1,20 @@
+from typing import Any
 
+import nanoid  # type: ignore
 import pytest
 from pydantic import HttpUrl
-from typing import Any
+
 from uiform import UiForm
-import nanoid # type: ignore
+
+
 @pytest.mark.asyncio
 async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path: str) -> None:
     test_idx = nanoid.generate().lower()
     email_address = f"bert2_{test_idx}@devmail.uiform.com"
     webhook_url = HttpUrl('http://localhost:4000/product')
-    
+
     # Create
-    mailbox = sync_client.automations.mailboxes.create(
-        email=email_address,
-        json_schema=company_json_schema, 
-        webhook_url=webhook_url
-    )
+    mailbox = sync_client.automations.mailboxes.create(email=email_address, json_schema=company_json_schema, webhook_url=webhook_url)
     try:
         assert mailbox.email == email_address
         assert mailbox.webhook_url == webhook_url
@@ -44,7 +43,6 @@ async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str
         #             headers=headers
         #         )
         #         assert response.status_code == 200
-
 
         # Delete
         sync_client.automations.mailboxes.delete(email_address)

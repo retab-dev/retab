@@ -3,7 +3,9 @@
 # ---------------------------------------------
 
 import os
+
 from dotenv import load_dotenv
+
 from uiform import UiForm
 
 # Load environment variables
@@ -27,20 +29,20 @@ with open("../../assets/booking_confirmation.jpg", "rb") as f:
                     'X-FieldPrompt': 'Provide a descriptive and concise name for the event.',
                     'description': 'The name of the calendar event.',
                     'title': 'Name',
-                    'type': 'string'
+                    'type': 'string',
                 },
                 'date': {
                     'X-ReasoningPrompt': 'The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.',
                     'description': 'The date of the calendar event in ISO 8601 format.',
                     'title': 'Date',
-                    'type': 'string'
-                }
+                    'type': 'string',
+                },
             },
             'required': ['name', 'date'],
             'title': 'CalendarEvent',
-            'type': 'object'
+            'type': 'object',
         },
-        modality="text"
+        modality="text",
     )
 
 # Output

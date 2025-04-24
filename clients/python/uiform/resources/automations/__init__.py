@@ -1,6 +1,6 @@
 from .client import (
-    Automations,
     AsyncAutomations,
+    Automations,
 )
 
 __all__ = [

@@ -1,9 +1,3 @@
-from .client import (
-    Documents,
-    AsyncDocuments
-)
+from .client import AsyncDocuments, Documents
 
-__all__ = [
-    "Documents",
-    "AsyncDocuments"
-]
+__all__ = ["Documents", "AsyncDocuments"]

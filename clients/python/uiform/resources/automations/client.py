@@ -1,18 +1,20 @@
-from typing import Any
-import hmac
 import hashlib
+import hmac
 import json
+from typing import Any
 
-from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._resource import AsyncAPIResource, SyncAPIResource
+from .endpoints import AsyncEndpoints, Endpoints
+from .links import AsyncLinks, Links
+from .mailboxes import AsyncMailboxes, Mailboxes
+from .outlook import AsyncOutlooks, Outlooks
 
-from .mailboxes import Mailboxes, AsyncMailboxes
-from .links import Links, AsyncLinks
-from .outlook import Outlooks, AsyncOutlooks
-from .endpoints import Endpoints, AsyncEndpoints
 
 class SignatureVerificationError(Exception):
     """Raised when webhook signature verification fails."""
+
     pass
+
 
 class AutomationsMixin:
     def _verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
@@ -30,18 +32,15 @@ class AutomationsMixin:
         Raises:
             SignatureVerificationError: If the signature verification fails
         """
-        expected_signature = hmac.new(
-            secret.encode(),
-            event_body,
-            hashlib.sha256
-        ).hexdigest()
+        expected_signature = hmac.new(secret.encode(), event_body, hashlib.sha256).hexdigest()
 
         if not hmac.compare_digest(event_signature, expected_signature):
             raise SignatureVerificationError("Invalid signature")
 
         return json.loads(event_body.decode('utf-8'))
 
-class Automations(SyncAPIResource, AutomationsMixin): 
+
+class Automations(SyncAPIResource, AutomationsMixin):
     """Automations API wrapper"""
 
     def __init__(self, client: Any) -> None:
@@ -50,11 +49,13 @@ class Automations(SyncAPIResource, AutomationsMixin):
         self.links = Links(client=client)
         self.outlook = Outlooks(client=client)
         self.endpoints = Endpoints(client=client)
+
     def verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.
         """
         return self._verify_event(event_body, event_signature, secret)
+
 
 class AsyncAutomations(AsyncAPIResource, AutomationsMixin):
     """Async Automations API wrapper"""

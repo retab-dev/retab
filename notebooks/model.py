@@ -12,9 +12,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class AddressDataSimple(BaseModel):
-    city: Optional[str] = Field(
-        None, description='City, district, suburb, town, or village.', title='City'
-    )
+    city: Optional[str] = Field(None, description='City, district, suburb, town, or village.', title='City')
     postal_code: Optional[str] = Field(
         None,
         description='ZIP or postal code. If french postal code, it should be a pure number, without letters.',
@@ -38,9 +36,7 @@ class AddressDataSimple(BaseModel):
 
 
 class ClientData(BaseModel):
-    company_name: Optional[str] = Field(
-        None, description='Legal company name for billing', title='Company Name'
-    )
+    company_name: Optional[str] = Field(None, description='Legal company name for billing', title='Company Name')
     SIREN: Optional[str] = Field(
         None,
         description='SIREN number for billing and tax purposes. Usually located at the top or the very bottom of the document. (small text), and located alongside the other billing informations',
@@ -51,9 +47,7 @@ class ClientData(BaseModel):
         description='The VAT number is present for billing and tax purposes. Usually located at the top or the very bottom of the document, and located alongside the other billing informations (small text).\nIn France the VAT number format is FR {2 digits validation key} {first 9 digits SIREN number} so try use the SIREN number if available to help validate the VAT number.\nDocument your reasoning for the VAT number identification:\n1. Look for numbers prefixed with \'FR\' or labeled as \'TVA\', \'VAT\', or \'n° TVA\'\n2. Verify the format matches FR followed by key of 2 digits and 9 digits of SIREN number\n3. Note where you found it in the document\n\nExample: "Found VAT number FR12345678901 in footer next to SIREN number"\n\nIf multiple possible VAT numbers exist, explain your choice. If none found, state "No VAT number identified in document.',
         title='Vat Number Thinking',
     )
-    VAT_number: Optional[str] = Field(
-        None, description='VAT number Value', title='Vat Number'
-    )
+    VAT_number: Optional[str] = Field(None, description='VAT number Value', title='Vat Number')
     city: Optional[str] = Field(
         None,
         description='City, district, suburb, town, or village of billing address',
@@ -74,9 +68,7 @@ class ClientData(BaseModel):
         description='Unique code for the client used to connect the booking to the client in the TMS. It is rarely provided. If not provided, set to None',
         title='Code',
     )
-    email: Optional[str] = Field(
-        None, description='Client email address', title='Email'
-    )
+    email: Optional[str] = Field(None, description='Client email address', title='Email')
 
 
 class UNPackingGroup(Enum):
@@ -106,18 +98,10 @@ class DangerousGoodsInfoData(BaseModel):
         description='Document your analysis of the goods information from the source document. Include:\n\n1. Description of what\'s being transported\n2. Any reference numbers or codes found\n3. Special handling requirements\n4. Equipment needs\n5. Safety considerations\n6. Documentation requirements\n7. The presence of returnable Euro pallets (it has to be explicitly stated that the pallets are EU pallets in the source document in the sender section (not in the legal mentions))\n\n*Some observations you may consider about the weight:*\n- Sometimes the weight appears in tons, or kilograms. If the unit is not specified, assume it is in kilograms. However, the weight may appear like "12T400" which means 12.4 tons.\n- Some weight examples: "1500" -> 1500 kg, "1T500" -> 1.500 tons -> 1500 kg, "7T565" -> 7.565 tons -> 7565 kg, "12 tons" -> 12000 kg, "14 tonnes" -> 14000 kg\n\n*Example of thinking output:*\n```\nSource indicates: \n- 12 pallets of automotive parts\n- Reference: ORDER123, BATCH456\n- Requires forklift for unloading\n- Non-stackable items\n- Fragile goods warning labels needed"\n- Weight is in displayed in tons - its value is 5.4 tons, which is equivalent to 5400 kg.\n```\nList all relevant details found in the source document. Do not make assumptions about information that isn\'t explicitly stated.',
         title='Thinking',
     )
-    weight: Optional[float] = Field(
-        None, description='Weight of the dangerous good (in kilograms)', title='Weight'
-    )
-    UN_code: Optional[int] = Field(
-        None, description='UN code of the dangerous good', title='Un Code'
-    )
-    UN_label: Optional[str] = Field(
-        None, description='UN label of the dangerous good', title='Un Label'
-    )
-    UN_class: Optional[str] = Field(
-        None, description='UN class of the dangerous good', title='Un Class'
-    )
+    weight: Optional[float] = Field(None, description='Weight of the dangerous good (in kilograms)', title='Weight')
+    UN_code: Optional[int] = Field(None, description='UN code of the dangerous good', title='Un Code')
+    UN_label: Optional[str] = Field(None, description='UN label of the dangerous good', title='Un Label')
+    UN_class: Optional[str] = Field(None, description='UN class of the dangerous good', title='Un Class')
     UN_packing_group: Optional[UNPackingGroup] = Field(
         None,
         description='UN packing group of the dangerous good',
@@ -154,17 +138,13 @@ class DimensionsData(BaseModel):
         description='A loading meter (LM) is a measurement of the cargo space occupied in a truck, calculated based on the item’s footprint relative to the truck’s standard internal width of 2.4 meters. This measurement helps determine how much linear floor space is needed to transport the goods efficiently.\n\nIf loading meters are provided in the source (often labeled as Mètre linéaire (ML) or Mètre plancher (MPL)), use that value directly, noting it as “Using provided value of X loading meters.”\n\nIf not, calculate as follows:\n\n\t1.\tFor each item: (length × width) / 2.4.\n\t2.\tSum all calculated loading meters.\n\nFor example:\n\n\t•\tItem 1 is 3m × 1.2m, so it takes (3 × 1.2) / 2.4 = 1.5 loading meters.\n\t•\tItem 2 is 2m × 1.6m, so it takes (2 × 1.6) / 2.4 = 1.33 loading meters.\n\nTotal loading meters: 1.5 + 1.33 = 2.83 meters\n\nFor each item, write down the formula, insert values, and compute explicitly.\nTake your time to think rigourously. Do not hesitate to write down intermediate steps. WARNING: VOLUME WILL NOT BE IN ml, this is the unit used for loading meters - ml stands for metres lineaires.',
         title='Loading Meters Thinking',
     )
-    loading_meters: Optional[float] = Field(
-        None, description='Loading meters value', title='Loading Meters'
-    )
+    loading_meters: Optional[float] = Field(None, description='Loading meters value', title='Loading Meters')
     volume_thinking: Optional[str] = Field(
         None,
         description='Volume represents the total space occupied by an item in cubic meters, calculated as (length × width × height).\n\nIf volume is provided in the source, use that value directly and note it as, “Using provided value of X cubic meters.”\n\nIf not, calculate as follows:\n\n\t1.\tFor each item: length × width × height.\n\t2.\tSum the volumes of all items for the total volume.\n\nExample:\n\n\t•\tItem 1: 2m × 1m × 1.5m = 3 cubic meters\n\t•\tItem 2: 1.5m × 1m × 1m = 1.5 cubic meters\n\nTotal volume: 3 + 1.5 = 4.5 cubic meters\n\nFor each item, write down the formula, insert values, and compute explicitly. Take your time to ensure accuracy, and write intermediate steps if necessary.',
         title='Volume Thinking',
     )
-    volume: Optional[float] = Field(
-        None, description='Volume value in cubic meters', title='Volume'
-    )
+    volume: Optional[float] = Field(None, description='Volume value in cubic meters', title='Volume')
 
 
 class PackingType(Enum):
@@ -181,17 +161,13 @@ class PackingData(BaseModel):
         description="Type of packing - make sure you don't say it's a pallet (e.g. it says PAL) if you are not sure",
         title='Packing Type',
     )
-    supplementary_parcels: Optional[int] = Field(
-        None, description='Number of additional parcels', title='Supplementary Parcels'
-    )
+    supplementary_parcels: Optional[int] = Field(None, description='Number of additional parcels', title='Supplementary Parcels')
     pallets_on_ground_thinking: Optional[str] = Field(
         None,
         description='This field calculates the equivalent floor area occupied by packing units, expressed in terms of standard EUR pallets (1.2m × 0.8m). Follow these steps for each pallet, then sum the results to get the total floor pallet equivalent:\n\n\t1.\tFor each pallet: (length × width) / (1.2 × 0.8).\n\t2.\tSum the calculations to get the total floor pallet equivalent area.\n\nExample Calculations:\n\nExample 1: 6 EUR Pallets (Standard Size)\n\nIf all 6 pallets are standard EUR pallets:\n\n\t•\tEach pallet occupies: (1.2 × 0.8) / (1.2 × 0.8) = 1 pallet equivalent.\n\t•\tTotal for 6 pallets: 1 + 1 + 1 + 1 + 1 + 1 = 6.\n\nSo, floor pallet equivalent = 6.\n\nExample 2: Two Custom Pallets\n\n\t•\tPallet 1: 1.5m × 0.9m, so 1.5 × 0.9 / (1.2 × 0.8) ≈ 1.41.\n\t•\tPallet 2: 1.0m × 1.1m, so 1.0 × 1.1 / (1.2 × 0.8) ≈ 1.15.\n\nTotal floor pallet equivalent = 1.41 + 1.15 = 2.56.\n\nFor each pallet, write down the formula, insert values, and compute explicitly.\nTake your time to think rigourously. Do not hesitate to write down intermediate steps.',
         title='Pallets On Ground Thinking',
     )
-    pallets_on_ground: Optional[float] = Field(
-        None, description='pallets on ground value', title='Pallets On Ground'
-    )
+    pallets_on_ground: Optional[float] = Field(None, description='pallets on ground value', title='Pallets On Ground')
     number_eur_pallet: Optional[int] = Field(
         None,
         description='Number of pallets that follow the European standard, i.e. marked as something like EUR or EPAL. If not explicitly mentioned, set to 0.',
@@ -223,9 +199,7 @@ class PickupDatetimeData(BaseModel):
 
 
 class RecipientData(BaseModel):
-    company_name: Optional[str] = Field(
-        None, description='Name of the company.', title='Company Name'
-    )
+    company_name: Optional[str] = Field(None, description='Name of the company.', title='Company Name')
     address: Optional[AddressDataSimple] = Field(
         default_factory=lambda: AddressDataSimple.parse_obj(
             {
@@ -238,16 +212,10 @@ class RecipientData(BaseModel):
         ),
         description='Address of the recipient.',
     )
-    phone_number: Optional[str] = Field(
-        None, description='Phone number of the recipient.', title='Phone Number'
-    )
-    email_address: Optional[EmailStr] = Field(
-        None, description='Email address of the recipient.', title='Email Address'
-    )
+    phone_number: Optional[str] = Field(None, description='Phone number of the recipient.', title='Phone Number')
+    email_address: Optional[EmailStr] = Field(None, description='Email address of the recipient.', title='Email Address')
     delivery_datetime: Optional[DeliveryDatetimeData] = Field(
-        default_factory=lambda: DeliveryDatetimeData.parse_obj(
-            {'date': None, 'start_time': None, 'end_time': None}
-        ),
+        default_factory=lambda: DeliveryDatetimeData.parse_obj({'date': None, 'start_time': None, 'end_time': None}),
         description='delivery date and time. Must be after the pickup date and time.',
     )
     observations: Optional[str] = Field(
@@ -258,9 +226,7 @@ class RecipientData(BaseModel):
 
 
 class SenderData(BaseModel):
-    company_name: Optional[str] = Field(
-        None, description='Name of the company.', title='Company Name'
-    )
+    company_name: Optional[str] = Field(None, description='Name of the company.', title='Company Name')
     address: Optional[AddressDataSimple] = Field(
         default_factory=lambda: AddressDataSimple.parse_obj(
             {
@@ -273,16 +239,10 @@ class SenderData(BaseModel):
         ),
         description='Address of the sender.',
     )
-    phone_number: Optional[str] = Field(
-        None, description='Phone number of the sender.', title='Phone Number'
-    )
-    email_address: Optional[EmailStr] = Field(
-        None, description='Email address of the sender.', title='Email Address'
-    )
+    phone_number: Optional[str] = Field(None, description='Phone number of the sender.', title='Phone Number')
+    email_address: Optional[EmailStr] = Field(None, description='Email address of the sender.', title='Email Address')
     pickup_datetime: Optional[PickupDatetimeData] = Field(
-        default_factory=lambda: PickupDatetimeData.parse_obj(
-            {'date': None, 'start_time': None, 'end_time': None}
-        ),
+        default_factory=lambda: PickupDatetimeData.parse_obj({'date': None, 'start_time': None, 'end_time': None}),
         description='pickup date and time.',
     )
     observations: Optional[str] = Field(
@@ -299,15 +259,9 @@ class Category(Enum):
 
 
 class TemperatureInfosData(BaseModel):
-    min_temperature: Optional[float] = Field(
-        None, description='Minimum temperature (in Celsius)', title='Min Temperature'
-    )
-    max_temperature: Optional[float] = Field(
-        None, description='Maximum temperature (in Celsius)', title='Max Temperature'
-    )
-    category: Optional[Category] = Field(
-        None, description='Temperature control requirements', title='Category'
-    )
+    min_temperature: Optional[float] = Field(None, description='Minimum temperature (in Celsius)', title='Min Temperature')
+    max_temperature: Optional[float] = Field(None, description='Maximum temperature (in Celsius)', title='Max Temperature')
+    category: Optional[Category] = Field(None, description='Temperature control requirements', title='Category')
 
 
 class TransportPriceData(BaseModel):
@@ -316,9 +270,7 @@ class TransportPriceData(BaseModel):
         description='Net price of the booking order (excluding taxes)',
         title='Total Price',
     )
-    currency: Optional[str] = Field(
-        None, description='Three-letter currency code (ISO 4217).', title='Currency'
-    )
+    currency: Optional[str] = Field(None, description='Three-letter currency code (ISO 4217).', title='Currency')
 
 
 class VehicleType(Enum):
@@ -383,14 +335,10 @@ class GoodsData(BaseModel):
         description='Packing details of the good',
     )
     dimensions: Optional[DimensionsData] = Field(
-        default_factory=lambda: DimensionsData.parse_obj(
-            {'loading_meters': None, 'volume': None}
-        ),
+        default_factory=lambda: DimensionsData.parse_obj({'loading_meters': None, 'volume': None}),
         description='Dimensions of the good',
     )
-    weight: Optional[float] = Field(
-        None, description='Weight of the good (in kilograms)', title='Weight'
-    )
+    weight: Optional[float] = Field(None, description='Weight of the good (in kilograms)', title='Weight')
     temperature_infos: Optional[TemperatureInfosData] = Field(
         {'min_temperature': None, 'max_temperature': None, 'category': None},
         description='Temperature infos of the good',
@@ -479,9 +427,7 @@ class ShipmentData(BaseModel):
         description='Description of transported goods',
     )
     transport_constraints: Optional[TruckData] = Field(
-        default_factory=lambda: TruckData.parse_obj(
-            {'vehicle_type': None, 'body_type': None, 'tail_lift': None, 'crane': None}
-        ),
+        default_factory=lambda: TruckData.parse_obj({'vehicle_type': None, 'body_type': None, 'tail_lift': None, 'crane': None}),
         description='List of transport constraints informations',
     )
 

@@ -1,10 +1,11 @@
-
 from pydantic import BaseModel
 
-from .batch_annotation import AnnotationProps, AnnotationInputData
-from ..._utils.benchmarking import EvalMetrics,SingleFileEval,compute_dict_difference
+from ..._utils.benchmarking import EvalMetrics, SingleFileEval, compute_dict_difference
+from .batch_annotation import AnnotationInputData, AnnotationProps
+
 # This job will generate two datasets from the original dataset, one with the first annotation and one with the second annotation
 # It will then evaluate the two datasets using the evaluation metrics and return an EvalMetrics object
+
 
 class EvaluationInputData(BaseModel):
     original_dataset_id: str
@@ -24,13 +25,13 @@ class EvaluationInputData(BaseModel):
 #     dashboard_db: AsyncIOMotorDatabase,
 # ) -> EvalMetrics:
 #     # Generate two datasets from the original dataset
-    
-#     # Create the actual dataset objects. 
 
-#     # Solution: 
+#     # Create the actual dataset objects.
+
+#     # Solution:
 #     # 1. Create the two datasets objects
 #     # 2. Duplicate all the dataset membership objects for the two datasets (with the right dataset_id)
-    
+
 #     # 3. Annotate the two datasets with the two annotation props
 #     annotation_job_1 = AnnotationJob(
 #         input_data=AnnotationInputData(
@@ -64,7 +65,7 @@ class EvaluationInputData(BaseModel):
 #         settings=settings,
 #         dashboard_db=dashboard_db,
 #     )
-    
+
 #     def compute_all_single_file_evals(
 #         dataset_1: Dataset,
 #         dataset_2: Dataset,
@@ -79,7 +80,7 @@ class EvaluationInputData(BaseModel):
 #                     dict_2=dataset_2.get_file(file_id),
 #                 )
 #             )
-        
+
 #         for file_id in dataset_2.file_ids:
 #             single_file_evals.append(
 #                 SingleFileEval(
@@ -115,7 +116,7 @@ class EvaluationInputData(BaseModel):
 #                 )
 #                 )
 
-            
+
 #         )
 #     # Then go through all the entries in the datasets and compute the evaluation metrics
 #     compute_all_single_file_evals(
@@ -127,9 +128,6 @@ class EvaluationInputData(BaseModel):
 #     compute_eval_metrics
 
 
-
-
 #     raise NotImplementedError("Not implemented")
 
 #     return eval_metrics
-

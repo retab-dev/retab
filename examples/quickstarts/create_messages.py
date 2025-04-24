@@ -3,9 +3,11 @@
 # ---------------------------------------------
 
 import os
+
 from dotenv import load_dotenv
-from uiform import UiForm
 from openai import OpenAI
+
+from uiform import UiForm
 
 # Load environment variables
 load_dotenv()
@@ -18,18 +20,11 @@ assert uiform_api_key, "Missing UIFORM_API_KEY"
 
 # UiForm Setup
 uiclient = UiForm(api_key=uiform_api_key)
-doc_msg = uiclient.documents.create_messages(
-    document="../../assets/booking_confirmation.jpg"
-)
+doc_msg = uiclient.documents.create_messages(document="../../assets/booking_confirmation.jpg")
 
 # OpenAI Summarization (no schema)
 client = OpenAI(api_key=api_key)
-completion = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=doc_msg.openai_messages + [
-        {"role": "user", "content": "Summarize the document"}
-    ]
-)
+completion = client.chat.completions.create(model="gpt-4o-mini", messages=doc_msg.openai_messages + [{"role": "user", "content": "Summarize the document"}])
 
 # Output
 print("\n📝 OpenAI Completion Output:")

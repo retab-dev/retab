@@ -1,15 +1,19 @@
-from typing import Any, Optional, Iterator, AsyncIterator, BinaryIO, List
-from types import TracebackType
-import os
-import httpx
 import json
+import os
+from types import TracebackType
+from typing import Any, AsyncIterator, BinaryIO, Iterator, List, Optional
+
 import backoff
 import backoff.types
+import httpx
 from pydantic_core import PydanticUndefined
 
-from .resources import documents, files, finetuning, models, schemas, automations, secrets, usage, completions
+from .resources import automations, completions, documents, files, finetuning, models, schemas, secrets, usage
 from .types.standards import PreparedRequest
-class MaxRetriesExceeded(Exception): pass
+
+
+class MaxRetriesExceeded(Exception):
+    pass
 
 
 def raise_max_tries_exceeded(details: backoff.types.Details) -> None:
@@ -19,6 +23,7 @@ def raise_max_tries_exceeded(details: backoff.types.Details) -> None:
         raise Exception(f"Max tries exceeded after {tries} tries.") from exception
     else:
         raise Exception(f"Max tries exceeded after {tries} tries.")
+
 
 class BaseUiForm:
     """Base class for UiForm clients that handles authentication and configuration.
@@ -32,7 +37,7 @@ class BaseUiForm:
         timeout (float): Request timeout in seconds. Defaults to 240.0
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
         openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
-        
+
     Raises:
         ValueError: If no API key is provided through arguments or environment variables
     """
@@ -48,9 +53,9 @@ class BaseUiForm:
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
-        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        gemini_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
+        # claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        # xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
     ) -> None:
         if api_key is None:
             api_key = os.environ.get("UIFORM_API_KEY")
@@ -61,7 +66,7 @@ class BaseUiForm:
                 "Then either pass it to the client (api_key='your-key') or set the UIFORM_API_KEY environment variable"
             )
 
-        if base_url is None:    
+        if base_url is None:
             base_url = os.environ.get("UIFORM_API_BASE_URL", "https://api.uiform.com")
 
         self.api_key = api_key
@@ -76,31 +81,30 @@ class BaseUiForm:
         if openai_api_key is PydanticUndefined:
             openai_api_key = os.environ.get("OPENAI_API_KEY")
 
-        #if claude_api_key is PydanticUndefined:
+        # if claude_api_key is PydanticUndefined:
         #    claude_api_key = os.environ.get("CLAUDE_API_KEY")
-        
-        #if xai_api_key is PydanticUndefined:
+
+        # if xai_api_key is PydanticUndefined:
         #    xai_api_key = os.environ.get("XAI_API_KEY")
 
         if gemini_api_key is PydanticUndefined:
-           gemini_api_key = os.environ.get("GEMINI_API_KEY")
+            gemini_api_key = os.environ.get("GEMINI_API_KEY")
 
         if openai_api_key:
             self.headers["OpenAI-Api-Key"] = openai_api_key
 
-        #if claude_api_key:
+        # if claude_api_key:
         #    self.headers["Claude-Api-Key"] = claude_api_key
 
-        #if xai_api_key:
+        # if xai_api_key:
         #    self.headers["XAI-Api-Key"] = xai_api_key
 
         if gemini_api_key:
-           self.headers["Gemini-Api-Key"] = gemini_api_key
-
+            self.headers["Gemini-Api-Key"] = gemini_api_key
 
     def _prepare_url(self, endpoint: str) -> str:
         return f"{self.base_url}/{endpoint.lstrip('/')}"
-    
+
     def _validate_response(self, response_object: httpx.Response) -> None:
         if response_object.status_code >= 500:
             response_object.raise_for_status()
@@ -108,15 +112,17 @@ class BaseUiForm:
             raise RuntimeError(f"Validation error (422): {response_object.text}")
         elif not response_object.is_success:
             raise RuntimeError(f"Request failed ({response_object.status_code}): {response_object.text}")
+
     def _get_headers(self, idempotency_key: str | None = None) -> dict[str, Any]:
         headers = self.headers.copy()
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
         return headers
 
+
 class UiForm(BaseUiForm):
     """Synchronous client for interacting with the UiForm API.
-    
+
     This client provides synchronous access to all UiForm API resources including files, fine-tuning,
     prompt optimization, documents, models, datasets, and schemas.
 
@@ -139,6 +145,7 @@ class UiForm(BaseUiForm):
         datasets: Access to dataset operations
         schemas: Access to schema operations
     """
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -146,10 +153,9 @@ class UiForm(BaseUiForm):
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
-        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-
+        gemini_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
+        # claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        # xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
     ) -> None:
         super().__init__(
             api_key=api_key,
@@ -158,10 +164,10 @@ class UiForm(BaseUiForm):
             max_retries=max_retries,
             openai_api_key=openai_api_key,
             gemini_api_key=gemini_api_key,
-            #claude_api_key=claude_api_key,
-            #xai_api_key=xai_api_key,
+            # claude_api_key=claude_api_key,
+            # xai_api_key=xai_api_key,
         )
-        
+
         self.client = httpx.Client(timeout=self.timeout)
 
         self.files = files.Files(client=self)
@@ -176,8 +182,13 @@ class UiForm(BaseUiForm):
         self.completions = completions.Completions(client=self)
 
     def _request(
-            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None,
-            raise_for_status: bool = False
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        idempotency_key: str | None = None,
+        raise_for_status: bool = False,
     ) -> Any:
         """Makes a synchronous HTTP request to the API.
 
@@ -194,23 +205,18 @@ class UiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
+
         def raw_request() -> Any:
-            response = self.client.request(
-                method,
-                json=data,
-                url=self._prepare_url(endpoint),
-                params=params,
-                headers=self._get_headers(idempotency_key)
-            )
+            response = self.client.request(method, json=data, url=self._prepare_url(endpoint), params=params, headers=self._get_headers(idempotency_key))
 
             self._validate_response(response)
-            
+
             return response.json()
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Any:
             return raw_request()
-        
+
         if raise_for_status:
             # If raise_for_status is True, we want to raise an exception if the request fails, not retry...
             return raw_request()
@@ -218,12 +224,18 @@ class UiForm(BaseUiForm):
             return wrapped_request()
 
     def _request_stream(
-            self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, raise_for_status: bool = False
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        idempotency_key: str | None = None,
+        raise_for_status: bool = False,
     ) -> Iterator[Any]:
         """Makes a streaming synchronous HTTP request to the API.
 
         Args:
-            method (str): HTTP method (GET, POST, etc.) 
+            method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
             data (Optional[dict]): Request payload
             params (Optional[dict]): Query parameters
@@ -234,39 +246,39 @@ class UiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
+
         def raw_request() -> Iterator[Any]:
-            with self.client.stream(
-                method, 
-                self._prepare_url(endpoint), 
-                json=data,
-                params=params,
-                headers=self._get_headers(idempotency_key)
-            ) as response_ctx_manager:
+            with self.client.stream(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
-                
+
                 for chunk in response_ctx_manager.iter_lines():
-                    if not chunk: continue
-                    try: yield json.loads(chunk)
-                    except Exception: pass
-        
+                    if not chunk:
+                        continue
+                    try:
+                        yield json.loads(chunk)
+                    except Exception:
+                        pass
+
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Iterator[Any]:
             for item in raw_request():
                 yield item
-        
+
         iterator_ = raw_request() if raise_for_status else wrapped_request()
-        
+
         for item in iterator_:
             yield item
 
     # Simplified request methods using standard PreparedRequest object
     def _prepared_request(self, request: PreparedRequest) -> Any:
-        return self._request(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status)
+        return self._request(
+            request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status
+        )
 
     def _prepared_request_stream(self, request: PreparedRequest) -> Iterator[Any]:
         for item in self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key):
             yield item
-    
+
     def close(self) -> None:
         """Closes the HTTP client session."""
         self.client.close()
@@ -290,10 +302,9 @@ class UiForm(BaseUiForm):
         self.close()
 
 
-
 class AsyncUiForm(BaseUiForm):
     """Asynchronous client for interacting with the UiForm API.
-    
+
     This client provides asynchronous access to all UiForm API resources including files, fine-tuning,
     prompt optimization, documents, models, datasets, and schemas.
 
@@ -316,6 +327,7 @@ class AsyncUiForm(BaseUiForm):
         datasets: Access to asynchronous dataset operations
         schemas: Access to asynchronous schema operations
     """
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -323,10 +335,10 @@ class AsyncUiForm(BaseUiForm):
         timeout: float = 240.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
-        gemini_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        #xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        ) -> None:
+        gemini_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
+        # claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        # xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+    ) -> None:
         super().__init__(
             api_key=api_key,
             base_url=base_url,
@@ -334,10 +346,10 @@ class AsyncUiForm(BaseUiForm):
             max_retries=max_retries,
             openai_api_key=openai_api_key,
             gemini_api_key=gemini_api_key,
-            #claude_api_key=claude_api_key,
-            #xai_api_key=xai_api_key,
+            # claude_api_key=claude_api_key,
+            # xai_api_key=xai_api_key,
         )
-        
+
         self.client = httpx.AsyncClient(timeout=self.timeout)
         self.files = files.AsyncFiles(client=self)
         self.fine_tuning = finetuning.AsyncFineTuning(client=self)
@@ -349,8 +361,15 @@ class AsyncUiForm(BaseUiForm):
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)
         self.completions = completions.AsyncCompletions(client=self)
+
     async def _request(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, raise_for_status: bool = False
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        idempotency_key: str | None = None,
+        raise_for_status: bool = False,
     ) -> Any:
         """Makes an asynchronous HTTP request to the API.
 
@@ -366,6 +385,7 @@ class AsyncUiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
+
         async def raw_request() -> Any:
             response = await self.client.request(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key))
             self._validate_response(response)
@@ -379,9 +399,15 @@ class AsyncUiForm(BaseUiForm):
             return await raw_request()
         else:
             return await wrapped_request()
-        
+
     async def _request_stream(
-        self, method: str, endpoint: str, data: Optional[dict[str, Any]] = None, params: Optional[dict[str, Any]] = None, idempotency_key: str | None = None, raise_for_status: bool = False
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        idempotency_key: str | None = None,
+        raise_for_status: bool = False,
     ) -> AsyncIterator[Any]:
         """Makes a streaming asynchronous HTTP request to the API.
 
@@ -397,19 +423,17 @@ class AsyncUiForm(BaseUiForm):
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
         """
+
         async def raw_request() -> AsyncIterator[Any]:
-            async with self.client.stream(
-                method, 
-                self._prepare_url(endpoint), 
-                json=data,
-                params=params,
-                headers=self._get_headers(idempotency_key)
-            ) as response_ctx_manager:
+            async with self.client.stream(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
                 async for chunk in response_ctx_manager.aiter_lines():
-                    if not chunk: continue
-                    try: yield json.loads(chunk)
-                    except Exception: pass
+                    if not chunk:
+                        continue
+                    try:
+                        yield json.loads(chunk)
+                    except Exception:
+                        pass
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> AsyncIterator[Any]:
@@ -417,15 +441,19 @@ class AsyncUiForm(BaseUiForm):
                 yield item
 
         async_iterator_ = raw_request() if raise_for_status else wrapped_request()
-        
+
         async for item in async_iterator_:
             yield item
 
     async def _prepared_request(self, request: PreparedRequest) -> Any:
-        return await self._request(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status)
-    
+        return await self._request(
+            request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status
+        )
+
     async def _prepared_request_stream(self, request: PreparedRequest) -> AsyncIterator[Any]:
-        async for item in self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status):
+        async for item in self._request_stream(
+            request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status
+        ):
             yield item
 
     async def close(self) -> None:

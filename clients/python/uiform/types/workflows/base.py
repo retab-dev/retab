@@ -2,18 +2,21 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, model_validator
 
-from ..jobs.base import PrepareDatasetInputData, AnnotationProps, AnnotationInputData, EvaluationInputData
-
+from ..jobs.base import AnnotationInputData, AnnotationProps, EvaluationInputData, PrepareDatasetInputData
 
 Workflows = Literal["finetuning-workflow", "annotation-workflow", "evaluation-workflow"]
 
-AnnotationModel = Literal["human"] | str    # If human, then annotation_props is not used
+AnnotationModel = Literal["human"] | str  # If human, then annotation_props is not used
+
 
 # This is the input data for the standalone annotation workflow (Fully automated)
-class StandaloneAnnotationWorkflowInputData(AnnotationInputData): pass
+class StandaloneAnnotationWorkflowInputData(AnnotationInputData):
+    pass
+
 
 # This is the input data for the standalone evaluation workflow (Fully automated)
-class StandaloneEvaluationWorkflowInputData(EvaluationInputData): pass
+class StandaloneEvaluationWorkflowInputData(EvaluationInputData):
+    pass
 
 
 # This is the input data for the standalone finetuning workflow (with human in the loop)

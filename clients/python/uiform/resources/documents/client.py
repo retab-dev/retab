@@ -1,28 +1,27 @@
-from typing import Any
-from pathlib import Path
 from io import IOBase
+from pathlib import Path
+from typing import Any
+
 import PIL.Image
 from pydantic import HttpUrl
 
-
-from ...types.modalities import Modality
-from ...types.mime import MIMEData
-from ..._utils.mime import prepare_mime_document, convert_mime_data_to_pil_image
-from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._resource import AsyncAPIResource, SyncAPIResource
+from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
 from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
-from .extractions import Extractions, AsyncExtractions
+from ...types.mime import MIMEData
+from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
+from .extractions import AsyncExtractions, Extractions
 
 
 class BaseDocumentsMixin:
     def _prepare_create_messages(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        modality: Modality = "native", 
+        modality: Modality = "native",
         image_settings: dict[str, Any] | None = None,
-        idempotency_key: str | None = None
+        idempotency_key: str | None = None,
     ) -> PreparedRequest:
-        
         mime_document = prepare_mime_document(document)
         data: dict[str, Any] = {
             "document": mime_document.model_dump(),
@@ -31,39 +30,33 @@ class BaseDocumentsMixin:
         if image_settings:
             data["image_settings"] = image_settings
 
-        
         loading_request = DocumentCreateMessageRequest.model_validate(data)
-        return PreparedRequest(
-            method="POST",
-            url="/v1/documents/create_messages",
-            data=loading_request.model_dump(),
-            idempotency_key=idempotency_key
-        )
+        return PreparedRequest(method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
 
     def _prepare_correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
 
         if not mime_document.mime_type.startswith("image/"):
             raise ValueError("Image is not a valid image")
-        
+
         return PreparedRequest(
             method="POST",
             url="/v1/documents/correct_image_orientation",
             data={"document": mime_document.model_dump()},
         )
 
-class Documents(SyncAPIResource, BaseDocumentsMixin): 
+
+class Documents(SyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper"""
 
     # TODO: Add batch methods
-    #client.documents.batch.extract()
-    #client.documents.batch.preprocess()
+    # client.documents.batch.extract()
+    # client.documents.batch.preprocess()
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.extractions = Extractions(client=client)
         # self.batch = Batch(client=client)
-
 
     def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
         """Corrects the orientation of an image using the UiForm API.
@@ -90,11 +83,13 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         mime_response = MIMEData.model_validate(response['document'])
         return convert_mime_data_to_pil_image(mime_response)
 
-    def create_messages(self, 
-            document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-            modality: Modality = "native", 
-            image_settings: dict[str, Any] | None = None,
-            idempotency_key: str | None = None) -> DocumentMessage:
+    def create_messages(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        modality: Modality = "native",
+        image_settings: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+    ) -> DocumentMessage:
         """
         Create document messages from a file using the UiForm API.
 
@@ -121,7 +116,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         return DocumentMessage.model_validate(response)
 
 
-
 class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper for asynchronous usage."""
 
@@ -129,11 +123,13 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         super().__init__(client=client)
         self.extractions = AsyncExtractions(client=client)
 
-    async def create_messages(self, 
-            document: Path | str | IOBase | MIMEData | PIL.Image.Image, 
-            modality: Modality = "native",
-            image_settings: dict[str, Any] | None = None,
-            idempotency_key: str | None = None) -> DocumentMessage:
+    async def create_messages(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image,
+        modality: Modality = "native",
+        image_settings: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+    ) -> DocumentMessage:
         """
         Create document messages from a file using the UiForm API asynchronously.
 

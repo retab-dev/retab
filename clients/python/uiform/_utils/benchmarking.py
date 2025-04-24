@@ -1,17 +1,19 @@
-from typing import Any, Literal, Callable
-from Levenshtein import distance as levenshtein_distance
-from pydantic import BaseModel
-from typing import Optional
 import datetime
-import pandas as pd # type: ignore
-import shutil
-from ..types.db.annotations import AnnotationParameters
 import re
-# The goal is to leverage this piece of code to open a jsonl file and get an analysis of the performance of the model using a one-liner. 
+import shutil
 
-
+# The goal is to leverage this piece of code to open a jsonl file and get an analysis of the performance of the model using a one-liner.
 ############# BENCHMARKING MODELS #############
 from itertools import zip_longest
+from typing import Any, Callable, Literal, Optional
+
+import pandas as pd  # type: ignore
+from Levenshtein import distance as levenshtein_distance
+from pydantic import BaseModel
+
+from ..types.db.annotations import AnnotationParameters
+
+
 def normalize_string(text: str) -> str:
     """
     Normalize a string by removing non-alphanumeric characters and lowercasing.
@@ -26,6 +28,7 @@ def normalize_string(text: str) -> str:
         return ""
     # Remove all non-alphanumeric characters and convert to lowercase
     return re.sub(r'[^a-zA-Z0-9]', '', text).lower()
+
 
 def hamming_distance_padded(s: str, t: str) -> int:
     """
@@ -43,6 +46,7 @@ def hamming_distance_padded(s: str, t: str) -> int:
     t = normalize_string(t)
 
     return sum(a != b for a, b in zip_longest(s, t, fillvalue=' '))
+
 
 def hamming_similarity(str_1: str, str_2: str) -> float:
     """
@@ -67,6 +71,7 @@ def hamming_similarity(str_1: str, str_2: str) -> float:
     dist = hamming_distance_padded(str_1, str_2)
     return 1 - (dist / max_length)
 
+
 def jaccard_similarity(str_1: str, str_2: str) -> float:
     """
     Compute the Jaccard similarity between two strings.
@@ -89,6 +94,7 @@ def jaccard_similarity(str_1: str, str_2: str) -> float:
     if not union:
         return 1.0
     return len(intersection) / len(union)
+
 
 def levenshtein_similarity(str_1: str, str_2: str) -> float:
     """
@@ -133,12 +139,12 @@ def compare_primitive_values(val1: str | int | float | bool | None, val2: str | 
     # One is None but the other has non None-compatible values (True, "string", 1, 1.5, etc.)
     elif val1 is None or val2 is None:
         return 0.0
-    
+
     # From now on, we can assume that val1 and val2 are not None.
     # Type compatibility check
     if isinstance(val1, bool) and isinstance(val2, bool):
         return 1.0 if val1 is val2 else 0.0
-    
+
     # Numeric comparison (int, float)
     if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
         # For numbers close to zero, use absolute difference
@@ -147,16 +153,18 @@ def compare_primitive_values(val1: str | int | float | bool | None, val2: str | 
         # Otherwise use relative difference
         max_val = max(abs(val1), abs(val2))
         return 1.0 - min(1.0, abs(val1 - val2) / max_val)
-    
+
     # String comparison - use the provided metric function
     if isinstance(val1, str) and isinstance(val2, str):
         return float(str_metric_function(val1, val2))
-    
+
     # If we get here, types are incompatible
     return 0.0
 
 
 dictionary_metrics = Literal["levenshtein_similarity", "jaccard_similarity", "hamming_similarity"]
+
+
 def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric: dictionary_metrics) -> dict[str, Any]:
     """
     Compute the difference between two dictionaries recursively.
@@ -267,7 +275,7 @@ def compute_dict_difference(dict1: dict[str, Any], dict2: dict[str, Any], metric
     for key in keys_symmetric_difference:
         # When the key is not present in both dictionaries, we return None.
         result[key] = None
-    
+
     for key in keys_intersect:
         # compare_values can handle None values, so we don't need to check for that.
         result[key] = compare_values(dict1_normalized[key], dict2_normalized[key], key)
@@ -279,10 +287,10 @@ def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[
     """
     Aggregate a list of dictionary differences into a single dictionary with average values,
     handling nested dictionaries recursively.
-    
+
     Args:
         dict_differences: A list of dictionaries containing similarity metrics (can be nested)
-        
+
     Returns:
         A tuple containing:
         - A dictionary with the average similarity metrics across all input dictionaries
@@ -290,30 +298,30 @@ def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[
     """
     if not dict_differences:
         return {}, {}
-    
+
     def aggregate_recursively(dicts_list: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
         # Initialize result dictionaries
         result: dict[str, Any] = {}
         uncertainty: dict[str, Any] = {}
-        
+
         # Collect all keys across all dictionaries
         all_keys: set[str] = set()
         for d in dicts_list:
             all_keys.update(d.keys())
-        
+
         for key in all_keys:
             # Collect values for this key from all dictionaries
             values = []
             for d in dicts_list:
                 if key in d:
                     values.append(d[key])
-            
+
             # Skip if no valid values
             if not values:
                 result[key] = None
                 uncertainty[key] = None
                 continue
-                
+
             # Check if values are nested dictionaries
             if all(isinstance(v, dict) for v in values if v is not None):
                 # Filter out None values
@@ -328,11 +336,11 @@ def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[
             else:
                 # Handle leaf nodes (numeric values)
                 numeric_values = [v for v in values if v is not None and isinstance(v, (int, float))]
-                
+
                 if numeric_values:
                     mean = sum(numeric_values) / len(numeric_values)
                     result[key] = mean
-                    
+
                     if len(numeric_values) > 1:
                         variance = sum((x - mean) ** 2 for x in numeric_values) / (len(numeric_values) - 1)
                         uncertainty[key] = max(0, variance) ** 0.5
@@ -341,9 +349,9 @@ def aggregate_dict_differences(dict_differences: list[dict[str, Any]]) -> tuple[
                 else:
                     result[key] = None
                     uncertainty[key] = None
-        
+
         return result, uncertainty
-    
+
     return aggregate_recursively(dict_differences)
 
 
@@ -351,10 +359,11 @@ class SingleFileEval(BaseModel):
     """
     A class for evaluating metrics between two dictionaries.
     """
-    eval_id : str
+
+    eval_id: str
     file_id: str
     schema_id: str
-    schema_data_id: str|None = None
+    schema_data_id: str | None = None
     dict_1: dict[str, Any]
     dict_2: dict[str, Any]
     annotation_props_1: AnnotationParameters
@@ -370,14 +379,10 @@ class EvalMetric(BaseModel):
     average: dict[str, Any]
     std: dict[str, Any]
 
+
 class EvalMetrics(BaseModel):
     schema_id: str
     distances: dict[dictionary_metrics, EvalMetric]
-
-
-
-
-
 
 
 def flatten_dict(d: dict[str, Any], parent_key: str = '', sep: str = '.') -> dict[str, Any]:
@@ -392,14 +397,9 @@ def flatten_dict(d: dict[str, Any], parent_key: str = '', sep: str = '.') -> dic
     return dict(items)
 
 
-def plot_metrics_with_uncertainty(
-    analysis: dict[str, Any],
-    uncertainties: Optional[dict[str, Any]] = None,
-    top_n: int = 20,
-    ascending: bool = False
-) -> None:
+def plot_metrics_with_uncertainty(analysis: dict[str, Any], uncertainties: Optional[dict[str, Any]] = None, top_n: int = 20, ascending: bool = False) -> None:
     """Plot a metric from analysis results using a horizontal bar chart with uncertainty.
-    
+
     Args:
         analysis: Dictionary containing similarity scores (can be nested).
         uncertainties: Dictionary containing uncertainty values (same structure as analysis).
@@ -412,7 +412,7 @@ def plot_metrics_with_uncertainty(
         flattened_uncertainties = flatten_dict(uncertainties)
     else:
         uncertainties_list = None
-    
+
     # Prepare data by matching fields
     fields = list(flattened_analysis.keys())
     similarities = [flattened_analysis[field] for field in fields]
@@ -420,28 +420,29 @@ def plot_metrics_with_uncertainty(
     if uncertainties:
         uncertainties_list = [flattened_uncertainties.get(field, None) for field in fields]
 
-    
     # Create a DataFrame
-    df = pd.DataFrame({
-        "field": fields,
-        "similarity": similarities,
-    })
+    df = pd.DataFrame(
+        {
+            "field": fields,
+            "similarity": similarities,
+        }
+    )
 
-    if uncertainties: 
+    if uncertainties:
         df["uncertainty"] = uncertainties_list
-    
+
     # Sort by similarity and select top N
     df = df.sort_values(by="similarity", ascending=ascending).head(top_n)
-    
+
     # Calculate layout dimensions
     label_width = max(len(field) for field in df["field"]) + 2  # Padding for alignment
     terminal_width = shutil.get_terminal_size().columns
     bar_width = terminal_width - label_width - 3  # Space for '| ' and extra padding
-    
+
     # Determine scaling factor based on maximum similarity
     max_similarity = df["similarity"].max()
     scale = bar_width / max_similarity if max_similarity > 0 else 1
-    
+
     # Generate and print bars
     for index, row in df.iterrows():
         field = row["field"]
@@ -450,10 +451,10 @@ def plot_metrics_with_uncertainty(
             uncertainty = row["uncertainty"]
         else:
             uncertainty = None
-        
+
         if similarity is None:
             continue  # Skip fields with no similarity value
-        
+
         # Calculate bar length and uncertainty range
         bar_len = round(similarity * scale)
         if uncertainty is not None and uncertainty > 0:
@@ -462,7 +463,7 @@ def plot_metrics_with_uncertainty(
         else:
             uncertainty_start = bar_len
             uncertainty_end = bar_len  # No uncertainty to display
-        
+
         # Build the bar string
         bar_string = ''
         for i in range(bar_width):
@@ -477,10 +478,8 @@ def plot_metrics_with_uncertainty(
                 else:
                     char = ' '  # Space for empty area
             bar_string += char
-        
+
         # Print the label and bar
         score_field = f'[{similarity:.4f}]'
 
-
         print(f"{field:<{label_width}} {score_field} | {bar_string}")
-

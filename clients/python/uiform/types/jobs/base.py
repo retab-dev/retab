@@ -1,13 +1,13 @@
 from typing import Literal, Optional, Self
 
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, Field, model_validator
 
 from ..image_settings import ImageSettings
 from ..modalities import Modality
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-
 SelectionMode = Literal["all", "manual"]
+
 
 # This is the input data for the prepare_dataset job
 class PrepareDatasetInputData(BaseModel):
@@ -16,7 +16,6 @@ class PrepareDatasetInputData(BaseModel):
     schema_data_id: Optional[str] = None
 
     selection_model: SelectionMode = "all"
-
 
     @model_validator(mode="after")
     def validate_input(self) -> Self:
@@ -49,8 +48,9 @@ class AnnotationProps(BaseModel):
     temperature: float = 0.0
     modality: Modality = "native"
     reasoning_effort: ChatCompletionReasoningEffort = "medium"
-    image_settings : ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     n_consensus: int = Field(default=1, description="Number of consensus rounds to perform")
+
 
 class AnnotationInputData(BaseModel):
     data_file: str
@@ -64,8 +64,6 @@ class EvaluationInputData(BaseModel):
     schema_id: str
     annotation_props_1: AnnotationProps | None = None
     annotation_props_2: AnnotationProps
-
-
 
 
 # from pydantic import BaseModel, Field, model_validator
