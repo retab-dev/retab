@@ -95,7 +95,7 @@ class FieldLocation(BaseModel):
 class UiParsedChoice(ParsedChoice):
     # Adaptable ParsedChoice that allows None for the finish_reason
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
-    field_locations: dict[str, FieldLocation] | None = Field(default=None, description="The locations of the fields in the document, if available")
+    field_locations: dict[str, list[FieldLocation]] | None = Field(default=None, description="The locations of the fields in the document, if available")
 
 
 LikelihoodsSource = Literal["consensus", "log_probs"]
