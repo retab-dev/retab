@@ -176,6 +176,7 @@ class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     flat_likelihoods: dict[str, float] = {}
     flat_parsed: dict[str, Any] = {}
     flat_deleted_keys: list[str] = []
+    field_locations: dict[str, list[FieldLocation]] | None = Field(default=None, description="The locations of the fields in the document, if available")
     missing_content: str = ""
     is_valid_json: bool = False
 
@@ -193,12 +194,12 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
-    def chunk_accumulator(self, previous_cumulated_chunk: 'UiParsedChatCompletionChunk | None' = None) -> 'UiParsedChatCompletionChunk':
+    def chunk_accumulator(self, previous_cumulated_chunk: "UiParsedChatCompletionChunk | None" = None) -> "UiParsedChatCompletionChunk":
         """
         Accumulate the chunk into the state, returning a new UiParsedChatCompletionChunk with the accumulated content that could be yielded alone to generate the same state.
         """
 
-        def safe_get_delta(chnk: 'UiParsedChatCompletionChunk | None', index: int) -> UiParsedChoiceDeltaChunk:
+        def safe_get_delta(chnk: "UiParsedChatCompletionChunk | None", index: int) -> UiParsedChoiceDeltaChunk:
             if chnk is not None and index < len(chnk.choices):
                 return chnk.choices[index].delta
             else:
