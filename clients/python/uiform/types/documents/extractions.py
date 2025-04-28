@@ -86,6 +86,7 @@ class FieldLocation(BaseModel):
     label: str = Field(..., description="The label of the field")
     value: str = Field(..., description="The extracted value of the field")
     quote: str = Field(..., description="The quote of the field (verbatim from the document)")
+    file_id: str | None = Field(default=None, description="The ID of the file")
     page: int | None = Field(default=None, description="The page number of the field (1-indexed)")
     bboxes_normalized: list[tuple[float, float, float, float]] | None = Field(default=None, description="The normalized bounding boxes of the field")
     score: float | None = Field(default=None, description="The score of the field")
@@ -217,6 +218,8 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         acc_missing_content = [safe_get_delta(self, i).missing_content or "" for i in range(max_choices)]
         acc_flat_deleted_keys = [safe_get_delta(self, i).flat_deleted_keys for i in range(max_choices)]
         acc_is_valid_json = [safe_get_delta(self, i).is_valid_json for i in range(max_choices)]
+        acc_field_locations = [safe_get_delta(self, i).field_locations for i in range(max_choices)]  # This is only present in the last chunk.
+
         # Delete from previous_cumulated_chunk.choices[i].delta.flat_parsed the keys that are in safe_get_delta(self, i).flat_deleted_keys
         for i in range(max_choices):
             previous_delta = safe_get_delta(previous_cumulated_chunk, i)
@@ -247,6 +250,7 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         flat_parsed=acc_flat_parsed[i],
                         flat_likelihoods=acc_flat_likelihoods[i],
                         flat_deleted_keys=acc_flat_deleted_keys[i],
+                        field_locations=acc_field_locations[i],
                         missing_content=acc_missing_content[i],
                         is_valid_json=acc_is_valid_json[i],
                     ),
