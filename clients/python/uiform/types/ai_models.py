@@ -297,7 +297,7 @@ openai_model_cards = [
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
         reasoning_effort_support=False,
     ),
     ModelCard(
@@ -307,7 +307,7 @@ openai_model_cards = [
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
         reasoning_effort_support=False,
     ),
     ModelCard(
@@ -317,7 +317,7 @@ openai_model_cards = [
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
         reasoning_effort_support=False,
     ),
     ModelCard(
@@ -327,7 +327,7 @@ openai_model_cards = [
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
         reasoning_effort_support=False,
     ),
     ModelCard(
@@ -337,7 +337,7 @@ openai_model_cards = [
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
         reasoning_effort_support=False,
     ),
     ModelCard(
@@ -347,7 +347,7 @@ openai_model_cards = [
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
         reasoning_effort_support=False,
     ),
     # ----------------------
@@ -545,21 +545,21 @@ gemini_model_cards = [
         pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
     ),
     ModelCard(
         model="gemini-2.5-pro-preview-03-25",
         pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
     ),
     ModelCard(
         model="gemini-2.5-flash-preview-04-17",
         pricing=Pricing(text=TokenPrice(prompt=0.15, cached_discount=0.25, completion=0.60), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
     ),
     # ----------------------
     # gemini-2.0-flash family
@@ -569,7 +569,7 @@ gemini_model_cards = [
         pricing=Pricing(text=TokenPrice(prompt=0.1, cached_discount=0.025 / 0.1, completion=0.40), audio=TokenPrice(prompt=0.7, cached_discount=0.175 / 0.7, completion=1000)),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
     ),
     ModelCard(
         model="gemini-2.0-flash-lite",
@@ -580,7 +580,7 @@ gemini_model_cards = [
             features=["streaming", "structured_outputs"],
         ),
         logprobs_support=False,
-        temperature_support=False,
+        temperature_support=True,
     ),
 ]
 
