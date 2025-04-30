@@ -16,7 +16,7 @@ from ..pagination import ListMetadata
 
 
 class Endpoint(AutomationConfig):
-    object: Literal['automation.endpoint'] = "automation.endpoint"
+    object: Literal['deployment.endpoint'] = "deployment.endpoint"
     id: str = Field(default_factory=lambda: "endp_" + nanoid.generate(), description="Unique identifier for the extraction endpoint")
 
     # Extraction Endpoint Specific Config

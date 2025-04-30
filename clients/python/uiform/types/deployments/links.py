@@ -17,7 +17,7 @@ from ..pagination import ListMetadata
 
 
 class Link(AutomationConfig):
-    object: Literal['automation.link'] = "automation.link"
+    object: Literal['deployment.link'] = "deployment.link"
     id: str = Field(default_factory=lambda: "lnk_" + nanoid.generate(), description="Unique identifier for the extraction link")
 
     # Link Specific Config

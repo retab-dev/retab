@@ -24,7 +24,7 @@ from ..logs import AutomationConfig, UpdateAutomationRequest
 
 class Mailbox(AutomationConfig):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
-    object: Literal['automation.mailbox'] = "automation.mailbox"
+    object: Literal['deployment.mailbox'] = "deployment.mailbox"
     id: str = Field(default_factory=lambda: "mb_" + nanoid.generate(), description="Unique identifier for the mailbox")
 
     # Email Specific config
