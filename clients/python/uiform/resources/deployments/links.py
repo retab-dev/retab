@@ -81,7 +81,7 @@ class LinksMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/automations", params=params)
+        return PreparedRequest(method="GET", url="/v1/deployments", params=params)
 
     def prepare_get(self, link_id: str) -> PreparedRequest:
         """Get a specific extraction link configuration.
