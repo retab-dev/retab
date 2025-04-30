@@ -14,15 +14,15 @@ async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str
     webhook_url = HttpUrl('http://localhost:4000/product')
 
     # Create
-    mailbox = sync_client.automations.mailboxes.create(email=email_address, json_schema=company_json_schema, webhook_url=webhook_url)
+    mailbox = sync_client.deployments.mailboxes.create(email=email_address, json_schema=company_json_schema, webhook_url=webhook_url)
     try:
         assert mailbox.email == email_address
         assert mailbox.webhook_url == webhook_url
         # Read
-        mailbox = sync_client.automations.mailboxes.get(email_address)
+        mailbox = sync_client.deployments.mailboxes.get(email_address)
         assert mailbox.email == email_address
         # Update
-        mailbox = sync_client.automations.mailboxes.update(email_address, webhook_url=HttpUrl('http://localhost:4000/product2'))
+        mailbox = sync_client.deployments.mailboxes.update(email_address, webhook_url=HttpUrl('http://localhost:4000/product2'))
         assert mailbox.webhook_url == HttpUrl('http://localhost:4000/product2')
 
         # TODO: send and email to email_address (need sendgrid account)
@@ -38,19 +38,19 @@ async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str
         #             "file": f
         #         }
         #         response = await client.post(
-        #             sync_client.base_url + f"/v1/automations/links/parse/{link_id}",
+        #             sync_client.base_url + f"/v1/deployments/links/parse/{link_id}",
         #             files=files,
         #             headers=headers
         #         )
         #         assert response.status_code == 200
 
         # Delete
-        sync_client.automations.mailboxes.delete(email_address)
+        sync_client.deployments.mailboxes.delete(email_address)
         with pytest.raises(Exception):
-            sync_client.automations.mailboxes.get(email_address)
+            sync_client.deployments.mailboxes.get(email_address)
     finally:
         # Delete the mailbox
         try:
-            sync_client.automations.mailboxes.delete(email_address)
+            sync_client.deployments.mailboxes.delete(email_address)
         except Exception:
             pass

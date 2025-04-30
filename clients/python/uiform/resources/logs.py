@@ -40,7 +40,7 @@ class Usage(SyncAPIResource):
         if end_date:
             params["end_date"] = end_date.isoformat()
 
-        response = self._client._request("GET", f"/v1/automations/mailboxes/{email}/usage", params=params)
+        response = self._client._request("GET", f"/v1/deployments/mailboxes/{email}/usage", params=params)
         return Amount.model_validate(response)
 
     def link(self, link_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> Amount:
@@ -60,7 +60,7 @@ class Usage(SyncAPIResource):
         if end_date:
             params["end_date"] = end_date.isoformat()
 
-        response = self._client._request("GET", f"/v1/automations/links/{link_id}/usage", params=params)
+        response = self._client._request("GET", f"/v1/deployments/links/{link_id}/usage", params=params)
         return Amount.model_validate(response)
 
     def schema(self, schema_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> Amount:
