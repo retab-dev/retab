@@ -39,7 +39,7 @@ class FetchParams(BaseModel):
 
 
 class Outlook(AutomationConfig):
-    object: Literal['automation.outlook'] = "automation.outlook"
+    object: Literal['deployment.outlook'] = "deployment.outlook"
     name: str = Field(..., description="Name of the outlook plugin")
     id: str = Field(default_factory=lambda: "outlook_" + nanoid.generate(), description="Unique identifier for the outlook")
 

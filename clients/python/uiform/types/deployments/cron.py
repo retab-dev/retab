@@ -30,7 +30,7 @@ from ..logs import AutomationConfig
 
 
 class ScrappingConfig(AutomationConfig):
-    object: Literal['automation.scrapping_cron'] = "automation.scrapping_cron"
+    object: Literal['deployment.scrapping_cron'] = "deployment.scrapping_cron"
     id: str = Field(default_factory=lambda: "scrapping_" + nanoid.generate(), description="Unique identifier for the scrapping job")
 
     # Scrapping Specific Config
