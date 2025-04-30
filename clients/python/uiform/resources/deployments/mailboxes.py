@@ -2,7 +2,7 @@ import datetime
 import json
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import httpx
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -12,23 +12,26 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import prepare_mime_document
-from ...types.automations.links import Link, ListLinks, UpdateLinkRequest
+from ...types.deployments.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
 from ...types.documents.extractions import UiParsedChatCompletion
 from ...types.image_settings import ImageSettings
-from ...types.logs import AutomationLog, ExternalRequestLog, ListLogs
-from ...types.mime import BaseMIMEData, MIMEData
+from ...types.logs import AutomationLog, ExternalRequestLog
+from ...types.mime import BaseMIMEData, EmailData, MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 
 
-class LinksMixin:
+class MailBoxesMixin:
     def prepare_create(
         self,
-        name: str,
+        email: str,
         json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: str | None = None,
+        # email specific opitonals Fields
+        authorized_domains: List[str] = [],
+        authorized_emails: List[str] = [],
+        # HTTP Config Optional Fields
+        webhook_headers: Dict[str, str] = {},
         # DocumentExtraction Config
         image_settings: Optional[Dict[str, Any]] = None,
         modality: Modality = "native",
@@ -39,11 +42,12 @@ class LinksMixin:
         assert_valid_model_extraction(model)
 
         data = {
-            "name": name,
+            "email": email,
             "webhook_url": webhook_url,
-            "webhook_headers": webhook_headers or {},
+            "webhook_headers": webhook_headers,
             "json_schema": json_schema,
-            "password": password,
+            "authorized_domains": authorized_domains,
+            "authorized_emails": authorized_emails,
             "image_settings": image_settings or ImageSettings(),
             "modality": modality,
             "model": model,
@@ -51,18 +55,17 @@ class LinksMixin:
             "reasoning_effort": reasoning_effort,
         }
 
-        request = Link.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/automations/links", data=request.model_dump(mode='json'))
+        # Validate the data
+        mailbox_data = Mailbox.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/deployments/mailboxes", data=mailbox_data.model_dump(mode="json"))
 
     def prepare_list(
         self,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        limit: Optional[int] = 10,
-        order: Optional[Literal["asc", "desc"]] = "desc",
-        # Filtering parameters
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        email: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
@@ -72,8 +75,7 @@ class LinksMixin:
             "after": after,
             "limit": limit,
             "order": order,
-            "automation_id": link_id,
-            "name": name,
+            "email": email,
             "webhook_url": webhook_url,
             "schema_id": schema_id,
             "schema_data_id": schema_data_id,
@@ -81,26 +83,18 @@ class LinksMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/automations", params=params)
+        return PreparedRequest(method="GET", url="/v1/deployments/mailboxes", params=params)
 
-    def prepare_get(self, link_id: str) -> PreparedRequest:
-        """Get a specific extraction link configuration.
-
-        Args:
-            link_id: ID of the extraction link
-
-        Returns:
-            Link: The extraction link configuration
-        """
-        return PreparedRequest(method="GET", url=f"/v1/automations/{link_id}")
+    def prepare_get(self, email: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/deployments/mailboxes/{email}")
 
     def prepare_update(
         self,
-        link_id: str,
-        name: Optional[str] = None,
+        email: str,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
-        password: Optional[str] = None,
+        authorized_domains: Optional[List[str]] = None,
+        authorized_emails: Optional[List[str]] = None,
         image_settings: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
@@ -109,17 +103,14 @@ class LinksMixin:
         json_schema: Optional[Dict[str, Any]] = None,
     ) -> PreparedRequest:
         data: dict[str, Any] = {}
-
-        if link_id is not None:
-            data["id"] = link_id
-        if name is not None:
-            data["name"] = name
         if webhook_url is not None:
             data["webhook_url"] = webhook_url
         if webhook_headers is not None:
             data["webhook_headers"] = webhook_headers
-        if password is not None:
-            data["password"] = password
+        if authorized_domains is not None:
+            data["authorized_domains"] = authorized_domains
+        if authorized_emails is not None:
+            data["authorized_emails"] = authorized_emails
         if image_settings is not None:
             data["image_settings"] = image_settings
         if modality is not None:
@@ -129,16 +120,17 @@ class LinksMixin:
             data["model"] = model
         if temperature is not None:
             data["temperature"] = temperature
-        if json_schema is not None:
-            data["json_schema"] = json_schema
         if reasoning_effort is not None:
             data["reasoning_effort"] = reasoning_effort
+        if json_schema is not None:
+            data["json_schema"] = json_schema
 
-        request = UpdateLinkRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/automations/{link_id}", data=request.model_dump(mode='json'))
+        update_mailbox_request = UpdateMailboxRequest.model_validate(data)
 
-    def prepare_delete(self, link_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/automations/links/{link_id}", raise_for_status=True)
+        return PreparedRequest(method="PUT", url=f"/v1/deployments/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
+
+    def prepare_delete(self, email: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/deployments/mailboxes/{email}", raise_for_status=True)
 
     def prepare_logs(
         self,
@@ -146,32 +138,13 @@ class LinksMixin:
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc",
-        # Filtering parameters
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
+        email: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
     ) -> PreparedRequest:
-        """Get logs for extraction links with pagination support.
-
-        Args:
-            before: Optional cursor for pagination - get results before this log ID
-            after: Optional cursor for pagination - get results after this log ID
-            limit: Maximum number of logs to return (1-100, default 10)
-            order: Sort order by creation time - "asc" or "desc" (default "desc")
-            link_id: Optional ID of a specific extraction link to filter logs for
-            name: Optional filter by link name
-            webhook_url: Optional filter by webhook URL
-            schema_id: Optional filter by schema ID
-            schema_data_id: Optional filter by schema data ID
-
-        Returns:
-            ListLinkLogsResponse: Paginated list of logs and metadata
-        """
         params = {
-            "automation_id": link_id,
-            "name": name,
+            "email": email,
             "webhook_url": webhook_url,
             "schema_id": schema_id,
             "schema_data_id": schema_data_id,
@@ -180,150 +153,151 @@ class LinksMixin:
             "limit": limit,
             "order": order,
         }
-        # Remove None values
-        params = {k: v for k, v in params.items() if v is not None}
-
-        return PreparedRequest(method="GET", url="/v1/automations/logs", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/deployments/mailboxes/{email}/logs", params=params)
 
 
-class Links(SyncAPIResource, LinksMixin):
-    """Extraction Link API wrapper for managing extraction link configurations"""
+class Mailboxes(SyncAPIResource, MailBoxesMixin):
+    """Emails API wrapper for managing email automation configurations"""
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.tests = TestLinks(client=client)
+        self.tests = TestMailboxes(client=client)
 
     def create(
         self,
-        name: str,
+        email: str,
         json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: str | None = None,
+        # email specific opitonals Fields
+        authorized_domains: List[str] = [],
+        authorized_emails: List[str] = [],
+        # HTTP Config Optional Fields
+        webhook_headers: Dict[str, str] = {},
         # DocumentExtraction Config
         image_settings: Optional[Dict[str, Any]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-    ) -> Link:
-        """Create a new extraction link configuration.
+    ) -> Mailbox:
+        """Create a new email automation configuration.
 
         Args:
-            name: Name of the extraction link
-            json_schema: JSON schema to validate extracted data
-            webhook_url: Webhook endpoint for forwarding processed files
-            webhook_headers: Optional HTTP headers for webhook requests
-            password: Optional password for protected links
+            email: Email address for the mailbox
+            json_schema: JSON schema to validate extracted email data
+            webhook_url: Webhook URL to receive processed emails
+            webhook_headers: Webhook headers to send with processed emails
+            authorized_domains: List of authorized domains for the mailbox
+            authorized_emails: List of authorized emails for the mailbox
             image_settings: Optional image preprocessing operations
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
             reasoning_effort: The effort level for the model to reason about the input data.
+
         Returns:
-            Link: The created extraction link configuration
+            Mailbox: The created mailbox configuration
         """
 
-        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(
+            email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort
+        )
         response = self._client._prepared_request(request)
-        print(f"Extraction Link Created. Link available at https://uiform.com/links/{response['id']}")
-        return Link.model_validate(response)
+        return Mailbox.model_validate(response)
 
     def list(
         self,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        limit: Optional[int] = 10,
-        order: Optional[Literal["asc", "desc"]] = "desc",
-        # Filtering parameters
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        email: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> ListLinks:
-        """List extraction link configurations with pagination support.
+    ) -> ListMailboxes:
+        """List all email automation configurations.
 
         Args:
-            before: Optional cursor for pagination before a specific link ID
-            after: Optional cursor for pagination after a specific link ID
-            limit: Optional limit on number of results (max 100)
-            order: Optional sort order ("asc" or "desc")
-            link_id: Optional filter by extraction link ID
-            name: Optional filter by link name
-            webhook_url: Optional filter by webhook URL
-            schema_id: Optional filter by schema ID
-            schema_data_id: Optional filter by schema data ID
+            before: Optional cursor for pagination - get results before this log ID
+            after: Optional cursor for pagination - get results after this log ID
+            limit: Maximum number of logs to return (1-100, default 10)
+            order: Sort order by creation time - "asc" or "desc" (default "desc")
+            email: Optional email address filter
+            webhook_url: Optional webhook URL filter
+            schema_id: Optional schema ID filter
+            schema_data_id: Optional schema data ID filter
 
         Returns:
-            ListLinks: Paginated list of extraction link configurations with metadata
+            ListMailboxes: List of mailbox configurations
         """
-        request = self.prepare_list(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
-        return ListLinks.model_validate(response)
+        return ListMailboxes.model_validate(response)
 
-    def get(self, link_id: str) -> Link:
-        """Get a specific extraction link configuration.
+    def get(self, email: str) -> Mailbox:
+        """Get a specific email automation configuration.
 
         Args:
-            link_id: ID of the extraction link
+            email: Email address of the mailbox
 
         Returns:
-            Link: The extraction link configuration
+            Mailbox: The mailbox configuration
         """
-        request = self.prepare_get(link_id)
+        request = self.prepare_get(email)
         response = self._client._prepared_request(request)
-        return Link.model_validate(response)
+        return Mailbox.model_validate(response)
 
     def update(
         self,
-        link_id: str,
-        name: Optional[str] = None,
+        email: str,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
-        password: Optional[str] = None,
+        authorized_domains: Optional[List[str]] = None,
+        authorized_emails: Optional[List[str]] = None,
         image_settings: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None,
-    ) -> Link:
-        """Update an extraction link configuration.
+    ) -> Mailbox:
+        """Update an email automation configuration.
 
         Args:
-            link_id: ID of the extraction link to update
-            name: New name for the link
-            webhook_url: New webhook endpoint URL
-            webhook_headers: New webhook headers
-            password: New password for protected links
+            email: Email address of the mailbox to update
+            webhook_url: New webhook configuration
+            webhook_headers: New webhook configuration
+            max_file_size: New webhook configuration
+            file_payload: New webhook configuration
+            follow_up: New webhook configuration
+            authorized_domains: New webhook configuration
+            authorized_emails: New webhook configuration
             image_settings: New image preprocessing operations
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
-            reasoning_effort: The effort level for the model to reason about the input data.
+            reasoning_effort: New reasoning effort
             json_schema: New JSON schema
 
         Returns:
-            Link: The updated extraction link configuration
+            Mailbox: The updated mailbox configuration
         """
-
-        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort, json_schema)
+        request = self.prepare_update(
+            email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema
+        )
         response = self._client._prepared_request(request)
-        return Link.model_validate(response)
+        return Mailbox.model_validate(response)
 
-    def delete(self, link_id: str) -> None:
-        """Delete an extraction link configuration.
+    def delete(self, email: str) -> None:
+        """Delete an email automation configuration.
 
         Args:
-            link_id: ID of the extraction link to delete
-
-        Returns:
-            Dict[str, str]: Response message confirming deletion
+            email: Email address of the mailbox to delete
         """
-        request = self.prepare_delete(link_id)
-        self._client._prepared_request(request)
-        print(f"Extraction Link Deleted. Link https://uiform.com/links/{link_id} is no longer available.")
+        request = self.prepare_delete(email)
+        response = self._client._prepared_request(request)
+        return None
 
     def logs(
         self,
@@ -331,102 +305,100 @@ class Links(SyncAPIResource, LinksMixin):
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc",
-        # Filtering parameters
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
+        email: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> ListLogs:
-        """Get logs for extraction links with pagination support.
+    ) -> List[AutomationLog]:
+        """Get logs for a specific email automation.
 
         Args:
             before: Optional cursor for pagination - get results before this log ID
             after: Optional cursor for pagination - get results after this log ID
             limit: Maximum number of logs to return (1-100, default 10)
             order: Sort order by creation time - "asc" or "desc" (default "desc")
-            link_id: Optional ID of a specific extraction link to filter logs for
-            name: Optional filter by link name
-            webhook_url: Optional filter by webhook URL
-            schema_id: Optional filter by schema ID
-            schema_data_id: Optional filter by schema data ID
+            email: Optional email address filter
+            webhook_url: Optional webhook URL filter
+            schema_id: Optional schema ID filter
+            schema_data_id: Optional schema data ID filter
 
         Returns:
-            ListLinkLogsResponse: Paginated list of logs and metadata
+            List[Dict[str, Any]]: List of log entries
         """
-        request = self.prepare_logs(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_logs(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
-        return ListLogs.model_validate(response)
+        return [AutomationLog.model_validate(log) for log in response]
 
 
-class AsyncLinks(AsyncAPIResource, LinksMixin):
-    """Async Extraction Link API wrapper for managing extraction link configurations"""
-
+class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.tests = AsyncTestLinks(client=client)
+        self.tests = AsyncTestMailboxes(client=client)
 
     async def create(
         self,
-        name: str,
+        email: str,
         json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: str | None = None,
+        authorized_domains: List[str] = [],
+        authorized_emails: List[str] = [],
+        webhook_headers: Dict[str, str] = {},
         image_settings: Optional[Dict[str, Any]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-    ) -> Link:
-        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort)
+    ) -> Mailbox:
+        request = self.prepare_create(
+            email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort
+        )
         response = await self._client._prepared_request(request)
-        print(f"Extraction Link Created. Link available at https://uiform.com/links/{response['id']}")
-        return Link.model_validate(response)
+        return Mailbox.model_validate(response)
 
     async def list(
         self,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        limit: Optional[int] = 10,
-        order: Optional[Literal["asc", "desc"]] = "desc",
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        email: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> ListLinks:
-        request = self.prepare_list(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
+    ) -> ListMailboxes:
+        request = self.prepare_list(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
-        return ListLinks.model_validate(response)
+        return ListMailboxes.model_validate(response)
 
-    async def get(self, link_id: str) -> Link:
-        request = self.prepare_get(link_id)
+    async def get(self, email: str) -> Mailbox:
+        request = self.prepare_get(email)
         response = await self._client._prepared_request(request)
-        return Link.model_validate(response)
+        return Mailbox.model_validate(response)
 
     async def update(
         self,
-        link_id: str,
-        name: Optional[str] = None,
+        email: str,
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
-        password: Optional[str] = None,
+        authorized_domains: Optional[List[str]] = None,
+        authorized_emails: Optional[List[str]] = None,
         image_settings: Optional[Dict[str, Any]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None,
-    ) -> Link:
-        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort, json_schema)
+    ) -> Mailbox:
+        request = self.prepare_update(
+            email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema
+        )
         response = await self._client._prepared_request(request)
-        return Link.model_validate(response)
+        return Mailbox.model_validate(response)
 
-    async def delete(self, link_id: str) -> None:
-        request = self.prepare_delete(link_id)
+    async def delete(self, email: str) -> None:
+        request = self.prepare_delete(email)
         await self._client._prepared_request(request)
-        print(f"Extraction Link Deleted. Link https://uiform.com/links/{link_id} is no longer available.")
+        return None
 
     async def logs(
         self,
@@ -434,31 +406,51 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc",
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
+        email: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> ListLogs:
-        request = self.prepare_logs(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
+    ) -> List[AutomationLog]:
+        request = self.prepare_logs(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
-        return ListLogs.model_validate(response)
+        return [AutomationLog.model_validate(log) for log in response]
 
 
-### Test Links ###
-
-
-class TestLinksMixin:
-    def prepare_upload(self, link_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
+class TestMailboxesMixin:
+    def prepare_forward(
+        self,
+        email: str,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
+        verbose: bool = True,
+    ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/automations/links/tests/upload/{link_id}", data={"document": mime_document.model_dump(mode='json')})
+        return PreparedRequest(method="POST", url=f"/v1/deployments/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
 
-    def prepare_webhook(self, link_id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/v1/automations/links/tests/webhook/{link_id}", data=None)
+    def prepare_process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
+        mime_document = prepare_mime_document(document)
+        return PreparedRequest(method="POST", url=f"/v1/deployments/mailboxes/tests/process/{email}", data={"document": mime_document.model_dump()})
 
-    def print_upload_verbose(self, log: AutomationLog) -> None:
+    def prepare_webhook(self, email: str) -> PreparedRequest:
+        return PreparedRequest(method="POST", url=f"/v1/deployments/mailboxes/tests/webhook/{email}", data=None)
+
+    def print_forward_verbose(self, email_data: EmailData) -> None:
+        print(f"\nTEST EMAIL FORWARDING RESULTS:")
+        print(f"\n#########################")
+        print(f"Email ID: {email_data.id}")
+        print(f"Subject: {email_data.subject}")
+        print(f"From: {email_data.sender}")
+        print(f"To: {', '.join(str(r) for r in email_data.recipients_to)}")
+        if email_data.recipients_cc:
+            print(f"CC: {', '.join(str(r) for r in email_data.recipients_cc)}")
+        print(f"Sent at: {email_data.sent_at}")
+        print(f"Attachments: {len(email_data.attachments)}")
+        if email_data.body_plain:
+            print("\nBody Preview:")
+            print(email_data.body_plain[:500] + "..." if len(email_data.body_plain) > 500 else email_data.body_plain)
+
+    def print_process_verbose(self, log: AutomationLog) -> None:
         if log.external_request_log:
-            print(f"\nTEST FILE UPLOAD RESULTS:")
+            print(f"\nTEST EMAIL PROCESSING RESULTS:")
             print(f"\n#########################")
             print(f"Status Code: {log.external_request_log.status_code}")
             print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
@@ -562,50 +554,68 @@ invoice_file_content = b"""
             """
 
 
-class TestLinks(SyncAPIResource, TestLinksMixin):
-    """Test Extraction Link API wrapper for testing extraction link configurations"""
-
-    def upload(self, link_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
-        """Mock endpoint that simulates the complete extraction process with sample data.
+class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
+    def forward(
+        self,
+        email: str,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
+        verbose: bool = True,
+    ) -> EmailData:
+        """Mock endpoint that simulates the complete email forwarding process with sample data.
 
         Args:
-            link_id: ID of the extraction link to mock
+            email: Email address of the mailbox to mock
 
         Returns:
             DocumentExtractResponse: The simulated extraction response
         """
+        request = self.prepare_forward(email, document, verbose)
+        response = self._client._prepared_request(request)
 
-        request = self.prepare_upload(link_id, document)
+        email_data = EmailData.model_validate(response)
+
+        if verbose:
+            self.print_forward_verbose(email_data)
+        return email_data
+
+    def process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
+        """Mock endpoint that simulates the complete email processing process with sample data.
+
+        Args:
+            email: Email address of the mailbox to mock
+
+        Returns:
+            DocumentExtractResponse: The simulated extraction response
+        """
+        request = self.prepare_process(email, document)
         response = self._client._prepared_request(request)
 
         log = AutomationLog.model_validate(response)
 
         if verbose:
-            self.print_upload_verbose(log)
-
+            self.print_process_verbose(log)
         return log
 
-    def webhook(self, link_id: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
+    def webhook(self, email: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
         """Mock endpoint that simulates the complete webhook process with sample data.
 
         Args:
-            link_id: ID of the extraction link to mock
-            webhook_url: Optional URL to send webhook to for local testing
+            email: Email address of the mailbox to mock
+            webhook_url: Optional URL to send webhook to. If provided, will send to this URL instead of the configured one
             verbose: Whether to print verbose output
 
         Returns:
             AutomationLog: The simulated webhook response
         """
         if webhook_url:
-            # Step 1: get automation object
-            link = self._client.automations.links.get(link_id)
-
-            # Create sample invoice content
+            # Step 1: get mailbox config
+            mailbox = self._client.deployments.mailboxes.get(email)
 
             # Create MIME document
             mime_document = prepare_mime_document(invoice_file_content)
 
             # Create sample extraction response
+
             # Send webhook request
             start_time = datetime.datetime.now(datetime.timezone.utc)
             webhook_response = None
@@ -634,7 +644,7 @@ class TestLinks(SyncAPIResource, TestLinksMixin):
             # Create log entry
             log = AutomationLog(
                 user_email=None,
-                automation_snapshot=link,
+                automation_snapshot=mailbox,
                 file_metadata=BaseMIMEData.model_validate(mime_document),
                 completion=clean_response,
                 organization_id="",
@@ -657,7 +667,7 @@ class TestLinks(SyncAPIResource, TestLinksMixin):
 
             return log
 
-        request = self.prepare_webhook(link_id)
+        request = self.prepare_webhook(email)
         response = self._client._prepared_request(request)
         log = AutomationLog.model_validate(response)
         if verbose:
@@ -665,26 +675,42 @@ class TestLinks(SyncAPIResource, TestLinksMixin):
         return log
 
 
-class AsyncTestLinks(AsyncAPIResource, TestLinksMixin):
-    """Async Test Extraction Link API wrapper for testing extraction link configurations"""
+class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
+    async def forward(
+        self,
+        email: str,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
+        verbose: bool = True,
+    ) -> EmailData:
+        request = self.prepare_forward(email, document, verbose)
+        response = await self._client._prepared_request(request)
+        email_data = EmailData.model_validate(response)
+        if verbose:
+            self.print_forward_verbose(email_data)
+        return email_data
 
-    async def upload(self, link_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
-        request = self.prepare_upload(link_id, document)
+    async def process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
+        request = self.prepare_process(email, document)
         response = await self._client._prepared_request(request)
         log = AutomationLog.model_validate(response)
         if verbose:
-            self.print_upload_verbose(log)
+            self.print_process_verbose(log)
         return log
 
-    async def webhook(self, link_id: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
-        # If webhook_url is provided, this is often to test the webhook endpoint locally (even if it does not correspond to the webhook url configured in the link)
-        # If webhook_url is not provided, the webhook url configured in the link will be used (it has to be a real url and not a local url)
+    async def webhook(self, email: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
+        """Mock endpoint that simulates the complete webhook process with sample data.
 
+        Args:
+            email: Email address of the mailbox to mock
+            webhook_url: Optional URL to send webhook to. If provided, will send to this URL instead of the configured one
+            verbose: Whether to print verbose output
+
+        Returns:
+            AutomationLog: The simulated webhook response
+        """
         if webhook_url:
-            # Step 1: get automation object
-            link = await self._client.automations.links.get(link_id)
-
-            # Create sample invoice content
+            # Step 1: get mailbox config
+            mailbox = await self._client.deployments.mailboxes.get(email)
 
             # Create MIME document
             mime_document = prepare_mime_document(invoice_file_content)
@@ -717,7 +743,7 @@ class AsyncTestLinks(AsyncAPIResource, TestLinksMixin):
             # Create log entry
             log = AutomationLog(
                 user_email=None,
-                automation_snapshot=link,
+                automation_snapshot=mailbox,
                 file_metadata=BaseMIMEData.model_validate(mime_document),
                 completion=clean_response,
                 organization_id="",
@@ -740,7 +766,7 @@ class AsyncTestLinks(AsyncAPIResource, TestLinksMixin):
 
             return log
 
-        request = self.prepare_webhook(link_id)
+        request = self.prepare_webhook(email)
         response = await self._client._prepared_request(request)
         log = AutomationLog.model_validate(response)
         if verbose:

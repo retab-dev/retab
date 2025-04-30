@@ -16,7 +16,7 @@ class SignatureVerificationError(Exception):
     pass
 
 
-class AutomationsMixin:
+class DeploymentsMixin:
     def _verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.
@@ -40,8 +40,8 @@ class AutomationsMixin:
         return json.loads(event_body.decode('utf-8'))
 
 
-class Automations(SyncAPIResource, AutomationsMixin):
-    """Automations API wrapper"""
+class Deployments(SyncAPIResource, DeploymentsMixin):
+    """Deployments API wrapper"""
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
@@ -57,8 +57,8 @@ class Automations(SyncAPIResource, AutomationsMixin):
         return self._verify_event(event_body, event_signature, secret)
 
 
-class AsyncAutomations(AsyncAPIResource, AutomationsMixin):
-    """Async Automations API wrapper"""
+class AsyncDeployments(AsyncAPIResource, DeploymentsMixin):
+    """Async Deployments API wrapper"""
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)

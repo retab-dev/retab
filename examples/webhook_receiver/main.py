@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from pyngrok import ngrok
 
-from uiform.types.automations.webhooks import WebhookRequest
+from uiform.types.deployments.webhooks import WebhookRequest
 from uiform.types.documents.extractions import UiParsedChatCompletion, UiParsedChoice
 from uiform.types.mime import MIMEData
 

@@ -8,7 +8,7 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
-from ...types.automations.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
+from ...types.deployments.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
 from ...types.image_settings import ImageSettings
 from ...types.logs import ExternalRequestLog
 
@@ -47,7 +47,7 @@ class EndpointsMixin:
         }
 
         request = Endpoint.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/automations/endpoints", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="POST", url="/v1/deployments/endpoints", data=request.model_dump(mode='json'))
 
     def prepare_list(
         self,
@@ -72,7 +72,7 @@ class EndpointsMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/automations/endpoints", params=params)
+        return PreparedRequest(method="GET", url="/v1/deployments/endpoints", params=params)
 
     def prepare_get(self, endpoint_id: str) -> PreparedRequest:
         """Get a specific endpoint configuration.
@@ -83,7 +83,7 @@ class EndpointsMixin:
         Returns:
             Endpoint: The endpoint configuration
         """
-        return PreparedRequest(method="GET", url=f"/v1/automations/endpoints/{endpoint_id}")
+        return PreparedRequest(method="GET", url=f"/v1/deployments/endpoints/{endpoint_id}")
 
     def prepare_update(
         self,
@@ -122,10 +122,10 @@ class EndpointsMixin:
         if reasoning_effort is not None:
             data["reasoning_effort"] = reasoning_effort
         request = UpdateEndpointRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/automations/endpoints/{endpoint_id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/deployments/endpoints/{endpoint_id}", data=request.model_dump(mode='json'))
 
     def prepare_delete(self, endpoint_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/automations/endpoints/{endpoint_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/deployments/endpoints/{endpoint_id}")
 
 
 class Endpoints(SyncAPIResource, EndpointsMixin):

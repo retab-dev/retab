@@ -24,7 +24,7 @@ class UsageMixin:
         if end_date:
             params["end_date"] = end_date.isoformat()
 
-        return PreparedRequest(method="GET", url=f"/v1/automations/mailboxes/{email}/usage", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/deployments/mailboxes/{email}/usage", params=params)
 
     def prepare_link(self, link_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> PreparedRequest:
         params = {}
@@ -33,7 +33,7 @@ class UsageMixin:
         if end_date:
             params["end_date"] = end_date.isoformat()
 
-        return PreparedRequest(method="GET", url=f"/v1/automations/links/{link_id}/usage", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/deployments/links/{link_id}/usage", params=params)
 
     def prepare_schema(self, schema_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> PreparedRequest:
         params = {}

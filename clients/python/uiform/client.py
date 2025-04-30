@@ -8,7 +8,7 @@ import backoff.types
 import httpx
 from pydantic_core import PydanticUndefined
 
-from .resources import automations, completions, documents, files, finetuning, models, schemas, secrets, usage
+from .resources import deployments, completions, documents, files, finetuning, models, schemas, secrets, usage
 from .types.standards import PreparedRequest
 
 
@@ -176,7 +176,7 @@ class UiForm(BaseUiForm):
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
-        self.automations = automations.Automations(client=self)
+        self.deployments = deployments.Deployments(client=self)
         self.secrets = secrets.Secrets(client=self)
         self.usage = usage.Usage(client=self)
         self.completions = completions.Completions(client=self)
@@ -357,7 +357,7 @@ class AsyncUiForm(BaseUiForm):
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
-        self.automations = automations.AsyncAutomations(client=self)
+        self.deployments = deployments.AsyncDeployments(client=self)
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)
         self.completions = completions.AsyncCompletions(client=self)
