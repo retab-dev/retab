@@ -1,6 +1,6 @@
 import base64
 import datetime
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from anthropic.types.message import Message
 from anthropic.types.message_param import MessageParam
@@ -13,10 +13,12 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
+
+from ..._utils.usage.usage import compute_cost_from_model
 
 from ..._utils.ai_models import find_provider_from_model
-from ..ai_models import AIProvider, get_model_card
+from ..ai_models import AIProvider, Amount, get_model_card
 from ..chat import ChatCompletionUiformMessage
 from ..image_settings import ImageSettings
 from ..mime import MIMEData
@@ -194,7 +196,17 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
-
+    @computed_field
+    @property
+    def api_cost(self) -> Optional[Amount]:
+        if self.usage:
+            try:
+                cost = compute_cost_from_model(self.model, self.usage)
+                return cost
+            except Exception as e:
+                print(f"Error computing cost: {e}")
+                return None
+        return None
     def chunk_accumulator(self, previous_cumulated_chunk: "UiParsedChatCompletionChunk | None" = None) -> "UiParsedChatCompletionChunk":
         """
         Accumulate the chunk into the state, returning a new UiParsedChatCompletionChunk with the accumulated content that could be yielded alone to generate the same state.
