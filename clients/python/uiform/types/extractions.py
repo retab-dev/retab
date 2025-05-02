@@ -18,8 +18,8 @@ ValidationsState = Literal["pending", "validated", "invalid"]
 
 
 class ExtractionSource(BaseModel):
-    type: Literal["api", "annotation", "deployment.link", "automation.email", "automation.cron", "deployment.outlook", "deployment.endpoint", "schema.extract"] = Field(
-        description="Type of extraction"
+    type: Literal["api", "annotation", "deployment.link", "deployment.email", "deployment.cron", "deployment.outlook", "deployment.endpoint", "schema.extract"] = Field(
+        description="Type of extraction"    
     )
     id: str | None = Field(default=None, description="ID the trigger of the extraction")
 
