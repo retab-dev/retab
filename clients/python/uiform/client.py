@@ -5,6 +5,8 @@ from typing import Any, AsyncIterator, BinaryIO, Iterator, List, Optional
 
 import backoff
 import backoff.types
+
+import certifi
 import httpx
 from pydantic_core import PydanticUndefined
 
@@ -168,7 +170,7 @@ class UiForm(BaseUiForm):
             # xai_api_key=xai_api_key,
         )
 
-        self.client = httpx.Client(timeout=self.timeout)
+        self.client = httpx.Client(timeout=self.timeout, verify=certifi.where())
 
         self.files = files.Files(client=self)
         self.fine_tuning = finetuning.FineTuning(client=self)
@@ -350,7 +352,7 @@ class AsyncUiForm(BaseUiForm):
             # xai_api_key=xai_api_key,
         )
 
-        self.client = httpx.AsyncClient(timeout=self.timeout)
+        self.client = httpx.AsyncClient(timeout=self.timeout, verify=certifi.where())
         self.files = files.AsyncFiles(client=self)
         self.fine_tuning = finetuning.AsyncFineTuning(client=self)
         # self.prompt_optimization = prompt_optimization.AsyncPromptOptimization(client=self)
