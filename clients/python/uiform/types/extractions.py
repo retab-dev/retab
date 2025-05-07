@@ -7,7 +7,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel, Field, computed_field
 
 from uiform.types.chat import ChatCompletionUiformMessage
-from uiform.types.documents.extractions import DocumentExtractRequest, UiParsedChatCompletion
+from uiform.types.documents.extractions import UiParsedChatCompletion
 
 from .._utils.usage.usage import compute_cost_from_model
 from .ai_models import Amount
@@ -19,7 +19,7 @@ ValidationsState = Literal["pending", "validated", "invalid"]
 
 class ExtractionSource(BaseModel):
     type: Literal["api", "annotation", "deployment.link", "deployment.email", "deployment.cron", "deployment.outlook", "deployment.endpoint", "schema.extract"] = Field(
-        description="Type of extraction"    
+        description="Type of extraction"
     )
     id: str | None = Field(default=None, description="ID the trigger of the extraction")
 
@@ -62,6 +62,7 @@ class Extraction(BaseModel):
     organization_id: str = Field(..., description="Organization ID of the user or application")
     validation_state: Optional[ValidationsState] = Field(default=None, description="Validation state of the extraction")
     billed: bool = Field(default=False, description="Whether the extraction has been billed or not")
+
     @computed_field
     @property
     def api_cost(self) -> Optional[Amount]:

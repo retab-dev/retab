@@ -99,6 +99,7 @@ class UiParsedChoice(ParsedChoice):
     # Adaptable ParsedChoice that allows None for the finish_reason
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
     field_locations: dict[str, list[FieldLocation]] | None = Field(default=None, description="The locations of the fields in the document, if available")
+    key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
 
 
 LikelihoodsSource = Literal["consensus", "log_probs"]
@@ -182,6 +183,7 @@ class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     field_locations: dict[str, list[FieldLocation]] | None = Field(default=None, description="The locations of the fields in the document, if available")
     missing_content: str = ""
     is_valid_json: bool = False
+    key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
 
 
 class UiParsedChoiceChunk(ChoiceChunk):
@@ -196,6 +198,7 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
+
     @computed_field
     @property
     def api_cost(self) -> Optional[Amount]:
@@ -207,6 +210,7 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                 print(f"Error computing cost: {e}")
                 return None
         return None
+
     def chunk_accumulator(self, previous_cumulated_chunk: "UiParsedChatCompletionChunk | None" = None) -> "UiParsedChatCompletionChunk":
         """
         Accumulate the chunk into the state, returning a new UiParsedChatCompletionChunk with the accumulated content that could be yielded alone to generate the same state.
@@ -231,7 +235,6 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         acc_flat_deleted_keys = [safe_get_delta(self, i).flat_deleted_keys for i in range(max_choices)]
         acc_is_valid_json = [safe_get_delta(self, i).is_valid_json for i in range(max_choices)]
         acc_field_locations = [safe_get_delta(self, i).field_locations for i in range(max_choices)]  # This is only present in the last chunk.
-
         # Delete from previous_cumulated_chunk.choices[i].delta.flat_parsed the keys that are in safe_get_delta(self, i).flat_deleted_keys
         for i in range(max_choices):
             previous_delta = safe_get_delta(previous_cumulated_chunk, i)
@@ -242,6 +245,7 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         # Accumulate the flat_parsed and flat_likelihoods
         acc_flat_parsed = [safe_get_delta(previous_cumulated_chunk, i).flat_parsed | safe_get_delta(self, i).flat_parsed for i in range(max_choices)]
         acc_flat_likelihoods = [safe_get_delta(previous_cumulated_chunk, i).flat_likelihoods | safe_get_delta(self, i).flat_likelihoods for i in range(max_choices)]
+        acc_key_mapping = [safe_get_delta(previous_cumulated_chunk, i).key_mapping or safe_get_delta(self, i).key_mapping for i in range(max_choices)]
 
         acc_content = [(safe_get_delta(previous_cumulated_chunk, i).content or "") + (safe_get_delta(self, i).content or "") for i in range(max_choices)]
         usage = self.usage
@@ -265,6 +269,7 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         field_locations=acc_field_locations[i],
                         missing_content=acc_missing_content[i],
                         is_valid_json=acc_is_valid_json[i],
+                        key_mapping=acc_key_mapping[i],
                     ),
                     index=i,
                 )
