@@ -104,3 +104,6 @@ Among the features we're working on:
 - [ ] Evals SDK
 - [ ] Low-level speed optimizations
 - [ ] Add more templates
+- [ ] Additional context dump: additional_messages
+- [ ] DoubleCheck API (Agentic verification of the results)
+- [ ] Deep Research
