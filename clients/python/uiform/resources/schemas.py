@@ -119,7 +119,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
 
         The generated schema includes X-Prompts for enhanced LLM interactions:
         - X-SystemPrompt: Defines high-level instructions and context for consistent LLM behavior
-        - X-FieldPrompt: Enhances standard description fields with specific extraction guidance
         - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
 
         Args:
@@ -183,7 +182,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
 
         The generated schema includes X-Prompts for enhanced LLM interactions:
         - X-SystemPrompt: Defines high-level instructions and context for consistent LLM behavior
-        - X-FieldPrompt: Enhances standard description fields with specific extraction guidance
         - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
 
         Args:
@@ -314,7 +312,6 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
 
         The generated schema includes X-Prompts for enhanced LLM interactions:
         - X-SystemPrompt: Defines high-level instructions and context for consistent LLM behavior
-        - X-FieldPrompt: Enhances standard description fields with specific extraction guidance
         - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
 
         Args:
