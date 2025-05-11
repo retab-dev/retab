@@ -16,7 +16,7 @@ Made with love by the team at [UiForm](https://uiform.com) 🤍.
 
 ---
 
-### How it works
+### What is UiForm?
 
 UiForm solves all the major challenges in document processing with LLMs:
 
@@ -52,24 +52,6 @@ sequenceDiagram
 
 ---
 
-## General philosophy
-
-Our goal is to : 
-<Steps>
-  <Step title="Document Processing">
-    Helping you leverage OpenAI API to do document processing tasks with structured generations
-  </Step>
-  <Step title="Deployment">
-    Create custom mailboxes and links connected to your webhooks to process documents at scale
-  </Step>
-  <Step title="Optimization">
-    Identify the most used deployments and help you finetune models to reduce costs and improve performance
-  </Step>
-</Steps>
-
-
----
-
 
 
 We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthropic](https://www.anthropic.com/api), [Gemini](https://aistudio.google.com/) and [xAI](https://x.ai/api) models.
@@ -82,13 +64,8 @@ You come with your own API key from your favorite AI provider, and we handle the
 
 - [Quickstart](/get-started/quickstart)
 - [Prompt Engineering Guide](/get-started/prompting-with-the-JSON-schema)
-- [General Concepts](/SDK/General-Concepts)
-    - [Consensus](/SDK/General-Concepts#consensus)
-- [Create mailboxes](/SDK/Deployments#mailbox)
-- [Create links](/SDK/Deployments#link)
-- Finetuning (coming soon)
-- Prompt optimization (coming soon)
-- Data-Labelling with our AI-powered annotator (coming soon)
+- [Overview of the core concepts](/core/Overview)
+- [Create a deployment](/core/Deployments#mailbox)
 
 ---
 
@@ -123,7 +100,7 @@ We share our roadmap publicly on [Github](https://github.com/UiForm/uiform)
 Among the features we're working on:
 
 - [ ] Node.js SDK
-- [ ] Finetuning
-- [ ] Chat-based interface in the evaluation platform to rapidely generate visualizations
+- [ ] Chat-based interface in the evaluation platform
 - [ ] Evals SDK
+- [ ] Low-level speed optimizations
 - [ ] Add more templates
