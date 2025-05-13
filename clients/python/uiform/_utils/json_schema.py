@@ -213,7 +213,7 @@ def validate_adr_tunnel_code(v: Any) -> Optional[str]:
     if v is None:
         return None
     v_str = str(v).strip().upper()  # unify for set comparison
-    valid_codes = {'B', 'B1000C', 'B/D', 'B/E', 'C', 'C5000D', 'C/D', 'C/E', 'D', 'D/E', 'E', '-'}
+    valid_codes = {"B", "B1000C", "B/D", "B/E", "C", "C5000D", "C/D", "C/E", "D", "D/E", "E", "-"}
     return v_str if v_str in valid_codes else None
 
 
@@ -224,7 +224,7 @@ def validate_un_packing_group(v: Any) -> Optional[str]:
     if v is None:
         return None
     v_str = str(v).strip().upper()
-    valid_groups = {'I', 'II', 'III'}
+    valid_groups = {"I", "II", "III"}
     return v_str if v_str in valid_groups else None
 
 
@@ -347,7 +347,7 @@ def validate_strold(v: Any) -> Optional[str]:
         return None
     v_str = str(v).strip()
     # Treat these placeholders (and empty) as invalid
-    if v_str.lower() in {'null', 'none', 'nan', ''}:
+    if v_str.lower() in {"null", "none", "nan", ""}:
         return None
     return v_str
 
@@ -360,7 +360,7 @@ def validate_str(v: Any) -> Optional[str]:
     if v is None:
         return None
     v_str = str(v).strip()
-    if v_str.lower() in {'null', 'none', 'nan'}:  # Only treat explicit placeholders as None
+    if v_str.lower() in {"null", "none", "nan"}:  # Only treat explicit placeholders as None
         return None
     return v_str  # Keep empty strings intact
 
@@ -748,7 +748,7 @@ def json_schema_to_strict_openai_schema(obj: Union[dict[str, Any], list[Any]]) -
         new_obj: dict[str, Any] = copy.deepcopy(obj)
 
         # Remove some not-supported fields
-        for key in ['default', 'format', 'X-FieldTranslation', 'X-EnumTranslation']:
+        for key in ["default", "format", "X-FieldTranslation", "X-EnumTranslation"]:
             new_obj.pop(key, None)
 
         # Handle integer type
@@ -756,15 +756,15 @@ def json_schema_to_strict_openai_schema(obj: Union[dict[str, Any], list[Any]]) -
             if new_obj["type"] == "integer":
                 new_obj["type"] = "number"
             elif isinstance(new_obj["type"], list):
-                new_obj["type"] = ['number' if t == 'integer' else t for t in new_obj["type"]]
+                new_obj["type"] = ["number" if t == "integer" else t for t in new_obj["type"]]
 
         # Handle allOf
         if "allOf" in new_obj:
             subschemas = new_obj.pop("allOf")
             merged: dict[str, Any] = {}
             for subschema in subschemas:
-                if '$ref' in subschema:
-                    merged.update({'$ref': subschema['$ref']})
+                if "$ref" in subschema:
+                    merged.update({"$ref": subschema["$ref"]})
                 else:
                     merged.update(json_schema_to_strict_openai_schema(subschema))
             new_obj.update(merged)
@@ -779,10 +779,10 @@ def json_schema_to_strict_openai_schema(obj: Union[dict[str, Any], list[Any]]) -
             new_obj["type"] = "string"
 
         # Handle object type
-        if new_obj.get("type") == "object" and 'properties' in new_obj and isinstance(new_obj['properties'], dict):
-            new_obj['required'] = list(new_obj['properties'].keys())
-            new_obj['additionalProperties'] = False
-            new_obj['properties'] = {k: json_schema_to_strict_openai_schema(v) for k, v in new_obj['properties'].items()}
+        if new_obj.get("type") == "object" and "properties" in new_obj and isinstance(new_obj["properties"], dict):
+            new_obj["required"] = list(new_obj["properties"].keys())
+            new_obj["additionalProperties"] = False
+            new_obj["properties"] = {k: json_schema_to_strict_openai_schema(v) for k, v in new_obj["properties"].items()}
 
         # Handle array type
         if new_obj.get("type") == "array" and "items" in new_obj:
@@ -1045,7 +1045,7 @@ def cleanup_reasoning(output_data: Any, reasoning_preffix: str = "reasoning___")
 # Other utils
 
 
-def cast_all_leaves_from_json_schema_to_type(leaf: dict[str, Any], new_type: Literal['string', 'boolean'], is_optional: bool = True) -> dict[str, Any]:
+def cast_all_leaves_from_json_schema_to_type(leaf: dict[str, Any], new_type: Literal["string", "boolean"], is_optional: bool = True) -> dict[str, Any]:
     new_leaf: dict[str, Any] = {}
     # new_leaf["description"] = "Here goes the suggestion, if any, or null."
     if leaf.get("type") == "object":
@@ -1060,7 +1060,7 @@ def cast_all_leaves_from_json_schema_to_type(leaf: dict[str, Any], new_type: Lit
         if is_optional:
             new_leaf["anyOf"] = [{"type": new_type}, {"type": "null"}]
         else:
-            new_leaf['type'] = new_type
+            new_leaf["type"] = new_type
     return new_leaf
 
 
@@ -1186,16 +1186,25 @@ def object_format_coercion(instance: dict[str, Any], schema: dict[str, Any]) -> 
     return coerced if coerced is not None else {}
 
 
-def flatten_dict(obj: Any, prefix: str = '') -> dict[str, Any]:
+def flatten_dict(obj: Any, prefix: str = "") -> dict[str, Any]:
     items = []  # type: ignore
     if isinstance(obj, dict):
-        for k, v in obj.items():
-            new_key = f"{prefix}.{k}" if prefix else k
-            items.extend(flatten_dict(v, new_key).items())
+        if len(obj) == 0:
+            # Keep empty dicts as dicts (so we can keep its structure)
+            items.append((prefix, {}))
+        else:
+            for k, v in obj.items():
+                new_key = f"{prefix}.{k}" if prefix else k
+                items.extend(flatten_dict(v, new_key).items())
+
     elif isinstance(obj, list):
-        for i, v in enumerate(obj):
-            new_key = f"{prefix}.{i}"
-            items.extend(flatten_dict(v, new_key).items())
+        if len(obj) == 0:
+            # Keep empty lists as lists (so we can keep its structure)
+            items.append((prefix, []))
+        else:
+            for i, v in enumerate(obj):
+                new_key = f"{prefix}.{i}"
+                items.extend(flatten_dict(v, new_key).items())
     else:
         items.append((prefix, obj))
     return dict(items)
@@ -1258,7 +1267,7 @@ def unflatten_dict(obj: dict[str, Any]) -> Any:
         if not isinstance(key, str):
             continue
 
-        parts = key.split('.')
+        parts = key.split(".")
         # Filter out empty parts
         valid_parts = [p for p in parts if p]
         if not valid_parts:
@@ -1271,7 +1280,7 @@ def unflatten_dict(obj: dict[str, Any]) -> Any:
             # Check if the part is an integer (for list indices)
             try:
                 # More robust integer parsing - handles negative numbers too
-                if part.lstrip('-').isdigit():
+                if part.lstrip("-").isdigit():
                     part = int(part)
             except (ValueError, AttributeError):
                 # If conversion fails, keep as string
@@ -1956,13 +1965,13 @@ def nlp_data_structure_to_field_descriptions(nlp_data_structure: str) -> dict:
 
     # Pattern to match headers and extract field_name and type
     # Example: "### field_name (type)" or "#### parent.child (type)"
-    header_pattern = re.compile(r'^(#+)\s+([^\s(]+)\s*\(([^)]*)\)')
+    header_pattern = re.compile(r"^(#+)\s+([^\s(]+)\s*\(([^)]*)\)")
 
     # Pattern to extract description between tags
-    description_pattern = re.compile(r'<Description>(.*?)</Description>', re.DOTALL)
+    description_pattern = re.compile(r"<Description>(.*?)</Description>", re.DOTALL)
 
     # Split the markdown by lines
-    lines = nlp_data_structure.split('\n')
+    lines = nlp_data_structure.split("\n")
 
     # Process the markdown to extract field names and descriptions
     field_descriptions = {}
