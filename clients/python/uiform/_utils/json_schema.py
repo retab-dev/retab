@@ -1186,25 +1186,25 @@ def object_format_coercion(instance: dict[str, Any], schema: dict[str, Any]) -> 
     return coerced if coerced is not None else {}
 
 
-def flatten_dict(obj: Any, prefix: str = "") -> dict[str, Any]:
+def flatten_dict(obj: Any, prefix: str = "", allow_empty_objects: bool = True) -> dict[str, Any]:
     items = []  # type: ignore
     if isinstance(obj, dict):
-        if len(obj) == 0:
+        if len(obj) == 0 and allow_empty_objects:
             # Keep empty dicts as dicts (so we can keep its structure)
             items.append((prefix, {}))
         else:
             for k, v in obj.items():
                 new_key = f"{prefix}.{k}" if prefix else k
-                items.extend(flatten_dict(v, new_key).items())
+                items.extend(flatten_dict(v, new_key, allow_empty_objects=allow_empty_objects).items())
 
     elif isinstance(obj, list):
-        if len(obj) == 0:
+        if len(obj) == 0 and allow_empty_objects:
             # Keep empty lists as lists (so we can keep its structure)
             items.append((prefix, []))
         else:
             for i, v in enumerate(obj):
                 new_key = f"{prefix}.{i}"
-                items.extend(flatten_dict(v, new_key).items())
+                items.extend(flatten_dict(v, new_key, allow_empty_objects=allow_empty_objects).items())
     else:
         items.append((prefix, obj))
     return dict(items)
