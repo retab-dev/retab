@@ -83,15 +83,20 @@ class Iteration(BaseModel):
         return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
 
 
+
+
 class DocumentItem(BaseModel):
     mime_data: MIMEData = Field(description="The mime data of the document. Can also be a BaseMIMEData, which is why we have this id field (to be able to identify the file, but id is equal to mime_data.id)")
     annotation: dict[str,Any] = Field(default={}, description="The ground truth of the document")
-    metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
+    annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
 
 class EvaluationDocument(DocumentItem):
     id: str = Field(description="The ID of the document. Equal to mime_data.id but robust to the case where mime_data is a BaseMIMEData")
 
-
+class UpdateEvaluationDocumentRequest(BaseModel):
+    annotation: Optional[dict[str,Any]] = Field(default=None, description="The ground truth of the document")
+    annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
+    
 class UpdateEvaluationRequest(BaseModel):
     name: Optional[str] = Field(default=None, description="The name of the document")
     documents: Optional[list[EvaluationDocument]] = Field(default=None, description="The documents of the evaluation")
