@@ -49,7 +49,7 @@ import datetime
 
 from pydantic import BaseModel, Field
 
-from uiform.types.jobs.base import AnnotationProps
+from uiform.types.jobs.base import InferenceSettings
 
 
 class FinetunedModel(BaseModel):
@@ -58,7 +58,7 @@ class FinetunedModel(BaseModel):
     model: str
     schema_id: str
     schema_data_id: str
-    finetuning_props: AnnotationProps
+    finetuning_props: InferenceSettings
     eval_id: str | None = None
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 

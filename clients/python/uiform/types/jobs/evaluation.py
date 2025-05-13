@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 from ..._utils.benchmarking import EvalMetrics, SingleFileEval, compute_dict_difference
-from .batch_annotation import AnnotationInputData, AnnotationProps
+from .batch_annotation import AnnotationInputData, InferenceSettings
 
 # This job will generate two datasets from the original dataset, one with the first annotation and one with the second annotation
 # It will then evaluate the two datasets using the evaluation metrics and return an EvalMetrics object
@@ -11,14 +11,14 @@ class EvaluationInputData(BaseModel):
     original_dataset_id: str
     schema_id: str
     schema_data_id: str
-    annotation_props_1: AnnotationProps
-    annotation_props_2: AnnotationProps
+    inference_settings_1: InferenceSettings
+    inference_settings_2: InferenceSettings
 
 
 # def evaluate_datasets(
 #     original_dataset_id: str,
-#     annotation_props_1: AnnotationProps,
-#     annotation_props_2: AnnotationProps,
+#     inference_settings_1: InferenceSettings,
+#     inference_settings_2: InferenceSettings,
 #     identity: Identity,
 #     job_execution_id: str,
 #     settings: Settings,
@@ -38,7 +38,7 @@ class EvaluationInputData(BaseModel):
 #             dataset_id=original_dataset_id,
 #             files_ids=None,
 #             upsert=True,
-#             annotation_props=annotation_props_1
+#             inference_settings=inference_settings_1
 #         )
 #     )
 
@@ -47,7 +47,7 @@ class EvaluationInputData(BaseModel):
 #             dataset_id=original_dataset_id,
 #             files_ids=None,
 #             upsert=True,
-#             annotation_props=annotation_props_2
+#             inference_settings=inference_settings_2
 #         )
 #     )
 #     batch_annotate_job_with_checkpoints(

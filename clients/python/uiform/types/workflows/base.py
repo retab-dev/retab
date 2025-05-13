@@ -2,11 +2,11 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, model_validator
 
-from ..jobs.base import AnnotationInputData, AnnotationProps, EvaluationInputData, PrepareDatasetInputData
+from ..jobs.base import AnnotationInputData, InferenceSettings, EvaluationInputData, PrepareDatasetInputData
 
 Workflows = Literal["finetuning-workflow", "annotation-workflow", "evaluation-workflow"]
 
-AnnotationModel = Literal["human"] | str  # If human, then annotation_props is not used
+AnnotationModel = Literal["human"] | str  # If human, then inference_settings is not used
 
 
 # This is the input data for the standalone annotation workflow (Fully automated)
@@ -23,15 +23,15 @@ class StandaloneEvaluationWorkflowInputData(EvaluationInputData):
 class FinetuningWorkflowInputData(BaseModel):
     prepare_dataset_input_data: PrepareDatasetInputData
     annotation_model: AnnotationModel
-    annotation_props: AnnotationProps | None = None
-    finetuning_props: AnnotationProps
+    inference_settings: InferenceSettings | None = None
+    finetuning_props: InferenceSettings
 
     # Validate the input
     @model_validator(mode="after")
     def validate_input(self) -> Self:
         if self.annotation_model == "human":
-            if self.annotation_props is not None:
-                raise ValueError("annotation_props must be None if annotation_model is human")
+            if self.inference_settings is not None:
+                raise ValueError("inference_settings must be None if annotation_model is human")
         else:
-            self.annotation_props = self.finetuning_props
+            self.inference_settings = self.finetuning_props
         return self

@@ -7,9 +7,9 @@ from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.standards import PreparedRequest
-from ..types.evals import (Evaluation, EvaluationDocument, Iteration, MetricResult, AnnotationData, 
+from ..types.evals import (Evaluation, EvaluationDocument, Iteration, MetricResult, PredictionData, 
                            AddIterationFromJsonlRequest)
-from ..types.jobs.base import AnnotationProps
+from ..types.jobs.base import InferenceSettings
 from ..types.image_settings import ImageSettings
 from ..types.mime import MIMEData
 from .._utils.mime import prepare_mime_document
@@ -30,14 +30,14 @@ class EvalsMixin:
     def prepare_create(self, name: str, json_schema: Dict[str, Any], project_id: str, 
                          documents: List[EvaluationDocument] = [], 
                          iterations: List[Iteration] = [], 
-                         default_annotation_props: Optional[AnnotationProps] = None) -> PreparedRequest:
+                         default_inference_settings: Optional[InferenceSettings] = None) -> PreparedRequest:
         eval_data = Evaluation(
             name=name,
             json_schema=json_schema,
             project_id=project_id,
             documents=documents,
             iterations=iterations,
-            default_annotation_props=default_annotation_props
+            default_inference_settings=default_inference_settings
         )
         return PreparedRequest(
             method="POST",
@@ -55,7 +55,7 @@ class EvalsMixin:
                       json_schema: Optional[Dict[str, Any]] = None, 
                       documents: Optional[List[EvaluationDocument]] = None,
                       iterations: Optional[List[Iteration]] = None,
-                      default_annotation_props: Optional[AnnotationProps] = None) -> PreparedRequest:
+                      default_inference_settings: Optional[InferenceSettings] = None) -> PreparedRequest:
         """
         Prepare a request to update an evaluation with partial updates.
         
@@ -73,8 +73,8 @@ class EvalsMixin:
             update_data["documents"] = [doc.model_dump(exclude_none=True, mode="json") for doc in documents]
         if iterations is not None:
             update_data["iterations"] = [iter.model_dump(exclude_none=True, mode="json") for iter in iterations]
-        if default_annotation_props is not None:
-            update_data["default_annotation_props"] = default_annotation_props.model_dump(exclude_none=True, mode="json")
+        if default_inference_settings is not None:
+            update_data["default_inference_settings"] = default_inference_settings.model_dump(exclude_none=True, mode="json")
             
         return PreparedRequest(
             method="PATCH",
@@ -113,10 +113,9 @@ class DocumentsMixin:
 
     def prepare_create(self, eval_id: str, document: MIMEData, ground_truth: Dict[str, Any]) -> PreparedRequest:
         # Serialize the MIMEData
-        document_data = document.model_dump() if hasattr(document, "model_dump") else document.dict()
         
         data = {
-            "document": document_data,
+            "document": document.model_dump(),
             "ground_truth": ground_truth
         }
         
@@ -136,8 +135,6 @@ class DocumentsMixin:
             params=params
         )
 
-
-class DocumentMixin:
     def prepare_update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> PreparedRequest:
         data = {"ground_truth": ground_truth}
         
@@ -187,7 +184,7 @@ class IterationsMixin:
         )
 
     def prepare_create(self, eval_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> PreparedRequest:
-        props = AnnotationProps(
+        props = InferenceSettings(
             model=model,
             temperature=temperature,
         )
@@ -196,8 +193,8 @@ class IterationsMixin:
             
         iteration_data = Iteration(
             json_schema=json_schema,
-            annotation_props=props,
-            annotations=[]
+            inference_settings=props,
+            predictions=[]
         )
         
         return PreparedRequest(
@@ -207,19 +204,19 @@ class IterationsMixin:
         )
 
     def prepare_update(self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> PreparedRequest:
-        annotation_props = AnnotationProps(
+        inference_settings = InferenceSettings(
             model=model,
             temperature=temperature,
         )
         
         if image_settings:
-            annotation_props.image_settings = ImageSettings.model_validate(image_settings)
+            inference_settings.image_settings = ImageSettings.model_validate(image_settings)
             
         iteration_data = Iteration(
             id=iteration_id,
             json_schema=json_schema,
-            annotation_props=annotation_props,
-            annotations=[]
+            inference_settings=inference_settings,
+            predictions=[]
         )
         
         return PreparedRequest(
@@ -249,7 +246,6 @@ class Evals(SyncAPIResource, EvalsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.documents = Documents(self._client)
-        self.document = Document(self._client)
         self.iterations = Iterations(self._client)
 
     def create(self, name: str, json_schema: Dict[str, Any], project_id: str) -> Evaluation:
@@ -290,7 +286,7 @@ class Evals(SyncAPIResource, EvalsMixin):
               json_schema: Optional[Dict[str, Any]] = None, 
               documents: Optional[List[EvaluationDocument]] = None,
               iterations: Optional[List[Iteration]] = None,
-              default_annotation_props: Optional[AnnotationProps] = None) -> Evaluation:
+              default_inference_settings: Optional[InferenceSettings] = None) -> Evaluation:
         """
         Update an evaluation with partial updates.
 
@@ -301,7 +297,7 @@ class Evals(SyncAPIResource, EvalsMixin):
             json_schema: Optional new JSON schema
             documents: Optional list of documents to update
             iterations: Optional list of iterations to update
-            default_annotation_props: Optional annotation properties
+            default_inference_settings: Optional annotation properties
 
         Returns:
             Evaluation: The updated evaluation
@@ -315,7 +311,7 @@ class Evals(SyncAPIResource, EvalsMixin):
             json_schema=json_schema,
             documents=documents,
             iterations=iterations,
-            default_annotation_props=default_annotation_props
+            default_inference_settings=default_inference_settings
         )
         response = self._client._prepared_request(request)
         return Evaluation(**response)
@@ -432,9 +428,6 @@ class Documents(SyncAPIResource, DocumentsMixin):
         response = self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
-
-class Document(SyncAPIResource, DocumentMixin):
-    """Document API wrapper for individual document operations"""
 
     def update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> EvaluationDocument:
         """
@@ -627,7 +620,6 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.documents = AsyncDocuments(self._client)
-        self.document = AsyncDocument(self._client)
         self.iterations = AsyncIterations(self._client)
 
     async def create(self, name: str, json_schema: Dict[str, Any], project_id: str) -> Evaluation:
@@ -668,7 +660,7 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
                       json_schema: Optional[Dict[str, Any]] = None, 
                       documents: Optional[List[EvaluationDocument]] = None,
                       iterations: Optional[List[Iteration]] = None,
-                      default_annotation_props: Optional[AnnotationProps] = None) -> Evaluation:
+                      default_inference_settings: Optional[InferenceSettings] = None) -> Evaluation:
         """
         Update an evaluation with partial updates.
 
@@ -679,7 +671,7 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
             json_schema: Optional new JSON schema
             documents: Optional list of documents to update
             iterations: Optional list of iterations to update
-            default_annotation_props: Optional annotation properties
+            default_inference_settings: Optional annotation properties
 
         Returns:
             Evaluation: The updated evaluation
@@ -693,7 +685,7 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
             json_schema=json_schema,
             documents=documents,
             iterations=iterations,
-            default_annotation_props=default_annotation_props
+            default_inference_settings=default_inference_settings
         )
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
@@ -810,9 +802,6 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         response = await self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
-
-class AsyncDocument(AsyncAPIResource, DocumentMixin):
-    """Async Document API wrapper for individual document operations"""
 
     async def update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> EvaluationDocument:
         """

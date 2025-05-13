@@ -366,8 +366,8 @@ class SingleFileEval(BaseModel):
     schema_data_id: str | None = None
     dict_1: dict[str, Any]
     dict_2: dict[str, Any]
-    annotation_props_1: AnnotationParameters
-    annotation_props_2: AnnotationParameters
+    inference_settings_1: AnnotationParameters
+    inference_settings_2: AnnotationParameters
     created_at: datetime.datetime
     organization_id: str
     hamming_similarity: dict[str, Any]

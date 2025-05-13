@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, computed_field
 from .._utils.json_schema import clean_schema
 from .._utils.mime import generate_blake2b_hash_from_string
 from .ai_models import Amount, LLMModel
-from .jobs.base import AnnotationProps
+from .jobs.base import InferenceSettings
 from .mime import MIMEData
 
 
@@ -35,20 +35,22 @@ class MetricResult(BaseModel):
     mean_similarity: float = Field(description="The average similarity score across all items")
     metric_type: MetricType = Field(description="The type of similarity metric used for comparison")
 
-
-class AnnotationData(BaseModel):
-    annotation: dict[str, Any] = Field(default={}, description="The result of the extraction or manual annotation")
+class PredictionMetadata(BaseModel):
     likelihoods: Optional[dict[str, Any]] = Field(default=None, description="The likelihoods of the extraction")
     field_locations: Optional[dict[str, Any]] = Field(default=None, description="The field locations of the extraction")
     consensus_details: Optional[list[dict[str, Any]]] = Field(default=None, description="The consensus details of the extraction")
     api_cost: Optional[Amount] = Field(default=None, description="The cost of the API call for this document (if any -- ground truth for example)")
 
+class PredictionData(BaseModel):
+    prediction: dict[str, Any] = Field(default={}, description="The result of the extraction or manual annotation")
+    metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the prediction")
+   
 
 class Iteration(BaseModel):
     id: str = Field(default_factory=lambda: "eval_iter_" + nanoid.generate())
-    annotation_props: AnnotationProps
+    inference_settings: InferenceSettings
     json_schema: dict[str, Any]
-    annotations: list[AnnotationData] = Field(default_factory=list, description="The annotations of the iteration")
+    predictions: list[PredictionData] = Field(default_factory=list, description="The predictions of the iteration for all the documents")
 
     @computed_field  # type: ignore
     @property
@@ -82,9 +84,9 @@ class Iteration(BaseModel):
 
 
 class DocumentItem(BaseModel):
-    mime_data: MIMEData  # Can also be a BaseMIMEData, which is why we have this id field (to be able to identify the file, but id is equal to mime_data.id)
-    ground_truth: AnnotationData = Field(default=AnnotationData(), description="The ground truth of the document")
-
+    mime_data: MIMEData = Field(description="The mime data of the document. Can also be a BaseMIMEData, which is why we have this id field (to be able to identify the file, but id is equal to mime_data.id)")
+    annotation: dict[str,Any] = Field(default={}, description="The ground truth of the document")
+    metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
 
 class EvaluationDocument(DocumentItem):
     id: str = Field(description="The ID of the document. Equal to mime_data.id but robust to the case where mime_data is a BaseMIMEData")
@@ -144,7 +146,7 @@ class Evaluation(BaseModel):
     json_schema: dict[str, Any]
 
     project_id: str = Field(description="The ID of the project", default="default_spreadsheets")
-    default_annotation_props: Optional[AnnotationProps] = Field(default=None, description="The default annotation properties for the evaluation (mostly used in the frontend)")
+    default_inference_settings: Optional[InferenceSettings] = Field(default=None, description="The default inference properties for the evaluation (mostly used in the frontend)")
 
     # @field_validator('iterations')
     # def validate_iterations_content_length(cls: Any, v: list[Iteration], values: Any) -> list[Iteration]:
