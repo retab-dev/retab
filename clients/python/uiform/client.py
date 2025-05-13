@@ -55,7 +55,7 @@ class BaseUiForm:
         openai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
         gemini_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
         # claude_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
-        # xai_api_key: Optional[str] = PydanticUndefined,   # type: ignore[assignment]
+        xai_api_key: Optional[str] = PydanticUndefined,  # type: ignore[assignment]
     ) -> None:
         if api_key is None:
             api_key = os.environ.get("UIFORM_API_KEY")
@@ -94,10 +94,10 @@ class BaseUiForm:
             self.headers["OpenAI-Api-Key"] = openai_api_key
 
         # if claude_api_key:
-        #    self.headers["Claude-Api-Key"] = claude_api_key
+        #    self.headers["Anthropic-Api-Key"] = claude_api_key
 
-        # if xai_api_key:
-        #    self.headers["XAI-Api-Key"] = xai_api_key
+        if xai_api_key:
+            self.headers["XAI-Api-Key"] = xai_api_key
 
         if gemini_api_key:
             self.headers["Gemini-Api-Key"] = gemini_api_key
