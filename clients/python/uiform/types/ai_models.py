@@ -41,7 +41,6 @@ OpenAIModel = Literal[
     "gpt-4o-mini-audio-preview-2024-12-17",
     "gpt-4o-mini-realtime-preview-2024-12-17",
 ]
-<<<<<<< HEAD
 xAI_Model = Literal["grok-3-beta", "grok-3-mini-beta"]
 LLMModel = Literal[OpenAIModel, "human", AnthropicModel, xAI_Model, GeminiModel]
 
@@ -600,9 +599,7 @@ gemini_model_cards = [
 ]
 
 
-<<<<<<< HEAD
 model_cards = openai_model_cards + gemini_model_cards + xai_model_cards
-=======
 xAI_model_cards = [
     # ----------------------
     # grok3-family
@@ -635,7 +632,6 @@ xAI_model_cards = [
 
 
 model_cards = openai_model_cards + gemini_model_cards
->>>>>>> af39113 (Added support for grok, but images are not supported yet...)
 
 
 def get_model_card(model: str) -> ModelCard:
