@@ -604,7 +604,7 @@ xAI_model_cards = [
     # ----------------------
     # grok3-family
     # ----------------------
-     ModelCard(
+    ModelCard(
         model="grok-3-beta",
         pricing=Pricing(text=TokenPrice(prompt=3, cached_discount=1.0, completion=15), audio=None),
         capabilities=ModelCapabilities(
@@ -615,7 +615,6 @@ xAI_model_cards = [
         logprobs_support=False,
         temperature_support=True,
     ),
-
     ModelCard(
         model="grok-3-mini-beta",
         pricing=Pricing(text=TokenPrice(prompt=0.3, cached_discount=1.0, completion=0.5), audio=None),
@@ -627,11 +626,10 @@ xAI_model_cards = [
         logprobs_support=False,
         temperature_support=True,
     ),
-
 ]
 
 
-model_cards = openai_model_cards + gemini_model_cards
+model_cards = openai_model_cards + gemini_model_cards + xAI_model_cards
 
 
 def get_model_card(model: str) -> ModelCard:
