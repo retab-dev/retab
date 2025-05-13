@@ -9,14 +9,15 @@ from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.standards import PreparedRequest
 from ..types.evals import (Evaluation, EvaluationDocument, Iteration, MetricResult, PredictionData, 
                            AddIterationFromJsonlRequest, DocumentItem, UpdateEvaluationDocumentRequest, 
-                           PredictionMetadata)
+                           PredictionMetadata, PerformIterationRequest)
 from ..types.jobs.base import InferenceSettings
 from ..types.image_settings import ImageSettings
 from ..types.mime import MIMEData
 from .._utils.mime import prepare_mime_document
+from ..types.modalities import Modality
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 from tqdm import tqdm
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 
 class DeleteResponse(TypedDict):
@@ -192,27 +193,34 @@ class IterationsMixin:
             params=params
         )
 
-    def prepare_create(self, eval_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> PreparedRequest:
+    def prepare_create(self, 
+        eval_id: str, 
+        json_schema: Dict[str, Any], 
+        model: str, 
+        temperature: float = 0.0, 
+        modality: Modality = "text",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        image_settings: Optional[Dict[str, Any]] = None,
+        n_consensus: int = 1) -> PreparedRequest:
+
         props = InferenceSettings(
             model=model,
             temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            image_settings=ImageSettings.model_validate(image_settings),
+            n_consensus=n_consensus
         )
-        if image_settings:
-            props.image_settings = ImageSettings.model_validate(image_settings)
-            
-        iteration_data = Iteration(
-            json_schema=json_schema,
+
+        perform_iteration_request = PerformIterationRequest(
             inference_settings=props,
-            predictions=[]
+            json_schema=json_schema
         )
 
-        
-
-        
         return PreparedRequest(
             method="POST",
-            url=f"/v1/evals/{eval_id}/iterations",
-            data=iteration_data.model_dump(exclude_none=True, mode="json")
+            url=f"/v1/evals/{eval_id}/perform_iteration",
+            data=perform_iteration_request.model_dump(exclude_none=True, mode="json")
         )
 
 
@@ -550,7 +558,15 @@ class Iterations(SyncAPIResource, IterationsMixin):
         response = self._client._prepared_request(request)
         return [Iteration(**item) for item in response.get("data", [])]
 
-    def create(self, eval_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> Iteration:
+    def create(self, 
+        eval_id: str, 
+        json_schema: Dict[str, Any], 
+        model: str, 
+        temperature: float = 0.0, 
+        modality: Modality = "text",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        image_settings: Optional[Dict[str, Any]] = None,
+        n_consensus: int = 1) -> Iteration:
         """
         Create a new iteration for an evaluation.
 
@@ -559,14 +575,26 @@ class Iterations(SyncAPIResource, IterationsMixin):
             json_schema: The JSON schema for the iteration
             model: The model to use for the iteration
             temperature: The temperature to use for the model
+            modality: The modality to use (text, image, etc.)
+            reasoning_effort: The reasoning effort setting for the model (auto, low, medium, high)
             image_settings: Optional image settings
+            n_consensus: Number of consensus iterations to perform
 
         Returns:
             Iteration: The created iteration
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(eval_id, json_schema, model, temperature, image_settings)
+        request = self.prepare_create(
+            eval_id=eval_id, 
+            json_schema=json_schema, 
+            model=model, 
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            image_settings=image_settings,
+            n_consensus=n_consensus
+        )
         response = self._client._prepared_request(request)
         return Iteration(**response)
 
@@ -924,7 +952,15 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         response = await self._client._prepared_request(request)
         return [Iteration(**item) for item in response.get("data", [])]
 
-    async def create(self, eval_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> Iteration:
+    async def create(self, 
+        eval_id: str, 
+        json_schema: Dict[str, Any], 
+        model: str, 
+        temperature: float = 0.0, 
+        modality: Modality = "text",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        image_settings: Optional[Dict[str, Any]] = None,
+        n_consensus: int = 1) -> Iteration:
         """
         Create a new iteration for an evaluation.
 
@@ -933,14 +969,26 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
             json_schema: The JSON schema for the iteration
             model: The model to use for the iteration
             temperature: The temperature to use for the model
+            modality: The modality to use (text, image, etc.)
+            reasoning_effort: The reasoning effort setting for the model (auto, low, medium, high)
             image_settings: Optional image settings
+            n_consensus: Number of consensus iterations to perform
 
         Returns:
             Iteration: The created iteration
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(eval_id, json_schema, model, temperature, image_settings)
+        request = self.prepare_create(
+            eval_id=eval_id, 
+            json_schema=json_schema, 
+            model=model, 
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            image_settings=image_settings,
+            n_consensus=n_consensus
+        )
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 
