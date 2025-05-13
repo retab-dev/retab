@@ -41,6 +41,7 @@ OpenAIModel = Literal[
     "gpt-4o-mini-audio-preview-2024-12-17",
     "gpt-4o-mini-realtime-preview-2024-12-17",
 ]
+<<<<<<< HEAD
 xAI_Model = Literal["grok-3-beta", "grok-3-mini-beta"]
 LLMModel = Literal[OpenAIModel, "human", AnthropicModel, xAI_Model, GeminiModel]
 
@@ -599,7 +600,42 @@ gemini_model_cards = [
 ]
 
 
+<<<<<<< HEAD
 model_cards = openai_model_cards + gemini_model_cards + xai_model_cards
+=======
+xAI_model_cards = [
+    # ----------------------
+    # grok3-family
+    # ----------------------
+     ModelCard(
+        model="grok-3-beta",
+        pricing=Pricing(text=TokenPrice(prompt=3, cached_discount=1.0, completion=15), audio=None),
+        capabilities=ModelCapabilities(
+            modalities=["text"],
+            endpoints=["chat_completions"],
+            features=["streaming", "structured_outputs"],
+        ),
+        logprobs_support=False,
+        temperature_support=True,
+    ),
+
+    ModelCard(
+        model="grok-3-mini-beta",
+        pricing=Pricing(text=TokenPrice(prompt=0.3, cached_discount=1.0, completion=0.5), audio=None),
+        capabilities=ModelCapabilities(
+            modalities=["text"],
+            endpoints=["chat_completions"],
+            features=["streaming", "structured_outputs"],
+        ),
+        logprobs_support=False,
+        temperature_support=True,
+    ),
+
+]
+
+
+model_cards = openai_model_cards + gemini_model_cards
+>>>>>>> af39113 (Added support for grok, but images are not supported yet...)
 
 
 def get_model_card(model: str) -> ModelCard:
