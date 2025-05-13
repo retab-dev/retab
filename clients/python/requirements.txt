@@ -55,3 +55,9 @@ google-genai
 google-generativeai
 anthropic
 tiktoken
+
+
+########################
+## SSL dependencies
+########################
+truststore

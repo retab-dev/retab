@@ -1,23 +1,48 @@
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict, Union
+from io import IOBase
+from pathlib import Path
+
+import PIL.Image
+from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.standards import PreparedRequest
-from ..types.evals import Evaluation, EvaluationDocument, Iteration, MetricResult
+from ..types.evals import (Evaluation, EvaluationDocument, Iteration, MetricResult, AnnotationData, 
+                           AddIterationFromJsonlRequest)
+from ..types.jobs.base import AnnotationProps
+from ..types.image_settings import ImageSettings
+from ..types.mime import MIMEData
+from .._utils.mime import prepare_mime_document
 
+
+class DeleteResponse(TypedDict):
+    """Response from a delete operation"""
+    success: bool
+    id: str
+
+class ExportResponse(TypedDict):
+    """Response from an export operation"""
+    success: bool
+    path: str
 
 
 class EvalsMixin:
-    def prepare_create(self, name: str, json_schema: Dict[str, Any], project_id: str) -> PreparedRequest:
+    def prepare_create(self, name: str, json_schema: Dict[str, Any], project_id: str, 
+                         documents: List[EvaluationDocument] = [], 
+                         iterations: List[Iteration] = [], 
+                         default_annotation_props: Optional[AnnotationProps] = None) -> PreparedRequest:
+        eval_data = Evaluation(
+            name=name,
+            json_schema=json_schema,
+            project_id=project_id,
+            documents=documents,
+            iterations=iterations,
+            default_annotation_props=default_annotation_props
+        )
         return PreparedRequest(
             method="POST",
             url="/v1/evals",
-            data={
-                "name": name,
-                "json_schema": json_schema,
-                "project_id": project_id,
-                "documents": [],
-                "iterations": []
-            }
+            data=eval_data.model_dump(exclude_none=True)
         )
 
     def prepare_get(self, id: str) -> PreparedRequest:
@@ -26,11 +51,35 @@ class EvalsMixin:
             url=f"/v1/evals/{id}"
         )
 
-    def prepare_update(self, id: str, name: str) -> PreparedRequest:
+    def prepare_update(self, eval_id: str, name: Optional[str] = None, project_id: Optional[str] = None, 
+                      json_schema: Optional[Dict[str, Any]] = None, 
+                      documents: Optional[List[EvaluationDocument]] = None,
+                      iterations: Optional[List[Iteration]] = None,
+                      default_annotation_props: Optional[AnnotationProps] = None) -> PreparedRequest:
+        """
+        Prepare a request to update an evaluation with partial updates.
+        
+        Only the provided fields will be updated. Fields set to None will be excluded from the update.
+        """
+        # Build a dictionary with only the provided fields
+        update_data = {}
+        if name is not None:
+            update_data["name"] = name
+        if project_id is not None:
+            update_data["project_id"] = project_id
+        if json_schema is not None:
+            update_data["json_schema"] = json_schema
+        if documents is not None:
+            update_data["documents"] = [doc.model_dump(exclude_none=True) for doc in documents]
+        if iterations is not None:
+            update_data["iterations"] = [iter.model_dump(exclude_none=True) for iter in iterations]
+        if default_annotation_props is not None:
+            update_data["default_annotation_props"] = default_annotation_props.model_dump(exclude_none=True)
+            
         return PreparedRequest(
-            method="PUT",
-            url=f"/v1/evals/{id}",
-            data={"name": name}
+            method="PATCH",
+            url=f"/v1/evals/{eval_id}",
+            data=update_data
         )
 
     def prepare_list(self, project_id: str) -> PreparedRequest:
@@ -49,7 +98,6 @@ class EvalsMixin:
 
 class DocumentsMixin:
     def prepare_import_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
-        # This would be implemented based on the actual API endpoint
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/import_documents",
@@ -57,18 +105,22 @@ class DocumentsMixin:
         )
 
     def prepare_save_to_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
-        # This would be implemented based on the actual API endpoint
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/export_documents",
             data={"path": path}
         )
 
-    def prepare_create(self, eval_id: str, document: str, ground_truth: Dict[str, Any]) -> PreparedRequest:
+    def prepare_create(self, eval_id: str, document: Union[str, Dict[str, Any]], ground_truth: Dict[str, Any]) -> PreparedRequest:
+        data = {
+            "document": document,
+            "ground_truth": ground_truth
+        }
+        
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/documents",
-            data={"document": document, "ground_truth": ground_truth}
+            data=data
         )
 
     def prepare_list(self, eval_id: str, filename: Optional[str] = None) -> PreparedRequest:
@@ -84,10 +136,12 @@ class DocumentsMixin:
 
 class DocumentMixin:
     def prepare_update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> PreparedRequest:
+        data = {"ground_truth": ground_truth}
+        
         return PreparedRequest(
             method="PUT",
             url=f"/v1/evals/{eval_id}/documents/{id}",
-            data={"ground_truth": ground_truth}
+            data=data
         )
 
     def prepare_delete(self, eval_id: str, id: str) -> PreparedRequest:
@@ -99,17 +153,18 @@ class DocumentMixin:
 
 class IterationsMixin:
     def prepare_import_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
+        request_data = AddIterationFromJsonlRequest(jsonl_gcs_path=path)
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/add_iteration_from_jsonl",
-            data={"jsonl_gcs_path": path}
+            data=request_data.model_dump()
         )
 
     def prepare_save_to_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/export_iteration_as_jsonl/0",
-            data={"path": path}
+            data=None
         )
 
     def prepare_get(self, id: str) -> PreparedRequest:
@@ -129,35 +184,45 @@ class IterationsMixin:
         )
 
     def prepare_create(self, eval_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> PreparedRequest:
-        data = {
-            "json_schema": json_schema,
-            "annotation_props": {
-                "model": model,
-                "temperature": temperature
-            }
-        }
+        props = AnnotationProps(
+            model=model,
+            temperature=temperature,
+        )
         if image_settings:
-            data["annotation_props"]["image_settings"] = image_settings
+            props.image_settings = ImageSettings.model_validate(image_settings)
+            
+        iteration_data = Iteration(
+            json_schema=json_schema,
+            annotation_props=props,
+            annotations=[]
+        )
+        
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/iterations",
-            data=data
+            data=iteration_data.model_dump(exclude_none=True)
         )
 
     def prepare_update(self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> PreparedRequest:
-        data = {
-            "json_schema": json_schema,
-            "annotation_props": {
-                "model": model,
-                "temperature": temperature
-            }
-        }
+        annotation_props = AnnotationProps(
+            model=model,
+            temperature=temperature,
+        )
+        
         if image_settings:
-            data["annotation_props"]["image_settings"] = image_settings
+            annotation_props.image_settings = ImageSettings.model_validate(image_settings)
+            
+        iteration_data = Iteration(
+            id=iteration_id,
+            json_schema=json_schema,
+            annotation_props=annotation_props,
+            annotations=[]
+        )
+        
         return PreparedRequest(
             method="PUT",
             url=f"/v1/iterations/{iteration_id}",
-            data=data
+            data=iteration_data.model_dump(exclude_none=True)
         )
 
     def prepare_delete(self, id: str) -> PreparedRequest:
@@ -173,17 +238,6 @@ class DistancesMixin:
             method="GET",
             url=f"/v1/iterations/{iteration_id}/distances/{document_id}"
         )
-
-
-class DeleteResponse(TypedDict):
-    """Response from a delete operation"""
-    success: bool
-    id: str
-
-class ExportResponse(TypedDict):
-    """Response from an export operation"""
-    success: bool
-    path: str
 
 
 class Evals(SyncAPIResource, EvalsMixin):
@@ -229,20 +283,37 @@ class Evals(SyncAPIResource, EvalsMixin):
         response = self._client._prepared_request(request)
         return Evaluation(**response)
 
-    def update(self, id: str, name: str) -> Evaluation:
+    def update(self, id: str, name: Optional[str] = None, project_id: Optional[str] = None, 
+              json_schema: Optional[Dict[str, Any]] = None, 
+              documents: Optional[List[EvaluationDocument]] = None,
+              iterations: Optional[List[Iteration]] = None,
+              default_annotation_props: Optional[AnnotationProps] = None) -> Evaluation:
         """
-        Update an evaluation.
+        Update an evaluation with partial updates.
 
         Args:
             id: The ID of the evaluation to update
-            name: The new name for the evaluation
+            name: Optional new name for the evaluation
+            project_id: Optional new project ID
+            json_schema: Optional new JSON schema
+            documents: Optional list of documents to update
+            iterations: Optional list of iterations to update
+            default_annotation_props: Optional annotation properties
 
         Returns:
             Evaluation: The updated evaluation
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(id, name)
+        request = self.prepare_update(
+            eval_id=id,
+            name=name,
+            project_id=project_id,
+            json_schema=json_schema,
+            documents=documents,
+            iterations=iterations,
+            default_annotation_props=default_annotation_props
+        )
         response = self._client._prepared_request(request)
         return Evaluation(**response)
 
@@ -314,13 +385,18 @@ class Documents(SyncAPIResource, DocumentsMixin):
         request = self.prepare_save_to_jsonl(eval_id, path)
         return self._client._prepared_request(request)
 
-    def create(self, eval_id: str, document: str, ground_truth: Dict[str, Any]) -> EvaluationDocument:
+    def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], ground_truth: Dict[str, Any]) -> EvaluationDocument:
         """
         Create a document for an evaluation.
 
         Args:
             eval_id: The ID of the evaluation
-            document: The document file path or content
+            document: The document to process. Can be:
+                - A file path (Path or str)
+                - A file-like object (IOBase)
+                - A MIMEData object
+                - A PIL Image object
+                - A URL (HttpUrl)
             ground_truth: The ground truth for the document
 
         Returns:
@@ -328,7 +404,11 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(eval_id, document, ground_truth)
+        # Convert document to MIME data format
+        mime_document = prepare_mime_document(document)
+        document_data = mime_document.model_dump() if hasattr(mime_document, "model_dump") else mime_document.dict()
+        
+        request = self.prepare_create(eval_id, document_data, ground_truth)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
@@ -581,20 +661,37 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
 
-    async def update(self, id: str, name: str) -> Evaluation:
+    async def update(self, id: str, name: Optional[str] = None, project_id: Optional[str] = None, 
+                      json_schema: Optional[Dict[str, Any]] = None, 
+                      documents: Optional[List[EvaluationDocument]] = None,
+                      iterations: Optional[List[Iteration]] = None,
+                      default_annotation_props: Optional[AnnotationProps] = None) -> Evaluation:
         """
-        Update an evaluation.
+        Update an evaluation with partial updates.
 
         Args:
             id: The ID of the evaluation to update
-            name: The new name for the evaluation
+            name: Optional new name for the evaluation
+            project_id: Optional new project ID
+            json_schema: Optional new JSON schema
+            documents: Optional list of documents to update
+            iterations: Optional list of iterations to update
+            default_annotation_props: Optional annotation properties
 
         Returns:
             Evaluation: The updated evaluation
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(id, name)
+        request = self.prepare_update(
+            eval_id=id,
+            name=name,
+            project_id=project_id,
+            json_schema=json_schema,
+            documents=documents,
+            iterations=iterations,
+            default_annotation_props=default_annotation_props
+        )
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
 
@@ -666,13 +763,18 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         request = self.prepare_save_to_jsonl(eval_id, path)
         return await self._client._prepared_request(request)
 
-    async def create(self, eval_id: str, document: str, ground_truth: Dict[str, Any]) -> EvaluationDocument:
+    async def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], ground_truth: Dict[str, Any]) -> EvaluationDocument:
         """
         Create a document for an evaluation.
 
         Args:
             eval_id: The ID of the evaluation
-            document: The document file path or content
+            document: The document to process. Can be:
+                - A file path (Path or str)
+                - A file-like object (IOBase)
+                - A MIMEData object
+                - A PIL Image object
+                - A URL (HttpUrl)
             ground_truth: The ground truth for the document
 
         Returns:
@@ -680,7 +782,11 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(eval_id, document, ground_truth)
+        # Convert document to MIME data format
+        mime_document = prepare_mime_document(document)
+        document_data = mime_document.model_dump() if hasattr(mime_document, "model_dump") else mime_document.dict()
+        
+        request = self.prepare_create(eval_id, document_data, ground_truth)
         response = await self._client._prepared_request(request)
         return EvaluationDocument(**response)
 

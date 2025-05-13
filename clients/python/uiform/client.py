@@ -10,6 +10,7 @@ from pydantic_core import PydanticUndefined
 
 from .resources import deployments, completions, documents, evals, files, finetuning, models, schemas, secrets, usage
 from .types.standards import PreparedRequest
+import truststore
 
 
 class MaxRetriesExceeded(Exception):
@@ -69,6 +70,8 @@ class BaseUiForm:
         if base_url is None:
             base_url = os.environ.get("UIFORM_API_BASE_URL", "https://api.uiform.com")
 
+
+        truststore.inject_into_ssl()
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -78,28 +81,30 @@ class BaseUiForm:
             "Content-Type": "application/json",
         }
 
+        # Only check environment variables if the value is PydanticUndefined
         if openai_api_key is PydanticUndefined:
             openai_api_key = os.environ.get("OPENAI_API_KEY")
-
+        
         # if claude_api_key is PydanticUndefined:
         #    claude_api_key = os.environ.get("CLAUDE_API_KEY")
-
+        
         # if xai_api_key is PydanticUndefined:
         #    xai_api_key = os.environ.get("XAI_API_KEY")
-
+        
         if gemini_api_key is PydanticUndefined:
             gemini_api_key = os.environ.get("GEMINI_API_KEY")
 
-        if openai_api_key:
+        # Only add headers if the values are actual strings (not None or PydanticUndefined)
+        if openai_api_key and openai_api_key is not PydanticUndefined:
             self.headers["OpenAI-Api-Key"] = openai_api_key
-
-        # if claude_api_key:
+        
+        # if claude_api_key and claude_api_key is not PydanticUndefined:
         #    self.headers["Anthropic-Api-Key"] = claude_api_key
-
-        if xai_api_key:
+        
+        if xai_api_key and xai_api_key is not PydanticUndefined:
             self.headers["XAI-Api-Key"] = xai_api_key
-
-        if gemini_api_key:
+        
+        if gemini_api_key and gemini_api_key is not PydanticUndefined:
             self.headers["Gemini-Api-Key"] = gemini_api_key
 
     def _prepare_url(self, endpoint: str) -> str:
