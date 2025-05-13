@@ -1,4 +1,4 @@
-
+ 
 import copy
 import datetime
 import json
@@ -184,3 +184,7 @@ class Evaluation(BaseModel):
             str: A SHA1 hash string representing the complete schema version.
         """
         return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
+
+
+class AddIterationFromJsonlRequest(BaseModel):
+    jsonl_gcs_path: str

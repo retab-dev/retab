@@ -29,7 +29,7 @@ class DocumentPreprocessResponseContent(BaseModel):
 
 
 class PreparedRequest(BaseModel):
-    method: Literal["POST", "GET", "PUT", "DELETE"]
+    method: Literal["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "CONNECT", "TRACE"]
     url: str
     data: dict | None = None
     params: dict | None = None
