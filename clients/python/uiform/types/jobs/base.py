@@ -43,7 +43,7 @@ class DatasetSplitInputData(BaseModel):
 
 
 # This is the input data for the batch annotation job
-class AnnotationProps(BaseModel):
+class InferenceSettings(BaseModel):
     model: str = "gpt-4o-mini"
     temperature: float = 0.0
     modality: Modality = "native"
@@ -55,15 +55,15 @@ class AnnotationProps(BaseModel):
 class AnnotationInputData(BaseModel):
     data_file: str
     schema_id: str
-    annotation_props: AnnotationProps
+    inference_settings: InferenceSettings
 
 
 # This is the input data for the evaluation job
 class EvaluationInputData(BaseModel):
     eval_data_file: str
     schema_id: str
-    annotation_props_1: AnnotationProps | None = None
-    annotation_props_2: AnnotationProps
+    inference_settings_1: InferenceSettings | None = None
+    inference_settings_2: InferenceSettings
 
 
 # from pydantic import BaseModel, Field, model_validator

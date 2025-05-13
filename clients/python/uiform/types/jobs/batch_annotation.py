@@ -7,7 +7,7 @@ from ..image_settings import ImageSettings
 from ..modalities import Modality
 
 
-class AnnotationProps(BaseModel):
+class InferenceSettings(BaseModel):
     model: str = "gpt-4o-mini"
     temperature: float = 0.0
     modality: Modality
@@ -19,4 +19,4 @@ class AnnotationInputData(BaseModel):
     dataset_id: str
     files_ids: Optional[list[str]] = None
     upsert: bool = False
-    annotation_props: AnnotationProps
+    inference_settings: InferenceSettings
