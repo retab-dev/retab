@@ -288,7 +288,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             ), provider
         else:
             assert provider == "Anthropic", f"Unsupported model: {model}"
-            return Anthropic(api_key=self._client.headers["Claude-Api-Key"]), provider
+            return Anthropic(api_key=self._client.headers["Anthropic-Api-Key"]), provider
 
     def _get_model_completion(
         self,

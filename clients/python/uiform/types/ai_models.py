@@ -1,7 +1,7 @@
 from typing import Literal
 
-AIProvider = Literal["OpenAI", "Gemini"]  # , "Anthropic", "xAI"]
-OpenAICompatibleProvider = Literal["OpenAI", "Gemini"]  # , "xAI"]
+AIProvider = Literal["OpenAI", "Gemini", "xAI"]  # , "Anthropic", "xAI"]
+OpenAICompatibleProvider = Literal["OpenAI", "xAI"]  # , "xAI"]
 GeminiModel = Literal[
     "gemini-2.5-flash-preview-04-17",
     "gemini-2.5-pro-exp-03-25",
@@ -41,8 +41,8 @@ OpenAIModel = Literal[
     "gpt-4o-mini-audio-preview-2024-12-17",
     "gpt-4o-mini-realtime-preview-2024-12-17",
 ]
-xAI_Model = Literal["grok-2-vision-1212", "grok-2-1212"]
-LLMModel = Literal[OpenAIModel, 'human', AnthropicModel, xAI_Model, GeminiModel]
+xAI_Model = Literal["grok-3-beta", "grok-3-mini-beta"]
+LLMModel = Literal[OpenAIModel, "human", AnthropicModel, xAI_Model, GeminiModel]
 
 
 import datetime
@@ -525,13 +525,27 @@ anthropic_model_cards = [
 xai_model_cards = [
     ModelCard(
         model="grok-2-vision-1212",
-        pricing=Pricing(text=TokenPrice(prompt=2.00, cached_discount=0.5, completion=10.00), audio=TokenPrice(prompt=2.00, cached_discount=0.5, completion=0.00)),
+        pricing=Pricing(text=TokenPrice(prompt=2.00, cached_discount=0.5, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling"]),
+        logprobs_support=False,  # Disabling it because it is messing the output
     ),
     ModelCard(
         model="grok-2-1212",
         pricing=Pricing(text=TokenPrice(prompt=2.00, cached_discount=0.5, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions"], features=["streaming", "function_calling"]),
+        logprobs_support=False,  # Disabling it because it is messing the output
+    ),
+    ModelCard(
+        model="grok-3-beta",
+        pricing=Pricing(text=TokenPrice(prompt=3.00, cached_discount=0.5, completion=15.00), audio=None),
+        capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions"], features=["streaming", "function_calling"]),
+        logprobs_support=False,  # Disabling it because it is messing the output
+    ),
+    ModelCard(
+        model="grok-3-mini-beta",
+        pricing=Pricing(text=TokenPrice(prompt=0.30, cached_discount=0.5, completion=0.50), audio=None),
+        capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions"], features=["streaming", "function_calling"]),
+        logprobs_support=False,  # Disabling it because it is messing the output
     ),
 ]
 
@@ -585,7 +599,7 @@ gemini_model_cards = [
 ]
 
 
-model_cards = openai_model_cards + gemini_model_cards
+model_cards = openai_model_cards + gemini_model_cards + xai_model_cards
 
 
 def get_model_card(model: str) -> ModelCard:
