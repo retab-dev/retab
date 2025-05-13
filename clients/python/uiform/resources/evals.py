@@ -42,7 +42,7 @@ class EvalsMixin:
         return PreparedRequest(
             method="POST",
             url="/v1/evals",
-            data=eval_data.model_dump(exclude_none=True)
+            data=eval_data.model_dump(exclude_none=True, mode="json")
         )
 
     def prepare_get(self, id: str) -> PreparedRequest:
@@ -70,11 +70,11 @@ class EvalsMixin:
         if json_schema is not None:
             update_data["json_schema"] = json_schema
         if documents is not None:
-            update_data["documents"] = [doc.model_dump(exclude_none=True) for doc in documents]
+            update_data["documents"] = [doc.model_dump(exclude_none=True, mode="json") for doc in documents]
         if iterations is not None:
-            update_data["iterations"] = [iter.model_dump(exclude_none=True) for iter in iterations]
+            update_data["iterations"] = [iter.model_dump(exclude_none=True, mode="json") for iter in iterations]
         if default_annotation_props is not None:
-            update_data["default_annotation_props"] = default_annotation_props.model_dump(exclude_none=True)
+            update_data["default_annotation_props"] = default_annotation_props.model_dump(exclude_none=True, mode="json")
             
         return PreparedRequest(
             method="PATCH",
@@ -111,9 +111,12 @@ class DocumentsMixin:
             data={"path": path}
         )
 
-    def prepare_create(self, eval_id: str, document: Union[str, Dict[str, Any]], ground_truth: Dict[str, Any]) -> PreparedRequest:
+    def prepare_create(self, eval_id: str, document: MIMEData, ground_truth: Dict[str, Any]) -> PreparedRequest:
+        # Serialize the MIMEData
+        document_data = document.model_dump() if hasattr(document, "model_dump") else document.dict()
+        
         data = {
-            "document": document,
+            "document": document_data,
             "ground_truth": ground_truth
         }
         
@@ -157,7 +160,7 @@ class IterationsMixin:
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/add_iteration_from_jsonl",
-            data=request_data.model_dump()
+            data=request_data.model_dump(mode="json")
         )
 
     def prepare_save_to_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
@@ -200,7 +203,7 @@ class IterationsMixin:
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/iterations",
-            data=iteration_data.model_dump(exclude_none=True)
+            data=iteration_data.model_dump(exclude_none=True, mode="json")
         )
 
     def prepare_update(self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> PreparedRequest:
@@ -222,7 +225,7 @@ class IterationsMixin:
         return PreparedRequest(
             method="PUT",
             url=f"/v1/iterations/{iteration_id}",
-            data=iteration_data.model_dump(exclude_none=True)
+            data=iteration_data.model_dump(exclude_none=True, mode="json")
         )
 
     def prepare_delete(self, id: str) -> PreparedRequest:
@@ -405,10 +408,10 @@ class Documents(SyncAPIResource, DocumentsMixin):
             HTTPException if the request fails
         """
         # Convert document to MIME data format
-        mime_document = prepare_mime_document(document)
-        document_data = mime_document.model_dump() if hasattr(mime_document, "model_dump") else mime_document.dict()
+        mime_document: MIMEData = prepare_mime_document(document)
         
-        request = self.prepare_create(eval_id, document_data, ground_truth)
+        # Let prepare_create handle the serialization
+        request = self.prepare_create(eval_id, mime_document, ground_truth)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
@@ -783,10 +786,10 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
             HTTPException if the request fails
         """
         # Convert document to MIME data format
-        mime_document = prepare_mime_document(document)
-        document_data = mime_document.model_dump() if hasattr(mime_document, "model_dump") else mime_document.dict()
+        mime_document: MIMEData = prepare_mime_document(document)
         
-        request = self.prepare_create(eval_id, document_data, ground_truth)
+        # Let prepare_create handle the serialization
+        request = self.prepare_create(eval_id, mime_document, ground_truth)
         response = await self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
