@@ -8,7 +8,7 @@ from pydantic import HttpUrl
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.standards import PreparedRequest
 from ..types.evals import (Evaluation, EvaluationDocument, Iteration, MetricResult, PredictionData, 
-                           AddIterationFromJsonlRequest)
+                           AddIterationFromJsonlRequest, DocumentItem, UpdateEvaluationDocumentRequest)
 from ..types.jobs.base import InferenceSettings
 from ..types.image_settings import ImageSettings
 from ..types.mime import MIMEData
@@ -113,16 +113,17 @@ class DocumentsMixin:
 
     def prepare_create(self, eval_id: str, document: MIMEData, ground_truth: Dict[str, Any]) -> PreparedRequest:
         # Serialize the MIMEData
-        
-        data = {
-            "document": document.model_dump(),
-            "ground_truth": ground_truth
-        }
+
+        document_item = DocumentItem(
+            mime_data=document,
+            annotation=ground_truth,
+            annotation_metadata=None
+        )
         
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/documents",
-            data=data
+            data=document_item.model_dump(mode="json")
         )
 
     def prepare_list(self, eval_id: str, filename: Optional[str] = None) -> PreparedRequest:
@@ -136,12 +137,16 @@ class DocumentsMixin:
         )
 
     def prepare_update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> PreparedRequest:
-        data = {"ground_truth": ground_truth}
+
+        update_request = UpdateEvaluationDocumentRequest(
+            annotation=ground_truth,
+            annotation_metadata=None
+        )
         
         return PreparedRequest(
             method="PUT",
             url=f"/v1/evals/{eval_id}/documents/{id}",
-            data=data
+            data=update_request.model_dump(mode="json", exclude_none=True)
         )
 
     def prepare_delete(self, eval_id: str, id: str) -> PreparedRequest:
