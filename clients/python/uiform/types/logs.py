@@ -9,7 +9,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_serializer
 from pydantic_core import Url
 
-from .._utils.json_schema import clean_schema
+from .._utils.json_schema import clean_schema, compute_schema_data_id
 from .._utils.mime import generate_blake2b_hash_from_string
 from .._utils.usage.usage import compute_cost_from_model
 from .ai_models import Amount
@@ -51,16 +51,7 @@ class AutomationConfig(BaseModel):
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return "sch_data_id_" + generate_blake2b_hash_from_string(
-            json.dumps(
-                clean_schema(
-                    copy.deepcopy(self.json_schema),
-                    remove_custom_fields=True,
-                    fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"],
-                ),
-                sort_keys=True,
-            ).strip()
-        )
+        return compute_schema_data_id(self.json_schema)
 
     # This is a computed field, it is exposed when serializing the object
     @computed_field  # type: ignore
@@ -114,16 +105,7 @@ class UpdateAutomationRequest(BaseModel):
 
         if self.json_schema is None:
             return None
-        return "sch_data_id_" + generate_blake2b_hash_from_string(
-            json.dumps(
-                clean_schema(
-                    copy.deepcopy(self.json_schema),
-                    remove_custom_fields=True,
-                    fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"],
-                ),
-                sort_keys=True,
-            ).strip()
-        )
+        return compute_schema_data_id(self.json_schema)
 
     @computed_field  # type: ignore
     @property

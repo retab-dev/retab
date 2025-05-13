@@ -2074,3 +2074,31 @@ def __sanitize_instance(instance: Any, schema: dict[str, Any], path: SchemaPath 
 def sanitize(instance: Any, schema: dict[str, Any]) -> Any:
     expanded_schema = expand_refs(schema)
     return __sanitize_instance(instance, expanded_schema)
+
+import copy
+import json
+from .mime import generate_blake2b_hash_from_string
+def compute_schema_data_id(json_schema: dict[str, Any]) -> str:
+    """Returns the schema_data_id for a given JSON schema.
+    
+    The schema_data_id is a hash of the schema data, ignoring all prompt/description/default fields
+    and other non-structural metadata.
+    
+    Args:
+        json_schema: The JSON schema to compute the ID for
+        
+    Returns:
+        str: A hash string representing the schema data version with "sch_data_id_" prefix
+    """
+
+    
+    return "sch_data_id_" + generate_blake2b_hash_from_string(
+        json.dumps(
+            clean_schema(
+                copy.deepcopy(json_schema),
+                remove_custom_fields=True,
+                fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"],
+            ),
+            sort_keys=True,
+        ).strip()
+    )

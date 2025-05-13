@@ -8,11 +8,15 @@ from pydantic import HttpUrl
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.standards import PreparedRequest
 from ..types.evals import (Evaluation, EvaluationDocument, Iteration, MetricResult, PredictionData, 
-                           AddIterationFromJsonlRequest, DocumentItem, UpdateEvaluationDocumentRequest)
+                           AddIterationFromJsonlRequest, DocumentItem, UpdateEvaluationDocumentRequest, 
+                           PredictionMetadata)
 from ..types.jobs.base import InferenceSettings
 from ..types.image_settings import ImageSettings
 from ..types.mime import MIMEData
 from .._utils.mime import prepare_mime_document
+
+from tqdm import tqdm
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 
 class DeleteResponse(TypedDict):
@@ -201,12 +205,16 @@ class IterationsMixin:
             inference_settings=props,
             predictions=[]
         )
+
+        
+
         
         return PreparedRequest(
             method="POST",
             url=f"/v1/evals/{eval_id}/iterations",
             data=iteration_data.model_dump(exclude_none=True, mode="json")
         )
+
 
     def prepare_update(self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> PreparedRequest:
         inference_settings = InferenceSettings(
