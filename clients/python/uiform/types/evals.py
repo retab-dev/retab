@@ -93,6 +93,14 @@ class DocumentItem(BaseModel):
 class EvaluationDocument(DocumentItem):
     id: str = Field(description="The ID of the document. Equal to mime_data.id but robust to the case where mime_data is a BaseMIMEData")
 
+class PerformIterationRequest(BaseModel):
+    """
+    Request model for performing a new iteration with custom inference settings and optional JSON schema.
+    """
+    inference_settings: InferenceSettings
+    json_schema: Optional[dict[str, Any]] = None
+
+
 class UpdateEvaluationDocumentRequest(BaseModel):
     annotation: Optional[dict[str,Any]] = Field(default=None, description="The ground truth of the document")
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
