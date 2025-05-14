@@ -1765,7 +1765,7 @@ def get_all_paths(schema: dict[str, Any]) -> list[str]:
     return paths
 
 
-def convert_schema_to_layout(schema: dict[str, Any]) -> Layout:
+def convert_schema_to_layout(schema: dict[str, Any]) -> dict[str, Any]:
     """
     Convert a JSON Schema (represented as a Python dict) into a Layout object.
     """
@@ -1869,7 +1869,7 @@ def convert_schema_to_layout(schema: dict[str, Any]) -> Layout:
         else:
             top_level_items.append(FieldItem(type="field", name=prop_name, size=1))
 
-    return Layout(type="column", size=1, items=top_level_items, **{"$defs": converted_defs})
+    return Layout(type="column", size=1, items=top_level_items, **{"$defs": converted_defs}).model_dump(by_alias=True)
 
 
 ### Json Schema to NLP Data Structure

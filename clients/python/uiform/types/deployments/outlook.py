@@ -60,7 +60,7 @@ class Outlook(AutomationConfig):
     )
     n_consensus: int = Field(default=1, description="Number of consensus required to validate the data")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
-    layout_schema: Optional[Layout] = Field(default=None, description="Layout schema format used to display the data")
+    layout_schema: Optional[dict[str, Any]] = Field(default=None, description="Layout schema format used to display the data")
 
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
 
@@ -143,7 +143,7 @@ class UpdateOutlookRequest(UpdateAutomationRequest):
     reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
 
     json_schema: Optional[Dict] = None
-    layout_schema: Optional[Layout] = None
+    layout_schema: Optional[dict[str, Any]] = None
 
     @field_validator("authorized_emails", mode="before")
     def normalize_authorized_emails(cls, emails: Optional[List[str]]) -> Optional[List[str]]:
