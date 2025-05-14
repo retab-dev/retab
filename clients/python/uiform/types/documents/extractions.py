@@ -256,6 +256,7 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         request_at = self.request_at
 
         return UiParsedChatCompletionChunk(
+            extraction_id=self.extraction_id,
             id=self.id,
             created=self.created,
             model=self.model,
