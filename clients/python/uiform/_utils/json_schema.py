@@ -2116,3 +2116,42 @@ def compute_schema_data_id(json_schema: dict[str, Any]) -> str:
             sort_keys=True,
         ).strip()
     )
+
+def validate_json_against_schema(
+    data: Any,
+    schema: dict[str, Any],
+    return_instance: bool = False,
+) -> Union[None, BaseModel]:
+    """
+    Validate *data* against *schema*.
+
+    Parameters
+    ----------
+    data
+        A JSON‑serialisable Python object (dict / list / primitives).
+    schema
+        A JSON‑Schema dict (can contain $defs / $ref – they’ll be expanded
+        by ``convert_json_schema_to_basemodel``).
+    return_instance
+        • ``False`` (default): only validate; raise if invalid; return ``None``.  
+        • ``True``: on success, return the fully‑validated Pydantic instance
+          (handy for downstream type‑safe access).
+
+    Raises
+    ------
+    pydantic.ValidationError
+        If *data* does not conform to *schema*.
+
+    Examples
+    --------
+    >>> validate_json_against_schema({"foo": 1}, my_schema)        # just checks
+    >>> obj = validate_json_against_schema(data, schema, True)     # typed access
+    >>> print(obj.foo + 5)
+    """
+    # 1) Build a Pydantic model on‑the‑fly from the JSON‑Schema
+    Model: Type[BaseModel] = convert_json_schema_to_basemodel(schema)
+
+    # 2) Let Pydantic do the heavy lifting
+    instance = Model.model_validate(data)          # <- raises ValidationError if bad
+
+    return instance if return_instance else None

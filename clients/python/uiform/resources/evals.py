@@ -105,20 +105,7 @@ class EvalsMixin:
 
 
 class DocumentsMixin:
-    def prepare_import_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="POST",
-            url=f"/v1/evals/{eval_id}/import_documents",
-            data={"path": path}
-        )
-
-    def prepare_save_to_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="POST",
-            url=f"/v1/evals/{eval_id}/export_documents",
-            data={"path": path}
-        )
-
+   
     def prepare_get(self, eval_id: str, id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
@@ -171,21 +158,7 @@ class DocumentsMixin:
 
 
 class IterationsMixin:
-    def prepare_import_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
-        request_data = AddIterationFromJsonlRequest(jsonl_gcs_path=path)
-        return PreparedRequest(
-            method="POST",
-            url=f"/v1/evals/{eval_id}/add_iteration_from_jsonl",
-            data=request_data.model_dump(mode="json")
-        )
-
-    def prepare_save_to_jsonl(self, eval_id: str, path: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="POST",
-            url=f"/v1/evals/{eval_id}/export_iteration_as_jsonl/0",
-            data=None
-        )
-
+   
     def prepare_get(self, id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
@@ -260,13 +233,11 @@ class IterationsMixin:
             method="DELETE",
             url=f"/v1/evals/iterations/{id}"
         )
-
-
-class DistancesMixin:
-    def prepare_get(self, iteration_id: str, document_id: str) -> PreparedRequest:
+    
+    def prepare_compute_distances(self, iteration_id: str, document_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/v1/evals/iterations/{iteration_id}/distances/{document_id}"
+            url=f"/v1/evals/iterations/{iteration_id}/compute_distances/{document_id}"
         )
 
 
@@ -378,41 +349,12 @@ class Evals(SyncAPIResource, EvalsMixin):
         return self._client._prepared_request(request)
 
 
+
+
 class Documents(SyncAPIResource, DocumentsMixin):
     """Documents API wrapper for evaluations"""
 
-    def import_jsonl(self, eval_id: str, path: str) -> Evaluation:
-        """
-        Import documents from a JSONL file.
-
-        Args:
-            eval_id: The ID of the evaluation
-            path: The path to the JSONL file
-
-        Returns:
-            Evaluation: The updated experiment with imported documents
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_import_jsonl(eval_id, path)
-        response = self._client._prepared_request(request)
-        return Evaluation(**response)
-
-    def save_to_jsonl(self, eval_id: str, path: str) -> ExportResponse:
-        """
-        Save documents to a JSONL file.
-
-        Args:
-            eval_id: The ID of the evaluation
-            path: The path to save the JSONL file
-
-        Returns:
-            ExportResponse: The response containing success status and path
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_save_to_jsonl(eval_id, path)
-        return self._client._prepared_request(request)
+   
 
     def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], ground_truth: Dict[str, Any]) -> EvaluationDocument:
         """
@@ -515,56 +457,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.distances = Distances(self._client)
 
-    def import_jsonl(self, eval_id: str, path: str) -> Evaluation:
-        """
-        Import iterations from a JSONL file.
-
-        Args:
-            eval_id: The ID of the evaluation
-            path: The path to the JSONL file
-
-        Returns:
-            Evaluation: The updated experiment with imported iterations
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_import_jsonl(eval_id, path)
-        response = self._client._prepared_request(request)
-        return Evaluation(**response)
-
-    def save_to_jsonl(self, eval_id: str, path: str) -> ExportResponse:
-        """
-        Save iterations to a JSONL file.
-
-        Args:
-            eval_id: The ID of the evaluation
-            path: The path to save the JSONL file
-
-        Returns:
-            ExportResponse: The response containing success status and path
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_save_to_jsonl(eval_id, path)
-        return self._client._prepared_request(request)
-
-    def get(self, id: str) -> Iteration:
-        """
-        Get an iteration by ID.
-
-        Args:
-            id: The ID of the iteration
-
-        Returns:
-            Iteration: The iteration
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_get(id)
-        response = self._client._prepared_request(request)
-        return Iteration(**response)
 
     def list(self, eval_id: str, model: Optional[str] = None) -> List[Iteration]:
         """
@@ -623,26 +516,6 @@ class Iterations(SyncAPIResource, IterationsMixin):
         response = self._client._prepared_request(request)
         return Iteration(**response)
 
-    def update(self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> Iteration:
-        """
-        Update an iteration.
-
-        Args:
-            iteration_id: The ID of the iteration
-            json_schema: The JSON schema for the iteration
-            model: The model to use for the iteration
-            temperature: The temperature to use for the model
-            image_settings: Optional image settings
-
-        Returns:
-            Iteration: The updated iteration
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_update(iteration_id, json_schema, model, temperature, image_settings)
-        response = self._client._prepared_request(request)
-        return Iteration(**response)
-
     def delete(self, id: str) -> DeleteResponse:
         """
         Delete an iteration.
@@ -658,11 +531,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         request = self.prepare_delete(id)
         return self._client._prepared_request(request)
 
-
-class Distances(SyncAPIResource, DistancesMixin):
-    """Distances API wrapper for iterations"""
-
-    def get(self, iteration_id: str, document_id: str) -> DistancesResult:
+    def compute_distances(self, iteration_id: str, document_id: str) -> DistancesResult:
         """
         Get distances for a document in an iteration.
 
@@ -675,7 +544,7 @@ class Distances(SyncAPIResource, DistancesMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_get(iteration_id, document_id)
+        request = self.prepare_compute_distances(iteration_id, document_id)
         response = self._client._prepared_request(request)
         return DistancesResult(**response)
 
@@ -791,39 +660,6 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
 class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
     """Async Documents API wrapper for evaluations"""
 
-    async def import_jsonl(self, eval_id: str, path: str) -> Evaluation:
-        """
-        Import documents from a JSONL file.
-
-        Args:
-            eval_id: The ID of the evaluation
-            path: The path to the JSONL file
-
-        Returns:
-            Evaluation: The updated experiment with imported documents
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_import_jsonl(eval_id, path)
-        response = await self._client._prepared_request(request)
-        return Evaluation(**response)
-
-    async def save_to_jsonl(self, eval_id: str, path: str) -> ExportResponse:
-        """
-        Save documents to a JSONL file.
-
-        Args:
-            eval_id: The ID of the evaluation
-            path: The path to save the JSONL file
-
-        Returns:
-            ExportResponse: The response containing success status and path
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_save_to_jsonl(eval_id, path)
-        return await self._client._prepared_request(request)
-
     async def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], ground_truth: Dict[str, Any]) -> EvaluationDocument:
         """
         Create a document for an evaluation.
@@ -909,40 +745,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.distances = AsyncDistances(self._client)
 
-    async def import_jsonl(self, eval_id: str, path: str) -> Evaluation:
-        """
-        Import iterations from a JSONL file.
-
-        Args:
-            eval_id: The ID of the evaluation
-            path: The path to the JSONL file
-
-        Returns:
-            Evaluation: The updated experiment with imported iterations
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_import_jsonl(eval_id, path)
-        response = await self._client._prepared_request(request)
-        return Evaluation(**response)
-
-    async def save_to_jsonl(self, eval_id: str, path: str) -> ExportResponse:
-        """
-        Save iterations to a JSONL file.
-
-        Args:
-            eval_id: The ID of the evaluation
-            path: The path to save the JSONL file
-
-        Returns:
-            ExportResponse: The response containing success status and path
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_save_to_jsonl(eval_id, path)
-        return await self._client._prepared_request(request)
 
     async def get(self, id: str) -> Iteration:
         """
@@ -1017,26 +820,6 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 
-    async def update(self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> Iteration:
-        """
-        Update an iteration.
-
-        Args:
-            iteration_id: The ID of the iteration
-            json_schema: The JSON schema for the iteration
-            model: The model to use for the iteration
-            temperature: The temperature to use for the model
-            image_settings: Optional image settings
-
-        Returns:
-            Iteration: The updated iteration
-        Raises:
-            HTTPException if the request fails
-        """
-        request = self.prepare_update(iteration_id, json_schema, model, temperature, image_settings)
-        response = await self._client._prepared_request(request)
-        return Iteration(**response)
-
     async def delete(self, id: str) -> DeleteResponse:
         """
         Delete an iteration.
@@ -1053,10 +836,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         return await self._client._prepared_request(request)
 
 
-class AsyncDistances(AsyncAPIResource, DistancesMixin):
-    """Async Distances API wrapper for iterations"""
-
-    async def get(self, iteration_id: str, document_id: str) -> DistancesResult:
+    async def compute_distances(self, iteration_id: str, document_id: str) -> DistancesResult:
         """
         Get distances for a document in an iteration.
 
@@ -1069,7 +849,7 @@ class AsyncDistances(AsyncAPIResource, DistancesMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_get(iteration_id, document_id)
+        request = self.prepare_compute_distances(iteration_id, document_id)
         response = await self._client._prepared_request(request)
         return DistancesResult(**response)
 

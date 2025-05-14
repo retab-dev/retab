@@ -92,10 +92,11 @@ class Iteration(BaseModel):
 
 
 
-
-class DocumentItem(BaseModel):
+class AnnotatedDocument(BaseModel):
     mime_data: MIMEData = Field(description="The mime data of the document. Can also be a BaseMIMEData, which is why we have this id field (to be able to identify the file, but id is equal to mime_data.id)")
     annotation: dict[str,Any] = Field(default={}, description="The ground truth of the document")
+
+class DocumentItem(AnnotatedDocument):
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
 
 class EvaluationDocument(DocumentItem):
