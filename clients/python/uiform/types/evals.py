@@ -42,8 +42,10 @@ class DistancesResult(BaseModel):
     metric_type: MetricType = Field(description="The type of distance metric used for comparison")
 
 class PredictionMetadata(BaseModel):
+    extraction_id: Optional[str] = Field(default=None, description="The ID of the extraction")
     likelihoods: Optional[dict[str, Any]] = Field(default=None, description="The likelihoods of the extraction")
     field_locations: Optional[dict[str, Any]] = Field(default=None, description="The field locations of the extraction")
+    agentic_field_locations: Optional[dict[str, Any]] = Field(default=None, description="The field locations of the extraction extracted by an llm")
     consensus_details: Optional[list[dict[str, Any]]] = Field(default=None, description="The consensus details of the extraction")
     api_cost: Optional[Amount] = Field(default=None, description="The cost of the API call for this document (if any -- ground truth for example)")
 
