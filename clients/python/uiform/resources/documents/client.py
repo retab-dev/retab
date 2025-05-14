@@ -49,10 +49,6 @@ class BaseDocumentsMixin:
 class Documents(SyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper"""
 
-    # TODO: Add batch methods
-    # client.documents.batch.extract()
-    # client.documents.batch.preprocess()
-
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.extractions = Extractions(client=client)
