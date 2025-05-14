@@ -36,6 +36,7 @@ class OutlooksMixin:
         # Optional Fields for data integration
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
+        layout_schema: Optional[Dict[str, Any]] = None,
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
@@ -51,6 +52,7 @@ class OutlooksMixin:
             "model": model,
             "temperature": temperature,
             "reasoning_effort": reasoning_effort,
+            "layout_schema": layout_schema,
         }
 
         if match_params is not None:
