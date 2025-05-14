@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, computed_field
 
 
 
-from .._utils.json_schema import clean_schema
+from .._utils.json_schema import clean_schema, compute_schema_data_id
 from .._utils.mime import generate_blake2b_hash_from_string
 from .ai_models import Amount, LLMModel
 from .jobs.base import InferenceSettings
@@ -124,16 +124,7 @@ class UpdateEvaluationRequest(BaseModel):
         if self.json_schema is None:
             return None
 
-        return "sch_data_id_" + generate_blake2b_hash_from_string(
-            json.dumps(
-                clean_schema(
-                    copy.deepcopy(self.json_schema),
-                    remove_custom_fields=True,
-                    fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"],
-                ),
-                sort_keys=True,
-            ).strip()
-        )
+        return compute_schema_data_id(self.json_schema)
 
     # This is a computed field, it is exposed when serializing the object
     @computed_field  # type: ignore
@@ -178,16 +169,7 @@ class Evaluation(BaseModel):
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return "sch_data_id_" + generate_blake2b_hash_from_string(
-            json.dumps(
-                clean_schema(
-                    copy.deepcopy(self.json_schema),
-                    remove_custom_fields=True,
-                    fields_to_remove=["description", "default", "title", "required", "examples", "deprecated", "readOnly", "writeOnly"],
-                ),
-                sort_keys=True,
-            ).strip()
-        )
+        return compute_schema_data_id(self.json_schema)
 
     # This is a computed field, it is exposed when serializing the object
     @computed_field  # type: ignore

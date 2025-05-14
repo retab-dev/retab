@@ -87,11 +87,14 @@ class EvalsMixin:
             data=update_data
         )
 
-    def prepare_list(self, project_id: str) -> PreparedRequest:
+    def prepare_list(self, project_id: Optional[str] = None) -> PreparedRequest:
+        params = {}
+        if project_id:
+            params["project_id"] = project_id
         return PreparedRequest(
             method="GET",
             url="/v1/evals",
-            params={"project_id": project_id}
+            params=params
         )
 
     def prepare_delete(self, id: str) -> PreparedRequest:
@@ -114,6 +117,12 @@ class DocumentsMixin:
             method="POST",
             url=f"/v1/evals/{eval_id}/export_documents",
             data={"path": path}
+        )
+
+    def prepare_get(self, eval_id: str, id: str) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/v1/evals/{eval_id}/documents/{id}"
         )
 
     def prepare_create(self, eval_id: str, document: MIMEData, ground_truth: Dict[str, Any]) -> PreparedRequest:
@@ -180,7 +189,7 @@ class IterationsMixin:
     def prepare_get(self, id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/v1/iterations/{id}"
+            url=f"/v1/evals/iterations/{id}"
         )
 
     def prepare_list(self, eval_id: str, model: Optional[str] = None) -> PreparedRequest:
@@ -195,10 +204,10 @@ class IterationsMixin:
 
     def prepare_create(self, 
         eval_id: str, 
-        json_schema: Dict[str, Any], 
         model: str, 
+        json_schema: Optional[Dict[str, Any]] = None, 
         temperature: float = 0.0, 
-        modality: Modality = "text",
+        modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_settings: Optional[Dict[str, Any]] = None,
         n_consensus: int = 1) -> PreparedRequest:
@@ -208,7 +217,7 @@ class IterationsMixin:
             temperature=temperature,
             modality=modality,
             reasoning_effort=reasoning_effort,
-            image_settings=ImageSettings.model_validate(image_settings),
+            image_settings=ImageSettings.model_validate(image_settings) if image_settings else ImageSettings(),
             n_consensus=n_consensus
         )
 
@@ -242,14 +251,14 @@ class IterationsMixin:
         
         return PreparedRequest(
             method="PUT",
-            url=f"/v1/iterations/{iteration_id}",
+            url=f"/v1/evals/iterations/{iteration_id}",
             data=iteration_data.model_dump(exclude_none=True, mode="json")
         )
 
     def prepare_delete(self, id: str) -> PreparedRequest:
         return PreparedRequest(
             method="DELETE",
-            url=f"/v1/iterations/{id}"
+            url=f"/v1/evals/iterations/{id}"
         )
 
 
@@ -257,7 +266,7 @@ class DistancesMixin:
     def prepare_get(self, iteration_id: str, document_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/v1/iterations/{iteration_id}/distances/{document_id}"
+            url=f"/v1/evals/iterations/{iteration_id}/distances/{document_id}"
         )
 
 
@@ -449,7 +458,23 @@ class Documents(SyncAPIResource, DocumentsMixin):
         response = self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
+    def get(self, eval_id: str, id: str) -> EvaluationDocument:
+        """
+        Get a document by ID.
 
+        Args:
+            eval_id: The ID of the evaluation
+            id: The ID of the document
+
+        Returns:
+            EvaluationDocument: The document
+        Raises:
+            HTTPException if the request fails
+        """
+        request = self.prepare_get(eval_id, id)
+        response = self._client._prepared_request(request)
+        return EvaluationDocument(**response)
+    
     def update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> EvaluationDocument:
         """
         Update a document.
@@ -560,10 +585,10 @@ class Iterations(SyncAPIResource, IterationsMixin):
 
     def create(self, 
         eval_id: str, 
-        json_schema: Dict[str, Any], 
         model: str, 
         temperature: float = 0.0, 
-        modality: Modality = "text",
+        modality: Modality = "native",
+        json_schema: Optional[Dict[str, Any]] = None, 
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_settings: Optional[Dict[str, Any]] = None,
         n_consensus: int = 1) -> Iteration:
@@ -572,7 +597,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
 
         Args:
             eval_id: The ID of the evaluation
-            json_schema: The JSON schema for the iteration
+            json_schema: The JSON schema for the iteration (if not set, we use the one of the eval)
             model: The model to use for the iteration
             temperature: The temperature to use for the model
             modality: The modality to use (text, image, etc.)
@@ -731,7 +756,7 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
 
-    async def list(self, project_id: str) -> List[Evaluation]:
+    async def list(self, project_id: Optional[str] = None) -> List[Evaluation]:
         """
         List evaluations for a project.
 
@@ -954,10 +979,10 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
 
     async def create(self, 
         eval_id: str, 
-        json_schema: Dict[str, Any], 
         model: str, 
         temperature: float = 0.0, 
-        modality: Modality = "text",
+        modality: Modality = "native",
+        json_schema: Optional[Dict[str, Any]] = None, 
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_settings: Optional[Dict[str, Any]] = None,
         n_consensus: int = 1) -> Iteration:

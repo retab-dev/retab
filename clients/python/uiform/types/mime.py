@@ -115,7 +115,20 @@ class BaseMIMEData(MIMEData):
             # Convert MIMEData instance to dict
             obj = obj.model_dump()
         if isinstance(obj, dict) and 'url' in obj:
-            obj['url'] = obj['url'][:1000]  # Truncate URL to 1000 chars
+            # Truncate URL to 1000 chars or less, ensuring it's a valid base64 string
+            if len(obj['url']) > 1000:
+                # Find the position of the base64 data
+                if ',' in obj['url']:
+                    prefix, base64_data = obj['url'].split(',', 1)
+                    # Calculate how many characters we can keep (must be a multiple of 4)
+                    max_base64_len = 1000 - len(prefix) - 1  # -1 for the comma
+                    # Ensure the length is a multiple of 4
+                    max_base64_len = max_base64_len - (max_base64_len % 4)
+                    # Truncate and reassemble
+                    obj['url'] = prefix + ',' + base64_data[:max_base64_len]
+                else:
+                    # If there's no comma (unexpected format), truncate to 996 chars (multiple of 4)
+                    obj['url'] = obj['url'][:996]
         return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
 
     @property
