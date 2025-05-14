@@ -35,6 +35,12 @@ class MetricResult(BaseModel):
     mean_similarity: float = Field(description="The average similarity score across all items")
     metric_type: MetricType = Field(description="The type of similarity metric used for comparison")
 
+
+class DistancesResult(BaseModel):
+    distances: dict[str, Any] = Field(description="List of distances for individual items")
+    mean_distance: float = Field(description="The average distance across all items")
+    metric_type: MetricType = Field(description="The type of distance metric used for comparison")
+
 class PredictionMetadata(BaseModel):
     likelihoods: Optional[dict[str, Any]] = Field(default=None, description="The likelihoods of the extraction")
     field_locations: Optional[dict[str, Any]] = Field(default=None, description="The field locations of the extraction")

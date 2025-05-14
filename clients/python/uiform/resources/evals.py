@@ -7,7 +7,7 @@ from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.standards import PreparedRequest
-from ..types.evals import (Evaluation, EvaluationDocument, Iteration, MetricResult, PredictionData, 
+from ..types.evals import (Evaluation, EvaluationDocument, Iteration, DistancesResult, PredictionData, 
                            AddIterationFromJsonlRequest, DocumentItem, UpdateEvaluationDocumentRequest, 
                            PredictionMetadata, PerformIterationRequest)
 from ..types.jobs.base import InferenceSettings
@@ -662,7 +662,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
 class Distances(SyncAPIResource, DistancesMixin):
     """Distances API wrapper for iterations"""
 
-    def get(self, iteration_id: str, document_id: str) -> MetricResult:
+    def get(self, iteration_id: str, document_id: str) -> DistancesResult:
         """
         Get distances for a document in an iteration.
 
@@ -671,13 +671,13 @@ class Distances(SyncAPIResource, DistancesMixin):
             document_id: The ID of the document
 
         Returns:
-            MetricResult: The distances
+            DistancesResult: The distances
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_get(iteration_id, document_id)
         response = self._client._prepared_request(request)
-        return MetricResult(**response)
+        return DistancesResult(**response)
 
 
 class AsyncEvals(AsyncAPIResource, EvalsMixin):
@@ -1056,7 +1056,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
 class AsyncDistances(AsyncAPIResource, DistancesMixin):
     """Async Distances API wrapper for iterations"""
 
-    async def get(self, iteration_id: str, document_id: str) -> MetricResult:
+    async def get(self, iteration_id: str, document_id: str) -> DistancesResult:
         """
         Get distances for a document in an iteration.
 
@@ -1065,11 +1065,11 @@ class AsyncDistances(AsyncAPIResource, DistancesMixin):
             document_id: The ID of the document
 
         Returns:
-            MetricResult: The distances
+            DistancesResult: The distances
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_get(iteration_id, document_id)
         response = await self._client._prepared_request(request)
-        return MetricResult(**response)
+        return DistancesResult(**response)
 
