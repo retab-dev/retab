@@ -812,15 +812,27 @@ def clean_schema(schema: dict[str, Any], remove_custom_fields: bool = False, fie
         The resulting cleaned JSON schema.
     """
     schema = schema.copy()
+    lower_fields_to_remove = [f.lower() for f in fields_to_remove]
     for key in list(schema.keys()):
         if not isinstance(key, str):
-            # Make sure we're only removing keys that are strings.
             continue
+
         lower_key = key.lower()
-        if lower_key in [f.lower() for f in fields_to_remove] or key in fields_to_remove:
+
+        conditions_to_remove = [
+            # Empty keys
+            not key,
+            # Empty subschemas
+            isinstance(schema[key], dict) and len(schema[key]) == 0,
+            # Fields to remove
+            lower_key in lower_fields_to_remove,
+            # Custom fields
+            remove_custom_fields and lower_key.startswith("x-"),
+        ]
+
+        if any(conditions_to_remove):
             schema.pop(key)
-        if remove_custom_fields and lower_key.startswith("x-"):
-            schema.pop(key)
+            continue
 
     if "properties" in schema:
         schema["properties"] = {
@@ -2075,23 +2087,25 @@ def sanitize(instance: Any, schema: dict[str, Any]) -> Any:
     expanded_schema = expand_refs(schema)
     return __sanitize_instance(instance, expanded_schema)
 
+
 import copy
 import json
 from .mime import generate_blake2b_hash_from_string
+
+
 def compute_schema_data_id(json_schema: dict[str, Any]) -> str:
     """Returns the schema_data_id for a given JSON schema.
-    
+
     The schema_data_id is a hash of the schema data, ignoring all prompt/description/default fields
     and other non-structural metadata.
-    
+
     Args:
         json_schema: The JSON schema to compute the ID for
-        
+
     Returns:
         str: A hash string representing the schema data version with "sch_data_id_" prefix
     """
 
-    
     return "sch_data_id_" + generate_blake2b_hash_from_string(
         json.dumps(
             clean_schema(
