@@ -8,6 +8,7 @@ from .endpoints import AsyncEndpoints, Endpoints
 from .links import AsyncLinks, Links
 from .mailboxes import AsyncMailboxes, Mailboxes
 from .outlook import AsyncOutlooks, Outlooks
+from .tests import AsyncTests, Tests
 
 
 class SignatureVerificationError(Exception):
@@ -49,6 +50,7 @@ class Deployments(SyncAPIResource, DeploymentsMixin):
         self.links = Links(client=client)
         self.outlook = Outlooks(client=client)
         self.endpoints = Endpoints(client=client)
+        self.tests = Tests(client=client)
 
     def verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
@@ -66,6 +68,7 @@ class AsyncDeployments(AsyncAPIResource, DeploymentsMixin):
         self.links = AsyncLinks(client=client)
         self.outlook = AsyncOutlooks(client=client)
         self.endpoints = AsyncEndpoints(client=client)
+        self.tests = AsyncTests(client=client)
 
     async def verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
