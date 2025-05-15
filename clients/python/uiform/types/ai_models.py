@@ -6,6 +6,7 @@ GeminiModel = Literal[
     "gemini-2.5-flash-preview-04-17",
     "gemini-2.5-pro-exp-03-25",
     "gemini-2.0-flash-lite",
+    "gemini-2.0-flash",
 ]
 AnthropicModel = Literal[
     "claude-3-5-sonnet-latest", "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"
