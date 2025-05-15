@@ -102,7 +102,7 @@ class DocumentItem(AnnotatedDocument):
 class EvaluationDocument(DocumentItem):
     id: str = Field(description="The ID of the document. Equal to mime_data.id but robust to the case where mime_data is a BaseMIMEData")
 
-class PerformIterationRequest(BaseModel):
+class CreateIterationRequest(BaseModel):
     """
     Request model for performing a new iteration with custom inference settings and optional JSON schema.
     """
