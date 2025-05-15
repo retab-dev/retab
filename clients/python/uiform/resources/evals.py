@@ -9,7 +9,7 @@ from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.standards import PreparedRequest
 from ..types.evals import (Evaluation, EvaluationDocument, Iteration, DistancesResult, PredictionData, 
                            AddIterationFromJsonlRequest, DocumentItem, UpdateEvaluationDocumentRequest, 
-                           PredictionMetadata, PerformIterationRequest)
+                           PredictionMetadata, CreateIterationRequest)
 from ..types.jobs.base import InferenceSettings
 from ..types.image_settings import ImageSettings
 from ..types.mime import MIMEData
@@ -32,14 +32,14 @@ class ExportResponse(TypedDict):
 
 
 class EvalsMixin:
-    def prepare_create(self, name: str, json_schema: Dict[str, Any], project_id: str, 
+    def prepare_create(self, name: str, json_schema: Dict[str, Any], project_id: str | None = None, 
                          documents: List[EvaluationDocument] = [], 
                          iterations: List[Iteration] = [], 
                          default_inference_settings: Optional[InferenceSettings] = None) -> PreparedRequest:
         eval_data = Evaluation(
             name=name,
             json_schema=json_schema,
-            project_id=project_id,
+            project_id=project_id if project_id else "default_spreadsheets",
             documents=documents,
             iterations=iterations,
             default_inference_settings=default_inference_settings
@@ -112,12 +112,12 @@ class DocumentsMixin:
             url=f"/v1/evals/{eval_id}/documents/{id}"
         )
 
-    def prepare_create(self, eval_id: str, document: MIMEData, ground_truth: Dict[str, Any]) -> PreparedRequest:
+    def prepare_create(self, eval_id: str, document: MIMEData, annotation: Dict[str, Any]) -> PreparedRequest:
         # Serialize the MIMEData
 
         document_item = DocumentItem(
             mime_data=document,
-            annotation=ground_truth,
+            annotation=annotation,
             annotation_metadata=None
         )
         
@@ -137,10 +137,10 @@ class DocumentsMixin:
             params=params
         )
 
-    def prepare_update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> PreparedRequest:
+    def prepare_update(self, eval_id: str, id: str, annotation: Dict[str, Any]) -> PreparedRequest:
 
         update_request = UpdateEvaluationDocumentRequest(
-            annotation=ground_truth,
+            annotation=annotation,
             annotation_metadata=None
         )
         
@@ -194,14 +194,14 @@ class IterationsMixin:
             n_consensus=n_consensus
         )
 
-        perform_iteration_request = PerformIterationRequest(
+        perform_iteration_request = CreateIterationRequest(
             inference_settings=props,
             json_schema=json_schema
         )
 
         return PreparedRequest(
             method="POST",
-            url=f"/v1/evals/{eval_id}/perform_iteration",
+            url=f"/v1/evals/{eval_id}/iterations/create",
             data=perform_iteration_request.model_dump(exclude_none=True, mode="json")
         )
 
@@ -249,7 +249,7 @@ class Evals(SyncAPIResource, EvalsMixin):
         self.documents = Documents(self._client)
         self.iterations = Iterations(self._client)
 
-    def create(self, name: str, json_schema: Dict[str, Any], project_id: str) -> Evaluation:
+    def create(self, name: str, json_schema: Dict[str, Any], project_id: str | None = None) -> Evaluation:
         """
         Create a new evaluation.
 
@@ -356,7 +356,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
 
    
 
-    def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], ground_truth: Dict[str, Any]) -> EvaluationDocument:
+    def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Create a document for an evaluation.
 
@@ -368,7 +368,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
                 - A MIMEData object
                 - A PIL Image object
                 - A URL (HttpUrl)
-            ground_truth: The ground truth for the document
+            annotation: The ground truth for the document
 
         Returns:
             EvaluationDocument: The created document
@@ -379,7 +379,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         mime_document: MIMEData = prepare_mime_document(document)
         
         # Let prepare_create handle the serialization
-        request = self.prepare_create(eval_id, mime_document, ground_truth)
+        request = self.prepare_create(eval_id, mime_document, annotation)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
@@ -417,21 +417,21 @@ class Documents(SyncAPIResource, DocumentsMixin):
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
     
-    def update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> EvaluationDocument:
+    def update(self, eval_id: str, id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Update a document.
 
         Args:
             eval_id: The ID of the evaluation
             id: The ID of the document
-            ground_truth: The ground truth for the document
+            annotation: The ground truth for the document
 
         Returns:
             EvaluationDocument: The updated document
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(eval_id, id, ground_truth)
+        request = self.prepare_update(eval_id, id, annotation)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
@@ -557,7 +557,7 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
         self.documents = AsyncDocuments(self._client)
         self.iterations = AsyncIterations(self._client)
 
-    async def create(self, name: str, json_schema: Dict[str, Any], project_id: str) -> Evaluation:
+    async def create(self, name: str, json_schema: Dict[str, Any], project_id: str | None = None) -> Evaluation:
         """
         Create a new evaluation.
 
@@ -660,7 +660,7 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
 class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
     """Async Documents API wrapper for evaluations"""
 
-    async def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], ground_truth: Dict[str, Any]) -> EvaluationDocument:
+    async def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Create a document for an evaluation.
 
@@ -672,7 +672,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
                 - A MIMEData object
                 - A PIL Image object
                 - A URL (HttpUrl)
-            ground_truth: The ground truth for the document
+            annotation: The ground truth for the document
 
         Returns:
             EvaluationDocument: The created document
@@ -683,7 +683,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         mime_document: MIMEData = prepare_mime_document(document)
         
         # Let prepare_create handle the serialization
-        request = self.prepare_create(eval_id, mime_document, ground_truth)
+        request = self.prepare_create(eval_id, mime_document, annotation)
         response = await self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
@@ -705,21 +705,21 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
 
-    async def update(self, eval_id: str, id: str, ground_truth: Dict[str, Any]) -> EvaluationDocument:
+    async def update(self, eval_id: str, id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Update a document.
 
         Args:
             eval_id: The ID of the evaluation
             id: The ID of the document
-            ground_truth: The ground truth for the document
+            annotation: The ground truth for the document
 
         Returns:
             EvaluationDocument: The updated document
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(eval_id, id, ground_truth)
+        request = self.prepare_update(eval_id, id, annotation)
         response = await self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
