@@ -1,417 +1,338 @@
 import json
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator
+from typing import Any, AsyncGenerator, Generator, TypeVar, Generic, Optional, Union, List, Sequence, cast
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
+from openai.types.responses.response import Response
+from openai.types.responses.response_input_param import ResponseInputParam, ResponseInputItemParam
+from openai.types.responses.response_output_item import ResponseOutputItem
 from openai.types.shared_params.response_format_json_schema import ResponseFormatJSONSchema
-#from openai.lib._parsing import ResponseFormatT
-from pydantic import BaseModel as ResponseFormatT
-
+from pydantic import BaseModel
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from .._utils.ai_models import assert_valid_model_extraction
 from .._utils.json_schema import load_json_schema, unflatten_dict
+from .._utils.responses import convert_to_openai_format, convert_from_openai_format, parse_openai_responses_response
 from .._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ..types.chat import ChatCompletionUiformMessage
-from ..types.completions import UiChatCompletionsRequest
-from ..types.documents.extractions import UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice
+from ..types.completions import UiChatResponseCreateRequest, UiChatCompletionsRequest
+from ..types.documents.extractions import UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice, UiResponse
 from ..types.standards import PreparedRequest
 from ..types.schemas.object import Schema
 
+from typing import Optional, Union
+from openai.types.shared_params.reasoning import Reasoning
+from openai.types.responses.response_input_param import ResponseInputParam
+from openai.types.responses.response_text_config_param import ResponseTextConfigParam
+from openai.types.shared_params.response_format_json_schema import ResponseFormatJSONSchema
 
+T = TypeVar('T', bound=BaseModel)
 
-class BaseCompletionsMixin:
+class BaseResponsesMixin:
+    def prepare_create(
+        self,
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text: ResponseTextConfigParam,
+        temperature: float = 0,
+        reasoning: Optional[Reasoning] = None,
+        stream: bool = False,
+        n_consensus: int = 1,
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> PreparedRequest:
+        """
+        Prepare a request for the Responses API create method.
+        """
+        assert_valid_model_extraction(model)
+
+        text_format = text.get("format", None)
+        assert text_format is not None, "text.format is required"
+        json_schema = text_format.get("schema", None)
+        assert json_schema is not None, "text.format.schema is required"
+
+        schema_obj = Schema(json_schema=json_schema)
+
+        if instructions is None:
+            instructions = schema_obj.developer_system_prompt
+        
+        # Create the request object based on the UiChatResponseCreateRequest model
+        data = UiChatResponseCreateRequest(
+            model=model,
+            input=input,
+            temperature=temperature,
+            stream=stream,
+            reasoning=reasoning, 
+            n_consensus=n_consensus,
+            text={
+                "format": {
+                    "type": "json_schema", 
+                    "name": schema_obj.id, 
+                    "schema": schema_obj.inference_json_schema, 
+                    "strict": True
+                }
+            },
+            instructions=instructions,
+        )
+
+        # Validate the request data
+        ui_chat_response_create_request = UiChatResponseCreateRequest.model_validate(data)
+
+        return PreparedRequest(
+            method="POST", 
+            url="/v1/responses", 
+            data=ui_chat_response_create_request.model_dump(), 
+            idempotency_key=idempotency_key
+        )
 
     def prepare_parse(
         self,
-        response_format: type[ResponseFormatT],
-        messages: list[ChatCompletionUiformMessage],
         model: str,
-        temperature: float,
-        reasoning_effort: ChatCompletionReasoningEffort,
-        stream: bool,
-        n_consensus: int,
-        idempotency_key: str | None = None,
+        input: Union[str, ResponseInputParam],
+        text_format: type[BaseModel],
+        temperature: float = 0,
+        reasoning: Optional[Reasoning] = None,
+        stream: bool = False,
+        n_consensus: int = 1,
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
     ) -> PreparedRequest:
+        """
+        Prepare a request for the Responses API parse method.
+        """
+
         assert_valid_model_extraction(model)
 
-        json_schema = response_format.model_json_schema()
+        schema_obj = Schema(pydantic_model=text_format)
 
-        schema_obj = Schema(json_schema=json_schema)
-
-        data = {
-            "messages": messages,
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": schema_obj.id,
-                    "schema": schema_obj.inference_json_schema,
-                    "strict": True,
-                },
-            },
-            "model": model,
-            "temperature": temperature,
-            "stream": stream,
-            "reasoning_effort": reasoning_effort,
-            "n_consensus": n_consensus,
-        }
-
-        # Validate DocumentAPIRequest data (raises exception if invalid)
-        ui_chat_completions_request = UiChatCompletionsRequest.model_validate(data)
-
-        return PreparedRequest(method="POST", url="/v1/completions", data=ui_chat_completions_request.model_dump(), idempotency_key=idempotency_key)
-
-
-    def prepare_create(
-        self,
-        response_format: ResponseFormatJSONSchema,
-        messages: list[ChatCompletionUiformMessage],
-        model: str,
-        temperature: float,
-        reasoning_effort: ChatCompletionReasoningEffort,
-        stream: bool,
-        n_consensus: int,
-        idempotency_key: str | None = None,
-    ) -> PreparedRequest:
+        if instructions is None:
+            instructions = schema_obj.developer_system_prompt
         
-        json_schema = response_format["json_schema"].get("schema")
-
-        assert isinstance(json_schema, dict), f"json_schema must be a dictionary, got {type(json_schema)}"
-
-        schema_obj = Schema(json_schema=json_schema)
-
-        data = {
-            "messages": messages,
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": schema_obj.id,
-                    "schema": schema_obj.inference_json_schema,
-                    "strict": True,
-                },
+        # Create the request object based on the UiChatResponseCreateRequest model
+        data = UiChatResponseCreateRequest(
+            model=model,
+            input=input,
+            temperature=temperature,
+            stream=stream,
+            reasoning=reasoning, 
+            n_consensus=n_consensus,
+            text={
+                "format": {
+                    "type": "json_schema", 
+                    "name": schema_obj.id, 
+                    "schema": schema_obj.inference_json_schema, 
+                    "strict": True
+                }
             },
-            "model": model,
-            "temperature": temperature,
-            "stream": stream,
-            "reasoning_effort": reasoning_effort,
-            "n_consensus": n_consensus,
-        }
+            instructions=instructions,
+        )
 
-        # Validate DocumentAPIRequest data (raises exception if invalid)
-        ui_chat_completions_request = UiChatCompletionsRequest.model_validate(data)
+        # Validate the request data
+        ui_chat_response_create_request = UiChatResponseCreateRequest.model_validate(data)
 
-        return PreparedRequest(method="POST", url="/v1/completions", data=ui_chat_completions_request.model_dump(), idempotency_key=idempotency_key)
+        return PreparedRequest(
+            method="POST", 
+            url="/v1/responses", 
+            data=ui_chat_response_create_request.model_dump(), 
+            idempotency_key=idempotency_key
+        )
+        
+
+        return PreparedRequest(
+            method="POST", 
+            url="/v1/completions", 
+            data=ui_chat_completions_request.model_dump(), 
+            idempotency_key=idempotency_key
+        )
 
 
-class Completions(SyncAPIResource, BaseCompletionsMixin):
-    """Multi-provider Completions API wrapper"""
+class Responses(SyncAPIResource, BaseResponsesMixin):
+    """UiForm Responses API compatible with OpenAI Responses API"""
 
     def create(
         self,
-        response_format: ResponseFormatJSONSchema,
-        messages: list[ChatCompletionUiformMessage],
-        model: str = "gpt-4o-2024-08-06",
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text: ResponseTextConfigParam,
         temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        reasoning: Optional[Reasoning] = None,
         n_consensus: int = 1,
-        idempotency_key: str | None = None,
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
         stream: bool = False,
-    ) -> UiParsedChatCompletion:
+    ) -> Response:
         """
-        Create a completion using the UiForm API.
+        Create a completion using the UiForm API with OpenAI Responses API compatible interface.
+        
+        Args:
+            model: The model to use
+            input: The input text or message array
+            temperature: Model temperature setting (0-1)
+            reasoning: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use
+            text: The response format configuration
+            instructions: Optional system instructions
+            idempotency_key: Idempotency key for request
+            stream: Whether to stream the response
+            
+        Returns:
+            Response: OpenAI Responses API compatible response
         """
-
         request = self.prepare_create(
             model=model,
+            input=input,
             temperature=temperature,
-            reasoning_effort=reasoning_effort,
+            reasoning=reasoning,
             stream=stream,
-            messages=messages,
-            response_format=response_format,
+            text=text,
+            instructions=instructions,
             n_consensus=n_consensus,
             idempotency_key=idempotency_key,
         )
 
-        response = self._client._prepared_request(request)
-
-        return UiParsedChatCompletion.model_validate(response)
-
-
+        result = self._client._prepared_request(request)
+        response = UiResponse.model_validate(result)
+        
+        return response
+            
     def parse(
         self,
-        response_format: type[ResponseFormatT],
-        messages: list[ChatCompletionUiformMessage],
-        model: str = "gpt-4o-2024-08-06",
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text_format: type[T],
         temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        reasoning: Optional[Reasoning] = None,
         n_consensus: int = 1,
-        idempotency_key: str | None = None,
-    ) -> UiParsedChatCompletion:
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> Response:
         """
-        Parse messages using the UiForm API to extract structured data according to the provided JSON schema.
-
+        Parse content using the UiForm API with OpenAI Responses API compatible interface.
+        
         Args:
-            response_format: JSON schema defining the expected data structure
-            messages: List of chat messages to parse
-            model: The AI model to use for processing
+            model: The model to use
+            input: The input text or message array
+            text_format: The Pydantic model defining the expected output format
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use
+            instructions: Optional system instructions
             idempotency_key: Idempotency key for request
-            store: Whether to store the data in the UiForm database
-
+            
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            Response: OpenAI Responses API compatible response with parsed content
         """
         request = self.prepare_parse(
-            response_format=response_format,
-            messages=messages,
             model=model,
+            input=input,
             temperature=temperature,
-            reasoning_effort=reasoning_effort,
+            reasoning=reasoning,
             stream=False,
-            n_consensus=n_consensus,
-            idempotency_key=idempotency_key,
-        )
-        response = self._client._prepared_request(request)
-
-        return UiParsedChatCompletion.model_validate(response)
-
-    @as_context_manager
-    def stream(
-        self,
-        response_format: type[ResponseFormatT],
-        messages: list[ChatCompletionUiformMessage],
-        model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        n_consensus: int = 1,
-        idempotency_key: str | None = None,
-    ) -> Generator[UiParsedChatCompletion, None, None]:
-        """
-        Process messages using the UiForm API with streaming enabled.
-
-        Args:
-            response_format: JSON schema defining the expected data structure
-            messages: List of chat messages to parse
-            model: The AI model to use for processing
-            temperature: Model temperature setting (0-1)
-            reasoning_effort: The effort level for the model to reason about the input data
-            idempotency_key: Idempotency key for request
-
-        Returns:
-            Generator[UiParsedChatCompletion]: Stream of parsed responses
-
-        Usage:
-        ```python
-        with uiform.completions.stream(json_schema, messages, model, temperature, reasoning_effort) as stream:
-            for response in stream:
-                print(response)
-        ```
-        """
-        request = self.prepare_parse(
-            response_format=response_format,
-            messages=messages,
-            model=model,
-            temperature=temperature,
-            reasoning_effort=reasoning_effort,
-            stream=True,
+            text_format=text_format,
+            instructions=instructions,
             n_consensus=n_consensus,
             idempotency_key=idempotency_key,
         )
 
-        # Request the stream and return a context manager
-        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
-        # Initialize the UiParsedChatCompletion object
-        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
-            id="",
-            created=0,
-            model="",
-            object="chat.completion",
-            likelihoods={},
-            choices=[
-                UiParsedChoice(
-                    index=0,
-                    message=ParsedChatCompletionMessage(content="", role="assistant"),
-                    finish_reason=None,
-                    logprobs=None,
-                )
-            ],
-        )
-        for chunk_json in self._client._prepared_request_stream(request):
-            if not chunk_json:
-                continue
-            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
-            # Basic stuff
-            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
-            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
-            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
-
-            # Update the ui_parsed_completion object
-            ui_parsed_completion.likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
-            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
-            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
-            ui_parsed_completion.choices[0].message.parsed = parsed
-
-            yield ui_parsed_completion
-
-        # change the finish_reason to stop
-        ui_parsed_completion.choices[0].finish_reason = "stop"
-        yield ui_parsed_completion
+        result = self._client._prepared_request(request)
+        response = UiResponse.model_validate(result)
+        
+        return response
 
 
-class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
-    """Multi-provider Completions API wrapper for asynchronous usage."""
+
+class AsyncResponses(AsyncAPIResource, BaseResponsesMixin):
+    """UiForm Responses API compatible with OpenAI Responses API for async usage"""
 
     async def create(
         self,
-        response_format: ResponseFormatJSONSchema,
-        messages: list[ChatCompletionUiformMessage],
-        model: str = "gpt-4o-2024-08-06",
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text: ResponseTextConfigParam,
         temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        reasoning: Optional[Reasoning] = None,
         n_consensus: int = 1,
-        idempotency_key: str | None = None,
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
         stream: bool = False,
-    ) -> UiParsedChatCompletion:
+    ) -> UiResponse:
         """
-        Create a completion using the UiForm API.
+        Create a completion using the UiForm API asynchronously with OpenAI Responses API compatible interface.
+        
+        Args:
+            model: The model to use
+            input: The input text or message array
+            text: The response format configuration
+            temperature: Model temperature setting (0-1)
+            reasoning: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use
+            instructions: Optional system instructions
+            idempotency_key: Idempotency key for request
+            stream: Whether to stream the response
+            
+        Returns:
+            Response: OpenAI Responses API compatible response
         """
-
         request = self.prepare_create(
             model=model,
+            input=input,
             temperature=temperature,
-            reasoning_effort=reasoning_effort,
+            reasoning=reasoning,
             stream=stream,
-            messages=messages,
-            response_format=response_format,
+            text=text,
+            instructions=instructions,
             n_consensus=n_consensus,
             idempotency_key=idempotency_key,
         )
 
-        response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion.model_validate(response)
+        result = await self._client._prepared_request(request)
+        response = UiResponse.model_validate(result)
+        return response
+        
 
-
-
-
+            
     async def parse(
         self,
-        response_format: type[ResponseFormatT],
-        messages: list[ChatCompletionUiformMessage],
-        model: str = "gpt-4o-2024-08-06",
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text_format: type[BaseModel],
         temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        reasoning: Optional[Reasoning] = None,
         n_consensus: int = 1,
-        idempotency_key: str | None = None,
-    ) -> UiParsedChatCompletion:
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+        stream: bool = False,
+    ) -> UiResponse:
         """
-        Parse messages using the UiForm API asynchronously.
-
+        Parse content using the UiForm API asynchronously with OpenAI Responses API compatible interface.
+        
         Args:
-            json_schema: JSON schema defining the expected data structure
-            messages: List of chat messages to parse
-            model: The AI model to use
+            model: The model to use
+            input: The input text or message array
+            text_format: The Pydantic model defining the expected output format
             temperature: Model temperature setting (0-1)
-            reasoning_effort: The effort level for the model to reason about the input data
-            n_consensus: Number of consensus models to use for extraction
+            reasoning: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use
+            instructions: Optional system instructions
             idempotency_key: Idempotency key for request
-
+            
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            Response: OpenAI Responses API compatible response with parsed content
         """
         request = self.prepare_parse(
-            response_format=response_format,
-            messages=messages,
             model=model,
+            input=input,
             temperature=temperature,
-            reasoning_effort=reasoning_effort,
-            stream=False,
-            n_consensus=n_consensus,
-            idempotency_key=idempotency_key,
-        )
-        response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion.model_validate(response)
-
-    @as_async_context_manager
-    async def stream(
-        self,
-        response_format: type[ResponseFormatT],
-        messages: list[ChatCompletionUiformMessage],
-        model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        n_consensus: int = 1,
-        idempotency_key: str | None = None,
-    ) -> AsyncGenerator[UiParsedChatCompletion, None]:
-        """
-        Parse messages using the UiForm API asynchronously with streaming.
-
-        Args:
-            json_schema: JSON schema defining the expected data structure
-            messages: List of chat messages to parse
-            model: The AI model to use
-            temperature: Model temperature setting (0-1)
-            reasoning_effort: The effort level for the model to reason about the input data
-            n_consensus: Number of consensus models to use for extraction
-            idempotency_key: Idempotency key for request
-
-        Returns:
-            AsyncGenerator[UiParsedChatCompletion]: Stream of parsed responses
-
-        Usage:
-        ```python
-        async with uiform.completions.stream(json_schema, messages, model, temperature, reasoning_effort, n_consensus) as stream:
-            async for response in stream:
-                print(response)
-        ```
-        """
-        request = self.prepare_parse(
-            response_format=response_format,
-            messages=messages,
-            model=model,
-            temperature=temperature,
-            reasoning_effort=reasoning_effort,
-            stream=True,
+            reasoning=reasoning,
+            stream=stream,
+            text_format=text_format,
+            instructions=instructions,
             n_consensus=n_consensus,
             idempotency_key=idempotency_key,
         )
 
-        # Request the stream and return a context manager
-        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
-        # Initialize the UiParsedChatCompletion object
-        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
-            id="",
-            created=0,
-            model="",
-            object="chat.completion",
-            likelihoods={},
-            choices=[
-                UiParsedChoice(
-                    index=0,
-                    message=ParsedChatCompletionMessage(content="", role="assistant"),
-                    finish_reason=None,
-                    logprobs=None,
-                )
-            ],
-        )
-        async for chunk_json in self._client._prepared_request_stream(request):
-            if not chunk_json:
-                continue
-            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
-            # Basic stuff
-            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
-            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
-            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
-
-            # Update the ui_parsed_completion object
-            ui_parsed_completion.likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
-            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
-            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
-            ui_parsed_completion.choices[0].message.parsed = parsed
-
-            yield ui_parsed_completion
-
-        # change the finish_reason to stop
-        ui_parsed_completion.choices[0].finish_reason = "stop"
-        yield ui_parsed_completion
+        result = await self._client._prepared_request(request)
+        response = UiResponse.model_validate(result)
+        return response
+        
