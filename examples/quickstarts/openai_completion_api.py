@@ -23,7 +23,11 @@ assert uiform_api_key, "Missing UIFORM_API_KEY"
 json_schema = {
     'X-SystemPrompt': 'You are a useful assistant extracting information from documents.',
     'properties': {
-        'name': {'X-FieldPrompt': 'Provide a descriptive and concise name for the event.', 'description': 'The name of the calendar event.', 'title': 'Name', 'type': 'string'},
+        'name': {
+            'description': 'The name of the calendar event.',
+            'title': 'Name',
+            'type': 'string',
+        },
         'date': {
             'X-ReasoningPrompt': 'The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.',
             'description': 'The date of the calendar event in ISO 8601 format.',
@@ -35,6 +39,7 @@ json_schema = {
     'title': 'CalendarEvent',
     'type': 'object',
 }
+
 
 # Optional image processing settings
 image_settings = {"correct_image_orientation": True, "dpi": 72, "image_to_text": "ocr", "browser_canvas": "A4"}
@@ -55,12 +60,27 @@ schema_obj = Schema(json_schema=json_schema)
 
 # OpenAI Chat Completion with schema-based prompting
 client = OpenAI(api_key=api_key)
+# Example 1: Use the `inference_json_schema` parameter
 completion = client.chat.completions.create(
     model=model,
     temperature=temperature,
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
-    response_format={"type": "json_schema", "json_schema": {"name": schema_obj.id, "schema": schema_obj.inference_json_schema, "strict": True}},
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": schema_obj.id,
+            "schema": schema_obj.inference_json_schema,
+            "strict": True,
+        },
+    },
 )
+# Example 2: Use the `inference_pydantic_model` parameter
+completion = client.beta.chat.completions.parse(
+    model=model,
+    messages=schema_obj.openai_messages + doc_msg.openai_messages,
+    response_format=schema_obj.inference_pydantic_model,
+)
+
 
 # Validate and clean the output
 assert completion.choices[0].message.content is not None
