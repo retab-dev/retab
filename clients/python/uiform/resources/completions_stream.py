@@ -107,38 +107,8 @@ class BaseCompletionsMixin:
 class Completions(SyncAPIResource, BaseCompletionsMixin):
     """Multi-provider Completions API wrapper"""
 
-    def create(
-        self,
-        response_format: ResponseFormatJSONSchema,
-        messages: list[ChatCompletionUiformMessage],
-        model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        n_consensus: int = 1,
-        idempotency_key: str | None = None,
-        stream: bool = False,
-    ) -> UiParsedChatCompletion:
-        """
-        Create a completion using the UiForm API.
-        """
-
-        request = self.prepare_create(
-            model=model,
-            temperature=temperature,
-            reasoning_effort=reasoning_effort,
-            stream=stream,
-            messages=messages,
-            response_format=response_format,
-            n_consensus=n_consensus,
-            idempotency_key=idempotency_key,
-        )
-
-        response = self._client._prepared_request(request)
-
-        return UiParsedChatCompletion.model_validate(response)
-
-
-    def parse(
+    @as_context_manager
+    def stream(
         self,
         response_format: type[ResponseFormatT],
         messages: list[ChatCompletionUiformMessage],
@@ -147,9 +117,9 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         n_consensus: int = 1,
         idempotency_key: str | None = None,
-    ) -> UiParsedChatCompletion:
+    ) -> Generator[UiParsedChatCompletion, None, None]:
         """
-        Parse messages using the UiForm API to extract structured data according to the provided JSON schema.
+        Process messages using the UiForm API with streaming enabled.
 
         Args:
             response_format: JSON schema defining the expected data structure
@@ -158,10 +128,16 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data
             idempotency_key: Idempotency key for request
-            store: Whether to store the data in the UiForm database
 
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            Generator[UiParsedChatCompletion]: Stream of parsed responses
+
+        Usage:
+        ```python
+        with uiform.completions.stream(json_schema, messages, model, temperature, reasoning_effort) as stream:
+            for response in stream:
+                print(response)
+        ```
         """
         request = self.prepare_parse(
             response_format=response_format,
@@ -169,51 +145,57 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
             model=model,
             temperature=temperature,
             reasoning_effort=reasoning_effort,
-            stream=False,
+            stream=True,
             n_consensus=n_consensus,
             idempotency_key=idempotency_key,
         )
-        response = self._client._prepared_request(request)
 
-        return UiParsedChatCompletion.model_validate(response)
+        # Request the stream and return a context manager
+        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
+        # Initialize the UiParsedChatCompletion object
+        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
+            id="",
+            created=0,
+            model="",
+            object="chat.completion",
+            likelihoods={},
+            choices=[
+                UiParsedChoice(
+                    index=0,
+                    message=ParsedChatCompletionMessage(content="", role="assistant"),
+                    finish_reason=None,
+                    logprobs=None,
+                )
+            ],
+        )
+        for chunk_json in self._client._prepared_request_stream(request):
+            if not chunk_json:
+                continue
+            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
+            # Basic stuff
+            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
+
+            # Update the ui_parsed_completion object
+            ui_parsed_completion.likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
+            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
+            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
+            ui_parsed_completion.choices[0].message.parsed = parsed
+
+            yield ui_parsed_completion
+
+        # change the finish_reason to stop
+        ui_parsed_completion.choices[0].finish_reason = "stop"
+        yield ui_parsed_completion
 
 
 class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
     """Multi-provider Completions API wrapper for asynchronous usage."""
 
-    async def create(
-        self,
-        response_format: ResponseFormatJSONSchema,
-        messages: list[ChatCompletionUiformMessage],
-        model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        n_consensus: int = 1,
-        idempotency_key: str | None = None,
-        stream: bool = False,
-    ) -> UiParsedChatCompletion:
-        """
-        Create a completion using the UiForm API.
-        """
-
-        request = self.prepare_create(
-            model=model,
-            temperature=temperature,
-            reasoning_effort=reasoning_effort,
-            stream=stream,
-            messages=messages,
-            response_format=response_format,
-            n_consensus=n_consensus,
-            idempotency_key=idempotency_key,
-        )
-
-        response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion.model_validate(response)
-
-
-
-
-    async def parse(
+   
+    @as_async_context_manager
+    async def stream(
         self,
         response_format: type[ResponseFormatT],
         messages: list[ChatCompletionUiformMessage],
@@ -222,9 +204,9 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         n_consensus: int = 1,
         idempotency_key: str | None = None,
-    ) -> UiParsedChatCompletion:
+    ) -> AsyncGenerator[UiParsedChatCompletion, None]:
         """
-        Parse messages using the UiForm API asynchronously.
+        Parse messages using the UiForm API asynchronously with streaming.
 
         Args:
             json_schema: JSON schema defining the expected data structure
@@ -236,7 +218,14 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
             idempotency_key: Idempotency key for request
 
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            AsyncGenerator[UiParsedChatCompletion]: Stream of parsed responses
+
+        Usage:
+        ```python
+        async with uiform.completions.stream(json_schema, messages, model, temperature, reasoning_effort, n_consensus) as stream:
+            async for response in stream:
+                print(response)
+        ```
         """
         request = self.prepare_parse(
             response_format=response_format,
@@ -244,9 +233,46 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
             model=model,
             temperature=temperature,
             reasoning_effort=reasoning_effort,
-            stream=False,
+            stream=True,
             n_consensus=n_consensus,
             idempotency_key=idempotency_key,
         )
-        response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion.model_validate(response)
+
+        # Request the stream and return a context manager
+        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
+        # Initialize the UiParsedChatCompletion object
+        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
+            id="",
+            created=0,
+            model="",
+            object="chat.completion",
+            likelihoods={},
+            choices=[
+                UiParsedChoice(
+                    index=0,
+                    message=ParsedChatCompletionMessage(content="", role="assistant"),
+                    finish_reason=None,
+                    logprobs=None,
+                )
+            ],
+        )
+        async for chunk_json in self._client._prepared_request_stream(request):
+            if not chunk_json:
+                continue
+            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
+            # Basic stuff
+            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
+
+            # Update the ui_parsed_completion object
+            ui_parsed_completion.likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
+            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
+            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
+            ui_parsed_completion.choices[0].message.parsed = parsed
+
+            yield ui_parsed_completion
+
+        # change the finish_reason to stop
+        ui_parsed_completion.choices[0].finish_reason = "stop"
+        yield ui_parsed_completion
