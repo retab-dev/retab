@@ -24,7 +24,7 @@ class ExtractionSource(BaseModel):
     id: str | None = Field(default=None, description="ID the trigger of the extraction")
 
 
-ExtractionSteps = Literal['prepare_messages', 'yield_first_token', 'completion']  # Steps are meant to not overlap
+ExtractionSteps = str | Literal['initialization', 'prepare_messages', 'yield_first_token', 'completion']  # Steps are meant to not overlap
 
 
 class ExtractionTimingStep(BaseModel):
