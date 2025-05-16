@@ -240,6 +240,114 @@ class Responses(SyncAPIResource, BaseResponsesMixin):
         
         return response
 
+    @as_context_manager
+    def stream(
+        self,
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text: ResponseTextConfigParam,
+        temperature: float = 0,
+        reasoning: Optional[Reasoning] = None,
+        n_consensus: int = 1,
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> Generator[UiResponse, None, None]:
+        """
+        Create a completion using the UiForm API with streaming enabled.
+        
+        Args:
+            model: The model to use
+            input: The input text or message array
+            text: The response format configuration
+            temperature: Model temperature setting (0-1)
+            reasoning: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use
+            instructions: Optional system instructions
+            idempotency_key: Idempotency key for request
+            
+        Returns:
+            Generator[UiResponse]: Stream of responses
+
+        Usage:
+        ```python
+        with uiform.responses.stream(model, input, text, temperature, reasoning) as stream:
+            for response in stream:
+                print(response)
+        ```
+        """
+        request = self.prepare_create(
+            model=model,
+            input=input,
+            temperature=temperature,
+            reasoning=reasoning,
+            stream=True,
+            text=text,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            idempotency_key=idempotency_key,
+        )
+
+        # Request the stream and return a context manager
+        for chunk_json in self._client._prepared_request_stream(request):
+            if not chunk_json:
+                continue
+            response = UiResponse.model_validate(chunk_json)
+            yield response
+
+    @as_context_manager
+    def stream_parse(
+        self,
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text_format: type[T],
+        temperature: float = 0,
+        reasoning: Optional[Reasoning] = None,
+        n_consensus: int = 1,
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> Generator[UiResponse, None, None]:
+        """
+        Parse content using the UiForm API with streaming enabled.
+        
+        Args:
+            model: The model to use
+            input: The input text or message array
+            text_format: The Pydantic model defining the expected output format
+            temperature: Model temperature setting (0-1)
+            reasoning: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use
+            instructions: Optional system instructions
+            idempotency_key: Idempotency key for request
+            
+        Returns:
+            Generator[UiResponse]: Stream of parsed responses
+
+        Usage:
+        ```python
+        with uiform.responses.stream_parse(model, input, MyModel, temperature, reasoning) as stream:
+            for response in stream:
+                print(response)
+        ```
+        """
+        request = self.prepare_parse(
+            model=model,
+            input=input,
+            temperature=temperature,
+            reasoning=reasoning,
+            stream=True,
+            text_format=text_format,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            idempotency_key=idempotency_key,
+        )
+
+        # Request the stream and return a context manager
+        for chunk_json in self._client._prepared_request_stream(request):
+            if not chunk_json:
+                continue
+            response = UiResponse.model_validate(chunk_json)
+            yield response
+
 
 
 class AsyncResponses(AsyncAPIResource, BaseResponsesMixin):
@@ -335,4 +443,112 @@ class AsyncResponses(AsyncAPIResource, BaseResponsesMixin):
         result = await self._client._prepared_request(request)
         response = UiResponse.model_validate(result)
         return response
+        
+    @as_async_context_manager
+    async def stream(
+        self,
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text: ResponseTextConfigParam,
+        temperature: float = 0,
+        reasoning: Optional[Reasoning] = None,
+        n_consensus: int = 1,
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> AsyncGenerator[UiResponse, None]:
+        """
+        Create a completion using the UiForm API asynchronously with streaming enabled.
+        
+        Args:
+            model: The model to use
+            input: The input text or message array
+            text: The response format configuration
+            temperature: Model temperature setting (0-1)
+            reasoning: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use
+            instructions: Optional system instructions
+            idempotency_key: Idempotency key for request
+            
+        Returns:
+            AsyncGenerator[UiResponse]: Async stream of responses
+
+        Usage:
+        ```python
+        async with uiform.responses.async_stream(model, input, text, temperature, reasoning) as stream:
+            async for response in stream:
+                print(response)
+        ```
+        """
+        request = self.prepare_create(
+            model=model,
+            input=input,
+            temperature=temperature,
+            reasoning=reasoning,
+            stream=True,
+            text=text,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            idempotency_key=idempotency_key,
+        )
+
+        # Request the stream and return a context manager
+        async for chunk_json in self._client._prepared_request_stream(request):
+            if not chunk_json:
+                continue
+            response = UiResponse.model_validate(chunk_json)
+            yield response
+        
+    @as_async_context_manager
+    async def stream_parse(
+        self,
+        model: str,
+        input: Union[str, ResponseInputParam],
+        text_format: type[T],
+        temperature: float = 0,
+        reasoning: Optional[Reasoning] = None,
+        n_consensus: int = 1,
+        instructions: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> AsyncGenerator[UiResponse, None]:
+        """
+        Parse content using the UiForm API asynchronously with streaming enabled.
+        
+        Args:
+            model: The model to use
+            input: The input text or message array
+            text_format: The Pydantic model defining the expected output format
+            temperature: Model temperature setting (0-1)
+            reasoning: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use
+            instructions: Optional system instructions
+            idempotency_key: Idempotency key for request
+            
+        Returns:
+            AsyncGenerator[UiResponse]: Async stream of parsed responses
+
+        Usage:
+        ```python
+        async with uiform.responses.async_stream_parse(model, input, MyModel, temperature, reasoning) as stream:
+            async for response in stream:
+                print(response)
+        ```
+        """
+        request = self.prepare_parse(
+            model=model,
+            input=input,
+            temperature=temperature,
+            reasoning=reasoning,
+            stream=True,
+            text_format=text_format,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            idempotency_key=idempotency_key,
+        )
+
+        # Request the stream and return a context manager
+        async for chunk_json in self._client._prepared_request_stream(request):
+            if not chunk_json:
+                continue
+            response = UiResponse.model_validate(chunk_json)
+            yield response
         
