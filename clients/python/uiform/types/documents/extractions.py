@@ -109,9 +109,9 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     extraction_id: str | None = None
     choices: list[UiParsedChoice]
     # Additional metadata fields (UIForm)
-    likelihoods: Any  # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
+    likelihoods: Any = {}  # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
     schema_validation_error: ErrorDetail | None = None
-    likelihoods_source: LikelihoodsSource = "log_probs"
+    likelihoods_source: LikelihoodsSource | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
@@ -195,7 +195,7 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     extraction_id: str | None = None
     choices: list[UiParsedChoiceChunk]
     schema_validation_error: ErrorDetail | None = None
-    likelihoods_source: LikelihoodsSource = "log_probs"
+    likelihoods_source: LikelihoodsSource | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
