@@ -118,6 +118,21 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
 
+
+class UiResponse(Response):
+    extraction_id: str | None = None
+    # Additional metadata fields (UIForm)
+    likelihoods: Any = {}  # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
+    schema_validation_error: ErrorDetail | None = None
+    likelihoods_source: LikelihoodsSource | None = None
+    # Timestamps
+    request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
+    first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
+    last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
+
+
+
+
 class LogExtractionRequest(BaseModel):
     messages: list[ChatCompletionUiformMessage] | None = None  # TODO: compatibility with Anthropic
     openai_messages: list[ChatCompletionMessageParam] | None = None

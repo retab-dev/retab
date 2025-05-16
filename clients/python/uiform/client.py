@@ -8,7 +8,7 @@ import backoff.types
 import httpx
 from pydantic_core import PydanticUndefined
 
-from .resources import deployments, completions, documents, evals, files, finetuning, models, schemas, secrets, usage
+from .resources import deployments, completions, documents, evals, files, finetuning, models, schemas, secrets, usage, responses
 from .types.standards import PreparedRequest
 import truststore
 
@@ -149,6 +149,7 @@ class UiForm(BaseUiForm):
         models: Access to model operations
         datasets: Access to dataset operations
         schemas: Access to schema operations
+        responses: Access to responses API (OpenAI Responses API compatible interface)
     """
 
     def __init__(
@@ -185,6 +186,7 @@ class UiForm(BaseUiForm):
         self.secrets = secrets.Secrets(client=self)
         self.usage = usage.Usage(client=self)
         self.completions = completions.Completions(client=self)
+        self.responses = responses.Responses(client=self)
 
     def _request(
         self,
@@ -331,6 +333,7 @@ class AsyncUiForm(BaseUiForm):
         models: Access to asynchronous model operations
         datasets: Access to asynchronous dataset operations
         schemas: Access to asynchronous schema operations
+        responses: Access to responses API (OpenAI Responses API compatible interface)
     """
 
     def __init__(
@@ -368,6 +371,7 @@ class AsyncUiForm(BaseUiForm):
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)
         self.completions = completions.AsyncCompletions(client=self)
+        self.responses = responses.AsyncResponses(client=self)
 
     async def _request(
         self,
