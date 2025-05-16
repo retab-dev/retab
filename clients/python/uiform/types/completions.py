@@ -20,6 +20,7 @@ class UiChatCompletionsParseRequest(BaseModel):
     # Regular fields
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
+    n_consensus: int = Field(default=1, description="Number of consensus models to use for extraction. If greater than 1 the temperature cannot be 0.")
 
     @property
     def provider(self) -> AIProvider:

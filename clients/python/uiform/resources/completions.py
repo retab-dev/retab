@@ -24,6 +24,7 @@ class BaseCompletionsMixin:
         temperature: float,
         reasoning_effort: ChatCompletionReasoningEffort,
         stream: bool,
+        n_consensus: int,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
@@ -37,6 +38,7 @@ class BaseCompletionsMixin:
             "temperature": temperature,
             "stream": stream,
             "reasoning_effort": reasoning_effort,
+            "n_consensus": n_consensus,
         }
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
@@ -55,6 +57,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        n_consensus: int = 1,
         idempotency_key: str | None = None,
     ) -> UiParsedChatCompletion:
         """
@@ -73,7 +76,14 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
             UiParsedChatCompletion: Parsed response from the API
         """
         request = self.prepare(
-            json_schema=json_schema, messages=messages, model=model, temperature=temperature, reasoning_effort=reasoning_effort, stream=False, idempotency_key=idempotency_key
+            json_schema=json_schema,
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            stream=False,
+            n_consensus=n_consensus,
+            idempotency_key=idempotency_key,
         )
         response = self._client._prepared_request(request)
 
@@ -87,6 +97,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        n_consensus: int = 1,
         idempotency_key: str | None = None,
     ) -> Generator[UiParsedChatCompletion, None, None]:
         """
@@ -111,20 +122,25 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         ```
         """
         request = self.prepare(
-            json_schema=json_schema, messages=messages, model=model, temperature=temperature, reasoning_effort=reasoning_effort, stream=True, idempotency_key=idempotency_key
+            json_schema=json_schema,
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            stream=True,
+            n_consensus=n_consensus,
+            idempotency_key=idempotency_key,
         )
 
         # Request the stream and return a context manager
-        flatten_parsed: dict[str, Any] = {}
-        flatten_likelihoods: dict[str, float] = {}
-        ui_parsed_chat_completion_chunk: UiParsedChatCompletionChunk | None = None
+        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
         # Initialize the UiParsedChatCompletion object
         ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
             id="",
             created=0,
             model="",
             object="chat.completion",
-            likelihoods=unflatten_dict(flatten_likelihoods),
+            likelihoods={},
             choices=[
                 UiParsedChoice(
                     index=0,
@@ -137,22 +153,17 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            ui_parsed_chat_completion_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json)
+            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
             # Basic stuff
-            ui_parsed_completion.id = ui_parsed_chat_completion_chunk.id
-            ui_parsed_completion.created = ui_parsed_chat_completion_chunk.created
-            ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
-
-            # Accumulate the content and likelihoods
-            if ui_parsed_chat_completion_chunk.choices:
-                flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
-                flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
+            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
 
             # Update the ui_parsed_completion object
-            parsed = unflatten_dict(flatten_parsed)
+            ui_parsed_completion.likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
+            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
             ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
             ui_parsed_completion.choices[0].message.parsed = parsed
-            ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
 
             yield ui_parsed_completion
 
@@ -171,6 +182,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        n_consensus: int = 1,
         idempotency_key: str | None = None,
     ) -> UiParsedChatCompletion:
         """
@@ -182,13 +194,21 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
             model: The AI model to use
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use for extraction
             idempotency_key: Idempotency key for request
 
         Returns:
             UiParsedChatCompletion: Parsed response from the API
         """
         request = self.prepare(
-            json_schema=json_schema, messages=messages, model=model, temperature=temperature, reasoning_effort=reasoning_effort, stream=False, idempotency_key=idempotency_key
+            json_schema=json_schema,
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            stream=False,
+            n_consensus=n_consensus,
+            idempotency_key=idempotency_key,
         )
         response = await self._client._prepared_request(request)
         return UiParsedChatCompletion.model_validate(response)
@@ -201,6 +221,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         model: str = "gpt-4o-2024-08-06",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        n_consensus: int = 1,
         idempotency_key: str | None = None,
     ) -> AsyncGenerator[UiParsedChatCompletion, None]:
         """
@@ -212,6 +233,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
             model: The AI model to use
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus models to use for extraction
             idempotency_key: Idempotency key for request
 
         Returns:
@@ -219,19 +241,24 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
 
         Usage:
         ```python
-        async with uiform.completions.stream(json_schema, messages, model, temperature, reasoning_effort) as stream:
+        async with uiform.completions.stream(json_schema, messages, model, temperature, reasoning_effort, n_consensus) as stream:
             async for response in stream:
                 print(response)
         ```
         """
         request = self.prepare(
-            json_schema=json_schema, messages=messages, model=model, temperature=temperature, reasoning_effort=reasoning_effort, stream=True, idempotency_key=idempotency_key
+            json_schema=json_schema,
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            stream=True,
+            n_consensus=n_consensus,
+            idempotency_key=idempotency_key,
         )
 
         # Request the stream and return a context manager
-        flatten_parsed: dict[str, Any] = {}
-        flatten_likelihoods: dict[str, float] = {}
-        ui_parsed_chat_completion_chunk: UiParsedChatCompletionChunk | None = None
+        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
         # Initialize the UiParsedChatCompletion object
         ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
             id="",
@@ -251,22 +278,17 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         async for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            ui_parsed_chat_completion_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json)
+            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
             # Basic stuff
-            ui_parsed_completion.id = ui_parsed_chat_completion_chunk.id
-            ui_parsed_completion.created = ui_parsed_chat_completion_chunk.created
-            ui_parsed_completion.model = ui_parsed_chat_completion_chunk.model
-
-            # Accumulate the content and likelihoods
-            if ui_parsed_chat_completion_chunk.choices:
-                flatten_parsed = {**flatten_parsed, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_parsed}
-                flatten_likelihoods = {**flatten_likelihoods, **ui_parsed_chat_completion_chunk.choices[0].delta.flat_likelihoods}
+            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
 
             # Update the ui_parsed_completion object
-            parsed = unflatten_dict(flatten_parsed)
-            ui_parsed_completion.choices[0].message.parsed = parsed
+            ui_parsed_completion.likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
+            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
             ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
-            ui_parsed_completion.likelihoods = unflatten_dict(flatten_likelihoods)
+            ui_parsed_completion.choices[0].message.parsed = parsed
 
             yield ui_parsed_completion
 
