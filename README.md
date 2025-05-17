@@ -101,9 +101,8 @@ Among the features we're working on:
 
 - [ ] Node.js SDK
 - [ ] Chat-based interface in the evaluation platform
-- [ ] Evals SDK
-- [ ] Low-level speed optimizations
+- [ ] Low-level speed optimizations for Evals Frontend
+- [ ] New JSON Reconciliation Model
 - [ ] Add more templates
-- [ ] Additional context dump: additional_messages
 - [ ] DoubleCheck API (Agentic verification of the results)
 - [ ] Deep Research
