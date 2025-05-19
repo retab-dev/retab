@@ -1,7 +1,7 @@
 from typing import Any, Dict, Literal, Optional
 
 from ..._resource import SyncAPIResource, AsyncAPIResource
-from ...types.logs import AutomationLog, ExternalRequestLog, ListLogs
+from ...types.logs import DeploymentLog, ExternalRequestLog, ListLogs
 from ...types.standards import PreparedRequest
 
 
@@ -66,7 +66,7 @@ class LogsMixin:
         return PreparedRequest(method="GET", url="/v1/deployments/logs", params=params)
 
     def prepare_rerun(self, log_id: str) -> PreparedRequest:
-        """Rerun a webhook from an existing AutomationLog.
+        """Rerun a webhook from an existing DeploymentLog.
 
         Args:
             log_id: ID of the log to rerun
@@ -80,18 +80,18 @@ class LogsMixin:
 class Logs(SyncAPIResource, LogsMixin):
     """Logs API wrapper for managing automation logs"""
 
-    def get(self, log_id: str) -> AutomationLog:
+    def get(self, log_id: str) -> DeploymentLog:
         """Get a specific automation log by ID.
 
         Args:
             log_id: ID of the log to retrieve
 
         Returns:
-            AutomationLog: The automation log
+            DeploymentLog: The automation log
         """
         request = self.prepare_get(log_id)
         response = self._client._prepared_request(request)
-        return AutomationLog.model_validate(response)
+        return DeploymentLog.model_validate(response)
 
     def list(
         self,
@@ -128,7 +128,7 @@ class Logs(SyncAPIResource, LogsMixin):
         return ListLogs.model_validate(response)
 
     def rerun(self, log_id: str) -> ExternalRequestLog:
-        """Rerun a webhook from an existing AutomationLog.
+        """Rerun a webhook from an existing DeploymentLog.
 
         Args:
             log_id: ID of the log to rerun
@@ -147,18 +147,18 @@ class Logs(SyncAPIResource, LogsMixin):
 class AsyncLogs(AsyncAPIResource, LogsMixin):
     """Async Logs API wrapper for managing automation logs"""
 
-    async def get(self, log_id: str) -> AutomationLog:
+    async def get(self, log_id: str) -> DeploymentLog:
         """Get a specific automation log by ID.
 
         Args:
             log_id: ID of the log to retrieve
 
         Returns:
-            AutomationLog: The automation log
+            DeploymentLog: The automation log
         """
         request = self.prepare_get(log_id)
         response = await self._client._prepared_request(request)
-        return AutomationLog.model_validate(response)
+        return DeploymentLog.model_validate(response)
 
     async def list(
         self,
@@ -195,7 +195,7 @@ class AsyncLogs(AsyncAPIResource, LogsMixin):
         return ListLogs.model_validate(response)
 
     async def rerun(self, log_id: str) -> ExternalRequestLog:
-        """Rerun a webhook from an existing AutomationLog.
+        """Rerun a webhook from an existing DeploymentLog.
 
         Args:
             log_id: ID of the log to rerun
