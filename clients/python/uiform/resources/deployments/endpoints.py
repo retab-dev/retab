@@ -161,7 +161,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         """
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_settings, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
-        print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f'/v1/endpoints/{response["id"]}'}")
+        print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/deployments/{response['id']}")
         return Endpoint.model_validate(response)
 
     def list(
@@ -267,7 +267,8 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
     ) -> Endpoint:
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_settings, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
-        print(f"Endpoint ID: {response['id']}. Send files to {self._client.base_url + f'/v1/endpoints/{response["id"]}'}")
+        print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        
         return Endpoint.model_validate(response)
 
     async def list(
@@ -309,4 +310,3 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
     async def delete(self, endpoint_id: str) -> None:
         request = self.prepare_delete(endpoint_id)
         await self._client._prepared_request(request)
-        print(f"Endpoint Deleted. ID: {endpoint_id}")

@@ -138,6 +138,9 @@ class Logs(SyncAPIResource, LogsMixin):
         """
         request = self.prepare_rerun(log_id)
         response = self._client._prepared_request(request)
+
+        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/deployments/logs/{log_id}")
+
         return ExternalRequestLog.model_validate(response)
 
 
@@ -202,4 +205,7 @@ class AsyncLogs(AsyncAPIResource, LogsMixin):
         """
         request = self.prepare_rerun(log_id)
         response = await self._client._prepared_request(request)
+
+        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/deployments/logs/{log_id}")
+
         return ExternalRequestLog.model_validate(response)

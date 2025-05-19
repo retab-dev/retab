@@ -236,6 +236,9 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             fetch_params,
         )
         response = self._client._prepared_request(request)
+
+        print(f"Outlook automation created. Outlook available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+
         return Outlook.model_validate(response)
 
     def list(
@@ -422,6 +425,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
             fetch_params,
         )
         response = await self._client._prepared_request(request)
+        print(f"Outlook automation created. Outlook available at https://www.uiform.com/dashboard/deployments/{response['id']}")
         return Outlook.model_validate(response)
 
     async def list(
