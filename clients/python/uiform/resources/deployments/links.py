@@ -15,7 +15,7 @@ from ..._utils.mime import prepare_mime_document
 from ...types.deployments.links import Link, ListLinks, UpdateLinkRequest
 from ...types.documents.extractions import UiParsedChatCompletion
 from ...types.image_settings import ImageSettings
-from ...types.logs import AutomationLog, ExternalRequestLog, ListLogs
+from ...types.logs import DeploymentLog, ExternalRequestLog, ListLogs
 from ...types.mime import BaseMIMEData, MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest

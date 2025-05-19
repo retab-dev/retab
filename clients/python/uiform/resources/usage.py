@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.ai_models import Amount
-from ..types.logs import AutomationLog, LogCompletionRequest
+from ..types.logs import DeploymentLog, LogCompletionRequest
 from ..types.standards import PreparedRequest
 
 total_cost = 0.0
@@ -141,7 +141,7 @@ class Usage(SyncAPIResource, UsageMixin):
         return Amount.model_validate(response)
 
     # TODO: Turn that into an async process
-    def log(self, response_format: completion_create_params.ResponseFormat, completion: ChatCompletion) -> AutomationLog:
+    def log(self, response_format: completion_create_params.ResponseFormat, completion: ChatCompletion) -> DeploymentLog:
         """Logs an openai request completion as an automation log to make the usage calculation possible for the user
 
         client = OpenAI()
@@ -164,11 +164,11 @@ class Usage(SyncAPIResource, UsageMixin):
             completion: The completion of the openai request
 
         Returns:
-            AutomationLog: The automation log
+            DeploymentLog: The automation log
         """
         request = self.prepare_log(response_format, completion)
         response = self._client._request(request.method, request.url, request.data, request.params)
-        return AutomationLog.model_validate(response)
+        return DeploymentLog.model_validate(response)
 
 
 class AsyncUsage(AsyncAPIResource, UsageMixin):
@@ -241,7 +241,7 @@ class AsyncUsage(AsyncAPIResource, UsageMixin):
         return Amount.model_validate(response)
 
     # TODO: Turn that into an async process
-    async def log(self, response_format: completion_create_params.ResponseFormat, completion: ChatCompletion) -> AutomationLog:
+    async def log(self, response_format: completion_create_params.ResponseFormat, completion: ChatCompletion) -> DeploymentLog:
         """Logs an openai request completion as an automation log to make the usage calculation possible for the user
 
         client = OpenAI()
@@ -264,8 +264,8 @@ class AsyncUsage(AsyncAPIResource, UsageMixin):
             completion: The completion of the openai request
 
         Returns:
-            AutomationLog: The automation log
+            DeploymentLog: The automation log
         """
         request = self.prepare_log(response_format, completion)
         response = await self._client._request(request.method, request.url, request.data, request.params)
-        return AutomationLog.model_validate(response)
+        return DeploymentLog.model_validate(response)

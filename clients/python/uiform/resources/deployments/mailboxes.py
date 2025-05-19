@@ -15,7 +15,7 @@ from ..._utils.mime import prepare_mime_document
 from ...types.deployments.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
 from ...types.documents.extractions import UiParsedChatCompletion
 from ...types.image_settings import ImageSettings
-from ...types.logs import AutomationLog, ExternalRequestLog
+from ...types.logs import DeploymentLog, ExternalRequestLog
 from ...types.mime import BaseMIMEData, EmailData, MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
@@ -312,7 +312,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> List[AutomationLog]:
+    ) -> List[DeploymentLog]:
         """Get logs for a specific email automation.
 
         Args:
@@ -330,7 +330,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         """
         request = self.prepare_logs(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
-        return [AutomationLog.model_validate(log) for log in response]
+        return [DeploymentLog.model_validate(log) for log in response]
 
 
 class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
@@ -416,10 +416,10 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> List[AutomationLog]:
+    ) -> List[DeploymentLog]:
         request = self.prepare_logs(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
-        return [AutomationLog.model_validate(log) for log in response]
+        return [DeploymentLog.model_validate(log) for log in response]
 
 
 class TestMailboxesMixin:

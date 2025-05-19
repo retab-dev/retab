@@ -172,13 +172,13 @@ class LogCompletionRequest(BaseModel):
     completion: ChatCompletion
 
 
-class AutomationLog(BaseModel):
+class DeploymentLog(BaseModel):
     object: Literal['automation_log'] = "automation_log"
     id: str = Field(default_factory=lambda: "log_auto_" + nanoid.generate(), description="Unique identifier for the automation log")
     user_email: Optional[EmailStr]  # When the user is logged or when he forwards an email
     organization_id: str
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    automation_snapshot: AutomationConfig
+    deployment_snapshot: AutomationConfig
     completion: UiParsedChatCompletion | ChatCompletion
     file_metadata: Optional[BaseMIMEData]
     external_request_log: Optional[ExternalRequestLog]
@@ -198,5 +198,5 @@ class AutomationLog(BaseModel):
 
 
 class ListLogs(BaseModel):
-    data: List[AutomationLog]
+    data: List[DeploymentLog]
     list_metadata: ListMetadata

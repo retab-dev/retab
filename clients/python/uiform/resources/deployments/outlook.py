@@ -11,7 +11,7 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.deployments.outlook import FetchParams, ListOutlooks, MatchParams, Outlook, UpdateOutlookRequest
 from ...types.image_settings import ImageSettings
-from ...types.logs import AutomationLog
+from ...types.logs import DeploymentLog
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 
@@ -367,7 +367,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         schema_data_id: Optional[str] = None,
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
-    ) -> List[AutomationLog]:
+    ) -> List[DeploymentLog]:
         """Get logs for a specific outlook automation.
 
         Args:
@@ -386,7 +386,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         """
         request = self.prepare_logs(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
         response = self._client._prepared_request(request)
-        return [AutomationLog.model_validate(log) for log in response]
+        return [DeploymentLog.model_validate(log) for log in response]
 
 
 class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
@@ -503,7 +503,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         schema_data_id: Optional[str] = None,
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
-    ) -> List[AutomationLog]:
+    ) -> List[DeploymentLog]:
         request = self.prepare_logs(before, after, limit, order, outlook_id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
         response = await self._client._prepared_request(request)
-        return [AutomationLog.model_validate(log) for log in response]
+        return [DeploymentLog.model_validate(log) for log in response]
