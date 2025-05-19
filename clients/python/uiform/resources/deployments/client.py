@@ -9,7 +9,7 @@ from .links import AsyncLinks, Links
 from .mailboxes import AsyncMailboxes, Mailboxes
 from .outlook import AsyncOutlooks, Outlooks
 from .tests import AsyncTests, Tests
-
+from .logs import AsyncLogs, Logs
 
 class SignatureVerificationError(Exception):
     """Raised when webhook signature verification fails."""
@@ -51,7 +51,7 @@ class Deployments(SyncAPIResource, DeploymentsMixin):
         self.outlook = Outlooks(client=client)
         self.endpoints = Endpoints(client=client)
         self.tests = Tests(client=client)
-
+        self.logs = Logs(client=client)
     def verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.
@@ -69,6 +69,7 @@ class AsyncDeployments(AsyncAPIResource, DeploymentsMixin):
         self.outlook = AsyncOutlooks(client=client)
         self.endpoints = AsyncEndpoints(client=client)
         self.tests = AsyncTests(client=client)
+        self.logs = AsyncLogs(client=client)
 
     async def verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
