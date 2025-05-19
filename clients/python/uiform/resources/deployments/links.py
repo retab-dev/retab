@@ -191,7 +191,6 @@ class Links(SyncAPIResource, LinksMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.tests = TestLinks(client=client)
 
     def create(
         self,
@@ -226,7 +225,8 @@ class Links(SyncAPIResource, LinksMixin):
 
         request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
-        print(f"Extraction Link Created. Link available at https://uiform.com/links/{response['id']}")
+
+        print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/deployments/{response['id']}")
         return Link.model_validate(response)
 
     def list(
@@ -323,7 +323,6 @@ class Links(SyncAPIResource, LinksMixin):
         """
         request = self.prepare_delete(link_id)
         self._client._prepared_request(request)
-        print(f"Extraction Link Deleted. Link https://uiform.com/links/{link_id} is no longer available.")
 
     def logs(
         self,
@@ -364,7 +363,6 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.tests = AsyncTestLinks(client=client)
 
     async def create(
         self,
@@ -381,7 +379,7 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
     ) -> Link:
         request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
-        print(f"Extraction Link Created. Link available at https://uiform.com/links/{response['id']}")
+        print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/deployments/{response['id']}")
         return Link.model_validate(response)
 
     async def list(
@@ -426,7 +424,6 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
     async def delete(self, link_id: str) -> None:
         request = self.prepare_delete(link_id)
         await self._client._prepared_request(request)
-        print(f"Extraction Link Deleted. Link https://uiform.com/links/{link_id} is no longer available.")
 
     async def logs(
         self,
@@ -443,306 +440,3 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         request = self.prepare_logs(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return ListLogs.model_validate(response)
-
-
-### Test Links ###
-
-
-class TestLinksMixin:
-    def prepare_upload(self, link_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
-        mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/deployments/links/tests/upload/{link_id}", data={"document": mime_document.model_dump(mode='json')})
-
-    def prepare_webhook(self, link_id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/v1/deployments/links/tests/webhook/{link_id}", data=None)
-
-    def print_upload_verbose(self, log: AutomationLog) -> None:
-        if log.external_request_log:
-            print(f"\nTEST FILE UPLOAD RESULTS:")
-            print(f"\n#########################")
-            print(f"Status Code: {log.external_request_log.status_code}")
-            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-
-            if log.external_request_log.error:
-                print(f"\nERROR: {log.external_request_log.error}")
-
-            if log.external_request_log.response_body:
-                print("\n--------------")
-                print("RESPONSE BODY:")
-                print("--------------")
-
-                print(json.dumps(log.external_request_log.response_body, indent=2))
-            if log.external_request_log.response_headers:
-                print("\n--------------")
-                print("RESPONSE HEADERS:")
-                print("--------------")
-                print(json.dumps(log.external_request_log.response_headers, indent=2))
-
-    def print_webhook_verbose(self, log: AutomationLog) -> None:
-        if log.external_request_log:
-            print(f"\nTEST WEBHOOK RESULTS:")
-            print(f"\n#########################")
-            print(f"Status Code: {log.external_request_log.status_code}")
-            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-
-            if log.external_request_log.error:
-                print(f"\nERROR: {log.external_request_log.error}")
-
-            if log.external_request_log.response_body:
-                print("\n--------------")
-                print("RESPONSE BODY:")
-                print("--------------")
-
-                print(json.dumps(log.external_request_log.response_body, indent=2))
-            if log.external_request_log.response_headers:
-                print("\n--------------")
-                print("RESPONSE HEADERS:")
-                print("--------------")
-                print(json.dumps(log.external_request_log.response_headers, indent=2))
-
-
-clean_response = UiParsedChatCompletion.model_validate(
-    {
-        'id': 'chatcmpl-xxxxxxxxxx',
-        'choices': [
-            {
-                'finish_reason': 'stop',
-                'index': 0,
-                'logprobs': None,
-                'message': {
-                    'content': '{"name": "ACME Corporation", "type": "corporate", "relationship": "client"}',
-                    'refusal': None,
-                    'role': 'assistant',
-                    'audio': None,
-                    'function_call': None,
-                    'tool_calls': [],
-                    'parsed': {},
-                },
-            }
-        ],
-        'created': 1738084776,
-        'model': 'gpt-4o-mini-2024-07-18',
-        'object': 'chat.completion',
-        'service_tier': 'default',
-        'system_fingerprint': 'fp_xxxxxx',
-        'usage': {
-            'completion_tokens': 17,
-            'prompt_tokens': 663,
-            'total_tokens': 680,
-            'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0},
-            'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0},
-        },
-        'likelihoods': {'name': 1.0, 'type': 0.9999993295729247, 'relationship': 0.9999920581810364},
-    }
-)
-
-
-invoice_file_content = b"""
-            INVOICE
-            
-            Invoice Number: INV-2024-001
-            Date: March 15, 2024
-            
-            Bill To:
-            ACME Corporation
-            123 Business Street
-            Business City, BC 12345
-            
-            Items:
-            1. Consulting Services - $1,000
-            2. Software License - $500
-            3. Support Package - $250
-            
-            Subtotal: $1,750
-            Tax (10%): $175
-            Total: $1,925
-            
-            Payment Terms: Net 30
-            Due Date: April 14, 2024
-            """
-
-
-class TestLinks(SyncAPIResource, TestLinksMixin):
-    """Test Extraction Link API wrapper for testing extraction link configurations"""
-
-    def upload(self, link_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
-        """Mock endpoint that simulates the complete extraction process with sample data.
-
-        Args:
-            link_id: ID of the extraction link to mock
-
-        Returns:
-            DocumentExtractResponse: The simulated extraction response
-        """
-
-        request = self.prepare_upload(link_id, document)
-        response = self._client._prepared_request(request)
-
-        log = AutomationLog.model_validate(response)
-
-        if verbose:
-            self.print_upload_verbose(log)
-
-        return log
-
-    def webhook(self, link_id: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
-        """Mock endpoint that simulates the complete webhook process with sample data.
-
-        Args:
-            link_id: ID of the extraction link to mock
-            webhook_url: Optional URL to send webhook to for local testing
-            verbose: Whether to print verbose output
-
-        Returns:
-            AutomationLog: The simulated webhook response
-        """
-        if webhook_url:
-            # Step 1: get automation object
-            link = self._client.deployments.links.get(link_id)
-
-            # Create sample invoice content
-
-            # Create MIME document
-            mime_document = prepare_mime_document(invoice_file_content)
-
-            # Create sample extraction response
-            # Send webhook request
-            start_time = datetime.datetime.now(datetime.timezone.utc)
-            webhook_response = None
-            error_message = None
-            status_code = None
-            response_body: Dict[str, Any] = {}
-            response_headers: Dict[str, str] = {}
-
-            try:
-                with httpx.Client() as client:
-                    webhook_response = client.post(
-                        str(webhook_url),
-                        json={"completion": clean_response.model_dump(mode="json"), "file_payload": BaseMIMEData.model_validate(mime_document).model_dump(mode="json")},
-                    )
-                    webhook_response.raise_for_status()
-                    status_code = webhook_response.status_code
-                    response_body = webhook_response.json() if webhook_response.text else {}
-                    response_headers = dict(webhook_response.headers)
-            except Exception as e:
-                error_message = f"Error sending webhook: {str(e)}"
-                status_code = 500
-                response_body = {"error": str(e)}
-
-            end_time = datetime.datetime.now(datetime.timezone.utc)
-
-            # Create log entry
-            log = AutomationLog(
-                user_email=None,
-                automation_snapshot=link,
-                file_metadata=BaseMIMEData.model_validate(mime_document),
-                completion=clean_response,
-                organization_id="",
-                external_request_log=ExternalRequestLog(
-                    webhook_url=webhook_url,
-                    request_body={"completion": clean_response.model_dump(mode="json")},
-                    request_headers={},
-                    request_at=start_time,
-                    response_body=response_body,
-                    response_headers=response_headers,
-                    response_at=end_time,
-                    status_code=status_code or 0,
-                    error=error_message,
-                    duration_ms=(end_time - start_time).total_seconds() * 1000,
-                ),
-            )
-
-            if verbose:
-                self.print_webhook_verbose(log)
-
-            return log
-
-        request = self.prepare_webhook(link_id)
-        response = self._client._prepared_request(request)
-        log = AutomationLog.model_validate(response)
-        if verbose:
-            self.print_webhook_verbose(log)
-        return log
-
-
-class AsyncTestLinks(AsyncAPIResource, TestLinksMixin):
-    """Async Test Extraction Link API wrapper for testing extraction link configurations"""
-
-    async def upload(self, link_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
-        request = self.prepare_upload(link_id, document)
-        response = await self._client._prepared_request(request)
-        log = AutomationLog.model_validate(response)
-        if verbose:
-            self.print_upload_verbose(log)
-        return log
-
-    async def webhook(self, link_id: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
-        # If webhook_url is provided, this is often to test the webhook endpoint locally (even if it does not correspond to the webhook url configured in the link)
-        # If webhook_url is not provided, the webhook url configured in the link will be used (it has to be a real url and not a local url)
-
-        if webhook_url:
-            # Step 1: get automation object
-            link = await self._client.deployments.links.get(link_id)
-
-            # Create sample invoice content
-
-            # Create MIME document
-            mime_document = prepare_mime_document(invoice_file_content)
-
-            # Send webhook request
-            start_time = datetime.datetime.now(datetime.timezone.utc)
-            webhook_response = None
-            error_message = None
-            status_code = None
-            response_body: Dict[str, Any] = {}
-            response_headers: Dict[str, str] = {}
-
-            try:
-                async with httpx.AsyncClient() as client:
-                    webhook_response = await client.post(
-                        str(webhook_url),
-                        json={"completion": clean_response.model_dump(mode="json"), "file_payload": BaseMIMEData.model_validate(mime_document).model_dump(mode="json")},
-                    )
-                    webhook_response.raise_for_status()
-                    status_code = webhook_response.status_code
-                    response_body = webhook_response.json() if webhook_response.text else {}
-                    response_headers = dict(webhook_response.headers)
-            except Exception as e:
-                error_message = f"Error sending webhook: {str(e)}"
-                status_code = 500
-                response_body = {"error": str(e)}
-
-            end_time = datetime.datetime.now(datetime.timezone.utc)
-
-            # Create log entry
-            log = AutomationLog(
-                user_email=None,
-                automation_snapshot=link,
-                file_metadata=BaseMIMEData.model_validate(mime_document),
-                completion=clean_response,
-                organization_id="",
-                external_request_log=ExternalRequestLog(
-                    webhook_url=webhook_url,
-                    request_body={"completion": clean_response.model_dump(mode="json")},
-                    request_headers={},
-                    request_at=start_time,
-                    response_body=response_body,
-                    response_headers=response_headers,
-                    response_at=end_time,
-                    status_code=status_code or 0,
-                    error=error_message,
-                    duration_ms=(end_time - start_time).total_seconds() * 1000,
-                ),
-            )
-
-            if verbose:
-                self.print_webhook_verbose(log)
-
-            return log
-
-        request = self.prepare_webhook(link_id)
-        response = await self._client._prepared_request(request)
-        log = AutomationLog.model_validate(response)
-        if verbose:
-            self.print_webhook_verbose(log)
-        return log

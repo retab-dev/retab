@@ -203,6 +203,9 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort
         )
         response = self._client._prepared_request(request)
+
+        print(f"Email automation created. Mailbox available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+
         return Mailbox.model_validate(response)
 
     def list(
@@ -353,6 +356,9 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
             email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort
         )
         response = await self._client._prepared_request(request)
+
+        print(f"Email automation created. Mailbox available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+
         return Mailbox.model_validate(response)
 
     async def list(
@@ -426,13 +432,6 @@ class TestMailboxesMixin:
         mime_document = prepare_mime_document(document)
         return PreparedRequest(method="POST", url=f"/v1/deployments/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
 
-    def prepare_process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
-        mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/deployments/mailboxes/tests/process/{email}", data={"document": mime_document.model_dump()})
-
-    def prepare_webhook(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/v1/deployments/mailboxes/tests/webhook/{email}", data=None)
-
     def print_forward_verbose(self, email_data: EmailData) -> None:
         print(f"\nTEST EMAIL FORWARDING RESULTS:")
         print(f"\n#########################")
@@ -447,112 +446,6 @@ class TestMailboxesMixin:
         if email_data.body_plain:
             print("\nBody Preview:")
             print(email_data.body_plain[:500] + "..." if len(email_data.body_plain) > 500 else email_data.body_plain)
-
-    def print_process_verbose(self, log: AutomationLog) -> None:
-        if log.external_request_log:
-            print(f"\nTEST EMAIL PROCESSING RESULTS:")
-            print(f"\n#########################")
-            print(f"Status Code: {log.external_request_log.status_code}")
-            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-
-            if log.external_request_log.error:
-                print(f"\nERROR: {log.external_request_log.error}")
-
-            if log.external_request_log.response_body:
-                print("\n--------------")
-                print("RESPONSE BODY:")
-                print("--------------")
-
-                print(json.dumps(log.external_request_log.response_body, indent=2))
-            if log.external_request_log.response_headers:
-                print("\n--------------")
-                print("RESPONSE HEADERS:")
-                print("--------------")
-                print(json.dumps(log.external_request_log.response_headers, indent=2))
-
-    def print_webhook_verbose(self, log: AutomationLog) -> None:
-        if log.external_request_log:
-            print(f"\nTEST WEBHOOK RESULTS:")
-            print(f"\n#########################")
-            print(f"Status Code: {log.external_request_log.status_code}")
-            print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
-
-            if log.external_request_log.error:
-                print(f"\nERROR: {log.external_request_log.error}")
-
-            if log.external_request_log.response_body:
-                print("\n--------------")
-                print("RESPONSE BODY:")
-                print("--------------")
-
-                print(json.dumps(log.external_request_log.response_body, indent=2))
-            if log.external_request_log.response_headers:
-                print("\n--------------")
-                print("RESPONSE HEADERS:")
-                print("--------------")
-                print(json.dumps(log.external_request_log.response_headers, indent=2))
-
-
-clean_response = UiParsedChatCompletion.model_validate(
-    {
-        'id': 'chatcmpl-xxxxxxxxxx',
-        'choices': [
-            {
-                'finish_reason': 'stop',
-                'index': 0,
-                'logprobs': None,
-                'message': {
-                    'content': '{"name": "ACME Corporation", "type": "corporate", "relationship": "client"}',
-                    'refusal': None,
-                    'role': 'assistant',
-                    'audio': None,
-                    'function_call': None,
-                    'tool_calls': [],
-                    'parsed': {},
-                },
-            }
-        ],
-        'created': 1738084776,
-        'model': 'gpt-4o-mini-2024-07-18',
-        'object': 'chat.completion',
-        'service_tier': 'default',
-        'system_fingerprint': 'fp_xxxxxx',
-        'usage': {
-            'completion_tokens': 17,
-            'prompt_tokens': 663,
-            'total_tokens': 680,
-            'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0},
-            'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0},
-        },
-        'likelihoods': {'name': 1.0, 'type': 0.9999993295729247, 'relationship': 0.9999920581810364},
-    }
-)
-
-
-invoice_file_content = b"""
-            INVOICE
-            
-            Invoice Number: INV-2024-001
-            Date: March 15, 2024
-            
-            Bill To:
-            ACME Corporation
-            123 Business Street
-            Business City, BC 12345
-            
-            Items:
-            1. Consulting Services - $1,000
-            2. Software License - $500
-            3. Support Package - $250
-            
-            Subtotal: $1,750
-            Tax (10%): $175
-            Total: $1,925
-            
-            Payment Terms: Net 30
-            Due Date: April 14, 2024
-            """
-
 
 class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
     def forward(
@@ -578,103 +471,6 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
             self.print_forward_verbose(email_data)
         return email_data
 
-    def process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
-        """Mock endpoint that simulates the complete email processing process with sample data.
-
-        Args:
-            email: Email address of the mailbox to mock
-
-        Returns:
-            DocumentExtractResponse: The simulated extraction response
-        """
-        request = self.prepare_process(email, document)
-        response = self._client._prepared_request(request)
-
-        log = AutomationLog.model_validate(response)
-
-        if verbose:
-            self.print_process_verbose(log)
-        return log
-
-    def webhook(self, email: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
-        """Mock endpoint that simulates the complete webhook process with sample data.
-
-        Args:
-            email: Email address of the mailbox to mock
-            webhook_url: Optional URL to send webhook to. If provided, will send to this URL instead of the configured one
-            verbose: Whether to print verbose output
-
-        Returns:
-            AutomationLog: The simulated webhook response
-        """
-        if webhook_url:
-            # Step 1: get mailbox config
-            mailbox = self._client.deployments.mailboxes.get(email)
-
-            # Create MIME document
-            mime_document = prepare_mime_document(invoice_file_content)
-
-            # Create sample extraction response
-
-            # Send webhook request
-            start_time = datetime.datetime.now(datetime.timezone.utc)
-            webhook_response = None
-            error_message = None
-            status_code = None
-            response_body: Dict[str, Any] = {}
-            response_headers: Dict[str, str] = {}
-
-            try:
-                with httpx.Client() as client:
-                    webhook_response = client.post(
-                        str(webhook_url),
-                        json={"completion": clean_response.model_dump(mode="json"), "file_payload": BaseMIMEData.model_validate(mime_document).model_dump(mode="json")},
-                    )
-                    webhook_response.raise_for_status()
-                    status_code = webhook_response.status_code
-                    response_body = webhook_response.json() if webhook_response.text else {}
-                    response_headers = dict(webhook_response.headers)
-            except Exception as e:
-                error_message = f"Error sending webhook: {str(e)}"
-                status_code = 500
-                response_body = {"error": str(e)}
-
-            end_time = datetime.datetime.now(datetime.timezone.utc)
-
-            # Create log entry
-            log = AutomationLog(
-                user_email=None,
-                automation_snapshot=mailbox,
-                file_metadata=BaseMIMEData.model_validate(mime_document),
-                completion=clean_response,
-                organization_id="",
-                external_request_log=ExternalRequestLog(
-                    webhook_url=webhook_url,
-                    request_body={"completion": clean_response.model_dump(mode="json")},
-                    request_headers={},
-                    request_at=start_time,
-                    response_body=response_body,
-                    response_headers=response_headers,
-                    response_at=end_time,
-                    status_code=status_code or 0,
-                    error=error_message,
-                    duration_ms=(end_time - start_time).total_seconds() * 1000,
-                ),
-            )
-
-            if verbose:
-                self.print_webhook_verbose(log)
-
-            return log
-
-        request = self.prepare_webhook(email)
-        response = self._client._prepared_request(request)
-        log = AutomationLog.model_validate(response)
-        if verbose:
-            self.print_webhook_verbose(log)
-        return log
-
-
 class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
     async def forward(
         self,
@@ -688,87 +484,3 @@ class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
         if verbose:
             self.print_forward_verbose(email_data)
         return email_data
-
-    async def process(self, email: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
-        request = self.prepare_process(email, document)
-        response = await self._client._prepared_request(request)
-        log = AutomationLog.model_validate(response)
-        if verbose:
-            self.print_process_verbose(log)
-        return log
-
-    async def webhook(self, email: str, webhook_url: HttpUrl | None = None, verbose: bool = True) -> AutomationLog:
-        """Mock endpoint that simulates the complete webhook process with sample data.
-
-        Args:
-            email: Email address of the mailbox to mock
-            webhook_url: Optional URL to send webhook to. If provided, will send to this URL instead of the configured one
-            verbose: Whether to print verbose output
-
-        Returns:
-            AutomationLog: The simulated webhook response
-        """
-        if webhook_url:
-            # Step 1: get mailbox config
-            mailbox = await self._client.deployments.mailboxes.get(email)
-
-            # Create MIME document
-            mime_document = prepare_mime_document(invoice_file_content)
-
-            # Send webhook request
-            start_time = datetime.datetime.now(datetime.timezone.utc)
-            webhook_response = None
-            error_message = None
-            status_code = None
-            response_body: Dict[str, Any] = {}
-            response_headers: Dict[str, str] = {}
-
-            try:
-                async with httpx.AsyncClient() as client:
-                    webhook_response = await client.post(
-                        str(webhook_url),
-                        json={"completion": clean_response.model_dump(mode="json"), "file_payload": BaseMIMEData.model_validate(mime_document).model_dump(mode="json")},
-                    )
-                    webhook_response.raise_for_status()
-                    status_code = webhook_response.status_code
-                    response_body = webhook_response.json() if webhook_response.text else {}
-                    response_headers = dict(webhook_response.headers)
-            except Exception as e:
-                error_message = f"Error sending webhook: {str(e)}"
-                status_code = 500
-                response_body = {"error": str(e)}
-
-            end_time = datetime.datetime.now(datetime.timezone.utc)
-
-            # Create log entry
-            log = AutomationLog(
-                user_email=None,
-                automation_snapshot=mailbox,
-                file_metadata=BaseMIMEData.model_validate(mime_document),
-                completion=clean_response,
-                organization_id="",
-                external_request_log=ExternalRequestLog(
-                    webhook_url=webhook_url,
-                    request_body={"completion": clean_response.model_dump(mode="json")},
-                    request_headers={},
-                    request_at=start_time,
-                    response_body=response_body,
-                    response_headers=response_headers,
-                    response_at=end_time,
-                    status_code=status_code or 0,
-                    error=error_message,
-                    duration_ms=(end_time - start_time).total_seconds() * 1000,
-                ),
-            )
-
-            if verbose:
-                self.print_webhook_verbose(log)
-
-            return log
-
-        request = self.prepare_webhook(email)
-        response = await self._client._prepared_request(request)
-        log = AutomationLog.model_validate(response)
-        if verbose:
-            self.print_webhook_verbose(log)
-        return log
