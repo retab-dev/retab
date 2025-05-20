@@ -13,11 +13,6 @@ class ExternalAPIKeysMixin:
         request = ExternalAPIKeyRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/secrets/external_api_keys", data=request.model_dump(mode="json"))
 
-    def prepare_update(self, provider: AIProvider, api_key: str) -> PreparedRequest:
-        data = {"provider": provider, "api_key": api_key}
-        request = ExternalAPIKeyRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url="/v1/secrets/external_api_keys", data=request.model_dump(mode="json"))
-
     def prepare_get(self, provider: AIProvider) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/secrets/external_api_keys/{provider}")
 
@@ -43,20 +38,6 @@ class ExternalAPIKeys(SyncAPIResource, ExternalAPIKeysMixin):
         """
 
         request = self.prepare_create(provider, api_key)
-        response = self._client._prepared_request(request)
-        return response
-
-    def update(self, provider: AIProvider, api_key: str) -> dict:
-        """Add or update an external API key.
-
-        Args:
-            provider: The API provider (openai, gemini, anthropic, xai)
-            api_key: The API key to store
-
-        Returns:
-            dict: Response indicating success
-        """
-        request = self.prepare_update(provider, api_key)
         response = self._client._prepared_request(request)
         return response
 
@@ -109,11 +90,6 @@ class AsyncExternalAPIKeys(AsyncAPIResource, ExternalAPIKeysMixin):
 
     async def create(self, provider: AIProvider, api_key: str) -> dict:
         request = self.prepare_create(provider, api_key)
-        response = await self._client._prepared_request(request)
-        return response
-
-    async def update(self, provider: AIProvider, api_key: str) -> dict:
-        request = self.prepare_update(provider, api_key)
         response = await self._client._prepared_request(request)
         return response
 
