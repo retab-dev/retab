@@ -98,7 +98,7 @@ def validate_email_regex(v: Any) -> Optional[str]:
     v_str = str(v).strip()
     if not v_str:
         return None
-    pattern = r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
+    pattern = r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
     if re.match(pattern, v_str):
         return v_str.lower()
     return None
@@ -182,7 +182,7 @@ def validate_packing_type(v: Any) -> Optional[str]:
         return None
     v_str = str(v).strip().lower()
     # We'll store the valid set in lower for easy comparison
-    valid_packing_types = {'box', 'pallet', 'container', 'bag', 'drum', 'other'}
+    valid_packing_types = {"box", "pallet", "container", "bag", "drum", "other"}
     if v_str in valid_packing_types:
         return v_str
     return None
@@ -1222,7 +1222,7 @@ def flatten_dict(obj: Any, prefix: str = "", allow_empty_objects: bool = True) -
     return dict(items)
 
 
-def convert_dict_to_list_recursively(_obj: Any) -> Any:
+def convert_dict_to_list_recursively(_obj: Any, allow_lists: bool = True) -> Any:
     """
     Recursively converts dict[int, Any] to list[Any] if the keys are sequential integers starting from 0.
     Creates a copy of the input object rather than modifying it in place.
@@ -1236,20 +1236,23 @@ def convert_dict_to_list_recursively(_obj: Any) -> Any:
 
     # Process all nested dictionaries first
     for key, value in _obj.items():
-        result[key] = convert_dict_to_list_recursively(value)
+        result[key] = convert_dict_to_list_recursively(value, allow_lists=allow_lists)
 
     # Check if this dictionary should be converted to a list
     if result and all(isinstance(k, int) for k in result.keys()):
         # Check if keys are sequential starting from 0
         keys = sorted(result.keys())
-        if keys[0] == 0 and keys[-1] == len(keys) - 1:
+        if allow_lists and keys[0] == 0 and keys[-1] == len(keys) - 1:
             # Convert to list
             return [result[i] for i in keys]
+        else:
+            # Sort the keys and convert to string
+            return {str(i): result[i] for i in keys}
 
     return result
 
 
-def unflatten_dict(obj: dict[str, Any]) -> Any:
+def unflatten_dict(obj: dict[str, Any], allow_lists: bool = True) -> Any:
     """
     Unflattens a dictionary by recursively converting keys with dots into nested dictionaries.
     After building the nested structure, converts dict[int, Any] to list[Any] if the keys
@@ -1313,7 +1316,7 @@ def unflatten_dict(obj: dict[str, Any]) -> Any:
                 current = current[part]
 
     # Second pass: convert appropriate dict[int, Any] to list[Any]
-    return convert_dict_to_list_recursively(result)
+    return convert_dict_to_list_recursively(result, allow_lists=allow_lists)
 
 
 def extract_property_type_info(prop_schema: dict[str, Any]) -> tuple[str, Optional[str], bool, list[Any] | None]:
@@ -2117,6 +2120,7 @@ def compute_schema_data_id(json_schema: dict[str, Any]) -> str:
         ).strip()
     )
 
+
 def validate_json_against_schema(
     data: Any,
     schema: dict[str, Any],
@@ -2133,7 +2137,7 @@ def validate_json_against_schema(
         A JSON‑Schema dict (can contain $defs / $ref – they’ll be expanded
         by ``convert_json_schema_to_basemodel``).
     return_instance
-        • ``False`` (default): only validate; raise if invalid; return ``None``.  
+        • ``False`` (default): only validate; raise if invalid; return ``None``.
         • ``True``: on success, return the fully‑validated Pydantic instance
           (handy for downstream type‑safe access).
 
@@ -2152,6 +2156,6 @@ def validate_json_against_schema(
     Model: Type[BaseModel] = convert_json_schema_to_basemodel(schema)
 
     # 2) Let Pydantic do the heavy lifting
-    instance = Model.model_validate(data)          # <- raises ValidationError if bad
+    instance = Model.model_validate(data)  # <- raises ValidationError if bad
 
     return instance if return_instance else None
