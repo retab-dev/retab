@@ -39,6 +39,7 @@ class Extraction(BaseModel):
     messages_gcs: str = Field(..., description="GCS path to the messages")
     file_gcs: str = Field(..., description="GCS path to the file")
     file_id: str = Field(..., description="ID of the file")
+    file_page_count: Optional[int] = Field(default=None, description="Number of pages in the file if available")
 
     ocr_file_gcs: Optional[str] = Field(default=None, description="GCS path to the OCR file if available")
     ocr_file_id: Optional[str] = Field(default=None, description="ID of the OCR file if available")
