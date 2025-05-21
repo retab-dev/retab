@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, computed_field
 from uiform.types.chat import ChatCompletionUiformMessage
 from uiform.types.documents.extractions import UiParsedChatCompletion
 
-from .._utils.usage.usage import compute_cost_from_model
+from .._utils.usage.usage import compute_cost_from_model, compute_cost_from_model_with_breakdown, CostBreakdown
 from .ai_models import Amount
 from .image_settings import ImageSettings
 from .modalities import Modality
@@ -71,6 +71,18 @@ class Extraction(BaseModel):
         if self.completion and self.completion.usage:
             try:
                 cost = compute_cost_from_model(self.completion.model, self.completion.usage)
+                return cost
+            except Exception as e:
+                print(f"Error computing cost: {e}")
+                return None
+        return None
+    
+    @computed_field  # type: ignore
+    @property
+    def cost_breakdown(self) -> Optional[CostBreakdown]:
+        if self.completion and self.completion.usage:
+            try:
+                cost = compute_cost_from_model_with_breakdown(self.completion.model, self.completion.usage)
                 return cost
             except Exception as e:
                 print(f"Error computing cost: {e}")
