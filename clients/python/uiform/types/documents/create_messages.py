@@ -1,6 +1,6 @@
 import base64
 from io import BytesIO
-from typing import List, Literal
+from typing import List, Literal, Dict, Union
 
 import PIL.Image
 import requests
@@ -8,11 +8,12 @@ from anthropic.types.message_param import MessageParam
 from google.genai.types import ContentUnionDict  # type: ignore
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from ..._utils.chat import convert_to_anthropic_format, convert_to_google_genai_format, str_messages
 from ..._utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format
 from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
+from ..._utils.display import count_text_tokens, count_image_tokens
 from ..chat import ChatCompletionUiformMessage
 from ..image_settings import ImageSettings
 from ..mime import MIMEData
@@ -20,6 +21,11 @@ from ..modalities import Modality
 
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 
+
+class TokenCount(BaseModel):
+    total_tokens: int = 0
+    developer_tokens: int = 0
+    user_tokens: int = 0
 
 class DocumentCreateMessageRequest(BaseModel):
     document: MIMEData
@@ -47,6 +53,57 @@ class DocumentMessage(BaseModel):
 
     modality: Modality
     """The modality of the document to load."""
+
+    @computed_field
+    def token_count(self) -> TokenCount:
+        """Returns the token count for the document message.
+        
+        This property calculates token usage based on both text and image content
+        in the messages using the token counting utilities.
+        
+        Returns:
+            TokenCount: A Pydantic model with total, user, and developer token counts.
+        """
+        total_tokens = 0
+        user_tokens = 0
+        developer_tokens = 0
+        
+        for msg in self.messages:
+            role = msg.get("role", "user")
+            msg_tokens = 0
+            
+            if isinstance(msg["content"], str):
+                msg_tokens = count_text_tokens(msg["content"])
+            elif isinstance(msg["content"], list):
+                for content_item in msg["content"]:
+                    if isinstance(content_item, str):
+                        msg_tokens += count_text_tokens(content_item)
+                    elif isinstance(content_item, dict):
+                        item_type = content_item.get("type")
+                        
+                        if item_type == "text" and "text" in content_item:
+                            msg_tokens += count_text_tokens(content_item["text"])
+                        
+                        elif item_type == "image_url" and "image_url" in content_item:
+                            image_url = content_item["image_url"]["url"]
+                            detail = content_item["image_url"].get("detail", "high")
+                            msg_tokens += count_image_tokens(image_url, detail)
+            
+            # Update total tokens
+            total_tokens += msg_tokens
+            
+            # Update role-specific counts
+            assert role in ["user", "developer"], f"Invalid role: {role}"
+            if role == "user":
+                user_tokens += msg_tokens
+            elif role == "developer":
+                developer_tokens += msg_tokens
+        
+        return TokenCount(
+            total_tokens=total_tokens,
+            user_tokens=user_tokens,
+            developer_tokens=developer_tokens
+        )
 
     @property
     def items(self) -> list[str | PIL.Image.Image]:
