@@ -11,7 +11,7 @@ from pydantic_core import Url
 
 from .._utils.json_schema import clean_schema, compute_schema_data_id
 from .._utils.mime import generate_blake2b_hash_from_string
-from .._utils.usage.usage import compute_cost_from_model
+from .._utils.usage.usage import compute_cost_from_model, compute_cost_from_model_with_breakdown, CostBreakdown
 from .ai_models import Amount
 from .documents.extractions import UiParsedChatCompletion
 from .image_settings import ImageSettings
@@ -190,6 +190,18 @@ class DeploymentLog(BaseModel):
         if self.completion and self.completion.usage:
             try:
                 cost = compute_cost_from_model(self.completion.model, self.completion.usage)
+                return cost
+            except Exception as e:
+                print(f"Error computing cost: {e}")
+                return None
+        return None
+    
+    @computed_field  # type: ignore
+    @property
+    def cost_breakdown(self) -> Optional[CostBreakdown]:
+        if self.completion and self.completion.usage:
+            try:
+                cost = compute_cost_from_model_with_breakdown(self.completion.model, self.completion.usage)
                 return cost
             except Exception as e:
                 print(f"Error computing cost: {e}")

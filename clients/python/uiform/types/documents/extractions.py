@@ -15,7 +15,7 @@ from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
-from ..._utils.usage.usage import compute_cost_from_model
+from ..._utils.usage.usage import compute_cost_from_model, compute_cost_from_model_with_breakdown, CostBreakdown
 
 from ..._utils.ai_models import find_provider_from_model
 from ..ai_models import AIProvider, Amount, get_model_card
@@ -222,6 +222,18 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         if self.usage:
             try:
                 cost = compute_cost_from_model(self.model, self.usage)
+                return cost
+            except Exception as e:
+                print(f"Error computing cost: {e}")
+                return None
+        return None
+
+    @computed_field  # type: ignore
+    @property
+    def cost_breakdown(self) -> Optional[CostBreakdown]:
+        if self.usage:
+            try:
+                cost = compute_cost_from_model_with_breakdown(self.model, self.usage)
                 return cost
             except Exception as e:
                 print(f"Error computing cost: {e}")
