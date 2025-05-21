@@ -105,6 +105,9 @@ def count_image_tokens(image_url: str, detail: Literal["low", "high", "auto"] = 
         total_tiles = tiles_wide * tiles_high
 
         return base_token_cost + (token_per_tile * total_tiles)
+    
+
+
 
 
 def process_jsonl_file(jsonl_path: str) -> List[TokenCounts]:
