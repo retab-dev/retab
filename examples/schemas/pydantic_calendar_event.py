@@ -26,7 +26,7 @@ doc_msg = uiclient.documents.create_messages(document="../../assets/calendar_eve
 class CalendarEvent(BaseModel):
     model_config = ConfigDict(json_schema_extra={"X-SystemPrompt": "You are a useful assistant."})
 
-    name: str = Field(..., description="The name of the calendar event.", json_schema_extra={"X-FieldPrompt": "Provide a descriptive and concise name for the event."})
+    name: str = Field(..., description="The name of the calendar event.")
     date: str = Field(
         ...,
         description="The date of the calendar event in ISO 8601 format.",
