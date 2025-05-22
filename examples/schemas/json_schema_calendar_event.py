@@ -26,7 +26,8 @@ schema_obj = Schema(
     json_schema={
         'X-SystemPrompt': 'You are a useful assistant extracting information from documents.',
         'properties': {
-            'name': {'X-FieldPrompt': 'Provide a descriptive and concise name for the event.', 'description': 'The name of the calendar event.', 'title': 'Name', 'type': 'string'},
+            'name': {'description': 'The name of the calendar event.', 
+                     'title': 'Name', 'type': 'string'},
             'date': {
                 'X-ReasoningPrompt': 'The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.',
                 'description': 'The date of the calendar event in ISO 8601 format.',
