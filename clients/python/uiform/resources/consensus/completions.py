@@ -9,15 +9,15 @@ from openai.types.shared_params.response_format_json_schema import ResponseForma
 from pydantic import BaseModel as ResponseFormatT
 
 
-from .._resource import AsyncAPIResource, SyncAPIResource
-from .._utils.ai_models import assert_valid_model_extraction
-from .._utils.json_schema import load_json_schema, unflatten_dict
-from .._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ..types.chat import ChatCompletionUiformMessage
-from ..types.completions import UiChatCompletionsRequest
-from ..types.documents.extractions import UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice
-from ..types.standards import PreparedRequest
-from ..types.schemas.object import Schema
+from ..._resource import AsyncAPIResource, SyncAPIResource
+from ..._utils.ai_models import assert_valid_model_extraction
+from ..._utils.json_schema import load_json_schema, unflatten_dict
+from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
+from ...types.chat import ChatCompletionUiformMessage
+from ...types.completions import UiChatCompletionsRequest
+from ...types.documents.extractions import UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice
+from ...types.standards import PreparedRequest
+from ...types.schemas.object import Schema
 
 
 

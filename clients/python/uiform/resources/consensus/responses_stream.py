@@ -10,16 +10,16 @@ from openai.types.responses.response_output_item import ResponseOutputItem
 from openai.types.shared_params.response_format_json_schema import ResponseFormatJSONSchema
 from pydantic import BaseModel
 
-from .._resource import AsyncAPIResource, SyncAPIResource
-from .._utils.ai_models import assert_valid_model_extraction
-from .._utils.json_schema import load_json_schema, unflatten_dict
-from .._utils.responses import convert_to_openai_format, convert_from_openai_format, parse_openai_responses_response
-from .._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ..types.chat import ChatCompletionUiformMessage
-from ..types.completions import UiChatResponseCreateRequest, UiChatCompletionsRequest
-from ..types.documents.extractions import UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice, UiResponse
-from ..types.standards import PreparedRequest
-from ..types.schemas.object import Schema
+from ..._resource import AsyncAPIResource, SyncAPIResource
+from ..._utils.ai_models import assert_valid_model_extraction
+from ..._utils.json_schema import load_json_schema, unflatten_dict
+from ..._utils.responses import convert_to_openai_format, convert_from_openai_format, parse_openai_responses_response
+from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
+from ...types.chat import ChatCompletionUiformMessage
+from ...types.completions import UiChatResponseCreateRequest, UiChatCompletionsRequest
+from ...types.documents.extractions import UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice, UiResponse
+from ...types.standards import PreparedRequest
+from ...types.schemas.object import Schema
 
 from typing import Optional, Union
 from openai.types.shared_params.reasoning import Reasoning
