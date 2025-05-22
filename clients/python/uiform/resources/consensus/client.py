@@ -32,13 +32,11 @@ class BaseConsensusMixin:
         list_dicts: List[Dict[str, Any]],
         reference_schema: Optional[Dict[str, Any]] = None,
         mode: Literal["direct", "aligned"] = "direct",
-        min_support_ratio: float = 0.51,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         data = {
             "list_dicts": list_dicts,
             "mode": mode,
-            "min_support_ratio": min_support_ratio,
         }
         
         if reference_schema is not None:
@@ -86,7 +84,6 @@ class Consensus(SyncAPIResource, BaseConsensusMixin):
         list_dicts: List[Dict[str, Any]],
         reference_schema: Optional[Dict[str, Any]] = None,
         mode: Literal["direct", "aligned"] = "direct",
-        min_support_ratio: float = 0.51,
         idempotency_key: str | None = None,
     ) -> Dict[str, Any]:
         """
@@ -96,7 +93,6 @@ class Consensus(SyncAPIResource, BaseConsensusMixin):
             list_dicts: List of dictionaries to reconcile
             reference_schema: Optional schema to validate dictionaries against
             mode: Mode for consensus computation ("direct" or "aligned")
-            min_support_ratio: Minimum support ratio for reference elements
             idempotency_key: Optional idempotency key for the request
             
         Returns:
@@ -109,7 +105,6 @@ class Consensus(SyncAPIResource, BaseConsensusMixin):
             list_dicts, 
             reference_schema, 
             mode, 
-            min_support_ratio,
             idempotency_key
         )
         response = self._client._prepared_request(request)
@@ -150,7 +145,6 @@ class AsyncConsensus(AsyncAPIResource, BaseConsensusMixin):
         list_dicts: List[Dict[str, Any]],
         reference_schema: Optional[Dict[str, Any]] = None,
         mode: Literal["direct", "aligned"] = "direct",
-        min_support_ratio: float = 0.51,
         idempotency_key: str | None = None,
     ) -> Dict[str, Any]:
         """
@@ -160,7 +154,6 @@ class AsyncConsensus(AsyncAPIResource, BaseConsensusMixin):
             list_dicts: List of dictionaries to reconcile
             reference_schema: Optional schema to validate dictionaries against
             mode: Mode for consensus computation ("direct" or "aligned")
-            min_support_ratio: Minimum support ratio for reference elements
             idempotency_key: Optional idempotency key for the request
             
         Returns:
@@ -173,7 +166,6 @@ class AsyncConsensus(AsyncAPIResource, BaseConsensusMixin):
             list_dicts, 
             reference_schema, 
             mode, 
-            min_support_ratio,
             idempotency_key
         )
         response = await self._client._prepared_request(request)
