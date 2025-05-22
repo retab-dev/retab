@@ -1,4 +1,5 @@
 import json
+import warnings
 import os
 import shutil
 from typing import IO, Any
@@ -39,9 +40,9 @@ def load_env(request: pytest.FixtureRequest) -> None:
     env_path = os.path.join(os.path.dirname(TEST_DIR), env_file)
     print("loading env file: ", env_path)
     if not os.path.exists(env_path):
-        raise FileNotFoundError(f"Environment file not found: {env_path}")
-
-    load_dotenv(env_path, override=True)
+        warnings.warn(f"Environment file not found: {env_path}", UserWarning)
+    else:
+        load_dotenv(env_path, override=True)
     print("EMAIL_DOMAIN", os.environ["EMAIL_DOMAIN"])
 
 
