@@ -109,9 +109,8 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     extraction_id: str | None = None
     choices: list[UiParsedChoice]
     # Additional metadata fields (UIForm)
-    likelihoods: Any = {}  # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
+    likelihoods: Optional[dict[str, Any]] = Field(default =None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object.")
     schema_validation_error: ErrorDetail | None = None
-    likelihoods_source: LikelihoodsSource | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
@@ -122,9 +121,8 @@ class UiParsedChatCompletion(ParsedChatCompletion):
 class UiResponse(Response):
     extraction_id: str | None = None
     # Additional metadata fields (UIForm)
-    likelihoods: Any = {}  # Object defining the uncertainties of the fields extracted. Follows the same structure as the extraction object.
+    likelihoods: Optional[dict[str, Any]] = Field(default =None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object.")
     schema_validation_error: ErrorDetail | None = None
-    likelihoods_source: LikelihoodsSource | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
@@ -210,7 +208,6 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     extraction_id: str | None = None
     choices: list[UiParsedChoiceChunk]
     schema_validation_error: ErrorDetail | None = None
-    likelihoods_source: LikelihoodsSource | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
@@ -306,7 +303,6 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                 for i in range(max_choices)
             ],
             schema_validation_error=self.schema_validation_error,
-            likelihoods_source=self.likelihoods_source,
             request_at=request_at,
             first_token_at=first_token_at,
             last_token_at=last_token_at,
