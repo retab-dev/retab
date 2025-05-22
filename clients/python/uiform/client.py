@@ -8,7 +8,7 @@ import backoff.types
 import httpx
 from pydantic_core import PydanticUndefined
 
-from .resources import deployments, completions, documents, evals, files, finetuning, models, schemas, secrets, usage, responses
+from .resources import deployments, consensus, documents, evals, files, finetuning, models, schemas, secrets, usage
 from .types.standards import PreparedRequest
 import truststore
 
@@ -185,8 +185,7 @@ class UiForm(BaseUiForm):
         self.deployments = deployments.Deployments(client=self)
         self.secrets = secrets.Secrets(client=self)
         self.usage = usage.Usage(client=self)
-        self.completions = completions.Completions(client=self)
-        self.responses = responses.Responses(client=self)
+        self.consensus = consensus.Consensus(client=self)
 
     def _request(
         self,
@@ -370,8 +369,7 @@ class AsyncUiForm(BaseUiForm):
         self.deployments = deployments.AsyncDeployments(client=self)
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)
-        self.completions = completions.AsyncCompletions(client=self)
-        self.responses = responses.AsyncResponses(client=self)
+        self.consensus = consensus.AsyncConsensus(client=self)
 
     async def _request(
         self,
