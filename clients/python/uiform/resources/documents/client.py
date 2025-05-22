@@ -7,7 +7,7 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
-from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage
+from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage, DocumentCreateInputRequest
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
@@ -32,6 +32,26 @@ class BaseDocumentsMixin:
 
         loading_request = DocumentCreateMessageRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
+
+    def _prepare_create_inputs(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        modality: Modality = "native",
+        image_settings: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+    ) -> PreparedRequest:
+        mime_document = prepare_mime_document(document)
+        data: dict[str, Any] = {
+            "document": mime_document.model_dump(),
+            "modality": modality,
+            "json_schema": json_schema,
+        }
+        if image_settings:
+            data["image_settings"] = image_settings
+
+        loading_request = DocumentCreateInputRequest.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/documents/create_inputs", data=loading_request.model_dump(), idempotency_key=idempotency_key)
 
     def _prepare_correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -111,6 +131,40 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
+    def create_inputs(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        modality: Modality = "native",
+        image_settings: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+    ) -> DocumentMessage:
+        """
+        Create document inputs (messages with schema) from a file using the UiForm API.
+
+        Args:
+            document: The document to process. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
+            json_schema: The JSON schema to use for structuring the document content.
+            modality: The processing modality to use. Defaults to "native".
+            image_settings: Optional dictionary of image processing operations to apply.
+                It has to be a dictionary with the following keys:
+                {
+                    "correct_image_orientation": True,  # Whether to auto-correct image orientation
+                    "dpi": 72,                         # DPI for image processing
+                    "image_to_text": "ocr",            # OCR engine to use
+                    "browser_canvas": "A4"             # Output page size
+                }
+            idempotency_key: Optional idempotency key for the request
+        Returns:
+            DocumentMessage: The processed document message containing extracted content with schema context.
+
+        Raises:
+            UiformAPIError: If the API request fails.
+        """
+        request = self._prepare_create_inputs(document, json_schema, modality, image_settings, idempotency_key)
+        response = self._client._prepared_request(request)
+        return DocumentMessage.model_validate(response)
+
 
 class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper for asynchronous usage."""
@@ -143,6 +197,33 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         assert request.data is not None
         print(request.data.keys())
         print(request.data)
+        response = await self._client._prepared_request(request)
+        return DocumentMessage.model_validate(response)
+
+    async def create_inputs(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        json_schema: dict[str, Any],
+        modality: Modality = "native",
+        image_settings: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+    ) -> DocumentMessage:
+        """
+        Create document inputs (messages with schema) from a file using the UiForm API asynchronously.
+
+        Args:
+            document: The document to process. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
+            json_schema: The JSON schema to use for structuring the document content.
+            modality: The processing modality to use. Defaults to "native".
+            image_settings: Optional dictionary of image processing operations to apply.
+            idempotency_key: Idempotency key for request
+        Returns:
+            DocumentMessage: The processed document message containing extracted content with schema context.
+
+        Raises:
+            UiformAPIError: If the API request fails.
+        """
+        request = self._prepare_create_inputs(document, json_schema, modality, image_settings, idempotency_key)
         response = await self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
