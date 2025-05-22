@@ -4,28 +4,10 @@ from pydantic import BaseModel, Field
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.standards import PreparedRequest
-
+from .completions import AsyncCompletions, Completions
+from .responses import AsyncResponses, Responses
 
 class BaseConsensusMixin:
-    def _prepare_compare_extractions(
-        self,
-        dict1: Dict[str, Any],
-        dict2: Dict[str, Any],
-        metric: str = "levenshtein_similarity",
-        idempotency_key: str | None = None,
-    ) -> PreparedRequest:
-        data = {
-            "dict1": dict1,
-            "dict2": dict2,
-            "metric": metric,
-        }
-        
-        return PreparedRequest(
-            method="POST", 
-            url="/v1/consensus/distances", 
-            data=data, 
-            idempotency_key=idempotency_key
-        )
 
     def _prepare_reconcile(
         self,
@@ -49,36 +31,14 @@ class BaseConsensusMixin:
             idempotency_key=idempotency_key
         )
 
-
 class Consensus(SyncAPIResource, BaseConsensusMixin):
     """Consensus API wrapper for synchronous operations"""
 
-    def compare_extractions(
-        self,
-        dict1: Dict[str, Any],
-        dict2: Dict[str, Any],
-        metric: str = "levenshtein_similarity",
-        idempotency_key: str | None = None,
-    ) -> Dict[str, Any]:
-        """
-        Compare two dictionaries using the specified similarity metric.
-        
-        Args:
-            dict1: First dictionary to compare
-            dict2: Second dictionary to compare
-            metric: Similarity metric to use (default: "levenshtein_similarity")
-            idempotency_key: Optional idempotency key for the request
-            
-        Returns:
-            Dict containing comparison results with similarity scores for each field
-            
-        Raises:
-            UiformAPIError: If the API request fails
-        """
-        request = self._prepare_compare_extractions(dict1, dict2, metric, idempotency_key)
-        response = self._client._prepared_request(request)
-        return response
-    
+    def __init__(self, client: Any) -> None:
+        super().__init__(client=client)
+        self.completions = Completions(client=client)
+        self.responses = Responses(client=client)
+
     def reconcile(
         self,
         list_dicts: List[Dict[str, Any]],
@@ -114,31 +74,11 @@ class Consensus(SyncAPIResource, BaseConsensusMixin):
 class AsyncConsensus(AsyncAPIResource, BaseConsensusMixin):
     """Consensus API wrapper for asynchronous operations"""
 
-    async def compare_extractions(
-        self,
-        dict1: Dict[str, Any],
-        dict2: Dict[str, Any],
-        metric: str = "levenshtein_similarity",
-        idempotency_key: str | None = None,
-    ) -> Dict[str, Any]:
-        """
-        Compare two dictionaries using the specified similarity metric asynchronously.
-        
-        Args:
-            dict1: First dictionary to compare
-            dict2: Second dictionary to compare
-            metric: Similarity metric to use (default: "levenshtein_similarity")
-            idempotency_key: Optional idempotency key for the request
-            
-        Returns:
-            Dict containing comparison results with similarity scores for each field
-            
-        Raises:
-            UiformAPIError: If the API request fails
-        """
-        request = self._prepare_compare_extractions(dict1, dict2, metric, idempotency_key)
-        response = await self._client._prepared_request(request)
-        return response
+    def __init__(self, client: Any) -> None:
+        super().__init__(client=client)
+        self.completions = AsyncCompletions(client=client)
+        self.responses = AsyncResponses(client=client)
+
     
     async def reconcile(
         self,
