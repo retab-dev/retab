@@ -6,16 +6,16 @@ from ...types.standards import PreparedRequest
 
 
 class LogsMixin:
-    def prepare_get(self, log_id: str) -> PreparedRequest:
+    def prepare_get(self, id: str) -> PreparedRequest:
         """Get a specific automation log by ID.
 
         Args:
-            log_id: ID of the log to retrieve
+            id: ID of the log to retrieve
 
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="GET", url=f"/v1/deployments/logs/{log_id}")
+        return PreparedRequest(method="GET", url=f"/v1/deployments/logs/{id}")
 
     def prepare_list(
         self,
@@ -65,31 +65,31 @@ class LogsMixin:
 
         return PreparedRequest(method="GET", url="/v1/deployments/logs", params=params)
 
-    def prepare_rerun(self, log_id: str) -> PreparedRequest:
+    def prepare_rerun(self, id: str) -> PreparedRequest:
         """Rerun a webhook from an existing DeploymentLog.
 
         Args:
-            log_id: ID of the log to rerun
+            id: ID of the log to rerun
 
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="POST", url=f"/v1/deployments/logs/{log_id}/rerun")
+        return PreparedRequest(method="POST", url=f"/v1/deployments/logs/{id}/rerun")
 
 
 class Logs(SyncAPIResource, LogsMixin):
     """Logs API wrapper for managing automation logs"""
 
-    def get(self, log_id: str) -> DeploymentLog:
+    def get(self, id: str) -> DeploymentLog:
         """Get a specific automation log by ID.
 
         Args:
-            log_id: ID of the log to retrieve
+            id: ID of the log to retrieve
 
         Returns:
             DeploymentLog: The automation log
         """
-        request = self.prepare_get(log_id)
+        request = self.prepare_get(id)
         response = self._client._prepared_request(request)
         return DeploymentLog.model_validate(response)
 
@@ -127,19 +127,19 @@ class Logs(SyncAPIResource, LogsMixin):
         response = self._client._prepared_request(request)
         return ListLogs.model_validate(response)
 
-    def rerun(self, log_id: str) -> ExternalRequestLog:
+    def rerun(self, id: str) -> ExternalRequestLog:
         """Rerun a webhook from an existing DeploymentLog.
 
         Args:
-            log_id: ID of the log to rerun
+            id: ID of the log to rerun
 
         Returns:
             ExternalRequestLog: The result of the rerun webhook call
         """
-        request = self.prepare_rerun(log_id)
+        request = self.prepare_rerun(id)
         response = self._client._prepared_request(request)
 
-        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/deployments/logs/{log_id}")
+        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/deployments/logs/{id}")
 
         return ExternalRequestLog.model_validate(response)
 
@@ -147,16 +147,16 @@ class Logs(SyncAPIResource, LogsMixin):
 class AsyncLogs(AsyncAPIResource, LogsMixin):
     """Async Logs API wrapper for managing automation logs"""
 
-    async def get(self, log_id: str) -> DeploymentLog:
+    async def get(self, id: str) -> DeploymentLog:
         """Get a specific automation log by ID.
 
         Args:
-            log_id: ID of the log to retrieve
+            id: ID of the log to retrieve
 
         Returns:
             DeploymentLog: The automation log
         """
-        request = self.prepare_get(log_id)
+        request = self.prepare_get(id)
         response = await self._client._prepared_request(request)
         return DeploymentLog.model_validate(response)
 
@@ -194,18 +194,18 @@ class AsyncLogs(AsyncAPIResource, LogsMixin):
         response = await self._client._prepared_request(request)
         return ListLogs.model_validate(response)
 
-    async def rerun(self, log_id: str) -> ExternalRequestLog:
+    async def rerun(self, id: str) -> ExternalRequestLog:
         """Rerun a webhook from an existing DeploymentLog.
 
         Args:
-            log_id: ID of the log to rerun
+            id: ID of the log to rerun
 
         Returns:
             ExternalRequestLog: The result of the rerun webhook call
         """
-        request = self.prepare_rerun(log_id)
+        request = self.prepare_rerun(id)
         response = await self._client._prepared_request(request)
 
-        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/deployments/logs/{log_id}")
+        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/deployments/logs/{id}")
 
         return ExternalRequestLog.model_validate(response)
