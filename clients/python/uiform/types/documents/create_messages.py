@@ -28,31 +28,24 @@ class TokenCount(BaseModel):
     user_tokens: int = 0
 
 class DocumentCreateMessageRequest(BaseModel):
-    document: MIMEData
-    """The document to load."""
-
-    modality: Modality
-    """The modality of the document to load."""
-
+    document: MIMEData = Field(description="The document to load.")
+    modality: Modality = Field(description="The modality of the document to load.")
     image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
-    """The image operations to apply to the document."""
+
+
+from typing import Any
+class DocumentCreateInputRequest(DocumentCreateMessageRequest):
+    json_schema: dict[str, Any] = Field(description="The json schema to use for the document.")
+
+
 
 
 class DocumentMessage(BaseModel):
-    id: str
-    """A unique identifier for the document loading."""
-
-    object: Literal["document_message"] = Field(default="document_message")
-    """The type of object being loaded."""
-
-    messages: List[ChatCompletionUiformMessage]
-    """A list of messages containing the document content and metadata."""
-
-    created: int
-    """The Unix timestamp (in seconds) of when the document was loaded."""
-
-    modality: Modality
-    """The modality of the document to load."""
+    id: str = Field(description="A unique identifier for the document loading.")
+    object: Literal["document_message"] = Field(default="document_message", description="The type of object being loaded.")
+    messages: List[ChatCompletionUiformMessage] = Field(description="A list of messages containing the document content and metadata.")
+    created: int = Field(description="The Unix timestamp (in seconds) of when the document was loaded.")
+    modality: Modality = Field(description="The modality of the document to load.")
 
     @computed_field
     def token_count(self) -> TokenCount:
