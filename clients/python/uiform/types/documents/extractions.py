@@ -90,26 +90,39 @@ class UiParsedChatCompletion(ParsedChatCompletion):
     extraction_id: str | None = None
     choices: list[UiParsedChoice]
     # Additional metadata fields (UIForm)
-    likelihoods: Optional[dict[str, Any]] = Field(default =None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object.")
+    likelihoods: Optional[dict[str, Any]] = Field(
+        default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
+    )
     schema_validation_error: ErrorDetail | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
+    @computed_field
+    @property
+    def api_cost(self) -> Optional[Amount]:
+        if self.usage:
+            try:
+                cost = compute_cost_from_model(self.model, self.usage)
+                return cost
+            except Exception as e:
+                print(f"Error computing cost: {e}")
+                return None
+        return None
 
 
 class UiResponse(Response):
     extraction_id: str | None = None
     # Additional metadata fields (UIForm)
-    likelihoods: Optional[dict[str, Any]] = Field(default =None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object.")
+    likelihoods: Optional[dict[str, Any]] = Field(
+        default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
+    )
     schema_validation_error: ErrorDetail | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
-
-
 
 
 class LogExtractionRequest(BaseModel):
