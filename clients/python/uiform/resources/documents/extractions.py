@@ -14,7 +14,7 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
-from ..._utils.json_schema import filter_reasoning_fields_json, load_json_schema, unflatten_dict
+from ..._utils.json_schema import filter_auxiliary_fields_json, load_json_schema, unflatten_dict
 from ..._utils.mime import MIMEData, prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionUiformMessage
@@ -28,9 +28,9 @@ def maybe_parse_to_pydantic(schema: Schema, response: UiParsedChatCompletion, al
     if response.choices[0].message.content:
         try:
             if allow_partial:
-                response.choices[0].message.parsed = schema._partial_pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content))
+                response.choices[0].message.parsed = schema._partial_pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
             else:
-                response.choices[0].message.parsed = schema.pydantic_model.model_validate(filter_reasoning_fields_json(response.choices[0].message.content))
+                response.choices[0].message.parsed = schema.pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
         except Exception as e:
             pass
     return response

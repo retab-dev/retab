@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from uiform import Schema, UiForm
-from uiform._utils.json_schema import filter_reasoning_fields_json
+from uiform._utils.json_schema import filter_auxiliary_fields_json
 
 # Load environment variables
 load_dotenv()
@@ -84,7 +84,7 @@ completion = client.beta.chat.completions.parse(
 
 # Validate and clean the output
 assert completion.choices[0].message.content is not None
-extraction = schema_obj.pydantic_model.model_validate(filter_reasoning_fields_json(completion.choices[0].message.content))
+extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(completion.choices[0].message.content))
 
 # Output
 print("\n✅ Extracted Result:")

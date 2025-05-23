@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from uiform import Schema, UiForm
-from uiform._utils.json_schema import filter_reasoning_fields_json
+from uiform._utils.json_schema import filter_auxiliary_fields_json
 
 # Load environment variables
 load_dotenv()
@@ -89,7 +89,7 @@ response = client.responses.parse(
 
 
 # Validate response and remove reasoning fields
-extraction = schema_obj.pydantic_model.model_validate(filter_reasoning_fields_json(response.output_text))
+extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(response.output_text))
 
 # Output
 print("\n✅ Extracted Result (Responses API):")

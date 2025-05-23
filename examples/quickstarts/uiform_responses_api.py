@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 from uiform import UiForm, Schema
-from uiform._utils.json_schema import filter_reasoning_fields_json
+from uiform._utils.json_schema import filter_auxiliary_fields_json
 
 # Load environment variables
 load_dotenv()
@@ -17,10 +17,12 @@ load_dotenv()
 uiform_api_key = os.getenv("UIFORM_API_KEY")
 assert uiform_api_key, "Missing UIFORM_API_KEY"
 
+
 # 1. Define schema using Pydantic model for parse() method
 class CalendarEvent(BaseModel):
     name: str = Field(description="The name of the calendar event.")
     date: str = Field(description="The date of the calendar event in ISO 8601 format.")
+
 
 # Define schema for create() method
 json_schema = {
@@ -72,16 +74,12 @@ response = uiclient.responses.create(
 # Output
 print("\n✅ Extracted Result Example 1 (responses.create()):")
 print(f"Output text: {response.output_text}")
-extraction = schema_obj.pydantic_model.model_validate(filter_reasoning_fields_json(response.output_text))
+extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(response.output_text))
 print(extraction.model_dump_json(indent=2))
 
 # Example 2: Use the UiForm's responses.parse() method with Pydantic model
 response = uiclient.responses.parse(
-    model=model,
-    temperature=temperature,
-    input=doc_msg.openai_responses_input,
-    text_format=CalendarEvent,
-    instructions="Extract the calendar event information from the document."
+    model=model, temperature=temperature, input=doc_msg.openai_responses_input, text_format=CalendarEvent, instructions="Extract the calendar event information from the document."
 )
 
 # Output
@@ -101,5 +99,5 @@ response = uiclient.responses.create(
 # Output
 print("\n✅ Extracted Result Example 3 (text input):")
 print(f"Output text: {response.output_text}")
-extraction = schema_obj.pydantic_model.model_validate(filter_reasoning_fields_json(response.output_text))
-print(extraction.model_dump_json(indent=2)) 
+extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(response.output_text))
+print(extraction.model_dump_json(indent=2))

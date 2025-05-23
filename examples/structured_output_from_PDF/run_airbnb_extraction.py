@@ -42,9 +42,9 @@ print(json.dumps(completion.choices[0].message.parsed.model_dump(), indent=2))
 ## Eventually: validate the response against the original schema if you want to remove the reasoning fields
 # ---------------------------------------------
 
-from uiform._utils.json_schema import filter_reasoning_fields_json
+from uiform._utils.json_schema import filter_auxiliary_fields_json
 
 assert completion.choices[0].message.content is not None
-extraction = schema_obj.pydantic_model.model_validate(filter_reasoning_fields_json(completion.choices[0].message.content))
+extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(completion.choices[0].message.content))
 
 print(json.dumps(extraction.model_dump(), indent=2))
