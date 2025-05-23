@@ -1665,32 +1665,32 @@ def load_json_schema(json_schema: Union[dict[str, Any], Path, str]) -> dict[str,
     return json_schema
 
 
-def filter_reasoning_fields(data: dict[str, Any]) -> dict[str, Any]:
+def filter_auxiliary_fields(data: dict[str, Any], prefixes: list[str] = ["reasoning___", "quote___"]) -> dict[str, Any]:
     """
-    Recursively filters out fields that start with 'reasoning___' from the input data.
+    Recursively filters out fields that start with any of the prefixes in `prefixes` from the input data.
     """
     if not isinstance(data, dict):
         return data  # Base case: return non-dict values as is
 
     filtered: dict[str, Any] = {}
     for key, value in data.items():
-        if not key.startswith("reasoning___"):
+        if not key.startswith(tuple(prefixes)):
             if isinstance(value, dict):
-                filtered[key] = filter_reasoning_fields(value)
+                filtered[key] = filter_auxiliary_fields(value, prefixes)
             elif isinstance(value, list):
-                filtered[key] = [filter_reasoning_fields(item) if isinstance(item, dict) else item for item in value]
+                filtered[key] = [filter_auxiliary_fields(item, prefixes) if isinstance(item, dict) else item for item in value]
             else:
                 filtered[key] = value
 
     return filtered
 
 
-def filter_reasoning_fields_json(data: str) -> dict[str, Any]:
+def filter_auxiliary_fields_json(data: str, prefixes: list[str] = ["reasoning___", "quote___"]) -> dict[str, Any]:
     """
-    Recursively filters out fields that start with 'reasoning___' from the input JSON data.
+    Recursively filters out fields that start with any of the prefixes in `prefixes` from the input JSON data.
     """
     data_dict = json.loads(data)
-    return filter_reasoning_fields(data_dict)
+    return filter_auxiliary_fields(data_dict, prefixes)
 
 
 def get_all_paths(schema: dict[str, Any]) -> list[str]:
