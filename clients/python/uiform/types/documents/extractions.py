@@ -48,10 +48,8 @@ class DocumentExtractRequest(BaseModel):
     # Add a model validator that rejects n_consensus > 1 if temperature is 0
     @field_validator("n_consensus")
     def check_n_consensus(cls, v: int, info: ValidationInfo) -> int:
-        model_card = get_model_card(info.data["model"])
-        if model_card.temperature_support and (v > 1 and info.data.get("temperature") == 0):
-            print("n_consensus greater than 1 but temperature is 0, setting temperature to 0.5")
-            info.data["temperature"] = 0.5
+        if v > 1 and info.data.get("temperature") == 0:
+            raise ValueError("n_consensus greater than 1 but temperature is 0")
         return v
 
 
