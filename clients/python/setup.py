@@ -5,9 +5,9 @@ with open('requirements.txt') as f:
     requirements_list = f.read().splitlines()
 
 setup(
-    name='seaside',
+    name='uiform',
     version='0.0.33',
-    author='Seaside',
+    author='UiForm',
     author_email='contact@uiform.com',
     description='UiForm official python library',
     long_description=open('README.md').read(),
