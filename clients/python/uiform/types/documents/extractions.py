@@ -45,16 +45,6 @@ class DocumentExtractRequest(BaseModel):
     store: bool = Field(default=True, description="If true, the extraction will be stored in the database")
     need_validation: bool = Field(default=False, description="If true, the extraction will be validated against the schema")
 
-    @property
-    def provider(self) -> AIProvider:
-        """
-        Determines the AI provider based on the model specified.
-
-        Returns:
-            AIProvider: The AI provider corresponding to the given model.
-        """
-        return find_provider_from_model(self.model)
-
     # Add a model validator that rejects n_consensus > 1 if temperature is 0
     @field_validator("n_consensus")
     def check_n_consensus(cls, v: int, info: ValidationInfo) -> int:
@@ -72,15 +62,6 @@ class ConsensusModel(BaseModel):
         default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
     )
 
-    @property
-    def provider(self) -> AIProvider:
-        """
-        Determines the AI provider based on the model specified.
-
-        Returns:
-            AIProvider: The AI provider corresponding to the given model.
-        """
-        return find_provider_from_model(self.model)
 
 
 # For location of fields in the document (OCR)

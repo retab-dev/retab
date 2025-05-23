@@ -1,13 +1,16 @@
 from typing import Literal
 
-AIProvider = Literal["OpenAI", "Gemini", "xAI"]  # , "Anthropic", "xAI"]
+AIProvider = Literal["OpenAI", "Gemini", "xAI", "UiForm"]  # , "Anthropic", "xAI"]
 OpenAICompatibleProvider = Literal["OpenAI", "xAI"]  # , "xAI"]
 GeminiModel = Literal[
+    "gemini-2.5-pro-preview-05-06",
+    "gemini-2.5-flash-preview-05-20",
     "gemini-2.5-flash-preview-04-17",
     "gemini-2.5-pro-exp-03-25",
     "gemini-2.0-flash-lite",
     "gemini-2.0-flash",
 ]
+
 AnthropicModel = Literal[
     "claude-3-5-sonnet-latest", "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"
 ]
@@ -43,8 +46,8 @@ OpenAIModel = Literal[
     "gpt-4o-mini-realtime-preview-2024-12-17",
 ]
 xAI_Model = Literal["grok-3-beta", "grok-3-mini-beta"]
-LLMModel = Literal[OpenAIModel, "human", AnthropicModel, xAI_Model, GeminiModel]
-
+UiFormModel = Literal["auto", "auto-small"]
+LLMModel = Literal[OpenAIModel, "human", AnthropicModel, xAI_Model, GeminiModel, UiFormModel]
 
 import datetime
 
@@ -148,7 +151,6 @@ class ModelCard(BaseModel):
     model: LLMModel | str  # Can be a random string for finetuned models
     pricing: Pricing
     capabilities: ModelCapabilities
-    logprobs_support: bool = True
     temperature_support: bool = True
     reasoning_effort_support: bool = False
 
@@ -171,7 +173,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -181,7 +182,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -189,7 +189,6 @@ openai_model_cards = [
         model="o1-preview-2024-09-12",
         pricing=Pricing(text=TokenPrice(prompt=15.00, cached_discount=0.5, completion=60.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling"]),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -200,7 +199,6 @@ openai_model_cards = [
         model="o1-mini",
         pricing=Pricing(text=TokenPrice(prompt=1.10, cached_discount=0.5, completion=4.40), audio=None),
         capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions", "responses", "assistants"], features=["streaming"]),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -208,7 +206,6 @@ openai_model_cards = [
         model="o1-mini-2024-09-12",
         pricing=Pricing(text=TokenPrice(prompt=1.10, cached_discount=0.5, completion=4.40), audio=None),
         capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions", "responses", "assistants"], features=["streaming"]),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -221,7 +218,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -231,7 +227,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -244,7 +239,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -254,7 +248,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -267,7 +260,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -277,7 +269,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=False,
         reasoning_effort_support=True,
     ),
@@ -297,7 +288,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=True,
         reasoning_effort_support=False,
     ),
@@ -307,7 +297,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=True,
         reasoning_effort_support=False,
     ),
@@ -317,7 +306,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=True,
         reasoning_effort_support=False,
     ),
@@ -327,7 +315,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=True,
         reasoning_effort_support=False,
     ),
@@ -337,7 +324,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=True,
         reasoning_effort_support=False,
     ),
@@ -347,7 +333,6 @@ openai_model_cards = [
         capabilities=ModelCapabilities(
             modalities=["text", "image"], endpoints=["chat_completions", "responses", "assistants", "batch"], features=["streaming", "function_calling", "structured_outputs"]
         ),
-        logprobs_support=False,
         temperature_support=True,
         reasoning_effort_support=False,
     ),
@@ -528,25 +513,21 @@ xai_model_cards = [
         model="grok-2-vision-1212",
         pricing=Pricing(text=TokenPrice(prompt=2.00, cached_discount=0.5, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling"]),
-        logprobs_support=False,  # Disabling it because it is messing the output
     ),
     ModelCard(
         model="grok-2-1212",
         pricing=Pricing(text=TokenPrice(prompt=2.00, cached_discount=0.5, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions"], features=["streaming", "function_calling"]),
-        logprobs_support=False,  # Disabling it because it is messing the output
     ),
     ModelCard(
         model="grok-3-beta",
         pricing=Pricing(text=TokenPrice(prompt=3.00, cached_discount=0.5, completion=15.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions"], features=["streaming", "function_calling"]),
-        logprobs_support=False,  # Disabling it because it is messing the output
     ),
     ModelCard(
         model="grok-3-mini-beta",
         pricing=Pricing(text=TokenPrice(prompt=0.30, cached_discount=0.5, completion=0.50), audio=None),
         capabilities=ModelCapabilities(modalities=["text"], endpoints=["chat_completions"], features=["streaming", "function_calling"]),
-        logprobs_support=False,  # Disabling it because it is messing the output
     ),
 ]
 
@@ -559,21 +540,29 @@ gemini_model_cards = [
         model="gemini-2.5-pro-exp-03-25",
         pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
-        logprobs_support=False,
         temperature_support=True,
+    ),
+    ModelCard(
+        model="gemini-2.5-pro-preview-05-06",
+        pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
+        capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
     ),
     ModelCard(
         model="gemini-2.5-pro-preview-03-25",
         pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
-        logprobs_support=False,
         temperature_support=True,
     ),
     ModelCard(
         model="gemini-2.5-flash-preview-04-17",
         pricing=Pricing(text=TokenPrice(prompt=0.15, cached_discount=0.25, completion=0.60), audio=None),
+        capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]), 
+        temperature_support=True,
+    ),
+    ModelCard(
+        model="gemini-2.5-flash-preview-05-20",
+        pricing=Pricing(text=TokenPrice(prompt=0.15, cached_discount=0.25, completion=0.60), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
-        logprobs_support=False,
         temperature_support=True,
     ),
     # ----------------------
@@ -583,7 +572,6 @@ gemini_model_cards = [
         model="gemini-2.0-flash",
         pricing=Pricing(text=TokenPrice(prompt=0.1, cached_discount=0.025 / 0.1, completion=0.40), audio=TokenPrice(prompt=0.7, cached_discount=0.175 / 0.7, completion=1000)),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
-        logprobs_support=False,
         temperature_support=True,
     ),
     ModelCard(
@@ -594,7 +582,6 @@ gemini_model_cards = [
             endpoints=["chat_completions"],
             features=["streaming", "structured_outputs"],
         ),
-        logprobs_support=False,
         temperature_support=True,
     ),
 ]
@@ -613,7 +600,6 @@ xAI_model_cards = [
             endpoints=["chat_completions"],
             features=["streaming", "structured_outputs"],
         ),
-        logprobs_support=False,
         temperature_support=True,
     ),
     ModelCard(
@@ -624,7 +610,6 @@ xAI_model_cards = [
             endpoints=["chat_completions"],
             features=["streaming", "structured_outputs"],
         ),
-        logprobs_support=False,
         temperature_support=True,
     ),
 ]
