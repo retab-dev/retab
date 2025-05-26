@@ -7,9 +7,18 @@ from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..types.standards import PreparedRequest
-from ..types.evals import (Evaluation, EvaluationDocument, Iteration, DistancesResult, PredictionData, 
-                           AddIterationFromJsonlRequest, DocumentItem, UpdateEvaluationDocumentRequest, 
-                           PredictionMetadata, CreateIterationRequest)
+from ..types.evals import (
+    Evaluation,
+    EvaluationDocument,
+    Iteration,
+    DistancesResult,
+    PredictionData,
+    AddIterationFromJsonlRequest,
+    DocumentItem,
+    UpdateEvaluationDocumentRequest,
+    PredictionMetadata,
+    CreateIterationRequest,
+)
 from ..types.jobs.base import InferenceSettings
 from ..types.image_settings import ImageSettings
 from ..types.mime import MIMEData
@@ -22,48 +31,54 @@ from tqdm import tqdm
 
 class DeleteResponse(TypedDict):
     """Response from a delete operation"""
+
     success: bool
     id: str
 
+
 class ExportResponse(TypedDict):
     """Response from an export operation"""
+
     success: bool
     path: str
 
 
 class EvalsMixin:
-    def prepare_create(self, name: str, json_schema: Dict[str, Any], project_id: str | None = None, 
-                         documents: List[EvaluationDocument] = [], 
-                         iterations: List[Iteration] = [], 
-                         default_inference_settings: Optional[InferenceSettings] = None) -> PreparedRequest:
+    def prepare_create(
+        self,
+        name: str,
+        json_schema: Dict[str, Any],
+        project_id: str | None = None,
+        documents: List[EvaluationDocument] = [],
+        iterations: List[Iteration] = [],
+        default_inference_settings: Optional[InferenceSettings] = None,
+    ) -> PreparedRequest:
         eval_data = Evaluation(
             name=name,
             json_schema=json_schema,
             project_id=project_id if project_id else "default_spreadsheets",
             documents=documents,
             iterations=iterations,
-            default_inference_settings=default_inference_settings
+            default_inference_settings=default_inference_settings,
         )
-        return PreparedRequest(
-            method="POST",
-            url="/v1/evals",
-            data=eval_data.model_dump(exclude_none=True, mode="json")
-        )
+        return PreparedRequest(method="POST", url="/v1/evals", data=eval_data.model_dump(exclude_none=True, mode="json"))
 
     def prepare_get(self, id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/v1/evals/{id}"
-        )
+        return PreparedRequest(method="GET", url=f"/v1/evals/{id}")
 
-    def prepare_update(self, eval_id: str, name: Optional[str] = None, project_id: Optional[str] = None, 
-                      json_schema: Optional[Dict[str, Any]] = None, 
-                      documents: Optional[List[EvaluationDocument]] = None,
-                      iterations: Optional[List[Iteration]] = None,
-                      default_inference_settings: Optional[InferenceSettings] = None) -> PreparedRequest:
+    def prepare_update(
+        self,
+        eval_id: str,
+        name: Optional[str] = None,
+        project_id: Optional[str] = None,
+        json_schema: Optional[Dict[str, Any]] = None,
+        documents: Optional[List[EvaluationDocument]] = None,
+        iterations: Optional[List[Iteration]] = None,
+        default_inference_settings: Optional[InferenceSettings] = None,
+    ) -> PreparedRequest:
         """
         Prepare a request to update an evaluation with partial updates.
-        
+
         Only the provided fields will be updated. Fields set to None will be excluded from the update.
         """
         # Build a dictionary with only the provided fields
@@ -80,165 +95,99 @@ class EvalsMixin:
             update_data["iterations"] = [iter.model_dump(exclude_none=True, mode="json") for iter in iterations]
         if default_inference_settings is not None:
             update_data["default_inference_settings"] = default_inference_settings.model_dump(exclude_none=True, mode="json")
-            
-        return PreparedRequest(
-            method="PATCH",
-            url=f"/v1/evals/{eval_id}",
-            data=update_data
-        )
+
+        return PreparedRequest(method="PATCH", url=f"/v1/evals/{eval_id}", data=update_data)
 
     def prepare_list(self, project_id: Optional[str] = None) -> PreparedRequest:
         params = {}
         if project_id:
             params["project_id"] = project_id
-        return PreparedRequest(
-            method="GET",
-            url="/v1/evals",
-            params=params
-        )
+        return PreparedRequest(method="GET", url="/v1/evals", params=params)
 
     def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="DELETE",
-            url=f"/v1/evals/{id}"
-        )
+        return PreparedRequest(method="DELETE", url=f"/v1/evals/{id}")
 
 
 class DocumentsMixin:
-   
     def prepare_get(self, eval_id: str, id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/v1/evals/{eval_id}/documents/{id}"
-        )
+        return PreparedRequest(method="GET", url=f"/v1/evals/{eval_id}/documents/{id}")
 
     def prepare_create(self, eval_id: str, document: MIMEData, annotation: Dict[str, Any]) -> PreparedRequest:
         # Serialize the MIMEData
 
-        document_item = DocumentItem(
-            mime_data=document,
-            annotation=annotation,
-            annotation_metadata=None
-        )
-        
-        return PreparedRequest(
-            method="POST",
-            url=f"/v1/evals/{eval_id}/documents",
-            data=document_item.model_dump(mode="json")
-        )
+        document_item = DocumentItem(mime_data=document, annotation=annotation, annotation_metadata=None)
+
+        return PreparedRequest(method="POST", url=f"/v1/evals/{eval_id}/documents", data=document_item.model_dump(mode="json"))
 
     def prepare_list(self, eval_id: str, filename: Optional[str] = None) -> PreparedRequest:
         params = {}
         if filename:
             params["filename"] = filename
-        return PreparedRequest(
-            method="GET",
-            url=f"/v1/evals/{eval_id}/documents",
-            params=params
-        )
+        return PreparedRequest(method="GET", url=f"/v1/evals/{eval_id}/documents", params=params)
 
     def prepare_update(self, eval_id: str, id: str, annotation: Dict[str, Any]) -> PreparedRequest:
+        update_request = UpdateEvaluationDocumentRequest(annotation=annotation, annotation_metadata=None)
 
-        update_request = UpdateEvaluationDocumentRequest(
-            annotation=annotation,
-            annotation_metadata=None
-        )
-        
-        return PreparedRequest(
-            method="PUT",
-            url=f"/v1/evals/{eval_id}/documents/{id}",
-            data=update_request.model_dump(mode="json", exclude_none=True)
-        )
+        return PreparedRequest(method="PUT", url=f"/v1/evals/{eval_id}/documents/{id}", data=update_request.model_dump(mode="json", exclude_none=True))
 
     def prepare_delete(self, eval_id: str, id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="DELETE",
-            url=f"/v1/evals/{eval_id}/documents/{id}"
-        )
+        return PreparedRequest(method="DELETE", url=f"/v1/evals/{eval_id}/documents/{id}")
 
 
 class IterationsMixin:
-   
     def prepare_get(self, id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/v1/evals/iterations/{id}"
-        )
+        return PreparedRequest(method="GET", url=f"/v1/evals/iterations/{id}")
 
     def prepare_list(self, eval_id: str, model: Optional[str] = None) -> PreparedRequest:
         params = {}
         if model:
             params["model"] = model
-        return PreparedRequest(
-            method="GET",
-            url=f"/v1/evals/{eval_id}/iterations",
-            params=params
-        )
+        return PreparedRequest(method="GET", url=f"/v1/evals/{eval_id}/iterations", params=params)
 
-    def prepare_create(self, 
-        eval_id: str, 
-        model: str, 
-        json_schema: Optional[Dict[str, Any]] = None, 
-        temperature: float = 0.0, 
+    def prepare_create(
+        self,
+        eval_id: str,
+        model: str,
+        json_schema: Optional[Dict[str, Any]] = None,
+        temperature: float = 0.0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_settings: Optional[Dict[str, Any]] = None,
-        n_consensus: int = 1) -> PreparedRequest:
-
+        image_settings: Optional[ImageSettings] = None,
+        n_consensus: int = 1,
+    ) -> PreparedRequest:
         props = InferenceSettings(
             model=model,
             temperature=temperature,
             modality=modality,
             reasoning_effort=reasoning_effort,
             image_settings=ImageSettings.model_validate(image_settings) if image_settings else ImageSettings(),
-            n_consensus=n_consensus
+            n_consensus=n_consensus,
         )
 
-        perform_iteration_request = CreateIterationRequest(
-            inference_settings=props,
-            json_schema=json_schema
-        )
+        perform_iteration_request = CreateIterationRequest(inference_settings=props, json_schema=json_schema)
 
-        return PreparedRequest(
-            method="POST",
-            url=f"/v1/evals/{eval_id}/iterations/create",
-            data=perform_iteration_request.model_dump(exclude_none=True, mode="json")
-        )
+        return PreparedRequest(method="POST", url=f"/v1/evals/{eval_id}/iterations/create", data=perform_iteration_request.model_dump(exclude_none=True, mode="json"))
 
-
-    def prepare_update(self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[Dict[str, Any]] = None) -> PreparedRequest:
+    def prepare_update(
+        self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[ImageSettings] = None
+    ) -> PreparedRequest:
         inference_settings = InferenceSettings(
             model=model,
             temperature=temperature,
         )
-        
+
         if image_settings:
             inference_settings.image_settings = ImageSettings.model_validate(image_settings)
-            
-        iteration_data = Iteration(
-            id=iteration_id,
-            json_schema=json_schema,
-            inference_settings=inference_settings,
-            predictions=[]
-        )
-        
-        return PreparedRequest(
-            method="PUT",
-            url=f"/v1/evals/iterations/{iteration_id}",
-            data=iteration_data.model_dump(exclude_none=True, mode="json")
-        )
+
+        iteration_data = Iteration(id=iteration_id, json_schema=json_schema, inference_settings=inference_settings, predictions=[])
+
+        return PreparedRequest(method="PUT", url=f"/v1/evals/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_none=True, mode="json"))
 
     def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="DELETE",
-            url=f"/v1/evals/iterations/{id}"
-        )
-    
+        return PreparedRequest(method="DELETE", url=f"/v1/evals/iterations/{id}")
+
     def prepare_compute_distances(self, iteration_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/v1/evals/iterations/{iteration_id}/compute_distances/{document_id}"
-        )
+        return PreparedRequest(method="GET", url=f"/v1/evals/iterations/{iteration_id}/compute_distances/{document_id}")
 
 
 class Evals(SyncAPIResource, EvalsMixin):
@@ -283,11 +232,16 @@ class Evals(SyncAPIResource, EvalsMixin):
         response = self._client._prepared_request(request)
         return Evaluation(**response)
 
-    def update(self, id: str, name: Optional[str] = None, project_id: Optional[str] = None, 
-              json_schema: Optional[Dict[str, Any]] = None, 
-              documents: Optional[List[EvaluationDocument]] = None,
-              iterations: Optional[List[Iteration]] = None,
-              default_inference_settings: Optional[InferenceSettings] = None) -> Evaluation:
+    def update(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        project_id: Optional[str] = None,
+        json_schema: Optional[Dict[str, Any]] = None,
+        documents: Optional[List[EvaluationDocument]] = None,
+        iterations: Optional[List[Iteration]] = None,
+        default_inference_settings: Optional[InferenceSettings] = None,
+    ) -> Evaluation:
         """
         Update an evaluation with partial updates.
 
@@ -306,13 +260,7 @@ class Evals(SyncAPIResource, EvalsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_update(
-            eval_id=id,
-            name=name,
-            project_id=project_id,
-            json_schema=json_schema,
-            documents=documents,
-            iterations=iterations,
-            default_inference_settings=default_inference_settings
+            eval_id=id, name=name, project_id=project_id, json_schema=json_schema, documents=documents, iterations=iterations, default_inference_settings=default_inference_settings
         )
         response = self._client._prepared_request(request)
         return Evaluation(**response)
@@ -349,12 +297,8 @@ class Evals(SyncAPIResource, EvalsMixin):
         return self._client._prepared_request(request)
 
 
-
-
 class Documents(SyncAPIResource, DocumentsMixin):
     """Documents API wrapper for evaluations"""
-
-   
 
     def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
         """
@@ -377,7 +321,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         """
         # Convert document to MIME data format
         mime_document: MIMEData = prepare_mime_document(document)
-        
+
         # Let prepare_create handle the serialization
         request = self.prepare_create(eval_id, mime_document, annotation)
         response = self._client._prepared_request(request)
@@ -416,7 +360,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         request = self.prepare_get(eval_id, id)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
-    
+
     def update(self, eval_id: str, id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Update a document.
@@ -458,7 +402,6 @@ class Iterations(SyncAPIResource, IterationsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-
     def list(self, eval_id: str, model: Optional[str] = None) -> List[Iteration]:
         """
         List iterations for an evaluation.
@@ -476,15 +419,17 @@ class Iterations(SyncAPIResource, IterationsMixin):
         response = self._client._prepared_request(request)
         return [Iteration(**item) for item in response.get("data", [])]
 
-    def create(self, 
-        eval_id: str, 
-        model: str, 
-        temperature: float = 0.0, 
+    def create(
+        self,
+        eval_id: str,
+        model: str,
+        temperature: float = 0.0,
         modality: Modality = "native",
-        json_schema: Optional[Dict[str, Any]] = None, 
+        json_schema: Optional[Dict[str, Any]] = None,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_settings: Optional[Dict[str, Any]] = None,
-        n_consensus: int = 1) -> Iteration:
+        image_settings: Optional[ImageSettings] = None,
+        n_consensus: int = 1,
+    ) -> Iteration:
         """
         Create a new iteration for an evaluation.
 
@@ -504,14 +449,14 @@ class Iterations(SyncAPIResource, IterationsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_create(
-            eval_id=eval_id, 
-            json_schema=json_schema, 
-            model=model, 
+            eval_id=eval_id,
+            json_schema=json_schema,
+            model=model,
             temperature=temperature,
             modality=modality,
             reasoning_effort=reasoning_effort,
             image_settings=image_settings,
-            n_consensus=n_consensus
+            n_consensus=n_consensus,
         )
         response = self._client._prepared_request(request)
         return Iteration(**response)
@@ -591,11 +536,16 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
 
-    async def update(self, id: str, name: Optional[str] = None, project_id: Optional[str] = None, 
-                      json_schema: Optional[Dict[str, Any]] = None, 
-                      documents: Optional[List[EvaluationDocument]] = None,
-                      iterations: Optional[List[Iteration]] = None,
-                      default_inference_settings: Optional[InferenceSettings] = None) -> Evaluation:
+    async def update(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        project_id: Optional[str] = None,
+        json_schema: Optional[Dict[str, Any]] = None,
+        documents: Optional[List[EvaluationDocument]] = None,
+        iterations: Optional[List[Iteration]] = None,
+        default_inference_settings: Optional[InferenceSettings] = None,
+    ) -> Evaluation:
         """
         Update an evaluation with partial updates.
 
@@ -614,13 +564,7 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_update(
-            eval_id=id,
-            name=name,
-            project_id=project_id,
-            json_schema=json_schema,
-            documents=documents,
-            iterations=iterations,
-            default_inference_settings=default_inference_settings
+            eval_id=id, name=name, project_id=project_id, json_schema=json_schema, documents=documents, iterations=iterations, default_inference_settings=default_inference_settings
         )
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
@@ -681,7 +625,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         """
         # Convert document to MIME data format
         mime_document: MIMEData = prepare_mime_document(document)
-        
+
         # Let prepare_create handle the serialization
         request = self.prepare_create(eval_id, mime_document, annotation)
         response = await self._client._prepared_request(request)
@@ -703,7 +647,6 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         request = self.prepare_list(eval_id, filename)
         response = await self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
-
 
     async def update(self, eval_id: str, id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
         """
@@ -746,7 +689,6 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-
     async def get(self, id: str) -> Iteration:
         """
         Get an iteration by ID.
@@ -780,15 +722,17 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         response = await self._client._prepared_request(request)
         return [Iteration(**item) for item in response.get("data", [])]
 
-    async def create(self, 
-        eval_id: str, 
-        model: str, 
-        temperature: float = 0.0, 
+    async def create(
+        self,
+        eval_id: str,
+        model: str,
+        temperature: float = 0.0,
         modality: Modality = "native",
-        json_schema: Optional[Dict[str, Any]] = None, 
+        json_schema: Optional[Dict[str, Any]] = None,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_settings: Optional[Dict[str, Any]] = None,
-        n_consensus: int = 1) -> Iteration:
+        image_settings: Optional[ImageSettings] = None,
+        n_consensus: int = 1,
+    ) -> Iteration:
         """
         Create a new iteration for an evaluation.
 
@@ -808,14 +752,14 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_create(
-            eval_id=eval_id, 
-            json_schema=json_schema, 
-            model=model, 
+            eval_id=eval_id,
+            json_schema=json_schema,
+            model=model,
             temperature=temperature,
             modality=modality,
             reasoning_effort=reasoning_effort,
             image_settings=image_settings,
-            n_consensus=n_consensus
+            n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(request)
         return Iteration(**response)
@@ -835,7 +779,6 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         request = self.prepare_delete(id)
         return await self._client._prepared_request(request)
 
-
     async def compute_distances(self, iteration_id: str, document_id: str) -> DistancesResult:
         """
         Get distances for a document in an iteration.
@@ -852,4 +795,3 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         request = self.prepare_compute_distances(iteration_id, document_id)
         response = await self._client._prepared_request(request)
         return DistancesResult(**response)
-
