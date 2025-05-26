@@ -12,8 +12,8 @@ from .._utils.mime import prepare_mime_document_list
 from .._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ..types.modalities import Modality
 from ..types.schemas.object import PartialSchema, PartialSchemaChunk, Schema
-from ..types.schemas.promptify import PromptifyRequest
 from ..types.standards import PreparedRequest
+from ..types.schemas.generate import GenerateSchemaRequest, GenerateSystemPromptRequest
 
 
 class SchemasStreamMixin:
@@ -37,7 +37,7 @@ class SchemasStreamMixin:
             "modality": modality,
             "stream": stream,
         }
-        PromptifyRequest.model_validate(data)
+        GenerateSchemaRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/promptify", data=data)
 
     def prepare_generate(
@@ -74,7 +74,7 @@ class SchemasStreamMixin:
             "modality": modality,
             "stream": stream,
         }
-        PromptifyRequest.model_validate(data)
+        GenerateSystemPromptRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/system_prompt_endpoint", data=data)
 
 

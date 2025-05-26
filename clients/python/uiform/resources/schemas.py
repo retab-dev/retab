@@ -12,10 +12,9 @@ from .._utils.mime import prepare_mime_document_list
 from ..types.modalities import Modality
 from ..types.mime import MIMEData
 from ..types.schemas.generate import GenerateSchemaRequest, GenerateSystemPromptRequest
-from ..types.schemas.object import PartialSchema, PartialSchemaChunk, Schema
+from ..types.schemas.object import Schema
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.object import Schema
-from ..types.schemas.promptify import PromptifyRequest
 from ..types.standards import PreparedRequest
 
 
@@ -24,37 +23,22 @@ class SchemasMixin:
     def prepare_generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native",
-        flat: bool = False,
+        modality: Modality = "native"
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
         mime_documents = prepare_mime_document_list(documents)
-        data = {"documents": [doc.model_dump() for doc in mime_documents], "model": model, "temperature": temperature, "modality": modality, "flat": flat}
-        GenerateSchemaRequest.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/schemas/generate", data=data)
-
-    def prepare_promptify(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
-        model: str,
-        temperature: float = 0,
-        modality: Modality = "native",
-    ) -> PreparedRequest:
-        assert_valid_model_schema_generation(model)
-        mime_documents = prepare_mime_document_list(documents)
-        loaded_json_schema = load_json_schema(json_schema)
         data = {
-            "json_schema": loaded_json_schema,
             "documents": [doc.model_dump() for doc in mime_documents],
+            "instructions": instructions if instructions else None,
             "model": model,
             "temperature": temperature,
-            "modality": modality,
+            "modality": modality
         }
-        PromptifyRequest.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/schemas/promptify", data=data)
+        GenerateSchemaRequest.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/schemas/generate", data=data)
 
     def prepare_system_prompt(
         self,
@@ -76,7 +60,7 @@ class SchemasMixin:
             "temperature": temperature,
             "modality": modality,
         }
-        PromptifyRequest.model_validate(data)
+        GenerateSystemPromptRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/system_prompt_endpoint", data=data)
 
     def prepare_list(self, schema_id: Optional[str] = None, data_id: Optional[str] = None) -> PreparedRequest:
@@ -105,45 +89,15 @@ class Schemas(SyncAPIResource, SchemasMixin):
         else:
             raise ValueError("Either json_schema or pydantic_model must be provided")
 
-    """Schemas API wrapper"""
-
-    def promptify(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
-        model: str,
-        temperature: float = 0,
-        modality: Modality = "native",
-    ) -> Schema:
-        """
-        Enrich an existing JSON schema with additional field suggestions based on document analysis. It can be beneficial to use a bigger model (more costly but more accurate) for this task.
-
-        The generated schema includes X-Prompts for enhanced LLM interactions:
-        - X-SystemPrompt: Defines high-level instructions and context for consistent LLM behavior
-        - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
-
-        Args:
-            json_schema: Base JSON schema to enrich
-            documents: List of documents (as MIMEData) to analyze
-
-        Returns:
-            dict[str, Any]: Enhanced JSON schema with additional field suggestions and X-Prompts
-
-        Raises:
-            HTTPException if the request fails
-        """
-
-        prepared_request = self.prepare_promptify(json_schema, documents, model, temperature, modality)
-        response = self._client._prepared_request(prepared_request)
-        return Schema.model_validate(response)
+   
 
     def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native",
-        flat: bool = False,
+        modality: Modality = "native"
     ) -> Schema:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -162,7 +116,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
             HTTPException if the request fails
         """
 
-        prepared_request = self.prepare_generate(documents, model, temperature, modality, flat)
+        prepared_request = self.prepare_generate(documents, instructions, model, temperature, modality)
         response = self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
 
@@ -224,10 +178,10 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     async def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0.0,
         modality: Modality = "native",
-        flat: bool = False,
     ) -> Schema:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -246,7 +200,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         Raises
             HTTPException if the request fails
         """
-        prepared_request = self.prepare_generate(documents, model, temperature, modality, flat)
+        prepared_request = self.prepare_generate(documents, instructions, model, temperature, modality)
         response = await self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
 
