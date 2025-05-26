@@ -31,7 +31,7 @@ class SchemasMixin:
 
     def prepare_promptify(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str,
         temperature: float = 0,
@@ -39,10 +39,10 @@ class SchemasMixin:
         stream: bool = False,
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
-        raw_schema = load_json_schema(raw_schema)
+        json_schema = load_json_schema(json_schema)
         mime_documents = prepare_mime_document_list(documents)
         data = {
-            "raw_schema": raw_schema,
+            "json_schema": json_schema,
             "documents": [doc.model_dump() for doc in mime_documents],
             "model": model,
             "temperature": temperature,
@@ -69,7 +69,7 @@ class SchemasMixin:
 
     def prepare_system_prompt(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
@@ -79,7 +79,7 @@ class SchemasMixin:
         assert_valid_model_schema_generation(model)
         mime_documents = prepare_mime_document_list(documents)
         data = {
-            "raw_schema": raw_schema,
+            "json_schema": json_schema,
             "documents": [doc.model_dump() for doc in mime_documents],
             "model": model,
             "temperature": temperature,
@@ -108,7 +108,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
 
     def promptify(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str,
         temperature: float = 0,
@@ -122,7 +122,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
 
         Args:
-            raw_schema: Base JSON schema to enrich
+            json_schema: Base JSON schema to enrich
             documents: List of documents (as MIMEData) to analyze
 
         Returns:
@@ -132,20 +132,20 @@ class Schemas(SyncAPIResource, SchemasMixin):
             HTTPException if the request fails
         """
 
-        prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality)
+        prepared_request = self.prepare_promptify(json_schema, documents, model, temperature, modality)
         response = self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
 
     @as_context_manager
     def promptify_stream(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str,
         temperature: float = 0,
         modality: Modality = "native",
     ) -> Generator[PartialSchema | Schema, None, None]:
-        prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality, stream=True)
+        prepared_request = self.prepare_promptify(json_schema, documents, model, temperature, modality, stream=True)
         chunk_json: Any = None
         flat_json_schema = {}
 
@@ -159,10 +159,10 @@ class Schemas(SyncAPIResource, SchemasMixin):
             flat_json_schema = {**flat_json_schema, **schema_chunk.delta_json_schema_flat}
 
             # Unflatten the schema to get proper nested structure
-            json_schema = unflatten_dict(flat_json_schema)
+            unflattened_json_schema = unflatten_dict(flat_json_schema)
 
             # Yield a PartialSchema with the current accumulated state
-            yield PartialSchema(json_schema=json_schema)
+            yield PartialSchema(json_schema=unflattened_json_schema)
 
         # The last chunk should yield the full schema object
         if chunk_json:
@@ -233,27 +233,27 @@ class Schemas(SyncAPIResource, SchemasMixin):
 
     def system_prompt(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
         modality: Modality = "native",
         stream: bool = False,
     ) -> str:
-        prepared_request = self.prepare_system_prompt(raw_schema, documents, model, temperature, modality, stream)
+        prepared_request = self.prepare_system_prompt(json_schema, documents, model, temperature, modality, stream)
         response = self._client._prepared_request(prepared_request)
         return response
 
     @as_context_manager
     def system_prompt_stream(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
         modality: Modality = "native",
     ) -> Generator[str, None, None]:
-        prepared_request = self.prepare_system_prompt(raw_schema, documents, model, temperature, modality, stream=True)
+        prepared_request = self.prepare_system_prompt(json_schema, documents, model, temperature, modality, stream=True)
         for chunk in self._client._prepared_request_stream(prepared_request):
             yield chunk
 
@@ -301,7 +301,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
 
     async def promptify(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str,
         temperature: float = 0,
@@ -315,7 +315,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
 
         Args:
-            raw_schema: Base JSON schema to enrich
+            json_schema: Base JSON schema to enrich
             documents: List of documents (as MIMEData) to analyze
 
         Returns:
@@ -325,7 +325,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             HTTPException if the request fails
         """
 
-        prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality)
+        prepared_request = self.prepare_promptify(json_schema, documents, model, temperature, modality)
         response = await self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
 
@@ -394,13 +394,13 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     @as_async_context_manager
     async def promptify_stream(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str,
         temperature: float = 0,
         modality: Modality = "native",
     ) -> AsyncGenerator[PartialSchema | Schema, None]:
-        prepared_request = self.prepare_promptify(raw_schema, documents, model, temperature, modality, stream=True)
+        prepared_request = self.prepare_promptify(json_schema, documents, model, temperature, modality, stream=True)
         chunk_json: Any = None
         flat_json_schema = {}
 
@@ -414,10 +414,10 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             flat_json_schema = {**flat_json_schema, **schema_chunk.delta_json_schema_flat}
 
             # Unflatten the schema to get proper nested structure
-            json_schema = unflatten_dict(flat_json_schema)
+            unflattened_json_schema = unflatten_dict(flat_json_schema)
 
             # Yield a PartialSchema with the current accumulated state
-            yield PartialSchema(json_schema=json_schema)
+            yield PartialSchema(json_schema=unflattened_json_schema)
 
         # The last chunk should yield the full schema object
         if chunk_json:
@@ -426,26 +426,26 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
 
     async def system_prompt(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
         modality: Modality = "native",
         stream: bool = False,
     ) -> str:
-        prepared_request = self.prepare_system_prompt(raw_schema, documents, model, temperature, modality, stream)
+        prepared_request = self.prepare_system_prompt(json_schema, documents, model, temperature, modality, stream)
         response = await self._client._prepared_request(prepared_request)
         return response
 
     @as_async_context_manager
     async def system_prompt_stream(
         self,
-        raw_schema: dict[str, Any] | Path | str,
+        json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | IOBase | PIL.Image.Image],
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
         modality: Modality = "native",
     ) -> AsyncGenerator[str, None]:
-        prepared_request = self.prepare_system_prompt(raw_schema, documents, model, temperature, modality, stream=True)
+        prepared_request = self.prepare_system_prompt(json_schema, documents, model, temperature, modality, stream=True)
         async for chunk in self._client._prepared_request_stream(prepared_request):
             yield chunk

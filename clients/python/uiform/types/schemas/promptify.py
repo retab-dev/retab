@@ -17,5 +17,5 @@ class PromptifyBase(BaseModel):
 
 
 class PromptifyRequest(PromptifyBase):
-    raw_schema: dict[str, Any]
+    json_schema: dict[str, Any]
     documents: list[MIMEData]

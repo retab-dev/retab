@@ -12,6 +12,7 @@ from ...types.mime import MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 from .extractions import AsyncExtractions, Extractions
+from ..._utils.json_schema import load_json_schema
 
 
 class BaseDocumentsMixin:
@@ -36,16 +37,18 @@ class BaseDocumentsMixin:
     def _prepare_create_inputs(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        json_schema: dict[str, Any],
+        json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_settings: dict[str, Any] | None = None,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
+        loaded_schema = load_json_schema(json_schema)
+
         data: dict[str, Any] = {
             "document": mime_document.model_dump(),
             "modality": modality,
-            "json_schema": json_schema,
+            "json_schema": loaded_schema,
         }
         if image_settings:
             data["image_settings"] = image_settings
@@ -134,7 +137,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def create_inputs(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        json_schema: dict[str, Any],
+        json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_settings: dict[str, Any] | None = None,
         idempotency_key: str | None = None,
@@ -203,7 +206,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     async def create_inputs(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        json_schema: dict[str, Any],
+        json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_settings: dict[str, Any] | None = None,
         idempotency_key: str | None = None,

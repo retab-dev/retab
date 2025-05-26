@@ -31,7 +31,7 @@
 #     metric: Metrics = "accuracy_per_field"
 
 # class PromptOptimizationJobInputData(BaseModel):
-#     raw_schema: dict[str, Any]
+#     json_schema: dict[str, Any]
 #     optimization_objects: list[PromptOptimizationObject]
 #     schema_optimization_props: PromptOptimizationProps
 

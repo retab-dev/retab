@@ -1003,10 +1003,10 @@ def _rec_replace_description_with_llm_description(schema: dict[str, Any]) -> dic
     return new_schema
 
 
-def create_reasoning_schema(raw_schema: dict[str, Any]) -> dict[str, Any]:
+def create_reasoning_schema(json_schema: dict[str, Any]) -> dict[str, Any]:
     # Resolve refs first to get expanded schema
-    definitions = raw_schema.get("$defs", {})
-    resolved = expand_refs(copy.deepcopy(raw_schema), definitions)
+    definitions = json_schema.get("$defs", {})
+    resolved = expand_refs(copy.deepcopy(json_schema), definitions)
     # resolved.pop("$defs", None)
 
     expanded_schema = copy.deepcopy(resolved)
