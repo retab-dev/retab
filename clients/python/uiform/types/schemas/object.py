@@ -32,7 +32,7 @@ from ..chat import ChatCompletionUiformMessage
 
 
 class PartialSchema(BaseModel):
-    """Response from the Promptify API -- A partial Schema object with no validation"""
+    """Response from the Generate Schema API -- A partial Schema object with no validation"""
 
     object: Literal["schema"] = "schema"
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
