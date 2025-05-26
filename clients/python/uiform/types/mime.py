@@ -56,15 +56,9 @@ class Page(BaseModel):
 class OCR(BaseModel):
     pages: list[Page]
 
-
-class MIMEMetadata(BaseModel):
-    ocr: Optional[OCR] = Field(default=None, description="OCR result of the attachment, if available.")
-
-
 class MIMEData(BaseModel):
     filename: str = Field(description="The filename of the file", examples=["file.pdf", "image.png", "data.txt"])
     url: str = Field(description="The URL of the file in base64 format", examples=["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."])
-    metadata: MIMEMetadata = Field(default=MIMEMetadata(), description="Additional metadata about the attachment.")
 
     @property
     def id(self) -> str:
@@ -144,8 +138,12 @@ class BaseMIMEData(MIMEData):
         return self.__str__()
 
 
+        
+
+
+
 # **** MIME DATACLASSES ****
-class AttachmentMetadata(MIMEMetadata):
+class AttachmentMetadata(BaseModel):
     is_inline: bool = Field(default=False, description="Whether the attachment is inline or not.")
     inline_cid: Optional[str] = Field(default=None, description="CID reference for inline attachments.")
     source: Optional[str] = Field(
