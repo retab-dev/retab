@@ -36,5 +36,5 @@ class GenerateSystemPromptRequest(GenerateBase):
     The request body for generating a system prompt for a JSON Schema.
     """
 
-    raw_schema: dict[str, Any]
+    json_schema: dict[str, Any]
     instructions: str | None = None
