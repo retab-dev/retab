@@ -124,6 +124,28 @@ class BaseUiForm:
             headers["Idempotency-Key"] = idempotency_key
         return headers
 
+    def _parse_response(self, response: httpx.Response) -> Any:
+        """Parse response based on content-type.
+        
+        Returns:
+            Any: Parsed JSON object for JSON responses, raw text string for text responses
+        """
+        content_type = response.headers.get("content-type", "")
+        
+        # Check if it's a JSON response
+        if "application/json" in content_type or "application/stream+json" in content_type:
+            return response.json()
+        # Check if it's a text response
+        elif "text/plain" in content_type or "text/" in content_type:
+            return response.text
+        else:
+            # Default to JSON parsing for backwards compatibility
+            try:
+                return response.json()
+            except Exception:
+                # If JSON parsing fails, return as text
+                return response.text
+
 
 class UiForm(BaseUiForm):
     """Synchronous client for interacting with the UiForm API.
@@ -206,7 +228,7 @@ class UiForm(BaseUiForm):
             idempotency_key (str, optional): Idempotency key for request
 
         Returns:
-            Any: Parsed JSON response
+            Any: Parsed JSON response or raw text string depending on response content-type
 
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
@@ -217,7 +239,7 @@ class UiForm(BaseUiForm):
 
             self._validate_response(response)
 
-            return response.json()
+            return self._parse_response(response)
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Any:
@@ -247,7 +269,7 @@ class UiForm(BaseUiForm):
             params (Optional[dict]): Query parameters
             idempotency_key (str, optional): Idempotency key for request
         Returns:
-            Iterator[Any]: Generator yielding parsed JSON objects from the stream
+            Iterator[Any]: Generator yielding parsed JSON objects or raw text strings from the stream
 
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
@@ -256,14 +278,28 @@ class UiForm(BaseUiForm):
         def raw_request() -> Iterator[Any]:
             with self.client.stream(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
+                
+                content_type = response_ctx_manager.headers.get("content-type", "")
+                is_json_stream = "application/json" in content_type or "application/stream+json" in content_type
+                is_text_stream = "text/plain" in content_type or ("text/" in content_type and not is_json_stream)
 
                 for chunk in response_ctx_manager.iter_lines():
                     if not chunk:
                         continue
-                    try:
-                        yield json.loads(chunk)
-                    except Exception:
-                        pass
+                    
+                    if is_json_stream:
+                        try:
+                            yield json.loads(chunk)
+                        except Exception:
+                            pass
+                    elif is_text_stream:
+                        yield chunk
+                    else:
+                        # Default behavior: try JSON first, fall back to text
+                        try:
+                            yield json.loads(chunk)
+                        except Exception:
+                            yield chunk
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Iterator[Any]:
@@ -371,6 +407,28 @@ class AsyncUiForm(BaseUiForm):
         self.usage = usage.AsyncUsage(client=self)
         self.consensus = consensus.AsyncConsensus(client=self)
 
+    def _parse_response(self, response: httpx.Response) -> Any:
+        """Parse response based on content-type.
+        
+        Returns:
+            Any: Parsed JSON object for JSON responses, raw text string for text responses
+        """
+        content_type = response.headers.get("content-type", "")
+        
+        # Check if it's a JSON response
+        if "application/json" in content_type or "application/stream+json" in content_type:
+            return response.json()
+        # Check if it's a text response
+        elif "text/plain" in content_type or "text/" in content_type:
+            return response.text
+        else:
+            # Default to JSON parsing for backwards compatibility
+            try:
+                return response.json()
+            except Exception:
+                # If JSON parsing fails, return as text
+                return response.text
+
     async def _request(
         self,
         method: str,
@@ -389,7 +447,7 @@ class AsyncUiForm(BaseUiForm):
             params (Optional[dict]): Query parameters
             idempotency_key (str, optional): Idempotency key for request
         Returns:
-            Any: Parsed JSON response
+            Any: Parsed JSON response or raw text string depending on response content-type
 
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
@@ -398,7 +456,7 @@ class AsyncUiForm(BaseUiForm):
         async def raw_request() -> Any:
             response = await self.client.request(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key))
             self._validate_response(response)
-            return response.json()
+            return self._parse_response(response)
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> Any:
@@ -427,7 +485,7 @@ class AsyncUiForm(BaseUiForm):
             params (Optional[dict]): Query parameters
             idempotency_key (str, optional): Idempotency key for request
         Returns:
-            AsyncIterator[Any]: Async generator yielding parsed JSON objects from the stream
+            AsyncIterator[Any]: Async generator yielding parsed JSON objects or raw text strings from the stream
 
         Raises:
             RuntimeError: If request fails after max retries or validation error occurs
@@ -436,13 +494,28 @@ class AsyncUiForm(BaseUiForm):
         async def raw_request() -> AsyncIterator[Any]:
             async with self.client.stream(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
+                
+                content_type = response_ctx_manager.headers.get("content-type", "")
+                is_json_stream = "application/json" in content_type or "application/stream+json" in content_type
+                is_text_stream = "text/plain" in content_type or ("text/" in content_type and not is_json_stream)
+                
                 async for chunk in response_ctx_manager.aiter_lines():
                     if not chunk:
                         continue
-                    try:
-                        yield json.loads(chunk)
-                    except Exception:
-                        pass
+                    
+                    if is_json_stream:
+                        try:
+                            yield json.loads(chunk)
+                        except Exception:
+                            pass
+                    elif is_text_stream:
+                        yield chunk
+                    else:
+                        # Default behavior: try JSON first, fall back to text
+                        try:
+                            yield json.loads(chunk)
+                        except Exception:
+                            yield chunk
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> AsyncIterator[Any]:

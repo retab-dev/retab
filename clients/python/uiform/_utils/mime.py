@@ -151,7 +151,7 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     return mime_data
 
 
-def prepare_mime_document_list(documents: Sequence[Path | str | bytes | io.IOBase | PIL.Image.Image]) -> list[MIMEData]:
+def prepare_mime_document_list(documents: Sequence[Path | str | bytes | MIMEData | io.IOBase | PIL.Image.Image]) -> list[MIMEData]:
     """
     Convert documents (file paths or file-like objects) to MIMEData objects.
 
