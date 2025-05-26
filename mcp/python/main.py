@@ -43,10 +43,10 @@ async def generate_schema(list_file_download_urls: list[str], model: str = "gpt-
         # FIrst, generate the schema from the file
         response = uiform_client.schemas.generate(documents=list_binary_data, model=model, modality="native")
 
-        raw_schema = response.json_schema
+        json_schema = response.json_schema
 
         # # Now the final json schema
-        final_schema = raw_schema.copy()
+        final_schema = json_schema.copy()
 
         # Return the processing results
         return json.dumps(final_schema)

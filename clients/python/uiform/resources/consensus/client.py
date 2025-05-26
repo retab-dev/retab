@@ -6,6 +6,7 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.standards import PreparedRequest
 from .completions import AsyncCompletions, Completions
 from .responses import AsyncResponses, Responses
+from ...types.consensus import ReconciliationResponse
 
 class BaseConsensusMixin:
 
@@ -45,7 +46,7 @@ class Consensus(SyncAPIResource, BaseConsensusMixin):
         reference_schema: Optional[Dict[str, Any]] = None,
         mode: Literal["direct", "aligned"] = "direct",
         idempotency_key: str | None = None,
-    ) -> Dict[str, Any]:
+    ) -> ReconciliationResponse:
         """
         Reconcile multiple dictionaries to produce a single unified consensus dictionary.
         
@@ -68,7 +69,7 @@ class Consensus(SyncAPIResource, BaseConsensusMixin):
             idempotency_key
         )
         response = self._client._prepared_request(request)
-        return response
+        return ReconciliationResponse.model_validate(response)
 
 
 class AsyncConsensus(AsyncAPIResource, BaseConsensusMixin):
@@ -86,7 +87,7 @@ class AsyncConsensus(AsyncAPIResource, BaseConsensusMixin):
         reference_schema: Optional[Dict[str, Any]] = None,
         mode: Literal["direct", "aligned"] = "direct",
         idempotency_key: str | None = None,
-    ) -> Dict[str, Any]:
+    ) -> ReconciliationResponse:
         """
         Reconcile multiple dictionaries to produce a single unified consensus dictionary asynchronously.
         
@@ -109,4 +110,5 @@ class AsyncConsensus(AsyncAPIResource, BaseConsensusMixin):
             idempotency_key
         )
         response = await self._client._prepared_request(request)
-        return response
+
+        return ReconciliationResponse.model_validate(response)
