@@ -11,22 +11,20 @@ from .._utils.json_schema import load_json_schema
 from .._utils.mime import prepare_mime_document_list
 from ..types.modalities import Modality
 from ..types.mime import MIMEData
-from ..types.schemas.generate import GenerateSchemaRequest, GenerateSystemPromptRequest
-from ..types.schemas.object import Schema
 from ..types.schemas.generate import GenerateSchemaRequest
+from ..types.schemas.enhance import EnhanceSchemaConfig, EnhanceSchemaConfigDict, EnhanceSchemaRequest
 from ..types.schemas.object import Schema
 from ..types.standards import PreparedRequest
 
 
 class SchemasMixin:
-   
     def prepare_generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native"
+        modality: Modality = "native",
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
         mime_documents = prepare_mime_document_list(documents)
@@ -35,19 +33,21 @@ class SchemasMixin:
             "instructions": instructions if instructions else None,
             "model": model,
             "temperature": temperature,
-            "modality": modality
+            "modality": modality,
         }
         GenerateSchemaRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/generate", data=data)
 
-    def prepare_system_prompt(
+    def prepare_enhance(
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
-        instructions: str | None = None,
-        model: str = "gpt-4o-2024-11-20",
-        temperature: float = 0,
-        modality: Modality = "native",
+        instructions: str | None,
+        model: str,
+        temperature: float,
+        modality: Modality,
+        flat_likelihoods: dict[str, float] | None,
+        tools_config: EnhanceSchemaConfig,
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
         mime_documents = prepare_mime_document_list(documents)
@@ -59,9 +59,11 @@ class SchemasMixin:
             "model": model,
             "temperature": temperature,
             "modality": modality,
+            "flat_likelihoods": flat_likelihoods,
+            "tools_config": tools_config.model_dump(),
         }
-        GenerateSystemPromptRequest.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/schemas/system_prompt_endpoint", data=data)
+        EnhanceSchemaRequest.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/schemas/enhance", data=data)
 
     def prepare_list(self, schema_id: Optional[str] = None, data_id: Optional[str] = None) -> PreparedRequest:
         params = {}
@@ -89,15 +91,13 @@ class Schemas(SyncAPIResource, SchemasMixin):
         else:
             raise ValueError("Either json_schema or pydantic_model must be provided")
 
-   
-
     def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native"
+        modality: Modality = "native",
     ) -> Schema:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -120,16 +120,20 @@ class Schemas(SyncAPIResource, SchemasMixin):
         response = self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
 
-    def system_prompt(
+    def enhance(
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native"
+        modality: Modality = "native",
+        flat_likelihoods: dict[str, float] | None = None,
+        tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
-        prepared_request = self.prepare_system_prompt(json_schema, documents, instructions, model, temperature, modality)
+        prepared_request = self.prepare_enhance(
+            json_schema, documents, instructions, model, temperature, modality, flat_likelihoods, EnhanceSchemaConfig.model_validate(tools_config or {})
+        )
         response = self._client._prepared_request(prepared_request)
         return Schema(json_schema=response["json_schema"])
 
@@ -204,7 +208,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         response = await self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
 
-    async def system_prompt(
+    async def enhance(
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
@@ -212,7 +216,11 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
         modality: Modality = "native",
+        flat_likelihoods: dict[str, float] | None = None,
+        tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
-        prepared_request = self.prepare_system_prompt(json_schema, documents, instructions, model, temperature, modality)
+        prepared_request = self.prepare_enhance(
+            json_schema, documents, instructions, model, temperature, modality, flat_likelihoods, EnhanceSchemaConfig.model_validate(tools_config or {})
+        )
         response = await self._client._prepared_request(prepared_request)
         return Schema(json_schema=response["json_schema"])
