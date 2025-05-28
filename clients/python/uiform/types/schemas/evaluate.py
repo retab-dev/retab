@@ -4,6 +4,7 @@ from ..mime import MIMEData
 from ..modalities import Modality
 from ..image_settings import ImageSettings
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from ..evals import ItemMetric
 
 
 class EvaluateSchemaRequest(BaseModel):
@@ -20,3 +21,11 @@ class EvaluateSchemaRequest(BaseModel):
     image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     n_consensus: int = 1
     json_schema: dict[str, Any]
+
+
+class EvaluateSchemaResponse(BaseModel):
+    """
+    The response body for evaluating a JSON Schema.
+    """
+
+    item_metrics: list[ItemMetric]

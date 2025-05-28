@@ -14,7 +14,7 @@ from ..types.mime import MIMEData
 from ..types.image_settings import ImageSettingsDict
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.enhance import EnhanceSchemaConfig, EnhanceSchemaConfigDict, EnhanceSchemaRequest
-from ..types.schemas.evaluate import EvaluateSchemaRequest
+from ..types.schemas.evaluate import EvaluateSchemaRequest, EvaluateSchemaResponse
 from ..types.schemas.object import Schema
 from ..types.standards import PreparedRequest
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -157,7 +157,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         modality: Modality = "native",
         image_settings: Optional[ImageSettingsDict] = None,
         n_consensus: int = 1,
-    ) -> dict[str, list[Any]]:
+    ) -> EvaluateSchemaResponse:
         """
         Evaluate a schema by performing extractions on provided documents.
         If ground truths are provided, compares extractions against them.
@@ -175,7 +175,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
             n_consensus: Number of consensus rounds to perform
 
         Returns:
-            dict[str, list[Any]]: Dictionary containing evaluation metrics for each document.
+            EvaluateSchemaResponse: Dictionary containing evaluation metrics for each document.
             Each metric includes:
             - similarity: Average similarity/likelihood score
             - similarities: Per-field similarity/likelihood scores
@@ -198,7 +198,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
             n_consensus=n_consensus,
         )
         response = self._client._prepared_request(prepared_request)
-        return response
+        return EvaluateSchemaResponse.model_validate(response)
 
     def enhance(
         self,
@@ -289,7 +289,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         modality: Modality = "native",
         image_settings: Optional[ImageSettingsDict] = None,
         n_consensus: int = 1,
-    ) -> dict[str, list[Any]]:
+    ) -> EvaluateSchemaResponse:
         """
         Evaluate a schema by performing extractions on provided documents.
         If ground truths are provided, compares extractions against them.
@@ -307,7 +307,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             n_consensus: Number of consensus rounds to perform
 
         Returns:
-            dict[str, list[Any]]: Dictionary containing evaluation metrics for each document.
+            EvaluateSchemaResponse: Dictionary containing evaluation metrics for each document.
             Each metric includes:
             - similarity: Average similarity/likelihood score
             - similarities: Per-field similarity/likelihood scores
@@ -330,7 +330,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(prepared_request)
-        return response
+        return EvaluateSchemaResponse.model_validate(response)
 
     async def enhance(
         self,
