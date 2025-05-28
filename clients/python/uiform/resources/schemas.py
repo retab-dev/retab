@@ -11,10 +11,13 @@ from .._utils.json_schema import load_json_schema
 from .._utils.mime import prepare_mime_document_list
 from ..types.modalities import Modality
 from ..types.mime import MIMEData
+from ..types.image_settings import ImageSettingsDict
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.enhance import EnhanceSchemaConfig, EnhanceSchemaConfigDict, EnhanceSchemaRequest
+from ..types.schemas.evaluate import EvaluateSchemaRequest
 from ..types.schemas.object import Schema
 from ..types.standards import PreparedRequest
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 
 class SchemasMixin:
@@ -37,6 +40,37 @@ class SchemasMixin:
         }
         GenerateSchemaRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/generate", data=data)
+
+    def prepare_evaluate(
+        self,
+        documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        json_schema: dict[str, Any],
+        ground_truths: list[dict[str, Any]] | None = None,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0.0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        modality: Modality = "native",
+        image_settings: Optional[ImageSettingsDict] = None,
+        n_consensus: int = 1,
+    ) -> PreparedRequest:
+        # Assert that if ground_truths is not None, it has the same length as documents
+        if ground_truths is not None and len(documents) != len(ground_truths):
+            raise ValueError("Number of documents must match number of ground truths")
+
+        mime_documents = prepare_mime_document_list(documents)
+        data = {
+            "documents": [doc.model_dump() for doc in mime_documents],
+            "ground_truths": ground_truths,
+            "model": model,
+            "temperature": temperature,
+            "reasoning_effort": reasoning_effort,
+            "modality": modality,
+            "image_settings": image_settings,
+            "n_consensus": n_consensus,
+            "json_schema": json_schema,
+        }
+        EvaluateSchemaRequest.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/schemas/evaluate", data=data)
 
     def prepare_enhance(
         self,
@@ -111,6 +145,60 @@ class Schemas(SyncAPIResource, SchemasMixin):
         prepared_request = self.prepare_generate(documents, instructions, model, temperature, modality)
         response = self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
+
+    def evaluate(
+        self,
+        documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        json_schema: dict[str, Any],
+        ground_truths: list[dict[str, Any]] | None = None,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0.0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        modality: Modality = "native",
+        image_settings: Optional[ImageSettingsDict] = None,
+        n_consensus: int = 1,
+    ) -> dict[str, list[Any]]:
+        """
+        Evaluate a schema by performing extractions on provided documents.
+        If ground truths are provided, compares extractions against them.
+        Otherwise, uses consensus likelihoods as metrics.
+
+        Args:
+            documents: List of documents to evaluate against
+            json_schema: The JSON schema to evaluate
+            ground_truths: Optional list of ground truth dictionaries to compare against
+            model: The model to use for extraction
+            temperature: The temperature to use for extraction
+            reasoning_effort: The reasoning effort to use for extraction
+            modality: The modality to use for extraction
+            image_settings: Optional image settings for preprocessing
+            n_consensus: Number of consensus rounds to perform
+
+        Returns:
+            dict[str, list[Any]]: Dictionary containing evaluation metrics for each document.
+            Each metric includes:
+            - similarity: Average similarity/likelihood score
+            - similarities: Per-field similarity/likelihood scores
+            - flat_similarities: Flattened per-field similarity/likelihood scores
+            - aligned_* versions of the above metrics
+
+        Raises:
+            ValueError: If ground_truths is provided and its length doesn't match documents
+            HTTPException: If the request fails or if there are too many documents
+        """
+        prepared_request = self.prepare_evaluate(
+            documents=documents,
+            json_schema=json_schema,
+            ground_truths=ground_truths,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            modality=modality,
+            image_settings=image_settings,
+            n_consensus=n_consensus,
+        )
+        response = self._client._prepared_request(prepared_request)
+        return response
 
     def enhance(
         self,
@@ -189,6 +277,60 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         prepared_request = self.prepare_generate(documents, instructions, model, temperature, modality)
         response = await self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
+
+    async def evaluate(
+        self,
+        documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        json_schema: dict[str, Any],
+        ground_truths: list[dict[str, Any]] | None = None,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0.0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        modality: Modality = "native",
+        image_settings: Optional[ImageSettingsDict] = None,
+        n_consensus: int = 1,
+    ) -> dict[str, list[Any]]:
+        """
+        Evaluate a schema by performing extractions on provided documents.
+        If ground truths are provided, compares extractions against them.
+        Otherwise, uses consensus likelihoods as metrics.
+
+        Args:
+            documents: List of documents to evaluate against
+            json_schema: The JSON schema to evaluate
+            ground_truths: Optional list of ground truth dictionaries to compare against
+            model: The model to use for extraction
+            temperature: The temperature to use for extraction
+            reasoning_effort: The reasoning effort to use for extraction
+            modality: The modality to use for extraction
+            image_settings: Optional image settings for preprocessing
+            n_consensus: Number of consensus rounds to perform
+
+        Returns:
+            dict[str, list[Any]]: Dictionary containing evaluation metrics for each document.
+            Each metric includes:
+            - similarity: Average similarity/likelihood score
+            - similarities: Per-field similarity/likelihood scores
+            - flat_similarities: Flattened per-field similarity/likelihood scores
+            - aligned_* versions of the above metrics
+
+        Raises:
+            ValueError: If ground_truths is provided and its length doesn't match documents
+            HTTPException: If the request fails or if there are too many documents
+        """
+        prepared_request = self.prepare_evaluate(
+            documents=documents,
+            json_schema=json_schema,
+            ground_truths=ground_truths,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            modality=modality,
+            image_settings=image_settings,
+            n_consensus=n_consensus,
+        )
+        response = await self._client._prepared_request(prepared_request)
+        return response
 
     async def enhance(
         self,
