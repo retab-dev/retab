@@ -46,7 +46,7 @@ class SchemasMixin:
         model: str,
         temperature: float,
         modality: Modality,
-        flat_likelihoods: dict[str, float] | None,
+        flat_likelihoods: list[dict[str, float]] | dict[str, float] | None,
         tools_config: EnhanceSchemaConfig,
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
@@ -64,14 +64,6 @@ class SchemasMixin:
         }
         EnhanceSchemaRequest.model_validate(data)
         return PreparedRequest(method="POST", url="/v1/schemas/enhance", data=data)
-
-    def prepare_list(self, schema_id: Optional[str] = None, data_id: Optional[str] = None) -> PreparedRequest:
-        params = {}
-        if schema_id:
-            params["schema_id"] = schema_id
-        if data_id:
-            params["data_id"] = data_id
-        return PreparedRequest(method="GET", url="/v1/schemas", params=params)
 
     def prepare_get(self, schema_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/schemas/{schema_id}")
@@ -128,7 +120,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
         modality: Modality = "native",
-        flat_likelihoods: dict[str, float] | None = None,
+        flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None,
         tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
         prepared_request = self.prepare_enhance(
@@ -154,16 +146,6 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             raise ValueError("Either json_schema or pydantic_model must be provided")
 
     """Schemas Asyncronous API wrapper"""
-
-    async def list(self, schema_id: Optional[str] = None, data_id: Optional[str] = None) -> List[Schema]:
-        """List all schemas.
-
-        Returns:
-            list[Schema]: The list of schemas
-        """
-        prepared_request = self.prepare_list(schema_id, data_id)
-        response = await self._client._prepared_request(prepared_request)
-        return [Schema.model_validate(schema) for schema in response]
 
     async def get(self, schema_id: str) -> Schema:
         """Retrieve a schema by ID.
@@ -216,7 +198,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
         modality: Modality = "native",
-        flat_likelihoods: dict[str, float] | None = None,
+        flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None,
         tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
         prepared_request = self.prepare_enhance(

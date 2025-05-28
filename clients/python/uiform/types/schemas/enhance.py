@@ -22,7 +22,7 @@ class EnhanceSchemaConfig(BaseModel):
         ):
             raise ValueError("At least one tool must be allowed")
         # There are some not implemented tools
-        if any([self.allow_fields_insertion, self.allow_fields_deletion, self.allow_field_description_update, self.allow_reasoning_field_toggle]):
+        if any([self.allow_fields_insertion, self.allow_fields_deletion, self.allow_reasoning_field_toggle]):
             raise ValueError("Fields insertion, Field deletion, Field description update and Reasoning field toggle are not implemented yet, sorry about that!")
         return self
 
@@ -31,9 +31,9 @@ class EnhanceSchemaConfig(BaseModel):
 class EnhanceSchemaConfigDict(TypedDict, total=False):
     allow_fields_insertion: Literal[False]
     allow_fields_deletion: Literal[False]
-    allow_field_description_update: Literal[False]
     allow_reasoning_field_toggle: Literal[False]
-    allow_system_prompt_update: Literal[True]
+    allow_field_description_update: bool
+    allow_system_prompt_update: bool
 
 
 class EnhanceSchemaRequest(BaseModel):
@@ -58,4 +58,4 @@ class EnhanceSchemaRequest(BaseModel):
 
     json_schema: dict[str, Any]
     instructions: str | None = None
-    flat_likelihoods: dict[str, float] | None = None
+    flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None
