@@ -63,6 +63,7 @@ class Iteration(BaseModel):
     inference_settings: InferenceSettings
     json_schema: dict[str, Any]
     predictions: list[PredictionData] = Field(default_factory=list, description="The predictions of the iteration for all the documents")
+    metric_results: Optional[MetricResult] = Field(default=None, description="The metric results of the iteration")
 
     @computed_field  # type: ignore
     @property
