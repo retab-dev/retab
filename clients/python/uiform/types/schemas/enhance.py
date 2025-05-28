@@ -42,6 +42,7 @@ class EnhanceSchemaRequest(BaseModel):
     """
 
     documents: list[MIMEData]
+    ground_truths: list[dict[str, Any]] | None = None
     model: str = "gpt-4o-mini"
     temperature: float = 0.0
     reasoning_effort: ChatCompletionReasoningEffort = "medium"
@@ -58,4 +59,4 @@ class EnhanceSchemaRequest(BaseModel):
 
     json_schema: dict[str, Any]
     instructions: str | None = None
-    flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None
+    # flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None
