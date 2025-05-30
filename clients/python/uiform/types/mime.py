@@ -1,5 +1,6 @@
 import base64
 import datetime
+import gzip
 import hashlib
 import mimetypes
 import re
@@ -22,6 +23,34 @@ class Point(BaseModel):
     y: int
 
 
+class Matrix(BaseModel):
+    """Representation for transformation matrix, compatible with OpenCV format.
+
+    This represents transformation matrices that were applied to the original
+    document image to produce the processed page image.
+    """
+
+    rows: int = Field(description="Number of rows in the matrix")
+    cols: int = Field(description="Number of columns in the matrix")
+    type_: int = Field(description="OpenCV data type (e.g., 0 for CV_8U)")
+    data: str = Field(description="The matrix data compressed with gzip and encoded as base64 string for JSON serialization")
+
+    @property
+    def data_bytes(self) -> bytes:
+        """Get the matrix data as bytes."""
+        # Decode base64 then decompress with gzip
+        compressed_data = base64.b64decode(self.data)
+        return gzip.decompress(compressed_data)
+
+    @classmethod
+    def from_bytes(cls, rows: int, cols: int, type_: int, data_bytes: bytes) -> Self:
+        """Create a Matrix from raw bytes data."""
+        # Compress with gzip then encode with base64
+        compressed_data = gzip.compress(data_bytes, compresslevel=6)  # Good balance of speed vs compression
+        encoded_data = base64.b64encode(compressed_data).decode("utf-8")
+        return cls(rows=rows, cols=cols, type_=type_, data=encoded_data)
+
+
 class TextBox(BaseModel):
     width: int
     height: int
@@ -41,9 +70,11 @@ class Page(BaseModel):
     page_number: int
     width: int
     height: int
+    unit: str = Field(default="pixels", description="The unit of the page dimensions")
     blocks: list[TextBox]
     lines: list[TextBox]
     tokens: list[TextBox]
+    transforms: list[Matrix] = Field(default=[], description="Transformation matrices applied to the original document image")
 
     @field_validator('width', 'height')
     @classmethod
@@ -55,6 +86,7 @@ class Page(BaseModel):
 
 class OCR(BaseModel):
     pages: list[Page]
+
 
 class MIMEData(BaseModel):
     filename: str = Field(description="The filename of the file", examples=["file.pdf", "image.png", "data.txt"])
@@ -136,10 +168,6 @@ class BaseMIMEData(MIMEData):
 
     def __repr__(self) -> str:
         return self.__str__()
-
-
-        
-
 
 
 # **** MIME DATACLASSES ****
