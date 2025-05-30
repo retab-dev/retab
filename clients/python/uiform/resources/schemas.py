@@ -76,6 +76,7 @@ class SchemasMixin:
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        ground_truths: list[dict[str, Any]] | None,
         instructions: str | None,
         model: str,
         temperature: float,
@@ -89,6 +90,7 @@ class SchemasMixin:
         data = {
             "json_schema": loaded_json_schema,
             "documents": [doc.model_dump() for doc in mime_documents],
+            "ground_truths": ground_truths,
             "instructions": instructions if instructions else None,
             "model": model,
             "temperature": temperature,
@@ -204,6 +206,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        ground_truths: list[dict[str, Any]] | None = None,
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
@@ -212,7 +215,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
         prepared_request = self.prepare_enhance(
-            json_schema, documents, instructions, model, temperature, modality, flat_likelihoods, EnhanceSchemaConfig.model_validate(tools_config or {})
+            json_schema, documents, ground_truths, instructions, model, temperature, modality, flat_likelihoods, EnhanceSchemaConfig.model_validate(tools_config or {})
         )
         response = self._client._prepared_request(prepared_request)
         return Schema(json_schema=response["json_schema"])
@@ -336,6 +339,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
+        ground_truths: list[dict[str, Any]] | None = None,
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
@@ -344,7 +348,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
         prepared_request = self.prepare_enhance(
-            json_schema, documents, instructions, model, temperature, modality, flat_likelihoods, EnhanceSchemaConfig.model_validate(tools_config or {})
+            json_schema, documents, ground_truths, instructions, model, temperature, modality, flat_likelihoods, EnhanceSchemaConfig.model_validate(tools_config or {})
         )
         response = await self._client._prepared_request(prepared_request)
         return Schema(json_schema=response["json_schema"])
