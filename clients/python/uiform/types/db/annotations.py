@@ -4,14 +4,14 @@ from typing import Any, Dict, Literal
 import nanoid  # type: ignore
 from pydantic import BaseModel, Field
 
-from ..image_settings import ImageSettings
 from ..modalities import Modality
 
 
 class AnnotationParameters(BaseModel):
     model: str
     modality: Modality | None = "native"
-    image_settings: ImageSettings | None = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
+    image_resolution_dpi: int = 96
+    browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4'
     temperature: float = 0.0
 
 

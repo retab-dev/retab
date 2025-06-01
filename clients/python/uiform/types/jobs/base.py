@@ -3,7 +3,6 @@ from typing import Literal, Optional, Self
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, Field, model_validator
 
-from ..image_settings import ImageSettings
 from ..modalities import Modality
 
 SelectionMode = Literal["all", "manual"]
@@ -48,7 +47,8 @@ class InferenceSettings(BaseModel):
     temperature: float = 0.0
     modality: Modality = "native"
     reasoning_effort: ChatCompletionReasoningEffort = "medium"
-    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    image_resolution_dpi: int = 96
+    browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4'
     n_consensus: int = Field(default=1, description="Number of consensus rounds to perform")
 
 

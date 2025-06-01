@@ -10,7 +10,6 @@ from pydantic_core import Url
 
 from ..._utils.json_schema import clean_schema
 from ..._utils.mime import generate_blake2b_hash_from_string
-from ..image_settings import ImageSettings
 from ..logs import AutomationConfig, UpdateAutomationRequest
 from ..modalities import Modality
 from ..pagination import ListMetadata
@@ -30,7 +29,8 @@ class Link(AutomationConfig):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     # DocumentExtraction Config
     modality: Modality
-    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
@@ -97,7 +97,8 @@ class UpdateLinkRequest(UpdateAutomationRequest):
     # DocumentExtraction Parameters
     # ------------------------------
     # DocumentProcessing Parameters
-    image_settings: Optional[ImageSettings] = None
+    image_resolution_dpi: Optional[int] = None
+    browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None
     modality: Optional[Modality] = None
     # Others DocumentExtraction Parameters
     model: Optional[str] = None

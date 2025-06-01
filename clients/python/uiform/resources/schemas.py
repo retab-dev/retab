@@ -11,7 +11,6 @@ from .._utils.json_schema import load_json_schema
 from .._utils.mime import prepare_mime_document_list
 from ..types.modalities import Modality
 from ..types.mime import MIMEData
-from ..types.image_settings import ImageSettingsDict
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.enhance import EnhanceSchemaConfig, EnhanceSchemaConfigDict, EnhanceSchemaRequest
 from ..types.schemas.evaluate import EvaluateSchemaRequest, EvaluateSchemaResponse
@@ -50,7 +49,8 @@ class SchemasMixin:
         temperature: float = 0.0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
-        image_settings: Optional[ImageSettingsDict] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: str = "A4",
         n_consensus: int = 1,
     ) -> PreparedRequest:
         # Assert that if ground_truths is not None, it has the same length as documents
@@ -65,7 +65,8 @@ class SchemasMixin:
             "temperature": temperature,
             "reasoning_effort": reasoning_effort,
             "modality": modality,
-            "image_settings": image_settings,
+            "image_resolution_dpi": image_resolution_dpi,
+            "browser_canvas": browser_canvas,
             "n_consensus": n_consensus,
             "json_schema": json_schema,
         }
@@ -157,7 +158,8 @@ class Schemas(SyncAPIResource, SchemasMixin):
         temperature: float = 0.0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
-        image_settings: Optional[ImageSettingsDict] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: str = "A4",
         n_consensus: int = 1,
     ) -> EvaluateSchemaResponse:
         """
@@ -173,7 +175,12 @@ class Schemas(SyncAPIResource, SchemasMixin):
             temperature: The temperature to use for extraction
             reasoning_effort: The reasoning effort to use for extraction
             modality: The modality to use for extraction
-            image_settings: Optional image settings for preprocessing
+            image_resolution_dpi: The DPI of the image. Defaults to 96.
+            browser_canvas: The canvas size of the browser. Must be one of:
+                - "A3" (11.7in x 16.54in)
+                - "A4" (8.27in x 11.7in) 
+                - "A5" (5.83in x 8.27in)
+                Defaults to "A4".
             n_consensus: Number of consensus rounds to perform
 
         Returns:
@@ -196,7 +203,8 @@ class Schemas(SyncAPIResource, SchemasMixin):
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             modality=modality,
-            image_settings=image_settings,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
             n_consensus=n_consensus,
         )
         response = self._client._prepared_request(prepared_request)
@@ -290,7 +298,8 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         temperature: float = 0.0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
-        image_settings: Optional[ImageSettingsDict] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: str = "A4",
         n_consensus: int = 1,
     ) -> EvaluateSchemaResponse:
         """
@@ -306,7 +315,12 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             temperature: The temperature to use for extraction
             reasoning_effort: The reasoning effort to use for extraction
             modality: The modality to use for extraction
-            image_settings: Optional image settings for preprocessing
+            image_resolution_dpi: The DPI of the image. Defaults to 96.
+            browser_canvas: The canvas size of the browser. Must be one of:
+                - "A3" (11.7in x 16.54in)
+                - "A4" (8.27in x 11.7in) 
+                - "A5" (5.83in x 8.27in)
+                Defaults to "A4".
             n_consensus: Number of consensus rounds to perform
 
         Returns:
@@ -329,7 +343,8 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             modality=modality,
-            image_settings=image_settings,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
             n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(prepared_request)

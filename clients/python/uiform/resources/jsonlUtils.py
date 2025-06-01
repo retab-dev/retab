@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from io import IOBase
 from pathlib import Path
-from typing import IO, Any, Optional
+from typing import IO, Any, Literal, Optional
 
 from anthropic import Anthropic
 from openai import OpenAI
@@ -18,7 +18,6 @@ from tqdm import tqdm
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from .._utils.ai_models import assert_valid_model_extraction, find_provider_from_model
-from .._utils.benchmarking import BenchmarkMetrics, ComparisonMetrics, ExtractionAnalysis, display_benchmark_metrics, normalized_comparison_metrics, plot_comparison_metrics
 from .._utils.chat import convert_to_anthropic_format, convert_to_openai_format, separate_messages
 from .._utils.display import Metrics, display_metrics, process_dataset_and_compute_metrics
 from .._utils.json_schema import load_json_schema
@@ -139,7 +138,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         document_annotation_pairs_paths: list[dict[str, Path | str]],
         dataset_path: Path | str,
-        image_settings: Optional[dict[str, Any]] = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         modality: Modality = "native",
     ) -> None:
         """Save document-annotation pairs to a JSONL training set.
@@ -155,7 +155,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         with open(dataset_path, 'w', encoding='utf-8') as file:
             for pair_paths in tqdm(document_annotation_pairs_paths, desc="Processing pairs", position=0):
-                document_message = self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality, image_settings=image_settings)
+                document_message = self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality, image_resolution_dpi=image_resolution_dpi, browser_canvas=browser_canvas)
 
                 with open(pair_paths['annotation_fpath'], 'r') as f:
                     annotation = json.loads(f.read())

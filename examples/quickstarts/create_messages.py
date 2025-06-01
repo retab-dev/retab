@@ -21,12 +21,8 @@ uiclient = UiForm(api_key=uiform_api_key)
 doc_msg = uiclient.documents.create_messages(
     document="../../assets/booking_confirmation.jpg",
     modality="native", 
-    image_settings={
-        "correct_image_orientation": True, 
-        "dpi": 72, 
-        "image_to_text": "ocr", 
-        "browser_canvas": "A4"
-    }
+    image_resolution_dpi=96,
+    browser_canvas="A4",
 )
 
 

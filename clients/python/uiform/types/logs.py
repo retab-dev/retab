@@ -14,7 +14,6 @@ from .._utils.mime import generate_blake2b_hash_from_string
 from .._utils.usage.usage import compute_cost_from_model, compute_cost_from_model_with_breakdown, CostBreakdown
 from .ai_models import Amount
 from .documents.extractions import UiParsedChatCompletion
-from .image_settings import ImageSettings
 from .mime import BaseMIMEData
 from .modalities import Modality
 from .pagination import ListMetadata
@@ -31,7 +30,8 @@ class AutomationConfig(BaseModel):
     webhook_headers: Dict[str, str] = Field(default_factory=dict, description="Headers to send with the request")
 
     modality: Modality
-    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
 
     # New attributes
     model: str = Field(..., description="Model used for chat completion")
@@ -79,7 +79,8 @@ class UpdateAutomationRequest(BaseModel):
     # ------------------------------
     # DocumentProcessing Parameters
     # ------------------------------
-    image_settings: Optional[ImageSettings] = None
+    image_resolution_dpi: Optional[int] = None
+    browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None
     modality: Optional[Modality] = None
     model: Optional[str] = None
     temperature: Optional[float] = None
