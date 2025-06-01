@@ -14,7 +14,6 @@ from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import prepare_mime_document
 from ...types.deployments.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
 from ...types.documents.extractions import UiParsedChatCompletion
-from ...types.image_settings import ImageSettings
 from ...types.logs import DeploymentLog, ExternalRequestLog
 from ...types.mime import BaseMIMEData, EmailData, MIMEData
 from ...types.modalities import Modality
@@ -33,7 +32,8 @@ class MailBoxesMixin:
         # HTTP Config Optional Fields
         webhook_headers: Dict[str, str] = {},
         # DocumentExtraction Config
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -48,7 +48,8 @@ class MailBoxesMixin:
             "json_schema": json_schema,
             "authorized_domains": authorized_domains,
             "authorized_emails": authorized_emails,
-            "image_settings": image_settings or ImageSettings(),
+            "image_resolution_dpi": image_resolution_dpi,
+            "browser_canvas": browser_canvas,
             "modality": modality,
             "model": model,
             "temperature": temperature,
@@ -95,7 +96,8 @@ class MailBoxesMixin:
         webhook_headers: Optional[Dict[str, str]] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -111,8 +113,10 @@ class MailBoxesMixin:
             data["authorized_domains"] = authorized_domains
         if authorized_emails is not None:
             data["authorized_emails"] = authorized_emails
-        if image_settings is not None:
-            data["image_settings"] = image_settings
+        if image_resolution_dpi is not None:
+            data["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas is not None:
+            data["browser_canvas"] = browser_canvas
         if modality is not None:
             data["modality"] = modality
         if model is not None:
@@ -174,7 +178,8 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         # HTTP Config Optional Fields
         webhook_headers: Dict[str, str] = {},
         # DocumentExtraction Config
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -189,7 +194,8 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             webhook_headers: Webhook headers to send with processed emails
             authorized_domains: List of authorized domains for the mailbox
             authorized_emails: List of authorized emails for the mailbox
-            image_settings: Optional image preprocessing operations
+            image_resolution_dpi: Image resolution DPI
+            browser_canvas: Browser canvas size
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
@@ -200,7 +206,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         """
 
         request = self.prepare_create(
-            email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort
+            email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
         )
         response = self._client._prepared_request(request)
 
@@ -258,7 +264,8 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -276,7 +283,8 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             follow_up: New webhook configuration
             authorized_domains: New webhook configuration
             authorized_emails: New webhook configuration
-            image_settings: New image preprocessing operations
+            image_resolution_dpi: New image resolution DPI
+            browser_canvas: New browser canvas size
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
@@ -287,7 +295,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             Mailbox: The updated mailbox configuration
         """
         request = self.prepare_update(
-            email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema
+            email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema
         )
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
@@ -346,14 +354,15 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         authorized_domains: List[str] = [],
         authorized_emails: List[str] = [],
         webhook_headers: Dict[str, str] = {},
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Mailbox:
         request = self.prepare_create(
-            email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_settings, modality, model, temperature, reasoning_effort
+                email, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
         )
         response = await self._client._prepared_request(request)
 
@@ -388,7 +397,8 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -396,7 +406,7 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         json_schema: Optional[Dict[str, Any]] = None,
     ) -> Mailbox:
         request = self.prepare_update(
-            email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_settings, modality, model, temperature, reasoning_effort, json_schema
+            email, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema
         )
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)

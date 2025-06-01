@@ -2,7 +2,7 @@ import base64
 import json
 from io import IOBase
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Generator, Literal, Optional
 
 from anthropic.types.message_param import MessageParam
 from openai.types.chat import ChatCompletionMessageParam
@@ -41,7 +41,8 @@ class BaseExtractionsMixin:
         self,
         json_schema: dict[str, Any] | Path | str,
         document: Path | str | IOBase | HttpUrl | None,
-        image_settings: Optional[dict[str, Any]],
+        image_resolution_dpi: int | None,
+        browser_canvas: Literal['A3', 'A4', 'A5'] | None,
         model: str,
         temperature: float,
         modality: Modality,
@@ -66,8 +67,10 @@ class BaseExtractionsMixin:
             "reasoning_effort": reasoning_effort,
             "n_consensus": n_consensus,
         }
-        if image_settings:
-            data["image_settings"] = image_settings
+        if image_resolution_dpi:
+            data["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas:
+            data["browser_canvas"] = browser_canvas
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         document_extract_request = DocumentExtractRequest.model_validate(data)
@@ -125,7 +128,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | None,
-        image_settings: Optional[dict[str, Any]] = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -156,7 +160,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = self.prepare_extraction(
-            json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema, document, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
         )
         response = self._client._prepared_request(request)
 
@@ -169,7 +173,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | None,
-        image_settings: Optional[dict[str, Any]] = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -183,7 +188,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         Args:
             json_schema: JSON schema defining the expected data structure
             document: Single document (as MIMEData) to process
-            image_settings:
+            image_resolution_dpi: Optional image resolution DPI.
+            browser_canvas: Optional browser canvas size.
             model: The AI model to use for processing
             temperature: Model temperature setting (0-1)
             modality: Modality of the document (e.g., native)
@@ -204,7 +210,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         ```
         """
         request = self.prepare_extraction(
-            json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema, document, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
         )
         schema = Schema(json_schema=load_json_schema(json_schema))
 
@@ -287,7 +293,8 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | None,
-        image_settings: Optional[dict[str, Any]] = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -301,7 +308,8 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         Args:
             json_schema: JSON schema defining the expected data structure.
             document: Path, string, or file-like object representing the document.
-            image_settings : Optional additional context for the model.
+            image_resolution_dpi: Optional image resolution DPI.
+            browser_canvas: Optional browser canvas size.
             model: The AI model to use.
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
@@ -313,7 +321,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             DocumentExtractResponse: Parsed response from the API.
         """
         request = self.prepare_extraction(
-            json_schema, document, image_settings, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema, document, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
         )
         response = await self._client._prepared_request(request)
         schema = Schema(json_schema=load_json_schema(json_schema))
@@ -325,7 +333,8 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | None,
-        image_settings: Optional[dict[str, Any]] = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -357,7 +366,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         ```
         """
         request = self.prepare_extraction(
-            json_schema, document, image_settings, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema, document, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
         )
         schema = Schema(json_schema=load_json_schema(json_schema))
         ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None

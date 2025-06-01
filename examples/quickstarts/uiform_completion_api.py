@@ -41,9 +41,6 @@ json_schema = {
 }
 
 # Optional image processing settings
-image_settings = {"correct_image_orientation": True, "dpi": 72, "image_to_text": "ocr", "browser_canvas": "A4"}
-
-# Define model and modality
 model = "gpt-4o"
 modality = "native"
 temperature = 0.0
@@ -54,7 +51,8 @@ uiclient = UiForm(api_key=uiform_api_key)
 doc_msg = uiclient.documents.create_messages(
     document="../../assets/calendar_event.xlsx",
     modality=modality,
-    image_settings=image_settings,
+    image_resolution_dpi=96,
+    browser_canvas="A4",
 )
 
 # OpenAI Chat Completion with schema-based prompting

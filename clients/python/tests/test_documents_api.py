@@ -203,7 +203,8 @@ async def test_extraction_with_idempotency_exceptions(
     loading_request = client.documents.extractions.prepare_extraction(
         json_schema=booking_confirmation_json_schema,
         document=booking_confirmation_file_path,
-        image_settings=None,
+        image_resolution_dpi=96,
+        browser_canvas="A4",
         model="gpt-4o-mini",
         temperature=0,
         modality="native",

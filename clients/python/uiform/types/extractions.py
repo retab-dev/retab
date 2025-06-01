@@ -11,7 +11,6 @@ from uiform.types.documents.extractions import UiParsedChatCompletion
 
 from .._utils.usage.usage import compute_cost_from_model, compute_cost_from_model_with_breakdown, CostBreakdown
 from .ai_models import Amount
-from .image_settings import ImageSettings
 from .modalities import Modality
 
 ValidationsState = Literal["pending", "validated", "invalid"]
@@ -46,7 +45,8 @@ class Extraction(BaseModel):
     model: str = Field(..., description="Model used for the analysis")
     temperature: float = Field(default=0.0, description="Temperature used for the analysis")
     source: ExtractionSource = Field(..., description="Source of the extraction")
-    image_settings: ImageSettings = Field(default=ImageSettings(), description="Preprocessing operations applied to image before sending them to the llm")
+    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
     modality: Modality = Field(default="native", description="Modality of the extraction")
     reasoning_effort: Optional[ChatCompletionReasoningEffort] = Field(default=None, description="The effort level for the model to reason about the input data.")
     timings: list[ExtractionTimingStep] = Field(default_factory=list, description="Timings of the extraction")

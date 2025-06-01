@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union, Literal
 from io import IOBase
 from pathlib import Path
 
@@ -20,7 +20,7 @@ from ..types.evals import (
     CreateIterationRequest,
 )
 from ..types.jobs.base import InferenceSettings
-from ..types.image_settings import ImageSettings
+
 from ..types.mime import MIMEData
 from .._utils.mime import prepare_mime_document
 from ..types.modalities import Modality
@@ -152,7 +152,8 @@ class IterationsMixin:
         temperature: float = 0.0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_settings: Optional[ImageSettings] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
         n_consensus: int = 1,
     ) -> PreparedRequest:
         props = InferenceSettings(
@@ -160,7 +161,8 @@ class IterationsMixin:
             temperature=temperature,
             modality=modality,
             reasoning_effort=reasoning_effort,
-            image_settings=ImageSettings.model_validate(image_settings) if image_settings else ImageSettings(),
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
             n_consensus=n_consensus,
         )
 
@@ -169,15 +171,14 @@ class IterationsMixin:
         return PreparedRequest(method="POST", url=f"/v1/evals/{eval_id}/iterations/create", data=perform_iteration_request.model_dump(exclude_none=True, mode="json"))
 
     def prepare_update(
-        self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_settings: Optional[ImageSettings] = None
+        self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_resolution_dpi: int = 96, browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4'
     ) -> PreparedRequest:
         inference_settings = InferenceSettings(
             model=model,
             temperature=temperature,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
         )
-
-        if image_settings:
-            inference_settings.image_settings = ImageSettings.model_validate(image_settings)
 
         iteration_data = Iteration(id=iteration_id, json_schema=json_schema, inference_settings=inference_settings, predictions=[])
 
@@ -427,7 +428,8 @@ class Iterations(SyncAPIResource, IterationsMixin):
         modality: Modality = "native",
         json_schema: Optional[Dict[str, Any]] = None,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_settings: Optional[ImageSettings] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
         n_consensus: int = 1,
     ) -> Iteration:
         """
@@ -440,7 +442,12 @@ class Iterations(SyncAPIResource, IterationsMixin):
             temperature: The temperature to use for the model
             modality: The modality to use (text, image, etc.)
             reasoning_effort: The reasoning effort setting for the model (auto, low, medium, high)
-            image_settings: Optional image settings
+            image_resolution_dpi: The DPI of the image. Defaults to 96.
+            browser_canvas: The canvas size of the browser. Must be one of:
+                - "A3" (11.7in x 16.54in)
+                - "A4" (8.27in x 11.7in) 
+                - "A5" (5.83in x 8.27in)
+                Defaults to "A4".
             n_consensus: Number of consensus iterations to perform
 
         Returns:
@@ -455,7 +462,8 @@ class Iterations(SyncAPIResource, IterationsMixin):
             temperature=temperature,
             modality=modality,
             reasoning_effort=reasoning_effort,
-            image_settings=image_settings,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
             n_consensus=n_consensus,
         )
         response = self._client._prepared_request(request)
@@ -730,7 +738,8 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         modality: Modality = "native",
         json_schema: Optional[Dict[str, Any]] = None,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_settings: Optional[ImageSettings] = None,
+        image_resolution_dpi: int = 96,
+        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
         n_consensus: int = 1,
     ) -> Iteration:
         """
@@ -743,7 +752,12 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
             temperature: The temperature to use for the model
             modality: The modality to use (text, image, etc.)
             reasoning_effort: The reasoning effort setting for the model (auto, low, medium, high)
-            image_settings: Optional image settings
+            image_resolution_dpi: The DPI of the image. Defaults to 96.
+            browser_canvas: The canvas size of the browser. Must be one of:
+                - "A3" (11.7in x 16.54in)
+                - "A4" (8.27in x 11.7in) 
+                - "A5" (5.83in x 8.27in)
+                Defaults to "A4".
             n_consensus: Number of consensus iterations to perform
 
         Returns:
@@ -758,7 +772,8 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
             temperature=temperature,
             modality=modality,
             reasoning_effort=reasoning_effort,
-            image_settings=image_settings,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
             n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(request)

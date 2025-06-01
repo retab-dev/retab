@@ -45,9 +45,6 @@ json_schema = {
     'type': 'object',
 }
 
-# Optional image preprocessing
-image_settings = {"correct_image_orientation": True, "dpi": 72, "image_to_text": "ocr", "browser_canvas": "A4"}
-
 # Configuration
 model = "gpt-4o-2024-08-06"
 modality = "native"
@@ -58,13 +55,14 @@ uiclient = UiForm(api_key=uiform_api_key)
 doc_msg = uiclient.documents.create_messages(
     document="../../assets/calendar_event.xlsx",
     modality=modality,
-    image_settings=image_settings,
+    image_resolution_dpi=96,
+    browser_canvas="A4",
 )
 schema_obj = Schema(json_schema=json_schema)
 
 # Example 1: Use the UiForm's responses.create() method
 input_messages = schema_obj.openai_responses_input + doc_msg.openai_responses_input
-response = uiclient.responses.create(
+response = uiclient.consensus.responses.create(
     model=model,
     temperature=temperature,
     input=input_messages,
@@ -78,7 +76,7 @@ extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_js
 print(extraction.model_dump_json(indent=2))
 
 # Example 2: Use the UiForm's responses.parse() method with Pydantic model
-response = uiclient.responses.parse(
+response = uiclient.consensus.responses.parse(
     model=model, temperature=temperature, input=doc_msg.openai_responses_input, text_format=CalendarEvent, instructions="Extract the calendar event information from the document."
 )
 
@@ -89,7 +87,7 @@ extraction = CalendarEvent.model_validate_json(response.output_text)
 print(extraction.model_dump_json(indent=2))
 
 # Example 3: Working with plain text input
-response = uiclient.responses.create(
+response = uiclient.consensus.responses.create(
     model=model,
     temperature=temperature,
     input="Meeting with John on June 15th at 3pm",

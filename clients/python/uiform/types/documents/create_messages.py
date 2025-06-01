@@ -15,7 +15,6 @@ from ..._utils.chat import convert_to_openai_format as convert_to_openai_complet
 from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
 from ..._utils.display import count_text_tokens, count_image_tokens
 from ..chat import ChatCompletionUiformMessage
-from ..image_settings import ImageSettings
 from ..mime import MIMEData
 from ..modalities import Modality
 
@@ -30,8 +29,8 @@ class TokenCount(BaseModel):
 class DocumentCreateMessageRequest(BaseModel):
     document: MIMEData = Field(description="The document to load.")
     modality: Modality = Field(description="The modality of the document to load.")
-    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
-
+    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
 
 from typing import Any
 class DocumentCreateInputRequest(DocumentCreateMessageRequest):

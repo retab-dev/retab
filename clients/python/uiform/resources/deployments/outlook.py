@@ -10,7 +10,6 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.deployments.outlook import FetchParams, ListOutlooks, MatchParams, Outlook, UpdateOutlookRequest
-from ...types.image_settings import ImageSettings
 from ...types.logs import DeploymentLog
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
@@ -28,7 +27,8 @@ class OutlooksMixin:
         # HTTP Config Optional Fields
         webhook_headers: Dict[str, str] = {},
         # DocumentExtraction Config
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -47,7 +47,8 @@ class OutlooksMixin:
             "json_schema": json_schema,
             "authorized_domains": authorized_domains,
             "authorized_emails": authorized_emails,
-            "image_settings": image_settings or ImageSettings(),
+            "image_resolution_dpi": image_resolution_dpi,
+            "browser_canvas": browser_canvas,
             "modality": modality,
             "model": model,
             "temperature": temperature,
@@ -103,7 +104,8 @@ class OutlooksMixin:
         webhook_headers: Optional[Dict[str, str]] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -124,8 +126,10 @@ class OutlooksMixin:
             data["authorized_domains"] = authorized_domains
         if authorized_emails is not None:
             data["authorized_emails"] = authorized_emails
-        if image_settings is not None:
-            data["image_settings"] = image_settings
+        if image_resolution_dpi is not None:
+            data["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas is not None:
+            data["browser_canvas"] = browser_canvas
         if modality is not None:
             data["modality"] = modality
         if model is not None:
@@ -195,7 +199,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         authorized_domains: List[str] = [],
         authorized_emails: List[str] = [],
         webhook_headers: Dict[str, str] = {},
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -212,7 +217,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             webhook_headers: Webhook headers to send with processed data
             authorized_domains: List of authorized domains
             authorized_emails: List of authorized emails
-            image_settings: Optional image preprocessing operations
+            image_resolution_dpi: Optional image resolution DPI
+            browser_canvas: Optional browser canvas size
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
@@ -230,7 +236,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             authorized_domains,
             authorized_emails,
             webhook_headers,
-            image_settings,
+            image_resolution_dpi,
+            browser_canvas,
             modality,
             model,
             temperature,
@@ -298,7 +305,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -317,7 +325,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             webhook_headers: New webhook headers
             authorized_domains: New authorized domains
             authorized_emails: New authorized emails
-            image_settings: New image preprocessing operations
+            image_resolution_dpi: New image resolution DPI
+            browser_canvas: New browser canvas size
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
@@ -337,7 +346,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             webhook_headers,
             authorized_domains,
             authorized_emails,
-            image_settings,
+            image_resolution_dpi,
+            browser_canvas,
             modality,
             model,
             temperature,
@@ -407,7 +417,8 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         authorized_domains: List[str] = [],
         authorized_emails: List[str] = [],
         webhook_headers: Dict[str, str] = {},
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -422,7 +433,8 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
             authorized_domains,
             authorized_emails,
             webhook_headers,
-            image_settings,
+            image_resolution_dpi,
+            browser_canvas,
             modality,
             model,
             temperature,
@@ -463,7 +475,8 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -480,7 +493,8 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
             webhook_headers,
             authorized_domains,
             authorized_emails,
-            image_settings,
+            image_resolution_dpi,
+            browser_canvas,
             modality,
             model,
             temperature,

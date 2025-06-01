@@ -1,8 +1,7 @@
-from typing import Any
+from typing import Any, Literal
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, Field
 
-from ..image_settings import ImageSettings
 from ..mime import MIMEData
 from ..modalities import Modality
 
@@ -15,8 +14,9 @@ class GenerateSchemaRequest(BaseModel):
     modality: Modality
     instructions: str | None = None
     """The modality of the document to load."""
+    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
 
-    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
     """The image operations to apply to the document."""
 
     stream: bool = False

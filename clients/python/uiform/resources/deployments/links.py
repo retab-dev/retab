@@ -14,7 +14,6 @@ from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import prepare_mime_document
 from ...types.deployments.links import Link, ListLinks, UpdateLinkRequest
 from ...types.documents.extractions import UiParsedChatCompletion
-from ...types.image_settings import ImageSettings
 from ...types.logs import DeploymentLog, ExternalRequestLog, ListLogs
 from ...types.mime import BaseMIMEData, MIMEData
 from ...types.modalities import Modality
@@ -30,7 +29,8 @@ class LinksMixin:
         webhook_headers: Optional[Dict[str, str]] = None,
         password: str | None = None,
         # DocumentExtraction Config
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[str] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -44,7 +44,8 @@ class LinksMixin:
             "webhook_headers": webhook_headers or {},
             "json_schema": json_schema,
             "password": password,
-            "image_settings": image_settings or ImageSettings(),
+            "image_resolution_dpi": image_resolution_dpi,
+            "browser_canvas": browser_canvas,
             "modality": modality,
             "model": model,
             "temperature": temperature,
@@ -101,7 +102,8 @@ class LinksMixin:
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
         password: Optional[str] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[str] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -120,8 +122,10 @@ class LinksMixin:
             data["webhook_headers"] = webhook_headers
         if password is not None:
             data["password"] = password
-        if image_settings is not None:
-            data["image_settings"] = image_settings
+        if image_resolution_dpi is not None:
+            data["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas is not None:
+            data["browser_canvas"] = browser_canvas
         if modality is not None:
             data["modality"] = modality
         if model is not None:
@@ -200,7 +204,8 @@ class Links(SyncAPIResource, LinksMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         password: str | None = None,
         # DocumentExtraction Config
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[str] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -214,7 +219,8 @@ class Links(SyncAPIResource, LinksMixin):
             webhook_url: Webhook endpoint for forwarding processed files
             webhook_headers: Optional HTTP headers for webhook requests
             password: Optional password for protected links
-            image_settings: Optional image preprocessing operations
+            image_resolution_dpi: Optional image resolution DPI
+            browser_canvas: Optional browser canvas
             modality: Processing modality (currently only "native" supported)
             model: AI model to use for processing
             temperature: Model temperature setting
@@ -223,7 +229,7 @@ class Links(SyncAPIResource, LinksMixin):
             Link: The created extraction link configuration
         """
 
-        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
 
         print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/deployments/{response['id']}")
@@ -282,7 +288,8 @@ class Links(SyncAPIResource, LinksMixin):
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
         password: Optional[str] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[str] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -297,7 +304,8 @@ class Links(SyncAPIResource, LinksMixin):
             webhook_url: New webhook endpoint URL
             webhook_headers: New webhook headers
             password: New password for protected links
-            image_settings: New image preprocessing operations
+            image_resolution_dpi: New image resolution DPI
+            browser_canvas: New browser canvas
             modality: New processing modality
             model: New AI model
             temperature: New temperature setting
@@ -308,7 +316,7 @@ class Links(SyncAPIResource, LinksMixin):
             Link: The updated extraction link configuration
         """
 
-        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort, json_schema)
+        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema)
         response = self._client._prepared_request(request)
         return Link.model_validate(response)
 
@@ -371,13 +379,14 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         webhook_url: HttpUrl,
         webhook_headers: Optional[Dict[str, str]] = None,
         password: str | None = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[str] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Link:
-        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
         print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/deployments/{response['id']}")
         return Link.model_validate(response)
@@ -410,14 +419,15 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         webhook_url: Optional[HttpUrl] = None,
         webhook_headers: Optional[Dict[str, str]] = None,
         password: Optional[str] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[str] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None,
     ) -> Link:
-        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_settings, modality, model, temperature, reasoning_effort, json_schema)
+        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema)
         response = await self._client._prepared_request(request)
         return Link.model_validate(response)
 

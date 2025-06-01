@@ -6,7 +6,6 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel, Field, HttpUrl, field_serializer
 from pydantic_core import Url
 
-from ..image_settings import ImageSettings
 from ..modalities import Modality
 
 
@@ -44,7 +43,8 @@ class ScrappingConfig(AutomationConfig):
     webhook_headers: dict[str, str] = Field(default_factory=dict, description="Headers to send with the request")
 
     modality: Modality
-    image_settings: ImageSettings = Field(default_factory=ImageSettings, description="Preprocessing operations applied to image before sending them to the llm")
+    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
 
     # New attributes
     model: str = Field(..., description="Model used for chat completion")
