@@ -50,4 +50,4 @@ class EnhanceSchemaRequest(BaseModel):
 
     json_schema: dict[str, Any]
     instructions: str | None = None
-    # flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None
+    flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None
