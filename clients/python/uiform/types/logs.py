@@ -19,9 +19,88 @@ from .modalities import Modality
 from .pagination import ListMetadata
 
 
-class AutomationConfig(BaseModel):
-    object: str
-    id: str
+class ProcessorConfig(BaseModel):
+    object: str = Field(default="processor", description="Type of the object")
+    id: str = Field(default_factory=lambda: "proc_" + nanoid.generate(), description="Unique identifier for the processor")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+    modality: Modality
+    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
+
+    # New attributes
+    model: str = Field(..., description="Model used for chat completion")
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
+    reasoning_effort: ChatCompletionReasoningEffort = Field(
+        default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
+    )
+    n_consensus: int = Field(default=1, description="Number of consensus required to validate the data")
+
+    @computed_field  # type: ignore
+    @property
+    def schema_data_id(self) -> str:
+        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
+
+        Returns:
+            str: A SHA1 hash string representing the schema data version.
+        """
+        return compute_schema_data_id(self.json_schema)
+
+    # This is a computed field, it is exposed when serializing the object
+    @computed_field  # type: ignore
+    @property
+    def schema_id(self) -> str:
+        """Returns the SHA1 hash of the complete schema.
+
+        Returns:
+            str: A SHA1 hash string representing the complete schema version.
+        """
+        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
+
+
+class UpdateProcessorRequest(BaseModel):
+    # ------------------------------
+    # Processor Parameters
+    # ------------------------------
+    modality: Optional[Modality] = None
+    image_resolution_dpi: Optional[int] = None
+    browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None
+    model: Optional[str] = None
+    json_schema: Optional[Dict] = None
+    temperature: Optional[float] = None
+    reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
+    n_consensus: Optional[int] = None
+
+    @computed_field  # type: ignore
+    @property
+    def schema_data_id(self) -> Optional[str]:
+        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
+
+        Returns:
+            str: A SHA1 hash string representing the schema data version.
+        """
+        if self.json_schema is None:
+            return None
+        return compute_schema_data_id(self.json_schema)
+
+    @computed_field  # type: ignore
+    @property
+    def schema_id(self) -> Optional[str]:
+        """Returns the SHA1 hash of the complete schema.
+
+        Returns:
+            str: A SHA1 hash string representing the complete schema version.
+        """
+        if self.json_schema is None:
+            return None
+        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
+
+
+class AutomationConfig(ProcessorConfig):
+    object: str = Field(default="automation", description="Type of the object")
+    id: str = Field(default_factory=lambda: "auto_" + nanoid.generate(), description="Unique identifier for the automation")
+
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     default_language: str = Field(default="en", description="Default language for the automation")
 
