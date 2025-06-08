@@ -55,7 +55,7 @@ class ProcessorsMixin:
         }
 
         request = ProcessorConfig.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/deployments/processors", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="POST", url="/v1/processors", data=request.model_dump(mode='json'))
 
     def prepare_list(
         self,
@@ -86,7 +86,7 @@ class ProcessorsMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/deployments/processors", params=params)
+        return PreparedRequest(method="GET", url="/v1/processors", params=params)
 
     def prepare_get(self, id: str) -> PreparedRequest:
         """Get a specific processor configuration.
@@ -97,7 +97,7 @@ class ProcessorsMixin:
         Returns:
             ProcessorConfig: The processor configuration
         """
-        return PreparedRequest(method="GET", url=f"/v1/deployments/processors/{id}")
+        return PreparedRequest(method="GET", url=f"/v1/processors/{id}")
 
     def prepare_update(
         self,
@@ -134,10 +134,10 @@ class ProcessorsMixin:
         if n_consensus is not None:
             data["n_consensus"] = n_consensus
         request = UpdateProcessorRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/deployments/processors/{id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/processors/{id}", data=request.model_dump(mode='json'))
 
     def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/deployments/processors/{id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/processors/{id}")
 
     def prepare_submit(
         self,
@@ -203,9 +203,9 @@ class ProcessorsMixin:
                 ))
             files = files_list
 
-        url = f"/v1/deployments/processors/{id}/submit"
+        url = f"/v1/processors/{id}/submit"
         if stream:
-            url = f"/v1/deployments/processors/{id}/submit/stream"
+            url = f"/v1/processors/{id}/submit/stream"
         
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 
