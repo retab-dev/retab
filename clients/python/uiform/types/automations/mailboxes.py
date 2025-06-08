@@ -1,17 +1,10 @@
-import copy
-import datetime
-import json
 import os
 import re
-from typing import Any, ClassVar, Dict, List, Literal, Optional
+from typing import ClassVar, List, Literal, Optional
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_serializer, field_validator
-from pydantic_core import Url
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from ..._utils.json_schema import clean_schema
-from ..._utils.mime import generate_blake2b_hash_from_string
-from ..modalities import Modality
 from ..pagination import ListMetadata
 
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
@@ -23,7 +16,7 @@ from ..logs import AutomationConfig, UpdateAutomationRequest
 
 class Mailbox(AutomationConfig):
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
-    object: Literal['deployment.mailbox'] = "deployment.mailbox"
+    object: Literal['automation.mailbox'] = "automation.mailbox"
     id: str = Field(default_factory=lambda: "mb_" + nanoid.generate(), description="Unique identifier for the mailbox")
 
     # Email Specific config

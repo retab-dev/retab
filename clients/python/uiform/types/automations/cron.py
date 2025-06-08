@@ -4,7 +4,6 @@ from typing import Any, Literal, Optional
 import nanoid  # type: ignore
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, Field, HttpUrl, field_serializer
-from pydantic_core import Url
 
 from ..modalities import Modality
 
@@ -29,7 +28,7 @@ from ..logs import AutomationConfig
 
 
 class ScrappingConfig(AutomationConfig):
-    object: Literal['deployment.scrapping_cron'] = "deployment.scrapping_cron"
+    object: Literal['automation.scrapping_cron'] = "automation.scrapping_cron"
     id: str = Field(default_factory=lambda: "scrapping_" + nanoid.generate(), description="Unique identifier for the scrapping job")
 
     # Scrapping Specific Config

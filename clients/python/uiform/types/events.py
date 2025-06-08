@@ -22,7 +22,7 @@ metadata_key = Literal[
     'dataset',
     'dataset_membership',
     'endpoint',
-    'deployment',
+    'automation',
     'template',
 ]
 
@@ -31,10 +31,10 @@ event_type = Literal[
     'messages.created',
     'document.orientation_corrected',
     'consensus.reconciled',
-    'deployment.created',
-    'deployment.updated',
-    'deployment.deleted',
-    'deployment.webhook',
+    'automation.created',
+    'automation.updated',
+    'automation.deleted',
+    'automation.webhook',
     'preprocessing.created',
     'link.created',
     'link.updated',
