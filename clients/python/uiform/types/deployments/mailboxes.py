@@ -31,23 +31,6 @@ class Mailbox(AutomationConfig):
     authorized_domains: list[str] = Field(default_factory=list, description="List of authorized domains to receive the emails from")
     authorized_emails: List[EmailStr] = Field(default_factory=list, description="List of emails to access the link")
 
-    # Automation Config
-    webhook_url: HttpUrl = Field(..., description="Url of the webhook to send the data to")
-    webhook_headers: Dict[str, str] = Field(default_factory=dict, description="Headers to send with the request")
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-
-    # DocumentExtraction Config
-    modality: Modality
-    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
-    model: str = Field(..., description="Model used for chat completion")
-    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
-    temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
-    reasoning_effort: ChatCompletionReasoningEffort = Field(
-        default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
-    )
-    n_consensus: int = Field(default=1, description="Number of consensus required to validate the data")
-
     # Normalize email fields (case-insensitive)
     @field_validator("email", mode="before")
     def normalize_email(cls, value: str) -> str:
@@ -72,22 +55,6 @@ class ListMailboxes(BaseModel):
 
 # Inherits from the methods of UpdateAutomationRequest
 class UpdateMailboxRequest(UpdateAutomationRequest):
-    # ------------------------------
-    # HTTP Config
-    # ------------------------------
-    webhook_url: Optional[HttpUrl] = None
-    webhook_headers: Optional[Dict[str, str]] = None
-
-    # ------------------------------
-    # DocumentProcessing Parameters
-    # ------------------------------
-    image_resolution_dpi: Optional[int] = None
-    browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None
-    modality: Optional[Modality] = None
-    model: Optional[str] = None
-    temperature: Optional[float] = None
-    json_schema: Optional[Dict] = None
-    reasoning_effort: Optional[ChatCompletionReasoningEffort] = None
 
     # ------------------------------
     # Email Specific config
