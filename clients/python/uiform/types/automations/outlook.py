@@ -1,19 +1,11 @@
-import copy
-import datetime
-import json
-import os
 import re
-from typing import Any, ClassVar, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import nanoid  # type: ignore
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_serializer, field_validator, model_validator
-from pydantic_core import Url
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
-from ..._utils.json_schema import clean_schema, convert_schema_to_layout
-from ..._utils.mime import generate_blake2b_hash_from_string
+from ..._utils.json_schema import convert_schema_to_layout
 from ..logs import AutomationConfig, UpdateAutomationRequest
-from ..modalities import Modality
 from ..pagination import ListMetadata
 
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
@@ -37,7 +29,7 @@ class FetchParams(BaseModel):
 
 
 class Outlook(AutomationConfig):
-    object: Literal['deployment.outlook'] = "deployment.outlook"
+    object: Literal['automation.outlook'] = "automation.outlook"
     id: str = Field(default_factory=lambda: "outlook_" + nanoid.generate(), description="Unique identifier for the outlook")
 
     authorized_domains: list[str] = Field(default_factory=list, description="List of authorized domains to receive the emails from")

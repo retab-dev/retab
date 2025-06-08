@@ -38,7 +38,7 @@ async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str
         #             "file": f
         #         }
         #         response = await client.post(
-        #             sync_client.base_url + f"/v1/deployments/links/parse/{link_id}",
+        #             sync_client.base_url + f"/v1/deployments/automations/links/parse/{link_id}",
         #             files=files,
         #             headers=headers
         #         )

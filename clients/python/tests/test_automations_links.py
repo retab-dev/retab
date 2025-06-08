@@ -42,7 +42,7 @@ async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, An
                     "Authorization": f"Basic {usr_pwd_enc}",
                 }
                 files = {"file": f}
-                response = await client.post(sync_client.base_url + f"/v1/deployments/links/parse/{link_id}", files=files, headers=headers)
+                response = await client.post(sync_client.base_url + f"/v1/deployments/automations/links/parse/{link_id}", files=files, headers=headers)
                 assert response.status_code == 200
 
         # Delete

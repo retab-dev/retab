@@ -12,9 +12,9 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import prepare_mime_document
-from ...types.deployments.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
+from ...types.automations.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
 from ...types.documents.extractions import UiParsedChatCompletion
-from ...types.logs import DeploymentLog, ExternalRequestLog
+from ...types.logs import AutomationLog, ExternalRequestLog
 from ...types.mime import BaseMIMEData, EmailData, MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
@@ -87,7 +87,7 @@ class MailBoxesMixin:
         return PreparedRequest(method="GET", url="/v1/deployments/mailboxes", params=params)
 
     def prepare_get(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/deployments/mailboxes/{email}")
+        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/mailboxes/{email}")
 
     def prepare_update(
         self,
@@ -131,10 +131,10 @@ class MailBoxesMixin:
 
         update_mailbox_request = UpdateMailboxRequest.model_validate(data)
 
-        return PreparedRequest(method="PUT", url=f"/v1/deployments/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
+        return PreparedRequest(method="PUT", url=f"/v1/deployments/automations/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
 
     def prepare_delete(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/deployments/mailboxes/{email}", raise_for_status=True)
+        return PreparedRequest(method="DELETE", url=f"/v1/deployments/automations/mailboxes/{email}", raise_for_status=True)
 
     def prepare_logs(
         self,
@@ -157,7 +157,7 @@ class MailBoxesMixin:
             "limit": limit,
             "order": order,
         }
-        return PreparedRequest(method="GET", url=f"/v1/deployments/mailboxes/{email}/logs", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/mailboxes/{email}/logs", params=params)
 
 
 class Mailboxes(SyncAPIResource, MailBoxesMixin):
@@ -210,7 +210,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         )
         response = self._client._prepared_request(request)
 
-        print(f"Email automation created. Mailbox available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        print(f"Email automation created. Mailbox available at https://www.uiform.com/dashboard/processors/{response['id']}")
 
         return Mailbox.model_validate(response)
 
@@ -320,7 +320,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> List[DeploymentLog]:
+    ) -> List[AutomationLog]:
         """Get logs for a specific email automation.
 
         Args:
@@ -338,7 +338,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         """
         request = self.prepare_logs(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
-        return [DeploymentLog.model_validate(log) for log in response]
+        return [AutomationLog.model_validate(log) for log in response]
 
 
 class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
@@ -366,7 +366,7 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         )
         response = await self._client._prepared_request(request)
 
-        print(f"Email automation created. Mailbox available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        print(f"Email automation created. Mailbox available at https://www.uiform.com/dashboard/processors/{response['id']}")
 
         return Mailbox.model_validate(response)
 
@@ -426,10 +426,10 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
-    ) -> List[DeploymentLog]:
+    ) -> List[AutomationLog]:
         request = self.prepare_logs(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
-        return [DeploymentLog.model_validate(log) for log in response]
+        return [AutomationLog.model_validate(log) for log in response]
 
 
 class TestMailboxesMixin:
@@ -440,7 +440,7 @@ class TestMailboxesMixin:
         verbose: bool = True,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/deployments/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
+        return PreparedRequest(method="POST", url=f"/v1/deployments/automations/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
 
     def print_forward_verbose(self, email_data: EmailData) -> None:
         print(f"\nTEST EMAIL FORWARDING RESULTS:")

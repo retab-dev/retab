@@ -12,9 +12,9 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import prepare_mime_document
-from ...types.deployments.links import Link, ListLinks, UpdateLinkRequest
+from ...types.automations.links import Link, ListLinks, UpdateLinkRequest
 from ...types.documents.extractions import UiParsedChatCompletion
-from ...types.logs import DeploymentLog, ExternalRequestLog, ListLogs
+from ...types.logs import AutomationLog, ExternalRequestLog, ListLogs
 from ...types.mime import BaseMIMEData, MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
@@ -142,7 +142,7 @@ class LinksMixin:
         return PreparedRequest(method="PUT", url=f"/v1/deployments/{link_id}", data=request.model_dump(mode='json'))
 
     def prepare_delete(self, link_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/deployments/links/{link_id}", raise_for_status=True)
+        return PreparedRequest(method="DELETE", url=f"/v1/deployments/automations/links/{link_id}", raise_for_status=True)
 
     def prepare_logs(
         self,
@@ -187,7 +187,7 @@ class LinksMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/deployments/logs", params=params)
+        return PreparedRequest(method="GET", url="/v1/deployments/automations/logs", params=params)
 
 
 class Links(SyncAPIResource, LinksMixin):
@@ -232,7 +232,7 @@ class Links(SyncAPIResource, LinksMixin):
         request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
 
-        print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/processors/{response['id']}")
         return Link.model_validate(response)
 
     def list(
@@ -388,7 +388,7 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
     ) -> Link:
         request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
-        print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/processors/{response['id']}")
         return Link.model_validate(response)
 
     async def list(

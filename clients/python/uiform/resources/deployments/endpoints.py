@@ -8,7 +8,7 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
-from ...types.deployments.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
+from ...types.automations.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
 from ...types.logs import ExternalRequestLog
 
 # from ...types.documents.extractions import DocumentExtractResponse
@@ -84,7 +84,7 @@ class EndpointsMixin:
         Returns:
             Endpoint: The endpoint configuration
         """
-        return PreparedRequest(method="GET", url=f"/v1/deployments/endpoints/{id}")
+        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/endpoints/{id}")
 
     def prepare_update(
         self,
@@ -126,10 +126,10 @@ class EndpointsMixin:
         if reasoning_effort is not None:
             data["reasoning_effort"] = reasoning_effort
         request = UpdateEndpointRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/deployments/endpoints/{id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/deployments/automations/endpoints/{id}", data=request.model_dump(mode='json'))
 
     def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/deployments/endpoints/{id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/deployments/automations/endpoints/{id}")
 
 
 class Endpoints(SyncAPIResource, EndpointsMixin):
@@ -167,7 +167,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         """
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
         response = self._client._prepared_request(request)
-        print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/processors/{response['id']}")
         return Endpoint.model_validate(response)
 
     def list(
@@ -276,7 +276,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
     ) -> Endpoint:
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
-        print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/processors/{response['id']}")
         
         return Endpoint.model_validate(response)
 

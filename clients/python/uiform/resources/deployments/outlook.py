@@ -9,8 +9,8 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
-from ...types.deployments.outlook import FetchParams, ListOutlooks, MatchParams, Outlook, UpdateOutlookRequest
-from ...types.logs import DeploymentLog
+from ...types.automations.outlook import FetchParams, ListOutlooks, MatchParams, Outlook, UpdateOutlookRequest
+from ...types.logs import AutomationLog
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 
@@ -94,7 +94,7 @@ class OutlooksMixin:
         return PreparedRequest(method="GET", url="/v1/deployments/outlook", params=params)
 
     def prepare_get(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/deployments/outlook/{id}")
+        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/outlook/{id}")
 
     def prepare_update(
         self,
@@ -150,10 +150,10 @@ class OutlooksMixin:
 
         update_outlook_request = UpdateOutlookRequest.model_validate(data)
 
-        return PreparedRequest(method="PUT", url=f"/v1/deployments/outlook/{id}", data=update_outlook_request.model_dump(mode="json"))
+        return PreparedRequest(method="PUT", url=f"/v1/deployments/automations/outlook/{id}", data=update_outlook_request.model_dump(mode="json"))
 
     def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/deployments/outlook/{id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/deployments/automations/outlook/{id}")
 
     def prepare_logs(
         self,
@@ -182,7 +182,7 @@ class OutlooksMixin:
             "match_params": match_params,
             "fetch_params": fetch_params,
         }
-        return PreparedRequest(method="GET", url=f"/v1/deployments/outlook/{id}/logs", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/outlook/{id}/logs", params=params)
 
 
 class Outlooks(SyncAPIResource, OutlooksMixin):
@@ -247,7 +247,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         )
         response = self._client._prepared_request(request)
 
-        print(f"Outlook automation created. Outlook available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        print(f"Outlook automation created. Outlook available at https://www.uiform.com/dashboard/processors/{response['id']}")
 
         return Outlook.model_validate(response)
 
@@ -383,7 +383,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         schema_data_id: Optional[str] = None,
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
-    ) -> List[DeploymentLog]:
+    ) -> List[AutomationLog]:
         """Get logs for a specific outlook automation.
 
         Args:
@@ -402,7 +402,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         """
         request = self.prepare_logs(before, after, limit, order, id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
         response = self._client._prepared_request(request)
-        return [DeploymentLog.model_validate(log) for log in response]
+        return [AutomationLog.model_validate(log) for log in response]
 
 
 class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
@@ -443,7 +443,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
             fetch_params,
         )
         response = await self._client._prepared_request(request)
-        print(f"Outlook automation created. Outlook available at https://www.uiform.com/dashboard/deployments/{response['id']}")
+        print(f"Outlook automation created. Outlook available at https://www.uiform.com/dashboard/processors/{response['id']}")
         return Outlook.model_validate(response)
 
     async def list(
@@ -525,7 +525,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         schema_data_id: Optional[str] = None,
         match_params: Optional[List[MatchParams]] = None,
         fetch_params: Optional[List[FetchParams]] = None,
-    ) -> List[DeploymentLog]:
+    ) -> List[AutomationLog]:
         request = self.prepare_logs(before, after, limit, order, id, name, webhook_url, schema_id, schema_data_id, match_params, fetch_params)
         response = await self._client._prepared_request(request)
-        return [DeploymentLog.model_validate(log) for log in response]
+        return [AutomationLog.model_validate(log) for log in response]

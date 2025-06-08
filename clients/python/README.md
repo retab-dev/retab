@@ -271,7 +271,7 @@ automation = uiclient.deployments.mailboxes.create(
 
 At any email sent to `invoices@mailbox.uiform.com`, the automation will send a POST request to your FastAPI webhook endpoint, where the payload can be processed.
 
-You can see the automation you just created on your [dashboard](https://www.uiform.com/dashboard/deployments)!
+You can see the automation you just created on your [dashboard](https://www.uiform.com/dashboard/processors)!
 
 ### Step 5: Test your automation
 

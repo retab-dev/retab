@@ -60,6 +60,26 @@ class ProcessorConfig(BaseModel):
         return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
 
 
+class AutomationConfig(BaseModel):
+    object: str = Field(default="automation", description="Type of the object")
+    id: str = Field(default_factory=lambda: "auto_" + nanoid.generate(), description="Unique identifier for the automation")
+    name: str = Field(..., description="Name of the automation")
+    processor_id: str = Field(..., description="ID of the processor to use for the automation")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp of the last update")
+
+    default_language: str = Field(default="en", description="Default language for the automation")
+
+    # HTTP Config
+    webhook_url: HttpUrl = Field(..., description="Url of the webhook to send the data to")
+    webhook_headers: Dict[str, str] = Field(default_factory=dict, description="Headers to send with the request")
+
+    need_validation: bool = Field(default=False, description="If the automation needs to be validated before running")
+
+    @field_serializer('webhook_url')
+    def url2str(self, val: HttpUrl) -> str:
+        return str(val)
+
+
 class UpdateProcessorRequest(BaseModel):
     # ------------------------------
     # Processor Parameters
@@ -97,26 +117,6 @@ class UpdateProcessorRequest(BaseModel):
         if self.json_schema is None:
             return None
         return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
-
-
-class AutomationConfig(BaseModel):
-    object: str = Field(default="automation", description="Type of the object")
-    id: str = Field(default_factory=lambda: "auto_" + nanoid.generate(), description="Unique identifier for the automation")
-    name: str = Field(..., description="Name of the automation")
-    processor_id: str = Field(..., description="ID of the processor to use for the automation")
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp of the last update")
-
-    default_language: str = Field(default="en", description="Default language for the automation")
-
-    # HTTP Config
-    webhook_url: HttpUrl = Field(..., description="Url of the webhook to send the data to")
-    webhook_headers: Dict[str, str] = Field(default_factory=dict, description="Headers to send with the request")
-
-    need_validation: bool = Field(default=False, description="If the automation needs to be validated before running")
-
-    @field_serializer('webhook_url')
-    def url2str(self, val: HttpUrl) -> str:
-        return str(val)
 
 
 class UpdateAutomationRequest(BaseModel):
@@ -189,7 +189,7 @@ class LogCompletionRequest(BaseModel):
     completion: ChatCompletion
 
 
-class DeploymentLog(BaseModel):
+class AutomationLog(BaseModel):
     object: Literal['automation_log'] = "automation_log"
     id: str = Field(default_factory=lambda: "log_auto_" + nanoid.generate(), description="Unique identifier for the automation log")
     user_email: Optional[EmailStr]  # When the user is logged or when he forwards an email
@@ -227,5 +227,5 @@ class DeploymentLog(BaseModel):
 
 
 class ListLogs(BaseModel):
-    data: List[DeploymentLog]
+    data: List[AutomationLog]
     list_metadata: ListMetadata
