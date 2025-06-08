@@ -8,11 +8,11 @@ import httpx
 from pydantic import HttpUrl
 from PIL.Image import Image
 
-from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.mime import prepare_mime_document
-from ...types.mime import BaseMIMEData, MIMEData
-from ...types.logs import AutomationLog
-from ...types.standards import PreparedRequest
+from ...._resource import AsyncAPIResource, SyncAPIResource
+from ...._utils.mime import prepare_mime_document
+from ....types.mime import BaseMIMEData, MIMEData
+from ....types.logs import AutomationLog
+from ....types.standards import PreparedRequest
 
 
 class TestsMixin:

@@ -3,7 +3,7 @@ import hmac
 import json
 from typing import Any
 
-from ..._resource import AsyncAPIResource, SyncAPIResource
+from ...._resource import AsyncAPIResource, SyncAPIResource
 from .endpoints import AsyncEndpoints, Endpoints
 from .links import AsyncLinks, Links
 from .mailboxes import AsyncMailboxes, Mailboxes
@@ -17,7 +17,7 @@ class SignatureVerificationError(Exception):
     pass
 
 
-class DeploymentsMixin:
+class AutomationsMixin:
     def _verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.
@@ -41,8 +41,8 @@ class DeploymentsMixin:
         return json.loads(event_body.decode('utf-8'))
 
 
-class Deployments(SyncAPIResource, DeploymentsMixin):
-    """Deployments API wrapper"""
+class Automations(SyncAPIResource, AutomationsMixin):
+    """Automations API wrapper"""
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
@@ -59,8 +59,8 @@ class Deployments(SyncAPIResource, DeploymentsMixin):
         return self._verify_event(event_body, event_signature, secret)
 
 
-class AsyncDeployments(AsyncAPIResource, DeploymentsMixin):
-    """Async Deployments API wrapper"""
+class AsyncAutomations(AsyncAPIResource, AutomationsMixin):
+    """Async Automations API wrapper"""
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)

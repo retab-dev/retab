@@ -1,0 +1,482 @@
+import base64
+import datetime
+from pathlib import Path
+from typing import Any, Dict, Literal, Optional
+
+import httpx
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from pydantic import HttpUrl
+
+from ..._resource import AsyncAPIResource, SyncAPIResource
+from ..._utils.ai_models import assert_valid_model_extraction
+from ...types.logs import ProcessorConfig, UpdateProcessorRequest
+from ...types.pagination import ListMetadata
+from ...types.documents.extractions import UiParsedChatCompletion, DocumentExtractRequest
+from pydantic import BaseModel
+from typing import List
+
+# from ...types.documents.extractions import DocumentExtractResponse
+from ...types.mime import BaseMIMEData, MIMEData
+from ...types.modalities import Modality
+from ...types.standards import PreparedRequest
+from .automations import Automations, AsyncAutomations
+
+
+class ListProcessors(BaseModel):
+    data: List[ProcessorConfig]
+    list_metadata: ListMetadata
+
+
+class ProcessorsMixin:
+    def prepare_create(
+        self,
+        name: str,
+        json_schema: Dict[str, Any],
+        modality: Modality = "native",
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        image_resolution_dpi: Optional[int] = 96,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = 'A4',
+        n_consensus: int = 1,
+    ) -> PreparedRequest:
+        assert_valid_model_extraction(model)
+
+        data = {
+            "name": name,
+            "json_schema": json_schema,
+            "modality": modality,
+            "model": model,
+            "temperature": temperature,
+            "reasoning_effort": reasoning_effort,
+            "image_resolution_dpi": image_resolution_dpi,
+            "browser_canvas": browser_canvas,
+            "n_consensus": n_consensus,
+        }
+
+        request = ProcessorConfig.model_validate(data)
+        return PreparedRequest(method="POST", url="/v1/deployments/processors", data=request.model_dump(mode='json'))
+
+    def prepare_list(
+        self,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        limit: Optional[int] = 10,
+        order: Optional[Literal["asc", "desc"]] = "desc",
+        # Filtering parameters
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        modality: Optional[str] = None,
+        model: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> PreparedRequest:
+        params = {
+            "before": before,
+            "after": after,
+            "limit": limit,
+            "order": order,
+            "id": id,
+            "name": name,
+            "modality": modality,
+            "model": model,
+            "schema_id": schema_id,
+            "schema_data_id": schema_data_id,
+        }
+        # Remove None values
+        params = {k: v for k, v in params.items() if v is not None}
+
+        return PreparedRequest(method="GET", url="/v1/deployments/processors", params=params)
+
+    def prepare_get(self, id: str) -> PreparedRequest:
+        """Get a specific processor configuration.
+
+        Args:
+            id: ID of the processor
+
+        Returns:
+            ProcessorConfig: The processor configuration
+        """
+        return PreparedRequest(method="GET", url=f"/v1/deployments/processors/{id}")
+
+    def prepare_update(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        modality: Optional[Modality] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        model: Optional[str] = None,
+        json_schema: Optional[Dict[str, Any]] = None,
+        temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
+        n_consensus: Optional[int] = None,
+    ) -> PreparedRequest:
+        data: dict[str, Any] = {}
+
+        if name is not None:
+            data["name"] = name
+        if modality is not None:
+            data["modality"] = modality
+        if image_resolution_dpi is not None:
+            data["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas is not None:
+            data["browser_canvas"] = browser_canvas
+        if model is not None:
+            assert_valid_model_extraction(model)
+            data["model"] = model
+        if json_schema is not None:
+            data["json_schema"] = json_schema
+        if temperature is not None:
+            data["temperature"] = temperature
+        if reasoning_effort is not None:
+            data["reasoning_effort"] = reasoning_effort
+        if n_consensus is not None:
+            data["n_consensus"] = n_consensus
+        request = UpdateProcessorRequest.model_validate(data)
+        return PreparedRequest(method="PUT", url=f"/v1/deployments/processors/{id}", data=request.model_dump(mode='json'))
+
+    def prepare_delete(self, id: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/deployments/processors/{id}")
+
+    def prepare_submit(
+        self,
+        id: str,
+        document: Optional[MIMEData] = None,
+        documents: Optional[List[MIMEData]] = None,
+        temperature: Optional[float] = None,
+        stream: bool = False,
+        seed: Optional[int] = None,
+        store: bool = True,
+    ) -> PreparedRequest:
+        """Prepare a request to submit documents to a processor.
+
+        Args:
+            id: ID of the processor
+            document: Single document to process (mutually exclusive with documents)
+            documents: List of documents to process (mutually exclusive with document)
+            temperature: Optional temperature override
+            stream: Whether to stream the response
+            seed: Optional seed for reproducibility
+            store: Whether to store the results
+
+        Returns:
+            PreparedRequest: The prepared request
+        """
+        # Validate that either document or documents is provided, but not both
+        if not document and not documents:
+            raise ValueError("Either 'document' or 'documents' must be provided")
+        
+        if document and documents:
+            raise ValueError("Provide either 'document' (single) or 'documents' (multiple), not both")
+        
+        # Prepare form data parameters
+        form_data = {
+            "temperature": temperature,
+            "stream": stream,
+            "seed": seed,
+            "store": store,
+        }
+        # Remove None values
+        form_data = {k: v for k, v in form_data.items() if v is not None}
+
+        # Prepare files for upload
+        files = {}
+        if document:
+            # Single document upload
+            files["document"] = (
+                document.filename,
+                base64.b64decode(document.content),
+                document.mime_type
+            )
+        elif documents:
+            # Multiple documents upload - httpx supports multiple files with same field name using a list
+            files_list = []
+            for doc in documents:
+                files_list.append((
+                    "documents",  # field name
+                    (
+                        doc.filename,
+                        base64.b64decode(doc.content),
+                        doc.mime_type
+                    )
+                ))
+            files = files_list
+
+        url = f"/v1/deployments/processors/{id}/submit"
+        if stream:
+            url = f"/v1/deployments/processors/{id}/submit/stream"
+        
+        return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
+
+
+class Processors(SyncAPIResource, ProcessorsMixin):
+    """Processors API wrapper for managing processor configurations"""
+
+    def __init__(self, client: Any) -> None:
+        super().__init__(client=client)
+        self.automations = Automations(client=client)
+
+    def create(
+        self,
+        name: str,
+        json_schema: Dict[str, Any],
+        modality: Modality = "native",
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        image_resolution_dpi: Optional[int] = 96,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = 'A4',
+        n_consensus: int = 1,
+    ) -> ProcessorConfig:
+        """Create a new processor configuration.
+
+        Args:
+            name: Name of the processor
+            json_schema: JSON schema for the processor
+            image_resolution_dpi: Optional image resolution DPI
+            browser_canvas: Optional browser canvas size
+            modality: Processing modality (currently only "native" supported)
+            model: AI model to use for processing
+            temperature: Model temperature setting
+            reasoning_effort: The effort level for the model to reason about the input data.
+            n_consensus: Number of consensus required to validate the data
+        Returns:
+            ProcessorConfig: The created processor configuration
+        """
+        request = self.prepare_create(name, json_schema, modality, model, temperature, reasoning_effort, image_resolution_dpi, browser_canvas, n_consensus)
+        response = self._client._prepared_request(request)
+        print(f"Processor ID: {response['id']}. Processor available at https://www.uiform.com/dashboard/processors/{response['id']}")
+        return ProcessorConfig.model_validate(response)
+
+    def list(
+        self,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        limit: Optional[int] = 10,
+        order: Optional[Literal["asc", "desc"]] = "desc",
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        modality: Optional[str] = None,
+        model: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> ListProcessors:
+        """List processor configurations with pagination support.
+
+        Args:
+            before: Optional cursor for pagination before a specific processor ID
+            after: Optional cursor for pagination after a specific processor ID
+            limit: Optional limit on number of results (max 100)
+            order: Optional sort order ("asc" or "desc")
+            id: Optional filter by processor ID
+            name: Optional filter by processor name
+            modality: Optional filter by modality
+            model: Optional filter by model
+            schema_id: Optional filter by schema ID
+            schema_data_id: Optional filter by schema data ID
+
+        Returns:
+            ListProcessors: Paginated list of processor configurations with metadata
+        """
+        request = self.prepare_list(before, after, limit, order, id, name, modality, model, schema_id, schema_data_id)
+        response = self._client._prepared_request(request)
+        return ListProcessors.model_validate(response)
+
+    def get(self, id: str) -> ProcessorConfig:
+        """Get a specific processor configuration.
+
+        Args:
+            id: ID of the processor
+
+        Returns:
+            ProcessorConfig: The processor configuration
+        """
+        request = self.prepare_get(id)
+        response = self._client._prepared_request(request)
+        return ProcessorConfig.model_validate(response)
+
+    def update(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        modality: Optional[Modality] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        model: Optional[str] = None,
+        json_schema: Optional[Dict[str, Any]] = None,
+        temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
+        n_consensus: Optional[int] = None,
+    ) -> ProcessorConfig:
+        """Update a processor configuration.
+
+        Args:
+            id: ID of the processor to update
+            name: New name for the processor
+            modality: New processing modality
+            image_resolution_dpi: New image resolution DPI
+            browser_canvas: New browser canvas size
+            model: New AI model
+            json_schema: New JSON schema for the processor
+            temperature: New temperature setting
+            reasoning_effort: The effort level for the model to reason about the input data.
+            n_consensus: New number of consensus required
+        Returns:
+            ProcessorConfig: The updated processor configuration
+        """
+        request = self.prepare_update(id, name, modality, image_resolution_dpi, browser_canvas, model, json_schema, temperature, reasoning_effort, n_consensus)
+        response = self._client._prepared_request(request)
+        return ProcessorConfig.model_validate(response)
+
+    def delete(self, id: str) -> None:
+        """Delete a processor configuration.
+
+        Args:
+            id: ID of the processor to delete
+        """
+        request = self.prepare_delete(id)
+        self._client._prepared_request(request)
+        print(f"Processor Deleted. ID: {id}")
+
+    def submit(
+        self,
+        id: str,
+        document: Optional[MIMEData] = None,
+        documents: Optional[List[MIMEData]] = None,
+        temperature: Optional[float] = None,
+        stream: bool = False,
+        seed: Optional[int] = None,
+        store: bool = True,
+    ) -> UiParsedChatCompletion:
+        """Submit documents to a processor for processing.
+
+        Args:
+            id: ID of the processor
+            document: Single document to process (mutually exclusive with documents)
+            documents: List of documents to process (mutually exclusive with document)
+            temperature: Optional temperature override
+            stream: Whether to stream the response
+            seed: Optional seed for reproducibility
+            store: Whether to store the results
+
+        Returns:
+            UiParsedChatCompletion: The processing result
+        """
+        request = self.prepare_submit(
+            id=id,
+            document=document,
+            documents=documents,
+            temperature=temperature,
+            stream=stream,
+            seed=seed,
+            store=store
+        )
+        response = self._client._prepared_request(request)
+        return UiParsedChatCompletion.model_validate(response)
+
+
+class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
+    """Async Processors API wrapper for managing processor configurations"""
+
+    def __init__(self, client: Any) -> None:
+        super().__init__(client=client)
+        self.automations = AsyncAutomations(client=client)
+
+    async def create(
+        self,
+        name: str,
+        json_schema: Dict[str, Any],
+        modality: Modality = "native",
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        image_resolution_dpi: Optional[int] = 96,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = 'A4',
+        n_consensus: int = 1,
+    ) -> ProcessorConfig:
+        request = self.prepare_create(name, json_schema, modality, model, temperature, reasoning_effort, image_resolution_dpi, browser_canvas, n_consensus)
+        response = await self._client._prepared_request(request)
+        print(f"Processor ID: {response['id']}. Processor available at https://www.uiform.com/dashboard/processors/{response['id']}")
+        
+        return ProcessorConfig.model_validate(response)
+
+    async def list(
+        self,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        limit: Optional[int] = 10,
+        order: Optional[Literal["asc", "desc"]] = "desc",
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        modality: Optional[str] = None,
+        model: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_data_id: Optional[str] = None,
+    ) -> ListProcessors:
+        request = self.prepare_list(before, after, limit, order, id, name, modality, model, schema_id, schema_data_id)
+        response = await self._client._prepared_request(request)
+        return ListProcessors.model_validate(response)
+
+    async def get(self, id: str) -> ProcessorConfig:
+        request = self.prepare_get(id)
+        response = await self._client._prepared_request(request)
+        return ProcessorConfig.model_validate(response)
+
+    async def update(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        modality: Optional[Modality] = None,
+        image_resolution_dpi: Optional[int] = None,
+        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        model: Optional[str] = None,
+        json_schema: Optional[Dict[str, Any]] = None,
+        temperature: Optional[float] = None,
+        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
+        n_consensus: Optional[int] = None,
+    ) -> ProcessorConfig:
+        request = self.prepare_update(id, name, modality, image_resolution_dpi, browser_canvas, model, json_schema, temperature, reasoning_effort, n_consensus)
+        response = await self._client._prepared_request(request)
+        return ProcessorConfig.model_validate(response)
+
+    async def delete(self, id: str) -> None:
+        request = self.prepare_delete(id)
+        await self._client._prepared_request(request)
+        print(f"Processor Deleted. ID: {id}")
+
+    async def submit(
+        self,
+        id: str,
+        document: Optional[MIMEData] = None,
+        documents: Optional[List[MIMEData]] = None,
+        temperature: Optional[float] = None,
+        stream: bool = False,
+        seed: Optional[int] = None,
+        store: bool = True,
+    ) -> UiParsedChatCompletion:
+        """Submit documents to a processor for processing.
+
+        Args:
+            id: ID of the processor
+            document: Single document to process (mutually exclusive with documents)
+            documents: List of documents to process (mutually exclusive with document)
+            temperature: Optional temperature override
+            stream: Whether to stream the response
+            seed: Optional seed for reproducibility
+            store: Whether to store the results
+
+        Returns:
+            UiParsedChatCompletion: The processing result
+        """
+        request = self.prepare_submit(
+            id=id,
+            document=document,
+            documents=documents,
+            temperature=temperature,
+            stream=stream,
+            seed=seed,
+            store=store
+        )
+        response = await self._client._prepared_request(request)
+        return UiParsedChatCompletion.model_validate(response)

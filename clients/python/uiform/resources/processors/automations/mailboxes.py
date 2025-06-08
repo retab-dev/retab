@@ -9,15 +9,15 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from PIL.Image import Image
 from pydantic import HttpUrl
 
-from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.ai_models import assert_valid_model_extraction
-from ..._utils.mime import prepare_mime_document
-from ...types.automations.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
-from ...types.documents.extractions import UiParsedChatCompletion
-from ...types.logs import AutomationLog, ExternalRequestLog
-from ...types.mime import BaseMIMEData, EmailData, MIMEData
-from ...types.modalities import Modality
-from ...types.standards import PreparedRequest
+from ...._resource import AsyncAPIResource, SyncAPIResource
+from ...._utils.ai_models import assert_valid_model_extraction
+from ...._utils.mime import prepare_mime_document
+from ....types.automations.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
+from ....types.documents.extractions import UiParsedChatCompletion
+from ....types.logs import AutomationLog, ExternalRequestLog
+from ....types.mime import BaseMIMEData, EmailData, MIMEData
+from ....types.modalities import Modality
+from ....types.standards import PreparedRequest
 
 
 class MailBoxesMixin:
@@ -87,7 +87,7 @@ class MailBoxesMixin:
         return PreparedRequest(method="GET", url="/v1/deployments/mailboxes", params=params)
 
     def prepare_get(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/mailboxes/{email}")
+        return PreparedRequest(method="GET", url=f"/v1/processors/automations/mailboxes/{email}")
 
     def prepare_update(
         self,
@@ -131,10 +131,10 @@ class MailBoxesMixin:
 
         update_mailbox_request = UpdateMailboxRequest.model_validate(data)
 
-        return PreparedRequest(method="PUT", url=f"/v1/deployments/automations/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
+        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
 
     def prepare_delete(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/deployments/automations/mailboxes/{email}", raise_for_status=True)
+        return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/mailboxes/{email}", raise_for_status=True)
 
     def prepare_logs(
         self,
@@ -157,7 +157,7 @@ class MailBoxesMixin:
             "limit": limit,
             "order": order,
         }
-        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/mailboxes/{email}/logs", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/processors/automations/mailboxes/{email}/logs", params=params)
 
 
 class Mailboxes(SyncAPIResource, MailBoxesMixin):
@@ -440,7 +440,7 @@ class TestMailboxesMixin:
         verbose: bool = True,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/deployments/automations/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
+        return PreparedRequest(method="POST", url=f"/v1/processors/automations/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
 
     def print_forward_verbose(self, email_data: EmailData) -> None:
         print(f"\nTEST EMAIL FORWARDING RESULTS:")

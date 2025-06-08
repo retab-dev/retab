@@ -1,4 +1,4 @@
-from typing import Any, Generic, Literal, Optional, TypeVar
+from typing import Any, Generic, List, Literal, Optional, Tuple, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -33,5 +33,7 @@ class PreparedRequest(BaseModel):
     url: str
     data: dict | None = None
     params: dict | None = None
+    form_data: dict | None = None
+    files: dict | List[Tuple[str, Tuple[str, bytes, str]]] | None = None
     idempotency_key: str | None = None
     raise_for_status: bool = False

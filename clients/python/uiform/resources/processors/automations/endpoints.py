@@ -6,15 +6,15 @@ import httpx
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import HttpUrl
 
-from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.ai_models import assert_valid_model_extraction
-from ...types.automations.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
-from ...types.logs import ExternalRequestLog
+from ...._resource import AsyncAPIResource, SyncAPIResource
+from ...._utils.ai_models import assert_valid_model_extraction
+from ....types.automations.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
+from ....types.logs import ExternalRequestLog
 
 # from ...types.documents.extractions import DocumentExtractResponse
-from ...types.mime import BaseMIMEData, MIMEData
-from ...types.modalities import Modality
-from ...types.standards import PreparedRequest
+from ....types.mime import BaseMIMEData, MIMEData
+from ....types.modalities import Modality
+from ....types.standards import PreparedRequest
 
 
 class EndpointsMixin:
@@ -84,7 +84,7 @@ class EndpointsMixin:
         Returns:
             Endpoint: The endpoint configuration
         """
-        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/endpoints/{id}")
+        return PreparedRequest(method="GET", url=f"/v1/processors/automations/endpoints/{id}")
 
     def prepare_update(
         self,
@@ -126,10 +126,10 @@ class EndpointsMixin:
         if reasoning_effort is not None:
             data["reasoning_effort"] = reasoning_effort
         request = UpdateEndpointRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/deployments/automations/endpoints/{id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/endpoints/{id}", data=request.model_dump(mode='json'))
 
     def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/deployments/automations/endpoints/{id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/endpoints/{id}")
 
 
 class Endpoints(SyncAPIResource, EndpointsMixin):
