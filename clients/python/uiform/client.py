@@ -8,7 +8,7 @@ import backoff.types
 import httpx
 from pydantic_core import PydanticUndefined
 
-from .resources import deployments, consensus, documents, evals, files, finetuning, models, schemas, secrets, usage
+from .resources import processors, consensus, documents, evals, files, finetuning, models, schemas, secrets, usage
 from .types.standards import PreparedRequest
 import truststore
 
@@ -204,7 +204,7 @@ class UiForm(BaseUiForm):
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
-        self.deployments = deployments.Deployments(client=self)
+        self.processors = processors.Processors(client=self)
         self.secrets = secrets.Secrets(client=self)
         self.usage = usage.Usage(client=self)
         self.consensus = consensus.Consensus(client=self)
@@ -215,6 +215,8 @@ class UiForm(BaseUiForm):
         endpoint: str,
         data: Optional[dict[str, Any]] = None,
         params: Optional[dict[str, Any]] = None,
+        form_data: Optional[dict[str, Any]] = None,
+        files: Optional[dict[str, Any] | list] = None,
         idempotency_key: str | None = None,
         raise_for_status: bool = False,
     ) -> Any:
@@ -223,9 +225,12 @@ class UiForm(BaseUiForm):
         Args:
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
-            data (Optional[dict]): Request payload
+            data (Optional[dict]): Request payload (JSON)
             params (Optional[dict]): Query parameters
+            form_data (Optional[dict]): Form data for multipart/form-data requests
+            files (Optional[dict]): Files for multipart/form-data requests
             idempotency_key (str, optional): Idempotency key for request
+            raise_for_status (bool): Whether to raise on HTTP errors
 
         Returns:
             Any: Parsed JSON response or raw text string depending on response content-type
@@ -235,10 +240,31 @@ class UiForm(BaseUiForm):
         """
 
         def raw_request() -> Any:
-            response = self.client.request(method, json=data, url=self._prepare_url(endpoint), params=params, headers=self._get_headers(idempotency_key))
-
+            # Prepare request kwargs
+            request_kwargs = {
+                "method": method,
+                "url": self._prepare_url(endpoint),
+                "params": params,
+                "headers": self._get_headers(idempotency_key),
+            }
+            
+            # Handle different content types
+            if files or form_data:
+                # For multipart/form-data requests
+                if form_data:
+                    request_kwargs["data"] = form_data
+                if files:
+                    request_kwargs["files"] = files
+                # Remove Content-Type header to let httpx set it automatically for multipart
+                headers = request_kwargs["headers"].copy()
+                headers.pop("Content-Type", None)
+                request_kwargs["headers"] = headers
+            elif data:
+                # For JSON requests
+                request_kwargs["json"] = data
+            
+            response = self.client.request(**request_kwargs)
             self._validate_response(response)
-
             return self._parse_response(response)
 
         @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
@@ -257,6 +283,8 @@ class UiForm(BaseUiForm):
         endpoint: str,
         data: Optional[dict[str, Any]] = None,
         params: Optional[dict[str, Any]] = None,
+        form_data: Optional[dict[str, Any]] = None,
+        files: Optional[dict[str, Any] | list] = None,
         idempotency_key: str | None = None,
         raise_for_status: bool = False,
     ) -> Iterator[Any]:
@@ -265,9 +293,12 @@ class UiForm(BaseUiForm):
         Args:
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
-            data (Optional[dict]): Request payload
+            data (Optional[dict]): Request payload (JSON)
             params (Optional[dict]): Query parameters
+            form_data (Optional[dict]): Form data for multipart/form-data requests
+            files (Optional[dict]): Files for multipart/form-data requests
             idempotency_key (str, optional): Idempotency key for request
+            raise_for_status (bool): Whether to raise on HTTP errors
         Returns:
             Iterator[Any]: Generator yielding parsed JSON objects or raw text strings from the stream
 
@@ -276,7 +307,30 @@ class UiForm(BaseUiForm):
         """
 
         def raw_request() -> Iterator[Any]:
-            with self.client.stream(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
+            # Prepare request kwargs
+            stream_kwargs = {
+                "method": method,
+                "url": self._prepare_url(endpoint),
+                "params": params,
+                "headers": self._get_headers(idempotency_key),
+            }
+            
+            # Handle different content types
+            if files or form_data:
+                # For multipart/form-data requests
+                if form_data:
+                    stream_kwargs["data"] = form_data
+                if files:
+                    stream_kwargs["files"] = files
+                # Remove Content-Type header to let httpx set it automatically for multipart
+                headers = stream_kwargs["headers"].copy()
+                headers.pop("Content-Type", None)
+                stream_kwargs["headers"] = headers
+            elif data:
+                # For JSON requests
+                stream_kwargs["json"] = data
+            
+            with self.client.stream(**stream_kwargs) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
                 
                 content_type = response_ctx_manager.headers.get("content-type", "")
@@ -314,11 +368,27 @@ class UiForm(BaseUiForm):
     # Simplified request methods using standard PreparedRequest object
     def _prepared_request(self, request: PreparedRequest) -> Any:
         return self._request(
-            request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status
+            method=request.method,
+            endpoint=request.url,
+            data=request.data,
+            params=request.params,
+            form_data=request.form_data,
+            files=request.files,
+            idempotency_key=request.idempotency_key,
+            raise_for_status=request.raise_for_status
         )
 
     def _prepared_request_stream(self, request: PreparedRequest) -> Iterator[Any]:
-        for item in self._request_stream(request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key):
+        for item in self._request_stream(
+            method=request.method,
+            endpoint=request.url,
+            data=request.data,
+            params=request.params,
+            form_data=request.form_data,
+            files=request.files,
+            idempotency_key=request.idempotency_key,
+            raise_for_status=request.raise_for_status
+        ):
             yield item
 
     def close(self) -> None:
@@ -402,7 +472,7 @@ class AsyncUiForm(BaseUiForm):
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
-        self.deployments = deployments.AsyncDeployments(client=self)
+        self.processors = processors.AsyncProcessors(client=self)
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)
         self.consensus = consensus.AsyncConsensus(client=self)
@@ -435,6 +505,8 @@ class AsyncUiForm(BaseUiForm):
         endpoint: str,
         data: Optional[dict[str, Any]] = None,
         params: Optional[dict[str, Any]] = None,
+        form_data: Optional[dict[str, Any]] = None,
+        files: Optional[dict[str, Any] | list] = None,
         idempotency_key: str | None = None,
         raise_for_status: bool = False,
     ) -> Any:
@@ -443,9 +515,12 @@ class AsyncUiForm(BaseUiForm):
         Args:
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
-            data (Optional[dict]): Request payload
+            data (Optional[dict]): Request payload (JSON)
             params (Optional[dict]): Query parameters
+            form_data (Optional[dict]): Form data for multipart/form-data requests
+            files (Optional[dict]): Files for multipart/form-data requests
             idempotency_key (str, optional): Idempotency key for request
+            raise_for_status (bool): Whether to raise on HTTP errors
         Returns:
             Any: Parsed JSON response or raw text string depending on response content-type
 
@@ -454,7 +529,30 @@ class AsyncUiForm(BaseUiForm):
         """
 
         async def raw_request() -> Any:
-            response = await self.client.request(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key))
+            # Prepare request kwargs
+            request_kwargs = {
+                "method": method,
+                "url": self._prepare_url(endpoint),
+                "params": params,
+                "headers": self._get_headers(idempotency_key),
+            }
+            
+            # Handle different content types
+            if files or form_data:
+                # For multipart/form-data requests
+                if form_data:
+                    request_kwargs["data"] = form_data
+                if files:
+                    request_kwargs["files"] = files
+                # Remove Content-Type header to let httpx set it automatically for multipart
+                headers = request_kwargs["headers"].copy()
+                headers.pop("Content-Type", None)
+                request_kwargs["headers"] = headers
+            elif data:
+                # For JSON requests
+                request_kwargs["json"] = data
+            
+            response = await self.client.request(**request_kwargs)
             self._validate_response(response)
             return self._parse_response(response)
 
@@ -473,6 +571,8 @@ class AsyncUiForm(BaseUiForm):
         endpoint: str,
         data: Optional[dict[str, Any]] = None,
         params: Optional[dict[str, Any]] = None,
+        form_data: Optional[dict[str, Any]] = None,
+        files: Optional[dict[str, Any] | list] = None,
         idempotency_key: str | None = None,
         raise_for_status: bool = False,
     ) -> AsyncIterator[Any]:
@@ -481,9 +581,12 @@ class AsyncUiForm(BaseUiForm):
         Args:
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
-            data (Optional[dict]): Request payload
+            data (Optional[dict]): Request payload (JSON)
             params (Optional[dict]): Query parameters
+            form_data (Optional[dict]): Form data for multipart/form-data requests
+            files (Optional[dict]): Files for multipart/form-data requests
             idempotency_key (str, optional): Idempotency key for request
+            raise_for_status (bool): Whether to raise on HTTP errors
         Returns:
             AsyncIterator[Any]: Async generator yielding parsed JSON objects or raw text strings from the stream
 
@@ -492,7 +595,30 @@ class AsyncUiForm(BaseUiForm):
         """
 
         async def raw_request() -> AsyncIterator[Any]:
-            async with self.client.stream(method, self._prepare_url(endpoint), json=data, params=params, headers=self._get_headers(idempotency_key)) as response_ctx_manager:
+            # Prepare request kwargs
+            stream_kwargs = {
+                "method": method,
+                "url": self._prepare_url(endpoint),
+                "params": params,
+                "headers": self._get_headers(idempotency_key),
+            }
+            
+            # Handle different content types
+            if files or form_data:
+                # For multipart/form-data requests
+                if form_data:
+                    stream_kwargs["data"] = form_data
+                if files:
+                    stream_kwargs["files"] = files
+                # Remove Content-Type header to let httpx set it automatically for multipart
+                headers = stream_kwargs["headers"].copy()
+                headers.pop("Content-Type", None)
+                stream_kwargs["headers"] = headers
+            elif data:
+                # For JSON requests
+                stream_kwargs["json"] = data
+            
+            async with self.client.stream(**stream_kwargs) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
                 
                 content_type = response_ctx_manager.headers.get("content-type", "")
@@ -529,12 +655,26 @@ class AsyncUiForm(BaseUiForm):
 
     async def _prepared_request(self, request: PreparedRequest) -> Any:
         return await self._request(
-            request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status
+            method=request.method,
+            endpoint=request.url,
+            data=request.data,
+            params=request.params,
+            form_data=request.form_data,
+            files=request.files,
+            idempotency_key=request.idempotency_key,
+            raise_for_status=request.raise_for_status
         )
 
     async def _prepared_request_stream(self, request: PreparedRequest) -> AsyncIterator[Any]:
         async for item in self._request_stream(
-            request.method, request.url, data=request.data, params=request.params, idempotency_key=request.idempotency_key, raise_for_status=request.raise_for_status
+            method=request.method,
+            endpoint=request.url,
+            data=request.data,
+            params=request.params,
+            form_data=request.form_data,
+            files=request.files,
+            idempotency_key=request.idempotency_key,
+            raise_for_status=request.raise_for_status
         ):
             yield item
 

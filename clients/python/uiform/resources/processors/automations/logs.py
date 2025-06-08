@@ -1,8 +1,8 @@
 from typing import Any, Dict, Literal, Optional
 
-from ..._resource import SyncAPIResource, AsyncAPIResource
-from ...types.logs import AutomationLog, ExternalRequestLog, ListLogs
-from ...types.standards import PreparedRequest
+from ...._resource import SyncAPIResource, AsyncAPIResource
+from ....types.logs import AutomationLog, ExternalRequestLog, ListLogs
+from ....types.standards import PreparedRequest
 
 
 class LogsMixin:
@@ -15,7 +15,7 @@ class LogsMixin:
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="GET", url=f"/v1/deployments/automations/logs/{id}")
+        return PreparedRequest(method="GET", url=f"/v1/processors/automations/logs/{id}")
 
     def prepare_list(
         self,
@@ -63,7 +63,7 @@ class LogsMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/deployments/automations/logs", params=params)
+        return PreparedRequest(method="GET", url="/v1/processors/automations/logs", params=params)
 
     def prepare_rerun(self, id: str) -> PreparedRequest:
         """Rerun a webhook from an existing AutomationLog.
@@ -74,7 +74,7 @@ class LogsMixin:
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="POST", url=f"/v1/deployments/automations/logs/{id}/rerun")
+        return PreparedRequest(method="POST", url=f"/v1/processors/automations/logs/{id}/rerun")
 
 
 class Logs(SyncAPIResource, LogsMixin):
