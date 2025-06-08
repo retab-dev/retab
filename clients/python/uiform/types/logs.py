@@ -99,9 +99,12 @@ class UpdateProcessorRequest(BaseModel):
         return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
 
 
-class AutomationConfig(ProcessorConfig):
+class AutomationConfig(BaseModel):
     object: str = Field(default="automation", description="Type of the object")
     id: str = Field(default_factory=lambda: "auto_" + nanoid.generate(), description="Unique identifier for the automation")
+    name: str = Field(..., description="Name of the automation")
+    processor_id: str = Field(..., description="ID of the processor to use for the automation")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp of the last update")
 
     default_language: str = Field(default="en", description="Default language for the automation")
 
@@ -116,8 +119,9 @@ class AutomationConfig(ProcessorConfig):
         return str(val)
 
 
-class UpdateAutomationRequest(UpdateProcessorRequest):
+class UpdateAutomationRequest(BaseModel):
     name: Optional[str] = None
+    processor_id: Optional[str] = None
 
     default_language: Optional[str] = None
 
@@ -191,7 +195,7 @@ class DeploymentLog(BaseModel):
     user_email: Optional[EmailStr]  # When the user is logged or when he forwards an email
     organization_id: str
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    deployment_snapshot: AutomationConfig
+    automation_snapshot: AutomationConfig
     completion: UiParsedChatCompletion | ChatCompletion
     file_metadata: Optional[BaseMIMEData]
     external_request_log: Optional[ExternalRequestLog]

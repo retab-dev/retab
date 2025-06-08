@@ -219,7 +219,7 @@ Below is an example of a simple FastAPI application with a webhook endpoint:
 ```bash
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from uiform.types.deployments.webhooks import WebhookRequest
+from uiform.types.automations.webhooks import WebhookRequest
 from pydantic import BaseModel, Field, ConfigDict
 
 app = FastAPI()
