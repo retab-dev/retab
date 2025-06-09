@@ -16,7 +16,7 @@ async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, An
     model = "gpt-4o-mini"
     webhook_url = HttpUrl('http://localhost:4000/v1/test_ingest_completion')
     # Create
-    link = sync_client.automations.links.create(
+    link = sync_client.processors.automations.links.create(
         name,
         company_json_schema,
         webhook_url,
@@ -27,10 +27,10 @@ async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, An
         assert link.name == name
         assert link.webhook_url == webhook_url
         # Read
-        link = sync_client.automations.links.get(link_id)
+        link = sync_client.processors.automations.links.get(link_id)
         assert link.name == name
         # Update
-        link = sync_client.automations.links.update(link_id, password="password")
+        link = sync_client.processors.automations.links.update(link_id, password="password")
         assert link.password == "password"
         # Open and read the booking confirmation file
 
@@ -46,12 +46,12 @@ async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, An
                 assert response.status_code == 200
 
         # Delete
-        sync_client.automations.links.delete(link_id)
+        sync_client.processors.automations.links.delete(link_id)
         with pytest.raises(Exception):
-            sync_client.automations.links.get(link_id)
+            sync_client.processors.automations.links.get(link_id)
     finally:
         # Delete the link if it was created.
         try:
-            sync_client.automations.links.delete(link_id)
+            sync_client.processors.automations.links.delete(link_id)
         except Exception:
             pass

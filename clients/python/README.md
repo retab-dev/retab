@@ -261,7 +261,7 @@ from uiform import UiForm
 uiclient = UiForm()
 
 # Create an automation that uses the webhook URL from Step 2
-automation = uiclient.automations.mailboxes.create(
+automation = uiclient.processors.automations.mailboxes.create(
     email="invoices@mailbox.uiform.com",
     model="gpt-4.1-nano",
     json_schema=Invoice.model_json_schema(), # use the pydantic model to create the json schema
@@ -284,18 +284,18 @@ from uiform import UiForm
 uiclient = UiForm()
 
 # If you just want to send a test request to your webhook
-log = uiclient.automations.mailboxes.tests.webhook(
+log = uiclient.processors.automations.mailboxes.tests.webhook(
     email="test-mailbox-local@devmail.uiform.com", 
 )
 
 # If you want to test the file processing logic: 
-log = uiclient.automations.mailboxes.tests.process(
+log = uiclient.processors.automations.mailboxes.tests.process(
     email="test-mailbox-local@devmail.uiform.com", 
     document="your_invoice_email.eml"
 )
 
 # If you want to test a full email forwarding
-log = uiclient.automations.mailboxes.tests.forward(
+log = uiclient.processors.automations.mailboxes.tests.forward(
     email="uiform-quickstart@mailbox.uiform.com", 
     document="your_invoice_email.eml"
 )
@@ -309,7 +309,7 @@ from uiform import UiForm
 uiclient = UiForm()
 
 # If you just want to send a test request to your webhook
-log = uiclient.automations.mailboxes.tests.webhook(
+log = uiclient.processors.automations.mailboxes.tests.webhook(
     email="test-mailbox-local@devmail.uiform.com", 
     webhook_url="http://localhost:8000/webhook" # If you want to try your webhook locally, you can override the webhook url set in the automation
 )
