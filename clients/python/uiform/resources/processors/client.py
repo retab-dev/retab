@@ -1,22 +1,24 @@
 import base64
 import datetime
+from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import httpx
+import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
+from ..._utils.mime import MIMEData, prepare_mime_document
 from ...types.logs import ProcessorConfig, UpdateProcessorRequest
 from ...types.pagination import ListMetadata
 from ...types.documents.extractions import UiParsedChatCompletion, DocumentExtractRequest
 from pydantic import BaseModel
-from typing import List
 
 # from ...types.documents.extractions import DocumentExtractResponse
-from ...types.mime import BaseMIMEData, MIMEData
+from ...types.mime import BaseMIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 from .automations import Automations, AsyncAutomations
@@ -64,7 +66,6 @@ class ProcessorsMixin:
         limit: Optional[int] = 10,
         order: Optional[Literal["asc", "desc"]] = "desc",
         # Filtering parameters
-        id: Optional[str] = None,
         name: Optional[str] = None,
         modality: Optional[str] = None,
         model: Optional[str] = None,
@@ -76,7 +77,6 @@ class ProcessorsMixin:
             "after": after,
             "limit": limit,
             "order": order,
-            "id": id,
             "name": name,
             "modality": modality,
             "model": model,
@@ -88,20 +88,20 @@ class ProcessorsMixin:
 
         return PreparedRequest(method="GET", url="/v1/processors", params=params)
 
-    def prepare_get(self, id: str) -> PreparedRequest:
+    def prepare_get(self, processor_id: str) -> PreparedRequest:
         """Get a specific processor configuration.
 
         Args:
-            id: ID of the processor
+            processor_id: ID of the processor
 
         Returns:
             ProcessorConfig: The processor configuration
         """
-        return PreparedRequest(method="GET", url=f"/v1/processors/{id}")
+        return PreparedRequest(method="GET", url=f"/v1/processors/{processor_id}")
 
     def prepare_update(
         self,
-        id: str,
+        processor_id: str,
         name: Optional[str] = None,
         modality: Optional[Modality] = None,
         image_resolution_dpi: Optional[int] = None,
@@ -134,16 +134,16 @@ class ProcessorsMixin:
         if n_consensus is not None:
             data["n_consensus"] = n_consensus
         request = UpdateProcessorRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/processors/{id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/processors/{processor_id}", data=request.model_dump(mode='json'))
 
-    def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/processors/{id}")
+    def prepare_delete(self, processor_id: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/processors/{processor_id}")
 
     def prepare_submit(
         self,
-        id: str,
-        document: Optional[MIMEData] = None,
-        documents: Optional[List[MIMEData]] = None,
+        processor_id: str,
+        document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
+        documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
         temperature: Optional[float] = None,
         stream: bool = False,
         seed: Optional[int] = None,
@@ -152,7 +152,7 @@ class ProcessorsMixin:
         """Prepare a request to submit documents to a processor.
 
         Args:
-            id: ID of the processor
+            processor_id: ID of the processor
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override
@@ -183,29 +183,33 @@ class ProcessorsMixin:
         # Prepare files for upload
         files = {}
         if document:
+            # Convert document to MIMEData if needed
+            mime_document = prepare_mime_document(document)
             # Single document upload
             files["document"] = (
-                document.filename,
-                base64.b64decode(document.content),
-                document.mime_type
+                mime_document.filename,
+                base64.b64decode(mime_document.content),
+                mime_document.mime_type
             )
         elif documents:
             # Multiple documents upload - httpx supports multiple files with same field name using a list
             files_list = []
             for doc in documents:
+                # Convert each document to MIMEData if needed
+                mime_doc = prepare_mime_document(doc)
                 files_list.append((
                     "documents",  # field name
                     (
-                        doc.filename,
-                        base64.b64decode(doc.content),
-                        doc.mime_type
+                        mime_doc.filename,
+                        base64.b64decode(mime_doc.content),
+                        mime_doc.mime_type
                     )
                 ))
             files = files_list
 
-        url = f"/v1/processors/{id}/submit"
+        url = f"/v1/processors/{processor_id}/submit"
         if stream:
-            url = f"/v1/processors/{id}/submit/stream"
+            url = f"/v1/processors/{processor_id}/submit/stream"
         
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 
@@ -255,7 +259,6 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         after: Optional[str] = None,
         limit: Optional[int] = 10,
         order: Optional[Literal["asc", "desc"]] = "desc",
-        id: Optional[str] = None,
         name: Optional[str] = None,
         modality: Optional[str] = None,
         model: Optional[str] = None,
@@ -269,7 +272,6 @@ class Processors(SyncAPIResource, ProcessorsMixin):
             after: Optional cursor for pagination after a specific processor ID
             limit: Optional limit on number of results (max 100)
             order: Optional sort order ("asc" or "desc")
-            id: Optional filter by processor ID
             name: Optional filter by processor name
             modality: Optional filter by modality
             model: Optional filter by model
@@ -279,26 +281,26 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         Returns:
             ListProcessors: Paginated list of processor configurations with metadata
         """
-        request = self.prepare_list(before, after, limit, order, id, name, modality, model, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, name, modality, model, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
         return ListProcessors.model_validate(response)
 
-    def get(self, id: str) -> ProcessorConfig:
+    def get(self, processor_id: str) -> ProcessorConfig:
         """Get a specific processor configuration.
 
         Args:
-            id: ID of the processor
+            processor_id: ID of the processor
 
         Returns:
             ProcessorConfig: The processor configuration
         """
-        request = self.prepare_get(id)
+        request = self.prepare_get(processor_id)
         response = self._client._prepared_request(request)
         return ProcessorConfig.model_validate(response)
 
     def update(
         self,
-        id: str,
+        processor_id: str,
         name: Optional[str] = None,
         modality: Optional[Modality] = None,
         image_resolution_dpi: Optional[int] = None,
@@ -312,7 +314,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         """Update a processor configuration.
 
         Args:
-            id: ID of the processor to update
+            processor_id: ID of the processor to update
             name: New name for the processor
             modality: New processing modality
             image_resolution_dpi: New image resolution DPI
@@ -325,25 +327,25 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         Returns:
             ProcessorConfig: The updated processor configuration
         """
-        request = self.prepare_update(id, name, modality, image_resolution_dpi, browser_canvas, model, json_schema, temperature, reasoning_effort, n_consensus)
+        request = self.prepare_update(processor_id, name, modality, image_resolution_dpi, browser_canvas, model, json_schema, temperature, reasoning_effort, n_consensus)
         response = self._client._prepared_request(request)
         return ProcessorConfig.model_validate(response)
 
-    def delete(self, id: str) -> None:
+    def delete(self, processor_id: str) -> None:
         """Delete a processor configuration.
 
         Args:
-            id: ID of the processor to delete
+            processor_id: ID of the processor to delete
         """
-        request = self.prepare_delete(id)
+        request = self.prepare_delete(processor_id)
         self._client._prepared_request(request)
-        print(f"Processor Deleted. ID: {id}")
+        print(f"Processor Deleted. ID: {processor_id}")
 
     def submit(
         self,
-        id: str,
-        document: Optional[MIMEData] = None,
-        documents: Optional[List[MIMEData]] = None,
+        processor_id: str,
+        document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
+        documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
         temperature: Optional[float] = None,
         stream: bool = False,
         seed: Optional[int] = None,
@@ -352,7 +354,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         """Submit documents to a processor for processing.
 
         Args:
-            id: ID of the processor
+            processor_id: ID of the processor
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override
@@ -364,7 +366,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
             UiParsedChatCompletion: The processing result
         """
         request = self.prepare_submit(
-            id=id,
+            processor_id=processor_id,
             document=document,
             documents=documents,
             temperature=temperature,
@@ -407,25 +409,24 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         after: Optional[str] = None,
         limit: Optional[int] = 10,
         order: Optional[Literal["asc", "desc"]] = "desc",
-        id: Optional[str] = None,
         name: Optional[str] = None,
         modality: Optional[str] = None,
         model: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
     ) -> ListProcessors:
-        request = self.prepare_list(before, after, limit, order, id, name, modality, model, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, name, modality, model, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return ListProcessors.model_validate(response)
 
-    async def get(self, id: str) -> ProcessorConfig:
-        request = self.prepare_get(id)
+    async def get(self, processor_id: str) -> ProcessorConfig:
+        request = self.prepare_get(processor_id)
         response = await self._client._prepared_request(request)
         return ProcessorConfig.model_validate(response)
 
     async def update(
         self,
-        id: str,
+        processor_id: str,
         name: Optional[str] = None,
         modality: Optional[Modality] = None,
         image_resolution_dpi: Optional[int] = None,
@@ -436,20 +437,20 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         n_consensus: Optional[int] = None,
     ) -> ProcessorConfig:
-        request = self.prepare_update(id, name, modality, image_resolution_dpi, browser_canvas, model, json_schema, temperature, reasoning_effort, n_consensus)
+        request = self.prepare_update(processor_id, name, modality, image_resolution_dpi, browser_canvas, model, json_schema, temperature, reasoning_effort, n_consensus)
         response = await self._client._prepared_request(request)
         return ProcessorConfig.model_validate(response)
 
-    async def delete(self, id: str) -> None:
-        request = self.prepare_delete(id)
+    async def delete(self, processor_id: str) -> None:
+        request = self.prepare_delete(processor_id)
         await self._client._prepared_request(request)
-        print(f"Processor Deleted. ID: {id}")
+        print(f"Processor Deleted. ID: {processor_id}")
 
     async def submit(
         self,
-        id: str,
-        document: Optional[MIMEData] = None,
-        documents: Optional[List[MIMEData]] = None,
+        processor_id: str,
+        document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
+        documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
         temperature: Optional[float] = None,
         stream: bool = False,
         seed: Optional[int] = None,
@@ -458,7 +459,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         """Submit documents to a processor for processing.
 
         Args:
-            id: ID of the processor
+            processor_id: ID of the processor
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override
@@ -470,7 +471,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
             UiParsedChatCompletion: The processing result
         """
         request = self.prepare_submit(
-            id=id,
+            processor_id=processor_id,
             document=document,
             documents=documents,
             temperature=temperature,

@@ -6,16 +6,16 @@ from ....types.standards import PreparedRequest
 
 
 class LogsMixin:
-    def prepare_get(self, id: str) -> PreparedRequest:
+    def prepare_get(self, log_id: str) -> PreparedRequest:
         """Get a specific automation log by ID.
 
         Args:
-            id: ID of the log to retrieve
+            log_id: ID of the log to retrieve
 
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="GET", url=f"/v1/processors/automations/logs/{id}")
+        return PreparedRequest(method="GET", url=f"/v1/processors/automations/logs/{log_id}")
 
     def prepare_list(
         self,
@@ -26,7 +26,7 @@ class LogsMixin:
         # Filtering parameters
         status_code: Optional[int] = None,
         status_class: Optional[Literal["2xx", "3xx", "4xx", "5xx"]] = None,
-        deployment_id: Optional[str] = None,
+        automation_id: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
@@ -40,7 +40,7 @@ class LogsMixin:
             order: Optional sort order ("asc" or "desc")
             status_code: Optional filter by status code
             status_class: Optional filter by status_class
-            deployment_id: Optional filter by deployment ID
+            automation_id: Optional filter by deployment ID
             webhook_url: Optional filter by webhook URL
             schema_id: Optional filter by schema ID
             schema_data_id: Optional filter by schema data ID
@@ -55,7 +55,7 @@ class LogsMixin:
             "order": order,
             "status_code": status_code,
             "status_class": status_class,
-            "deployment_id": deployment_id,
+            "automation_id": automation_id,
             "webhook_url": webhook_url,
             "schema_id": schema_id,
             "schema_data_id": schema_data_id,
@@ -65,31 +65,31 @@ class LogsMixin:
 
         return PreparedRequest(method="GET", url="/v1/processors/automations/logs", params=params)
 
-    def prepare_rerun(self, id: str) -> PreparedRequest:
+    def prepare_rerun(self, log_id: str) -> PreparedRequest:
         """Rerun a webhook from an existing AutomationLog.
 
         Args:
-            id: ID of the log to rerun
+            log_id: ID of the log to rerun
 
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="POST", url=f"/v1/processors/automations/logs/{id}/rerun")
+        return PreparedRequest(method="POST", url=f"/v1/processors/automations/logs/{log_id}/rerun")
 
 
 class Logs(SyncAPIResource, LogsMixin):
     """Logs API wrapper for managing automation logs"""
 
-    def get(self, id: str) -> AutomationLog:
+    def get(self, log_id: str) -> AutomationLog:
         """Get a specific automation log by ID.
 
         Args:
-            id: ID of the log to retrieve
+            log_id: ID of the log to retrieve
 
         Returns:
             AutomationLog: The automation log
         """
-        request = self.prepare_get(id)
+        request = self.prepare_get(log_id)
         response = self._client._prepared_request(request)
         return AutomationLog.model_validate(response)
 
@@ -101,7 +101,7 @@ class Logs(SyncAPIResource, LogsMixin):
         order: Optional[Literal["asc", "desc"]] = "desc",
         status_code: Optional[int] = None,
         status_class: Optional[Literal["2xx", "3xx", "4xx", "5xx"]] = None,
-        deployment_id: Optional[str] = None,
+        automation_id: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
@@ -115,7 +115,7 @@ class Logs(SyncAPIResource, LogsMixin):
             order: Optional sort order ("asc" or "desc")
             status_code: Optional filter by status code
             status_class: Optional filter by status_class
-            deployment_id: Optional filter by deployment ID
+            automation_id: Optional filter by deployment ID
             webhook_url: Optional filter by webhook URL
             schema_id: Optional filter by schema ID
             schema_data_id: Optional filter by schema data ID
@@ -123,23 +123,23 @@ class Logs(SyncAPIResource, LogsMixin):
         Returns:
             ListLogs: Paginated list of automation logs with metadata
         """
-        request = self.prepare_list(before, after, limit, order, status_code, status_class, deployment_id, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, status_code, status_class, automation_id, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
         return ListLogs.model_validate(response)
 
-    def rerun(self, id: str) -> ExternalRequestLog:
+    def rerun(self, log_id: str) -> ExternalRequestLog:
         """Rerun a webhook from an existing AutomationLog.
 
         Args:
-            id: ID of the log to rerun
+            log_id: ID of the log to rerun
 
         Returns:
             ExternalRequestLog: The result of the rerun webhook call
         """
-        request = self.prepare_rerun(id)
+        request = self.prepare_rerun(log_id)
         response = self._client._prepared_request(request)
 
-        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/processors/logs/{id}")
+        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/processors/logs/{log_id}")
 
         return ExternalRequestLog.model_validate(response)
 
@@ -147,16 +147,16 @@ class Logs(SyncAPIResource, LogsMixin):
 class AsyncLogs(AsyncAPIResource, LogsMixin):
     """Async Logs API wrapper for managing automation logs"""
 
-    async def get(self, id: str) -> AutomationLog:
+    async def get(self, log_id: str) -> AutomationLog:
         """Get a specific automation log by ID.
 
         Args:
-            id: ID of the log to retrieve
+            log_id: ID of the log to retrieve
 
         Returns:
             AutomationLog: The automation log
         """
-        request = self.prepare_get(id)
+        request = self.prepare_get(log_id)
         response = await self._client._prepared_request(request)
         return AutomationLog.model_validate(response)
 
@@ -168,7 +168,7 @@ class AsyncLogs(AsyncAPIResource, LogsMixin):
         order: Optional[Literal["asc", "desc"]] = "desc",
         status_code: Optional[int] = None,
         status_class: Optional[Literal["2xx", "3xx", "4xx", "5xx"]] = None,
-        deployment_id: Optional[str] = None,
+        automation_id: Optional[str] = None,
         webhook_url: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_data_id: Optional[str] = None,
@@ -182,7 +182,7 @@ class AsyncLogs(AsyncAPIResource, LogsMixin):
             order: Optional sort order ("asc" or "desc")
             status_code: Optional filter by status code
             status_class: Optional filter by status_class
-            deployment_id: Optional filter by deployment ID
+            automation_id: Optional filter by deployment ID
             webhook_url: Optional filter by webhook URL
             schema_id: Optional filter by schema ID
             schema_data_id: Optional filter by schema data ID
@@ -190,22 +190,22 @@ class AsyncLogs(AsyncAPIResource, LogsMixin):
         Returns:
             ListLogs: Paginated list of automation logs with metadata
         """
-        request = self.prepare_list(before, after, limit, order, status_code, status_class, deployment_id, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, status_code, status_class, automation_id, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return ListLogs.model_validate(response)
 
-    async def rerun(self, id: str) -> ExternalRequestLog:
+    async def rerun(self, log_id: str) -> ExternalRequestLog:
         """Rerun a webhook from an existing AutomationLog.
 
         Args:
-            id: ID of the log to rerun
+            log_id: ID of the log to rerun
 
         Returns:
             ExternalRequestLog: The result of the rerun webhook call
         """
-        request = self.prepare_rerun(id)
+        request = self.prepare_rerun(log_id)
         response = await self._client._prepared_request(request)
 
-        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/processors/logs/{id}")
+        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/processors/logs/{log_id}")
 
         return ExternalRequestLog.model_validate(response)
