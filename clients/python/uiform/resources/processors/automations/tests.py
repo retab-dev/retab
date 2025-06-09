@@ -16,12 +16,12 @@ from ....types.standards import PreparedRequest
 
 
 class TestsMixin:
-    def prepare_upload(self, id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
+    def prepare_upload(self, automation_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/deployments/tests/upload/{id}", data={"document": mime_document.model_dump(mode='json')})
+        return PreparedRequest(method="POST", url=f"/v1/processors/automations/tests/upload/{automation_id}", data={"document": mime_document.model_dump(mode='json')})
 
-    def prepare_webhook(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/v1/deployments/tests/webhook/{id}", data=None)
+    def prepare_webhook(self, automation_id: str) -> PreparedRequest:
+        return PreparedRequest(method="POST", url=f"/v1/processors/automations/tests/webhook/{automation_id}", data=None)
 
     def print_upload_verbose(self, log: AutomationLog) -> None:
         if log.external_request_log:
@@ -71,18 +71,18 @@ class TestsMixin:
 class Tests(SyncAPIResource, TestsMixin):
     """Test API wrapper for testing automation configurations"""
 
-    def upload(self, id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
+    def upload(self, automation_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
         """Test endpoint that simulates the complete extraction process with the provided document.
 
         Args:
-            id: ID of the deployment to test
+            automation_id: ID of the automation to test
             document: Document to process
             verbose: Whether to print verbose output
 
         Returns:
             AutomationLog: The automation log with extraction results
         """
-        request = self.prepare_upload(id, document)
+        request = self.prepare_upload(automation_id, document)
         response = self._client._prepared_request(request)
         
         log = AutomationLog.model_validate(response)
@@ -92,17 +92,17 @@ class Tests(SyncAPIResource, TestsMixin):
             
         return log
 
-    def webhook(self, id: str, verbose: bool = True) -> AutomationLog:
+    def webhook(self, automation_id: str, verbose: bool = True) -> AutomationLog:
         """Test endpoint that simulates the complete webhook process with sample data.
 
-        Args:
-            id: ID of the deployment to test
+        Args:    
+            automation_id: ID of the automation to test
             verbose: Whether to print verbose output
 
         Returns:
             AutomationLog: The automation log with webhook results
         """
-        request = self.prepare_webhook(id)
+        request = self.prepare_webhook(automation_id)
         response = self._client._prepared_request(request)
         
         log = AutomationLog.model_validate(response)
@@ -116,18 +116,18 @@ class Tests(SyncAPIResource, TestsMixin):
 class AsyncTests(AsyncAPIResource, TestsMixin):
     """Async Test API wrapper for testing deployment configurations"""
 
-    async def upload(self, id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
+    async def upload(self, automation_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData, verbose: bool = True) -> AutomationLog:
         """Test endpoint that simulates the complete extraction process with the provided document.
 
         Args:
-            id: ID of the deployment to test
+            automation_id: ID of the automation to test
             document: Document to process
             verbose: Whether to print verbose output
 
         Returns:
             AutomationLog: The automation log with extraction results
         """
-        request = self.prepare_upload(id, document)
+        request = self.prepare_upload(automation_id, document)
         response = await self._client._prepared_request(request)
         
         log = AutomationLog.model_validate(response)
@@ -137,17 +137,17 @@ class AsyncTests(AsyncAPIResource, TestsMixin):
             
         return log
 
-    async def webhook(self, id: str, verbose: bool = True) -> AutomationLog:
+    async def webhook(self, automation_id: str, verbose: bool = True) -> AutomationLog:
         """Test endpoint that simulates the complete webhook process with sample data.
 
         Args:
-            id: ID of the deployment to test
+            automation_id: ID of the automation to test
             verbose: Whether to print verbose output
 
         Returns:
             AutomationLog: The automation log with webhook results
         """
-        request = self.prepare_webhook(id)
+        request = self.prepare_webhook(automation_id)
         response = await self._client._prepared_request(request)
         
         log = AutomationLog.model_validate(response)

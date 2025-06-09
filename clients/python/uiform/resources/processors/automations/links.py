@@ -25,7 +25,7 @@ class LinksMixin:
         self,
         name: str,
         json_schema: Dict[str, Any],
-        webhook_url: HttpUrl,
+        webhook_url: HttpUrl,   
         webhook_headers: Optional[Dict[str, str]] = None,
         password: str | None = None,
         # DocumentExtraction Config
@@ -143,52 +143,6 @@ class LinksMixin:
 
     def prepare_delete(self, link_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/links/{link_id}", raise_for_status=True)
-
-    def prepare_logs(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int = 10,
-        order: Literal["asc", "desc"] | None = "desc",
-        # Filtering parameters
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
-    ) -> PreparedRequest:
-        """Get logs for extraction links with pagination support.
-
-        Args:
-            before: Optional cursor for pagination - get results before this log ID
-            after: Optional cursor for pagination - get results after this log ID
-            limit: Maximum number of logs to return (1-100, default 10)
-            order: Sort order by creation time - "asc" or "desc" (default "desc")
-            link_id: Optional ID of a specific extraction link to filter logs for
-            name: Optional filter by link name
-            webhook_url: Optional filter by webhook URL
-            schema_id: Optional filter by schema ID
-            schema_data_id: Optional filter by schema data ID
-
-        Returns:
-            ListLinkLogsResponse: Paginated list of logs and metadata
-        """
-        params = {
-            "automation_id": link_id,
-            "name": name,
-            "webhook_url": webhook_url,
-            "schema_id": schema_id,
-            "schema_data_id": schema_data_id,
-            "before": before,
-            "after": after,
-            "limit": limit,
-            "order": order,
-        }
-        # Remove None values
-        params = {k: v for k, v in params.items() if v is not None}
-
-        return PreparedRequest(method="GET", url="/v1/processors/automations/logs", params=params)
-
 
 class Links(SyncAPIResource, LinksMixin):
     """Extraction Link API wrapper for managing extraction link configurations"""
@@ -332,40 +286,6 @@ class Links(SyncAPIResource, LinksMixin):
         request = self.prepare_delete(link_id)
         self._client._prepared_request(request)
 
-    def logs(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int = 10,
-        order: Literal["asc", "desc"] | None = "desc",
-        # Filtering parameters
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
-    ) -> ListLogs:
-        """Get logs for extraction links with pagination support.
-
-        Args:
-            before: Optional cursor for pagination - get results before this log ID
-            after: Optional cursor for pagination - get results after this log ID
-            limit: Maximum number of logs to return (1-100, default 10)
-            order: Sort order by creation time - "asc" or "desc" (default "desc")
-            link_id: Optional ID of a specific extraction link to filter logs for
-            name: Optional filter by link name
-            webhook_url: Optional filter by webhook URL
-            schema_id: Optional filter by schema ID
-            schema_data_id: Optional filter by schema data ID
-
-        Returns:
-            ListLinkLogsResponse: Paginated list of logs and metadata
-        """
-        request = self.prepare_logs(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
-        response = self._client._prepared_request(request)
-        return ListLogs.model_validate(response)
-
-
 class AsyncLinks(AsyncAPIResource, LinksMixin):
     """Async Extraction Link API wrapper for managing extraction link configurations"""
 
@@ -434,19 +354,3 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
     async def delete(self, link_id: str) -> None:
         request = self.prepare_delete(link_id)
         await self._client._prepared_request(request)
-
-    async def logs(
-        self,
-        before: str | None = None,
-        after: str | None = None,
-        limit: int = 10,
-        order: Literal["asc", "desc"] | None = "desc",
-        link_id: Optional[str] = None,
-        name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
-    ) -> ListLogs:
-        request = self.prepare_logs(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
-        response = await self._client._prepared_request(request)
-        return ListLogs.model_validate(response)
