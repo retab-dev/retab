@@ -145,7 +145,6 @@ class ProcessorsMixin:
         document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
         documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
         temperature: Optional[float] = None,
-        stream: bool = False,
         seed: Optional[int] = None,
         store: bool = True,
     ) -> PreparedRequest:
@@ -156,7 +155,6 @@ class ProcessorsMixin:
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override
-            stream: Whether to stream the response
             seed: Optional seed for reproducibility
             store: Whether to store the results
 
@@ -173,7 +171,6 @@ class ProcessorsMixin:
         # Prepare form data parameters
         form_data = {
             "temperature": temperature,
-            "stream": stream,
             "seed": seed,
             "store": store,
         }
@@ -208,8 +205,8 @@ class ProcessorsMixin:
             files = files_list
 
         url = f"/v1/processors/{processor_id}/submit"
-        if stream:
-            url = f"/v1/processors/{processor_id}/submit/stream"
+        # if stream:
+        #     url = f"/v1/processors/{processor_id}/submit/stream"
         
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 
@@ -347,7 +344,6 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
         documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
         temperature: Optional[float] = None,
-        stream: bool = False,
         seed: Optional[int] = None,
         store: bool = True,
     ) -> UiParsedChatCompletion:
@@ -358,7 +354,6 @@ class Processors(SyncAPIResource, ProcessorsMixin):
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override
-            stream: Whether to stream the response
             seed: Optional seed for reproducibility
             store: Whether to store the results
 
@@ -370,7 +365,6 @@ class Processors(SyncAPIResource, ProcessorsMixin):
             document=document,
             documents=documents,
             temperature=temperature,
-            stream=stream,
             seed=seed,
             store=store
         )
@@ -452,7 +446,6 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
         documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
         temperature: Optional[float] = None,
-        stream: bool = False,
         seed: Optional[int] = None,
         store: bool = True,
     ) -> UiParsedChatCompletion:
@@ -463,7 +456,6 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override
-            stream: Whether to stream the response
             seed: Optional seed for reproducibility
             store: Whether to store the results
 
@@ -475,7 +467,6 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
             document=document,
             documents=documents,
             temperature=temperature,
-            stream=stream,
             seed=seed,
             store=store
         )
