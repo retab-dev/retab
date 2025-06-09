@@ -63,12 +63,12 @@ class EvalsMixin:
         )
         return PreparedRequest(method="POST", url="/v1/evals", data=eval_data.model_dump(exclude_none=True, mode="json"))
 
-    def prepare_get(self, eval_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evals/{eval_id}")
+    def prepare_get(self, evaluation_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}")
 
     def prepare_update(
         self,
-        eval_id: str,
+        evaluation_id: str,
         name: Optional[str] = None,
         project_id: Optional[str] = None,
         json_schema: Optional[Dict[str, Any]] = None,
@@ -96,7 +96,7 @@ class EvalsMixin:
         if default_inference_settings is not None:
             update_data["default_inference_settings"] = default_inference_settings.model_dump(exclude_none=True, mode="json")
 
-        return PreparedRequest(method="PATCH", url=f"/v1/evals/{eval_id}", data=update_data)
+        return PreparedRequest(method="PATCH", url=f"/v1/evals/{evaluation_id}", data=update_data)
 
     def prepare_list(self, project_id: Optional[str] = None) -> PreparedRequest:
         params = {}
@@ -109,44 +109,44 @@ class EvalsMixin:
 
 
 class DocumentsMixin:
-    def prepare_get(self, eval_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evals/{eval_id}/documents/{document_id}")
+    def prepare_get(self, evaluation_id: str, document_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/documents/{document_id}")
 
-    def prepare_create(self, eval_id: str, document: MIMEData, annotation: Dict[str, Any]) -> PreparedRequest:
+    def prepare_create(self, evaluation_id: str, document: MIMEData, annotation: Dict[str, Any]) -> PreparedRequest:
         # Serialize the MIMEData
 
         document_item = DocumentItem(mime_data=document, annotation=annotation, annotation_metadata=None)
 
-        return PreparedRequest(method="POST", url=f"/v1/evals/{eval_id}/documents", data=document_item.model_dump(mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/documents", data=document_item.model_dump(mode="json"))
 
-    def prepare_list(self, eval_id: str, filename: Optional[str] = None) -> PreparedRequest:
+    def prepare_list(self, evaluation_id: str, filename: Optional[str] = None) -> PreparedRequest:
         params = {}
         if filename:
             params["filename"] = filename
-        return PreparedRequest(method="GET", url=f"/v1/evals/{eval_id}/documents", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/documents", params=params)
 
-    def prepare_update(self, eval_id: str, document_id: str, annotation: Dict[str, Any]) -> PreparedRequest:
+    def prepare_update(self, evaluation_id: str, document_id: str, annotation: Dict[str, Any]) -> PreparedRequest:
         update_request = UpdateEvaluationDocumentRequest(annotation=annotation, annotation_metadata=None)
 
-        return PreparedRequest(method="PUT", url=f"/v1/evals/{eval_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_none=True))
+        return PreparedRequest(method="PUT", url=f"/v1/evals/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_none=True))
 
-    def prepare_delete(self, eval_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/evals/{eval_id}/documents/{document_id}")
+    def prepare_delete(self, evaluation_id: str, document_id: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/evals/{evaluation_id}/documents/{document_id}")
 
 
 class IterationsMixin:
     def prepare_get(self, iteration_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/evals/iterations/{iteration_id}")
 
-    def prepare_list(self, eval_id: str, model: Optional[str] = None) -> PreparedRequest:
+    def prepare_list(self, evaluation_id: str, model: Optional[str] = None) -> PreparedRequest:
         params = {}
         if model:
             params["model"] = model
-        return PreparedRequest(method="GET", url=f"/v1/evals/{eval_id}/iterations", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/iterations", params=params)
 
     def prepare_create(
         self,
-        eval_id: str,
+        evaluation_id: str,
         model: str,
         json_schema: Optional[Dict[str, Any]] = None,
         temperature: float = 0.0,
@@ -168,7 +168,7 @@ class IterationsMixin:
 
         perform_iteration_request = CreateIterationRequest(inference_settings=props, json_schema=json_schema)
 
-        return PreparedRequest(method="POST", url=f"/v1/evals/{eval_id}/iterations/create", data=perform_iteration_request.model_dump(exclude_none=True, mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/iterations/create", data=perform_iteration_request.model_dump(exclude_none=True, mode="json"))
 
     def prepare_update(
         self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_resolution_dpi: int = 96, browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4'
@@ -217,25 +217,25 @@ class Evals(SyncAPIResource, EvalsMixin):
         response = self._client._prepared_request(request)
         return Evaluation(**response)
 
-    def get(self, eval_id: str) -> Evaluation:
+    def get(self, evaluation_id: str) -> Evaluation:
         """
         Get an evaluation by ID.
 
         Args:
-            eval_id: The ID of the evaluation to retrieve
+            evaluation_id: The ID of the evaluation to retrieve
 
         Returns:
             Evaluation: The evaluation
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_get(eval_id)
+        request = self.prepare_get(evaluation_id)
         response = self._client._prepared_request(request)
         return Evaluation(**response)
 
     def update(
         self,
-        eval_id: str,
+        evaluation_id: str,
         name: Optional[str] = None,
         project_id: Optional[str] = None,
         json_schema: Optional[Dict[str, Any]] = None,
@@ -247,7 +247,7 @@ class Evals(SyncAPIResource, EvalsMixin):
         Update an evaluation with partial updates.
 
         Args:
-            eval_id: The ID of the evaluation to update
+            evaluation_id: The ID of the evaluation to update
             name: Optional new name for the evaluation
             project_id: Optional new project ID
             json_schema: Optional new JSON schema
@@ -261,7 +261,7 @@ class Evals(SyncAPIResource, EvalsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_update(
-            eval_id=eval_id, name=name, project_id=project_id, json_schema=json_schema, documents=documents, iterations=iterations, default_inference_settings=default_inference_settings
+            evaluation_id=evaluation_id, name=name, project_id=project_id, json_schema=json_schema, documents=documents, iterations=iterations, default_inference_settings=default_inference_settings
         )
         response = self._client._prepared_request(request)
         return Evaluation(**response)
@@ -282,31 +282,31 @@ class Evals(SyncAPIResource, EvalsMixin):
         response = self._client._prepared_request(request)
         return [Evaluation(**item) for item in response.get("data", [])]
 
-    def delete(self, eval_id: str) -> DeleteResponse:
+    def delete(self, evaluation_id: str) -> DeleteResponse:
         """
         Delete an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation to delete
+            evaluation_id: The ID of the evaluation to delete
 
         Returns:
             DeleteResponse: The response containing success status and ID
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_delete(eval_id)
+        request = self.prepare_delete(evaluation_id)
         return self._client._prepared_request(request)
 
 
 class Documents(SyncAPIResource, DocumentsMixin):
     """Documents API wrapper for evaluations"""
 
-    def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
+    def create(self, evaluation_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Create a document for an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             document: The document to process. Can be:
                 - A file path (Path or str)
                 - A file-like object (IOBase)
@@ -324,16 +324,16 @@ class Documents(SyncAPIResource, DocumentsMixin):
         mime_document: MIMEData = prepare_mime_document(document)
 
         # Let prepare_create handle the serialization
-        request = self.prepare_create(eval_id, mime_document, annotation)
+        request = self.prepare_create(evaluation_id, mime_document, annotation)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    def list(self, eval_id: str, filename: Optional[str] = None) -> List[EvaluationDocument]:
+    def list(self, evaluation_id: str, filename: Optional[str] = None) -> List[EvaluationDocument]:
         """
         List documents for an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             filename: Optional filename to filter by
 
         Returns:
@@ -341,16 +341,16 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list(eval_id, filename)
+        request = self.prepare_list(evaluation_id, filename)
         response = self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
-    def get(self, eval_id: str, document_id: str) -> EvaluationDocument:
+    def get(self, evaluation_id: str, document_id: str) -> EvaluationDocument:
         """
         Get a document by ID.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             document_id: The ID of the document
 
         Returns:
@@ -358,16 +358,16 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_get(eval_id, document_id)
+        request = self.prepare_get(evaluation_id, document_id)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    def update(self, eval_id: str, document_id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
+    def update(self, evaluation_id: str, document_id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Update a document.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             document_id: The ID of the document
             annotation: The ground truth for the document
 
@@ -376,16 +376,16 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(eval_id, document_id, annotation)
+        request = self.prepare_update(evaluation_id, document_id, annotation)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    def delete(self, eval_id: str, document_id: str) -> DeleteResponse:
+    def delete(self, evaluation_id: str, document_id: str) -> DeleteResponse:
         """
         Delete a document.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             document_id: The ID of the document
 
         Returns:
@@ -393,7 +393,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_delete(eval_id, document_id)
+        request = self.prepare_delete(evaluation_id, document_id)
         return self._client._prepared_request(request)
 
 
@@ -403,12 +403,12 @@ class Iterations(SyncAPIResource, IterationsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def list(self, eval_id: str, model: Optional[str] = None) -> List[Iteration]:
+    def list(self, evaluation_id: str, model: Optional[str] = None) -> List[Iteration]:
         """
         List iterations for an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             model: Optional model to filter by
 
         Returns:
@@ -416,13 +416,13 @@ class Iterations(SyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list(eval_id, model)
+        request = self.prepare_list(evaluation_id, model)
         response = self._client._prepared_request(request)
         return [Iteration(**item) for item in response.get("data", [])]
 
     def create(
         self,
-        eval_id: str,
+        evaluation_id: str,
         model: str,
         temperature: float = 0.0,
         modality: Modality = "native",
@@ -436,7 +436,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         Create a new iteration for an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             json_schema: The JSON schema for the iteration (if not set, we use the one of the eval)
             model: The model to use for the iteration
             temperature: The temperature to use for the model
@@ -456,7 +456,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_create(
-            eval_id=eval_id,
+            evaluation_id=evaluation_id,
             json_schema=json_schema,
             model=model,
             temperature=temperature,
@@ -528,25 +528,25 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
 
-    async def get(self, eval_id: str) -> Evaluation:
+    async def get(self, evaluation_id: str) -> Evaluation:
         """
         Get an evaluation by ID.
 
         Args:
-            eval_id: The ID of the evaluation to retrieve
+            evaluation_id: The ID of the evaluation to retrieve
 
         Returns:
             Evaluation: The evaluation
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_get(eval_id)
+        request = self.prepare_get(evaluation_id)
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
 
     async def update(
         self,
-        eval_id: str,
+        evaluation_id: str,
         name: Optional[str] = None,
         project_id: Optional[str] = None,
         json_schema: Optional[Dict[str, Any]] = None,
@@ -572,7 +572,7 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_update(
-            eval_id=eval_id, name=name, project_id=project_id, json_schema=json_schema, documents=documents, iterations=iterations, default_inference_settings=default_inference_settings
+            evaluation_id=evaluation_id, name=name, project_id=project_id, json_schema=json_schema, documents=documents, iterations=iterations, default_inference_settings=default_inference_settings
         )
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
@@ -593,31 +593,31 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
         response = await self._client._prepared_request(request)
         return [Evaluation(**item) for item in response.get("data", [])]
 
-    async def delete(self, eval_id: str) -> DeleteResponse:
+    async def delete(self, evaluation_id: str) -> DeleteResponse:
         """
         Delete an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation to delete
+            evaluation_id: The ID of the evaluation to delete
 
         Returns:
             DeleteResponse: The response containing success status and ID
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_delete(eval_id)
+        request = self.prepare_delete(evaluation_id)
         return await self._client._prepared_request(request)
 
 
 class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
     """Async Documents API wrapper for evaluations"""
 
-    async def create(self, eval_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
+    async def create(self, evaluation_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Create a document for an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             document: The document to process. Can be:
                 - A file path (Path or str)
                 - A file-like object (IOBase)
@@ -635,16 +635,16 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         mime_document: MIMEData = prepare_mime_document(document)
 
         # Let prepare_create handle the serialization
-        request = self.prepare_create(eval_id, mime_document, annotation)
+        request = self.prepare_create(evaluation_id, mime_document, annotation)
         response = await self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    async def list(self, eval_id: str, filename: Optional[str] = None) -> List[EvaluationDocument]:
+    async def list(self, evaluation_id: str, filename: Optional[str] = None) -> List[EvaluationDocument]:
         """
         List documents for an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             filename: Optional filename to filter by
 
         Returns:
@@ -652,16 +652,16 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list(eval_id, filename)
+        request = self.prepare_list(evaluation_id, filename)
         response = await self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
-    async def update(self, eval_id: str, document_id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
+    async def update(self, evaluation_id: str, document_id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
         """
         Update a document.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             document_id: The ID of the document
             annotation: The ground truth for the document
 
@@ -670,16 +670,16 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(eval_id, document_id, annotation)
+        request = self.prepare_update(evaluation_id, document_id, annotation)
         response = await self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    async def delete(self, eval_id: str, document_id: str) -> DeleteResponse:
+    async def delete(self, evaluation_id: str, document_id: str) -> DeleteResponse:
         """
         Delete a document.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             document_id: The ID of the document
 
         Returns:
@@ -687,7 +687,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_delete(eval_id, document_id)
+        request = self.prepare_delete(evaluation_id, document_id)
         return await self._client._prepared_request(request)
 
 
@@ -713,12 +713,12 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 
-    async def list(self, eval_id: str, model: Optional[str] = None) -> List[Iteration]:
+    async def list(self, evaluation_id: str, model: Optional[str] = None) -> List[Iteration]:
         """
         List iterations for an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             model: Optional model to filter by
 
         Returns:
@@ -726,13 +726,13 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list(eval_id, model)
+        request = self.prepare_list(evaluation_id, model)
         response = await self._client._prepared_request(request)
         return [Iteration(**item) for item in response.get("data", [])]
 
     async def create(
         self,
-        eval_id: str,
+        evaluation_id: str,
         model: str,
         temperature: float = 0.0,
         modality: Modality = "native",
@@ -746,7 +746,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Create a new iteration for an evaluation.
 
         Args:
-            eval_id: The ID of the evaluation
+            evaluation_id: The ID of the evaluation
             json_schema: The JSON schema for the iteration
             model: The model to use for the iteration
             temperature: The temperature to use for the model
@@ -766,7 +766,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_create(
-            eval_id=eval_id,
+            evaluation_id=evaluation_id,
             json_schema=json_schema,
             model=model,
             temperature=temperature,
