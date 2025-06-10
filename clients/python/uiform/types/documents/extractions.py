@@ -31,7 +31,9 @@ class DocumentExtractRequest(BaseModel):
     document: MIMEData = Field(..., description="Document to be analyzed")
     modality: Modality
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
+    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(
+        default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
+    )
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
@@ -59,7 +61,6 @@ class ConsensusModel(BaseModel):
     reasoning_effort: ChatCompletionReasoningEffort = Field(
         default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
     )
-
 
 
 # For location of fields in the document (OCR)
@@ -176,7 +177,6 @@ class LogExtractionResponse(BaseModel):
 
 
 # We build from the openai.types.chat.chat_completion_chunk.ChatCompletionChunk adding just two three additional fields:
-# - missing_content: list[str]              #  The missing content (to be concatenated to the cumulated content to create a potentially valid JSON), it should be aligned with the choices index
 # - is_valid_json: list[bool]               #  Whether the total accumulated content is a valid JSON
 # - likelihoods: dict[str, float]     #  The delta of the flattened likelihoods (to be merged with the cumulated likelihoods)
 # - schema_validation_error: ErrorDetail | None = None #  The error in the schema validation of the total accumulated content
@@ -187,7 +187,6 @@ class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     flat_parsed: dict[str, Any] = {}
     flat_deleted_keys: list[str] = []
     field_locations: dict[str, list[FieldLocation]] | None = Field(default=None, description="The locations of the fields in the document, if available")
-    missing_content: str = ""
     is_valid_json: bool = False
     key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
 
@@ -242,14 +241,12 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                     content="",
                     flat_parsed={},
                     flat_likelihoods={},
-                    missing_content="",
                     is_valid_json=False,
                 )
 
         max_choices = max(len(self.choices), len(previous_cumulated_chunk.choices)) if previous_cumulated_chunk is not None else len(self.choices)
 
         # Get the current chunk missing content, flat_deleted_keys and is_valid_json
-        acc_missing_content = [safe_get_delta(self, i).missing_content or "" for i in range(max_choices)]
         acc_flat_deleted_keys = [safe_get_delta(self, i).flat_deleted_keys for i in range(max_choices)]
         acc_is_valid_json = [safe_get_delta(self, i).is_valid_json for i in range(max_choices)]
         acc_field_locations = [safe_get_delta(self, i).field_locations for i in range(max_choices)]  # This is only present in the last chunk.
@@ -286,7 +283,6 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         flat_likelihoods=acc_flat_likelihoods[i],
                         flat_deleted_keys=acc_flat_deleted_keys[i],
                         field_locations=acc_field_locations[i],
-                        missing_content=acc_missing_content[i],
                         is_valid_json=acc_is_valid_json[i],
                         key_mapping=acc_key_mapping[i],
                     ),
