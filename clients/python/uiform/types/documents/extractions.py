@@ -17,8 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_fiel
 
 from ..._utils.usage.usage import compute_cost_from_model, compute_cost_from_model_with_breakdown, CostBreakdown
 
-from ..._utils.ai_models import find_provider_from_model
-from ..ai_models import AIProvider, Amount, get_model_card
+from ..ai_models import Amount
 from ..chat import ChatCompletionUiformMessage
 from ..mime import MIMEData
 from ..modalities import Modality
@@ -27,12 +26,12 @@ from ..standards import ErrorDetail, StreamingBaseModel
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    document: MIMEData = Field(..., description="Document to be analyzed")
+    document: MIMEData = Field(default=None, description="Document to be analyzed", deprecated=True)  # type: ignore
+    documents: list[MIMEData] = Field(..., description="Documents to be analyzed (preferred over document)")
     modality: Modality
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(
-        default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
+    browser_canvas: Literal["A3", "A4", "A5"] = Field(
+        default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
     )
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
@@ -53,6 +52,16 @@ class DocumentExtractRequest(BaseModel):
         if v > 1 and info.data.get("temperature") == 0:
             raise ValueError("n_consensus greater than 1 but temperature is 0")
         return v
+
+    @model_validator(mode="before")
+    def validate_document_or_documents(cls, data: Any) -> Any:
+        if data.get("document") is not None and data.get("documents") is not None:
+            raise ValueError("document and documents cannot be provided at the same time")
+        if data.get("document") is not None:
+            data["documents"] = [data["document"]]
+        elif data.get("documents") is not None:
+            data["document"] = data["documents"][0]
+        return data
 
 
 class ConsensusModel(BaseModel):
