@@ -2,7 +2,7 @@ import base64
 import json
 from io import IOBase
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator, Literal, Optional
+from typing import Any, AsyncGenerator, Generator, Literal
 
 from anthropic.types.message_param import MessageParam
 from openai.types.chat import ChatCompletionMessageParam
@@ -31,7 +31,7 @@ def maybe_parse_to_pydantic(schema: Schema, response: UiParsedChatCompletion, al
                 response.choices[0].message.parsed = schema._partial_pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
             else:
                 response.choices[0].message.parsed = schema.pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
-        except Exception as e:
+        except Exception:
             pass
     return response
 
@@ -40,14 +40,15 @@ class BaseExtractionsMixin:
     def prepare_extraction(
         self,
         json_schema: dict[str, Any] | Path | str,
-        document: Path | str | IOBase | HttpUrl | None,
-        image_resolution_dpi: int | None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None,
-        model: str,
-        temperature: float,
-        modality: Modality,
-        reasoning_effort: ChatCompletionReasoningEffort,
-        stream: bool,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        model: str | None = None,
+        temperature: float = 0,
+        modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        stream: bool = False,
         n_consensus: int = 1,
         store: bool = False,
         idempotency_key: str | None = None,
@@ -56,9 +57,22 @@ class BaseExtractionsMixin:
 
         json_schema = load_json_schema(json_schema)
 
+        # Handle both single document and multiple documents
+        if document is not None and documents is not None:
+            raise ValueError("Cannot provide both 'document' and 'documents' parameters. Use either one.")
+        
+        if document is None and documents is None:
+            raise ValueError("Must provide either 'document' or 'documents' parameter.")
+        
+        # Convert single document to documents list for consistency
+        if document is not None:
+            processed_documents = [prepare_mime_document(document).model_dump()]
+        else:
+            processed_documents = [prepare_mime_document(doc).model_dump() for doc in documents]
+
         data = {
             "json_schema": json_schema,
-            "document": prepare_mime_document(document).model_dump() if document is not None else None,
+            "documents": processed_documents,
             "model": model,
             "temperature": temperature,
             "stream": stream,
@@ -127,7 +141,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
         browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         temperature: float = 0,
@@ -138,12 +153,15 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         store: bool = False,
     ) -> UiParsedChatCompletion:
         """
-        Process a document using the UiForm API.
+        Process one or more documents using the UiForm API.
 
         Args:
             json_schema: JSON schema defining the expected data structure
-            document: Single document (as MIMEData) to process
             model: The AI model to use for processing
+            document: Single document to process (use either this or documents, not both)
+            documents: List of documents to process (use either this or document, not both)
+            image_resolution_dpi: Optional image resolution DPI
+            browser_canvas: Optional browser canvas size
             temperature: Model temperature setting (0-1)
             modality: Modality of the document (e.g., native)
             reasoning_effort: The effort level for the model to reason about the input data.
@@ -151,16 +169,15 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             idempotency_key: Idempotency key for request
             store: Whether to store the document in the UiForm database
         Returns:
-            DocumentAPIResponse
+            UiParsedChatCompletion: Parsed response from the API
         Raises:
-            HTTPException if the request fails
+            ValueError: If neither document nor documents is provided, or if both are provided
+            HTTPException: If the request fails
         """
-
-        assert document is not None, "Either document or messages must be provided"
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = self.prepare_extraction(
-            json_schema, document, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema, document, documents, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
         )
         response = self._client._prepared_request(request)
 
@@ -172,7 +189,8 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
         browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         temperature: float = 0,
@@ -183,14 +201,15 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         store: bool = False,
     ) -> Generator[UiParsedChatCompletion, None, None]:
         """
-        Process a document using the UiForm API with streaming enabled.
+        Process one or more documents using the UiForm API with streaming enabled.
 
         Args:
             json_schema: JSON schema defining the expected data structure
-            document: Single document (as MIMEData) to process
+            model: The AI model to use for processing
+            document: Single document to process (use either this or documents, not both)
+            documents: List of documents to process (use either this or document, not both)
             image_resolution_dpi: Optional image resolution DPI.
             browser_canvas: Optional browser canvas size.
-            model: The AI model to use for processing
             temperature: Model temperature setting (0-1)
             modality: Modality of the document (e.g., native)
             reasoning_effort: The effort level for the model to reason about the input data.
@@ -199,18 +218,25 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             store: Whether to store the document in the UiForm database
 
         Returns:
-            Generator[DocumentExtractResponse]: Stream of parsed responses
+            Generator[UiParsedChatCompletion]: Stream of parsed responses
         Raises:
-            HTTPException if the request fails
+            ValueError: If neither document nor documents is provided, or if both are provided
+            HTTPException: If the request fails
         Usage:
         ```python
-        with uiform.documents.extractions.stream(json_schema, document, model, temperature, reasoning_effort, modality) as stream:
+        # Single document
+        with uiform.documents.extractions.stream(json_schema, model, document=document) as stream:
+            for response in stream:
+                print(response)
+        
+        # Multiple documents
+        with uiform.documents.extractions.stream(json_schema, model, documents=[doc1, doc2]) as stream:
             for response in stream:
                 print(response)
         ```
         """
         request = self.prepare_extraction(
-            json_schema, document, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema, document, documents, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
         )
         schema = Schema(json_schema=load_json_schema(json_schema))
 
@@ -292,7 +318,8 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
         browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         temperature: float = 0,
@@ -303,14 +330,15 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         store: bool = False,
     ) -> UiParsedChatCompletion:
         """
-        Extract structured data from a document asynchronously.
+        Extract structured data from one or more documents asynchronously.
 
         Args:
             json_schema: JSON schema defining the expected data structure.
-            document: Path, string, or file-like object representing the document.
+            model: The AI model to use.
+            document: Single document to process (use either this or documents, not both)
+            documents: List of documents to process (use either this or document, not both)
             image_resolution_dpi: Optional image resolution DPI.
             browser_canvas: Optional browser canvas size.
-            model: The AI model to use.
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
             reasoning_effort: The effort level for the model to reason about the input data.
@@ -318,10 +346,12 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             idempotency_key: Idempotency key for request
             store: Whether to store the document in the UiForm database
         Returns:
-            DocumentExtractResponse: Parsed response from the API.
+            UiParsedChatCompletion: Parsed response from the API.
+        Raises:
+            ValueError: If neither document nor documents is provided, or if both are provided
         """
         request = self.prepare_extraction(
-            json_schema, document, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema, document, documents, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
         )
         response = await self._client._prepared_request(request)
         schema = Schema(json_schema=load_json_schema(json_schema))
@@ -332,7 +362,8 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
         browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
         temperature: float = 0,
@@ -343,12 +374,15 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         store: bool = False,
     ) -> AsyncGenerator[UiParsedChatCompletion, None]:
         """
-        Extract structured data from a document asynchronously with streaming.
+        Extract structured data from one or more documents asynchronously with streaming.
 
         Args:
             json_schema: JSON schema defining the expected data structure.
-            document: Path, string, or file-like object representing the document.
             model: The AI model to use.
+            document: Single document to process (use either this or documents, not both)
+            documents: List of documents to process (use either this or document, not both)
+            image_resolution_dpi: Optional image resolution DPI.
+            browser_canvas: Optional browser canvas size.
             temperature: Model temperature setting (0-1).
             modality: Modality of the document (e.g., native).
             reasoning_effort: The effort level for the model to reason about the input data.
@@ -356,17 +390,25 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             idempotency_key: Idempotency key for request
             store: Whether to store the document in the UiForm database
         Returns:
-            AsyncGenerator[DocumentExtractResponse, None]: Stream of parsed responses.
+            AsyncGenerator[UiParsedChatCompletion, None]: Stream of parsed responses.
+        Raises:
+            ValueError: If neither document nor documents is provided, or if both are provided
 
         Usage:
         ```python
-        async with uiform.documents.extractions.stream(json_schema, document, model, temperature, reasoning_effort, modality) as stream:
+        # Single document
+        async with uiform.documents.extractions.stream(json_schema, model, document=document) as stream:
+            async for response in stream:
+                print(response)
+        
+        # Multiple documents
+        async with uiform.documents.extractions.stream(json_schema, model, documents=[doc1, doc2]) as stream:
             async for response in stream:
                 print(response)
         ```
         """
         request = self.prepare_extraction(
-            json_schema, document, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema, document, documents, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
         )
         schema = Schema(json_schema=load_json_schema(json_schema))
         ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
