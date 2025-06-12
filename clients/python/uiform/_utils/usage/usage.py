@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional
 
 from openai.types.completion_usage import CompletionUsage
 from pydantic import BaseModel, Field
@@ -71,12 +71,10 @@ def compute_api_call_cost(pricing: Pricing, usage: CompletionUsage, is_ft: bool 
     total_cost = (total_text_cost + total_audio_cost) / 1e6
 
     # Apply fine-tuning price hike if applicable
-    if is_ft and hasattr(pricing, 'ft_price_hike'):
+    if is_ft and hasattr(pricing, "ft_price_hike"):
         total_cost *= pricing.ft_price_hike
 
     return Amount(value=total_cost, currency="USD")
-
-
 
 
 def compute_cost_from_model(model: str, usage: CompletionUsage) -> Amount:
@@ -93,7 +91,7 @@ def compute_cost_from_model(model: str, usage: CompletionUsage) -> Amount:
     try:
         model_card = get_model_card(model)
         pricing = model_card.pricing
-    except ValueError as e:
+    except ValueError:
         raise ValueError(f"No pricing information found for model: {model}")
 
     return compute_api_call_cost(pricing, usage, is_ft)
@@ -124,46 +122,48 @@ class CompletionsUsage(BaseModel):
     model: Optional[str] = Field(default=None, description="When group_by=model, this field provides the model name of the grouped usage result.")
     batch: Optional[bool] = Field(default=None, description="When group_by=batch, this field tells whether the grouped usage result is batch or not.")
 
+
 ########################
 # DETAILED COST BREAKDOWN
 ########################
 
+
 class TokenCounts(BaseModel):
     """Detailed breakdown of token counts by type and category."""
-    
+
     # Prompt token counts
     prompt_regular_text: int
     prompt_cached_text: int
     prompt_audio: int
-    
+
     # Completion token counts
     completion_regular_text: int
     completion_audio: int
-    
+
     # Total tokens (should match sum of all components)
     total_tokens: int
 
 
 class CostBreakdown(BaseModel):
     """Detailed breakdown of API call costs by token type and usage category."""
-    
+
     # Total cost amount
     total: Amount
-    
+
     # Text token costs broken down by category
     text_prompt_cost: Amount
     text_cached_cost: Amount
     text_completion_cost: Amount
     text_total_cost: Amount
-    
+
     # Audio token costs broken down by category (if applicable)
     audio_prompt_cost: Optional[Amount] = None
     audio_completion_cost: Optional[Amount] = None
     audio_total_cost: Optional[Amount] = None
-    
+
     # Token counts for reference
     token_counts: TokenCounts
-    
+
     # Model and fine-tuning information
     model: str
     is_fine_tuned: bool = False
@@ -172,7 +172,7 @@ class CostBreakdown(BaseModel):
 def compute_api_call_cost_with_breakdown(pricing: Pricing, usage: CompletionUsage, model: str, is_ft: bool = False) -> CostBreakdown:
     """
     Computes a detailed price breakdown for the given token usage, based on the pricing.
-    
+
     Returns a CostBreakdown object containing costs broken down by token type and category.
     """
     # ----- Process prompt tokens -----
@@ -211,7 +211,7 @@ def compute_api_call_cost_with_breakdown(pricing: Pricing, usage: CompletionUsag
     cost_audio_prompt = 0.0
     cost_audio_completion = 0.0
     total_audio_cost = 0.0
-    
+
     if pricing.audio and (prompt_audio > 0 or completion_audio > 0):
         cost_audio_prompt = prompt_audio * pricing.audio.prompt
         cost_audio_completion = completion_audio * pricing.audio.completion
@@ -219,27 +219,27 @@ def compute_api_call_cost_with_breakdown(pricing: Pricing, usage: CompletionUsag
 
     # Convert to dollars (divide by 1M) and create Amount objects
     ft_multiplier = pricing.ft_price_hike if is_ft else 1.0
-    
+
     # Create Amount objects for each cost category
     text_prompt_amount = Amount(value=(cost_text_prompt / 1e6) * ft_multiplier, currency="USD")
     text_cached_amount = Amount(value=(cost_text_cached / 1e6) * ft_multiplier, currency="USD")
     text_completion_amount = Amount(value=(cost_text_completion / 1e6) * ft_multiplier, currency="USD")
     text_total_amount = Amount(value=(total_text_cost / 1e6) * ft_multiplier, currency="USD")
-    
+
     # Audio amounts (if applicable)
     audio_prompt_amount = None
     audio_completion_amount = None
     audio_total_amount = None
-    
+
     if pricing.audio and (prompt_audio > 0 or completion_audio > 0):
         audio_prompt_amount = Amount(value=(cost_audio_prompt / 1e6) * ft_multiplier, currency="USD")
         audio_completion_amount = Amount(value=(cost_audio_completion / 1e6) * ft_multiplier, currency="USD")
         audio_total_amount = Amount(value=(total_audio_cost / 1e6) * ft_multiplier, currency="USD")
-    
+
     # Total cost
     total_cost = (total_text_cost + total_audio_cost) / 1e6 * ft_multiplier
     total_amount = Amount(value=total_cost, currency="USD")
-    
+
     # Create TokenCounts object with token usage breakdown
     token_counts = TokenCounts(
         prompt_regular_text=prompt_regular_text,
@@ -247,9 +247,9 @@ def compute_api_call_cost_with_breakdown(pricing: Pricing, usage: CompletionUsag
         prompt_audio=prompt_audio,
         completion_regular_text=completion_regular_text,
         completion_audio=completion_audio,
-        total_tokens=usage.total_tokens
+        total_tokens=usage.total_tokens,
     )
-    
+
     return CostBreakdown(
         total=total_amount,
         text_prompt_cost=text_prompt_amount,
@@ -261,28 +261,28 @@ def compute_api_call_cost_with_breakdown(pricing: Pricing, usage: CompletionUsag
         audio_total_cost=audio_total_amount,
         token_counts=token_counts,
         model=model,
-        is_fine_tuned=is_ft
+        is_fine_tuned=is_ft,
     )
 
 
 def compute_cost_from_model_with_breakdown(model: str, usage: CompletionUsage) -> CostBreakdown:
     """
     Computes a detailed cost breakdown for an API call using the specified model and usage.
-    
+
     Args:
         model: The model name (can be a fine-tuned model like "ft:gpt-4o:uiform:4389573")
         usage: Token usage statistics for the API call
-        
+
     Returns:
         CostBreakdown object with detailed cost information
-        
+
     Raises:
         ValueError: If no pricing information is found for the model
     """
     # Extract base model name for fine-tuned models like "ft:gpt-4o:uiform:4389573"
     original_model = model
     is_ft = False
-    
+
     if model.startswith("ft:"):
         # Split by colon and take the second part (index 1) which contains the base model
         parts = model.split(":")
@@ -294,7 +294,7 @@ def compute_cost_from_model_with_breakdown(model: str, usage: CompletionUsage) -
     try:
         model_card = get_model_card(model)
         pricing = model_card.pricing
-    except ValueError as e:
+    except ValueError:
         raise ValueError(f"No pricing information found for model: {original_model}")
 
     return compute_api_call_cost_with_breakdown(pricing, usage, original_model, is_ft)

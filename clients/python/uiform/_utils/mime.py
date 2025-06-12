@@ -4,16 +4,17 @@ import io
 import json
 import mimetypes
 from pathlib import Path
-from typing import Literal, Sequence, TypeVar, get_args
+from typing import Sequence, TypeVar, get_args
 
 import httpx
 import PIL.Image
+import puremagic
 from pydantic import HttpUrl
 
 from ..types.mime import MIMEData
 from ..types.modalities import SUPPORTED_TYPES
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def generate_blake2b_hash_from_bytes(bytes_: bytes) -> str:
@@ -25,7 +26,7 @@ def generate_blake2b_hash_from_base64(base64_string: str) -> str:
 
 
 def generate_blake2b_hash_from_string(input_string: str) -> str:
-    return generate_blake2b_hash_from_bytes(input_string.encode('utf-8'))
+    return generate_blake2b_hash_from_bytes(input_string.encode("utf-8"))
 
 
 def generate_blake2b_hash_from_dict(input_dict: dict) -> str:
@@ -43,7 +44,7 @@ def convert_pil_image_to_mime_data(image: PIL.Image.Image) -> MIMEData:
     """
     # Convert PIL image to base64 string
     buffered = io.BytesIO()
-    choosen_format = image.format if (image.format and image.format.lower() in ['png', 'jpeg', 'gif', 'webp']) else "JPEG"
+    choosen_format = image.format if (image.format and image.format.lower() in ["png", "jpeg", "gif", "webp"]) else "JPEG"
     image.save(buffered, format=choosen_format)
     base64_content = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
@@ -98,13 +99,11 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     if isinstance(document, bytes):
         # `document` is already the raw bytes
         try:
-            import puremagic
-
             extension = puremagic.from_string(document)
             if extension.lower() in [".jpg", ".jpeg", ".jfif"]:
                 extension = ".jpeg"
-        except:
-            extension = '.txt'
+        except Exception:
+            extension = ".txt"
         file_bytes = document
         filename = "uploaded_file" + extension
     elif isinstance(document, io.IOBase):
@@ -112,19 +111,17 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
         file_bytes = document.read()
         filename = getattr(document, "name", "uploaded_file")
         filename = Path(filename).name
-    elif hasattr(document, 'unicode_string') and callable(getattr(document, 'unicode_string')):
+    elif hasattr(document, "unicode_string") and callable(getattr(document, "unicode_string")):
         with httpx.Client() as client:
             url: str = document.unicode_string()  # type: ignore
             response = client.get(url)
             response.raise_for_status()
             try:
-                import puremagic
-
                 extension = puremagic.from_string(response.content)
                 if extension.lower() in [".jpg", ".jpeg", ".jfif"]:
                     extension = ".jpeg"
-            except:
-                extension = '.txt'
+            except Exception:
+                extension = ".txt"
             file_bytes = response.content  # Fix: Use response.content instead of document
             filename = "uploaded_file" + extension
     else:
@@ -139,7 +136,7 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     encoded_content = base64.b64encode(file_bytes).decode("utf-8")
     # Compute SHA-256 hash over the *base64-encoded* content
     hash_obj = hashlib.sha256(encoded_content.encode("utf-8"))
-    content_hash = hash_obj.hexdigest()
+    hash_obj.hexdigest()
 
     # Guess MIME type based on file extension
     guessed_type, _ = mimetypes.guess_type(filename)

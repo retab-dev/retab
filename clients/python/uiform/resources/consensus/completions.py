@@ -1,28 +1,19 @@
-import json
-from pathlib import Path
-from typing import Any, AsyncGenerator, Generator
-
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from openai.types.shared_params.response_format_json_schema import ResponseFormatJSONSchema
-#from openai.lib._parsing import ResponseFormatT
-from pydantic import BaseModel as ResponseFormatT
 
+# from openai.lib._parsing import ResponseFormatT
+from pydantic import BaseModel as ResponseFormatT
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
-from ..._utils.json_schema import load_json_schema, unflatten_dict
-from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionUiformMessage
 from ...types.completions import UiChatCompletionsRequest
-from ...types.documents.extractions import UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice
-from ...types.standards import PreparedRequest
+from ...types.documents.extractions import UiParsedChatCompletion
 from ...types.schemas.object import Schema
-
+from ...types.standards import PreparedRequest
 
 
 class BaseCompletionsMixin:
-
     def prepare_parse(
         self,
         response_format: type[ResponseFormatT],
@@ -62,7 +53,6 @@ class BaseCompletionsMixin:
 
         return PreparedRequest(method="POST", url="/v1/completions", data=ui_chat_completions_request.model_dump(), idempotency_key=idempotency_key)
 
-
     def prepare_create(
         self,
         response_format: ResponseFormatJSONSchema,
@@ -74,7 +64,6 @@ class BaseCompletionsMixin:
         n_consensus: int,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
-        
         json_schema = response_format["json_schema"].get("schema")
 
         assert isinstance(json_schema, dict), f"json_schema must be a dictionary, got {type(json_schema)}"
@@ -136,7 +125,6 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         response = self._client._prepared_request(request)
 
         return UiParsedChatCompletion.model_validate(response)
-
 
     def parse(
         self,
@@ -209,9 +197,6 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
 
         response = await self._client._prepared_request(request)
         return UiParsedChatCompletion.model_validate(response)
-
-
-
 
     async def parse(
         self,

@@ -1,32 +1,29 @@
-import datetime
 import json
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional
 
-import httpx
-from pydantic import HttpUrl
 from PIL.Image import Image
+from pydantic import HttpUrl
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ...._utils.mime import prepare_mime_document
-from ....types.mime import BaseMIMEData, MIMEData
 from ....types.logs import AutomationLog
+from ....types.mime import MIMEData
 from ....types.standards import PreparedRequest
 
 
 class TestsMixin:
     def prepare_upload(self, automation_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/processors/automations/tests/upload/{automation_id}", data={"document": mime_document.model_dump(mode='json')})
+        return PreparedRequest(method="POST", url=f"/v1/processors/automations/tests/upload/{automation_id}", data={"document": mime_document.model_dump(mode="json")})
 
     def prepare_webhook(self, automation_id: str) -> PreparedRequest:
         return PreparedRequest(method="POST", url=f"/v1/processors/automations/tests/webhook/{automation_id}", data=None)
 
     def print_upload_verbose(self, log: AutomationLog) -> None:
         if log.external_request_log:
-            print(f"\nTEST FILE UPLOAD RESULTS:")
-            print(f"\n#########################")
+            print("\nTEST FILE UPLOAD RESULTS:")
+            print("\n#########################")
             print(f"Status Code: {log.external_request_log.status_code}")
             print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
 
@@ -38,7 +35,7 @@ class TestsMixin:
                 print("RESPONSE BODY:")
                 print("--------------")
                 print(json.dumps(log.external_request_log.response_body, indent=2))
-                
+
             if log.external_request_log.response_headers:
                 print("\n--------------")
                 print("RESPONSE HEADERS:")
@@ -47,8 +44,8 @@ class TestsMixin:
 
     def print_webhook_verbose(self, log: AutomationLog) -> None:
         if log.external_request_log:
-            print(f"\nTEST WEBHOOK RESULTS:")
-            print(f"\n#########################")
+            print("\nTEST WEBHOOK RESULTS:")
+            print("\n#########################")
             print(f"Status Code: {log.external_request_log.status_code}")
             print(f"Duration: {log.external_request_log.duration_ms:.2f}ms")
 
@@ -60,7 +57,7 @@ class TestsMixin:
                 print("RESPONSE BODY:")
                 print("--------------")
                 print(json.dumps(log.external_request_log.response_body, indent=2))
-                
+
             if log.external_request_log.response_headers:
                 print("\n--------------")
                 print("RESPONSE HEADERS:")
@@ -84,18 +81,18 @@ class Tests(SyncAPIResource, TestsMixin):
         """
         request = self.prepare_upload(automation_id, document)
         response = self._client._prepared_request(request)
-        
+
         log = AutomationLog.model_validate(response)
-        
+
         if verbose:
             self.print_upload_verbose(log)
-            
+
         return log
 
     def webhook(self, automation_id: str, verbose: bool = True) -> AutomationLog:
         """Test endpoint that simulates the complete webhook process with sample data.
 
-        Args:    
+        Args:
             automation_id: ID of the automation to test
             verbose: Whether to print verbose output
 
@@ -104,12 +101,12 @@ class Tests(SyncAPIResource, TestsMixin):
         """
         request = self.prepare_webhook(automation_id)
         response = self._client._prepared_request(request)
-        
+
         log = AutomationLog.model_validate(response)
-        
+
         if verbose:
             self.print_webhook_verbose(log)
-            
+
         return log
 
 
@@ -129,12 +126,12 @@ class AsyncTests(AsyncAPIResource, TestsMixin):
         """
         request = self.prepare_upload(automation_id, document)
         response = await self._client._prepared_request(request)
-        
+
         log = AutomationLog.model_validate(response)
-        
+
         if verbose:
             self.print_upload_verbose(log)
-            
+
         return log
 
     async def webhook(self, automation_id: str, verbose: bool = True) -> AutomationLog:
@@ -149,10 +146,10 @@ class AsyncTests(AsyncAPIResource, TestsMixin):
         """
         request = self.prepare_webhook(automation_id)
         response = await self._client._prepared_request(request)
-        
+
         log = AutomationLog.model_validate(response)
-        
+
         if verbose:
             self.print_webhook_verbose(log)
-            
+
         return log

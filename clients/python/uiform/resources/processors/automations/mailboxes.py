@@ -1,21 +1,15 @@
-import datetime
-import json
 from io import IOBase
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
-import httpx
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from PIL.Image import Image
 from pydantic import HttpUrl
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ...._utils.ai_models import assert_valid_model_extraction
 from ...._utils.mime import prepare_mime_document
 from ....types.automations.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
-from ....types.documents.extractions import UiParsedChatCompletion
-from ....types.logs import AutomationLog, ExternalRequestLog
-from ....types.mime import BaseMIMEData, EmailData, MIMEData
+from ....types.mime import EmailData, MIMEData
 from ....types.modalities import Modality
 from ....types.standards import PreparedRequest
 
@@ -34,7 +28,7 @@ class MailBoxesMixin:
         webhook_headers: Dict[str, str] = {},
         # DocumentExtraction Config
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -47,7 +41,7 @@ class MailBoxesMixin:
             "name": name,
             "webhook_url": webhook_url,
             "webhook_headers": webhook_headers,
-            "json_schema": json_schema, 
+            "json_schema": json_schema,
             "authorized_domains": authorized_domains,
             "authorized_emails": authorized_emails,
             "image_resolution_dpi": image_resolution_dpi,
@@ -102,7 +96,7 @@ class MailBoxesMixin:
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -111,7 +105,8 @@ class MailBoxesMixin:
     ) -> PreparedRequest:
         # Build data dict excluding None values
         data = {
-            k: v for k, v in {
+            k: v
+            for k, v in {
                 "name": name,
                 "webhook_url": webhook_url,
                 "webhook_headers": webhook_headers,
@@ -124,21 +119,19 @@ class MailBoxesMixin:
                 "temperature": temperature,
                 "reasoning_effort": reasoning_effort,
                 "json_schema": json_schema,
-            }.items() if v is not None
+            }.items()
+            if v is not None
         }
 
         if "model" in data:
             assert_valid_model_extraction(data["model"])
 
         update_mailbox_request = UpdateMailboxRequest.model_validate(data)
-        return PreparedRequest(
-            method="PUT", 
-            url=f"/v1/processors/automations/mailboxes/{email}", 
-            data=update_mailbox_request.model_dump(mode="json")
-        )
+        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
 
     def prepare_delete(self, email: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/mailboxes/{email}", raise_for_status=True)
+
 
 class Mailboxes(SyncAPIResource, MailBoxesMixin):
     """Emails API wrapper for managing email automation configurations"""
@@ -160,7 +153,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         webhook_headers: Dict[str, str] = {},
         # DocumentExtraction Config
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -187,7 +180,19 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         """
 
         request = self.prepare_create(
-            email, name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+            email,
+            name,
+            json_schema,
+            webhook_url,
+            authorized_domains,
+            authorized_emails,
+            webhook_headers,
+            image_resolution_dpi,
+            browser_canvas,
+            modality,
+            model,
+            temperature,
+            reasoning_effort,
         )
         response = self._client._prepared_request(request)
 
@@ -247,7 +252,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -277,7 +282,19 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             Mailbox: The updated mailbox configuration
         """
         request = self.prepare_update(
-            email, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema
+            email,
+            name,
+            webhook_url,
+            webhook_headers,
+            authorized_domains,
+            authorized_emails,
+            image_resolution_dpi,
+            browser_canvas,
+            modality,
+            model,
+            temperature,
+            reasoning_effort,
+            json_schema,
         )
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
@@ -289,8 +306,9 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             email: Email address of the mailbox to delete
         """
         request = self.prepare_delete(email)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
+
 
 class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
     def __init__(self, client: Any) -> None:
@@ -307,14 +325,26 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         authorized_emails: List[str] = [],
         webhook_headers: Dict[str, str] = {},
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Mailbox:
         request = self.prepare_create(
-                email, name, json_schema, webhook_url, authorized_domains, authorized_emails, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+            email,
+            name,
+            json_schema,
+            webhook_url,
+            authorized_domains,
+            authorized_emails,
+            webhook_headers,
+            image_resolution_dpi,
+            browser_canvas,
+            modality,
+            model,
+            temperature,
+            reasoning_effort,
         )
         response = await self._client._prepared_request(request)
 
@@ -352,7 +382,7 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -360,7 +390,19 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         json_schema: Optional[Dict[str, Any]] = None,
     ) -> Mailbox:
         request = self.prepare_update(
-            email, name, webhook_url, webhook_headers, authorized_domains, authorized_emails, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema
+            email,
+            name,
+            webhook_url,
+            webhook_headers,
+            authorized_domains,
+            authorized_emails,
+            image_resolution_dpi,
+            browser_canvas,
+            modality,
+            model,
+            temperature,
+            reasoning_effort,
+            json_schema,
         )
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)
@@ -382,8 +424,8 @@ class TestMailboxesMixin:
         return PreparedRequest(method="POST", url=f"/v1/processors/automations/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
 
     def print_forward_verbose(self, email_data: EmailData) -> None:
-        print(f"\nTEST EMAIL FORWARDING RESULTS:")
-        print(f"\n#########################")
+        print("\nTEST EMAIL FORWARDING RESULTS:")
+        print("\n#########################")
         print(f"Email ID: {email_data.id}")
         print(f"Subject: {email_data.subject}")
         print(f"From: {email_data.sender}")
@@ -395,6 +437,7 @@ class TestMailboxesMixin:
         if email_data.body_plain:
             print("\nBody Preview:")
             print(email_data.body_plain[:500] + "..." if len(email_data.body_plain) > 500 else email_data.body_plain)
+
 
 class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
     def forward(
@@ -419,6 +462,7 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
         if verbose:
             self.print_forward_verbose(email_data)
         return email_data
+
 
 class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
     async def forward(

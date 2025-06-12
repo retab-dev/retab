@@ -61,3 +61,8 @@ tiktoken
 ## SSL dependencies
 ########################
 truststore
+
+########################
+## Development dependencies
+########################
+ruff

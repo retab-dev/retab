@@ -1,8 +1,8 @@
 import re
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, computed_field, field_validator, model_validator
 
 from ..._utils.json_schema import convert_schema_to_layout
 from ..logs import AutomationConfig, UpdateAutomationRequest
@@ -29,7 +29,11 @@ class FetchParams(BaseModel):
 
 
 class Outlook(AutomationConfig):
-    object: Literal['automation.outlook'] = "automation.outlook"
+    @computed_field
+    @property
+    def object(self) -> str:
+        return "automation.outlook"
+
     id: str = Field(default_factory=lambda: "outlook_" + nanoid.generate(), description="Unique identifier for the outlook")
 
     authorized_domains: list[str] = Field(default_factory=list, description="List of authorized domains to receive the emails from")
@@ -41,12 +45,13 @@ class Outlook(AutomationConfig):
     match_params: List[MatchParams] = Field(default_factory=list, description="List of match parameters for the outlook automation")
     fetch_params: List[FetchParams] = Field(default_factory=list, description="List of fetch parameters for the outlook automation")
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def compute_layout_schema(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if values.get('layout_schema') is None:
-            values['layout_schema'] = convert_schema_to_layout(values['json_schema'])
+        if values.get("layout_schema") is None:
+            values["layout_schema"] = convert_schema_to_layout(values["json_schema"])
         return values
+
 
 class ListOutlooks(BaseModel):
     data: list[Outlook]

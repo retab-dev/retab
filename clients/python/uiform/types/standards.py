@@ -1,4 +1,4 @@
-from typing import Any, Generic, List, Literal, Optional, Tuple, TypeVar
+from typing import Any, List, Literal, Optional, Tuple, TypeVar
 
 from pydantic import BaseModel, Field
 

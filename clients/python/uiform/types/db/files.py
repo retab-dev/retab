@@ -31,6 +31,6 @@ class FileLink(BaseModel):
     expires_in: str = Field(description="The expiration time of the signed URL")
     filename: str = Field(description="The name of the file")
 
-    @field_serializer('download_url')
+    @field_serializer("download_url")
     def url2str(self, val: HttpUrl) -> str:
         return str(val)

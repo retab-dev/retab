@@ -1,17 +1,15 @@
-import copy
 import datetime
 import json
 from typing import Any, Dict, List, Literal, Optional
 
 import nanoid  # type: ignore
-from openai import OpenAI
+from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_serializer
-from pydantic_core import Url
 
-from .._utils.json_schema import clean_schema, compute_schema_data_id
+from .._utils.json_schema import compute_schema_data_id
 from .._utils.mime import generate_blake2b_hash_from_string
-from .._utils.usage.usage import compute_cost_from_model, compute_cost_from_model_with_breakdown, CostBreakdown
+from .._utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
 from .ai_models import Amount
 from .documents.extractions import UiParsedChatCompletion
 from .mime import BaseMIMEData
@@ -27,7 +25,9 @@ class ProcessorConfig(BaseModel):
 
     modality: Modality
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
+    browser_canvas: Literal["A3", "A4", "A5"] = Field(
+        default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
+    )
 
     # New attributes
     model: str = Field(..., description="Model used for chat completion")
@@ -61,7 +61,11 @@ class ProcessorConfig(BaseModel):
 
 
 class AutomationConfig(BaseModel):
-    object: str = Field(default="automation", description="Type of the object")
+    @computed_field
+    @property
+    def object(self) -> str:
+        return "automation"
+
     id: str = Field(default_factory=lambda: "auto_" + nanoid.generate(), description="Unique identifier for the automation")
     name: str = Field(..., description="Name of the automation")
     processor_id: str = Field(..., description="ID of the processor to use for the automation")
@@ -75,7 +79,7 @@ class AutomationConfig(BaseModel):
 
     need_validation: bool = Field(default=False, description="If the automation needs to be validated before running")
 
-    @field_serializer('webhook_url')
+    @field_serializer("webhook_url")
     def url2str(self, val: HttpUrl) -> str:
         return str(val)
 
@@ -87,7 +91,7 @@ class UpdateProcessorRequest(BaseModel):
     name: Optional[str] = None
     modality: Optional[Modality] = None
     image_resolution_dpi: Optional[int] = None
-    browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None
+    browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None
     model: Optional[str] = None
     json_schema: Optional[Dict] = None
     temperature: Optional[float] = None
@@ -127,18 +131,18 @@ class UpdateAutomationRequest(BaseModel):
 
     webhook_url: Optional[HttpUrl] = None
     webhook_headers: Optional[Dict[str, str]] = None
-    
+
     need_validation: Optional[bool] = None
 
-
-    @field_serializer('webhook_url')
+    @field_serializer("webhook_url")
     def url2str(self, val: HttpUrl | None) -> str | None:
         if isinstance(val, HttpUrl):
             return str(val)
         return val
 
+
 class OpenAIRequestConfig(BaseModel):
-    object: Literal['openai_request'] = "openai_request"
+    object: Literal["openai_request"] = "openai_request"
     id: str = Field(default_factory=lambda: "openai_req_" + nanoid.generate(), description="Unique identifier for the openai request")
     model: str
     json_schema: dict[str, Any]
@@ -173,15 +177,11 @@ class ExternalRequestLog(BaseModel):
     error: Optional[str] = None
     duration_ms: float
 
-    @field_serializer('webhook_url')
+    @field_serializer("webhook_url")
     def url2str(self, val: HttpUrl | None) -> str | None:
         if isinstance(val, HttpUrl):
             return str(val)
         return val
-
-
-from openai.types.chat import completion_create_params
-from openai.types.chat.chat_completion import ChatCompletion
 
 
 class LogCompletionRequest(BaseModel):
@@ -190,7 +190,7 @@ class LogCompletionRequest(BaseModel):
 
 
 class AutomationLog(BaseModel):
-    object: Literal['automation_log'] = "automation_log"
+    object: Literal["automation_log"] = "automation_log"
     id: str = Field(default_factory=lambda: "log_auto_" + nanoid.generate(), description="Unique identifier for the automation log")
     user_email: Optional[EmailStr]  # When the user is logged or when he forwards an email
     organization_id: str
@@ -212,7 +212,7 @@ class AutomationLog(BaseModel):
                 print(f"Error computing cost: {e}")
                 return None
         return None
-    
+
     @computed_field  # type: ignore
     @property
     def cost_breakdown(self) -> Optional[CostBreakdown]:

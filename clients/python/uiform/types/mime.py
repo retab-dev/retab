@@ -58,7 +58,7 @@ class TextBox(BaseModel):
     vertices: tuple[Point, Point, Point, Point] = Field(description="(top-left, top-right, bottom-right, bottom-left)")
     text: str
 
-    @field_validator('width', 'height')
+    @field_validator("width", "height")
     @classmethod
     def check_positive_dimensions(cls, v: int) -> int:
         if not isinstance(v, int) or v <= 0:
@@ -76,7 +76,7 @@ class Page(BaseModel):
     tokens: list[TextBox]
     transforms: list[Matrix] = Field(default=[], description="Transformation matrices applied to the original document image")
 
-    @field_validator('width', 'height')
+    @field_validator("width", "height")
     @classmethod
     def check_positive_dimensions(cls, v: int) -> int:
         if not isinstance(v, int) or v <= 0:
@@ -98,21 +98,21 @@ class MIMEData(BaseModel):
 
     @property
     def extension(self) -> str:
-        return self.filename.split('.')[-1].lower()
+        return self.filename.split(".")[-1].lower()
 
     @property
     def content(self) -> str:
-        if self.url.startswith('data:'):
+        if self.url.startswith("data:"):
             # Extract base64 content from data URL
-            base64_content = self.url.split(',')[1]
+            base64_content = self.url.split(",")[1]
             return base64_content
         else:
             raise ValueError("Content is not available for this file")
 
     @property
     def mime_type(self) -> str:
-        if self.url.startswith('data:'):
-            return self.url.split(';')[0].split(':')[1]
+        if self.url.startswith("data:"):
+            return self.url.split(";")[0].split(":")[1]
         else:
             return mimetypes.guess_type(self.filename)[0] or "application/octet-stream"
 
@@ -126,7 +126,7 @@ class MIMEData(BaseModel):
         return len(base64.b64decode(self.content))
 
     def __str__(self) -> str:
-        truncated_url = self.url[:50] + '...' if len(self.url) > 50 else self.url
+        truncated_url = self.url[:50] + "..." if len(self.url) > 50 else self.url
         # truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
         return f"MIMEData(filename='{self.filename}', url='{truncated_url}', mime_type='{self.mime_type}', size='{self.size}', extension='{self.extension}')"
 
@@ -136,34 +136,36 @@ class MIMEData(BaseModel):
 
 class BaseMIMEData(MIMEData):
     @classmethod
-    def model_validate(cls, obj: Any, *, strict: bool | None = None, from_attributes: bool | None = None, context: Any | None = None) -> Self:
+    def model_validate(
+        cls, obj: Any, *, strict: bool | None = None, from_attributes: bool | None = None, context: Any | None = None, by_alias: bool | None = None, by_name: bool | None = None
+    ) -> Self:
         if isinstance(obj, MIMEData):
             # Convert MIMEData instance to dict
             obj = obj.model_dump()
-        if isinstance(obj, dict) and 'url' in obj:
+        if isinstance(obj, dict) and "url" in obj:
             # Truncate URL to 1000 chars or less, ensuring it's a valid base64 string
-            if len(obj['url']) > 1000:
+            if len(obj["url"]) > 1000:
                 # Find the position of the base64 data
-                if ',' in obj['url']:
-                    prefix, base64_data = obj['url'].split(',', 1)
+                if "," in obj["url"]:
+                    prefix, base64_data = obj["url"].split(",", 1)
                     # Calculate how many characters we can keep (must be a multiple of 4)
                     max_base64_len = 1000 - len(prefix) - 1  # -1 for the comma
                     # Ensure the length is a multiple of 4
                     max_base64_len = max_base64_len - (max_base64_len % 4)
                     # Truncate and reassemble
-                    obj['url'] = prefix + ',' + base64_data[:max_base64_len]
+                    obj["url"] = prefix + "," + base64_data[:max_base64_len]
                 else:
                     # If there's no comma (unexpected format), truncate to 996 chars (multiple of 4)
-                    obj['url'] = obj['url'][:996]
-        return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
+                    obj["url"] = obj["url"][:996]
+        return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name)
 
     @property
     def id(self) -> str:
         raise NotImplementedError("id is not implemented for BaseMIMEData - id is the hash of the content, so it's not possible to generate it from the base class")
 
     def __str__(self) -> str:
-        truncated_url = self.url[:50] + '...' if len(self.url) > 50 else self.url
-        truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
+        truncated_url = self.url[:50] + "..." if len(self.url) > 50 else self.url
+        truncated_content = self.content[:50] + "..." if len(self.content) > 50 else self.content
         return f"BaseMIMEData(filename='{self.filename}', url='{truncated_url}', content='{truncated_content}', mime_type='{self.mime_type}', extension='{self.extension}')"
 
     def __repr__(self) -> str:
@@ -227,7 +229,7 @@ class BaseEmailData(BaseModel):
 
     @property
     def unique_filename(self) -> str:
-        cleaned_id = re.sub(r'[\s<>]', '', self.id)
+        cleaned_id = re.sub(r"[\s<>]", "", self.id)
         return f"{cleaned_id}.eml"
 
     def __repr__(self) -> str:
@@ -235,7 +237,7 @@ class BaseEmailData(BaseModel):
         attachment_count = len(self.attachments)
 
         subject_preview = self.subject
-        body_preview = self.body_plain[:5000] + '...' if self.body_plain and len(self.body_plain) > 5000 else self.body_plain
+        body_preview = self.body_plain[:5000] + "..." if self.body_plain and len(self.body_plain) > 5000 else self.body_plain
 
         return (
             f"BaseEmailData("

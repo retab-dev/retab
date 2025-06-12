@@ -1,6 +1,6 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Literal, Optional
 
-from ...._resource import SyncAPIResource, AsyncAPIResource
+from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.logs import AutomationLog, ExternalRequestLog, ListLogs
 from ....types.standards import PreparedRequest
 

@@ -1,18 +1,16 @@
 import copy
 import datetime
 import json
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional
 
 import nanoid  # type: ignore
 from pydantic import BaseModel, Field, computed_field
 
-
 from .._utils.json_schema import clean_schema, compute_schema_data_id
 from .._utils.mime import generate_blake2b_hash_from_string
-from .ai_models import Amount, LLMModel
+from .ai_models import Amount
 from .jobs.base import InferenceSettings
 from .mime import MIMEData
-
 
 # Define the type alias for MetricType
 MetricType = Literal["levenshtein", "jaccard", "hamming"]

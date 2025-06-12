@@ -2,10 +2,9 @@ import copy
 import datetime
 import json
 from pathlib import Path
-from typing import Any, Iterable, Literal, Self, cast
+from typing import Any, Literal, Self
 
 from anthropic.types.message_param import MessageParam
-
 from google.genai.types import ContentUnionDict  # type: ignore
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
@@ -220,7 +219,7 @@ class Schema(PartialSchema):
 
     @property
     def developer_system_prompt(self) -> str:
-        return '''
+        return """
 # General Instructions
 
 You are an expert in data extraction and structured data outputs.
@@ -379,7 +378,7 @@ You can easily identify the fields that require a source by the `quote___[attrib
 
 # User Defined System Prompt
 
-'''
+"""
 
     @property
     def user_system_prompt(self) -> str:
@@ -463,7 +462,7 @@ You can easily identify the fields that require a source by the `quote___[attrib
         rec_remove_required(_validation_object_schema_)
         return _validation_object_schema_
 
-    def _get_pattern_attribute(self, pattern: str, attribute: Literal['X-FieldPrompt', 'X-ReasoningPrompt', 'type']) -> str | None:
+    def _get_pattern_attribute(self, pattern: str, attribute: Literal["X-FieldPrompt", "X-ReasoningPrompt", "type"]) -> str | None:
         """
         Given a JSON Schema and a pattern (like "my_object.my_array.*.my_property"),
         navigate the schema and return the specified attribute of the identified node.
@@ -506,7 +505,7 @@ You can easily identify the fields that require a source by the `quote___[attrib
             return schema_to_ts_type(current_schema, {}, {}, 0, 0, add_field_description=False)
         return current_schema.get(attribute)
 
-    def _set_pattern_attribute(self, pattern: str, attribute: Literal['X-FieldPrompt', 'X-ReasoningPrompt', 'X-SystemPrompt', 'description'], value: str) -> None:
+    def _set_pattern_attribute(self, pattern: str, attribute: Literal["X-FieldPrompt", "X-ReasoningPrompt", "X-SystemPrompt", "description"], value: str) -> None:
         """Sets an attribute value at a specific path in the schema.
 
         Args:
@@ -551,7 +550,7 @@ You can easily identify the fields that require a source by the `quote___[attrib
                 assert ref_name in definitions, "Validation Error: The $ref is not a definition reference"
 
                 # Count how many times this ref is used in the entire schema
-                ref_count = json.dumps(self.json_schema).count(f"\"{ref}\"")
+                ref_count = json.dumps(self.json_schema).count(f'"{ref}"')
 
                 if ref_count > 1:
                     # Create a unique copy name by appending a number
@@ -589,8 +588,8 @@ You can easily identify the fields that require a source by the `quote___[attrib
     def validate_schema_and_model(cls, data: Any) -> Any:
         """Validate schema and model logic."""
         # Extract from data
-        json_schema: dict[str, Any] | None = data.get('json_schema', None)
-        pydantic_model: type[BaseModel] | None = data.get('pydantic_model', None)
+        json_schema: dict[str, Any] | None = data.get("json_schema", None)
+        pydantic_model: type[BaseModel] | None = data.get("pydantic_model", None)
 
         # Check if either json_schema or pydantic_model is provided
         if json_schema and pydantic_model:
@@ -601,11 +600,11 @@ You can easily identify the fields that require a source by the `quote___[attrib
 
         if json_schema:
             json_schema = load_json_schema(json_schema)
-            data['pydantic_model'] = convert_json_schema_to_basemodel(json_schema)
-            data['json_schema'] = json_schema
+            data["pydantic_model"] = convert_json_schema_to_basemodel(json_schema)
+            data["json_schema"] = json_schema
         if pydantic_model:
-            data['pydantic_model'] = pydantic_model
-            data['json_schema'] = pydantic_model.model_json_schema()
+            data["pydantic_model"] = pydantic_model
+            data["json_schema"] = pydantic_model.model_json_schema()
 
         return data
 
@@ -627,5 +626,5 @@ You can easily identify the fields that require a source by the `quote___[attrib
             json_schema: The JSON schema to save, can be a dict, Path, or string
             schema_path: Output path for the schema file
         """
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(self.json_schema, f, ensure_ascii=False, indent=2)

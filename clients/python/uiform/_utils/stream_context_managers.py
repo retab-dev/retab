@@ -1,7 +1,7 @@
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from typing import Any, AsyncGenerator, Callable, Generator, TypeVar, Union
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class AsyncGeneratorContextManager(AbstractAsyncContextManager[AsyncGenerator[T, None]]):

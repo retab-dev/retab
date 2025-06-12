@@ -3,8 +3,9 @@ from typing import Any, Literal, Optional
 
 import nanoid  # type: ignore
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, Field, HttpUrl, field_serializer
+from pydantic import BaseModel, Field, HttpUrl, computed_field, field_serializer
 
+from ..logs import AutomationConfig
 from ..modalities import Modality
 
 
@@ -24,11 +25,12 @@ class CronSchedule(BaseModel):
         return f"{self.second or '*'} {self.minute} {self.hour} {self.day_of_month or '*'} {self.month or '*'} {self.day_of_week or '*'}"
 
 
-from ..logs import AutomationConfig
-
-
 class ScrappingConfig(AutomationConfig):
-    object: Literal['automation.scrapping_cron'] = "automation.scrapping_cron"
+    @computed_field
+    @property
+    def object(self) -> str:
+        return "automation.scrapping_cron"
+
     id: str = Field(default_factory=lambda: "scrapping_" + nanoid.generate(), description="Unique identifier for the scrapping job")
 
     # Scrapping Specific Config
@@ -43,7 +45,9 @@ class ScrappingConfig(AutomationConfig):
 
     modality: Modality
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal['A3', 'A4', 'A5'] = Field(default='A4', description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.")
+    browser_canvas: Literal["A3", "A4", "A5"] = Field(
+        default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
+    )
 
     # New attributes
     model: str = Field(..., description="Model used for chat completion")
@@ -53,6 +57,6 @@ class ScrappingConfig(AutomationConfig):
         default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
     )
 
-    @field_serializer('webhook_url', 'link')
+    @field_serializer("webhook_url", "link")
     def url2str(self, val: HttpUrl) -> str:
         return str(val)

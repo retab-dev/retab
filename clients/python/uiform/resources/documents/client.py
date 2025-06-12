@@ -6,13 +6,13 @@ import PIL.Image
 from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
+from ..._utils.json_schema import load_json_schema
 from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
-from ...types.documents.create_messages import DocumentCreateMessageRequest, DocumentMessage, DocumentCreateInputRequest
+from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
 from .extractions import AsyncExtractions, Extractions
-from ..._utils.json_schema import load_json_schema
 
 
 class BaseDocumentsMixin:
@@ -21,7 +21,7 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native",
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -43,7 +43,7 @@ class BaseDocumentsMixin:
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -105,7 +105,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         """
         request = self._prepare_correct_image_orientation(document)
         response = self._client._prepared_request(request)
-        mime_response = MIMEData.model_validate(response['document'])
+        mime_response = MIMEData.model_validate(response["document"])
         return convert_mime_data_to_pil_image(mime_response)
 
     def create_messages(
@@ -113,7 +113,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native",
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -141,7 +141,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -177,7 +177,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image,
         modality: Modality = "native",
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -206,7 +206,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -251,5 +251,5 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         """
         request = self._prepare_correct_image_orientation(document)
         response = await self._client._prepared_request(request)
-        mime_response = MIMEData.model_validate(response['document'])
+        mime_response = MIMEData.model_validate(response["document"])
         return convert_mime_data_to_pil_image(mime_response)

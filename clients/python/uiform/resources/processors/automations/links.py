@@ -1,21 +1,11 @@
-import datetime
-import json
-from io import IOBase
-from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 
-import httpx
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from PIL.Image import Image
 from pydantic import HttpUrl
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ...._utils.ai_models import assert_valid_model_extraction
-from ...._utils.mime import prepare_mime_document
 from ....types.automations.links import Link, ListLinks, UpdateLinkRequest
-from ....types.documents.extractions import UiParsedChatCompletion
-from ....types.logs import AutomationLog, ExternalRequestLog, ListLogs
-from ....types.mime import BaseMIMEData, MIMEData
 from ....types.modalities import Modality
 from ....types.standards import PreparedRequest
 
@@ -25,7 +15,7 @@ class LinksMixin:
         self,
         name: str,
         json_schema: Dict[str, Any],
-        webhook_url: HttpUrl,   
+        webhook_url: HttpUrl,
         webhook_headers: Optional[Dict[str, str]] = None,
         password: str | None = None,
         # DocumentExtraction Config
@@ -53,7 +43,7 @@ class LinksMixin:
         }
 
         request = Link.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/deployments/links", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="POST", url="/v1/deployments/links", data=request.model_dump(mode="json"))
 
     def prepare_list(
         self,
@@ -139,10 +129,11 @@ class LinksMixin:
             data["reasoning_effort"] = reasoning_effort
 
         request = UpdateLinkRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/deployments/{link_id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/deployments/{link_id}", data=request.model_dump(mode="json"))
 
     def prepare_delete(self, link_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/links/{link_id}", raise_for_status=True)
+
 
 class Links(SyncAPIResource, LinksMixin):
     """Extraction Link API wrapper for managing extraction link configurations"""
@@ -183,7 +174,9 @@ class Links(SyncAPIResource, LinksMixin):
             Link: The created extraction link configuration
         """
 
-        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(
+            name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+        )
         response = self._client._prepared_request(request)
 
         print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/processors/{response['id']}")
@@ -270,7 +263,9 @@ class Links(SyncAPIResource, LinksMixin):
             Link: The updated extraction link configuration
         """
 
-        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema)
+        request = self.prepare_update(
+            link_id, name, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema
+        )
         response = self._client._prepared_request(request)
         return Link.model_validate(response)
 
@@ -285,6 +280,7 @@ class Links(SyncAPIResource, LinksMixin):
         """
         request = self.prepare_delete(link_id)
         self._client._prepared_request(request)
+
 
 class AsyncLinks(AsyncAPIResource, LinksMixin):
     """Async Extraction Link API wrapper for managing extraction link configurations"""
@@ -306,7 +302,9 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> Link:
-        request = self.prepare_create(name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(
+            name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+        )
         response = await self._client._prepared_request(request)
         print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/processors/{response['id']}")
         return Link.model_validate(response)
@@ -347,7 +345,9 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
         json_schema: Optional[Dict[str, Any]] = None,
     ) -> Link:
-        request = self.prepare_update(link_id, name, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema)
+        request = self.prepare_update(
+            link_id, name, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema
+        )
         response = await self._client._prepared_request(request)
         return Link.model_validate(response)
 

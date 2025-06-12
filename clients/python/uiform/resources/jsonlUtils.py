@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from io import IOBase
 from pathlib import Path
-from typing import IO, Any, Literal, Optional
+from typing import IO, Any, Literal, Optional, TypedDict
 
 from anthropic import Anthropic
 from openai import OpenAI
@@ -31,7 +31,6 @@ class FinetuningJSON(BaseModel):
 
 
 FinetuningJSONL = list[FinetuningJSON]
-from typing import TypedDict
 
 
 class BatchJSONLResponseFormat(TypedDict):
@@ -106,9 +105,9 @@ class BatchJSONLResponse(BaseModel):
 
 class BaseDatasetsMixin:
     def _dump_training_set(self, training_set: list[dict[str, Any]], dataset_path: Path | str) -> None:
-        with open(dataset_path, 'w', encoding='utf-8') as file:
+        with open(dataset_path, "w", encoding="utf-8") as file:
             for entry in training_set:
-                file.write(json.dumps(entry) + '\n')
+                file.write(json.dumps(entry) + "\n")
 
 
 class Datasets(SyncAPIResource, BaseDatasetsMixin):
@@ -139,7 +138,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         document_annotation_pairs_paths: list[dict[str, Path | str]],
         dataset_path: Path | str,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         modality: Modality = "native",
     ) -> None:
         """Save document-annotation pairs to a JSONL training set.
@@ -153,16 +152,18 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema = load_json_schema(json_schema)
         schema_obj = Schema(json_schema=json_schema)
 
-        with open(dataset_path, 'w', encoding='utf-8') as file:
+        with open(dataset_path, "w", encoding="utf-8") as file:
             for pair_paths in tqdm(document_annotation_pairs_paths, desc="Processing pairs", position=0):
-                document_message = self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality, image_resolution_dpi=image_resolution_dpi, browser_canvas=browser_canvas)
+                document_message = self._client.documents.create_messages(
+                    document=pair_paths["document_fpath"], modality=modality, image_resolution_dpi=image_resolution_dpi, browser_canvas=browser_canvas
+                )
 
-                with open(pair_paths['annotation_fpath'], 'r') as f:
+                with open(pair_paths["annotation_fpath"], "r") as f:
                     annotation = json.loads(f.read())
                 assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
 
                 entry = {"messages": schema_obj.messages + document_message.messages + [assistant_message]}
-                file.write(json.dumps(entry) + '\n')
+                file.write(json.dumps(entry) + "\n")
 
     def change_schema(
         self,
@@ -193,8 +194,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         assert isinstance(target_path, Path) or isinstance(target_path, str)
 
         # Use a temporary file to write the updated content
-        with tempfile.NamedTemporaryFile('w', delete=False, encoding='utf-8') as temp_file:
-            with open(input_dataset_path, 'r', encoding='utf-8') as infile:
+        with tempfile.NamedTemporaryFile("w", delete=False, encoding="utf-8") as temp_file:
+            with open(input_dataset_path, "r", encoding="utf-8") as infile:
                 for line in infile:
                     entry = json.loads(line)
                     messages = entry.get("messages", [])
@@ -208,7 +209,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     updated_entry = {"messages": updated_messages}
 
                     # Write the updated entry to the temporary file
-                    temp_file.write(json.dumps(updated_entry) + '\n')
+                    temp_file.write(json.dumps(updated_entry) + "\n")
 
         # Replace the original file with the temporary file
         shutil.move(temp_file.name, target_path)
@@ -241,19 +242,19 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         for pair_paths in tqdm(pairs_paths):
             document_messages: list[ChatCompletionUiformMessage] = []
 
-            if isinstance(pair_paths['document_fpath'], str) or isinstance(pair_paths['document_fpath'], Path):
-                document_message = self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality)
+            if isinstance(pair_paths["document_fpath"], str) or isinstance(pair_paths["document_fpath"], Path):
+                document_message = self._client.documents.create_messages(document=pair_paths["document_fpath"], modality=modality)
                 document_messages.extend(document_message.messages)
 
             else:
-                assert isinstance(pair_paths['document_fpath'], list)
-                for document_fpath in pair_paths['document_fpath']:
+                assert isinstance(pair_paths["document_fpath"], list)
+                for document_fpath in pair_paths["document_fpath"]:
                     document_message = self._client.documents.create_messages(document=document_fpath, modality=modality)
                     document_messages.extend(document_message.messages)
 
             # Use context manager to properly close the file
-            assert isinstance(pair_paths['annotation_fpath'], Path) or isinstance(pair_paths['annotation_fpath'], str)
-            with open(pair_paths['annotation_fpath'], 'r') as f:
+            assert isinstance(pair_paths["annotation_fpath"], Path) or isinstance(pair_paths["annotation_fpath"], str)
+            with open(pair_paths["annotation_fpath"], "r") as f:
                 annotation = json.loads(f.read())
             assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
 
@@ -389,6 +390,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                     raise ValueError(f"Invalid file path: {doc_path}")
                 hash_str = hashlib.md5(doc_path.as_posix().encode()).hexdigest()
             elif isinstance(doc, IO):
+                doc_path = Path(doc.name) or "unknown_file"
                 file_bytes = doc.read()
                 hash_str = hashlib.md5(file_bytes).hexdigest()
                 doc.seek(0)
@@ -408,7 +410,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
             annotation_path = Path(root_dir) / f"annotations_{hash_str}.json"
             annotation_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(annotation_path, 'w', encoding='utf-8') as f:
+            with open(annotation_path, "w", encoding="utf-8") as f:
                 json.dump(string_json, f, ensure_ascii=False, indent=2)
 
             return {"document_fpath": str(doc_path), "annotation_fpath": str(annotation_path)}
@@ -442,176 +444,176 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         # Generate final training set from all results
         self.save(json_schema=json_schema, document_annotation_pairs_paths=pairs_paths, dataset_path=dataset_path)
 
-    def eval(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        dataset_path: str | Path,
-        model: str = "gpt-4o-2024-08-06",
-        temperature: float = 0.0,
-        batch_size: int = 5,
-        max_concurrent: int = 3,
-        display: bool = True,
-    ) -> ComparisonMetrics:
-        """Evaluate model performance on a test dataset.
+    # def eval(
+    #     self,
+    #     json_schema: dict[str, Any] | Path | str,
+    #     dataset_path: str | Path,
+    #     model: str = "gpt-4o-2024-08-06",
+    #     temperature: float = 0.0,
+    #     batch_size: int = 5,
+    #     max_concurrent: int = 3,
+    #     display: bool = True,
+    # ) -> ComparisonMetrics:
+    #     """Evaluate model performance on a test dataset.
 
-        Args:
-            json_schema: JSON schema defining the expected data structure
-            dataset_path: Path to the JSONL file containing test examples
-            model: The model to use for benchmarking
-            temperature: Model temperature setting (0-1)
-            batch_size: Number of examples to process in each batch
-            max_concurrent: Maximum number of concurrent API calls
-        """
+    #     Args:
+    #         json_schema: JSON schema defining the expected data structure
+    #         dataset_path: Path to the JSONL file containing test examples
+    #         model: The model to use for benchmarking
+    #         temperature: Model temperature setting (0-1)
+    #         batch_size: Number of examples to process in each batch
+    #         max_concurrent: Maximum number of concurrent API calls
+    #     """
 
-        json_schema = load_json_schema(json_schema)
-        assert_valid_model_extraction(model)
-        schema_obj = Schema(json_schema=json_schema)
+    #     json_schema = load_json_schema(json_schema)
+    #     assert_valid_model_extraction(model)
+    #     schema_obj = Schema(json_schema=json_schema)
 
-        # Initialize appropriate client
-        client, provider = self._initialize_model_client(model)
+    #     # Initialize appropriate client
+    #     client, provider = self._initialize_model_client(model)
 
-        # Read all lines from the JSONL file
-        with open(dataset_path, 'r') as f:
-            lines = [json.loads(line) for line in f]
+    #     # Read all lines from the JSONL file
+    #     with open(dataset_path, "r") as f:
+    #         lines = [json.loads(line) for line in f]
 
-        extraction_analyses: list[ExtractionAnalysis] = []
-        total_batches = (len(lines) + batch_size - 1) // batch_size
+    #     extraction_analyses: list[ExtractionAnalysis] = []
+    #     total_batches = (len(lines) + batch_size - 1) // batch_size
 
-        # Create main progress bar for batches
-        batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
+    #     # Create main progress bar for batches
+    #     batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
 
-        # Track running metrics
-        class RunningMetrics(BaseModel):
-            model: str
-            accuracy: float
-            levenshtein: float
-            jaccard: float
-            false_positive: float
-            mismatched: float
-            processed: int
+    #     # Track running metrics
+    #     class RunningMetrics(BaseModel):
+    #         model: str
+    #         accuracy: float
+    #         levenshtein: float
+    #         jaccard: float
+    #         false_positive: float
+    #         mismatched: float
+    #         processed: int
 
-        running_metrics: RunningMetrics = RunningMetrics(
-            model=model,
-            accuracy=0.0,
-            levenshtein=0.0,
-            jaccard=0.0,
-            false_positive=0.0,
-            mismatched=0.0,
-            processed=0,  # number of processed examples - used in the loop to compute the running averages
-        )
+    #     running_metrics: RunningMetrics = RunningMetrics(
+    #         model=model,
+    #         accuracy=0.0,
+    #         levenshtein=0.0,
+    #         jaccard=0.0,
+    #         false_positive=0.0,
+    #         mismatched=0.0,
+    #         processed=0,  # number of processed examples - used in the loop to compute the running averages
+    #     )
 
-        def update_running_metrics(analysis: ExtractionAnalysis) -> None:
-            comparison = normalized_comparison_metrics([analysis])
-            running_metrics.processed += 1
-            n = running_metrics.processed
-            # Update running averages
-            running_metrics.accuracy = (running_metrics.accuracy * (n - 1) + comparison.accuracy) / n
-            running_metrics.levenshtein = (running_metrics.levenshtein * (n - 1) + comparison.levenshtein_similarity) / n
-            running_metrics.jaccard = (running_metrics.jaccard * (n - 1) + comparison.jaccard_similarity) / n
-            running_metrics.false_positive = (running_metrics.false_positive * (n - 1) + comparison.false_positive_rate) / n
-            running_metrics.mismatched = (running_metrics.mismatched * (n - 1) + comparison.mismatched_value_rate) / n
-            # Update progress bar description
-            batch_pbar.set_description(
-                f"Processing batches | Model: {running_metrics.model} | Acc: {running_metrics.accuracy:.2f} | "
-                f"Lev: {running_metrics.levenshtein:.2f} | "
-                f"IOU: {running_metrics.jaccard:.2f} | "
-                f"FP: {running_metrics.false_positive:.2f} | "
-                f"Mism: {running_metrics.mismatched:.2f}"
-            )
+    #     # def update_running_metrics(analysis: ExtractionAnalysis) -> None:
+    #     #     comparison = normalized_comparison_metrics([analysis])
+    #     #     running_metrics.processed += 1
+    #     #     n = running_metrics.processed
+    #     #     # Update running averages
+    #     #     running_metrics.accuracy = (running_metrics.accuracy * (n - 1) + comparison.accuracy) / n
+    #     #     running_metrics.levenshtein = (running_metrics.levenshtein * (n - 1) + comparison.levenshtein_similarity) / n
+    #     #     running_metrics.jaccard = (running_metrics.jaccard * (n - 1) + comparison.jaccard_similarity) / n
+    #     #     running_metrics.false_positive = (running_metrics.false_positive * (n - 1) + comparison.false_positive_rate) / n
+    #     #     running_metrics.mismatched = (running_metrics.mismatched * (n - 1) + comparison.mismatched_value_rate) / n
+    #     #     # Update progress bar description
+    #     #     batch_pbar.set_description(
+    #     #         f"Processing batches | Model: {running_metrics.model} | Acc: {running_metrics.accuracy:.2f} | "
+    #     #         f"Lev: {running_metrics.levenshtein:.2f} | "
+    #     #         f"IOU: {running_metrics.jaccard:.2f} | "
+    #     #         f"FP: {running_metrics.false_positive:.2f} | "
+    #     #         f"Mism: {running_metrics.mismatched:.2f}"
+    #     #     )
 
-        def process_example(jsonline: dict) -> ExtractionAnalysis | None:
-            line_number = jsonline['line_number']
-            try:
-                messages = jsonline['messages']
-                ground_truth = json.loads(messages[-1]['content'])
-                inference_messages = messages[:-1]
+    #     # def process_example(jsonline: dict) -> ExtractionAnalysis | None:
+    #     #     line_number = jsonline["line_number"]
+    #     #     try:
+    #     #         messages = jsonline["messages"]
+    #     #         ground_truth = json.loads(messages[-1]["content"])
+    #     #         inference_messages = messages[:-1]
 
-                # Use _get_model_completion instead of duplicating provider-specific logic
-                string_json = self._get_model_completion(client=client, provider=provider, model=model, temperature=temperature, messages=inference_messages, schema_obj=schema_obj)
+    #     #         # Use _get_model_completion instead of duplicating provider-specific logic
+    #     #         string_json = self._get_model_completion(client=client, provider=provider, model=model, temperature=temperature, messages=inference_messages, schema_obj=schema_obj)
 
-                prediction = json.loads(string_json)
-                analysis = ExtractionAnalysis(
-                    ground_truth=ground_truth,
-                    prediction=prediction,
-                )
-                update_running_metrics(analysis)
-                return analysis
-            except Exception as e:
-                print(f"\nWarning: Failed to process line number {line_number}: {str(e)}")
-                return None
+    #     #         prediction = json.loads(string_json)
+    #     #         analysis = ExtractionAnalysis(
+    #     #             ground_truth=ground_truth,
+    #     #             prediction=prediction,
+    #     #         )
+    #     #         update_running_metrics(analysis)
+    #     #         return analysis
+    #     #     except Exception as e:
+    #     #         print(f"\nWarning: Failed to process line number {line_number}: {str(e)}")
+    #     #         return None
 
-        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-            # Split entries into batches
-            for batch_idx in range(0, len(lines), batch_size):
-                batch = lines[batch_idx : batch_idx + batch_size]
+    #     # with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+    #     #     # Split entries into batches
+    #     #     for batch_idx in range(0, len(lines), batch_size):
+    #     #         batch = lines[batch_idx : batch_idx + batch_size]
 
-                # Submit and process batch
-                futures = [executor.submit(process_example, entry | {"line_number": batch_idx * batch_size + i}) for i, entry in enumerate(batch)]
-                for future in futures:
-                    result = future.result()
-                    if result is not None:
-                        extraction_analyses.append(result)
+    #     #         # Submit and process batch
+    #     #         futures = [executor.submit(process_example, entry | {"line_number": batch_idx * batch_size + i}) for i, entry in enumerate(batch)]
+    #     #         for future in futures:
+    #     #             result = future.result()
+    #     #             if result is not None:
+    #     #                 extraction_analyses.append(result)
 
-                batch_pbar.update(1)
+    #     #         batch_pbar.update(1)
 
-        batch_pbar.close()
+    #     # batch_pbar.close()
 
-        # Analyze error patterns across all examples
-        analysis = normalized_comparison_metrics(extraction_analyses)
+    #     # # Analyze error patterns across all examples
+    #     # analysis = normalized_comparison_metrics(extraction_analyses)
 
-        if display:
-            plot_comparison_metrics(analysis=analysis, top_n=10)
+    #     # if display:
+    #     #     plot_comparison_metrics(analysis=analysis, top_n=10)
 
-        return analysis
+    #     # return analysis
 
-    def benchmark(
-        self,
-        json_schema: dict[str, Any] | Path | str,
-        dataset_path: str | Path,
-        models: list[str],
-        temperature: float = 0.0,
-        batch_size: int = 5,
-        max_concurrent: int = 3,
-        print: bool = True,
-        verbose: bool = False,
-    ) -> list[BenchmarkMetrics]:
-        """Benchmark multiple models on a test dataset.
+    # def benchmark(
+    #     self,
+    #     json_schema: dict[str, Any] | Path | str,
+    #     dataset_path: str | Path,
+    #     models: list[str],
+    #     temperature: float = 0.0,
+    #     batch_size: int = 5,
+    #     max_concurrent: int = 3,
+    #     print: bool = True,
+    #     verbose: bool = False,
+    # ) -> list[BenchmarkMetrics]:
+    #     """Benchmark multiple models on a test dataset.
 
-        Args:
-            json_schema: JSON schema defining the expected data structure
-            dataset_path: Path to the JSONL file containing test examples
-            models: List of models to benchmark
-            temperature: Model temperature setting (0-1)
-            batch_size: Number of examples to process in each batch
-            max_concurrent: Maximum number of concurrent API calls
-            print: Whether to print the metrics
-            verbose: Whether to print all the metrics of all the function calls
+    #     Args:
+    #         json_schema: JSON schema defining the expected data structure
+    #         dataset_path: Path to the JSONL file containing test examples
+    #         models: List of models to benchmark
+    #         temperature: Model temperature setting (0-1)
+    #         batch_size: Number of examples to process in each batch
+    #         max_concurrent: Maximum number of concurrent API calls
+    #         print: Whether to print the metrics
+    #         verbose: Whether to print all the metrics of all the function calls
 
-        Returns:
-            Dictionary mapping model names to their evaluation metrics
-        """
-        results: list[BenchmarkMetrics] = []
+    #     Returns:
+    #         Dictionary mapping model names to their evaluation metrics
+    #     """
+    #     results: list[BenchmarkMetrics] = []
 
-        for model in models:
-            metrics: ComparisonMetrics = self.eval(
-                json_schema=json_schema, dataset_path=dataset_path, model=model, temperature=temperature, batch_size=batch_size, max_concurrent=max_concurrent, display=verbose
-            )
-            results.append(
-                BenchmarkMetrics(
-                    ai_model=model,
-                    accuracy=metrics.accuracy,
-                    levenshtein_similarity=metrics.levenshtein_similarity,
-                    jaccard_similarity=metrics.jaccard_similarity,
-                    false_positive_rate=metrics.false_positive_rate,
-                    false_negative_rate=metrics.false_negative_rate,
-                    mismatched_value_rate=metrics.mismatched_value_rate,
-                )
-            )
+    #     for model in models:
+    #         metrics: ComparisonMetrics = self.eval(
+    #             json_schema=json_schema, dataset_path=dataset_path, model=model, temperature=temperature, batch_size=batch_size, max_concurrent=max_concurrent, display=verbose
+    #         )
+    #         results.append(
+    #             BenchmarkMetrics(
+    #                 ai_model=model,
+    #                 accuracy=metrics.accuracy,
+    #                 levenshtein_similarity=metrics.levenshtein_similarity,
+    #                 jaccard_similarity=metrics.jaccard_similarity,
+    #                 false_positive_rate=metrics.false_positive_rate,
+    #                 false_negative_rate=metrics.false_negative_rate,
+    #                 mismatched_value_rate=metrics.mismatched_value_rate,
+    #             )
+    #         )
 
-        if print:
-            display_benchmark_metrics(results)
+    #     if print:
+    #         display_benchmark_metrics(results)
 
-        return results
+    #     return results
 
     def update_annotations(
         self,
@@ -642,7 +644,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         client, provider = self._initialize_model_client(model)
 
         # Read all lines from the JSONL file
-        with open(old_dataset_path, 'r') as f:
+        with open(old_dataset_path, "r") as f:
             lines = [json.loads(line) for line in f]
 
         updated_entries = []
@@ -651,13 +653,13 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         batch_pbar = tqdm(total=total_batches, desc="Processing batches", position=0)
 
         def process_entry(entry: dict) -> dict:
-            messages = entry['messages']
+            messages = entry["messages"]
             system_message, user_messages, assistant_messages = separate_messages(messages)
             system_and_user_messages = messages[:-1]
 
             previous_annotation_message: ChatCompletionUiformMessage = {
                 "role": "user",
-                "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + messages[-1]['content'],
+                "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + messages[-1]["content"],
             }
 
             string_json = self._get_model_completion(
@@ -691,9 +693,9 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
 
         batch_pbar.close()
 
-        with open(new_dataset_path, 'w') as f:
+        with open(new_dataset_path, "w") as f:
             for entry in updated_entries:
-                f.write(json.dumps(entry) + '\n')
+                f.write(json.dumps(entry) + "\n")
 
     #########################
     ##### BATCH METHODS #####
@@ -722,7 +724,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         schema_obj = Schema(json_schema=loaded_json_schema)
         assert_valid_model_extraction(model)
 
-        with open(batch_requests_path, 'w', encoding='utf-8') as f:
+        with open(batch_requests_path, "w", encoding="utf-8") as f:
             for i, doc in tqdm(enumerate(documents)):
                 # Create document messages
                 doc_msg = self._client.documents.create_messages(
@@ -744,7 +746,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 }
 
                 # Write the request as a JSON line
-                f.write(json.dumps(request) + '\n')
+                f.write(json.dumps(request) + "\n")
 
     def save_batch_update_annotation_requests(
         self,
@@ -768,18 +770,18 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         schema_obj = Schema(json_schema=loaded_json_schema)
 
         # Read existing annotations
-        with open(old_dataset_path, 'r') as f:
+        with open(old_dataset_path, "r") as f:
             entries = [json.loads(line) for line in f]
 
         # Create new JSONL with update requests
-        with open(batch_requests_path, 'w', encoding='utf-8') as f:
+        with open(batch_requests_path, "w", encoding="utf-8") as f:
             for i, entry in enumerate(entries):
-                existing_messages = entry['messages']
+                existing_messages = entry["messages"]
                 system_and_user_messages = existing_messages[:-1]
 
                 previous_annotation_message: ChatCompletionMessageParam = {
                     "role": "user",
-                    "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + existing_messages[-1]['content'],
+                    "content": "Here is an old annotation using a different schema. Use it as a reference to update the annotation: " + existing_messages[-1]["content"],
                 }
 
                 # Construct the request object
@@ -798,7 +800,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
                 request: BatchJSONL = {"custom_id": f"request-{i}", "method": "POST", "url": "/v1/chat/completions", "body": body}
 
                 # Write the request as a JSON line
-                f.write(json.dumps(request) + '\n')
+                f.write(json.dumps(request) + "\n")
 
     def build_dataset_from_batch_results(
         self,
@@ -806,27 +808,27 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         batch_results_path: str | Path,
         dataset_results_path: str | Path,
     ) -> None:
-        with open(batch_requests_path, 'r') as f:
+        with open(batch_requests_path, "r") as f:
             input_lines: list[BatchJSONL] = [json.loads(line) for line in f]
-        with open(batch_results_path, 'r') as f:
-            batch_results_lines: list[BatchJSONLResponse] = [json.loads(line) for line in f]
+        with open(batch_results_path, "r") as f:
+            batch_results_lines: list[BatchJSONLResponse] = [BatchJSONLResponse.model_validate_json(line) for line in f]
 
         assert len(input_lines) == len(batch_results_lines), "Input and batch results must have the same number of lines"
 
         for input_line, batch_result in zip(input_lines, batch_results_lines):
-            messages = input_line['body']['messages']
+            messages = input_line["body"]["messages"]
 
             # Filter out messages containing the old annotation reference to remove messages that come from "update annotation"
-            if isinstance(messages[-1].get('content'), str):
-                if re.search(r'Here is an old annotation using a different schema\. Use it as a reference to update the annotation:', str(messages[-1].get('content', ''))):
+            if isinstance(messages[-1].get("content"), str):
+                if re.search(r"Here is an old annotation using a different schema\. Use it as a reference to update the annotation:", str(messages[-1].get("content", ""))):
                     print("found keyword")
-                    input_line['body']['messages'] = messages[:-1]
+                    input_line["body"]["messages"] = messages[:-1]
 
-            input_line['body']['messages'].append(batch_result['response']['body']['choices'][0]['message'])
+            input_line["body"]["messages"].append(batch_result.response.body.choices[0].message)
 
-        with open(dataset_results_path, 'w') as f:
+        with open(dataset_results_path, "w") as f:
             for input_line in input_lines:
-                f.write(json.dumps({'messages': input_line['body']['messages']}) + '\n')
+                f.write(json.dumps({"messages": input_line["body"]["messages"]}) + "\n")
 
         print(f"Dataset saved to {dataset_results_path}")
 
@@ -849,9 +851,9 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
         training_set = []
 
         for pair_paths in tqdm(pairs_paths):
-            document_message = await self._client.documents.create_messages(document=pair_paths['document_fpath'], modality=modality)
+            document_message = await self._client.documents.create_messages(document=pair_paths["document_fpath"], modality=modality)
 
-            with open(pair_paths['annotation_fpath'], 'r') as f:
+            with open(pair_paths["annotation_fpath"], "r") as f:
                 annotation = json.loads(f.read())
             assistant_message = {"role": "assistant", "content": json.dumps(annotation, ensure_ascii=False, indent=2)}
 
@@ -917,7 +919,7 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
 
                 annotation_path.parent.mkdir(parents=True, exist_ok=True)
 
-                with open(annotation_path, 'w', encoding='utf-8') as f:
+                with open(annotation_path, "w", encoding="utf-8") as f:
                     json.dump(result.choices[0].message.content, f, ensure_ascii=False, indent=2)
 
                 return {"document_fpath": str(doc_path), "annotation_fpath": str(annotation_path)}
@@ -954,7 +956,7 @@ class AsyncDatasets(AsyncAPIResource, BaseDatasetsMixin):
 
                 annotation_path.parent.mkdir(parents=True, exist_ok=True)
 
-                with open(annotation_path, 'w', encoding='utf-8') as f:
+                with open(annotation_path, "w", encoding="utf-8") as f:
                     json.dump(result.choices[0].message.content, f, ensure_ascii=False, indent=2)
 
                 return {

@@ -1,7 +1,7 @@
 from typing import Literal, Optional
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from ..modalities import Modality
 
@@ -11,7 +11,7 @@ class InferenceSettings(BaseModel):
     temperature: float = 0.0
     modality: Modality
     image_resolution_dpi: int = 96
-    browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4'
+    browser_canvas: Literal["A3", "A4", "A5"] = "A4"
     reasoning_effort: ChatCompletionReasoningEffort = "medium"
 
 

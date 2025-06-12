@@ -1,16 +1,16 @@
 import json
 import os
 from types import TracebackType
-from typing import Any, AsyncIterator, BinaryIO, Iterator, List, Optional
+from typing import Any, AsyncIterator, Iterator, Optional
 
 import backoff
 import backoff.types
 import httpx
+import truststore
 from pydantic_core import PydanticUndefined
 
-from .resources import processors, consensus, documents, evals, files, finetuning, models, schemas, secrets, usage
+from .resources import consensus, documents, evals, files, finetuning, models, processors, schemas, secrets, usage
 from .types.standards import PreparedRequest
-import truststore
 
 
 class MaxRetriesExceeded(Exception):
@@ -70,7 +70,6 @@ class BaseUiForm:
         if base_url is None:
             base_url = os.environ.get("UIFORM_API_BASE_URL", "https://api.uiform.com")
 
-
         truststore.inject_into_ssl()
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
@@ -84,26 +83,26 @@ class BaseUiForm:
         # Only check environment variables if the value is PydanticUndefined
         if openai_api_key is PydanticUndefined:
             openai_api_key = os.environ.get("OPENAI_API_KEY")
-        
+
         # if claude_api_key is PydanticUndefined:
         #    claude_api_key = os.environ.get("CLAUDE_API_KEY")
-        
+
         # if xai_api_key is PydanticUndefined:
         #    xai_api_key = os.environ.get("XAI_API_KEY")
-        
+
         if gemini_api_key is PydanticUndefined:
             gemini_api_key = os.environ.get("GEMINI_API_KEY")
 
         # Only add headers if the values are actual strings (not None or PydanticUndefined)
         if openai_api_key and openai_api_key is not PydanticUndefined:
             self.headers["OpenAI-Api-Key"] = openai_api_key
-        
+
         # if claude_api_key and claude_api_key is not PydanticUndefined:
         #    self.headers["Anthropic-Api-Key"] = claude_api_key
-        
+
         if xai_api_key and xai_api_key is not PydanticUndefined:
             self.headers["XAI-Api-Key"] = xai_api_key
-        
+
         if gemini_api_key and gemini_api_key is not PydanticUndefined:
             self.headers["Gemini-Api-Key"] = gemini_api_key
 
@@ -126,12 +125,12 @@ class BaseUiForm:
 
     def _parse_response(self, response: httpx.Response) -> Any:
         """Parse response based on content-type.
-        
+
         Returns:
             Any: Parsed JSON object for JSON responses, raw text string for text responses
         """
         content_type = response.headers.get("content-type", "")
-        
+
         # Check if it's a JSON response
         if "application/json" in content_type or "application/stream+json" in content_type:
             return response.json()
@@ -247,7 +246,7 @@ class UiForm(BaseUiForm):
                 "params": params,
                 "headers": self._get_headers(idempotency_key),
             }
-            
+
             # Handle different content types
             if files or form_data:
                 # For multipart/form-data requests
@@ -262,7 +261,7 @@ class UiForm(BaseUiForm):
             elif data:
                 # For JSON requests
                 request_kwargs["json"] = data
-            
+
             response = self.client.request(**request_kwargs)
             self._validate_response(response)
             return self._parse_response(response)
@@ -314,7 +313,7 @@ class UiForm(BaseUiForm):
                 "params": params,
                 "headers": self._get_headers(idempotency_key),
             }
-            
+
             # Handle different content types
             if files or form_data:
                 # For multipart/form-data requests
@@ -329,10 +328,10 @@ class UiForm(BaseUiForm):
             elif data:
                 # For JSON requests
                 stream_kwargs["json"] = data
-            
+
             with self.client.stream(**stream_kwargs) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
-                
+
                 content_type = response_ctx_manager.headers.get("content-type", "")
                 is_json_stream = "application/json" in content_type or "application/stream+json" in content_type
                 is_text_stream = "text/plain" in content_type or ("text/" in content_type and not is_json_stream)
@@ -340,7 +339,7 @@ class UiForm(BaseUiForm):
                 for chunk in response_ctx_manager.iter_lines():
                     if not chunk:
                         continue
-                    
+
                     if is_json_stream:
                         try:
                             yield json.loads(chunk)
@@ -375,7 +374,7 @@ class UiForm(BaseUiForm):
             form_data=request.form_data,
             files=request.files,
             idempotency_key=request.idempotency_key,
-            raise_for_status=request.raise_for_status
+            raise_for_status=request.raise_for_status,
         )
 
     def _prepared_request_stream(self, request: PreparedRequest) -> Iterator[Any]:
@@ -387,7 +386,7 @@ class UiForm(BaseUiForm):
             form_data=request.form_data,
             files=request.files,
             idempotency_key=request.idempotency_key,
-            raise_for_status=request.raise_for_status
+            raise_for_status=request.raise_for_status,
         ):
             yield item
 
@@ -479,12 +478,12 @@ class AsyncUiForm(BaseUiForm):
 
     def _parse_response(self, response: httpx.Response) -> Any:
         """Parse response based on content-type.
-        
+
         Returns:
             Any: Parsed JSON object for JSON responses, raw text string for text responses
         """
         content_type = response.headers.get("content-type", "")
-        
+
         # Check if it's a JSON response
         if "application/json" in content_type or "application/stream+json" in content_type:
             return response.json()
@@ -536,7 +535,7 @@ class AsyncUiForm(BaseUiForm):
                 "params": params,
                 "headers": self._get_headers(idempotency_key),
             }
-            
+
             # Handle different content types
             if files or form_data:
                 # For multipart/form-data requests
@@ -551,7 +550,7 @@ class AsyncUiForm(BaseUiForm):
             elif data:
                 # For JSON requests
                 request_kwargs["json"] = data
-            
+
             response = await self.client.request(**request_kwargs)
             self._validate_response(response)
             return self._parse_response(response)
@@ -602,7 +601,7 @@ class AsyncUiForm(BaseUiForm):
                 "params": params,
                 "headers": self._get_headers(idempotency_key),
             }
-            
+
             # Handle different content types
             if files or form_data:
                 # For multipart/form-data requests
@@ -617,18 +616,18 @@ class AsyncUiForm(BaseUiForm):
             elif data:
                 # For JSON requests
                 stream_kwargs["json"] = data
-            
+
             async with self.client.stream(**stream_kwargs) as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
-                
+
                 content_type = response_ctx_manager.headers.get("content-type", "")
                 is_json_stream = "application/json" in content_type or "application/stream+json" in content_type
                 is_text_stream = "text/plain" in content_type or ("text/" in content_type and not is_json_stream)
-                
+
                 async for chunk in response_ctx_manager.aiter_lines():
                     if not chunk:
                         continue
-                    
+
                     if is_json_stream:
                         try:
                             yield json.loads(chunk)
@@ -662,7 +661,7 @@ class AsyncUiForm(BaseUiForm):
             form_data=request.form_data,
             files=request.files,
             idempotency_key=request.idempotency_key,
-            raise_for_status=request.raise_for_status
+            raise_for_status=request.raise_for_status,
         )
 
     async def _prepared_request_stream(self, request: PreparedRequest) -> AsyncIterator[Any]:
@@ -674,7 +673,7 @@ class AsyncUiForm(BaseUiForm):
             form_data=request.form_data,
             files=request.files,
             idempotency_key=request.idempotency_key,
-            raise_for_status=request.raise_for_status
+            raise_for_status=request.raise_for_status,
         ):
             yield item
 

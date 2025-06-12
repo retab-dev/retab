@@ -77,13 +77,19 @@ def convert_from_openai_format(messages: list[ResponseInputItemParam]) -> list[C
     formatted_messages: list[ChatCompletionUiformMessage] = []
 
     for message in messages:
+        if "role" not in message or "content" not in message:
+            # Mandatory fields for a message
+            if message.get("type") != "message":
+                print(f"Not supported message type: {message.get('type')}... Skipping...")
+            continue
+
+        role = message["role"]
+        content = message["content"]
+
         if "type" not in message:
             # The type is required by all other sub-types of ResponseInputItemParam except for EasyInputMessageParam and Message, which are messages.
             message["type"] = "message"
 
-        if message["type"] != "message":
-            print(f"Not supported message type: {message['type']}... Skipping...")
-            continue
         role = message["role"]
         content = message["content"]
         formatted_content: str | list[ChatCompletionContentPartParam]

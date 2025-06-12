@@ -14,8 +14,8 @@ from email_validator import validate_email
 from pydantic import BaseModel, BeforeValidator, Field, create_model
 from pydantic.config import ConfigDict
 
-from uiform._utils.mime import generate_blake2b_hash_from_string
-from uiform.types.schemas.layout import Column, FieldItem, Layout, RefObject, Row, RowList
+from ..types.schemas.layout import Column, FieldItem, Layout, RefObject, Row, RowList
+from .mime import generate_blake2b_hash_from_string
 
 # **** Validation Functions ****
 
@@ -116,7 +116,7 @@ def validate_vat_number(v: Any) -> Optional[str]:
     try:
         if stdnum.eu.vat.is_valid(v_str):
             return stdnum.eu.vat.validate(v_str)
-    except:
+    except Exception:
         pass
     return None
 
@@ -150,7 +150,7 @@ def validate_email_address(v: Any) -> Optional[str]:
         return None
     try:
         return validate_email(v_str).normalized
-    except:
+    except Exception:
         return None
 
 
@@ -170,7 +170,7 @@ def validate_frenchpostcode(v: Any) -> Optional[str]:
         if not v_str.isdigit():
             return None
         return v_str
-    except:
+    except Exception:
         return None
 
 
@@ -201,7 +201,7 @@ def validate_un_code(v: Any) -> Optional[int]:
         val = int(float(v_str))  # handle numeric strings
         if 0 <= val <= 3481:
             return val
-    except:
+    except Exception:
         pass
     return None
 
@@ -242,7 +242,7 @@ def validate_integer(v: Any) -> Optional[int]:
         return None
     try:
         return int(float(v_str))
-    except:
+    except Exception:
         return None
 
 
@@ -257,7 +257,7 @@ def validate_float(v: Any) -> Optional[float]:
         return None
     try:
         return float(v_str)
-    except:
+    except Exception:
         return None
 
 
@@ -333,7 +333,7 @@ def validate_bool(v: Any) -> bool:
             return True
         elif v_str in false_values:
             return False
-    except:
+    except Exception:
         pass
 
     return False
@@ -2089,11 +2089,6 @@ def __sanitize_instance(instance: Any, schema: dict[str, Any], path: SchemaPath 
 def sanitize(instance: Any, schema: dict[str, Any]) -> Any:
     expanded_schema = expand_refs(schema)
     return __sanitize_instance(instance, expanded_schema)
-
-
-import copy
-import json
-from .mime import generate_blake2b_hash_from_string
 
 
 def compute_schema_data_id(json_schema: dict[str, Any]) -> str:
