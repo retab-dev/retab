@@ -1,16 +1,11 @@
-import json
-from io import IOBase
-from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from PIL.Image import Image
 from pydantic import HttpUrl
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ...._utils.ai_models import assert_valid_model_extraction
 from ....types.automations.outlook import FetchParams, ListOutlooks, MatchParams, Outlook, UpdateOutlookRequest
-from ....types.logs import AutomationLog
 from ....types.modalities import Modality
 from ....types.standards import PreparedRequest
 
@@ -28,7 +23,7 @@ class OutlooksMixin:
         webhook_headers: Dict[str, str] = {},
         # DocumentExtraction Config
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -103,7 +98,7 @@ class OutlooksMixin:
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -153,6 +148,7 @@ class OutlooksMixin:
     def prepare_delete(self, outlook_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/outlook/{outlook_id}")
 
+
 class Outlooks(SyncAPIResource, OutlooksMixin):
     """Outlook API wrapper for managing outlook automation configurations"""
 
@@ -168,7 +164,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         authorized_emails: List[str] = [],
         webhook_headers: Dict[str, str] = {},
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -272,7 +268,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -333,7 +329,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             outlook_id: ID of the outlook plugin to delete
         """
         request = self.prepare_delete(outlook_id)
-        response = self._client._prepared_request(request)
+        self._client._prepared_request(request)
         return None
 
 
@@ -350,7 +346,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         authorized_emails: List[str] = [],
         webhook_headers: Dict[str, str] = {},
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -407,7 +403,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         authorized_domains: Optional[List[str]] = None,
         authorized_emails: Optional[List[str]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,

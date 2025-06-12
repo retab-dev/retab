@@ -1,18 +1,13 @@
-import datetime
-from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 
-import httpx
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import HttpUrl
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ...._utils.ai_models import assert_valid_model_extraction
 from ....types.automations.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
-from ....types.logs import ExternalRequestLog
 
 # from ...types.documents.extractions import DocumentExtractResponse
-from ....types.mime import BaseMIMEData, MIMEData
 from ....types.modalities import Modality
 from ....types.standards import PreparedRequest
 
@@ -26,7 +21,7 @@ class EndpointsMixin:
         webhook_headers: Optional[Dict[str, str]] = None,
         # DocumentExtraction Config
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -48,7 +43,7 @@ class EndpointsMixin:
         }
 
         request = Endpoint.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/deployments/endpoints", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="POST", url="/v1/deployments/endpoints", data=request.model_dump(mode="json"))
 
     def prepare_list(
         self,
@@ -92,7 +87,7 @@ class EndpointsMixin:
         webhook_headers: Optional[Dict[str, str]] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -124,7 +119,7 @@ class EndpointsMixin:
         if reasoning_effort is not None:
             data["reasoning_effort"] = reasoning_effort
         request = UpdateEndpointRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/endpoints/{endpoint_id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/endpoints/{endpoint_id}", data=request.model_dump(mode="json"))
 
     def prepare_delete(self, endpoint_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/endpoints/{endpoint_id}")
@@ -141,7 +136,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         # DocumentExtraction Config
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -215,7 +210,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -238,7 +233,9 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         Returns:
             Endpoint: The updated endpoint configuration
         """
-        request = self.prepare_update(endpoint_id, name, webhook_url, webhook_headers, json_schema, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
+        request = self.prepare_update(
+            endpoint_id, name, webhook_url, webhook_headers, json_schema, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+        )
         response = self._client._prepared_request(request)
         return Endpoint.model_validate(response)
 
@@ -264,7 +261,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         # DocumentExtraction Config
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = 0,
@@ -273,7 +270,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
         response = await self._client._prepared_request(request)
         print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/processors/{response['id']}")
-        
+
         return Endpoint.model_validate(response)
 
     async def list(
@@ -302,13 +299,15 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         webhook_headers: Optional[Dict[str, str]] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         modality: Optional[Modality] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
     ) -> Endpoint:
-        request = self.prepare_update(endpoint_id, name, webhook_url, webhook_headers, json_schema, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
+        request = self.prepare_update(
+            endpoint_id, name, webhook_url, webhook_headers, json_schema, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+        )
         response = await self._client._prepared_request(request)
         return Endpoint.model_validate(response)
 

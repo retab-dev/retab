@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
-from ..._utils.benchmarking import EvalMetrics, SingleFileEval, compute_dict_difference
-from .batch_annotation import AnnotationInputData, InferenceSettings
+from .batch_annotation import InferenceSettings
 
 # This job will generate two datasets from the original dataset, one with the first annotation and one with the second annotation
 # It will then evaluate the two datasets using the evaluation metrics and return an EvalMetrics object

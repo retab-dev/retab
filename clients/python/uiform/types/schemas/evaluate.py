@@ -1,9 +1,11 @@
-from pydantic import BaseModel, Field, model_validator
 from typing import Any, Literal, Self
+
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from pydantic import BaseModel, Field, model_validator
+
+from ..evals import ItemMetric
 from ..mime import MIMEData
 from ..modalities import Modality
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from ..evals import ItemMetric
 
 
 class EvaluateSchemaRequest(BaseModel):

@@ -1,22 +1,23 @@
 import os
 import re
-from typing import ClassVar, List, Literal, Optional
+from typing import ClassVar, List, Optional
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, computed_field, field_validator
 
+from ..logs import AutomationConfig, UpdateAutomationRequest
 from ..pagination import ListMetadata
 
 domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-
-from ..logs import AutomationConfig, UpdateAutomationRequest
-
 
 class Mailbox(AutomationConfig):
+    @computed_field
+    @property
+    def object(self) -> str:
+        return "automation.mailbox"
+
     EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}$"
-    object: Literal['automation.mailbox'] = "automation.mailbox"
     id: str = Field(default_factory=lambda: "mb_" + nanoid.generate(), description="Unique identifier for the mailbox")
 
     # Email Specific config
@@ -33,7 +34,7 @@ class Mailbox(AutomationConfig):
     def normalize_authorized_emails(cls, emails: List[str]) -> List[str]:
         return [email.strip().lower() for email in emails]
 
-    @field_validator('authorized_domains', mode='before')
+    @field_validator("authorized_domains", mode="before")
     def validate_domain(cls, list_domains: list[str]) -> list[str]:
         for domain in list_domains:
             if not domain_pattern.match(domain):
@@ -48,7 +49,6 @@ class ListMailboxes(BaseModel):
 
 # Inherits from the methods of UpdateAutomationRequest
 class UpdateMailboxRequest(UpdateAutomationRequest):
-
     # ------------------------------
     # Email Specific config
     # ------------------------------

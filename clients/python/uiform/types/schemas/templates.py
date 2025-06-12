@@ -5,6 +5,7 @@ import nanoid  # type: ignore
 from pydantic import BaseModel, Field, PrivateAttr, computed_field
 
 from ..._utils.json_schema import generate_schema_data_id, generate_schema_id
+from ...types.mime import MIMEData
 
 
 class TemplateSchema(BaseModel):
@@ -56,9 +57,6 @@ class TemplateSchema(BaseModel):
 
     _partial_pydantic_model: type[BaseModel] = PrivateAttr()
     """The Pydantic model to use for loading."""
-
-
-from ...types.mime import MIMEData
 
 
 class UpdateTemplateRequest(BaseModel):

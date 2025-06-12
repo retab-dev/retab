@@ -1,22 +1,17 @@
 import base64
-import io
 import logging
 from typing import List, Literal, Optional, Union, cast
 
 import requests
-from anthropic.types.content_block import ContentBlock
-from anthropic.types.image_block_param import ImageBlockParam, Source
+from anthropic.types.image_block_param import ImageBlockParam
 from anthropic.types.message_param import MessageParam
 from anthropic.types.text_block_param import TextBlockParam
-from anthropic.types.tool_result_block_param import ToolResultBlockParam
-from anthropic.types.tool_use_block_param import ToolUseBlockParam
 from google.genai.types import BlobDict, ContentDict, ContentUnionDict, PartDict  # type: ignore
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam
 from openai.types.chat.chat_completion_content_part_input_audio_param import ChatCompletionContentPartInputAudioParam
 from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
 from openai.types.chat.chat_completion_content_part_text_param import ChatCompletionContentPartTextParam
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-from PIL import Image
 
 from ..types.chat import ChatCompletionUiformMessage
 
@@ -64,7 +59,7 @@ def convert_to_google_genai_format(messages: List[ChatCompletionUiformMessage]) 
             continue
         parts: list[PartDict] = []
 
-        message_content = message['content']
+        message_content = message["content"]
         if isinstance(message_content, str):
             # Direct string content is treated as the prompt for the SDK
             parts.append(PartDict(text=message_content))
@@ -74,8 +69,8 @@ def convert_to_google_genai_format(messages: List[ChatCompletionUiformMessage]) 
                 if part["type"] == "text":
                     parts.append(PartDict(text=part["text"]))
                 elif part["type"] == "image_url":
-                    url = part['image_url'].get('url', '')  # type: ignore
-                    if url.startswith('data:image'):
+                    url = part["image_url"].get("url", "")  # type: ignore
+                    if url.startswith("data:image"):
                         # Extract base64 data and add it to the formatted inputs
                         media_type, data_content = url.split(";base64,")
                         media_type = media_type.split("data:")[-1]  # => "image/jpeg"
@@ -133,24 +128,24 @@ def convert_to_anthropic_format(messages: List[ChatCompletionUiformMessage]) -> 
         # -----------------------
         # Handle non-system roles
         # -----------------------
-        if isinstance(message['content'], str):
+        if isinstance(message["content"], str):
             # Direct string content is treated as a single text block
             content_blocks.append(
                 {
                     "type": "text",
-                    "text": message['content'],
+                    "text": message["content"],
                 }
             )
 
-        elif isinstance(message['content'], list):
+        elif isinstance(message["content"], list):
             # Handle structured content
-            for part in message['content']:
+            for part in message["content"]:
                 if part["type"] == "text":
                     part = cast(ChatCompletionContentPartTextParam, part)
                     content_blocks.append(
                         {
                             "type": "text",
-                            "text": part['text'],  # type: ignore
+                            "text": part["text"],  # type: ignore
                         }
                     )
 

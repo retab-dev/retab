@@ -43,8 +43,8 @@ class BaseExtractionsMixin:
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
-        model: str | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        model: str = "",
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -60,15 +60,14 @@ class BaseExtractionsMixin:
         # Handle both single document and multiple documents
         if document is not None and documents is not None:
             raise ValueError("Cannot provide both 'document' and 'documents' parameters. Use either one.")
-        
-        if document is None and documents is None:
-            raise ValueError("Must provide either 'document' or 'documents' parameter.")
-        
+
         # Convert single document to documents list for consistency
         if document is not None:
             processed_documents = [prepare_mime_document(document).model_dump()]
-        else:
+        elif documents is not None:
             processed_documents = [prepare_mime_document(doc).model_dump() for doc in documents]
+        else:
+            raise ValueError("Must provide either 'document' or 'documents' parameter.")
 
         data = {
             "json_schema": json_schema,
@@ -113,12 +112,14 @@ class BaseExtractionsMixin:
                 # url is a base64 encoded string with the mime type and the content. For the dummy one we will send a .txt file with the text "No document provided"
                 url="data:text/plain;base64," + base64.b64encode(b"No document provided").decode("utf-8"),
             )
+        else:
+            mime_document = prepare_mime_document(document)
 
         return PreparedRequest(
             method="POST",
             url="/v1/documents/log_extraction",
             data=LogExtractionRequest(
-                document=prepare_mime_document(document) if document else mime_document,
+                document=mime_document,
                 messages=messages,
                 openai_messages=openai_messages,
                 anthropic_messages=anthropic_messages,
@@ -144,7 +145,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -177,7 +178,19 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = self.prepare_extraction(
-            json_schema, document, documents, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema,
+            document,
+            documents,
+            image_resolution_dpi,
+            browser_canvas,
+            model,
+            temperature,
+            modality,
+            reasoning_effort,
+            False,
+            n_consensus=n_consensus,
+            store=store,
+            idempotency_key=idempotency_key,
         )
         response = self._client._prepared_request(request)
 
@@ -192,7 +205,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -228,7 +241,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         with uiform.documents.extractions.stream(json_schema, model, document=document) as stream:
             for response in stream:
                 print(response)
-        
+
         # Multiple documents
         with uiform.documents.extractions.stream(json_schema, model, documents=[doc1, doc2]) as stream:
             for response in stream:
@@ -236,7 +249,19 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         ```
         """
         request = self.prepare_extraction(
-            json_schema, document, documents, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema,
+            document,
+            documents,
+            image_resolution_dpi,
+            browser_canvas,
+            model,
+            temperature,
+            modality,
+            reasoning_effort,
+            True,
+            n_consensus=n_consensus,
+            store=store,
+            idempotency_key=idempotency_key,
         )
         schema = Schema(json_schema=load_json_schema(json_schema))
 
@@ -321,7 +346,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -351,7 +376,19 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             ValueError: If neither document nor documents is provided, or if both are provided
         """
         request = self.prepare_extraction(
-            json_schema, document, documents, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, False, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema,
+            document,
+            documents,
+            image_resolution_dpi,
+            browser_canvas,
+            model,
+            temperature,
+            modality,
+            reasoning_effort,
+            False,
+            n_consensus=n_consensus,
+            store=store,
+            idempotency_key=idempotency_key,
         )
         response = await self._client._prepared_request(request)
         schema = Schema(json_schema=load_json_schema(json_schema))
@@ -365,7 +402,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal['A3', 'A4', 'A5'] | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
         temperature: float = 0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
@@ -400,7 +437,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         async with uiform.documents.extractions.stream(json_schema, model, document=document) as stream:
             async for response in stream:
                 print(response)
-        
+
         # Multiple documents
         async with uiform.documents.extractions.stream(json_schema, model, documents=[doc1, doc2]) as stream:
             async for response in stream:
@@ -408,7 +445,19 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         ```
         """
         request = self.prepare_extraction(
-            json_schema, document, documents, image_resolution_dpi, browser_canvas, model, temperature, modality, reasoning_effort, True, n_consensus=n_consensus, store=store, idempotency_key=idempotency_key
+            json_schema,
+            document,
+            documents,
+            image_resolution_dpi,
+            browser_canvas,
+            model,
+            temperature,
+            modality,
+            reasoning_effort,
+            True,
+            n_consensus=n_consensus,
+            store=store,
+            idempotency_key=idempotency_key,
         )
         schema = Schema(json_schema=load_json_schema(json_schema))
         ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None

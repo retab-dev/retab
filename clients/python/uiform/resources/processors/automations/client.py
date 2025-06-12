@@ -6,10 +6,11 @@ from typing import Any
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from .endpoints import AsyncEndpoints, Endpoints
 from .links import AsyncLinks, Links
+from .logs import AsyncLogs, Logs
 from .mailboxes import AsyncMailboxes, Mailboxes
 from .outlook import AsyncOutlooks, Outlooks
 from .tests import AsyncTests, Tests
-from .logs import AsyncLogs, Logs
+
 
 class SignatureVerificationError(Exception):
     """Raised when webhook signature verification fails."""
@@ -38,7 +39,7 @@ class AutomationsMixin:
         if not hmac.compare_digest(event_signature, expected_signature):
             raise SignatureVerificationError("Invalid signature")
 
-        return json.loads(event_body.decode('utf-8'))
+        return json.loads(event_body.decode("utf-8"))
 
 
 class Automations(SyncAPIResource, AutomationsMixin):
@@ -52,6 +53,7 @@ class Automations(SyncAPIResource, AutomationsMixin):
         self.endpoints = Endpoints(client=client)
         self.tests = Tests(client=client)
         self.logs = Logs(client=client)
+
     def verify_event(self, event_body: bytes, event_signature: str, secret: str) -> Any:
         """
         Verify the signature of a webhook event.

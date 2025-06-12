@@ -4,16 +4,16 @@ BaseModality = Literal["text", "image"]  # "video" , "audio"
 Modality = Literal[BaseModality, "native", "image+text"]
 TYPE_FAMILIES = Literal["excel", "word", "powerpoint", "pdf", "image", "text", "email", "audio", "html", "web"]
 NativeModalities: dict[TYPE_FAMILIES, Modality] = {
-    'excel': 'image',
-    'word': 'image',
-    'html': 'text',
-    'powerpoint': 'image',
-    'pdf': 'image',
-    'image': 'image',
-    'web': 'image',
-    'text': 'text',
-    'email': 'native',
-    'audio': 'text',
+    "excel": "image",
+    "word": "image",
+    "html": "text",
+    "powerpoint": "image",
+    "pdf": "image",
+    "image": "image",
+    "web": "image",
+    "text": "text",
+    "email": "native",
+    "audio": "text",
 }
 
 EXCEL_TYPES = Literal[".xls", ".xlsx", ".ods"]

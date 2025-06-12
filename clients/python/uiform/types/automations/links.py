@@ -1,14 +1,18 @@
-from typing import Literal, Optional
+from typing import Optional
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from ..logs import AutomationConfig, UpdateAutomationRequest
 from ..pagination import ListMetadata
 
 
 class Link(AutomationConfig):
-    object: Literal['automation.link'] = "automation.link"
+    @computed_field
+    @property
+    def object(self) -> str:
+        return "automation.link"
+
     id: str = Field(default_factory=lambda: "lnk_" + nanoid.generate(), description="Unique identifier for the extraction link")
 
     # Link Specific Config

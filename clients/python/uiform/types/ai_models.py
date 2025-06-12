@@ -1,4 +1,9 @@
-from typing import Literal
+import datetime
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, Field
+
+from uiform.types.jobs.base import InferenceSettings
 
 AIProvider = Literal["OpenAI", "Gemini", "xAI", "UiForm"]  # , "Anthropic", "xAI"]
 OpenAICompatibleProvider = Literal["OpenAI", "xAI"]  # , "xAI"]
@@ -49,12 +54,6 @@ xAI_Model = Literal["grok-3-beta", "grok-3-mini-beta"]
 UiFormModel = Literal["auto", "auto-small"]
 LLMModel = Literal[OpenAIModel, "human", AnthropicModel, xAI_Model, GeminiModel, UiFormModel]
 
-import datetime
-
-from pydantic import BaseModel, Field
-
-from uiform.types.jobs.base import InferenceSettings
-
 
 class FinetunedModel(BaseModel):
     object: Literal["finetuned_model"] = "finetuned_model"
@@ -65,11 +64,6 @@ class FinetunedModel(BaseModel):
     finetuning_props: InferenceSettings
     evaluation_id: str | None = None
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-
-
-from typing import Dict, List, Literal, Optional
-
-from pydantic import BaseModel
 
 
 # Monthly Usage
@@ -556,7 +550,7 @@ gemini_model_cards = [
     ModelCard(
         model="gemini-2.5-flash-preview-04-17",
         pricing=Pricing(text=TokenPrice(prompt=0.15, cached_discount=0.25, completion=0.60), audio=None),
-        capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]), 
+        capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
         temperature_support=True,
     ),
     ModelCard(

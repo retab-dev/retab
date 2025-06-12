@@ -1,32 +1,26 @@
-from typing import Any, Dict, List, Optional, TypedDict, Union, Literal
 from io import IOBase
 from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
 
 import PIL.Image
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
-from ..types.standards import PreparedRequest
+from .._utils.mime import prepare_mime_document
 from ..types.evals import (
+    CreateIterationRequest,
+    DistancesResult,
+    DocumentItem,
     Evaluation,
     EvaluationDocument,
     Iteration,
-    DistancesResult,
-    PredictionData,
-    AddIterationFromJsonlRequest,
-    DocumentItem,
     UpdateEvaluationDocumentRequest,
-    PredictionMetadata,
-    CreateIterationRequest,
 )
 from ..types.jobs.base import InferenceSettings
-
 from ..types.mime import MIMEData
-from .._utils.mime import prepare_mime_document
 from ..types.modalities import Modality
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-
-from tqdm import tqdm
+from ..types.standards import PreparedRequest
 
 
 class DeleteResponse(TypedDict):
@@ -153,7 +147,7 @@ class IterationsMixin:
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         n_consensus: int = 1,
     ) -> PreparedRequest:
         props = InferenceSettings(
@@ -171,7 +165,7 @@ class IterationsMixin:
         return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/iterations/create", data=perform_iteration_request.model_dump(exclude_none=True, mode="json"))
 
     def prepare_update(
-        self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_resolution_dpi: int = 96, browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4'
+        self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_resolution_dpi: int = 96, browser_canvas: Literal["A3", "A4", "A5"] = "A4"
     ) -> PreparedRequest:
         inference_settings = InferenceSettings(
             model=model,
@@ -261,7 +255,13 @@ class Evals(SyncAPIResource, EvalsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_update(
-            evaluation_id=evaluation_id, name=name, project_id=project_id, json_schema=json_schema, documents=documents, iterations=iterations, default_inference_settings=default_inference_settings
+            evaluation_id=evaluation_id,
+            name=name,
+            project_id=project_id,
+            json_schema=json_schema,
+            documents=documents,
+            iterations=iterations,
+            default_inference_settings=default_inference_settings,
         )
         response = self._client._prepared_request(request)
         return Evaluation(**response)
@@ -429,7 +429,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         json_schema: Optional[Dict[str, Any]] = None,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         n_consensus: int = 1,
     ) -> Iteration:
         """
@@ -445,7 +445,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
             image_resolution_dpi: The DPI of the image. Defaults to 96.
             browser_canvas: The canvas size of the browser. Must be one of:
                 - "A3" (11.7in x 16.54in)
-                - "A4" (8.27in x 11.7in) 
+                - "A4" (8.27in x 11.7in)
                 - "A5" (5.83in x 8.27in)
                 Defaults to "A4".
             n_consensus: Number of consensus iterations to perform
@@ -572,7 +572,13 @@ class AsyncEvals(AsyncAPIResource, EvalsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_update(
-            evaluation_id=evaluation_id, name=name, project_id=project_id, json_schema=json_schema, documents=documents, iterations=iterations, default_inference_settings=default_inference_settings
+            evaluation_id=evaluation_id,
+            name=name,
+            project_id=project_id,
+            json_schema=json_schema,
+            documents=documents,
+            iterations=iterations,
+            default_inference_settings=default_inference_settings,
         )
         response = await self._client._prepared_request(request)
         return Evaluation(**response)
@@ -739,7 +745,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         json_schema: Optional[Dict[str, Any]] = None,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4',
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         n_consensus: int = 1,
     ) -> Iteration:
         """
@@ -755,7 +761,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
             image_resolution_dpi: The DPI of the image. Defaults to 96.
             browser_canvas: The canvas size of the browser. Must be one of:
                 - "A3" (11.7in x 16.54in)
-                - "A4" (8.27in x 11.7in) 
+                - "A4" (8.27in x 11.7in)
                 - "A5" (5.83in x 8.27in)
                 Defaults to "A4".
             n_consensus: Number of consensus iterations to perform

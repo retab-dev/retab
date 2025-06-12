@@ -5,7 +5,7 @@ import shutil
 # The goal is to leverage this piece of code to open a jsonl file and get an analysis of the performance of the model using a one-liner.
 ############# BENCHMARKING MODELS #############
 from itertools import zip_longest
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Literal, Optional, cast
 
 import pandas as pd  # type: ignore
 from Levenshtein import distance as levenshtein_distance
@@ -27,7 +27,7 @@ def normalize_string(text: str) -> str:
     if not text:
         return ""
     # Remove all non-alphanumeric characters and convert to lowercase
-    return re.sub(r'[^a-zA-Z0-9]', '', text).lower()
+    return re.sub(r"[^a-zA-Z0-9]", "", text).lower()
 
 
 def hamming_distance_padded(s: str, t: str) -> int:
@@ -45,7 +45,7 @@ def hamming_distance_padded(s: str, t: str) -> int:
     s = normalize_string(s)
     t = normalize_string(t)
 
-    return sum(a != b for a, b in zip_longest(s, t, fillvalue=' '))
+    return sum(a != b for a, b in zip_longest(s, t, fillvalue=" "))
 
 
 def hamming_similarity(str_1: str, str_2: str) -> float:
@@ -385,7 +385,7 @@ class EvalMetrics(BaseModel):
     distances: dict[dictionary_metrics, EvalMetric]
 
 
-def flatten_dict(d: dict[str, Any], parent_key: str = '', sep: str = '.') -> dict[str, Any]:
+def flatten_dict(d: dict[str, Any], parent_key: str = "", sep: str = ".") -> dict[str, Any]:
     """Flatten a nested dictionary with dot-separated keys."""
     items: list[tuple[str, Any]] = []
     for k, v in d.items():
@@ -408,16 +408,14 @@ def plot_metrics_with_uncertainty(analysis: dict[str, Any], uncertainties: Optio
     """
     # Flatten the dictionaries
     flattened_analysis = flatten_dict(analysis)
-    if uncertainties:
-        flattened_uncertainties = flatten_dict(uncertainties)
-    else:
-        uncertainties_list = None
-
     # Prepare data by matching fields
     fields = list(flattened_analysis.keys())
     similarities = [flattened_analysis[field] for field in fields]
 
+    # Prepare uncertainties if provided
+    uncertainties_list = None
     if uncertainties:
+        flattened_uncertainties = flatten_dict(uncertainties)
         uncertainties_list = [flattened_uncertainties.get(field, None) for field in fields]
 
     # Create a DataFrame
@@ -454,10 +452,11 @@ def plot_metrics_with_uncertainty(analysis: dict[str, Any], uncertainties: Optio
 
         if similarity is None:
             continue  # Skip fields with no similarity value
-
+        similarity = cast(float, similarity)
         # Calculate bar length and uncertainty range
         bar_len = round(similarity * scale)
         if uncertainty is not None and uncertainty > 0:
+            uncertainty = cast(float, uncertainty)
             uncertainty_start = max(0, round((similarity - uncertainty) * scale))
             uncertainty_end = min(bar_width, round((similarity + uncertainty) * scale))
         else:
@@ -465,21 +464,21 @@ def plot_metrics_with_uncertainty(analysis: dict[str, Any], uncertainties: Optio
             uncertainty_end = bar_len  # No uncertainty to display
 
         # Build the bar string
-        bar_string = ''
+        bar_string = ""
         for i in range(bar_width):
             if i < bar_len:
                 if i < uncertainty_start:
-                    char = '█'  # Solid block for certain part
+                    char = "█"  # Solid block for certain part
                 else:
-                    char = '█'  # Lighter block for uncertainty overlap
+                    char = "█"  # Lighter block for uncertainty overlap
             else:
                 if i < uncertainty_end:
-                    char = '░'  # Dash for upper uncertainty range
+                    char = "░"  # Dash for upper uncertainty range
                 else:
-                    char = ' '  # Space for empty area
+                    char = " "  # Space for empty area
             bar_string += char
 
         # Print the label and bar
-        score_field = f'[{similarity:.4f}]'
+        score_field = f"[{similarity:.4f}]"
 
         print(f"{field:<{label_width}} {score_field} | {bar_string}")

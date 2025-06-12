@@ -48,7 +48,7 @@ class InferenceSettings(BaseModel):
     modality: Modality = "native"
     reasoning_effort: ChatCompletionReasoningEffort = "medium"
     image_resolution_dpi: int = 96
-    browser_canvas: Literal['A3', 'A4', 'A5'] = 'A4'
+    browser_canvas: Literal["A3", "A4", "A5"] = "A4"
     n_consensus: int = Field(default=1, description="Number of consensus rounds to perform")
 
 

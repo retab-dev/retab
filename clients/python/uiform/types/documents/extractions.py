@@ -15,8 +15,7 @@ from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
-from ..._utils.usage.usage import compute_cost_from_model, compute_cost_from_model_with_breakdown, CostBreakdown
-
+from ..._utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
 from ..ai_models import Amount
 from ..chat import ChatCompletionUiformMessage
 from ..mime import MIMEData
@@ -96,7 +95,7 @@ LikelihoodsSource = Literal["consensus", "log_probs"]
 
 class UiParsedChatCompletion(ParsedChatCompletion):
     extraction_id: str | None = None
-    choices: list[UiParsedChoice]
+    choices: list[UiParsedChoice]  # type: ignore
     # Additional metadata fields (UIForm)
     likelihoods: Optional[dict[str, Any]] = Field(
         default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
@@ -201,12 +200,12 @@ class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
 
 
 class UiParsedChoiceChunk(ChoiceChunk):
-    delta: UiParsedChoiceDeltaChunk
+    delta: UiParsedChoiceDeltaChunk  # type: ignore
 
 
 class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     extraction_id: str | None = None
-    choices: list[UiParsedChoiceChunk]
+    choices: list[UiParsedChoiceChunk]  # type: ignore
     schema_validation_error: ErrorDetail | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")

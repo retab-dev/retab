@@ -1,27 +1,23 @@
 import base64
-import datetime
 from io import IOBase
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
-import httpx
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import HttpUrl
+from pydantic import BaseModel, HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import MIMEData, prepare_mime_document
+from ...types.documents.extractions import UiParsedChatCompletion
 from ...types.logs import ProcessorConfig, UpdateProcessorRequest
-from ...types.pagination import ListMetadata
-from ...types.documents.extractions import UiParsedChatCompletion, DocumentExtractRequest
-from pydantic import BaseModel
 
 # from ...types.documents.extractions import DocumentExtractResponse
-from ...types.mime import BaseMIMEData
 from ...types.modalities import Modality
+from ...types.pagination import ListMetadata
 from ...types.standards import PreparedRequest
-from .automations import Automations, AsyncAutomations
+from .automations import AsyncAutomations, Automations
 
 
 class ListProcessors(BaseModel):
@@ -39,7 +35,7 @@ class ProcessorsMixin:
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: Optional[int] = 96,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = 'A4',
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = "A4",
         n_consensus: int = 1,
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
@@ -57,7 +53,7 @@ class ProcessorsMixin:
         }
 
         request = ProcessorConfig.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/processors", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="POST", url="/v1/processors", data=request.model_dump(mode="json"))
 
     def prepare_list(
         self,
@@ -105,7 +101,7 @@ class ProcessorsMixin:
         name: Optional[str] = None,
         modality: Optional[Modality] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         model: Optional[str] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         temperature: Optional[float] = None,
@@ -134,7 +130,7 @@ class ProcessorsMixin:
         if n_consensus is not None:
             data["n_consensus"] = n_consensus
         request = UpdateProcessorRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/processors/{processor_id}", data=request.model_dump(mode='json'))
+        return PreparedRequest(method="PUT", url=f"/v1/processors/{processor_id}", data=request.model_dump(mode="json"))
 
     def prepare_delete(self, processor_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/{processor_id}")
@@ -164,10 +160,10 @@ class ProcessorsMixin:
         # Validate that either document or documents is provided, but not both
         if not document and not documents:
             raise ValueError("Either 'document' or 'documents' must be provided")
-        
+
         if document and documents:
             raise ValueError("Provide either 'document' (single) or 'documents' (multiple), not both")
-        
+
         # Prepare form data parameters
         form_data = {
             "temperature": temperature,
@@ -183,31 +179,25 @@ class ProcessorsMixin:
             # Convert document to MIMEData if needed
             mime_document = prepare_mime_document(document)
             # Single document upload
-            files["document"] = (
-                mime_document.filename,
-                base64.b64decode(mime_document.content),
-                mime_document.mime_type
-            )
+            files["document"] = (mime_document.filename, base64.b64decode(mime_document.content), mime_document.mime_type)
         elif documents:
             # Multiple documents upload - httpx supports multiple files with same field name using a list
             files_list = []
             for doc in documents:
                 # Convert each document to MIMEData if needed
                 mime_doc = prepare_mime_document(doc)
-                files_list.append((
-                    "documents",  # field name
+                files_list.append(
                     (
-                        mime_doc.filename,
-                        base64.b64decode(mime_doc.content),
-                        mime_doc.mime_type
+                        "documents",  # field name
+                        (mime_doc.filename, base64.b64decode(mime_doc.content), mime_doc.mime_type),
                     )
-                ))
+                )
             files = files_list
 
         url = f"/v1/processors/{processor_id}/submit"
         # if stream:
         #     url = f"/v1/processors/{processor_id}/submit/stream"
-        
+
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 
 
@@ -227,7 +217,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: Optional[int] = 96,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = 'A4',
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = "A4",
         n_consensus: int = 1,
     ) -> ProcessorConfig:
         """Create a new processor configuration.
@@ -301,7 +291,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         name: Optional[str] = None,
         modality: Optional[Modality] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         model: Optional[str] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         temperature: Optional[float] = None,
@@ -360,14 +350,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         Returns:
             UiParsedChatCompletion: The processing result
         """
-        request = self.prepare_submit(
-            processor_id=processor_id,
-            document=document,
-            documents=documents,
-            temperature=temperature,
-            seed=seed,
-            store=store
-        )
+        request = self.prepare_submit(processor_id=processor_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
         response = self._client._prepared_request(request)
         return UiParsedChatCompletion.model_validate(response)
 
@@ -388,13 +371,13 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         temperature: float = 0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: Optional[int] = 96,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = 'A4',
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = "A4",
         n_consensus: int = 1,
     ) -> ProcessorConfig:
         request = self.prepare_create(name, json_schema, modality, model, temperature, reasoning_effort, image_resolution_dpi, browser_canvas, n_consensus)
         response = await self._client._prepared_request(request)
         print(f"Processor ID: {response['id']}. Processor available at https://www.uiform.com/dashboard/processors/{response['id']}")
-        
+
         return ProcessorConfig.model_validate(response)
 
     async def list(
@@ -424,7 +407,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         name: Optional[str] = None,
         modality: Optional[Modality] = None,
         image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal['A3', 'A4', 'A5']] = None,
+        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
         model: Optional[str] = None,
         json_schema: Optional[Dict[str, Any]] = None,
         temperature: Optional[float] = None,
@@ -462,13 +445,6 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         Returns:
             UiParsedChatCompletion: The processing result
         """
-        request = self.prepare_submit(
-            processor_id=processor_id,
-            document=document,
-            documents=documents,
-            temperature=temperature,
-            seed=seed,
-            store=store
-        )
+        request = self.prepare_submit(processor_id=processor_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
         response = await self._client._prepared_request(request)
         return UiParsedChatCompletion.model_validate(response)

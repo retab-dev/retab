@@ -61,7 +61,7 @@ def assert_valid_model_batch_processing(model: str) -> None:
             raise ValueError(f"Invalid base model in fine-tuned model '{model}'. Base model must be one of: {get_args(OpenAIModel)}")
         if not model_id or not model_id.strip():
             raise ValueError(f"Model ID cannot be empty in fine-tuned model '{model}'")
-    except ValueError as e:
+    except ValueError:
         if ":" not in model:
             raise ValueError(
                 f"Invalid model format: {model}. Must be either:\n"
@@ -90,7 +90,7 @@ def assert_valid_model_schema_generation(model: str) -> None:
             raise ValueError(f"Invalid base model in fine-tuned model '{model}'. Base model must be one of: {get_args(OpenAIModel)}")
         if not model_id or not model_id.strip():
             raise ValueError(f"Model ID cannot be empty in fine-tuned model '{model}'")
-    except ValueError as e:
+    except ValueError:
         if ":" not in model:
             raise ValueError(
                 f"Invalid model format: {model}. Must be either:\n"
