@@ -4,7 +4,7 @@ from typing import Any, Sequence, Literal
 
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from .._utils.ai_models import assert_valid_model_schema_generation

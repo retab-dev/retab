@@ -1,17 +1,14 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, List, Literal, Optional
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import EmailStr, HttpUrl
 from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ...._utils.ai_models import assert_valid_model_extraction
 from ...._utils.mime import prepare_mime_document
 from ....types.automations.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
 from ....types.mime import EmailData, MIMEData
-from ....types.modalities import Modality
 from ....types.standards import PreparedRequest
 
 

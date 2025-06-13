@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 import json
-from pydantic_core import PydanticUndefined
 from typing import Any, Literal, Optional, Union
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
