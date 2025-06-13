@@ -1,8 +1,8 @@
 from typing import Any
+import os
 
 import nanoid  # type: ignore
 import pytest
-from pydantic import HttpUrl
 
 from uiform import UiForm
 
@@ -11,8 +11,8 @@ from uiform import UiForm
 async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path: str) -> None:
     test_idx = nanoid.generate().lower()
     name = f"test_mailbox_{test_idx}"
-    email_address = f"bert2_{test_idx}@devmail.uiform.com"
-    webhook_url = HttpUrl("http://localhost:4000/product")
+    email_address = f"bert2_{test_idx}@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}"
+    webhook_url = "http://localhost:4000/product"
     model = "gpt-4o-mini"
 
     # First create a processor
@@ -38,8 +38,8 @@ async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str
             mailbox = sync_client.processors.automations.mailboxes.get(email_address)
             assert mailbox.email == email_address
             # Update
-            mailbox = sync_client.processors.automations.mailboxes.update(email_address, webhook_url=HttpUrl("http://localhost:4000/product2"))
-            assert mailbox.webhook_url == HttpUrl("http://localhost:4000/product2")
+            mailbox = sync_client.processors.automations.mailboxes.update(email_address, webhook_url="http://localhost:4000/product2")
+            assert mailbox.webhook_url == "http://localhost:4000/product2"
 
             # TODO: send and email to email_address (need sendgrid account)
 

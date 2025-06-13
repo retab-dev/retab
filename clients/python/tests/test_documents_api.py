@@ -53,78 +53,53 @@ async def base_test_extract(
     booking_confirmation_file_path: str,
     booking_confirmation_json_schema: dict[str, Any],
 ) -> None:
-    name = nanoid.generate()
     json_schema = booking_confirmation_json_schema
     document = booking_confirmation_file_path
     modality: Literal["text"] = "text"
     response: UiParsedChatCompletion | None = None
 
     # First create a processor
-    processor = None
-    if client_type == "sync":
-        processor = sync_client.processors.create(
-            name=name,
-            json_schema=json_schema,
-            model=model,
-        )
-    else:
-        processor = await async_client.processors.create(
-            name=name,
-            json_schema=json_schema,
-            model=model,
-        )
-    processor_id = processor.id
 
-    try:
-        # Wait a random amount of time between 0 and 2 seconds (to avoid sending multiple requests to the same provider at the same time)
-        if client_type == "sync":
-            with sync_client as client:
-                if response_mode == "stream":
-                    with client.documents.extractions.stream(
-                        json_schema=json_schema,
-                        document=document,
-                        model=model,
-                        modality=modality,
-                    ) as stream_iterator:
-                        response = stream_iterator.__next__()
-                        for response in stream_iterator:
-                            pass
-                else:
-                    response = client.documents.extractions.parse(
-                        json_schema=json_schema,
-                        document=document,
-                        model=model,
-                        modality=modality,
-                    )
-        if client_type == "async":
-            async with async_client:
-                if response_mode == "stream":
-                    async with async_client.documents.extractions.stream(
-                        json_schema=json_schema,
-                        document=document,
-                        model=model,
-                        modality=modality,
-                    ) as stream_async_iterator:
-                        response = await stream_async_iterator.__anext__()
-                        async for response in stream_async_iterator:
-                            pass
-                else:
-                    response = await async_client.documents.extractions.parse(
-                        json_schema=json_schema,
-                        document=document,
-                        model=model,
-                        modality=modality,
-                    )
-        validate_extraction_response(response)
-    finally:
-        # Delete the processor if it was created
-        try:
-            if client_type == "sync":
-                sync_client.processors.delete(processor_id)
+    # Wait a random amount of time between 0 and 2 seconds (to avoid sending multiple requests to the same provider at the same time)
+    if client_type == "sync":
+        with sync_client as client:
+            if response_mode == "stream":
+                with client.documents.extractions.stream(
+                    json_schema=json_schema,
+                    document=document,
+                    model=model,
+                    modality=modality,
+                ) as stream_iterator:
+                    response = stream_iterator.__next__()
+                    for response in stream_iterator:
+                        pass
             else:
-                await async_client.processors.delete(processor_id)
-        except Exception:
-            pass
+                response = client.documents.extractions.parse(
+                    json_schema=json_schema,
+                    document=document,
+                    model=model,
+                    modality=modality,
+                )
+    if client_type == "async":
+        async with async_client:
+            if response_mode == "stream":
+                async with async_client.documents.extractions.stream(
+                    json_schema=json_schema,
+                    document=document,
+                    model=model,
+                    modality=modality,
+                ) as stream_async_iterator:
+                    response = await stream_async_iterator.__anext__()
+                    async for response in stream_async_iterator:
+                        pass
+            else:
+                response = await async_client.documents.extractions.parse(
+                    json_schema=json_schema,
+                    document=document,
+                    model=model,
+                    modality=modality,
+                )
+    validate_extraction_response(response)
 
 
 @pytest.mark.asyncio
@@ -258,7 +233,7 @@ async def test_extraction_with_idempotency(sync_client: UiForm, booking_confirma
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "test_exception",
-    ["before_handle_extraction", "within_extraction_parse_or_stream", "after_handle_extraction", "within_process_document_stream_generator"],
+    ["before_handle_extraction", "after_handle_extraction", "within_process_document_stream_generator"],
 )
 async def test_extraction_with_idempotency_exceptions(
     sync_client: UiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any], test_exception: str

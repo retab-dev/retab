@@ -86,7 +86,9 @@ class BaseExtractionsMixin:
             browser_canvas=browser_canvas,
         )
 
-        return PreparedRequest(method="POST", url="/v1/documents/extractions", data=request.model_dump(mode="json"), idempotency_key=idempotency_key)
+        return PreparedRequest(
+            method="POST", url="/v1/documents/extractions", data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
+        )
 
     def prepare_log_extraction(
         self,
