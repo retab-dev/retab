@@ -54,12 +54,24 @@ class DocumentExtractRequest(BaseModel):
 
     @model_validator(mode="before")
     def validate_document_or_documents(cls, data: Any) -> Any:
-        if data.get("document") is not None and data.get("documents") is not None:
-            raise ValueError("document and documents cannot be provided at the same time")
-        if data.get("document") is not None:
-            data["documents"] = [data["document"]]
-        elif data.get("documents") is not None:
-            data["document"] = data["documents"][0]
+        # Handle both dict and model instance cases
+        if isinstance(data, dict):
+            if data.get("document") is not None and data.get("documents") is not None:
+                raise ValueError("document and documents cannot be provided at the same time")
+            if data.get("document") is not None:
+                data["documents"] = [data["document"]]
+            elif data.get("documents") is not None:
+                data["document"] = data["documents"][0]
+        else:
+            # Handle model instance case
+            document = getattr(data, "document", None)
+            documents = getattr(data, "documents", None)
+            if document is not None and documents is not None:
+                raise ValueError("document and documents cannot be provided at the same time")
+            if document is not None:
+                setattr(data, "documents", [document])
+            elif documents is not None:
+                setattr(data, "document", documents[0])
         return data
 
 
@@ -155,19 +167,46 @@ class LogExtractionRequest(BaseModel):
     # Validate that at least one of the messages, openai_messages, anthropic_messages is provided using model_validator
     @model_validator(mode="before")
     def validation(cls, data: Any) -> Any:
-        messages_candidates = [data.get("messages"), data.get("openai_messages"), data.get("anthropic_messages"), data.get("openai_responses_input")]
-        messages_candidates = [candidate for candidate in messages_candidates if candidate is not None]
-        if len(messages_candidates) != 1:
-            raise ValueError("Exactly one of the messages, openai_messages, anthropic_messages, openai_responses_input must be provided")
+        # Handle both dict and model instance cases
+        if isinstance(data, dict):
+            messages_candidates = [data.get("messages"), data.get("openai_messages"), data.get("anthropic_messages"), data.get("openai_responses_input")]
+            messages_candidates = [candidate for candidate in messages_candidates if candidate is not None]
+            if len(messages_candidates) != 1:
+                raise ValueError("Exactly one of the messages, openai_messages, anthropic_messages, openai_responses_input must be provided")
 
-        # Validate that if anthropic_messages is provided, anthropic_system_prompt is also provided
-        if data.get("anthropic_messages") is not None and data.get("anthropic_system_prompt") is None:
-            raise ValueError("anthropic_system_prompt must be provided if anthropic_messages is provided")
+            # Validate that if anthropic_messages is provided, anthropic_system_prompt is also provided
+            if data.get("anthropic_messages") is not None and data.get("anthropic_system_prompt") is None:
+                raise ValueError("anthropic_system_prompt must be provided if anthropic_messages is provided")
 
-        completion_candidates = [data.get("completion"), data.get("openai_responses_output")]
-        completion_candidates = [candidate for candidate in completion_candidates if candidate is not None]
-        if len(completion_candidates) != 1:
-            raise ValueError("Exactly one of completion, openai_responses_output must be provided")
+            completion_candidates = [data.get("completion"), data.get("openai_responses_output")]
+            completion_candidates = [candidate for candidate in completion_candidates if candidate is not None]
+            if len(completion_candidates) != 1:
+                raise ValueError("Exactly one of completion, openai_responses_output must be provided")
+        else:
+            # Handle model instance case
+            messages_candidates = [
+                getattr(data, "messages", None),
+                getattr(data, "openai_messages", None),
+                getattr(data, "anthropic_messages", None),
+                getattr(data, "openai_responses_input", None)
+            ]
+            messages_candidates = [candidate for candidate in messages_candidates if candidate is not None]
+            if len(messages_candidates) != 1:
+                raise ValueError("Exactly one of the messages, openai_messages, anthropic_messages, openai_responses_input must be provided")
+
+            # Validate that if anthropic_messages is provided, anthropic_system_prompt is also provided
+            anthropic_messages = getattr(data, "anthropic_messages", None)
+            anthropic_system_prompt = getattr(data, "anthropic_system_prompt", None)
+            if anthropic_messages is not None and anthropic_system_prompt is None:
+                raise ValueError("anthropic_system_prompt must be provided if anthropic_messages is provided")
+
+            completion_candidates = [
+                getattr(data, "completion", None),
+                getattr(data, "openai_responses_output", None)
+            ]
+            completion_candidates = [candidate for candidate in completion_candidates if candidate is not None]
+            if len(completion_candidates) != 1:
+                raise ValueError("Exactly one of completion, openai_responses_output must be provided")
 
         return data
 
