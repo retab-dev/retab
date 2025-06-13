@@ -18,7 +18,13 @@ class UsageMixin:
         return PreparedRequest(method="GET", url="/v1/usage/monthly_credits")
 
     def prepare_total(self, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> PreparedRequest:
-        raise NotImplementedError("prepare_total is not implemented")
+        params = {}
+        if start_date:
+            params["start_date"] = start_date.isoformat()
+        if end_date:
+            params["end_date"] = end_date.isoformat()
+
+        return PreparedRequest(method="GET", url="/v1/usage/total", params=params)
 
     def prepare_mailbox(self, email: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> PreparedRequest:
         params = {}

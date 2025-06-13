@@ -6,19 +6,21 @@ from ....types.standards import PreparedRequest
 
 
 class LogsMixin:
-    def prepare_get(self, log_id: str) -> PreparedRequest:
+    def prepare_get(self, processor_id: str, log_id: str) -> PreparedRequest:
         """Get a specific automation log by ID.
 
         Args:
+            processor_id: ID of the processor
             log_id: ID of the log to retrieve
 
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="GET", url=f"/v1/processors/automations/logs/{log_id}")
+        return PreparedRequest(method="GET", url=f"/v1/processors/{processor_id}/automations/logs/{log_id}")
 
     def prepare_list(
         self,
+        processor_id: str,
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
@@ -34,6 +36,7 @@ class LogsMixin:
         """List automation logs with pagination support.
 
         Args:
+            processor_id: ID of the processor
             before: Optional cursor for pagination before a specific log ID
             after: Optional cursor for pagination after a specific log ID
             limit: Optional limit on number of results (max 100)
@@ -63,38 +66,41 @@ class LogsMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/processors/automations/logs", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/processors/{processor_id}/automations/logs", params=params)
 
-    def prepare_rerun(self, log_id: str) -> PreparedRequest:
+    def prepare_rerun(self, processor_id: str, log_id: str) -> PreparedRequest:
         """Rerun a webhook from an existing AutomationLog.
 
         Args:
+            processor_id: ID of the processor
             log_id: ID of the log to rerun
 
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="POST", url=f"/v1/processors/automations/logs/{log_id}/rerun")
+        return PreparedRequest(method="POST", url=f"/v1/processors/{processor_id}/automations/logs/{log_id}/rerun")
 
 
 class Logs(SyncAPIResource, LogsMixin):
     """Logs API wrapper for managing automation logs"""
 
-    def get(self, log_id: str) -> AutomationLog:
+    def get(self, processor_id: str, log_id: str) -> AutomationLog:
         """Get a specific automation log by ID.
 
         Args:
+            processor_id: ID of the processor
             log_id: ID of the log to retrieve
 
         Returns:
             AutomationLog: The automation log
         """
-        request = self.prepare_get(log_id)
+        request = self.prepare_get(processor_id, log_id)
         response = self._client._prepared_request(request)
         return AutomationLog.model_validate(response)
 
     def list(
         self,
+        processor_id: str,
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
@@ -109,6 +115,7 @@ class Logs(SyncAPIResource, LogsMixin):
         """List automation logs with pagination support.
 
         Args:
+            processor_id: ID of the processor
             before: Optional cursor for pagination before a specific log ID
             after: Optional cursor for pagination after a specific log ID
             limit: Optional limit on number of results (max 100)
@@ -123,23 +130,24 @@ class Logs(SyncAPIResource, LogsMixin):
         Returns:
             ListLogs: Paginated list of automation logs with metadata
         """
-        request = self.prepare_list(before, after, limit, order, status_code, status_class, automation_id, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(processor_id, before, after, limit, order, status_code, status_class, automation_id, webhook_url, schema_id, schema_data_id)
         response = self._client._prepared_request(request)
         return ListLogs.model_validate(response)
 
-    def rerun(self, log_id: str) -> ExternalRequestLog:
+    def rerun(self, processor_id: str, log_id: str) -> ExternalRequestLog:
         """Rerun a webhook from an existing AutomationLog.
 
         Args:
+            processor_id: ID of the processor
             log_id: ID of the log to rerun
 
         Returns:
             ExternalRequestLog: The result of the rerun webhook call
         """
-        request = self.prepare_rerun(log_id)
+        request = self.prepare_rerun(processor_id, log_id)
         response = self._client._prepared_request(request)
 
-        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/processors/logs/{log_id}")
+        print(f"Webhook call run successfully. Log available at https://www.uiform.com/dashboard/processors/{processor_id}/logs/{log_id}")
 
         return ExternalRequestLog.model_validate(response)
 
@@ -147,21 +155,23 @@ class Logs(SyncAPIResource, LogsMixin):
 class AsyncLogs(AsyncAPIResource, LogsMixin):
     """Async Logs API wrapper for managing automation logs"""
 
-    async def get(self, log_id: str) -> AutomationLog:
+    async def get(self, processor_id: str, log_id: str) -> AutomationLog:
         """Get a specific automation log by ID.
 
         Args:
+            processor_id: ID of the processor
             log_id: ID of the log to retrieve
 
         Returns:
             AutomationLog: The automation log
         """
-        request = self.prepare_get(log_id)
+        request = self.prepare_get(processor_id, log_id)
         response = await self._client._prepared_request(request)
         return AutomationLog.model_validate(response)
 
     async def list(
         self,
+        processor_id: str,
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
@@ -190,22 +200,23 @@ class AsyncLogs(AsyncAPIResource, LogsMixin):
         Returns:
             ListLogs: Paginated list of automation logs with metadata
         """
-        request = self.prepare_list(before, after, limit, order, status_code, status_class, automation_id, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(processor_id, before, after, limit, order, status_code, status_class, automation_id, webhook_url, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
         return ListLogs.model_validate(response)
 
-    async def rerun(self, log_id: str) -> ExternalRequestLog:
+    async def rerun(self, processor_id: str, log_id: str) -> ExternalRequestLog:
         """Rerun a webhook from an existing AutomationLog.
 
         Args:
+            processor_id: ID of the processor
             log_id: ID of the log to rerun
 
         Returns:
             ExternalRequestLog: The result of the rerun webhook call
         """
-        request = self.prepare_rerun(log_id)
+        request = self.prepare_rerun(processor_id, log_id)
         response = await self._client._prepared_request(request)
 
-        print(f"Webhook call run successfully. Log available at https://docs.uiform.com/dashboard/processors/logs/{log_id}")
+        print(f"Webhook call run successfully. Log available at https://www.uiform.com/dashboard/processors/{processor_id}/logs/{log_id}")
 
         return ExternalRequestLog.model_validate(response)

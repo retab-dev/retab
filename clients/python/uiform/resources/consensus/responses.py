@@ -44,7 +44,7 @@ class BaseResponsesMixin:
             instructions = schema_obj.developer_system_prompt
 
         # Create the request object based on the UiChatResponseCreateRequest model
-        data = UiChatResponseCreateRequest(
+        request = UiChatResponseCreateRequest(
             model=model,
             input=input,
             temperature=temperature,
@@ -55,10 +55,7 @@ class BaseResponsesMixin:
             instructions=instructions,
         )
 
-        # Validate the request data
-        ui_chat_response_create_request = UiChatResponseCreateRequest.model_validate(data)
-
-        return PreparedRequest(method="POST", url="/v1/responses", data=ui_chat_response_create_request.model_dump(), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/responses", data=request.model_dump(), idempotency_key=idempotency_key)
 
     def prepare_parse(
         self,
@@ -83,7 +80,7 @@ class BaseResponsesMixin:
             instructions = schema_obj.developer_system_prompt
 
         # Create the request object based on the UiChatResponseCreateRequest model
-        data = UiChatResponseCreateRequest(
+        request = UiChatResponseCreateRequest(
             model=model,
             input=input,
             temperature=temperature,
@@ -94,13 +91,10 @@ class BaseResponsesMixin:
             instructions=instructions,
         )
 
-        # Validate the request data
-        ui_chat_response_create_request = UiChatResponseCreateRequest.model_validate(data)
-
         return PreparedRequest(
             method="POST",
             url="/v1/responses",
-            data=ui_chat_response_create_request.model_dump(),
+            data=request.model_dump(),
             idempotency_key=idempotency_key,
         )
 

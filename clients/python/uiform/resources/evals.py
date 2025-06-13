@@ -16,6 +16,7 @@ from ..types.evals import (
     EvaluationDocument,
     Iteration,
     UpdateEvaluationDocumentRequest,
+    UpdateEvaluationRequest,
 )
 from ..types.jobs.base import InferenceSettings
 from ..types.mime import MIMEData
@@ -76,21 +77,17 @@ class EvalsMixin:
         Only the provided fields will be updated. Fields set to None will be excluded from the update.
         """
         # Build a dictionary with only the provided fields
-        update_data = {}
-        if name is not None:
-            update_data["name"] = name
-        if project_id is not None:
-            update_data["project_id"] = project_id
-        if json_schema is not None:
-            update_data["json_schema"] = json_schema
-        if documents is not None:
-            update_data["documents"] = [doc.model_dump(exclude_none=True, mode="json") for doc in documents]
-        if iterations is not None:
-            update_data["iterations"] = [iter.model_dump(exclude_none=True, mode="json") for iter in iterations]
-        if default_inference_settings is not None:
-            update_data["default_inference_settings"] = default_inference_settings.model_dump(exclude_none=True, mode="json")
 
-        return PreparedRequest(method="PATCH", url=f"/v1/evals/{evaluation_id}", data=update_data)
+        update_request = UpdateEvaluationRequest(
+            name=name,
+            project_id=project_id,
+            json_schema=json_schema,
+            documents=documents,
+            iterations=iterations,
+            default_inference_settings=default_inference_settings,
+        )
+
+        return PreparedRequest(method="PATCH", url=f"/v1/evals/{evaluation_id}", data=update_request.model_dump(exclude_none=True, mode="json"))
 
     def prepare_list(self, project_id: Optional[str] = None) -> PreparedRequest:
         params = {}
@@ -108,9 +105,7 @@ class DocumentsMixin:
 
     def prepare_create(self, evaluation_id: str, document: MIMEData, annotation: Dict[str, Any]) -> PreparedRequest:
         # Serialize the MIMEData
-
         document_item = DocumentItem(mime_data=document, annotation=annotation, annotation_metadata=None)
-
         return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/documents", data=document_item.model_dump(mode="json"))
 
     def prepare_list(self, evaluation_id: str, filename: Optional[str] = None) -> PreparedRequest:
@@ -121,7 +116,6 @@ class DocumentsMixin:
 
     def prepare_update(self, evaluation_id: str, document_id: str, annotation: Dict[str, Any]) -> PreparedRequest:
         update_request = UpdateEvaluationDocumentRequest(annotation=annotation, annotation_metadata=None)
-
         return PreparedRequest(method="PUT", url=f"/v1/evals/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_none=True))
 
     def prepare_delete(self, evaluation_id: str, document_id: str) -> PreparedRequest:
@@ -150,7 +144,7 @@ class IterationsMixin:
         browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         n_consensus: int = 1,
     ) -> PreparedRequest:
-        props = InferenceSettings(
+        inference_settings = InferenceSettings(
             model=model,
             temperature=temperature,
             modality=modality,
@@ -160,18 +154,30 @@ class IterationsMixin:
             n_consensus=n_consensus,
         )
 
-        perform_iteration_request = CreateIterationRequest(inference_settings=props, json_schema=json_schema)
+        request = CreateIterationRequest(inference_settings=inference_settings, json_schema=json_schema)
 
-        return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/iterations/create", data=perform_iteration_request.model_dump(exclude_none=True, mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/iterations/create", data=request.model_dump(exclude_none=True, mode="json"))
 
     def prepare_update(
-        self, iteration_id: str, json_schema: Dict[str, Any], model: str, temperature: float = 0.0, image_resolution_dpi: int = 96, browser_canvas: Literal["A3", "A4", "A5"] = "A4"
+        self,
+        iteration_id: str,
+        json_schema: Dict[str, Any],
+        model: str,
+        temperature: float = 0.0,
+        modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        image_resolution_dpi: int = 96,
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
+        n_consensus: int = 1,
     ) -> PreparedRequest:
         inference_settings = InferenceSettings(
             model=model,
             temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
+            n_consensus=n_consensus,
         )
 
         iteration_data = Iteration(id=iteration_id, json_schema=json_schema, inference_settings=inference_settings, predictions=[])

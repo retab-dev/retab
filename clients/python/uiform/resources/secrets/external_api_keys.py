@@ -8,8 +8,7 @@ from ...types.standards import PreparedRequest
 
 class ExternalAPIKeysMixin:
     def prepare_create(self, provider: AIProvider, api_key: str) -> PreparedRequest:
-        data = {"provider": provider, "api_key": api_key}
-        request = ExternalAPIKeyRequest.model_validate(data)
+        request = ExternalAPIKeyRequest(provider=provider, api_key=api_key)
         return PreparedRequest(method="POST", url="/v1/secrets/external_api_keys", data=request.model_dump(mode="json"))
 
     def prepare_get(self, provider: AIProvider) -> PreparedRequest:

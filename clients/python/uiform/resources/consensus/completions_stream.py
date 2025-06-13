@@ -34,12 +34,11 @@ class BaseCompletionsMixin:
         assert_valid_model_extraction(model)
 
         json_schema = response_format.model_json_schema()
-
         schema_obj = Schema(json_schema=json_schema)
 
-        data = {
-            "messages": messages,
-            "response_format": {
+        request = UiChatCompletionsRequest(
+            messages=messages,
+            response_format={
                 "type": "json_schema",
                 "json_schema": {
                     "name": schema_obj.id,
@@ -47,17 +46,14 @@ class BaseCompletionsMixin:
                     "strict": True,
                 },
             },
-            "model": model,
-            "temperature": temperature,
-            "stream": stream,
-            "reasoning_effort": reasoning_effort,
-            "n_consensus": n_consensus,
-        }
+            model=model,
+            temperature=temperature,
+            stream=stream,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+        )
 
-        # Validate DocumentAPIRequest data (raises exception if invalid)
-        ui_chat_completions_request = UiChatCompletionsRequest.model_validate(data)
-
-        return PreparedRequest(method="POST", url="/v1/completions", data=ui_chat_completions_request.model_dump(), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/completions", data=request.model_dump(), idempotency_key=idempotency_key)
 
     def prepare_create(
         self,
@@ -76,9 +72,11 @@ class BaseCompletionsMixin:
 
         schema_obj = Schema(json_schema=json_schema)
 
-        data = {
-            "messages": messages,
-            "response_format": {
+        # Validate DocumentAPIRequest data (raises exception if invalid)
+        request = UiChatCompletionsRequest(
+            model=model,
+            messages=messages,
+            response_format={
                 "type": "json_schema",
                 "json_schema": {
                     "name": schema_obj.id,
@@ -86,17 +84,13 @@ class BaseCompletionsMixin:
                     "strict": True,
                 },
             },
-            "model": model,
-            "temperature": temperature,
-            "stream": stream,
-            "reasoning_effort": reasoning_effort,
-            "n_consensus": n_consensus,
-        }
+            temperature=temperature,
+            stream=stream,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+        )
 
-        # Validate DocumentAPIRequest data (raises exception if invalid)
-        ui_chat_completions_request = UiChatCompletionsRequest.model_validate(data)
-
-        return PreparedRequest(method="POST", url="/v1/completions", data=ui_chat_completions_request.model_dump(), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/completions", data=request.model_dump(), idempotency_key=idempotency_key)
 
 
 class Completions(SyncAPIResource, BaseCompletionsMixin):

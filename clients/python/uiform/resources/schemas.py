@@ -1,10 +1,10 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Sequence, Literal
 
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from .._utils.ai_models import assert_valid_model_schema_generation
@@ -27,18 +27,19 @@ class SchemasMixin:
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
         modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
         mime_documents = prepare_mime_document_list(documents)
-        data = {
-            "documents": [doc.model_dump() for doc in mime_documents],
-            "instructions": instructions if instructions else None,
-            "model": model,
-            "temperature": temperature,
-            "modality": modality,
-        }
-        GenerateSchemaRequest.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/schemas/generate", data=data)
+        request = GenerateSchemaRequest(
+            documents=mime_documents,
+            instructions=instructions if instructions else None,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+        )
+        return PreparedRequest(method="POST", url="/v1/schemas/generate", data=request.model_dump())
 
     def prepare_evaluate(
         self,
@@ -46,61 +47,53 @@ class SchemasMixin:
         json_schema: dict[str, Any],
         ground_truths: list[dict[str, Any]] | None = None,
         model: str = "gpt-4o-mini",
-        temperature: float = 0.0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
         image_resolution_dpi: int = 96,
-        browser_canvas: str = "A4",
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         n_consensus: int = 1,
     ) -> PreparedRequest:
-        # Assert that if ground_truths is not None, it has the same length as documents
-        if ground_truths is not None and len(documents) != len(ground_truths):
-            raise ValueError("Number of documents must match number of ground truths")
-
         mime_documents = prepare_mime_document_list(documents)
-        data = {
-            "documents": [doc.model_dump() for doc in mime_documents],
-            "ground_truths": ground_truths,
-            "model": model,
-            "temperature": temperature,
-            "reasoning_effort": reasoning_effort,
-            "modality": modality,
-            "image_resolution_dpi": image_resolution_dpi,
-            "browser_canvas": browser_canvas,
-            "n_consensus": n_consensus,
-            "json_schema": json_schema,
-        }
-        EvaluateSchemaRequest.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/schemas/evaluate", data=data)
+        request = EvaluateSchemaRequest(
+            documents=mime_documents,
+            json_schema=json_schema,
+            ground_truths=ground_truths,
+            model=model,
+            reasoning_effort=reasoning_effort,
+            modality=modality,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            n_consensus=n_consensus,
+        )
+        return PreparedRequest(method="POST", url="/v1/schemas/evaluate", data=request.model_dump())
 
     def prepare_enhance(
         self,
         json_schema: dict[str, Any] | Path | str,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
-        ground_truths: list[dict[str, Any]] | None,
-        instructions: str | None,
-        model: str,
-        temperature: float,
-        modality: Modality,
-        flat_likelihoods: list[dict[str, float]] | dict[str, float] | None,
-        tools_config: EnhanceSchemaConfig,
+        ground_truths: list[dict[str, Any]] | None = None,
+        instructions: str | None = None,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0.0,
+        modality: Modality = "native",
+        flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None,
+        tools_config: EnhanceSchemaConfig = EnhanceSchemaConfig(),
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
         mime_documents = prepare_mime_document_list(documents)
         loaded_json_schema = load_json_schema(json_schema)
-        data = {
-            "json_schema": loaded_json_schema,
-            "documents": [doc.model_dump() for doc in mime_documents],
-            "ground_truths": ground_truths,
-            "instructions": instructions if instructions else None,
-            "model": model,
-            "temperature": temperature,
-            "modality": modality,
-            "flat_likelihoods": flat_likelihoods,
-            "tools_config": tools_config.model_dump(),
-        }
-        EnhanceSchemaRequest.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/schemas/enhance", data=data)
+        request = EnhanceSchemaRequest(
+            json_schema=loaded_json_schema,
+            documents=mime_documents,
+            ground_truths=ground_truths,
+            instructions=instructions if instructions else None,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            flat_likelihoods=flat_likelihoods,
+            tools_config=tools_config,
+        )
+        return PreparedRequest(method="POST", url="/v1/schemas/enhance", data=request.model_dump())
 
     def prepare_get(self, schema_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/schemas/{schema_id}")
@@ -155,11 +148,10 @@ class Schemas(SyncAPIResource, SchemasMixin):
         json_schema: dict[str, Any],
         ground_truths: list[dict[str, Any]] | None = None,
         model: str = "gpt-4o-mini",
-        temperature: float = 0.0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
         image_resolution_dpi: int = 96,
-        browser_canvas: str = "A4",
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         n_consensus: int = 1,
     ) -> EvaluateSchemaResponse:
         """
@@ -172,7 +164,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
             json_schema: The JSON schema to evaluate
             ground_truths: Optional list of ground truth dictionaries to compare against
             model: The model to use for extraction
-            temperature: The temperature to use for extraction
             reasoning_effort: The reasoning effort to use for extraction
             modality: The modality to use for extraction
             image_resolution_dpi: The DPI of the image. Defaults to 96.
@@ -200,7 +191,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
             json_schema=json_schema,
             ground_truths=ground_truths,
             model=model,
-            temperature=temperature,
             reasoning_effort=reasoning_effort,
             modality=modality,
             image_resolution_dpi=image_resolution_dpi,
@@ -222,8 +212,17 @@ class Schemas(SyncAPIResource, SchemasMixin):
         flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None,
         tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
+        _tools_config = EnhanceSchemaConfig(**(tools_config or {}))
         prepared_request = self.prepare_enhance(
-            json_schema, documents, ground_truths, instructions, model, temperature, modality, flat_likelihoods, EnhanceSchemaConfig.model_validate(tools_config or {})
+            json_schema=json_schema,
+            documents=documents,
+            ground_truths=ground_truths,
+            instructions=instructions,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            flat_likelihoods=flat_likelihoods,
+            tools_config=_tools_config,
         )
         response = self._client._prepared_request(prepared_request)
         return Schema(json_schema=response["json_schema"])
@@ -285,7 +284,13 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         Raises
             HTTPException if the request fails
         """
-        prepared_request = self.prepare_generate(documents, instructions, model, temperature, modality)
+        prepared_request = self.prepare_generate(
+            documents=documents,
+            instructions=instructions,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+        )
         response = await self._client._prepared_request(prepared_request)
         return Schema.model_validate(response)
 
@@ -295,11 +300,10 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         json_schema: dict[str, Any],
         ground_truths: list[dict[str, Any]] | None = None,
         model: str = "gpt-4o-mini",
-        temperature: float = 0.0,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
         image_resolution_dpi: int = 96,
-        browser_canvas: str = "A4",
+        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
         n_consensus: int = 1,
     ) -> EvaluateSchemaResponse:
         """
@@ -312,7 +316,6 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             json_schema: The JSON schema to evaluate
             ground_truths: Optional list of ground truth dictionaries to compare against
             model: The model to use for extraction
-            temperature: The temperature to use for extraction
             reasoning_effort: The reasoning effort to use for extraction
             modality: The modality to use for extraction
             image_resolution_dpi: The DPI of the image. Defaults to 96.
@@ -340,7 +343,6 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             json_schema=json_schema,
             ground_truths=ground_truths,
             model=model,
-            temperature=temperature,
             reasoning_effort=reasoning_effort,
             modality=modality,
             image_resolution_dpi=image_resolution_dpi,
@@ -362,8 +364,17 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None,
         tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
+        _tools_config = EnhanceSchemaConfig(**(tools_config or {}))
         prepared_request = self.prepare_enhance(
-            json_schema, documents, ground_truths, instructions, model, temperature, modality, flat_likelihoods, EnhanceSchemaConfig.model_validate(tools_config or {})
+            json_schema=json_schema,
+            documents=documents,
+            ground_truths=ground_truths,
+            instructions=instructions,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            flat_likelihoods=flat_likelihoods,
+            tools_config=_tools_config,
         )
         response = await self._client._prepared_request(prepared_request)
         return Schema(json_schema=response["json_schema"])

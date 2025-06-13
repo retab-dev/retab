@@ -130,6 +130,7 @@ class UpdateEvaluationRequest(BaseModel):
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the evaluation")
 
     project_id: Optional[str] = Field(default=None, description="The ID of the project")
+    default_inference_settings: Optional[InferenceSettings] = Field(default=None, description="The default inference properties for the evaluation (mostly used in the frontend)")
 
     @computed_field  # type: ignore
     @property
