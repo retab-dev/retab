@@ -1,49 +1,34 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Literal, Optional
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import HttpUrl
+from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ...._utils.ai_models import assert_valid_model_extraction
 from ....types.automations.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
-
-# from ...types.documents.extractions import DocumentExtractResponse
-from ....types.modalities import Modality
 from ....types.standards import PreparedRequest
 
 
 class EndpointsMixin:
     def prepare_create(
         self,
+        processor_id: str,
         name: str,
         webhook_url: HttpUrl,
-        json_schema: Dict[str, Any],
-        webhook_headers: Optional[Dict[str, str]] = None,
-        # DocumentExtraction Config
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Modality = "native",
         model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
-        data = {
-            "name": name,
-            "webhook_url": webhook_url,
-            "webhook_headers": webhook_headers or {},
-            "json_schema": json_schema,
-            "image_resolution_dpi": image_resolution_dpi,
-            "browser_canvas": browser_canvas,
-            "modality": modality,
-            "model": model,
-            "temperature": temperature,
-            "reasoning_effort": reasoning_effort,
-        }
-
-        request = Endpoint.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/deployments/endpoints", data=request.model_dump(mode="json"))
+        request = Endpoint(
+            processor_id=processor_id,
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+        )
+        return PreparedRequest(method="POST", url="/v1/processors/automations/endpoints", data=request.model_dump(mode="json"))
 
     def prepare_list(
         self,
@@ -66,7 +51,7 @@ class EndpointsMixin:
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/deployments/endpoints", params=params)
+        return PreparedRequest(method="GET", url="/v1/processors/automations/endpoints", params=params)
 
     def prepare_get(self, endpoint_id: str) -> PreparedRequest:
         """Get a specific endpoint configuration.
@@ -82,43 +67,19 @@ class EndpointsMixin:
     def prepare_update(
         self,
         endpoint_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
-        data: dict[str, Any] = {}
-
-        if endpoint_id is not None:
-            data["id"] = endpoint_id
-        if name is not None:
-            data["name"] = name
-        if webhook_url is not None:
-            data["webhook_url"] = webhook_url
-        if webhook_headers is not None:
-            data["webhook_headers"] = webhook_headers
-        if json_schema is not None:
-            data["json_schema"] = json_schema
-        if image_resolution_dpi is not None:
-            data["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not None:
-            data["browser_canvas"] = browser_canvas
-        if modality is not None:
-            data["modality"] = modality
-        if model is not None:
-            assert_valid_model_extraction(model)
-            data["model"] = model
-        if temperature is not None:
-            data["temperature"] = temperature
-        if reasoning_effort is not None:
-            data["reasoning_effort"] = reasoning_effort
-        request = UpdateEndpointRequest.model_validate(data)
+        request = UpdateEndpointRequest(
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+        )
         return PreparedRequest(method="PUT", url=f"/v1/processors/automations/endpoints/{endpoint_id}", data=request.model_dump(mode="json"))
 
     def prepare_delete(self, endpoint_id: str) -> PreparedRequest:
@@ -130,17 +91,11 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
 
     def create(
         self,
+        processor_id: str,
         name: str,
         webhook_url: HttpUrl,
-        json_schema: Dict[str, Any],
-        webhook_headers: Optional[Dict[str, str]] = None,
-        # DocumentExtraction Config
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Endpoint:
         """Create a new endpoint configuration.
 
@@ -158,7 +113,13 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         Returns:
             Endpoint: The created endpoint configuration
         """
-        request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(
+            processor_id=processor_id,
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+        )
         response = self._client._prepared_request(request)
         print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/processors/{response['id']}")
         return Endpoint.model_validate(response)
@@ -205,16 +166,11 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
     def update(
         self,
         endpoint_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Endpoint:
         """Update an endpoint configuration.
 
@@ -234,7 +190,12 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
             Endpoint: The updated endpoint configuration
         """
         request = self.prepare_update(
-            endpoint_id, name, webhook_url, webhook_headers, json_schema, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+            endpoint_id=endpoint_id,
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
         )
         response = self._client._prepared_request(request)
         return Endpoint.model_validate(response)
@@ -255,19 +216,19 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
 
     async def create(
         self,
+        processor_id: str,
         name: str,
         webhook_url: HttpUrl,
-        json_schema: Dict[str, Any],
-        webhook_headers: Optional[Dict[str, str]] = None,
-        # DocumentExtraction Config
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Endpoint:
-        request = self.prepare_create(name, webhook_url, json_schema, webhook_headers, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort)
+        request = self.prepare_create(
+            processor_id=processor_id,
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+        )
         response = await self._client._prepared_request(request)
         print(f"Endpoint ID: {response['id']}. Endpoint available at https://www.uiform.com/dashboard/processors/{response['id']}")
 
@@ -294,19 +255,19 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
     async def update(
         self,
         endpoint_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Endpoint:
         request = self.prepare_update(
-            endpoint_id, name, webhook_url, webhook_headers, json_schema, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+            endpoint_id=endpoint_id,
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
         )
         response = await self._client._prepared_request(request)
         return Endpoint.model_validate(response)

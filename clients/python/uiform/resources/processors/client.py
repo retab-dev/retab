@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Literal, Optional
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, HttpUrl
+from pydantic_core import PydanticUndefined
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
@@ -17,11 +18,12 @@ from ...types.logs import ProcessorConfig, UpdateProcessorRequest
 from ...types.modalities import Modality
 from ...types.pagination import ListMetadata
 from ...types.standards import PreparedRequest
-from .automations import AsyncAutomations, Automations
 
 
 class ListProcessors(BaseModel):
-    data: List[ProcessorConfig]
+    """Response model for listing processor configurations."""
+
+    data: list[ProcessorConfig]
     list_metadata: ListMetadata
 
 
@@ -29,44 +31,43 @@ class ProcessorsMixin:
     def prepare_create(
         self,
         name: str,
-        json_schema: Dict[str, Any],
+        json_schema: dict[str, Any],
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_resolution_dpi: Optional[int] = 96,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = "A4",
-        n_consensus: int = 1,
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
-        data = {
-            "name": name,
-            "json_schema": json_schema,
-            "modality": modality,
-            "model": model,
-            "temperature": temperature,
-            "reasoning_effort": reasoning_effort,
-            "image_resolution_dpi": image_resolution_dpi,
-            "browser_canvas": browser_canvas,
-            "n_consensus": n_consensus,
-        }
+        processor_config = ProcessorConfig(
+            name=name,
+            json_schema=json_schema,
+            modality=modality,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            n_consensus=n_consensus,
+        )
 
-        request = ProcessorConfig.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/processors", data=request.model_dump(mode="json"))
+        return PreparedRequest(method="POST", url="/v1/processors", data=processor_config.model_dump(mode="json"))
 
     def prepare_list(
         self,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        limit: Optional[int] = 10,
-        order: Optional[Literal["asc", "desc"]] = "desc",
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: Literal["asc", "desc"] | None = "desc",
         # Filtering parameters
-        name: Optional[str] = None,
-        modality: Optional[str] = None,
-        model: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
+        name: str | None = None,
+        modality: str | None = None,
+        model: str | None = None,
+        schema_id: str | None = None,
+        schema_data_id: str | None = None,
     ) -> PreparedRequest:
         params = {
             "before": before,
@@ -98,39 +99,32 @@ class ProcessorsMixin:
     def prepare_update(
         self,
         processor_id: str,
-        name: Optional[str] = None,
-        modality: Optional[Modality] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        model: Optional[str] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        n_consensus: Optional[int] = None,
+        name: str | None = None,
+        modality: Modality | None = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        model: str | None = None,
+        json_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
+        reasoning_effort: ChatCompletionReasoningEffort | None = None,
+        n_consensus: int | None = None,
     ) -> PreparedRequest:
-        data: dict[str, Any] = {}
-
-        if name is not None:
-            data["name"] = name
-        if modality is not None:
-            data["modality"] = modality
-        if image_resolution_dpi is not None:
-            data["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not None:
-            data["browser_canvas"] = browser_canvas
         if model is not None:
             assert_valid_model_extraction(model)
-            data["model"] = model
-        if json_schema is not None:
-            data["json_schema"] = json_schema
-        if temperature is not None:
-            data["temperature"] = temperature
-        if reasoning_effort is not None:
-            data["reasoning_effort"] = reasoning_effort
-        if n_consensus is not None:
-            data["n_consensus"] = n_consensus
-        request = UpdateProcessorRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/processors/{processor_id}", data=request.model_dump(mode="json"))
+
+        update_request = UpdateProcessorRequest(
+            name=name,
+            modality=modality,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            model=model,
+            json_schema=json_schema,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+        )
+
+        return PreparedRequest(method="PUT", url=f"/v1/processors/{processor_id}", data=update_request.model_dump(mode="json", exclude_none=True))
 
     def prepare_delete(self, processor_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/{processor_id}")
@@ -138,10 +132,10 @@ class ProcessorsMixin:
     def prepare_submit(
         self,
         processor_id: str,
-        document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
-        documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
-        temperature: Optional[float] = None,
-        seed: Optional[int] = None,
+        document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
+        documents: list[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
         store: bool = True,
     ) -> PreparedRequest:
         """Prepare a request to submit documents to a processor.
@@ -204,7 +198,6 @@ class Processors(SyncAPIResource, ProcessorsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.automations = Automations(client=client)
 
     def create(
         self,
@@ -212,11 +205,11 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         json_schema: Dict[str, Any],
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_resolution_dpi: Optional[int] = 96,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = "A4",
-        n_consensus: int = 1,
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
     ) -> ProcessorConfig:
         """Create a new processor configuration.
 
@@ -233,22 +226,32 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         Returns:
             ProcessorConfig: The created processor configuration
         """
-        request = self.prepare_create(name, json_schema, modality, model, temperature, reasoning_effort, image_resolution_dpi, browser_canvas, n_consensus)
+        request = self.prepare_create(
+            name=name,
+            json_schema=json_schema,
+            modality=modality,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            n_consensus=n_consensus,
+        )
         response = self._client._prepared_request(request)
         print(f"Processor ID: {response['id']}. Processor available at https://www.uiform.com/dashboard/processors/{response['id']}")
         return ProcessorConfig.model_validate(response)
 
     def list(
         self,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        limit: Optional[int] = 10,
-        order: Optional[Literal["asc", "desc"]] = "desc",
-        name: Optional[str] = None,
-        modality: Optional[str] = None,
-        model: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        name: str | None = None,
+        modality: str | None = None,
+        model: str | None = None,
+        schema_id: str | None = None,
+        schema_data_id: str | None = None,
     ) -> ListProcessors:
         """List processor configurations with pagination support.
 
@@ -286,15 +289,15 @@ class Processors(SyncAPIResource, ProcessorsMixin):
     def update(
         self,
         processor_id: str,
-        name: Optional[str] = None,
-        modality: Optional[Modality] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        model: Optional[str] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        n_consensus: Optional[int] = None,
+        name: str | None = None,
+        modality: Modality | None = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        model: str | None = None,
+        json_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
+        reasoning_effort: ChatCompletionReasoningEffort | None = None,
+        n_consensus: int | None = None,
     ) -> ProcessorConfig:
         """Update a processor configuration.
 
@@ -312,7 +315,18 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         Returns:
             ProcessorConfig: The updated processor configuration
         """
-        request = self.prepare_update(processor_id, name, modality, image_resolution_dpi, browser_canvas, model, json_schema, temperature, reasoning_effort, n_consensus)
+        request = self.prepare_update(
+            processor_id=processor_id,
+            name=name,
+            modality=modality,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            model=model,
+            json_schema=json_schema,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+        )
         response = self._client._prepared_request(request)
         return ProcessorConfig.model_validate(response)
 
@@ -329,10 +343,10 @@ class Processors(SyncAPIResource, ProcessorsMixin):
     def submit(
         self,
         processor_id: str,
-        document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
-        documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
-        temperature: Optional[float] = None,
-        seed: Optional[int] = None,
+        document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
+        documents: List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
         store: bool = True,
     ) -> UiParsedChatCompletion:
         """Submit documents to a processor for processing.
@@ -358,7 +372,6 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.automations = AsyncAutomations(client=client)
 
     async def create(
         self,
@@ -366,13 +379,23 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         json_schema: Dict[str, Any],
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_resolution_dpi: Optional[int] = 96,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = "A4",
-        n_consensus: int = 1,
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
     ) -> ProcessorConfig:
-        request = self.prepare_create(name, json_schema, modality, model, temperature, reasoning_effort, image_resolution_dpi, browser_canvas, n_consensus)
+        request = self.prepare_create(
+            name=name,
+            json_schema=json_schema,
+            modality=modality,
+            model=model,
+            temperature=temperature,
+            reasoning_effort=reasoning_effort,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            n_consensus=n_consensus,
+        )
         response = await self._client._prepared_request(request)
         print(f"Processor ID: {response['id']}. Processor available at https://www.uiform.com/dashboard/processors/{response['id']}")
 
@@ -380,15 +403,15 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
 
     async def list(
         self,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        limit: Optional[int] = 10,
-        order: Optional[Literal["asc", "desc"]] = "desc",
-        name: Optional[str] = None,
-        modality: Optional[str] = None,
-        model: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
+        before: str | None = None,
+        after: str | None = None,
+        limit: int | None = 10,
+        order: Literal["asc", "desc"] | None = "desc",
+        name: str | None = None,
+        modality: str | None = None,
+        model: str | None = None,
+        schema_id: str | None = None,
+        schema_data_id: str | None = None,
     ) -> ListProcessors:
         request = self.prepare_list(before, after, limit, order, name, modality, model, schema_id, schema_data_id)
         response = await self._client._prepared_request(request)
@@ -402,16 +425,32 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
     async def update(
         self,
         processor_id: str,
-        name: Optional[str] = None,
-        modality: Optional[Modality] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        model: Optional[str] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        n_consensus: Optional[int] = None,
+        name: str | None = None,
+        modality: Modality | None = None,
+        image_resolution_dpi: int | None = None,
+        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        model: str | None = None,
+        json_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
+        reasoning_effort: ChatCompletionReasoningEffort | None = None,
+        n_consensus: int | None = None,
     ) -> ProcessorConfig:
+        """Update a processor configuration.
+
+        Args:
+            processor_id: ID of the processor to update
+            name: New name for the processor
+            modality: New processing modality
+            image_resolution_dpi: New image resolution DPI
+            browser_canvas: New browser canvas size
+            model: New AI model
+            json_schema: New JSON schema for the processor
+            temperature: New temperature setting
+            reasoning_effort: The effort level for the model to reason about the input data.
+            n_consensus: New number of consensus required
+        Returns:
+            ProcessorConfig: The updated processor configuration
+        """
         request = self.prepare_update(processor_id, name, modality, image_resolution_dpi, browser_canvas, model, json_schema, temperature, reasoning_effort, n_consensus)
         response = await self._client._prepared_request(request)
         return ProcessorConfig.model_validate(response)
@@ -424,10 +463,10 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
     async def submit(
         self,
         processor_id: str,
-        document: Optional[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] = None,
-        documents: Optional[List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl]] = None,
-        temperature: Optional[float] = None,
-        seed: Optional[int] = None,
+        document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
+        documents: List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
         store: bool = True,
     ) -> UiParsedChatCompletion:
         """Submit documents to a processor for processing.

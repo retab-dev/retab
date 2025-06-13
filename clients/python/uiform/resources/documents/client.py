@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 import PIL.Image
 from pydantic import HttpUrl
+from pydantic_core import PydanticUndefined
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.json_schema import load_json_schema
@@ -20,21 +21,18 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native",
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        data: dict[str, Any] = {
-            "document": mime_document.model_dump(),
-            "modality": modality,
-        }
-        if image_resolution_dpi:
-            data["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas:
-            data["browser_canvas"] = browser_canvas
 
-        loading_request = DocumentCreateMessageRequest.model_validate(data)
+        loading_request = DocumentCreateMessageRequest(
+            document=mime_document,
+            modality=modality,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+        )
         return PreparedRequest(method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(), idempotency_key=idempotency_key)
 
     def _prepare_create_inputs(
@@ -42,24 +40,20 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment],
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment],
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
         loaded_schema = load_json_schema(json_schema)
 
-        data: dict[str, Any] = {
-            "document": mime_document.model_dump(),
-            "modality": modality,
-            "json_schema": loaded_schema,
-        }
-        if image_resolution_dpi:
-            data["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas:
-            data["browser_canvas"] = browser_canvas
-
-        loading_request = DocumentCreateInputRequest.model_validate(data)
+        loading_request = DocumentCreateInputRequest(
+            document=mime_document,
+            modality=modality,
+            json_schema=loaded_schema,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+        )
         return PreparedRequest(method="POST", url="/v1/documents/create_inputs", data=loading_request.model_dump(), idempotency_key=idempotency_key)
 
     def _prepare_correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PreparedRequest:
@@ -112,8 +106,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native",
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -131,7 +125,9 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Raises:
             UiformAPIError: If the API request fails.
         """
-        request = self._prepare_create_messages(document, modality, image_resolution_dpi, browser_canvas, idempotency_key)
+        request = self._prepare_create_messages(
+            document=document, modality=modality, image_resolution_dpi=image_resolution_dpi, browser_canvas=browser_canvas, idempotency_key=idempotency_key
+        )
         response = self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
@@ -140,8 +136,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -160,7 +156,14 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Raises:
             UiformAPIError: If the API request fails.
         """
-        request = self._prepare_create_inputs(document, json_schema, modality, image_resolution_dpi, browser_canvas, idempotency_key)
+        request = self._prepare_create_inputs(
+            document=document,
+            json_schema=json_schema,
+            modality=modality,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            idempotency_key=idempotency_key,
+        )
         response = self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
@@ -176,8 +179,8 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image,
         modality: Modality = "native",
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -193,7 +196,13 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Raises:
             UiformAPIError: If the API request fails.
         """
-        request = self._prepare_create_messages(document, modality, image_resolution_dpi, browser_canvas, idempotency_key)
+        request = self._prepare_create_messages(
+            document=document,
+            modality=modality,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            idempotency_key=idempotency_key,
+        )
         response = await self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
@@ -202,8 +211,8 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -222,7 +231,14 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Raises:
             UiformAPIError: If the API request fails.
         """
-        request = self._prepare_create_inputs(document, json_schema, modality, image_resolution_dpi, browser_canvas, idempotency_key)
+        request = self._prepare_create_inputs(
+            document=document,
+            json_schema=json_schema,
+            modality=modality,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            idempotency_key=idempotency_key,
+        )
         response = await self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 

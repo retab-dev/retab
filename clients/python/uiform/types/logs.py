@@ -125,12 +125,12 @@ class UpdateProcessorRequest(BaseModel):
 
 class UpdateAutomationRequest(BaseModel):
     name: Optional[str] = None
-    processor_id: Optional[str] = None
+    # processor_id: Optional[str] = None  # TODO: Is it allowed to change the processor_id?
 
     default_language: Optional[str] = None
 
     webhook_url: Optional[HttpUrl] = None
-    webhook_headers: Optional[Dict[str, str]] = None
+    webhook_headers: Optional[dict[str, str]] = None
 
     need_validation: Optional[bool] = None
 

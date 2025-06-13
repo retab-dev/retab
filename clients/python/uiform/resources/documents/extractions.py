@@ -10,6 +10,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
+from pydantic_core import PydanticUndefined
 from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
@@ -42,14 +43,14 @@ class BaseExtractionsMixin:
         json_schema: dict[str, Any] | Path | str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
-        model: str = "",
-        temperature: float = 0,
-        modality: Modality = "native",
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        model: str = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
         stream: bool = False,
-        n_consensus: int = 1,
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         store: bool = False,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
@@ -63,32 +64,28 @@ class BaseExtractionsMixin:
 
         # Convert single document to documents list for consistency
         if document is not None:
-            processed_documents = [prepare_mime_document(document).model_dump()]
+            processed_documents = [prepare_mime_document(document)]
         elif documents is not None:
-            processed_documents = [prepare_mime_document(doc).model_dump() for doc in documents]
+            processed_documents = [prepare_mime_document(doc) for doc in documents]
         else:
             raise ValueError("Must provide either 'document' or 'documents' parameter.")
 
-        data = {
-            "json_schema": json_schema,
-            "documents": processed_documents,
-            "model": model,
-            "temperature": temperature,
-            "stream": stream,
-            "modality": modality,
-            "store": store,
-            "reasoning_effort": reasoning_effort,
-            "n_consensus": n_consensus,
-        }
-        if image_resolution_dpi:
-            data["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas:
-            data["browser_canvas"] = browser_canvas
-
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        document_extract_request = DocumentExtractRequest.model_validate(data)
+        request = DocumentExtractRequest(
+            json_schema=json_schema,
+            documents=processed_documents,
+            model=model,
+            temperature=temperature,
+            stream=stream,
+            modality=modality,
+            store=store,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+        )
 
-        return PreparedRequest(method="POST", url="/v1/documents/extractions", data=document_extract_request.model_dump(), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/documents/extractions", data=request.model_dump(mode="json"), idempotency_key=idempotency_key)
 
     def prepare_log_extraction(
         self,
@@ -130,7 +127,7 @@ class BaseExtractionsMixin:
                 json_schema=json_schema,
                 model=model,
                 temperature=temperature,
-            ).model_dump(mode="json", by_alias=True),  # by_alias is necessary to enable serialization/deserialization ('schema' was being converted to 'schema_')
+            ).model_dump(mode="json"),
             raise_for_status=True,
         )
 
@@ -144,12 +141,12 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
-        temperature: float = 0,
-        modality: Modality = "native",
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        n_consensus: int = 1,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> UiParsedChatCompletion:
@@ -178,16 +175,16 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = self.prepare_extraction(
-            json_schema,
-            document,
-            documents,
-            image_resolution_dpi,
-            browser_canvas,
-            model,
-            temperature,
-            modality,
-            reasoning_effort,
-            False,
+            json_schema=json_schema,
+            document=document,
+            documents=documents,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            stream=False,
             n_consensus=n_consensus,
             store=store,
             idempotency_key=idempotency_key,
@@ -204,12 +201,12 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
-        temperature: float = 0,
-        modality: Modality = "native",
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        n_consensus: int = 1,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> Generator[UiParsedChatCompletion, None, None]:
@@ -249,16 +246,16 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         ```
         """
         request = self.prepare_extraction(
-            json_schema,
-            document,
-            documents,
-            image_resolution_dpi,
-            browser_canvas,
-            model,
-            temperature,
-            modality,
-            reasoning_effort,
-            True,
+            json_schema=json_schema,
+            document=document,
+            documents=documents,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            stream=True,
             n_consensus=n_consensus,
             store=store,
             idempotency_key=idempotency_key,
@@ -321,10 +318,10 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         openai_responses_output: Response | None = None,
     ) -> None:
         request = self.prepare_log_extraction(
-            document,
-            json_schema,
-            model,
-            temperature,
+            document=document,
+            json_schema=json_schema,
+            model=model,
+            temperature=temperature,
             completion=completion,
             messages=messages,
             openai_messages=openai_messages,
@@ -345,12 +342,12 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
-        temperature: float = 0,
-        modality: Modality = "native",
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        n_consensus: int = 1,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> UiParsedChatCompletion:
@@ -376,16 +373,16 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             ValueError: If neither document nor documents is provided, or if both are provided
         """
         request = self.prepare_extraction(
-            json_schema,
-            document,
-            documents,
-            image_resolution_dpi,
-            browser_canvas,
-            model,
-            temperature,
-            modality,
-            reasoning_effort,
-            False,
+            json_schema=json_schema,
+            document=document,
+            documents=documents,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            stream=False,
             n_consensus=n_consensus,
             store=store,
             idempotency_key=idempotency_key,
@@ -401,12 +398,12 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
-        temperature: float = 0,
-        modality: Modality = "native",
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        n_consensus: int = 1,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> AsyncGenerator[UiParsedChatCompletion, None]:
@@ -445,16 +442,16 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         ```
         """
         request = self.prepare_extraction(
-            json_schema,
-            document,
-            documents,
-            image_resolution_dpi,
-            browser_canvas,
-            model,
-            temperature,
-            modality,
-            reasoning_effort,
-            True,
+            json_schema=json_schema,
+            document=document,
+            documents=documents,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            stream=True,
             n_consensus=n_consensus,
             store=store,
             idempotency_key=idempotency_key,
@@ -517,10 +514,10 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         openai_responses_output: Response | None = None,
     ) -> None:
         request = self.prepare_log_extraction(
-            document,
-            json_schema,
-            model,
-            temperature,
+            document=document,
+            json_schema=json_schema,
+            model=model,
+            temperature=temperature,
             completion=completion,
             messages=messages,
             openai_messages=openai_messages,

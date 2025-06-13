@@ -1,64 +1,45 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import HttpUrl
+from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ...._utils.ai_models import assert_valid_model_extraction
 from ....types.automations.outlook import FetchParams, ListOutlooks, MatchParams, Outlook, UpdateOutlookRequest
-from ....types.modalities import Modality
 from ....types.standards import PreparedRequest
 
 
 class OutlooksMixin:
+    outlooks_base_url: str = "/v1/processors/automations/outlook"
+
     def prepare_create(
         self,
         name: str,
-        json_schema: Dict[str, Any],
+        processor_id: str,
         webhook_url: HttpUrl,
-        # email specific opitonals Fields
-        authorized_domains: List[str] = [],
-        authorized_emails: List[str] = [],
-        # HTTP Config Optional Fields
-        webhook_headers: Dict[str, str] = {},
-        # DocumentExtraction Config
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        # Optional Fields for data integration
-        match_params: Optional[List[MatchParams]] = None,
-        fetch_params: Optional[List[FetchParams]] = None,
-        layout_schema: Optional[Dict[str, Any]] = None,
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
+        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
+        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
-        assert_valid_model_extraction(model)
-
-        data = {
-            "name": name,
-            "webhook_url": webhook_url,
-            "webhook_headers": webhook_headers,
-            "json_schema": json_schema,
-            "authorized_domains": authorized_domains,
-            "authorized_emails": authorized_emails,
-            "image_resolution_dpi": image_resolution_dpi,
-            "browser_canvas": browser_canvas,
-            "modality": modality,
-            "model": model,
-            "temperature": temperature,
-            "reasoning_effort": reasoning_effort,
-            "layout_schema": layout_schema,
-        }
-
-        if match_params is not None:
-            data["match_params"] = match_params
-        if fetch_params is not None:
-            data["fetch_params"] = fetch_params
-
         # Validate the data
-        outlook_data = Outlook.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/deployments/outlook", data=outlook_data.model_dump(mode="json"))
+        outlook_data = Outlook(
+            processor_id=processor_id,
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+            layout_schema=layout_schema,
+            match_params=match_params,
+            fetch_params=fetch_params,
+        )
+        return PreparedRequest(method="POST", url=self.outlooks_base_url, data=outlook_data.model_dump(mode="json"))
 
     def prepare_list(
         self,
@@ -66,10 +47,8 @@ class OutlooksMixin:
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc",
-        name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
+        name: str | None = None,
+        webhook_url: str | None = None,
     ) -> PreparedRequest:
         params = {
             "before": before,
@@ -78,75 +57,46 @@ class OutlooksMixin:
             "order": order,
             "name": name,
             "webhook_url": webhook_url,
-            "schema_id": schema_id,
-            "schema_data_id": schema_data_id,
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/deployments/outlook", params=params)
+        return PreparedRequest(method="GET", url=self.outlooks_base_url, params=params)
 
     def prepare_get(self, outlook_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/processors/automations/outlook/{outlook_id}")
+        return PreparedRequest(method="GET", url=f"{self.outlooks_base_url}/{outlook_id}")
 
     def prepare_update(
         self,
         outlook_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        authorized_domains: Optional[List[str]] = None,
-        authorized_emails: Optional[List[str]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        match_params: Optional[List[MatchParams]] = None,
-        fetch_params: Optional[List[FetchParams]] = None,
-        layout_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
+        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
+        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
-        data: dict[str, Any] = {}
-        if name is not None:
-            data["name"] = name
-        if webhook_url is not None:
-            data["webhook_url"] = webhook_url
-        if webhook_headers is not None:
-            data["webhook_headers"] = webhook_headers
-        if authorized_domains is not None:
-            data["authorized_domains"] = authorized_domains
-        if authorized_emails is not None:
-            data["authorized_emails"] = authorized_emails
-        if image_resolution_dpi is not None:
-            data["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not None:
-            data["browser_canvas"] = browser_canvas
-        if modality is not None:
-            data["modality"] = modality
-        if model is not None:
-            assert_valid_model_extraction(model)
-            data["model"] = model
-        if temperature is not None:
-            data["temperature"] = temperature
-        if json_schema is not None:
-            data["json_schema"] = json_schema
-        if match_params is not None:
-            data["match_params"] = match_params
-        if fetch_params is not None:
-            data["fetch_params"] = fetch_params
-        if reasoning_effort is not None:
-            data["reasoning_effort"] = reasoning_effort
-        if layout_schema is not None:
-            data["layout_schema"] = layout_schema
+        update_outlook_request = UpdateOutlookRequest(
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+            layout_schema=layout_schema,
+            match_params=match_params,
+            fetch_params=fetch_params,
+        )
 
-        update_outlook_request = UpdateOutlookRequest.model_validate(data)
-
-        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/outlook/{outlook_id}", data=update_outlook_request.model_dump(mode="json"))
+        return PreparedRequest(method="PUT", url=f"{self.outlooks_base_url}/{outlook_id}", data=update_outlook_request.model_dump(mode="json"))
 
     def prepare_delete(self, outlook_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/outlook/{outlook_id}")
+        return PreparedRequest(method="DELETE", url=f"{self.outlooks_base_url}/{outlook_id}")
 
 
 class Outlooks(SyncAPIResource, OutlooksMixin):
@@ -158,35 +108,27 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
     def create(
         self,
         name: str,
-        json_schema: Dict[str, Any],
+        processor_id: str,
         webhook_url: HttpUrl,
-        authorized_domains: List[str] = [],
-        authorized_emails: List[str] = [],
-        webhook_headers: Dict[str, str] = {},
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        match_params: Optional[List[MatchParams]] = None,
-        fetch_params: Optional[List[FetchParams]] = None,
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
+        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
+        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Outlook:
         """Create a new outlook automation configuration.
 
         Args:
             name: Name of the outlook plugin
-            json_schema: JSON schema to validate extracted data
+            processor_id: ID of the processor to use for the automation
             webhook_url: Webhook URL to receive processed data
             webhook_headers: Webhook headers to send with processed data
             authorized_domains: List of authorized domains
             authorized_emails: List of authorized emails
-            image_resolution_dpi: Optional image resolution DPI
-            browser_canvas: Optional browser canvas size
-            modality: Processing modality (currently only "native" supported)
-            model: AI model to use for processing
-            temperature: Model temperature setting
-            reasoning_effort: The effort level for the model to reason about the input data.
+            layout_schema: Layout schema to display the data
             match_params: List of match parameters for the outlook automation
             fetch_params: List of fetch parameters for the outlook automation
         Returns:
@@ -194,20 +136,17 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         """
 
         request = self.prepare_create(
-            name,
-            json_schema,
-            webhook_url,
-            authorized_domains,
-            authorized_emails,
-            webhook_headers,
-            image_resolution_dpi,
-            browser_canvas,
-            modality,
-            model,
-            temperature,
-            reasoning_effort,
-            match_params,
-            fetch_params,
+            name=name,
+            processor_id=processor_id,
+            webhook_url=webhook_url,
+            default_language=default_language,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+            layout_schema=layout_schema,
+            match_params=match_params,
+            fetch_params=fetch_params,
         )
         response = self._client._prepared_request(request)
 
@@ -221,10 +160,8 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc",
-        name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
+        name: str | None = None,
+        webhook_url: str | None = None,
     ) -> ListOutlooks:
         """List all outlook automation configurations.
 
@@ -235,18 +172,14 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             order: Sort order by creation time - "asc" or "desc" (default "desc")
             name: Optional name filter
             webhook_url: Optional webhook URL filter
-            schema_id: Optional schema ID filter
-            schema_data_id: Optional schema data ID filter
-            match_params: Optional list of match parameters for the outlook automation
-            fetch_params: Optional list of fetch parameters for the outlook automation
         Returns:
             List[Outlook]: List of outlook plugin configurations
         """
-        request = self.prepare_list(before, after, limit, order, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, name, webhook_url)
         response = self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
 
-    def get(self, id: str) -> Outlook:
+    def get(self, outlook_id: str) -> Outlook:
         """Get a specific outlook automation configuration.
 
         Args:
@@ -255,28 +188,23 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         Returns:
             Outlook: The outlook plugin configuration
         """
-        request = self.prepare_get(id)
+        request = self.prepare_get(outlook_id)
         response = self._client._prepared_request(request)
         return Outlook.model_validate(response)
 
     def update(
         self,
         outlook_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        authorized_domains: Optional[List[str]] = None,
-        authorized_emails: Optional[List[str]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        match_params: Optional[List[MatchParams]] = None,
-        fetch_params: Optional[List[FetchParams]] = None,
-        layout_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
+        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
+        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Outlook:
         """Update an outlook automation configuration.
 
@@ -287,13 +215,6 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
             webhook_headers: New webhook headers
             authorized_domains: New authorized domains
             authorized_emails: New authorized emails
-            image_resolution_dpi: New image resolution DPI
-            browser_canvas: New browser canvas size
-            modality: New processing modality
-            model: New AI model
-            temperature: New temperature setting
-            reasoning_effort: New reasoning effort
-            json_schema: New JSON schema
             match_params: New match parameters for the outlook automation
             fetch_params: New fetch parameters for the outlook automation
             layout_schema: New layout schema for the outlook automation
@@ -303,21 +224,16 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         """
         request = self.prepare_update(
             outlook_id,
-            name,
-            webhook_url,
-            webhook_headers,
-            authorized_domains,
-            authorized_emails,
-            image_resolution_dpi,
-            browser_canvas,
-            modality,
-            model,
-            temperature,
-            reasoning_effort,
-            json_schema,
-            match_params,
-            fetch_params,
-            layout_schema,
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+            layout_schema=layout_schema,
+            match_params=match_params,
+            fetch_params=fetch_params,
         )
         response = self._client._prepared_request(request)
         return Outlook.model_validate(response)
@@ -340,35 +256,29 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
     async def create(
         self,
         name: str,
-        json_schema: Dict[str, Any],
+        processor_id: str,
         webhook_url: HttpUrl,
-        authorized_domains: List[str] = [],
-        authorized_emails: List[str] = [],
-        webhook_headers: Dict[str, str] = {},
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        match_params: List[MatchParams] = [],
-        fetch_params: List[FetchParams] = [],
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
+        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
+        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Outlook:
         request = self.prepare_create(
-            name,
-            json_schema,
-            webhook_url,
-            authorized_domains,
-            authorized_emails,
-            webhook_headers,
-            image_resolution_dpi,
-            browser_canvas,
-            modality,
-            model,
-            temperature,
-            reasoning_effort,
-            match_params,
-            fetch_params,
+            name=name,
+            processor_id=processor_id,
+            webhook_url=webhook_url,
+            default_language=default_language,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+            layout_schema=layout_schema,
+            match_params=match_params,
+            fetch_params=fetch_params,
         )
         response = await self._client._prepared_request(request)
         print(f"Outlook automation created. Outlook available at https://www.uiform.com/dashboard/processors/{response['id']}")
@@ -380,12 +290,10 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc",
-        name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
+        name: str | None = None,
+        webhook_url: str | None = None,
     ) -> ListOutlooks:
-        request = self.prepare_list(before, after, limit, order, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before, after, limit, order, name, webhook_url)
         response = await self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
 
@@ -397,39 +305,29 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
     async def update(
         self,
         outlook_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        authorized_domains: Optional[List[str]] = None,
-        authorized_emails: Optional[List[str]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        match_params: Optional[List[MatchParams]] = None,
-        fetch_params: Optional[List[FetchParams]] = None,
-        layout_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
+        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
+        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Outlook:
         request = self.prepare_update(
-            outlook_id,
-            name,
-            webhook_url,
-            webhook_headers,
-            authorized_domains,
-            authorized_emails,
-            image_resolution_dpi,
-            browser_canvas,
-            modality,
-            model,
-            temperature,
-            reasoning_effort,
-            json_schema,
-            match_params,
-            fetch_params,
-            layout_schema,
+            outlook_id=outlook_id,
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+            layout_schema=layout_schema,
+            match_params=match_params,
+            fetch_params=fetch_params,
         )
         response = await self._client._prepared_request(request)
         return Outlook.model_validate(response)

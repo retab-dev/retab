@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import HttpUrl
+from pydantic import EmailStr, HttpUrl
+from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ...._utils.ai_models import assert_valid_model_extraction
@@ -15,46 +16,33 @@ from ....types.standards import PreparedRequest
 
 
 class MailBoxesMixin:
+    mailboxes_base_url: str = "/v1/processors/automations/mailboxes"
+
     def prepare_create(
         self,
         email: str,
         name: str,
-        json_schema: Dict[str, Any],
+        processor_id: str,
         webhook_url: HttpUrl,
-        # email specific opitonals Fields
-        authorized_domains: List[str] = [],
-        authorized_emails: List[str] = [],
-        # HTTP Config Optional Fields
-        webhook_headers: Dict[str, str] = {},
-        # DocumentExtraction Config
-        image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
-        assert_valid_model_extraction(model)
-
-        data = {
-            "email": email,
-            "name": name,
-            "webhook_url": webhook_url,
-            "webhook_headers": webhook_headers,
-            "json_schema": json_schema,
-            "authorized_domains": authorized_domains,
-            "authorized_emails": authorized_emails,
-            "image_resolution_dpi": image_resolution_dpi,
-            "browser_canvas": browser_canvas,
-            "modality": modality,
-            "model": model,
-            "temperature": temperature,
-            "reasoning_effort": reasoning_effort,
-        }
-
-        # Validate the data
-        mailbox_data = Mailbox.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/deployments/mailboxes", data=mailbox_data.model_dump(mode="json"))
+        """Create a new email automation configuration."""
+        mailbox = Mailbox(
+            name=name,
+            processor_id=processor_id,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            email=email,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+        )
+        return PreparedRequest(method="POST", url=self.mailboxes_base_url, data=mailbox.model_dump(mode="json"))
 
     def prepare_list(
         self,
@@ -65,8 +53,6 @@ class MailBoxesMixin:
         email: Optional[str] = None,
         name: Optional[str] = None,
         webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
     ) -> PreparedRequest:
         params = {
             "before": before,
@@ -76,57 +62,38 @@ class MailBoxesMixin:
             "email": email,
             "name": name,
             "webhook_url": webhook_url,
-            "schema_id": schema_id,
-            "schema_data_id": schema_data_id,
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/deployments/mailboxes", params=params)
+        return PreparedRequest(method="GET", url=self.mailboxes_base_url, params=params)
 
     def prepare_get(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/processors/automations/mailboxes/{email}")
+        return PreparedRequest(method="GET", url=f"{self.mailboxes_base_url}/{email}")
+
+    def prepare_get_from_id(self, mailbox_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"{self.mailboxes_base_url}/from_id/{mailbox_id}")
 
     def prepare_update(
         self,
         email: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        authorized_domains: Optional[List[str]] = None,
-        authorized_emails: Optional[List[str]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
-        # Build data dict excluding None values
-        data = {
-            k: v
-            for k, v in {
-                "name": name,
-                "webhook_url": webhook_url,
-                "webhook_headers": webhook_headers,
-                "authorized_domains": authorized_domains,
-                "authorized_emails": authorized_emails,
-                "image_resolution_dpi": image_resolution_dpi,
-                "browser_canvas": browser_canvas,
-                "modality": modality,
-                "model": model,
-                "temperature": temperature,
-                "reasoning_effort": reasoning_effort,
-                "json_schema": json_schema,
-            }.items()
-            if v is not None
-        }
-
-        if "model" in data:
-            assert_valid_model_extraction(data["model"])
-
-        update_mailbox_request = UpdateMailboxRequest.model_validate(data)
+        update_mailbox_request = UpdateMailboxRequest(
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+        )
         return PreparedRequest(method="PUT", url=f"/v1/processors/automations/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
 
     def prepare_delete(self, email: str) -> PreparedRequest:
@@ -144,55 +111,39 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         self,
         email: str,
         name: str,
-        json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-        # email specific opitonals Fields
-        authorized_domains: List[str] = [],
-        authorized_emails: List[str] = [],
-        # HTTP Config Optional Fields
-        webhook_headers: Dict[str, str] = {},
-        # DocumentExtraction Config
-        image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        processor_id: str,
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Mailbox:
         """Create a new email automation configuration.
 
         Args:
             email: Email address for the mailbox
-            json_schema: JSON schema to validate extracted email data
+            name: Name of the mailbox
             webhook_url: Webhook URL to receive processed emails
-            webhook_headers: Webhook headers to send with processed emails
+            processor_id: ID of the processor to use for the mailbox
             authorized_domains: List of authorized domains for the mailbox
             authorized_emails: List of authorized emails for the mailbox
-            image_resolution_dpi: Image resolution DPI
-            browser_canvas: Browser canvas size
-            modality: Processing modality (currently only "native" supported)
-            model: AI model to use for processing
-            temperature: Model temperature setting
-            reasoning_effort: The effort level for the model to reason about the input data.
+            webhook_headers: Webhook headers to send with processed emails
 
         Returns:
             Mailbox: The created mailbox configuration
         """
 
         request = self.prepare_create(
-            email,
-            name,
-            json_schema,
-            webhook_url,
-            authorized_domains,
-            authorized_emails,
-            webhook_headers,
-            image_resolution_dpi,
-            browser_canvas,
-            modality,
-            model,
-            temperature,
-            reasoning_effort,
+            email=email,
+            name=name,
+            processor_id=processor_id,
+            webhook_url=webhook_url,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+            webhook_headers=webhook_headers,
+            default_language=default_language,
+            need_validation=need_validation,
         )
         response = self._client._prepared_request(request)
 
@@ -206,10 +157,9 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc",
+        name: Optional[str] = None,
         email: Optional[str] = None,
         webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
     ) -> ListMailboxes:
         """List all email automation configurations.
 
@@ -226,7 +176,15 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         Returns:
             ListMailboxes: List of mailbox configurations
         """
-        request = self.prepare_list(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            email=email,
+            name=name,
+            webhook_url=webhook_url,
+        )
         response = self._client._prepared_request(request)
         return ListMailboxes.model_validate(response)
 
@@ -246,55 +204,38 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
     def update(
         self,
         email: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        authorized_domains: Optional[List[str]] = None,
-        authorized_emails: Optional[List[str]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: List[str] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Mailbox:
         """Update an email automation configuration.
 
         Args:
             email: Email address of the mailbox to update
+            name: New name
+            default_language: New default language
             webhook_url: New webhook configuration
             webhook_headers: New webhook configuration
-            max_file_size: New webhook configuration
-            file_payload: New webhook configuration
-            follow_up: New webhook configuration
+            need_validation: New webhook configuration
             authorized_domains: New webhook configuration
             authorized_emails: New webhook configuration
-            image_resolution_dpi: New image resolution DPI
-            browser_canvas: New browser canvas size
-            modality: New processing modality
-            model: New AI model
-            temperature: New temperature setting
-            reasoning_effort: New reasoning effort
-            json_schema: New JSON schema
 
         Returns:
             Mailbox: The updated mailbox configuration
         """
         request = self.prepare_update(
-            email,
-            name,
-            webhook_url,
-            webhook_headers,
-            authorized_domains,
-            authorized_emails,
-            image_resolution_dpi,
-            browser_canvas,
-            modality,
-            model,
-            temperature,
-            reasoning_effort,
-            json_schema,
+            email=email,
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
         )
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
@@ -319,32 +260,24 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         self,
         email: str,
         name: str,
-        json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-        authorized_domains: List[str] = [],
-        authorized_emails: List[str] = [],
-        webhook_headers: Dict[str, str] = {},
-        image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        processor_id: str,
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Mailbox:
         request = self.prepare_create(
-            email,
-            name,
-            json_schema,
-            webhook_url,
-            authorized_domains,
-            authorized_emails,
-            webhook_headers,
-            image_resolution_dpi,
-            browser_canvas,
-            modality,
-            model,
-            temperature,
-            reasoning_effort,
+            email=email,
+            name=name,
+            processor_id=processor_id,
+            webhook_url=webhook_url,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
+            webhook_headers=webhook_headers,
+            default_language=default_language,
+            need_validation=need_validation,
         )
         response = await self._client._prepared_request(request)
 
@@ -358,13 +291,11 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         after: str | None = None,
         limit: int = 10,
         order: Literal["asc", "desc"] | None = "desc",
-        email: Optional[str] = None,
-        name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
+        email: str | None = None,
+        name: str | None = None,
+        webhook_url: str | None = None,
     ) -> ListMailboxes:
-        request = self.prepare_list(before, after, limit, order, email, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before=before, after=after, limit=limit, order=order, email=email, name=name, webhook_url=webhook_url)
         response = await self._client._prepared_request(request)
         return ListMailboxes.model_validate(response)
 
@@ -376,33 +307,23 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
     async def update(
         self,
         email: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        authorized_domains: Optional[List[str]] = None,
-        authorized_emails: Optional[List[str]] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Mailbox:
         request = self.prepare_update(
-            email,
-            name,
-            webhook_url,
-            webhook_headers,
-            authorized_domains,
-            authorized_emails,
-            image_resolution_dpi,
-            browser_canvas,
-            modality,
-            model,
-            temperature,
-            reasoning_effort,
-            json_schema,
+            email=email,
+            name=name,
+            default_language=default_language,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            authorized_domains=authorized_domains,
+            authorized_emails=authorized_emails,
         )
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)

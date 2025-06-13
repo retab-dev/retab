@@ -1,49 +1,34 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import HttpUrl
+from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ...._utils.ai_models import assert_valid_model_extraction
 from ....types.automations.links import Link, ListLinks, UpdateLinkRequest
-from ....types.modalities import Modality
 from ....types.standards import PreparedRequest
 
 
 class LinksMixin:
+    links_base_url: str = "/v1/processors/automations/links"
+
     def prepare_create(
         self,
+        processor_id: str,
         name: str,
-        json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: str | None = None,
-        # DocumentExtraction Config
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[str] = None,
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        password: str | None = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
-        assert_valid_model_extraction(model)
-
-        data = {
-            "name": name,
-            "webhook_url": webhook_url,
-            "webhook_headers": webhook_headers or {},
-            "json_schema": json_schema,
-            "password": password,
-            "image_resolution_dpi": image_resolution_dpi,
-            "browser_canvas": browser_canvas,
-            "modality": modality,
-            "model": model,
-            "temperature": temperature,
-            "reasoning_effort": reasoning_effort,
-        }
-
-        request = Link.model_validate(data)
-        return PreparedRequest(method="POST", url="/v1/deployments/links", data=request.model_dump(mode="json"))
+        request = Link(
+            processor_id=processor_id,
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            password=password,
+        )
+        return PreparedRequest(method="POST", url=self.links_base_url, data=request.model_dump(mode="json"))
 
     def prepare_list(
         self,
@@ -52,27 +37,21 @@ class LinksMixin:
         limit: Optional[int] = 10,
         order: Optional[Literal["asc", "desc"]] = "desc",
         # Filtering parameters
-        link_id: Optional[str] = None,
+        processor_id: Optional[str] = None,
         name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
     ) -> PreparedRequest:
         params = {
             "before": before,
             "after": after,
             "limit": limit,
             "order": order,
-            "automation_id": link_id,
+            "processor_id": processor_id,
             "name": name,
-            "webhook_url": webhook_url,
-            "schema_id": schema_id,
-            "schema_data_id": schema_data_id,
         }
         # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
 
-        return PreparedRequest(method="GET", url="/v1/deployments", params=params)
+        return PreparedRequest(method="GET", url=self.links_base_url, params=params)
 
     def prepare_get(self, link_id: str) -> PreparedRequest:
         """Get a specific extraction link configuration.
@@ -83,56 +62,28 @@ class LinksMixin:
         Returns:
             Link: The extraction link configuration
         """
-        return PreparedRequest(method="GET", url=f"/v1/deployments/{link_id}")
+        return PreparedRequest(method="GET", url=f"{self.links_base_url}/{link_id}")
 
     def prepare_update(
         self,
         link_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: Optional[str] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[str] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        password: str | None = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
-        data: dict[str, Any] = {}
-
-        if link_id is not None:
-            data["id"] = link_id
-        if name is not None:
-            data["name"] = name
-        if webhook_url is not None:
-            data["webhook_url"] = webhook_url
-        if webhook_headers is not None:
-            data["webhook_headers"] = webhook_headers
-        if password is not None:
-            data["password"] = password
-        if image_resolution_dpi is not None:
-            data["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not None:
-            data["browser_canvas"] = browser_canvas
-        if modality is not None:
-            data["modality"] = modality
-        if model is not None:
-            assert_valid_model_extraction(model)
-            data["model"] = model
-        if temperature is not None:
-            data["temperature"] = temperature
-        if json_schema is not None:
-            data["json_schema"] = json_schema
-        if reasoning_effort is not None:
-            data["reasoning_effort"] = reasoning_effort
-
-        request = UpdateLinkRequest.model_validate(data)
-        return PreparedRequest(method="PUT", url=f"/v1/deployments/{link_id}", data=request.model_dump(mode="json"))
+        request = UpdateLinkRequest(
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            password=password,
+        )
+        return PreparedRequest(method="PUT", url=f"{self.links_base_url}/{link_id}", data=request.model_dump(mode="json"))
 
     def prepare_delete(self, link_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/links/{link_id}", raise_for_status=True)
+        return PreparedRequest(method="DELETE", url=f"{self.links_base_url}/{link_id}", raise_for_status=True)
 
 
 class Links(SyncAPIResource, LinksMixin):
@@ -143,18 +94,12 @@ class Links(SyncAPIResource, LinksMixin):
 
     def create(
         self,
+        processor_id: str,
         name: str,
-        json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: str | None = None,
-        # DocumentExtraction Config
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[str] = None,
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        password: str | None = PydanticUndefined,  # type: ignore[assignment]
     ) -> Link:
         """Create a new extraction link configuration.
 
@@ -175,7 +120,12 @@ class Links(SyncAPIResource, LinksMixin):
         """
 
         request = self.prepare_create(
-            name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+            processor_id=processor_id,
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            password=password,
         )
         response = self._client._prepared_request(request)
 
@@ -189,11 +139,8 @@ class Links(SyncAPIResource, LinksMixin):
         limit: Optional[int] = 10,
         order: Optional[Literal["asc", "desc"]] = "desc",
         # Filtering parameters
-        link_id: Optional[str] = None,
+        processor_id: Optional[str] = None,
         name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
     ) -> ListLinks:
         """List extraction link configurations with pagination support.
 
@@ -202,16 +149,13 @@ class Links(SyncAPIResource, LinksMixin):
             after: Optional cursor for pagination after a specific link ID
             limit: Optional limit on number of results (max 100)
             order: Optional sort order ("asc" or "desc")
-            link_id: Optional filter by extraction link ID
+            processor_id: Optional filter by processor ID
             name: Optional filter by link name
-            webhook_url: Optional filter by webhook URL
-            schema_id: Optional filter by schema ID
-            schema_data_id: Optional filter by schema data ID
 
         Returns:
             ListLinks: Paginated list of extraction link configurations with metadata
         """
-        request = self.prepare_list(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before=before, after=after, limit=limit, order=order, processor_id=processor_id, name=name)
         response = self._client._prepared_request(request)
         return ListLinks.model_validate(response)
 
@@ -231,17 +175,11 @@ class Links(SyncAPIResource, LinksMixin):
     def update(
         self,
         link_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: Optional[str] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[str] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        password: str | None = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Link:
         """Update an extraction link configuration.
 
@@ -264,7 +202,12 @@ class Links(SyncAPIResource, LinksMixin):
         """
 
         request = self.prepare_update(
-            link_id, name, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema
+            link_id=link_id,
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            password=password,
+            need_validation=need_validation,
         )
         response = self._client._prepared_request(request)
         return Link.model_validate(response)
@@ -290,20 +233,20 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
 
     async def create(
         self,
+        processor_id: str,
         name: str,
-        json_schema: Dict[str, Any],
         webhook_url: HttpUrl,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: str | None = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[str] = None,
-        modality: Modality = "native",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        password: str | None = PydanticUndefined,  # type: ignore[assignment]
     ) -> Link:
         request = self.prepare_create(
-            name, json_schema, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort
+            processor_id=processor_id,
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            need_validation=need_validation,
+            password=password,
         )
         response = await self._client._prepared_request(request)
         print(f"Extraction Link Created. Link available at https://www.uiform.com/dashboard/processors/{response['id']}")
@@ -315,13 +258,10 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         after: Optional[str] = None,
         limit: Optional[int] = 10,
         order: Optional[Literal["asc", "desc"]] = "desc",
-        link_id: Optional[str] = None,
+        processor_id: Optional[str] = None,
         name: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        schema_data_id: Optional[str] = None,
     ) -> ListLinks:
-        request = self.prepare_list(before, after, limit, order, link_id, name, webhook_url, schema_id, schema_data_id)
+        request = self.prepare_list(before=before, after=after, limit=limit, order=order, processor_id=processor_id, name=name)
         response = await self._client._prepared_request(request)
         return ListLinks.model_validate(response)
 
@@ -333,20 +273,19 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
     async def update(
         self,
         link_id: str,
-        name: Optional[str] = None,
-        webhook_url: Optional[HttpUrl] = None,
-        webhook_headers: Optional[Dict[str, str]] = None,
-        password: Optional[str] = None,
-        image_resolution_dpi: Optional[int] = None,
-        browser_canvas: Optional[str] = None,
-        modality: Optional[Modality] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        reasoning_effort: Optional[ChatCompletionReasoningEffort] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
+        name: str = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
+        password: str | None = PydanticUndefined,  # type: ignore[assignment]
+        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Link:
         request = self.prepare_update(
-            link_id, name, webhook_url, webhook_headers, password, image_resolution_dpi, browser_canvas, modality, model, temperature, reasoning_effort, json_schema
+            link_id=link_id,
+            name=name,
+            webhook_url=webhook_url,
+            webhook_headers=webhook_headers,
+            password=password,
+            need_validation=need_validation,
         )
         response = await self._client._prepared_request(request)
         return Link.model_validate(response)

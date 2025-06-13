@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Literal, Optional
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.consensus import ReconciliationResponse
+from ...types.consensus import ReconciliationResponse, ReconciliationRequest
 from ...types.standards import PreparedRequest
 from .completions import AsyncCompletions, Completions
 from .responses import AsyncResponses, Responses
@@ -15,15 +15,13 @@ class BaseConsensusMixin:
         mode: Literal["direct", "aligned"] = "direct",
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
-        data = {
-            "list_dicts": list_dicts,
-            "mode": mode,
-        }
+        request = ReconciliationRequest(
+            list_dicts=list_dicts,
+            reference_schema=reference_schema,
+            mode=mode,
+        )
 
-        if reference_schema is not None:
-            data["reference_schema"] = reference_schema
-
-        return PreparedRequest(method="POST", url="/v1/consensus/reconcile", data=data, idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/consensus/reconcile", data=request.model_dump(), idempotency_key=idempotency_key)
 
 
 class Consensus(SyncAPIResource, BaseConsensusMixin):
