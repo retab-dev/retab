@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 import nanoid  # type: ignore
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, Field, HttpUrl, computed_field, field_serializer
+from pydantic import BaseModel, Field, HttpUrl, computed_field, field_validator
 
 from ..logs import AutomationConfig
 from ..modalities import Modality
@@ -35,13 +35,13 @@ class ScrappingConfig(AutomationConfig):
     id: str = Field(default_factory=lambda: "scrapping_" + nanoid.generate(), description="Unique identifier for the scrapping job")
 
     # Scrapping Specific Config
-    link: HttpUrl = Field(..., description="Link to be scrapped")
+    link: str = Field(..., description="Link to be scrapped")
     schedule: CronSchedule
 
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     # HTTP Config
-    webhook_url: HttpUrl = Field(..., description="Url of the webhook to send the data to")
+    webhook_url: str = Field(..., description="Url of the webhook to send the data to")
     webhook_headers: dict[str, str] = Field(default_factory=dict, description="Headers to send with the request")
 
     modality: Modality
@@ -58,6 +58,8 @@ class ScrappingConfig(AutomationConfig):
         default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
     )
 
-    @field_serializer("webhook_url", "link")
-    def url2str(self, val: HttpUrl) -> str:
-        return str(val)
+    @field_validator("webhook_url", "link", mode="after")
+    def validate_httpurl(cls, val: Any) -> Any:
+        if isinstance(val, str):
+            HttpUrl(val)
+        return val

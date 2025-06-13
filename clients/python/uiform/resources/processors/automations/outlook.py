@@ -1,6 +1,5 @@
 from typing import Any, Literal, List
 
-from pydantic import HttpUrl
 from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
@@ -15,7 +14,7 @@ class OutlooksMixin:
         self,
         name: str,
         processor_id: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
@@ -71,7 +70,7 @@ class OutlooksMixin:
         outlook_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
@@ -109,7 +108,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         self,
         name: str,
         processor_id: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
@@ -197,7 +196,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         outlook_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
@@ -257,7 +256,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         self,
         name: str,
         processor_id: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
@@ -307,7 +306,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         outlook_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
