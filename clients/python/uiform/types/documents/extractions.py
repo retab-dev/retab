@@ -57,22 +57,22 @@ class DocumentExtractRequest(BaseModel):
     def validate_document_or_documents(cls, data: Any) -> Any:
         # Handle both dict and model instance cases
         if isinstance(data, dict):
-            if data.get("document") is not None and data.get("documents") is not None:
-                raise ValueError("document and documents cannot be provided at the same time")
-            if data.get("document") is not None:
-                data["documents"] = [data["document"]]
-            elif data.get("documents") is not None:
+            if data.get("documents"):  # If documents is set, it has higher priority than document
                 data["document"] = data["documents"][0]
+            elif data.get("document"):
+                data["documents"] = [data["document"]]
+            else:
+                raise ValueError("document or documents must be provided")
         else:
             # Handle model instance case
             document = getattr(data, "document", None)
             documents = getattr(data, "documents", None)
-            if document is not None and documents is not None:
-                raise ValueError("document and documents cannot be provided at the same time")
-            if document is not None:
-                setattr(data, "documents", [document])
-            elif documents is not None:
+            if documents:
                 setattr(data, "document", documents[0])
+            elif document:
+                setattr(data, "documents", [document])
+            else:
+                raise ValueError("document or documents must be provided")
         return data
 
 
