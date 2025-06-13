@@ -2,7 +2,7 @@ import base64
 import json
 from io import IOBase
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator, Literal
+from typing import Any, AsyncGenerator, Generator
 
 from anthropic.types.message_param import MessageParam
 from openai.types.chat import ChatCompletionMessageParam
@@ -20,6 +20,7 @@ from ..._utils.mime import MIMEData, prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionUiformMessage
 from ...types.documents.extractions import DocumentExtractRequest, LogExtractionRequest, UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice
+from ...types.extractions import BrowserCanvas
 from ...types.modalities import Modality
 from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest
@@ -44,7 +45,7 @@ class BaseExtractionsMixin:
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         model: str = PydanticUndefined,  # type: ignore[assignment]
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
         modality: Modality = PydanticUndefined,  # type: ignore[assignment]
@@ -142,7 +143,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
         modality: Modality = PydanticUndefined,  # type: ignore[assignment]
         reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
@@ -202,7 +203,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
         modality: Modality = PydanticUndefined,  # type: ignore[assignment]
         reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
@@ -343,7 +344,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
         modality: Modality = PydanticUndefined,  # type: ignore[assignment]
         reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
@@ -399,7 +400,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
         modality: Modality = PydanticUndefined,  # type: ignore[assignment]
         reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]

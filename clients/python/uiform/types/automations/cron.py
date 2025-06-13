@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 import nanoid  # type: ignore
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, HttpUrl, computed_field, field_serializer
 
 from ..logs import AutomationConfig
 from ..modalities import Modality
+from ..extractions import BrowserCanvas
 
 
 def scrapping_action(link: HttpUrl) -> dict[str, Any]:
@@ -45,7 +46,7 @@ class ScrappingConfig(AutomationConfig):
 
     modality: Modality
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal["A3", "A4", "A5"] = Field(
+    browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
     )
 

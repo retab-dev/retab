@@ -1,16 +1,17 @@
 import datetime
-from typing import Any, Dict, Literal
+from typing import Any, Dict
 
 from pydantic import BaseModel, Field
 
 from ..modalities import Modality
+from ..extractions import BrowserCanvas
 
 
 class AnnotationParameters(BaseModel):
     model: str
     modality: Modality | None = "native"
     image_resolution_dpi: int = 96
-    browser_canvas: Literal["A3", "A4", "A5"] = "A4"
+    browser_canvas: BrowserCanvas = "A4"
     temperature: float = 0.0
 
 

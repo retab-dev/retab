@@ -15,6 +15,7 @@ from .documents.extractions import UiParsedChatCompletion
 from .mime import BaseMIMEData
 from .modalities import Modality
 from .pagination import ListMetadata
+from .extractions import BrowserCanvas
 
 
 class ProcessorConfig(BaseModel):
@@ -25,7 +26,7 @@ class ProcessorConfig(BaseModel):
 
     modality: Modality
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal["A3", "A4", "A5"] = Field(
+    browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
     )
 
@@ -91,7 +92,7 @@ class UpdateProcessorRequest(BaseModel):
     name: Optional[str] = None
     modality: Optional[Modality] = None
     image_resolution_dpi: Optional[int] = None
-    browser_canvas: Optional[Literal["A3", "A4", "A5"]] = None
+    browser_canvas: Optional[BrowserCanvas] = None
     model: Optional[str] = None
     json_schema: Optional[Dict] = None
     temperature: Optional[float] = None

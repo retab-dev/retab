@@ -1,10 +1,11 @@
-from typing import Any, Literal, Self, TypedDict
+from typing import Any, Self, TypedDict
 
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, Field, model_validator
 
 from ..mime import MIMEData
 from ..modalities import Modality
+from ..extractions import BrowserCanvas
 
 
 class EnhanceSchemaConfig(BaseModel):
@@ -41,7 +42,7 @@ class EnhanceSchemaRequest(BaseModel):
     """The modality of the document to load."""
 
     image_resolution_dpi: int = 96
-    browser_canvas: Literal["A3", "A4", "A5"] = "A4"
+    browser_canvas: BrowserCanvas = "A4"
     """The image operations to apply to the document."""
 
     stream: bool = False

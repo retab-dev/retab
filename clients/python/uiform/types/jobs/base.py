@@ -4,6 +4,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel, Field, model_validator
 
 from ..modalities import Modality
+from ..extractions import BrowserCanvas
 
 SelectionMode = Literal["all", "manual"]
 
@@ -48,7 +49,7 @@ class InferenceSettings(BaseModel):
     modality: Modality = "native"
     reasoning_effort: ChatCompletionReasoningEffort = "medium"
     image_resolution_dpi: int = 96
-    browser_canvas: Literal["A3", "A4", "A5"] = "A4"
+    browser_canvas: BrowserCanvas = "A4"
     n_consensus: int = Field(default=1, description="Number of consensus rounds to perform")
 
 

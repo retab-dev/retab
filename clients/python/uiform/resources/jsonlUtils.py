@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from io import IOBase
 from pathlib import Path
-from typing import IO, Any, Literal, Optional, TypedDict
+from typing import IO, Any, Optional, TypedDict
 
 from anthropic import Anthropic
 from openai import OpenAI
@@ -25,6 +25,7 @@ from .._utils.json_schema import load_json_schema
 from ..types.chat import ChatCompletionUiformMessage
 from ..types.modalities import Modality
 from ..types.schemas.object import Schema
+from ..types.extractions import BrowserCanvas
 
 
 class FinetuningJSON(BaseModel):
@@ -139,7 +140,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         document_annotation_pairs_paths: list[dict[str, Path | str]],
         dataset_path: Path | str,
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         modality: Modality = "native",
     ) -> None:
         """Save document-annotation pairs to a JSONL training set.

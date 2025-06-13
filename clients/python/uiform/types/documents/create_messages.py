@@ -17,6 +17,7 @@ from ..._utils.responses import convert_to_openai_format as convert_to_openai_re
 from ..chat import ChatCompletionUiformMessage
 from ..mime import MIMEData
 from ..modalities import Modality
+from ..extractions import BrowserCanvas
 
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 
@@ -31,7 +32,7 @@ class DocumentCreateMessageRequest(BaseModel):
     document: MIMEData = Field(description="The document to load.")
     modality: Modality = Field(description="The modality of the document to load.")
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal["A3", "A4", "A5"] = Field(
+    browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
     )
 
