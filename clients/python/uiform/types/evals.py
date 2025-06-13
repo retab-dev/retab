@@ -164,6 +164,7 @@ class Evaluation(BaseModel):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
 
     name: str
+    old_documents: list[EvaluationDocument] | None = None
     documents: list[EvaluationDocument]
     iterations: list[Iteration]
     json_schema: dict[str, Any]
