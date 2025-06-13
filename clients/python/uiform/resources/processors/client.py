@@ -11,7 +11,8 @@ from pydantic_core import PydanticUndefined
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import MIMEData, prepare_mime_document
-from ...types.documents.extractions import BrowserCanvas, UiParsedChatCompletion
+from ...types.browser_canvas import BrowserCanvas
+from ...types.documents.extractions import UiParsedChatCompletion
 from ...types.logs import ProcessorConfig, UpdateProcessorRequest
 from ...types.modalities import Modality
 from ...types.pagination import ListMetadata

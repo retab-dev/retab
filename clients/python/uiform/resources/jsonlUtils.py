@@ -25,7 +25,7 @@ from .._utils.json_schema import load_json_schema
 from ..types.chat import ChatCompletionUiformMessage
 from ..types.modalities import Modality
 from ..types.schemas.object import Schema
-from ..types.extractions import BrowserCanvas
+from ..types.browser_canvas import BrowserCanvas
 
 
 class FinetuningJSON(BaseModel):

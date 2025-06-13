@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from ..mime import MIMEData
 from ..modalities import Modality
-from ..extractions import BrowserCanvas
+from ..browser_canvas import BrowserCanvas
 
 
 class GenerateSchemaRequest(BaseModel):

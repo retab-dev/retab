@@ -17,7 +17,7 @@ from ..._utils.responses import convert_to_openai_format as convert_to_openai_re
 from ..chat import ChatCompletionUiformMessage
 from ..mime import MIMEData
 from ..modalities import Modality
-from ..extractions import BrowserCanvas
+from ..browser_canvas import BrowserCanvas
 
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 

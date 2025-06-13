@@ -4,7 +4,7 @@ from typing import Any, Dict
 from pydantic import BaseModel, Field
 
 from ..modalities import Modality
-from ..extractions import BrowserCanvas
+from ..browser_canvas import BrowserCanvas
 
 
 class AnnotationParameters(BaseModel):

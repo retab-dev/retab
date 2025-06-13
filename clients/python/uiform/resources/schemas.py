@@ -17,7 +17,7 @@ from ..types.schemas.evaluate import EvaluateSchemaRequest, EvaluateSchemaRespon
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.object import Schema
 from ..types.standards import PreparedRequest
-from ..types.extractions import BrowserCanvas
+from ..types.browser_canvas import BrowserCanvas
 
 
 class SchemasMixin:
