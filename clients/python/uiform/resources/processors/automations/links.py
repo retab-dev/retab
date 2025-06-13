@@ -1,6 +1,5 @@
 from typing import Any, Literal, Optional
 
-from pydantic import HttpUrl
 from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
@@ -15,7 +14,7 @@ class LinksMixin:
         self,
         processor_id: str,
         name: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         password: str | None = PydanticUndefined,  # type: ignore[assignment]
@@ -68,7 +67,7 @@ class LinksMixin:
         self,
         link_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         password: str | None = PydanticUndefined,  # type: ignore[assignment]
@@ -80,7 +79,7 @@ class LinksMixin:
             need_validation=need_validation,
             password=password,
         )
-        return PreparedRequest(method="PUT", url=f"{self.links_base_url}/{link_id}", data=request.model_dump(mode="json"))
+        return PreparedRequest(method="PUT", url=f"{self.links_base_url}/{link_id}", data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True))
 
     def prepare_delete(self, link_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"{self.links_base_url}/{link_id}", raise_for_status=True)
@@ -96,7 +95,7 @@ class Links(SyncAPIResource, LinksMixin):
         self,
         processor_id: str,
         name: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         password: str | None = PydanticUndefined,  # type: ignore[assignment]
@@ -176,7 +175,7 @@ class Links(SyncAPIResource, LinksMixin):
         self,
         link_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         password: str | None = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
@@ -235,7 +234,7 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         self,
         processor_id: str,
         name: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         password: str | None = PydanticUndefined,  # type: ignore[assignment]
@@ -274,7 +273,7 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         self,
         link_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         password: str | None = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]

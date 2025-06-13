@@ -85,7 +85,7 @@ def sync_client(api_keys: EnvConfig) -> UiForm:
     return UiForm(
         api_key=api_keys.uiform_api_key,
         base_url=api_keys.uiform_api_base_url,
-        max_retries=3,
+        max_retries=0,
     )
 
 
@@ -94,7 +94,7 @@ def async_client(api_keys: EnvConfig) -> AsyncUiForm:
     return AsyncUiForm(
         api_key=api_keys.uiform_api_key,
         base_url=api_keys.uiform_api_base_url,
-        max_retries=3,
+        max_retries=0,
     )
 
 

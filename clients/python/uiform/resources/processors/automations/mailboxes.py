@@ -20,7 +20,7 @@ class MailBoxesMixin:
         email: str,
         name: str,
         processor_id: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
         authorized_emails: list[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
@@ -76,7 +76,7 @@ class MailBoxesMixin:
         email: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
@@ -108,7 +108,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         self,
         email: str,
         name: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         processor_id: str,
         authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
         authorized_emails: list[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
@@ -203,7 +203,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         email: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
@@ -257,7 +257,7 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         self,
         email: str,
         name: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         processor_id: str,
         authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
         authorized_emails: List[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
@@ -306,7 +306,7 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         email: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
         authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]

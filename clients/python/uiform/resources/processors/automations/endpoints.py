@@ -1,6 +1,5 @@
 from typing import Literal, Optional
 
-from pydantic import HttpUrl
 from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
@@ -14,7 +13,7 @@ class EndpointsMixin:
         self,
         processor_id: str,
         name: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         model: str = "gpt-4o-mini",
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
@@ -69,7 +68,7 @@ class EndpointsMixin:
         endpoint_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
@@ -93,7 +92,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         self,
         processor_id: str,
         name: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Endpoint:
@@ -168,7 +167,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         endpoint_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Endpoint:
@@ -218,7 +217,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         self,
         processor_id: str,
         name: str,
-        webhook_url: HttpUrl,
+        webhook_url: str,
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Endpoint:
@@ -257,7 +256,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         endpoint_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
+        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
     ) -> Endpoint:

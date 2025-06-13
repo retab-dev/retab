@@ -1,7 +1,7 @@
 import mimetypes
-from typing import BinaryIO, Literal, Tuple
+from typing import Any, BinaryIO, Literal, Tuple
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 
 class DBFile(BaseModel):
@@ -27,10 +27,12 @@ FileTuple = Tuple[str, FileData]
 
 
 class FileLink(BaseModel):
-    download_url: HttpUrl = Field(description="The signed URL to download the file")
+    download_url: str = Field(description="The signed URL to download the file")
     expires_in: str = Field(description="The expiration time of the signed URL")
     filename: str = Field(description="The name of the file")
 
-    @field_serializer("download_url")
-    def url2str(self, val: HttpUrl) -> str:
-        return str(val)
+    @field_validator("download_url", mode="after")
+    def validate_httpurl(cls, val: Any) -> Any:
+        if isinstance(val, str):
+            HttpUrl(val)
+        return val

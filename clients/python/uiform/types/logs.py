@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Literal, Optional
 import nanoid  # type: ignore
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_serializer
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_validator
 
 from .._utils.json_schema import compute_schema_data_id
 from .._utils.mime import generate_blake2b_hash_from_string
@@ -75,14 +75,16 @@ class AutomationConfig(BaseModel):
     default_language: str = Field(default="en", description="Default language for the automation")
 
     # HTTP Config
-    webhook_url: HttpUrl = Field(..., description="Url of the webhook to send the data to")
+    webhook_url: str = Field(..., description="Url of the webhook to send the data to")
     webhook_headers: Dict[str, str] = Field(default_factory=dict, description="Headers to send with the request")
 
     need_validation: bool = Field(default=False, description="If the automation needs to be validated before running")
 
-    @field_serializer("webhook_url")
-    def url2str(self, val: HttpUrl) -> str:
-        return str(val)
+    @field_validator("webhook_url", mode="after")
+    def validate_httpurl(cls, val: Any) -> Any:
+        if isinstance(val, str):
+            HttpUrl(val)
+        return val
 
 
 class UpdateProcessorRequest(BaseModel):
@@ -130,15 +132,15 @@ class UpdateAutomationRequest(BaseModel):
 
     default_language: Optional[str] = None
 
-    webhook_url: Optional[HttpUrl] = None
+    webhook_url: Optional[str] = None
     webhook_headers: Optional[dict[str, str]] = None
 
     need_validation: Optional[bool] = None
 
-    @field_serializer("webhook_url")
-    def url2str(self, val: HttpUrl | None) -> str | None:
-        if isinstance(val, HttpUrl):
-            return str(val)
+    @field_validator("webhook_url", mode="after")
+    def validate_httpurl(cls, val: Any) -> Any:
+        if isinstance(val, str):
+            HttpUrl(val)
         return val
 
 
@@ -165,7 +167,7 @@ class OpenAIRequestConfig(BaseModel):
 
 
 class ExternalRequestLog(BaseModel):
-    webhook_url: Optional[HttpUrl]
+    webhook_url: Optional[str]
     request_body: dict[str, Any]
     request_headers: dict[str, str]
     request_at: datetime.datetime
@@ -178,10 +180,10 @@ class ExternalRequestLog(BaseModel):
     error: Optional[str] = None
     duration_ms: float
 
-    @field_serializer("webhook_url")
-    def url2str(self, val: HttpUrl | None) -> str | None:
-        if isinstance(val, HttpUrl):
-            return str(val)
+    @field_validator("webhook_url", mode="after")
+    def validate_httpurl(cls, val: Any) -> Any:
+        if isinstance(val, str):
+            HttpUrl(val)
         return val
 
 
