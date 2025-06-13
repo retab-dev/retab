@@ -6,7 +6,7 @@ from openai.types.chat.chat_completion import ChatCompletion
 from pydantic import BaseModel
 
 from .._resource import AsyncAPIResource, SyncAPIResource
-from ..types.ai_models import Amount
+from ..types.ai_models import Amount, MonthlyUsageResponse
 from ..types.logs import AutomationLog, LogCompletionRequest
 from ..types.standards import PreparedRequest
 
@@ -14,6 +14,9 @@ total_cost = 0.0
 
 
 class UsageMixin:
+    def prepare_monthly_credits_usage(self) -> PreparedRequest:
+        return PreparedRequest(method="GET", url="/v1/usage/monthly_credits")
+
     def prepare_total(self, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> PreparedRequest:
         raise NotImplementedError("prepare_total is not implemented")
 
@@ -72,6 +75,20 @@ class UsageMixin:
 
 
 class Usage(SyncAPIResource, UsageMixin):
+    def monthly_credits_usage(self) -> MonthlyUsageResponse:
+        """
+        Get monthly credits usage information.
+
+        Returns:
+            dict: Monthly usage data including credits consumed and limits
+
+        Raises:
+            UiformAPIError: If the API request fails
+        """
+        request = self.prepare_monthly_credits_usage()
+        response = self._client._request(request.method, request.url, request.data, request.params)
+        return MonthlyUsageResponse.model_validate(response)
+
     def total(self, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> Amount:
         """Get the total usage cost for a mailbox within an optional date range.
 
@@ -172,6 +189,20 @@ class Usage(SyncAPIResource, UsageMixin):
 
 
 class AsyncUsage(AsyncAPIResource, UsageMixin):
+    async def monthly_credits_usage(self) -> MonthlyUsageResponse:
+        """
+        Get monthly credits usage information.
+
+        Returns:
+            dict: Monthly usage data including credits consumed and limits
+
+        Raises:
+            UiformAPIError: If the API request fails
+        """
+        request = self.prepare_monthly_credits_usage()
+        response = await self._client._request(request.method, request.url, request.data, request.params)
+        return MonthlyUsageResponse.model_validate(response)
+
     async def total(self, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> Amount:
         """Get the total usage cost for a mailbox within an optional date range.
 

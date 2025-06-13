@@ -194,9 +194,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             UiformAPIError: If the API request fails.
         """
         request = self._prepare_create_messages(document, modality, image_resolution_dpi, browser_canvas, idempotency_key)
-        assert request.data is not None
-        print(request.data.keys())
-        print(request.data)
         response = await self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 

@@ -54,8 +54,6 @@ class ExternalAPIKeys(SyncAPIResource, ExternalAPIKeysMixin):
         """
         request = self.prepare_get(provider)
         response = self._client._prepared_request(request)
-        return response
-
         return ExternalAPIKey.model_validate(response)
 
     def list(self) -> List[ExternalAPIKey]:

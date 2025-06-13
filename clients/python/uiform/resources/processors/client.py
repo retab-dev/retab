@@ -195,8 +195,6 @@ class ProcessorsMixin:
             files = files_list
 
         url = f"/v1/processors/{processor_id}/submit"
-        # if stream:
-        #     url = f"/v1/processors/{processor_id}/submit/stream"
 
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 
