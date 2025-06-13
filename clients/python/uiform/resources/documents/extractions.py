@@ -20,7 +20,7 @@ from ..._utils.mime import MIMEData, prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionUiformMessage
 from ...types.documents.extractions import DocumentExtractRequest, LogExtractionRequest, UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice
-from ...types.extractions import BrowserCanvas
+from ...types.browser_canvas import BrowserCanvas
 from ...types.modalities import Modality
 from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest

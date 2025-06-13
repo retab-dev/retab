@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, List
 
 from pydantic import HttpUrl
 from pydantic_core import PydanticUndefined
@@ -200,11 +200,11 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: List[str] = PydanticUndefined,  # type: ignore[assignment]
         layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
-        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
-        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
+        match_params: List[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
+        fetch_params: List[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Outlook:
         """Update an outlook automation configuration.
 
@@ -310,11 +310,11 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         webhook_url: HttpUrl = PydanticUndefined,  # type: ignore[assignment]
         webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
         need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
+        authorized_emails: List[str] = PydanticUndefined,  # type: ignore[assignment]
         layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
-        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
-        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
+        match_params: List[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
+        fetch_params: List[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Outlook:
         request = self.prepare_update(
             outlook_id=outlook_id,

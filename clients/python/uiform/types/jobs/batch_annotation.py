@@ -4,7 +4,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel
 
 from ..modalities import Modality
-from ..extractions import BrowserCanvas
+from ..browser_canvas import BrowserCanvas
 
 
 class InferenceSettings(BaseModel):

@@ -4,7 +4,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel, Field, model_validator
 
 from ..modalities import Modality
-from ..extractions import BrowserCanvas
+from ..browser_canvas import BrowserCanvas
 
 SelectionMode = Literal["all", "manual"]
 

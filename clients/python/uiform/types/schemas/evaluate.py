@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, model_validator
 from ..evals import ItemMetric
 from ..mime import MIMEData
 from ..modalities import Modality
-from ..extractions import BrowserCanvas
+from ..browser_canvas import BrowserCanvas
 
 
 class EvaluateSchemaRequest(BaseModel):

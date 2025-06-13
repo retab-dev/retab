@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, HttpUrl, computed_field, field_serializer
 
 from ..logs import AutomationConfig
 from ..modalities import Modality
-from ..extractions import BrowserCanvas
+from ..browser_canvas import BrowserCanvas
 
 
 def scrapping_action(link: HttpUrl) -> dict[str, Any]:

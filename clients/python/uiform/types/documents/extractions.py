@@ -20,7 +20,7 @@ from ..ai_models import Amount
 from ..chat import ChatCompletionUiformMessage
 from ..mime import MIMEData
 from ..modalities import Modality
-from ..extractions import BrowserCanvas
+from ..browser_canvas import BrowserCanvas
 from ..standards import ErrorDetail, StreamingBaseModel
 
 

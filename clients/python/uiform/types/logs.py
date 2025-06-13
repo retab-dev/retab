@@ -15,7 +15,7 @@ from .documents.extractions import UiParsedChatCompletion
 from .mime import BaseMIMEData
 from .modalities import Modality
 from .pagination import ListMetadata
-from .extractions import BrowserCanvas
+from .browser_canvas import BrowserCanvas
 
 
 class ProcessorConfig(BaseModel):

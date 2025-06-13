@@ -10,7 +10,7 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.json_schema import load_json_schema
 from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
-from ...types.extractions import BrowserCanvas
+from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest

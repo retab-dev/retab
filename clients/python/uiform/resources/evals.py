@@ -21,7 +21,7 @@ from ..types.evals import (
 from ..types.jobs.base import InferenceSettings
 from ..types.mime import MIMEData
 from ..types.modalities import Modality
-from ..types.extractions import BrowserCanvas
+from ..types.browser_canvas import BrowserCanvas
 from ..types.standards import PreparedRequest
 
 
