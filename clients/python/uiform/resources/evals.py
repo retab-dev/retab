@@ -1,6 +1,6 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -21,6 +21,7 @@ from ..types.evals import (
 from ..types.jobs.base import InferenceSettings
 from ..types.mime import MIMEData
 from ..types.modalities import Modality
+from ..types.extractions import BrowserCanvas
 from ..types.standards import PreparedRequest
 
 
@@ -141,7 +142,7 @@ class IterationsMixin:
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
+        browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
     ) -> PreparedRequest:
         inference_settings = InferenceSettings(
@@ -167,7 +168,7 @@ class IterationsMixin:
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
+        browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
     ) -> PreparedRequest:
         inference_settings = InferenceSettings(
@@ -435,7 +436,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         json_schema: Optional[Dict[str, Any]] = None,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
+        browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
     ) -> Iteration:
         """
@@ -751,7 +752,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         json_schema: Optional[Dict[str, Any]] = None,
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
+        browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
     ) -> Iteration:
         """

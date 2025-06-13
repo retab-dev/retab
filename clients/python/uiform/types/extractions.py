@@ -24,6 +24,7 @@ class ExtractionSource(BaseModel):
 
 
 ExtractionSteps = str | Literal["initialization", "prepare_messages", "yield_first_token", "completion"]  # Steps are meant to not overlap
+BrowserCanvas = Literal["A3", "A4", "A5"]
 
 
 class ExtractionTimingStep(BaseModel):
@@ -49,7 +50,7 @@ class Extraction(BaseModel):
     temperature: float = Field(default=0.0, description="Temperature used for the analysis")
     source: ExtractionSource = Field(..., description="Source of the extraction")
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal["A3", "A4", "A5"] = Field(
+    browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
     )
     modality: Modality = Field(default="native", description="Modality of the extraction")

@@ -1,6 +1,6 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -10,6 +10,7 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.json_schema import load_json_schema
 from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
+from ...types.extractions import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
 from ...types.standards import PreparedRequest
@@ -22,7 +23,7 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native",
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -41,7 +42,7 @@ class BaseDocumentsMixin:
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment],
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment],
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment],
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -107,7 +108,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         modality: Modality = "native",
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -137,7 +138,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -180,7 +181,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image,
         modality: Modality = "native",
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """
@@ -212,7 +213,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
     ) -> DocumentMessage:
         """

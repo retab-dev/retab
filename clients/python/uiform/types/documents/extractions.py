@@ -20,6 +20,7 @@ from ..ai_models import Amount
 from ..chat import ChatCompletionUiformMessage
 from ..mime import MIMEData
 from ..modalities import Modality
+from ..extractions import BrowserCanvas
 from ..standards import ErrorDetail, StreamingBaseModel
 
 
@@ -29,7 +30,7 @@ class DocumentExtractRequest(BaseModel):
     documents: list[MIMEData] = Field(..., description="Documents to be analyzed (preferred over document)")
     modality: Modality
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: Literal["A3", "A4", "A5"] = Field(
+    browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
     )
     model: str = Field(..., description="Model used for chat completion")
@@ -188,7 +189,7 @@ class LogExtractionRequest(BaseModel):
                 getattr(data, "messages", None),
                 getattr(data, "openai_messages", None),
                 getattr(data, "anthropic_messages", None),
-                getattr(data, "openai_responses_input", None)
+                getattr(data, "openai_responses_input", None),
             ]
             messages_candidates = [candidate for candidate in messages_candidates if candidate is not None]
             if len(messages_candidates) != 1:
@@ -200,10 +201,7 @@ class LogExtractionRequest(BaseModel):
             if anthropic_messages is not None and anthropic_system_prompt is None:
                 raise ValueError("anthropic_system_prompt must be provided if anthropic_messages is provided")
 
-            completion_candidates = [
-                getattr(data, "completion", None),
-                getattr(data, "openai_responses_output", None)
-            ]
+            completion_candidates = [getattr(data, "completion", None), getattr(data, "openai_responses_output", None)]
             completion_candidates = [candidate for candidate in completion_candidates if candidate is not None]
             if len(completion_candidates) != 1:
                 raise ValueError("Exactly one of completion, openai_responses_output must be provided")

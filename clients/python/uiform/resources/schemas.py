@@ -1,6 +1,6 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Sequence, Literal
+from typing import Any, Sequence
 
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -17,6 +17,7 @@ from ..types.schemas.evaluate import EvaluateSchemaRequest, EvaluateSchemaRespon
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.object import Schema
 from ..types.standards import PreparedRequest
+from ..types.extractions import BrowserCanvas
 
 
 class SchemasMixin:
@@ -50,7 +51,7 @@ class SchemasMixin:
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
+        browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
     ) -> PreparedRequest:
         mime_documents = prepare_mime_document_list(documents)
@@ -151,7 +152,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
+        browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
     ) -> EvaluateSchemaResponse:
         """
@@ -303,7 +304,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         modality: Modality = "native",
         image_resolution_dpi: int = 96,
-        browser_canvas: Literal["A3", "A4", "A5"] = "A4",
+        browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
     ) -> EvaluateSchemaResponse:
         """

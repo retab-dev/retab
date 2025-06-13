@@ -11,13 +11,12 @@ from pydantic_core import PydanticUndefined
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import MIMEData, prepare_mime_document
-from ...types.documents.extractions import UiParsedChatCompletion
+from ...types.documents.extractions import BrowserCanvas, UiParsedChatCompletion
 from ...types.logs import ProcessorConfig, UpdateProcessorRequest
-
-# from ...types.documents.extractions import DocumentExtractResponse
 from ...types.modalities import Modality
 from ...types.pagination import ListMetadata
 from ...types.standards import PreparedRequest
+from .automations.client import AsyncAutomations, Automations
 
 
 class ListProcessors(BaseModel):
@@ -37,7 +36,7 @@ class ProcessorsMixin:
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
         reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
@@ -102,7 +101,7 @@ class ProcessorsMixin:
         name: str | None = None,
         modality: Modality | None = None,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        browser_canvas: BrowserCanvas | None = None,
         model: str | None = None,
         json_schema: dict[str, Any] | None = None,
         temperature: float | None = None,
@@ -198,6 +197,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
+        self.automations = Automations(client=client)
 
     def create(
         self,
@@ -208,7 +208,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
         reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
     ) -> ProcessorConfig:
         """Create a new processor configuration.
@@ -292,7 +292,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         name: str | None = None,
         modality: Modality | None = None,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        browser_canvas: BrowserCanvas | None = None,
         model: str | None = None,
         json_schema: dict[str, Any] | None = None,
         temperature: float | None = None,
@@ -372,6 +372,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
+        self.automations = AsyncAutomations(client=client)
 
     async def create(
         self,
@@ -382,7 +383,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
         reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
         image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: Literal["A3", "A4", "A5"] = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
     ) -> ProcessorConfig:
         request = self.prepare_create(
@@ -428,7 +429,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         name: str | None = None,
         modality: Modality | None = None,
         image_resolution_dpi: int | None = None,
-        browser_canvas: Literal["A3", "A4", "A5"] | None = None,
+        browser_canvas: BrowserCanvas | None = None,
         model: str | None = None,
         json_schema: dict[str, Any] | None = None,
         temperature: float | None = None,
