@@ -53,30 +53,78 @@ async def base_test_extract(
     booking_confirmation_file_path: str,
     booking_confirmation_json_schema: dict[str, Any],
 ) -> None:
+    name = nanoid.generate()
     json_schema = booking_confirmation_json_schema
     document = booking_confirmation_file_path
     modality: Literal["text"] = "text"
     response: UiParsedChatCompletion | None = None
-    # Wait a random amount of time between 0 and 2 seconds (to avoid sending multiple requests to the same provider at the same time)
+
+    # First create a processor
+    processor = None
     if client_type == "sync":
-        with sync_client as client:
-            if response_mode == "stream":
-                with client.documents.extractions.stream(json_schema=json_schema, document=document, model=model, modality=modality) as stream_iterator:
-                    response = stream_iterator.__next__()
-                    for response in stream_iterator:
-                        pass
+        processor = sync_client.processors.create(
+            name=name,
+            json_schema=json_schema,
+            model=model,
+        )
+    else:
+        processor = await async_client.processors.create(
+            name=name,
+            json_schema=json_schema,
+            model=model,
+        )
+    processor_id = processor.id
+
+    try:
+        # Wait a random amount of time between 0 and 2 seconds (to avoid sending multiple requests to the same provider at the same time)
+        if client_type == "sync":
+            with sync_client as client:
+                if response_mode == "stream":
+                    with client.documents.extractions.stream(
+                        json_schema=json_schema,
+                        document=document,
+                        model=model,
+                        modality=modality,
+                    ) as stream_iterator:
+                        response = stream_iterator.__next__()
+                        for response in stream_iterator:
+                            pass
+                else:
+                    response = client.documents.extractions.parse(
+                        json_schema=json_schema,
+                        document=document,
+                        model=model,
+                        modality=modality,
+                    )
+        if client_type == "async":
+            async with async_client:
+                if response_mode == "stream":
+                    async with async_client.documents.extractions.stream(
+                        json_schema=json_schema,
+                        document=document,
+                        model=model,
+                        modality=modality,
+                    ) as stream_async_iterator:
+                        response = await stream_async_iterator.__anext__()
+                        async for response in stream_async_iterator:
+                            pass
+                else:
+                    response = await async_client.documents.extractions.parse(
+                        json_schema=json_schema,
+                        document=document,
+                        model=model,
+                        modality=modality,
+                    )
+        validate_extraction_response(response)
+    finally:
+        # Delete the processor if it was created
+        try:
+            if client_type == "sync":
+                sync_client.processors.delete(processor_id)
             else:
-                response = client.documents.extractions.parse(json_schema=json_schema, document=document, model=model, modality=modality)
-    if client_type == "async":
-        async with async_client:
-            if response_mode == "stream":
-                async with async_client.documents.extractions.stream(json_schema=json_schema, document=document, model=model, modality=modality) as stream_async_iterator:
-                    response = await stream_async_iterator.__anext__()
-                    async for response in stream_async_iterator:
-                        pass
-            else:
-                response = await async_client.documents.extractions.parse(json_schema=json_schema, document=document, model=model, modality=modality)
-    validate_extraction_response(response)
+                await async_client.processors.delete(processor_id)
+        except Exception:
+            pass
 
 
 @pytest.mark.asyncio
@@ -171,22 +219,40 @@ async def test_extract_overload(
 
 @pytest.mark.asyncio
 async def test_extraction_with_idempotency(sync_client: UiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
-    client = sync_client
+    name = nanoid.generate()
     idempotency_key = nanoid.generate()
-    response_initial = client.documents.extractions.parse(
-        json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path, model="gpt-4o-mini", modality="native", idempotency_key=idempotency_key
+    model = "gpt-4o-mini"
+    modality = "native"
+
+    # First create a processor
+    processor = sync_client.processors.create(
+        name=name,
+        json_schema=booking_confirmation_json_schema,
+        model=model,
     )
-    await asyncio.sleep(2)
-    t0 = time.time()
-    response_second = client.documents.extractions.parse(
-        json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path, model="gpt-4o-mini", modality="native", idempotency_key=idempotency_key
-    )
-    t1 = time.time()
-    assert t1 - t0 < 10, "Request should take less than 10 seconds"
-    assert response_initial.choices[0].message.content == response_second.choices[0].message.content, "Response should be the same"
-    assert response_initial.choices[0].message.parsed is not None, "Parsed response should not be None for the first request"
-    assert response_second.choices[0].message.parsed is not None, "Parsed response should not be None for the second request"
-    assert response_initial.choices[0].message.parsed.model_dump() == response_second.choices[0].message.parsed.model_dump(), "Parsed response should be the same"
+    processor_id = processor.id
+
+    try:
+        response_initial = sync_client.documents.extractions.parse(
+            json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path, model=model, modality=modality, idempotency_key=idempotency_key
+        )
+        await asyncio.sleep(2)
+        t0 = time.time()
+        response_second = sync_client.documents.extractions.parse(
+            json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path, model=model, modality=modality, idempotency_key=idempotency_key
+        )
+        t1 = time.time()
+        assert t1 - t0 < 10, "Request should take less than 10 seconds"
+        assert response_initial.choices[0].message.content == response_second.choices[0].message.content, "Response should be the same"
+        assert response_initial.choices[0].message.parsed is not None, "Parsed response should not be None for the first request"
+        assert response_second.choices[0].message.parsed is not None, "Parsed response should not be None for the second request"
+        assert response_initial.choices[0].message.parsed.model_dump() == response_second.choices[0].message.parsed.model_dump(), "Parsed response should be the same"
+    finally:
+        # Delete the processor if it was created
+        try:
+            sync_client.processors.delete(processor_id)
+        except Exception:
+            pass
 
 
 @pytest.mark.asyncio
@@ -197,66 +263,83 @@ async def test_extraction_with_idempotency(sync_client: UiForm, booking_confirma
 async def test_extraction_with_idempotency_exceptions(
     sync_client: UiForm, booking_confirmation_file_path: str, booking_confirmation_json_schema: dict[str, Any], test_exception: str
 ) -> None:
-    client = sync_client
-    # Now we will validate some exception scenarios
+    name = nanoid.generate()
     idempotency_key = str(nanoid.generate())
-    loading_request = client.documents.extractions.prepare_extraction(
+    model = "gpt-4o-mini"
+    modality = "native"
+
+    # First create a processor
+    processor = sync_client.processors.create(
+        name=name,
         json_schema=booking_confirmation_json_schema,
-        document=booking_confirmation_file_path,
-        image_resolution_dpi=96,
-        browser_canvas="A4",
-        model="gpt-4o-mini",
-        temperature=0,
-        modality="native",
-        reasoning_effort="medium",
-        stream=False,
-        n_consensus=1,
-        store=False,
-        idempotency_key=idempotency_key,
+        model=model,
     )
-    assert loading_request.data is not None, "Loading request should not be None"
+    processor_id = processor.id
 
-    # Validate idempotency behavior for each of the following scenarios:
-    loading_request.data["test_exception"] = test_exception
-    response1: Any = None
-    response2: Any = None
-    raised_exception_1: Exception | None = None
-    raised_exception_2: Exception | None = None
     try:
-        loading_request.raise_for_status = True
-        if test_exception == "within_process_document_stream_generator":
-            loading_request.data["stream"] = True
-            stream_iterator = client._prepared_request_stream(loading_request)
-            response1 = stream_iterator.__next__()
-            for response1 in stream_iterator:
-                pass
-        else:
-            response1 = client._prepared_request(loading_request)
-    except Exception as e:
-        raised_exception_1 = e
+        loading_request = sync_client.documents.extractions.prepare_extraction(
+            json_schema=booking_confirmation_json_schema,
+            document=booking_confirmation_file_path,
+            image_resolution_dpi=96,
+            browser_canvas="A4",
+            model=model,
+            temperature=0,
+            modality=modality,
+            reasoning_effort="medium",
+            stream=False,
+            n_consensus=1,
+            store=False,
+            idempotency_key=idempotency_key,
+        )
+        assert loading_request.data is not None, "Loading request should not be None"
 
-    await asyncio.sleep(2)
-    t0 = time.time()
-    try:
-        loading_request.raise_for_status = True
-        if test_exception == "within_process_document_stream_generator":
-            loading_request.data["stream"] = True
-            stream_iterator = client._prepared_request_stream(loading_request)
-            response2 = stream_iterator.__next__()
-            for response2 in stream_iterator:
-                pass
-        else:
-            response2 = client._prepared_request(loading_request)
-    except Exception as e:
-        raised_exception_2 = e
-    t1 = time.time()
-    assert t1 - t0 < 10, "Request should take less than 10 seconds"
-    assert raised_exception_1 is not None, "Exception should be raised"
-    assert raised_exception_2 is not None, "Exception should be raised"
-    assert response1 is None, "Response should be None"
-    assert response2 is None, "Response should be None"
-    # Assert that the both exceptions is a HTTPStatusError
-    assert isinstance(raised_exception_1, httpx.HTTPStatusError), "Exception should be a HTTPStatusError"
-    assert isinstance(raised_exception_2, httpx.HTTPStatusError), "Exception should be a HTTPStatusError"
-    # Assert that the message of both exceptions is the same
-    assert raised_exception_1.args[0] == raised_exception_2.args[0], "Exception message should be the same"
+        # Validate idempotency behavior for each of the following scenarios:
+        loading_request.data["test_exception"] = test_exception
+        response1: Any = None
+        response2: Any = None
+        raised_exception_1: Exception | None = None
+        raised_exception_2: Exception | None = None
+        try:
+            loading_request.raise_for_status = True
+            if test_exception == "within_process_document_stream_generator":
+                loading_request.data["stream"] = True
+                stream_iterator = sync_client._prepared_request_stream(loading_request)
+                response1 = stream_iterator.__next__()
+                for response1 in stream_iterator:
+                    pass
+            else:
+                response1 = sync_client._prepared_request(loading_request)
+        except Exception as e:
+            raised_exception_1 = e
+
+        await asyncio.sleep(2)
+        t0 = time.time()
+        try:
+            loading_request.raise_for_status = True
+            if test_exception == "within_process_document_stream_generator":
+                loading_request.data["stream"] = True
+                stream_iterator = sync_client._prepared_request_stream(loading_request)
+                response2 = stream_iterator.__next__()
+                for response2 in stream_iterator:
+                    pass
+            else:
+                response2 = sync_client._prepared_request(loading_request)
+        except Exception as e:
+            raised_exception_2 = e
+        t1 = time.time()
+        assert t1 - t0 < 10, "Request should take less than 10 seconds"
+        assert raised_exception_1 is not None, "Exception should be raised"
+        assert raised_exception_2 is not None, "Exception should be raised"
+        assert response1 is None, "Response should be None"
+        assert response2 is None, "Response should be None"
+        # Assert that the both exceptions is a HTTPStatusError
+        assert isinstance(raised_exception_1, httpx.HTTPStatusError), "Exception should be a HTTPStatusError"
+        assert isinstance(raised_exception_2, httpx.HTTPStatusError), "Exception should be a HTTPStatusError"
+        # Assert that the message of both exceptions is the same
+        assert raised_exception_1.args[0] == raised_exception_2.args[0], "Exception message should be the same"
+    finally:
+        # Delete the processor if it was created
+        try:
+            sync_client.processors.delete(processor_id)
+        except Exception:
+            pass
