@@ -45,12 +45,12 @@ class Outlook(AutomationConfig):
     match_params: List[MatchParams] = Field(default_factory=list, description="List of match parameters for the outlook automation")
     fetch_params: List[FetchParams] = Field(default_factory=list, description="List of fetch parameters for the outlook automation")
 
-    @model_validator(mode="before")
-    @classmethod
-    def compute_layout_schema(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if values.get("layout_schema") is None:
-            values["layout_schema"] = convert_schema_to_layout(values["json_schema"])
-        return values
+    # @model_validator(mode="before")
+    # @classmethod
+    # def compute_layout_schema(cls, values: dict[str, Any]) -> dict[str, Any]:
+    #     if values.get("layout_schema") is None:
+    #         values["layout_schema"] = convert_schema_to_layout(values["json_schema"])
+    #     return values
 
 
 class ListOutlooks(BaseModel):
