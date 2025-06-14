@@ -33,6 +33,7 @@ class ProcessorConfig(BaseModel):
     # New attributes
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    layout_schema: dict[str, Any] | None = Field(None, description="Layout schema for the data type.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
     reasoning_effort: ChatCompletionReasoningEffort = Field(
         default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
