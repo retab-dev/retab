@@ -1,19 +1,8 @@
 from typing import Optional
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel
 
-from ..modalities import Modality
-from ..browser_canvas import BrowserCanvas
-
-
-class InferenceSettings(BaseModel):
-    model: str = "gpt-4o-mini"
-    temperature: float = 0.0
-    modality: Modality
-    image_resolution_dpi: int = 96
-    browser_canvas: BrowserCanvas = "A4"
-    reasoning_effort: ChatCompletionReasoningEffort = "medium"
+from ..inference_settings import InferenceSettings
 
 
 class AnnotationInputData(BaseModel):

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from .batch_annotation import InferenceSettings
+from ..inference_settings import InferenceSettings
 
 # This job will generate two datasets from the original dataset, one with the first annotation and one with the second annotation
 # It will then evaluate the two datasets using the evaluation metrics and return an EvalMetrics object

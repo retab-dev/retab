@@ -3,12 +3,12 @@ from typing import Any, Dict, List, Optional
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.evaluations.base import (
+from ...types.evaluations.model import (
     CreateIterationRequest,
     DistancesResult,
     Iteration,
 )
-from ...types.jobs.base import InferenceSettings
+from ...types.inference_settings import InferenceSettings
 from ...types.modalities import Modality
 from ...types.browser_canvas import BrowserCanvas
 from ...types.standards import PreparedRequest, DeleteResponse
