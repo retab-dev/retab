@@ -1,4 +1,4 @@
-from typing import Any, List, Literal, Optional, Tuple, TypeVar
+from typing import Any, List, Literal, Optional, Tuple, TypeVar, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -37,3 +37,17 @@ class PreparedRequest(BaseModel):
     files: dict | List[Tuple[str, Tuple[str, bytes, str]]] | None = None
     idempotency_key: str | None = None
     raise_for_status: bool = False
+
+
+class DeleteResponse(TypedDict):
+    """Response from a delete operation"""
+
+    success: bool
+    id: str
+
+
+class ExportResponse(TypedDict):
+    """Response from an export operation"""
+
+    success: bool
+    path: str
