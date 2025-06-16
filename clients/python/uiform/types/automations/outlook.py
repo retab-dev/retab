@@ -2,9 +2,8 @@ import re
 from typing import Any, Dict, List, Optional
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, EmailStr, Field, computed_field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, computed_field, field_validator
 
-from ..._utils.json_schema import convert_schema_to_layout
 from ..logs import AutomationConfig, UpdateAutomationRequest
 from ..pagination import ListMetadata
 
