@@ -1,10 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.evaluations import DocumentItem, Evaluation, EvaluationDocument, Iteration, UpdateEvaluationRequest
+from ...types.evaluations import Evaluation, EvaluationDocument, Iteration, PatchEvaluationRequest, ListEvaluationParams
 from ...types.inference_settings import InferenceSettings
-from ...types.standards import PreparedRequest, DeleteResponse
+from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 from .documents import Documents, AsyncDocuments
 from .iterations import Iterations, AsyncIterations
 
@@ -13,28 +12,15 @@ class EvalsMixin:
     def prepare_create(
         self,
         name: str,
-        json_schema: Dict[str, Any],
-        project_id: str | None = None,
-        documents: List[DocumentItem] = [],
-        default_inference_settings: Optional[InferenceSettings] = None,
+        json_schema: dict[str, Any],
+        project_id: str = FieldUnset,
+        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> PreparedRequest:
         # Convert DocumentItem to EvaluationDocument
-        documents_list = [
-            EvaluationDocument(
-                id=doc.mime_data.id,
-                mime_data=doc.mime_data,
-                annotation=doc.annotation,
-                annotation_metadata=doc.annotation_metadata,
-            )
-            for doc in documents
-        ]
-
         eval_data = Evaluation(
             name=name,
             json_schema=json_schema,
-            project_id=project_id if project_id else "default_spreadsheets",
-            documents=documents_list,
-            iterations=[],  # We don't allow filling iterations in the SDK
+            project_id=project_id,
             default_inference_settings=default_inference_settings,
         )
         return PreparedRequest(method="POST", url="/v1/evals", data=eval_data.model_dump(exclude_none=True, mode="json"))
@@ -45,12 +31,10 @@ class EvalsMixin:
     def prepare_update(
         self,
         evaluation_id: str,
-        name: Optional[str] = None,
-        project_id: Optional[str] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        documents: Optional[List[EvaluationDocument]] = None,
-        iterations: Optional[List[Iteration]] = None,
-        default_inference_settings: Optional[InferenceSettings] = None,
+        name: str = FieldUnset,
+        project_id: str = FieldUnset,
+        json_schema: dict[str, Any] = FieldUnset,
+        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> PreparedRequest:
         """
         Prepare a request to update an evaluation with partial updates.
@@ -58,22 +42,33 @@ class EvalsMixin:
         Only the provided fields will be updated. Fields set to None will be excluded from the update.
         """
         # Build a dictionary with only the provided fields
-
-        update_request = UpdateEvaluationRequest(
+        data = PatchEvaluationRequest(
             name=name,
             project_id=project_id,
             json_schema=json_schema,
-            documents=documents,
-            iterations=iterations,
             default_inference_settings=default_inference_settings,
-        )
+        ).model_dump(exclude_unset=True, mode="json")
 
-        return PreparedRequest(method="PATCH", url=f"/v1/evals/{evaluation_id}", data=update_request.model_dump(exclude_none=True, mode="json"))
+        return PreparedRequest(method="PATCH", url=f"/v1/evals/{evaluation_id}", data=data)
 
-    def prepare_list(self, project_id: Optional[str] = None) -> PreparedRequest:
-        params = {}
-        if project_id:
-            params["project_id"] = project_id
+    def prepare_list(self, project_id: str = FieldUnset) -> PreparedRequest:
+        """
+        Prepare a request to list evaluations.
+
+        Usage:
+        >>> client.evals.list(project_id="project_id")   # List all evaluations for a project
+        >>> client.evals.list()                          # List all evaluations (no project_id)
+
+        This does not work:
+        >>> client.evals.list(project_id=None)
+
+        Args:
+            project_id: The project ID to list evaluations for
+
+        Returns:
+            PreparedRequest: The prepared request
+        """
+        params = ListEvaluationParams(project_id=project_id).model_dump(exclude_unset=True, mode="json")
         return PreparedRequest(method="GET", url="/v1/evals", params=params)
 
     def prepare_delete(self, id: str) -> PreparedRequest:
@@ -91,10 +86,9 @@ class Evals(SyncAPIResource, EvalsMixin):
     def create(
         self,
         name: str,
-        json_schema: Dict[str, Any],
-        project_id: str | None = None,
-        documents: List[DocumentItem] = [],
-        default_inference_settings: Optional[InferenceSettings] = None,
+        json_schema: dict[str, Any],
+        project_id: str = FieldUnset,
+        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> Evaluation:
         """
         Create a new evaluation.
@@ -111,7 +105,7 @@ class Evals(SyncAPIResource, EvalsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(name, json_schema, project_id, documents=documents, default_inference_settings=default_inference_settings)
+        request = self.prepare_create(name, json_schema, project_id, default_inference_settings=default_inference_settings)
         response = self._client._prepared_request(request)
         return Evaluation(**response)
 
@@ -134,12 +128,10 @@ class Evals(SyncAPIResource, EvalsMixin):
     def update(
         self,
         evaluation_id: str,
-        name: Optional[str] = None,
-        project_id: Optional[str] = None,
-        json_schema: Optional[Dict[str, Any]] = None,
-        documents: Optional[List[EvaluationDocument]] = None,
-        iterations: Optional[List[Iteration]] = None,
-        default_inference_settings: Optional[InferenceSettings] = None,
+        name: str = FieldUnset,
+        project_id: str = FieldUnset,
+        json_schema: dict[str, Any] = FieldUnset,
+        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> Evaluation:
         """
         Update an evaluation with partial updates.
@@ -163,14 +155,12 @@ class Evals(SyncAPIResource, EvalsMixin):
             name=name,
             project_id=project_id,
             json_schema=json_schema,
-            documents=documents,
-            iterations=iterations,
             default_inference_settings=default_inference_settings,
         )
         response = self._client._prepared_request(request)
         return Evaluation(**response)
 
-    def list(self, project_id: str) -> List[Evaluation]:
+    def list(self, project_id: str = FieldUnset) -> List[Evaluation]:
         """
         List evaluations for a project.
 
