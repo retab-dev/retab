@@ -8,6 +8,7 @@ from uiform.types.jobs.base import InferenceSettings
 AIProvider = Literal["OpenAI", "Gemini", "xAI", "UiForm"]  # , "Anthropic", "xAI"]
 OpenAICompatibleProvider = Literal["OpenAI", "xAI"]  # , "xAI"]
 GeminiModel = Literal[
+    "gemini-2.5-pro-preview-06-05",
     "gemini-2.5-pro-preview-05-06",
     "gemini-2.5-flash-preview-05-20",
     "gemini-2.5-flash-preview-04-17",
@@ -535,6 +536,11 @@ gemini_model_cards = [
         pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
         capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
         temperature_support=True,
+    ),
+    ModelCard(
+        model="gemini-2.5-pro-preview-06-05",
+        pricing=Pricing(text=TokenPrice(prompt=1.25, cached_discount=0.25, completion=10.00), audio=None),
+        capabilities=ModelCapabilities(modalities=["text", "image"], endpoints=["chat_completions"], features=["streaming", "function_calling", "structured_outputs"]),
     ),
     ModelCard(
         model="gemini-2.5-pro-preview-05-06",
