@@ -7,11 +7,7 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.mime import prepare_mime_document
-from ...types.evaluations.base import (
-    DocumentItem,
-    EvaluationDocument,
-    UpdateEvaluationDocumentRequest,
-)
+from ...types.evaluations import DocumentItem, EvaluationDocument, UpdateEvaluationDocumentRequest
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, DeleteResponse
 

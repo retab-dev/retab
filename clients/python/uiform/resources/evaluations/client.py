@@ -2,13 +2,7 @@ from typing import Any, Dict, List, Optional
 
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.evaluations.model import (
-    DocumentItem,
-    Evaluation,
-    EvaluationDocument,
-    Iteration,
-    UpdateEvaluationRequest,
-)
+from ...types.evaluations import DocumentItem, Evaluation, EvaluationDocument, Iteration, UpdateEvaluationRequest
 from ...types.inference_settings import InferenceSettings
 from ...types.standards import PreparedRequest, DeleteResponse
 from .documents import Documents, AsyncDocuments
