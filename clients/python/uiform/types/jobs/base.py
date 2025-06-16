@@ -1,10 +1,7 @@
 from typing import Literal, Optional, Self
 
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, Field, model_validator
-
-from ..modalities import Modality
-from ..browser_canvas import BrowserCanvas
+from pydantic import BaseModel, model_validator
+from ..inference_settings import InferenceSettings
 
 SelectionMode = Literal["all", "manual"]
 
@@ -43,16 +40,6 @@ class DatasetSplitInputData(BaseModel):
 
 
 # This is the input data for the batch annotation job
-class InferenceSettings(BaseModel):
-    model: str = "gpt-4o-mini"
-    temperature: float = 0.0
-    modality: Modality = "native"
-    reasoning_effort: ChatCompletionReasoningEffort = "medium"
-    image_resolution_dpi: int = 96
-    browser_canvas: BrowserCanvas = "A4"
-    n_consensus: int = Field(default=1, description="Number of consensus rounds to perform")
-
-
 class AnnotationInputData(BaseModel):
     data_file: str
     schema_id: str

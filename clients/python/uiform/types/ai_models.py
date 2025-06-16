@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from uiform.types.jobs.base import InferenceSettings
+from .inference_settings import InferenceSettings
 
 AIProvider = Literal["OpenAI", "Gemini", "xAI", "UiForm"]  # , "Anthropic", "xAI"]
 OpenAICompatibleProvider = Literal["OpenAI", "xAI"]  # , "xAI"]

@@ -18,7 +18,7 @@ from ..types.evals import (
     UpdateEvaluationDocumentRequest,
     UpdateEvaluationRequest,
 )
-from ..types.jobs.base import InferenceSettings
+from ..types.inference_settings import InferenceSettings
 from ..types.mime import MIMEData
 from ..types.modalities import Modality
 from ..types.browser_canvas import BrowserCanvas

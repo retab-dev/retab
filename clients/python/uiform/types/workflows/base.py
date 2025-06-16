@@ -1,8 +1,8 @@
 from typing import Literal, Self
 
 from pydantic import BaseModel, model_validator
-
-from ..jobs.base import AnnotationInputData, EvaluationInputData, InferenceSettings, PrepareDatasetInputData
+from ..inference_settings import InferenceSettings
+from ..jobs.base import AnnotationInputData, EvaluationInputData, PrepareDatasetInputData
 
 Workflows = Literal["finetuning-workflow", "annotation-workflow", "evaluation-workflow"]
 

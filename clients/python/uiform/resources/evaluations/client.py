@@ -2,14 +2,14 @@ from typing import Any, Dict, List, Optional
 
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.evaluations.base import (
+from ...types.evaluations.model import (
     DocumentItem,
     Evaluation,
     EvaluationDocument,
     Iteration,
     UpdateEvaluationRequest,
 )
-from ...types.jobs.base import InferenceSettings
+from ...types.inference_settings import InferenceSettings
 from ...types.standards import PreparedRequest, DeleteResponse
 from .documents import Documents, AsyncDocuments
 from .iterations import Iterations, AsyncIterations
