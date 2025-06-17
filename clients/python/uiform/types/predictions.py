@@ -16,4 +16,4 @@ class PredictionMetadata(BaseModel):
 class PredictionData(BaseModel):
     prediction: dict[str, Any] = Field(default={}, description="The result of the extraction or manual annotation")
     metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the prediction")
-    updated_at: datetime.datetime = Field(default=datetime.datetime.now(tz=datetime.timezone.utc), description="The creation date of the prediction")
+    updated_at: Optional[datetime.datetime] = Field(default=None, description="The creation date of the prediction")
