@@ -1,6 +1,15 @@
 from .model import Evaluation, CreateEvaluation, PatchEvaluationRequest, ListEvaluationParams
 from .documents import AnnotatedDocument, DocumentItem, EvaluationDocument, CreateEvaluationDocumentRequest, PatchEvaluationDocumentRequest
-from .iterations import Iteration, CreateIterationRequest, PatchIterationRequest, ProcessIterationRequest, DocumentStatus, IterationDocumentStatusResponse, AddIterationFromJsonlRequest
+from .iterations import (
+    Iteration,
+    CreateIterationRequest,
+    PatchIterationRequest,
+    ProcessIterationRequest,
+    ProcessIterationDocumentRequest,
+    DocumentStatus,
+    IterationDocumentStatusResponse,
+    AddIterationFromJsonlRequest,
+)
 
 
 __all__ = [
@@ -17,6 +26,7 @@ __all__ = [
     "CreateIterationRequest",
     "PatchIterationRequest",
     "ProcessIterationRequest",
+    "ProcessIterationDocumentRequest",
     "DocumentStatus",
     "IterationDocumentStatusResponse",
     "AddIterationFromJsonlRequest",

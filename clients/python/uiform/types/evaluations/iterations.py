@@ -1,5 +1,5 @@
-import datetime
 import copy
+import datetime
 import json
 from typing import Any, Optional, Self
 
@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field, computed_field, model_validator
 from ..._utils.json_schema import clean_schema
 from ..._utils.mime import generate_blake2b_hash_from_string
 from ..inference_settings import InferenceSettings
-from ..predictions import PredictionData
 from ..metrics import MetricResult
+from ..predictions import PredictionData
 
 
 class Iteration(BaseModel):
