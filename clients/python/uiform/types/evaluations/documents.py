@@ -21,6 +21,10 @@ class EvaluationDocument(DocumentItem):
     id: str = Field(description="The ID of the document. Equal to mime_data.id but robust to the case where mime_data is a BaseMIMEData")
 
 
-class UpdateEvaluationDocumentRequest(BaseModel):
+class CreateEvaluationDocumentRequest(DocumentItem):
+    pass
+
+
+class PatchEvaluationDocumentRequest(BaseModel):
     annotation: Optional[dict[str, Any]] = Field(default=None, description="The ground truth of the document")
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")

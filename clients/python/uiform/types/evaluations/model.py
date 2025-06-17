@@ -18,7 +18,6 @@ class Evaluation(BaseModel):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
 
     name: str
-    old_documents: list[EvaluationDocument] | None = Field(default=None)
     documents: list[EvaluationDocument] = Field(default_factory=list)
     iterations: list[Iteration] = Field(default_factory=list)
     json_schema: dict[str, Any]
@@ -68,33 +67,6 @@ class PatchEvaluationRequest(BaseModel):
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the evaluation")
     project_id: Optional[str] = Field(default=None, description="The ID of the project")
     default_inference_settings: Optional[InferenceSettings] = Field(default=None, description="The default inference properties for the evaluation (mostly used in the frontend)")
-
-    # These fields will be used only if json_schema is set.
-    @computed_field
-    @property
-    def schema_data_id(self) -> Optional[str]:
-        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
-
-        Returns:
-            str: A SHA1 hash string representing the schema data version.
-        """
-        if self.json_schema is None:
-            return None
-
-        return compute_schema_data_id(self.json_schema)
-
-    # This is a computed field, it is exposed when serializing the object
-    @computed_field
-    @property
-    def schema_id(self) -> Optional[str]:
-        """Returns the SHA1 hash of the complete schema.
-
-        Returns:
-            str: A SHA1 hash string representing the complete schema version.
-        """
-        if self.json_schema is None:
-            return None
-        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
 
 
 class AddIterationFromJsonlRequest(BaseModel):
