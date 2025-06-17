@@ -80,5 +80,30 @@ class PatchIterationRequest(BaseModel):
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The new json schema of the iteration")
 
 
+class ProcessIterationRequest(BaseModel):
+    """Request model for processing an iteration - running extractions on documents."""
+    document_ids: Optional[list[str]] = Field(default=None, description="Specific document IDs to process. If None, all documents will be processed.")
+    only_outdated: bool = Field(default=True, description="Only process documents that need updates (prediction.updated_at is None or older than iteration.updated_at)")
+
+
+class DocumentStatus(BaseModel):
+    """Status of a document within an iteration."""
+    document_id: str
+    filename: str
+    needs_update: bool = Field(description="True if prediction is missing or outdated")
+    has_prediction: bool = Field(description="True if any prediction exists")
+    prediction_updated_at: Optional[datetime.datetime] = Field(description="When the prediction was last updated")
+    iteration_updated_at: datetime.datetime = Field(description="When the iteration settings were last updated")
+
+
+class IterationDocumentStatusResponse(BaseModel):
+    """Response showing the status of all documents in an iteration."""
+    iteration_id: str
+    documents: list[DocumentStatus]
+    total_documents: int
+    documents_needing_update: int
+    documents_up_to_date: int
+
+
 class AddIterationFromJsonlRequest(BaseModel):
     jsonl_gcs_path: str
