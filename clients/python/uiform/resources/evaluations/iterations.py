@@ -4,34 +4,34 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.browser_canvas import BrowserCanvas
-from ...types.evaluations import CreateIterationRequest, Iteration
+from ...types.evaluations import CreateIterationRequest, Iteration, ProcessIterationRequest, DocumentStatus, IterationDocumentStatusResponse, PatchIterationRequest
 from ...types.inference_settings import InferenceSettings
 from ...types.metrics import DistancesResult
 from ...types.modalities import Modality
-from ...types.standards import DeleteResponse, PreparedRequest
+from ...types.standards import DeleteResponse, PreparedRequest, FieldUnset
 
 
 class IterationsMixin:
     def prepare_get(self, iteration_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evals/iterations/{iteration_id}")
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/iterations/{iteration_id}")
 
     def prepare_list(self, evaluation_id: str, model: Optional[str] = None) -> PreparedRequest:
         params = {}
         if model:
             params["model"] = model
-        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/iterations", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/iterations", params=params)
 
     def prepare_create(
         self,
         evaluation_id: str,
-        model: str,
+        model: str = FieldUnset,
         json_schema: Optional[Dict[str, Any]] = None,
-        temperature: float = 0.0,
-        modality: Modality = "native",
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_resolution_dpi: int = 96,
-        browser_canvas: BrowserCanvas = "A4",
-        n_consensus: int = 1,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        n_consensus: int = FieldUnset,
     ) -> PreparedRequest:
         inference_settings = InferenceSettings(
             model=model,
@@ -45,19 +45,19 @@ class IterationsMixin:
 
         request = CreateIterationRequest(inference_settings=inference_settings, json_schema=json_schema)
 
-        return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/iterations/create", data=request.model_dump(exclude_none=True, mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/evaluations/iterations/create/{evaluation_id}", data=request.model_dump(exclude_unset=True, mode="json"))
 
     def prepare_update(
         self,
         iteration_id: str,
-        json_schema: Dict[str, Any],
-        model: str,
-        temperature: float = 0.0,
-        modality: Modality = "native",
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_resolution_dpi: int = 96,
-        browser_canvas: BrowserCanvas = "A4",
-        n_consensus: int = 1,
+        json_schema: Dict[str, Any] = FieldUnset,
+        model: str = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        n_consensus: int = FieldUnset,
     ) -> PreparedRequest:
         inference_settings = InferenceSettings(
             model=model,
@@ -68,16 +68,33 @@ class IterationsMixin:
             browser_canvas=browser_canvas,
             n_consensus=n_consensus,
         )
+        if not inference_settings.model_dump(exclude_unset=True, mode="json"):
+            inference_settings = FieldUnset
 
-        iteration_data = Iteration(id=iteration_id, json_schema=json_schema, inference_settings=inference_settings, predictions=[])
+        iteration_data = PatchIterationRequest(json_schema=json_schema, inference_settings=inference_settings)
 
-        return PreparedRequest(method="PUT", url=f"/v1/evals/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_none=True, mode="json"))
+        return PreparedRequest(method="PATCH", url=f"/v1/evaluations/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_unset=True, mode="json"))
 
     def prepare_delete(self, iteration_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/evals/iterations/{iteration_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/evaluations/iterations/{iteration_id}")
 
     def prepare_compute_distances(self, iteration_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evals/iterations/{iteration_id}/compute_distances/{document_id}")
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/iterations/{iteration_id}/compute_distances/{document_id}")
+
+    def prepare_process(
+        self,
+        iteration_id: str,
+        document_ids: Optional[List[str]] = None,
+        only_outdated: bool = True,
+    ) -> PreparedRequest:
+        request = ProcessIterationRequest(
+            document_ids=document_ids,
+            only_outdated=only_outdated,
+        )
+        return PreparedRequest(method="POST", url=f"/v1/evaluations/iterations/{iteration_id}/process", data=request.model_dump(exclude_none=True, mode="json"))
+
+    def prepare_status(self, iteration_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/iterations/{iteration_id}/status")
 
 
 class Iterations(SyncAPIResource, IterationsMixin):
@@ -183,6 +200,45 @@ class Iterations(SyncAPIResource, IterationsMixin):
         request = self.prepare_compute_distances(iteration_id, document_id)
         response = self._client._prepared_request(request)
         return DistancesResult(**response)
+
+    def process(
+        self,
+        iteration_id: str,
+        document_ids: Optional[List[str]] = None,
+        only_outdated: bool = True,
+    ) -> Iteration:
+        """
+        Process an iteration by running extractions on documents.
+
+        Args:
+            iteration_id: The ID of the iteration
+            document_ids: Optional list of specific document IDs to process
+            only_outdated: Whether to only process documents that need updates
+
+        Returns:
+            Iteration: The updated iteration
+        Raises:
+            HTTPException if the request fails
+        """
+        request = self.prepare_process(iteration_id, document_ids, only_outdated)
+        response = self._client._prepared_request(request)
+        return Iteration(**response)
+
+    def status(self, iteration_id: str) -> IterationDocumentStatusResponse:
+        """
+        Get the status of documents in an iteration.
+
+        Args:
+            iteration_id: The ID of the iteration
+
+        Returns:
+            IterationDocumentStatusResponse: The status of documents
+        Raises:
+            HTTPException if the request fails
+        """
+        request = self.prepare_status(iteration_id)
+        response = self._client._prepared_request(request)
+        return IterationDocumentStatusResponse(**response)
 
 
 class AsyncIterations(AsyncAPIResource, IterationsMixin):
@@ -304,3 +360,42 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         request = self.prepare_compute_distances(iteration_id, document_id)
         response = await self._client._prepared_request(request)
         return DistancesResult(**response)
+
+    async def process(
+        self,
+        iteration_id: str,
+        document_ids: Optional[List[str]] = None,
+        only_outdated: bool = True,
+    ) -> Iteration:
+        """
+        Process an iteration by running extractions on documents.
+
+        Args:
+            iteration_id: The ID of the iteration
+            document_ids: Optional list of specific document IDs to process
+            only_outdated: Whether to only process documents that need updates
+
+        Returns:
+            Iteration: The updated iteration
+        Raises:
+            HTTPException if the request fails
+        """
+        request = self.prepare_process(iteration_id, document_ids, only_outdated)
+        response = await self._client._prepared_request(request)
+        return Iteration(**response)
+
+    async def status(self, iteration_id: str) -> IterationDocumentStatusResponse:
+        """
+        Get the status of documents in an iteration.
+
+        Args:
+            iteration_id: The ID of the iteration
+
+        Returns:
+            IterationDocumentStatusResponse: The status of documents
+        Raises:
+            HTTPException if the request fails
+        """
+        request = self.prepare_status(iteration_id)
+        response = await self._client._prepared_request(request)
+        return IterationDocumentStatusResponse(**response)

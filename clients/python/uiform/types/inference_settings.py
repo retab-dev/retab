@@ -6,7 +6,7 @@ from .modalities import Modality
 
 
 class InferenceSettings(BaseModel):
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-4.1-mini"
     temperature: float = 0.0
     modality: Modality = "native"
     reasoning_effort: ChatCompletionReasoningEffort = "medium"

@@ -7,29 +7,27 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.mime import prepare_mime_document
-from ...types.evaluations import DocumentItem, EvaluationDocument, UpdateEvaluationDocumentRequest
+from ...types.evaluations import DocumentItem, EvaluationDocument, PatchEvaluationDocumentRequest
+from ...types.predictions import PredictionMetadata
 from ...types.mime import MIMEData
-from ...types.standards import PreparedRequest, DeleteResponse
+from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 
 
 class DocumentsMixin:
     def prepare_get(self, evaluation_id: str, document_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/documents/{document_id}")
 
-    def prepare_create(self, evaluation_id: str, document: MIMEData, annotation: Dict[str, Any]) -> PreparedRequest:
+    def prepare_create(self, evaluation_id: str, document: MIMEData, annotation: dict[str, Any]) -> PreparedRequest:
         # Serialize the MIMEData
         document_item = DocumentItem(mime_data=document, annotation=annotation, annotation_metadata=None)
         return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/documents", data=document_item.model_dump(mode="json"))
 
-    def prepare_list(self, evaluation_id: str, filename: Optional[str] = None) -> PreparedRequest:
-        params = {}
-        if filename:
-            params["filename"] = filename
-        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/documents", params=params)
+    def prepare_list(self, evaluation_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/documents")
 
-    def prepare_update(self, evaluation_id: str, document_id: str, annotation: Dict[str, Any]) -> PreparedRequest:
-        update_request = UpdateEvaluationDocumentRequest(annotation=annotation, annotation_metadata=None)
-        return PreparedRequest(method="PUT", url=f"/v1/evals/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_none=True))
+    def prepare_update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any] = FieldUnset) -> PreparedRequest:
+        update_request = PatchEvaluationDocumentRequest(annotation=annotation)
+        return PreparedRequest(method="PUT", url=f"/v1/evals/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_unset=True))
 
     def prepare_delete(self, evaluation_id: str, document_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/evals/{evaluation_id}/documents/{document_id}")
@@ -65,20 +63,19 @@ class Documents(SyncAPIResource, DocumentsMixin):
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    def list(self, evaluation_id: str, filename: Optional[str] = None) -> List[EvaluationDocument]:
+    def list(self, evaluation_id: str) -> List[EvaluationDocument]:
         """
         List documents for an evaluation.
 
         Args:
             evaluation_id: The ID of the evaluation
-            filename: Optional filename to filter by
 
         Returns:
             List[EvaluationDocument]: List of documents
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list(evaluation_id, filename)
+        request = self.prepare_list(evaluation_id)
         response = self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
@@ -99,7 +96,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    def update(self, evaluation_id: str, document_id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
+    def update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any] = FieldUnset) -> EvaluationDocument:
         """
         Update a document.
 
@@ -107,13 +104,12 @@ class Documents(SyncAPIResource, DocumentsMixin):
             evaluation_id: The ID of the evaluation
             document_id: The ID of the document
             annotation: The ground truth for the document
-
         Returns:
             EvaluationDocument: The updated document
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(evaluation_id, document_id, annotation)
+        request = self.prepare_update(evaluation_id, document_id, annotation=annotation)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
@@ -164,24 +160,23 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         response = await self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    async def list(self, evaluation_id: str, filename: Optional[str] = None) -> List[EvaluationDocument]:
+    async def list(self, evaluation_id: str) -> List[EvaluationDocument]:
         """
         List documents for an evaluation.
 
         Args:
             evaluation_id: The ID of the evaluation
-            filename: Optional filename to filter by
 
         Returns:
             List[EvaluationDocument]: List of documents
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list(evaluation_id, filename)
+        request = self.prepare_list(evaluation_id)
         response = await self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
-    async def update(self, evaluation_id: str, document_id: str, annotation: Dict[str, Any]) -> EvaluationDocument:
+    async def update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any] = FieldUnset) -> EvaluationDocument:
         """
         Update a document.
 
