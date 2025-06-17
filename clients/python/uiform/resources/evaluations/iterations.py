@@ -4,7 +4,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.browser_canvas import BrowserCanvas
-from ...types.evaluations import CreateIterationRequest, Iteration, ProcessIterationRequest, DocumentStatus, IterationDocumentStatusResponse, PatchIterationRequest
+from ...types.evaluations import CreateIterationRequest, Iteration, ProcessIterationRequest, IterationDocumentStatusResponse, PatchIterationRequest
 from ...types.inference_settings import InferenceSettings
 from ...types.metrics import DistancesResult
 from ...types.modalities import Modality
