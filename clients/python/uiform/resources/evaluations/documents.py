@@ -10,6 +10,7 @@ from ..._utils.mime import prepare_mime_document
 from ...types.evaluations import DocumentItem, EvaluationDocument, PatchEvaluationDocumentRequest
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
+from ...types.documents.extractions import UiParsedChatCompletion
 
 
 class DocumentsMixin:
@@ -32,6 +33,9 @@ class DocumentsMixin:
 
     def prepare_delete(self, evaluation_id: str, document_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}")
+
+    def prepare_llm_annotate(self, evaluation_id: str, document_id: str) -> PreparedRequest:
+        return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}/llm-annotate", data={"stream": False})
 
 
 class Documents(SyncAPIResource, DocumentsMixin):
@@ -130,6 +134,14 @@ class Documents(SyncAPIResource, DocumentsMixin):
         request = self.prepare_delete(evaluation_id, document_id)
         return self._client._prepared_request(request)
 
+    def llm_annotate(self, evaluation_id: str, document_id: str) -> UiParsedChatCompletion:
+        """
+        Annotate a document with an LLM. This method updates the document (within the evaluation) with the latest extraction.
+        """
+        request = self.prepare_llm_annotate(evaluation_id, document_id)
+        response = self._client._prepared_request(request)
+        return UiParsedChatCompletion(**response)
+
 
 class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
     """Async Documents API wrapper for evaluations"""
@@ -210,3 +222,12 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         """
         request = self.prepare_delete(evaluation_id, document_id)
         return await self._client._prepared_request(request)
+
+    async def llm_annotate(self, evaluation_id: str, document_id: str) -> UiParsedChatCompletion:
+        """
+        Annotate a document with an LLM.
+        This method updates the document (within the evaluation) with the latest extraction.
+        """
+        request = self.prepare_llm_annotate(evaluation_id, document_id)
+        response = await self._client._prepared_request(request)
+        return UiParsedChatCompletion(**response)
