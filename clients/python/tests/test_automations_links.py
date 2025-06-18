@@ -9,7 +9,7 @@ from uiform import UiForm
 
 
 @pytest.mark.asyncio
-async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path: str) -> None:
+async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path_1: str) -> None:
     name = nanoid.generate()
     print("name", name)
     model = "gpt-4o-mini"
@@ -45,7 +45,7 @@ async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, An
         # Open and read the booking confirmation file
 
         # Let's upload a file
-        with open(booking_confirmation_file_path, "rb") as f:
+        with open(booking_confirmation_file_path_1, "rb") as f:
             async with httpx.AsyncClient(timeout=240) as client:
                 usr_pwd_enc = base64.b64encode(f"{name}:password".encode("utf-8")).decode("utf-8")
                 headers = {

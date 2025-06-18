@@ -1,14 +1,14 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.evaluations import Evaluation, EvaluationDocument, Iteration, PatchEvaluationRequest, ListEvaluationParams, CreateEvaluation
+from ...types.evaluations import Evaluation, PatchEvaluationRequest, ListEvaluationParams, CreateEvaluation
 from ...types.inference_settings import InferenceSettings
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 from .documents import Documents, AsyncDocuments
 from .iterations import Iterations, AsyncIterations
 
 
-class EvalsMixin:
+class EvaluationsMixin:
     def prepare_create(
         self,
         name: str,
@@ -68,15 +68,15 @@ class EvalsMixin:
         Returns:
             PreparedRequest: The prepared request
         """
-        params = ListEvaluationParams(project_id=project_id).model_dump(exclude_unset=True, mode="json")
+        params = ListEvaluationParams(project_id=project_id).model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
         return PreparedRequest(method="GET", url="/v1/evaluations", params=params)
 
     def prepare_delete(self, id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/evaluations/{id}")
 
 
-class Evals(SyncAPIResource, EvalsMixin):
-    """Evals API wrapper"""
+class Evaluations(SyncAPIResource, EvaluationsMixin):
+    """Evaluations API wrapper"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -192,8 +192,8 @@ class Evals(SyncAPIResource, EvalsMixin):
         return self._client._prepared_request(request)
 
 
-class AsyncEvals(AsyncAPIResource, EvalsMixin):
-    """Async Evals API wrapper"""
+class AsyncEvaluations(AsyncAPIResource, EvaluationsMixin):
+    """Async Evaluations API wrapper"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
