@@ -8,7 +8,7 @@ from uiform import UiForm
 
 
 @pytest.mark.asyncio
-async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path: str) -> None:
+async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path_1: str) -> None:
     test_idx = nanoid.generate().lower()
     name = f"test_mailbox_{test_idx}"
     email_address = f"bert2_{test_idx}@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}"

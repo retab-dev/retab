@@ -9,7 +9,7 @@ import httpx
 import truststore
 from pydantic_core import PydanticUndefined
 
-from .resources import consensus, documents, evals, files, finetuning, models, processors, schemas, secrets, usage
+from .resources import consensus, documents, evals, files, finetuning, models, processors, schemas, secrets, usage, evaluations
 from .types.standards import PreparedRequest
 
 
@@ -197,6 +197,7 @@ class UiForm(BaseUiForm):
 
         self.client = httpx.Client(timeout=self.timeout)
         self.evals = evals.Evals(client=self)
+        self.evaluations = evaluations.Evaluations(client=self)
         self.files = files.Files(client=self)
         self.fine_tuning = finetuning.FineTuning(client=self)
         # self.prompt_optimization = prompt_optimization.PromptOptimization(client=self)
@@ -465,6 +466,7 @@ class AsyncUiForm(BaseUiForm):
         self.client = httpx.AsyncClient(timeout=self.timeout)
 
         self.evals = evals.AsyncEvals(client=self)
+        self.evaluations = evaluations.AsyncEvaluations(client=self)
         self.files = files.AsyncFiles(client=self)
         self.fine_tuning = finetuning.AsyncFineTuning(client=self)
         # self.prompt_optimization = prompt_optimization.AsyncPromptOptimization(client=self)

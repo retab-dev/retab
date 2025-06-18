@@ -112,20 +112,27 @@ def booking_confirmation_json_schema(test_data_dir: str) -> dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def booking_confirmation_file_path(test_data_dir: str) -> str:
-    return os.path.join(test_data_dir, "freight", "booking_confirmation.jpg")
+def booking_confirmation_file_path_1(test_data_dir: str) -> str:
+    return os.path.join(test_data_dir, "freight", "booking_confirmation_1.jpg")
 
 
 @pytest.fixture(scope="session")
-def booking_confirmation_bytes(booking_confirmation_file_path: str) -> bytes:  # Not Working!
-    with open(booking_confirmation_file_path, "rb") as f:
-        return f.read()
+def booking_confirmation_file_path_2(test_data_dir: str) -> str:
+    return os.path.join(test_data_dir, "freight", "booking_confirmation_2.jpg")
 
 
 @pytest.fixture(scope="session")
-def booking_confirmation_io_bytes(booking_confirmation_file_path: str) -> IO[bytes]:  # Not Working!
-    with open(booking_confirmation_file_path, "rb") as f:
-        return f
+def booking_confirmation_data_1(test_data_dir: str) -> dict[str, Any]:
+    data_path = os.path.join(test_data_dir, "freight", "booking_confirmation_1_data.json")
+    with open(data_path) as f:
+        return json.load(f)
+
+
+@pytest.fixture(scope="session")
+def booking_confirmation_data_2(test_data_dir: str) -> dict[str, Any]:
+    data_path = os.path.join(test_data_dir, "freight", "booking_confirmation_2_data.json")
+    with open(data_path) as f:
+        return json.load(f)
 
 
 @pytest.fixture(scope="session")

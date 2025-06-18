@@ -1,6 +1,6 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -8,29 +8,30 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.mime import prepare_mime_document
 from ...types.evaluations import DocumentItem, EvaluationDocument, PatchEvaluationDocumentRequest
-from ...types.predictions import PredictionMetadata
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 
 
 class DocumentsMixin:
     def prepare_get(self, evaluation_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/documents/{document_id}")
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}")
 
     def prepare_create(self, evaluation_id: str, document: MIMEData, annotation: dict[str, Any]) -> PreparedRequest:
         # Serialize the MIMEData
         document_item = DocumentItem(mime_data=document, annotation=annotation, annotation_metadata=None)
-        return PreparedRequest(method="POST", url=f"/v1/evals/{evaluation_id}/documents", data=document_item.model_dump(mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/documents", data=document_item.model_dump(mode="json"))
 
     def prepare_list(self, evaluation_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evals/{evaluation_id}/documents")
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/documents")
 
     def prepare_update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any] = FieldUnset) -> PreparedRequest:
         update_request = PatchEvaluationDocumentRequest(annotation=annotation)
-        return PreparedRequest(method="PUT", url=f"/v1/evals/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_unset=True))
+        return PreparedRequest(
+            method="PATCH", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True)
+        )
 
     def prepare_delete(self, evaluation_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/evals/{evaluation_id}/documents/{document_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}")
 
 
 class Documents(SyncAPIResource, DocumentsMixin):

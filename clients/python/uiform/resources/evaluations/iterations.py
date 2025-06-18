@@ -9,11 +9,12 @@ from ...types.inference_settings import InferenceSettings
 from ...types.metrics import DistancesResult
 from ...types.modalities import Modality
 from ...types.standards import DeleteResponse, PreparedRequest, FieldUnset
+from ...types.documents.extractions import UiParsedChatCompletion
 
 
 class IterationsMixin:
-    def prepare_get(self, iteration_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evaluations/iterations/{iteration_id}")
+    def prepare_get(self, evaluation_id: str, iteration_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}")
 
     def prepare_list(self, evaluation_id: str, model: Optional[str] = None) -> PreparedRequest:
         params = {}
@@ -45,10 +46,11 @@ class IterationsMixin:
 
         request = CreateIterationRequest(inference_settings=inference_settings, json_schema=json_schema)
 
-        return PreparedRequest(method="POST", url=f"/v1/evaluations/iterations/create/{evaluation_id}", data=request.model_dump(exclude_unset=True, mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/iterations", data=request.model_dump(exclude_unset=True, exclude_defaults=True, mode="json"))
 
     def prepare_update(
         self,
+        evaluation_id: str,
         iteration_id: str,
         json_schema: Dict[str, Any] = FieldUnset,
         model: str = FieldUnset,
@@ -73,16 +75,19 @@ class IterationsMixin:
 
         iteration_data = PatchIterationRequest(json_schema=json_schema, inference_settings=inference_settings)
 
-        return PreparedRequest(method="PATCH", url=f"/v1/evaluations/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_unset=True, mode="json"))
+        return PreparedRequest(
+            method="PATCH", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
+        )
 
-    def prepare_delete(self, iteration_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/evaluations/iterations/{iteration_id}")
+    def prepare_delete(self, evaluation_id: str, iteration_id: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}")
 
-    def prepare_compute_distances(self, iteration_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evaluations/iterations/{iteration_id}/compute_distances/{document_id}")
+    def prepare_compute_distances(self, evaluation_id: str, iteration_id: str, document_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}/documents/{document_id}/distances")
 
     def prepare_process(
         self,
+        evaluation_id: str,
         iteration_id: str,
         document_ids: Optional[List[str]] = None,
         only_outdated: bool = True,
@@ -91,10 +96,13 @@ class IterationsMixin:
             document_ids=document_ids,
             only_outdated=only_outdated,
         )
-        return PreparedRequest(method="POST", url=f"/v1/evaluations/iterations/{iteration_id}/process", data=request.model_dump(exclude_none=True, mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}/process", data=request.model_dump(exclude_none=True, mode="json"))
 
-    def prepare_status(self, iteration_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evaluations/iterations/{iteration_id}/status")
+    def prepare_process_document(self, evaluation_id: str, iteration_id: str, document_id: str) -> PreparedRequest:
+        return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}/documents/{document_id}/process", data={"stream": False})
+
+    def prepare_status(self, evaluation_id: str, iteration_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}/status")
 
 
 class Iterations(SyncAPIResource, IterationsMixin):
@@ -102,6 +110,11 @@ class Iterations(SyncAPIResource, IterationsMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def get(self, evaluation_id: str, iteration_id: str) -> Iteration:
+        request = self.prepare_get(evaluation_id, iteration_id)
+        response = self._client._prepared_request(request)
+        return Iteration(**response)
 
     def list(self, evaluation_id: str, model: Optional[str] = None) -> List[Iteration]:
         """
@@ -169,7 +182,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         response = self._client._prepared_request(request)
         return Iteration(**response)
 
-    def delete(self, iteration_id: str) -> DeleteResponse:
+    def delete(self, evaluation_id: str, iteration_id: str) -> DeleteResponse:
         """
         Delete an iteration.
 
@@ -181,10 +194,10 @@ class Iterations(SyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_delete(iteration_id)
+        request = self.prepare_delete(evaluation_id, iteration_id)
         return self._client._prepared_request(request)
 
-    def compute_distances(self, iteration_id: str, document_id: str) -> DistancesResult:
+    def compute_distances(self, evaluation_id: str, iteration_id: str, document_id: str) -> DistancesResult:
         """
         Get distances for a document in an iteration.
 
@@ -197,12 +210,13 @@ class Iterations(SyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_compute_distances(iteration_id, document_id)
+        request = self.prepare_compute_distances(evaluation_id, iteration_id, document_id)
         response = self._client._prepared_request(request)
         return DistancesResult(**response)
 
     def process(
         self,
+        evaluation_id: str,
         iteration_id: str,
         document_ids: Optional[List[str]] = None,
         only_outdated: bool = True,
@@ -220,11 +234,29 @@ class Iterations(SyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_process(iteration_id, document_ids, only_outdated)
+        request = self.prepare_process(evaluation_id, iteration_id, document_ids, only_outdated)
         response = self._client._prepared_request(request)
         return Iteration(**response)
 
-    def status(self, iteration_id: str) -> IterationDocumentStatusResponse:
+    def process_document(self, evaluation_id: str, iteration_id: str, document_id: str) -> UiParsedChatCompletion:
+        """
+        Process a single document within an iteration.
+        This method updates the iteration document with the latest extraction.
+
+        Args:
+            iteration_id: The ID of the iteration
+            document_id: The ID of the document
+
+        Returns:
+            UiParsedChatCompletion: The parsed chat completion
+        Raises:
+            HTTPException if the request fails
+        """
+        request = self.prepare_process_document(evaluation_id, iteration_id, document_id)
+        response = self._client._prepared_request(request)
+        return UiParsedChatCompletion(**response)
+
+    def status(self, evaluation_id: str, iteration_id: str) -> IterationDocumentStatusResponse:
         """
         Get the status of documents in an iteration.
 
@@ -236,7 +268,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_status(iteration_id)
+        request = self.prepare_status(evaluation_id, iteration_id)
         response = self._client._prepared_request(request)
         return IterationDocumentStatusResponse(**response)
 
@@ -247,7 +279,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    async def get(self, iteration_id: str) -> Iteration:
+    async def get(self, evaluation_id: str, iteration_id: str) -> Iteration:
         """
         Get an iteration by ID.
 
@@ -259,7 +291,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_get(iteration_id)
+        request = self.prepare_get(evaluation_id, iteration_id)
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 
@@ -329,7 +361,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 
-    async def delete(self, iteration_id: str) -> DeleteResponse:
+    async def delete(self, evaluation_id: str, iteration_id: str) -> DeleteResponse:
         """
         Delete an iteration.
 
@@ -341,10 +373,10 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_delete(iteration_id)
+        request = self.prepare_delete(evaluation_id, iteration_id)
         return await self._client._prepared_request(request)
 
-    async def compute_distances(self, iteration_id: str, document_id: str) -> DistancesResult:
+    async def compute_distances(self, evaluation_id: str, iteration_id: str, document_id: str) -> DistancesResult:
         """
         Get distances for a document in an iteration.
 
@@ -357,12 +389,13 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_compute_distances(iteration_id, document_id)
+        request = self.prepare_compute_distances(evaluation_id, iteration_id, document_id)
         response = await self._client._prepared_request(request)
         return DistancesResult(**response)
 
     async def process(
         self,
+        evaluation_id: str,
         iteration_id: str,
         document_ids: Optional[List[str]] = None,
         only_outdated: bool = True,
@@ -380,11 +413,29 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_process(iteration_id, document_ids, only_outdated)
+        request = self.prepare_process(evaluation_id, iteration_id, document_ids, only_outdated)
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 
-    async def status(self, iteration_id: str) -> IterationDocumentStatusResponse:
+    async def process_document(self, evaluation_id: str, iteration_id: str, document_id: str) -> UiParsedChatCompletion:
+        """
+        Process a single document within an iteration.
+        This method updates the iteration document with the latest extraction.
+
+        Args:
+            iteration_id: The ID of the iteration
+            document_id: The ID of the document
+
+        Returns:
+            UiParsedChatCompletion: The parsed chat completion
+        Raises:
+            HTTPException if the request fails
+        """
+        request = self.prepare_process_document(evaluation_id, iteration_id, document_id)
+        response = await self._client._prepared_request(request)
+        return UiParsedChatCompletion(**response)
+
+    async def status(self, evaluation_id: str, iteration_id: str) -> IterationDocumentStatusResponse:
         """
         Get the status of documents in an iteration.
 
@@ -396,6 +447,6 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_status(iteration_id)
+        request = self.prepare_status(evaluation_id, iteration_id)
         response = await self._client._prepared_request(request)
         return IterationDocumentStatusResponse(**response)
