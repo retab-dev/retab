@@ -469,12 +469,7 @@ async def test_complete_evaluation_workflow(
         assert iterations_after_delete[0].id == iteration1.id
 
         # Step 6: Delete one document (should affect remaining iteration)
-        await await_or_return(
-            client.evaluations.documents.delete(
-                evaluation_id=evaluation_id,
-                document_id=doc2.id,
-            )
-        )
+        await await_or_return(client.evaluations.documents.delete(evaluation_id=evaluation_id, document_id=doc2.id))
 
         # Verify we now have only 1 document
         documents_after_delete = await await_or_return(client.evaluations.documents.list(evaluation_id))
