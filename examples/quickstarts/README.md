@@ -1,12 +1,12 @@
 # ⚡ Quickstart Examples
 
-This folder contains simple, focused examples to help you quickly get started with UiForm.
+This folder contains simple, focused examples to help you quickly get started with Retab.
 
 ---
 
 ## 📥 Message Creation
 
-Learn how to create LLM-ready messages from documents using the `UiForm.documents.create_messages()` API.
+Learn how to create LLM-ready messages from documents using the `Retab.documents.create_messages()` API.
 
 | File | Description |
 |------|-------------|
@@ -32,4 +32,4 @@ Use a JSON schema to extract structured data from documents using different API 
 Make sure you’ve installed the SDK:
 
 ```bash
-pip install uiform
+pip install retab

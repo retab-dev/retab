@@ -1,6 +1,6 @@
 # Image vs. Text: What Modality to Use for Document Processing?
 
-Hey there, I'm [Sacha](https://x.com/sachaicb), creator and maintainer of UiForm.
+Hey there, I'm [Sacha](https://x.com/sachaicb), creator and maintainer of Retab.
 
 I've been working on document processing for a while now, and I've seen a lot of people surprised when i told them that the best way to process emails or excel files is to use vision, and not language. In this article, I'll share the heuristics we use to determine the optimal approach for each kind of document.
 
@@ -8,14 +8,14 @@ When processing documents, selecting the right modality is crucial for efficienc
 
 ## **Modalities**
 
-With UiForm, you can easily switch between modalities:
+With Retab, you can easily switch between modalities:
 
 ```python
-from uiform import UiForm
+from retab import Retab
 
-uiclient = UiForm()
+reclient = Retab()
 
-doc_msg = uiclient.documents.create_messages(
+doc_msg = reclient.documents.create_messages(
     document="contract.pdf",
     modality="text", # or "image", "image+text", "native"
 )
@@ -62,7 +62,7 @@ The body of an email is more than just plain text—it often includes HTML forma
 
 It's also important to consider email threading, where multiple messages are grouped together in a conversation. Efficient processing should be able to separate these threads and extract relevant content without losing context.
 
-For this reason, in UiForm, we put in the context window of the LLM both the text content of the body, and the images rendering the html content of the body.
+For this reason, in Retab, we put in the context window of the LLM both the text content of the body, and the images rendering the html content of the body.
 
 ### **Email Attachments**
 
@@ -82,11 +82,11 @@ Web pages can be saved as a single file format (e.g., `.mhtml`), which closely r
 In some cases, combining both modalities offers the best results. For example, on complex documents, the LLM can benefit from the image to understand the layout, but struggles to extract the text precisely. In this case, having the image and the text in the context window of the LLM is a great way to get the best of both worlds.
 
 ```python
-from uiform import UiForm
+from retab import Retab
 
-uiclient = UiForm()
+reclient = Retab()
 
-doc_msg = uiclient.documents.create_messages(
+doc_msg = reclient.documents.create_messages(
     document="contract.pdf",
     modality="image+text",
 )
@@ -125,6 +125,6 @@ By following these heuristics and choosing the right modality, you can achieve t
 
 Choosing the right way to process documents—whether using text or vision—can make a huge difference in how accurate and efficient your results are. By following the simple guidelines we’ve shared, you can easily decide which approach works best for different types of documents. And for those tricky cases, combining both can give you the best of both worlds.
 
-At UiForm, we’ve made it easy to switch between modalities so you don’t have to worry about choosing the wrong one. Whether you’re working with emails, spreadsheets, or contracts, using the right method will help you get the most out of your data while saving time and effort.
+At Retab, we’ve made it easy to switch between modalities so you don’t have to worry about choosing the wrong one. Whether you’re working with emails, spreadsheets, or contracts, using the right method will help you get the most out of your data while saving time and effort.
 
 Don't hesitate to reach out on [X](https://x.com/sachaicb) or [Discord](https://discord.gg/vc5tWRPqag) if you have any questions or feedback!

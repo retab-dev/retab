@@ -33,7 +33,7 @@ exclude = [
     "venv"
 ]
 
-include = ["uiform/**/*.py", "uiform/*.py"]
+include = ["retab/**/*.py", "retab/*.py"]
 
 line-length = 180
 

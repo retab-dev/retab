@@ -1,6 +1,6 @@
 # 🧠 Schema Examples
 
-This folder showcases two ways to define schemas for extracting structured data from documents using **UiForm**:
+This folder showcases two ways to define schemas for extracting structured data from documents using **Retab**:
 
 ---
 
@@ -18,4 +18,4 @@ This folder showcases two ways to define schemas for extracting structured data 
 Make sure you’ve installed the SDK:
 
 ```bash
-pip install uiform
+pip install retab

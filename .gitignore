@@ -30,7 +30,7 @@
 .env
 .env.local
 .env.production
-.env.uiform
+.env.retab
 .env.staging
 
 # Jupyter Notebook

@@ -1,6 +1,6 @@
 # 🌐 Other LLM Provider Examples
 
-We want to show here how to use **UiForm** with LLMs beyond OpenAI — including Google Gemini — while still leveraging schema-based structured data extraction.
+We want to show here how to use **Retab** with LLMs beyond OpenAI — including Google Gemini — while still leveraging schema-based structured data extraction.
 
 ---
 
@@ -8,8 +8,8 @@ We want to show here how to use **UiForm** with LLMs beyond OpenAI — including
 
 | File | Provider | Description |
 |------|----------|-------------|
-| `openai.py` | OpenAI | Classic UiForm + OpenAI flow using Pydantic schema extraction |
-| `gemini.py` | Google Gemini | UiForm integration with Gemini via OpenAI-compatible client and JSON Schema |
+| `openai.py` | OpenAI | Classic Retab + OpenAI flow using Pydantic schema extraction |
+| `gemini.py` | Google Gemini | Retab integration with Gemini via OpenAI-compatible client and JSON Schema |
 
 ---
 
@@ -18,4 +18,4 @@ We want to show here how to use **UiForm** with LLMs beyond OpenAI — including
 Install dependencies:
 
 ```bash
-pip install uiform python-dotenv openai
+pip install retab python-dotenv openai

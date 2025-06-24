@@ -5,11 +5,11 @@ import httpx
 import nanoid  # type: ignore
 import pytest
 
-from uiform import UiForm
+from retab import Retab
 
 
 @pytest.mark.asyncio
-async def test_links_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path_1: str) -> None:
+async def test_links_crud(sync_client: Retab, company_json_schema: dict[str, Any], booking_confirmation_file_path_1: str) -> None:
     name = nanoid.generate()
     print("name", name)
     model = "gpt-4o-mini"

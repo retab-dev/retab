@@ -8,18 +8,18 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from uiform import Schema, UiForm
+from retab import Schema, Retab
 
 # Load environment variables
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
-uiform_api_key = os.getenv("UIFORM_API_KEY")
+retab_api_key = os.getenv("RETAB_API_KEY")
 
 assert api_key, "Missing OPENAI_API_KEY"
-assert uiform_api_key, "Missing UIFORM_API_KEY"
+assert retab_api_key, "Missing RETAB_API_KEY"
 
-uiclient = UiForm(api_key=uiform_api_key)
-doc_msg = uiclient.documents.create_messages(document="../../assets/calendar_event.xlsx")
+reclient = Retab(api_key=retab_api_key)
+doc_msg = reclient.documents.create_messages(document="../../assets/calendar_event.xlsx")
 
 # Define schema
 schema_obj = Schema(
@@ -49,7 +49,7 @@ completion = client.chat.completions.create(
 )
 
 # Validate the response against the original schema if you want to remove the reasoning fields
-from uiform._utils.json_schema import filter_auxiliary_fields_json
+from retab._utils.json_schema import filter_auxiliary_fields_json
 
 assert completion.choices[0].message.content is not None
 extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(completion.choices[0].message.content))

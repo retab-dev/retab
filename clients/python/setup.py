@@ -5,15 +5,15 @@ with open('requirements.txt') as f:
     requirements_list = f.read().splitlines()
 
 setup(
-    name='uiform',
-    version='0.0.35',
-    author='UiForm',
-    author_email='contact@uiform.com',
-    description='UiForm official python library',
+    name='retab',
+    version='0.0.37',
+    author='Retab',
+    author_email='contact@retab.com',
+    description='Retab official python library',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/UiForm/uiform',
-    project_urls={'Team website': 'https://uiform.com'},
+    url='https://github.com/Retab-dev/retab',
+    project_urls={'Team website': 'https://retab.com'},
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',

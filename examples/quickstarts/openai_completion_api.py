@@ -1,5 +1,5 @@
 # ---------------------------------------------
-## Full example: Extract structured data using UiForm + OpenAI Chat Completion + JSON Schema
+## Full example: Extract structured data using Retab + OpenAI Chat Completion + JSON Schema
 # ---------------------------------------------
 
 import os
@@ -7,17 +7,17 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from uiform import Schema, UiForm
-from uiform._utils.json_schema import filter_auxiliary_fields_json
+from retab import Schema, Retab
+from retab._utils.json_schema import filter_auxiliary_fields_json
 
 # Load environment variables
 load_dotenv()
 
 api_key = os.getenv("OPENAI_API_KEY")
-uiform_api_key = os.getenv("UIFORM_API_KEY")
+retab_api_key = os.getenv("RETAB_API_KEY")
 
 assert api_key, "Missing OPENAI_API_KEY"
-assert uiform_api_key, "Missing UIFORM_API_KEY"
+assert retab_api_key, "Missing RETAB_API_KEY"
 
 # Define schema
 json_schema = {
@@ -45,9 +45,9 @@ model = "gpt-4o"
 modality = "native"
 temperature = 0.0
 
-# UiForm Setup
-uiclient = UiForm(api_key=uiform_api_key)
-doc_msg = uiclient.documents.create_messages(
+# Retab Setup
+reclient = Retab(api_key=retab_api_key)
+doc_msg = reclient.documents.create_messages(
     document="../../assets/calendar_event.xlsx",
     modality=modality,
     image_resolution_dpi=96,

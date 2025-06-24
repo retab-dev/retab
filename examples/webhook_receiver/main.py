@@ -1,5 +1,5 @@
 # ---------------------------------------------
-## FastAPI app to receive UiForm webhook events (with ngrok tunnel)
+## FastAPI app to receive Retab webhook events (with ngrok tunnel)
 # ---------------------------------------------
 
 import json
@@ -10,9 +10,9 @@ from fastapi import FastAPI
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from pyngrok import ngrok
 
-from uiform.types.automations.webhooks import WebhookRequest
-from uiform.types.documents.extractions import UiParsedChatCompletion, UiParsedChoice
-from uiform.types.mime import MIMEData
+from retab.types.automations.webhooks import WebhookRequest
+from retab.types.documents.extractions import UiParsedChatCompletion, UiParsedChoice
+from retab.types.mime import MIMEData
 
 # Load environment variables
 load_dotenv()

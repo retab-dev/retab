@@ -4,8 +4,8 @@ from typing import Any, Awaitable, Dict, Literal, TypeVar, get_args
 import nanoid  # type: ignore
 import pytest
 
-from uiform import AsyncUiForm, UiForm
-from uiform.types.documents.extractions import UiParsedChatCompletion
+from retab import AsyncRetab, Retab
+from retab.types.documents.extractions import UiParsedChatCompletion
 
 T = TypeVar("T")
 
@@ -29,8 +29,8 @@ ClientType = Literal[
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client_type", get_args(ClientType))
 async def test_evaluation_crud_basic(
-    sync_client: UiForm,
-    async_client: AsyncUiForm,
+    sync_client: Retab,
+    async_client: AsyncRetab,
     client_type: ClientType,
     booking_confirmation_json_schema: Dict[str, Any],
 ) -> None:
@@ -88,8 +88,8 @@ async def test_evaluation_crud_basic(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client_type", get_args(ClientType))
 async def test_evaluation_with_documents(
-    sync_client: UiForm,
-    async_client: AsyncUiForm,
+    sync_client: Retab,
+    async_client: AsyncRetab,
     client_type: ClientType,
     booking_confirmation_file_path_1: str,
     booking_confirmation_json_schema: Dict[str, Any],
@@ -167,8 +167,8 @@ async def test_evaluation_with_documents(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client_type", get_args(ClientType))
 async def test_iteration_crud_and_processing(
-    sync_client: UiForm,
-    async_client: AsyncUiForm,
+    sync_client: Retab,
+    async_client: AsyncRetab,
     client_type: ClientType,
     booking_confirmation_file_path_1: str,
     booking_confirmation_json_schema: Dict[str, Any],
@@ -265,8 +265,8 @@ async def test_iteration_crud_and_processing(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client_type", get_args(ClientType))
 async def test_process_document_method(
-    sync_client: UiForm,
-    async_client: AsyncUiForm,
+    sync_client: Retab,
+    async_client: AsyncRetab,
     client_type: ClientType,
     booking_confirmation_file_path_1: str,
     booking_confirmation_json_schema: Dict[str, Any],
@@ -355,8 +355,8 @@ async def test_process_document_method(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client_type", get_args(ClientType))
 async def test_complete_evaluation_workflow(
-    sync_client: UiForm,
-    async_client: AsyncUiForm,
+    sync_client: Retab,
+    async_client: AsyncRetab,
     client_type: ClientType,
     booking_confirmation_file_path_1: str,
     booking_confirmation_file_path_2: str,
@@ -491,8 +491,8 @@ async def test_complete_evaluation_workflow(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client_type", get_args(ClientType))
 async def test_iteration_selective_processing(
-    sync_client: UiForm,
-    async_client: AsyncUiForm,
+    sync_client: Retab,
+    async_client: AsyncRetab,
     client_type: ClientType,
     booking_confirmation_file_path_1: str,
     booking_confirmation_file_path_2: str,

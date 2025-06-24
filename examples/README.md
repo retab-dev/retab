@@ -1,8 +1,8 @@
 # 📁 Examples
 
-Welcome to our `examples/` folder, part of the **UiForm** open-source repo.
+Welcome to our `examples/` folder, part of the **Retab** open-source repo.
 
-We have here a curated set of scripts demonstrating how to use UiForm to build document-based LLM workflows.
+We have here a curated set of scripts demonstrating how to use Retab to build document-based LLM workflows.
 
 These examples are grouped by theme to help you get started quickly, learn how to define schemas, and integrate with different providers or webhook backends.
 
@@ -25,7 +25,7 @@ examples/
 
 ## 🏁 Quickstarts
 
-These examples show how to use the `uiform` SDK to create messages and process documents through your preferred LLM provider.
+These examples show how to use the `retab` SDK to create messages and process documents through your preferred LLM provider.
 
 | File | Description |
 |------|-------------|
@@ -39,7 +39,7 @@ These examples show how to use the `uiform` SDK to create messages and process d
 
 ## 🧠 Schema-Based Prompting
 
-Use UiForm’s schema support to guide LLM responses more precisely, using `X-FieldPrompt`, `X-ReasoningPrompt`, and more.
+Use Retab’s schema support to guide LLM responses more precisely, using `X-FieldPrompt`, `X-ReasoningPrompt`, and more.
 
 | File | Description |
 |------|-------------|
@@ -65,14 +65,14 @@ Demonstrate how to switch out OpenAI with other LLM providers like Gemini or Ant
 
 | File | Description |
 |------|-------------|
-| `gemini.py` | Use Google’s Gemini API with UiForm messages |
+| `gemini.py` | Use Google’s Gemini API with Retab messages |
 | `openai.py` | Simple OpenAI-based schema extraction (baseline example) |
 
 ---
 
 ## 🔗 Webhook Integration
 
-UiForm sends structured document outputs to your webhook. This example shows how to receive and process that data using FastAPI.
+Retab sends structured document outputs to your webhook. This example shows how to receive and process that data using FastAPI.
 
 | File | Description |
 |------|-------------|
@@ -94,12 +94,12 @@ We let you here with a standalone script to perform fuzzy matching between a tar
 
 1. **Install the SDK**  
    ```bash
-   pip install uiform
+   pip install retab
    ```
 
 2. **Set your environment variables**
    ```bash
-   UIFORM_API_KEY=sk_uiform_...
+   RETAB_API_KEY=sk_retab_...
    OPENAI_API_KEY=sk-...
    ```
 
@@ -124,6 +124,6 @@ Feel free to open a PR!
 
 ---
 
-Made with love by the team at [UiForm](https://uiform.com) 🤍.
+Made with love by the team at [Retab](https://retab.dev) 🤍.
 
 Join the community on [Discord](https://discord.com/invite/vc5tWRPqag) and share what you’re building!
