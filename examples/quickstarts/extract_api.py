@@ -1,25 +1,25 @@
 # ---------------------------------------------
-## Quick example: Extract structured data using UiForm’s all-in-one `.parse()` method.
+## Quick example: Extract structured data using Retab’s all-in-one `.parse()` method.
 # ---------------------------------------------
 
 import os
 
 from dotenv import load_dotenv
 
-from uiform import UiForm
+from retab import Retab
 
 # Load environment variables
 load_dotenv()
 
-uiform_api_key = os.getenv("UIFORM_API_KEY")
-assert uiform_api_key, "Missing UIFORM_API_KEY"
+retab_api_key = os.getenv("RETAB_API_KEY")
+assert retab_api_key, "Missing RETAB_API_KEY"
 
-# UiForm Setup
-uiclient = UiForm(api_key=uiform_api_key)
+# Retab Setup
+reclient = Retab(api_key=retab_api_key)
 
-# Document Extraction via UiForm API
+# Document Extraction via Retab API
 with open("../../assets/booking_confirmation.jpg", "rb") as f:
-    response = uiclient.documents.extractions.parse(
+    response = reclient.documents.extractions.parse(
         document=f,
         model="gpt-4o-mini",
         json_schema={

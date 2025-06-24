@@ -1,24 +1,24 @@
-# UiForm
+# Retab
 
 <div align="center" style="margin-bottom: 1em;">
 
-<img src="https://raw.githubusercontent.com/UiForm/uiform/refs/heads/main/assets/uiform-logo.png" alt="UiForm Logo" width="150">
+<img src="https://raw.githubusercontent.com/Retab/retab/refs/heads/main/assets/retab-logo.png" alt="Retab Logo" width="150">
 
 
   *The AI Automation Platform*
 
-Made with love by the team at [UiForm](https://uiform.com) 🤍.
+Made with love by the team at [Retab](https://retab.dev) 🤍.
 
-[Our Website](https://uiform.com) | [Documentation](https://docs.uiform.com/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/uiformAPI)
+[Our Website](https://retab.dev) | [Documentation](https://docs.retab.dev/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabAPI)
 
 
 </div>
 
 ---
 
-### What is UiForm?
+### What is Retab?
 
-UiForm solves all the major challenges in document processing with LLMs:
+Retab solves all the major challenges in document processing with LLMs:
 
 1. **Universal Document Processing**: Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without writing custom parsers
 2. **Structured, Schema-driven Extraction**: Get consistent, reliable outputs using schema-based prompt engineering
@@ -38,16 +38,16 @@ Many people haven't yet realized how powerful LLMs have become at document proce
 
 ## How it works
 
-UiForm allows you to easily create document processing deployments. Here is the general workflow:
+Retab allows you to easily create document processing deployments. Here is the general workflow:
 
 ```mermaid
 sequenceDiagram
-    User ->> UiForm: File Upload
-    UiForm -->> UiForm: Preprocessing
-    UiForm ->> AI Provider: Request on your behalf
-    AI Provider -->> UiForm:  Structured Generation
-    UiForm ->> Webhook: Send result
-    UiForm ->> User: Send Confirmation
+    User ->> Retab: File Upload
+    Retab -->> Retab: Preprocessing
+    Retab ->> AI Provider: Request on your behalf
+    AI Provider -->> Retab:  Structured Generation
+    Retab ->> Webhook: Send result
+    Retab ->> User: Send Confirmation
 ```
 
 ---
@@ -71,11 +71,11 @@ You come with your own API key from your favorite AI provider, and we handle the
 
 ## Jupyter Notebooks
 
-You can view minimal notebooks that demonstrate how to use UiForm to process documents:
-- [Mailbox creation quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/mailboxes_quickstart.ipynb)
-- [Upload Links creation quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/links_quickstart.ipynb)
-- [Document Extractions quickstart](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart.ipynb)
-- [Document Extractions quickstart - Async](https://github.com/UiForm/uiform/blob/main/notebooks/Quickstart-Async.ipynb)
+You can view minimal notebooks that demonstrate how to use Retab to process documents:
+- [Mailbox creation quickstart](https://github.com/Retab-dev/retab/blob/main/notebooks/mailboxes_quickstart.ipynb)
+- [Upload Links creation quickstart](https://github.com/Retab-dev/retab/blob/main/notebooks/links_quickstart.ipynb)
+- [Document Extractions quickstart](https://github.com/Retab-dev/retab/blob/main/notebooks/Quickstart.ipynb)
+- [Document Extractions quickstart - Async](https://github.com/Retab-dev/retab/blob/main/notebooks/Quickstart-Async.ipynb)
 
 --- 
 
@@ -84,18 +84,18 @@ You can view minimal notebooks that demonstrate how to use UiForm to process doc
 
 Let's create the future of document processing together!
 
-Join our [discord community](https://discord.com/invite/vc5tWRPqag) to share tips, discuss best practices, and showcase what you build. Or just [tweet](https://x.com/uiformAPI) at us.
+Join our [discord community](https://discord.com/invite/vc5tWRPqag) to share tips, discuss best practices, and showcase what you build. Or just [tweet](https://x.com/retabAPI) at us.
 
-We can't wait to see how you'll use UiForm.
+We can't wait to see how you'll use Retab.
 
 - [Discord](https://discord.com/invite/vc5tWRPqag)
-- [Twitter](https://x.com/uiformAPI)
+- [Twitter](https://x.com/retabAPI)
 
 ---
 
 ## Roadmap
 
-We share our roadmap publicly on [Github](https://github.com/UiForm/uiform)
+We share our roadmap publicly on [Github](https://github.com/Retab-dev/retab)
 
 Among the features we're working on:
 

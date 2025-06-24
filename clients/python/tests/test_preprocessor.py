@@ -2,11 +2,11 @@ from typing import Any
 
 import pytest
 
-from uiform import UiForm
+from retab import Retab
 
 
 @pytest.mark.asyncio
-async def test_preprocessor_crud(sync_client: UiForm, company_json_schema: dict[str, Any]) -> None:
+async def test_preprocessor_crud(sync_client: Retab, company_json_schema: dict[str, Any]) -> None:
     name = "test_preprocessor"
     model = "gpt-4o-mini"
 

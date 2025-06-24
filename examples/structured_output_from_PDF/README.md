@@ -1,6 +1,6 @@
 ## 🏢 Airbnb Pitch Deck Extraction
 
-We provide you here with an end-to-end example of using UiForm to extract structured insights from a PDF — we take the AirBnB pitch deck as an example.
+We provide you here with an end-to-end example of using Retab to extract structured insights from a PDF — we take the AirBnB pitch deck as an example.
 
 | File | Description |
 |------|-------------|
@@ -14,4 +14,4 @@ We provide you here with an end-to-end example of using UiForm to extract struct
 Make sure you’ve installed the SDK:
 
 ```bash
-pip install uiform
+pip install retab

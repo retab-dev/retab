@@ -6,14 +6,14 @@ from typing import IO, Any
 
 import pytest
 
-os.environ["EMAIL_DOMAIN"] = "mailbox.uiform.com"
+os.environ["EMAIL_DOMAIN"] = "mailbox.retab.dev"
 from enum import Enum
 from typing import Generator
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from uiform import AsyncUiForm, UiForm
+from retab import AsyncRetab, Retab
 
 # Get the directory containing the tests
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -51,49 +51,49 @@ def load_env(request: pytest.FixtureRequest) -> None:
 
 
 class EnvConfig(BaseModel):
-    uiform_api_key: str = Field(..., description="UiForm API key")
-    uiform_api_base_url: str = Field(..., description="UiForm API base URL")
+    retab_api_key: str = Field(..., description="Retab API key")
+    retab_api_base_url: str = Field(..., description="Retab API base URL")
 
 
 @pytest.fixture(scope="session")
 def api_keys(load_env: None) -> EnvConfig:
     _ = load_env
-    uiform_api_key = os.getenv("UIFORM_API_KEY")
-    uiform_api_base_url = os.getenv("UIFORM_API_BASE_URL")
+    retab_api_key = os.getenv("RETAB_API_KEY")
+    retab_api_base_url = os.getenv("RETAB_API_BASE_URL")
 
-    assert uiform_api_key is not None, "UIFORM_API_KEY must be set in environment"
-    assert uiform_api_base_url is not None, "UIFORM_API_BASE_URL must be set in environment"
+    assert retab_api_key is not None, "RETAB_API_KEY must be set in environment"
+    assert retab_api_base_url is not None, "RETAB_API_BASE_URL must be set in environment"
 
     return EnvConfig(
-        uiform_api_key=uiform_api_key,
-        uiform_api_base_url=uiform_api_base_url,
+        retab_api_key=retab_api_key,
+        retab_api_base_url=retab_api_base_url,
     )
 
 
 @pytest.fixture(scope="session")
 def base_url(api_keys: EnvConfig) -> str:
-    return api_keys.uiform_api_base_url
+    return api_keys.retab_api_base_url
 
 
 @pytest.fixture(scope="session")
-def uiform_api_key(api_keys: EnvConfig) -> str:
-    return api_keys.uiform_api_key
+def retab_api_key(api_keys: EnvConfig) -> str:
+    return api_keys.retab_api_key
 
 
 @pytest.fixture(scope="function")
-def sync_client(api_keys: EnvConfig) -> UiForm:
-    return UiForm(
-        api_key=api_keys.uiform_api_key,
-        base_url=api_keys.uiform_api_base_url,
+def sync_client(api_keys: EnvConfig) -> Retab:
+    return Retab(
+        api_key=api_keys.retab_api_key,
+        base_url=api_keys.retab_api_base_url,
         max_retries=0,
     )
 
 
 @pytest.fixture(scope="function")
-def async_client(api_keys: EnvConfig) -> AsyncUiForm:
-    return AsyncUiForm(
-        api_key=api_keys.uiform_api_key,
-        base_url=api_keys.uiform_api_base_url,
+def async_client(api_keys: EnvConfig) -> AsyncRetab:
+    return AsyncRetab(
+        api_key=api_keys.retab_api_key,
+        base_url=api_keys.retab_api_base_url,
         max_retries=0,
     )
 

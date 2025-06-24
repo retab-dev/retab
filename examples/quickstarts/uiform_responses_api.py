@@ -1,5 +1,5 @@
 # ---------------------------------------------
-## Full example: Use UiForm with Responses API implementation compatible with OpenAI's Responses API
+## Full example: Use Retab with Responses API implementation compatible with OpenAI's Responses API
 # ---------------------------------------------
 
 import os
@@ -8,14 +8,14 @@ from pydantic import BaseModel, Field
 
 from dotenv import load_dotenv
 
-from uiform import UiForm, Schema
-from uiform._utils.json_schema import filter_auxiliary_fields_json
+from retab import Retab, Schema
+from retab._utils.json_schema import filter_auxiliary_fields_json
 
 # Load environment variables
 load_dotenv()
 
-uiform_api_key = os.getenv("UIFORM_API_KEY")
-assert uiform_api_key, "Missing UIFORM_API_KEY"
+retab_api_key = os.getenv("RETAB_API_KEY")
+assert retab_api_key, "Missing RETAB_API_KEY"
 
 
 # 1. Define schema using Pydantic model for parse() method
@@ -50,9 +50,9 @@ model = "gpt-4o-2024-08-06"
 modality = "native"
 temperature = 0.0
 
-# UiForm Setup
-uiclient = UiForm(api_key=uiform_api_key)
-doc_msg = uiclient.documents.create_messages(
+# Retab Setup
+reclient = Retab(api_key=retab_api_key)
+doc_msg = reclient.documents.create_messages(
     document="../../assets/calendar_event.xlsx",
     modality=modality,
     image_resolution_dpi=96,
@@ -60,9 +60,9 @@ doc_msg = uiclient.documents.create_messages(
 )
 schema_obj = Schema(json_schema=json_schema)
 
-# Example 1: Use the UiForm's responses.create() method
+# Example 1: Use the Retab's responses.create() method
 input_messages = schema_obj.openai_responses_input + doc_msg.openai_responses_input
-response = uiclient.consensus.responses.create(
+response = reclient.consensus.responses.create(
     model=model,
     temperature=temperature,
     input=input_messages,
@@ -75,8 +75,8 @@ print(f"Output text: {response.output_text}")
 extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(response.output_text))
 print(extraction.model_dump_json(indent=2))
 
-# Example 2: Use the UiForm's responses.parse() method with Pydantic model
-response = uiclient.consensus.responses.parse(
+# Example 2: Use the Retab's responses.parse() method with Pydantic model
+response = reclient.consensus.responses.parse(
     model=model, temperature=temperature, input=doc_msg.openai_responses_input, text_format=CalendarEvent, instructions="Extract the calendar event information from the document."
 )
 
@@ -87,7 +87,7 @@ extraction = CalendarEvent.model_validate_json(response.output_text)
 print(extraction.model_dump_json(indent=2))
 
 # Example 3: Working with plain text input
-response = uiclient.consensus.responses.create(
+response = reclient.consensus.responses.create(
     model=model,
     temperature=temperature,
     input="Meeting with John on June 15th at 3pm",

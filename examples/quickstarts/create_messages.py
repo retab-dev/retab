@@ -1,24 +1,24 @@
 # ---------------------------------------------
-## Quick example: Summarize a document using UiForm + OpenAI, without a schema.
+## Quick example: Summarize a document using Retab + OpenAI, without a schema.
 # ---------------------------------------------
 
 import os
 
 from dotenv import load_dotenv
-from uiform import UiForm
+from retab import Retab
 
 # Load environment variables
 load_dotenv()
 
 api_key = os.getenv("OPENAI_API_KEY")
-uiform_api_key = os.getenv("UIFORM_API_KEY")
+retab_api_key = os.getenv("RETAB_API_KEY")
 
 assert api_key, "Missing OPENAI_API_KEY"
-assert uiform_api_key, "Missing UIFORM_API_KEY"
+assert retab_api_key, "Missing RETAB_API_KEY"
 
-# UiForm Setup
-uiclient = UiForm(api_key=uiform_api_key)
-doc_msg = uiclient.documents.create_messages(
+# Retab Setup
+reclient = Retab(api_key=retab_api_key)
+doc_msg = reclient.documents.create_messages(
     document="../../assets/booking_confirmation.jpg",
     modality="native", 
     image_resolution_dpi=96,

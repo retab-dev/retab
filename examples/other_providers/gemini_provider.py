@@ -1,5 +1,5 @@
 # ---------------------------------------------
-## Example using Gemini API with UiForm to extract structured data from a document.
+## Example using Gemini API with Retab to extract structured data from a document.
 # ---------------------------------------------
 
 import os
@@ -8,15 +8,15 @@ from dotenv import load_dotenv
 from openai import OpenAI  # Still using OpenAI interface structure
 from pydantic import BaseModel, ConfigDict, Field
 
-from uiform import Schema, UiForm
+from retab import Schema, Retab
 
 # Load environment variables
 load_dotenv()
 gemini_api_key = os.getenv("GEMINI_API_KEY")
-uiform_api_key = os.getenv("UIFORM_API_KEY")
+retab_api_key = os.getenv("RETAB_API_KEY")
 
 assert gemini_api_key, "Missing GEMINI_API_KEY"
-assert uiform_api_key, "Missing UIFORM_API_KEY"
+assert retab_api_key, "Missing RETAB_API_KEY"
 
 
 # Define schema
@@ -26,9 +26,9 @@ class CalendarEvent(BaseModel):
     date: str = Field(..., description="Date in ISO 8601", json_schema_extra={"X-ReasoningPrompt": "Infer the date from vague formats like 'next week' or 'tomorrow'."})
 
 
-# UiForm setup
-uiclient = UiForm(api_key=uiform_api_key)
-doc_msg = uiclient.documents.create_messages(document="../../assets/booking_confirmation.jpg")
+# Retab setup
+reclient = Retab(api_key=retab_api_key)
+doc_msg = reclient.documents.create_messages(document="../../assets/booking_confirmation.jpg")
 schema_obj = Schema(pydantic_model=CalendarEvent)
 
 # Gemini-compatible OpenAI-like client

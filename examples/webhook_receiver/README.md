@@ -1,6 +1,6 @@
 # 📬 Webhook Receiver Example
 
-We show here a minimal **FastAPI server** that receives structured outputs from UiForm document automations.
+We show here a minimal **FastAPI server** that receives structured outputs from Retab document automations.
 
 It uses **ngrok** to expose a local server for webhook testing.
 

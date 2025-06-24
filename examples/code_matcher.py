@@ -104,7 +104,7 @@ def example_usage() -> None:
 
     query = {
         'Code Client': 'UIFOR001',
-        'Nom': 'UiForm',
+        'Nom': 'Retab',
         'Adresse 1': '5 Parvis Alan Turing',
         'Adresse 2': '',
         'CP': 75013,

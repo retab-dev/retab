@@ -4,14 +4,14 @@ import os
 import nanoid  # type: ignore
 import pytest
 
-from uiform import UiForm
+from retab import Retab
 
 
 @pytest.mark.asyncio
-async def test_mailboxes_crud(sync_client: UiForm, company_json_schema: dict[str, Any], booking_confirmation_file_path_1: str) -> None:
+async def test_mailboxes_crud(sync_client: Retab, company_json_schema: dict[str, Any], booking_confirmation_file_path_1: str) -> None:
     test_idx = nanoid.generate().lower()
     name = f"test_mailbox_{test_idx}"
-    email_address = f"bert2_{test_idx}@{os.getenv('EMAIL_DOMAIN', 'mailbox.uiform.com')}"
+    email_address = f"bert2_{test_idx}@{os.getenv('EMAIL_DOMAIN', 'mailbox.retab.dev')}"
     webhook_url = "http://localhost:4000/product"
     model = "gpt-4o-mini"
 
