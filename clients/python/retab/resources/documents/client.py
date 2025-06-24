@@ -5,16 +5,32 @@ from typing import Any
 import PIL.Image
 from pydantic import HttpUrl
 from pydantic_core import PydanticUndefined
+from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.json_schema import load_json_schema
+from ..._utils.json_schema import load_json_schema, filter_auxiliary_fields_json
 from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
+from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
+from ...types.documents.extractions import DocumentExtractRequest, UiParsedChatCompletion
 from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
+from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest
 from .extractions import AsyncExtractions, Extractions
+
+
+def maybe_parse_to_pydantic(schema: Schema, response: UiParsedChatCompletion, allow_partial: bool = False) -> UiParsedChatCompletion:
+    if response.choices[0].message.content:
+        try:
+            if allow_partial:
+                response.choices[0].message.parsed = schema._partial_pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
+            else:
+                response.choices[0].message.parsed = schema.pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
+        except Exception:
+            pass
+    return response
 
 
 class BaseDocumentsMixin:
@@ -75,7 +91,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.extractions = Extractions(client=client)
+        self.extractions_api = Extractions(client=client)
         # self.batch = Batch(client=client)
 
     def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
@@ -168,13 +184,98 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
+    def extract(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        model: str,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        idempotency_key: str | None = None,
+        store: bool = False,
+    ) -> UiParsedChatCompletion:
+        """
+        Process one or more documents using the Retab API for structured data extraction.
+        
+        This method provides a direct interface to document extraction functionality,
+        intended to replace the current `.extractions.parse()` pattern.
+
+        Args:
+            json_schema: JSON schema defining the expected data structure
+            model: The AI model to use for processing
+            document: Single document to process (use either this or documents, not both)
+            documents: List of documents to process (use either this or document, not both)
+            image_resolution_dpi: Optional image resolution DPI
+            browser_canvas: Optional browser canvas size
+            temperature: Model temperature setting (0-1)
+            modality: Modality of the document (e.g., native)
+            reasoning_effort: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus extractions to perform
+            idempotency_key: Idempotency key for request
+            store: Whether to store the document in the Retab database
+            
+        Returns:
+            UiParsedChatCompletion: Parsed response from the API
+            
+        Raises:
+            ValueError: If neither document nor documents is provided, or if both are provided
+            HTTPException: If the request fails
+        """
+        assert_valid_model_extraction(model)
+
+        json_schema = load_json_schema(json_schema)
+
+        # Handle both single document and multiple documents
+        if document is not None and documents is not None:
+            raise ValueError("Cannot provide both 'document' and 'documents' parameters. Use either one.")
+
+        # Convert single document to documents list for consistency
+        if document is not None:
+            processed_documents = [prepare_mime_document(document)]
+        elif documents is not None:
+            processed_documents = [prepare_mime_document(doc) for doc in documents]
+        else:
+            raise ValueError("Must provide either 'document' or 'documents' parameter.")
+
+        # Validate DocumentAPIRequest data (raises exception if invalid)
+        request = DocumentExtractRequest(
+            json_schema=json_schema,
+            documents=processed_documents,
+            model=model,
+            temperature=temperature,
+            stream=False,
+            modality=modality,
+            store=store,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+        )
+
+        prepared_request = PreparedRequest(
+            method="POST", 
+            url="/v1/documents/extract", 
+            data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), 
+            idempotency_key=idempotency_key
+        )
+        
+        response = self._client._prepared_request(prepared_request)
+
+        schema = Schema(json_schema=load_json_schema(json_schema))
+        return maybe_parse_to_pydantic(schema, UiParsedChatCompletion.model_validate(response))
+
 
 class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper for asynchronous usage."""
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.extractions = AsyncExtractions(client=client)
+        self.extractions_api = AsyncExtractions(client=client)
 
     async def create_messages(
         self,
@@ -267,3 +368,88 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         response = await self._client._prepared_request(request)
         mime_response = MIMEData.model_validate(response["document"])
         return convert_mime_data_to_pil_image(mime_response)
+
+    async def extract(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        model: str,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
+        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = PydanticUndefined,  # type: ignore[assignment]
+        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
+        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        idempotency_key: str | None = None,
+        store: bool = False,
+    ) -> UiParsedChatCompletion:
+        """
+        Process one or more documents using the Retab API for structured data extraction asynchronously.
+        
+        This method provides a direct interface to document extraction functionality,
+        intended to replace the current `.extractions.parse()` pattern.
+
+        Args:
+            json_schema: JSON schema defining the expected data structure
+            model: The AI model to use for processing
+            document: Single document to process (use either this or documents, not both)
+            documents: List of documents to process (use either this or document, not both)
+            image_resolution_dpi: Optional image resolution DPI
+            browser_canvas: Optional browser canvas size
+            temperature: Model temperature setting (0-1)
+            modality: Modality of the document (e.g., native)
+            reasoning_effort: The effort level for the model to reason about the input data
+            n_consensus: Number of consensus extractions to perform
+            idempotency_key: Idempotency key for request
+            store: Whether to store the document in the Retab database
+            
+        Returns:
+            UiParsedChatCompletion: Parsed response from the API
+            
+        Raises:
+            ValueError: If neither document nor documents is provided, or if both are provided
+            HTTPException: If the request fails
+        """
+        assert_valid_model_extraction(model)
+
+        json_schema = load_json_schema(json_schema)
+
+        # Handle both single document and multiple documents
+        if document is not None and documents is not None:
+            raise ValueError("Cannot provide both 'document' and 'documents' parameters. Use either one.")
+
+        # Convert single document to documents list for consistency
+        if document is not None:
+            processed_documents = [prepare_mime_document(document)]
+        elif documents is not None:
+            processed_documents = [prepare_mime_document(doc) for doc in documents]
+        else:
+            raise ValueError("Must provide either 'document' or 'documents' parameter.")
+
+        # Validate DocumentAPIRequest data (raises exception if invalid)
+        request = DocumentExtractRequest(
+            json_schema=json_schema,
+            documents=processed_documents,
+            model=model,
+            temperature=temperature,
+            stream=False,
+            modality=modality,
+            store=store,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+        )
+
+        prepared_request = PreparedRequest(
+            method="POST", 
+            url="/v1/documents/extract", 
+            data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), 
+            idempotency_key=idempotency_key
+        )
+        
+        response = await self._client._prepared_request(prepared_request)
+
+        schema = Schema(json_schema=load_json_schema(json_schema))
+        return maybe_parse_to_pydantic(schema, UiParsedChatCompletion.model_validate(response))
