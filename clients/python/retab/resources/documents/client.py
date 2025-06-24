@@ -91,7 +91,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.extractions_api = Extractions(client=client)
+        #self.extractions_api = Extractions(client=client)
         # self.batch = Batch(client=client)
 
     def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
@@ -275,7 +275,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.extractions_api = AsyncExtractions(client=client)
+        #self.extractions_api = AsyncExtractions(client=client)
 
     async def create_messages(
         self,
