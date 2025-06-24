@@ -9,7 +9,7 @@
 
 Made with love by the team at [Retab](https://retab.dev) 🤍.
 
-[Our Website](https://retab.dev) | [Documentation](https://docs.retab.dev/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabAPI)
+[Our Website](https://retab.dev) | [Documentation](https://docs.retab.dev/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabdev)
 
 
 </div>
@@ -352,12 +352,12 @@ You can view minimal notebooks that demonstrate how to use Retab to process docu
 
 Let's create the future of document processing together!
 
-Join our [discord community](https://discord.com/invite/vc5tWRPqag) to share tips, discuss best practices, and showcase what you build. Or just [tweet](https://x.com/retabAPI) at us.
+Join our [discord community](https://discord.com/invite/vc5tWRPqag) to share tips, discuss best practices, and showcase what you build. Or just [tweet](https://x.com/retabdev) at us.
 
 We can't wait to see how you'll use Retab.
 
 - [Discord](https://discord.com/invite/vc5tWRPqag)
-- [Twitter](https://x.com/retabAPI)
+- [Twitter](https://x.com/retabdev)
 
 
 ## Roadmap
