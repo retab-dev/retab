@@ -1,0 +1,22 @@
+# grok3-family
+- model: "grok-3-beta"
+  pricing:
+    text:
+      prompt: 3
+      completion: 15
+    audio: null
+  capabilities:
+    modalities: ["text"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "structured_outputs"]
+
+- model: "grok-3-mini-beta"
+  pricing:
+    text:
+      prompt: 0.3
+      completion: 0.5
+    audio: null
+  capabilities:
+    modalities: ["text"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "structured_outputs"]
