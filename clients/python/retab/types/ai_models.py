@@ -8,6 +8,8 @@ from .inference_settings import InferenceSettings
 AIProvider = Literal["OpenAI", "Gemini", "xAI", "Retab"]  # , "Anthropic", "xAI"]
 OpenAICompatibleProvider = Literal["OpenAI", "xAI"]  # , "xAI"]
 GeminiModel = Literal[
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
     "gemini-2.5-pro-preview-06-05",
     "gemini-2.5-pro-preview-05-06",
     "gemini-2.5-flash-preview-05-20",
