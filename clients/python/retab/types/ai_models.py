@@ -1,10 +1,10 @@
 import datetime
 from typing import List, Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from retab.types.inference_settings import InferenceSettings
 
 
-AIProvider = Literal["OpenAI", "Gemini", "xAI", "Retab"]
+AIProvider = Literal["OpenAI", "Anthropic", "Gemini", "xAI", "Retab"]
 OpenAICompatibleProvider = Literal["OpenAI", "xAI"]
 GeminiModel = Literal[
     "gemini-2.5-pro",
@@ -20,7 +20,12 @@ GeminiModel = Literal[
 ]
 
 AnthropicModel = Literal[
-    "claude-3-5-sonnet-latest", "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"
+    "claude-3-5-sonnet-latest",
+    "claude-3-5-sonnet-20241022",
+    # "claude-3-5-haiku-20241022",
+    "claude-3-opus-20240229",
+    "claude-3-sonnet-20240229",
+    "claude-3-haiku-20240307",
 ]
 OpenAIModel = Literal[
     "gpt-4o",
@@ -36,13 +41,13 @@ OpenAIModel = Literal[
     "gpt-4o-2024-08-06",
     "gpt-4o-2024-05-13",
     "gpt-4o-mini-2024-07-18",
-    "o3-mini",
-    "o3-mini-2025-01-31",
+    # "o3-mini",
+    # "o3-mini-2025-01-31",
     "o1",
     "o1-2024-12-17",
-    "o1-preview-2024-09-12",
-    "o1-mini",
-    "o1-mini-2024-09-12",
+    # "o1-preview-2024-09-12",
+    # "o1-mini",
+    # "o1-mini-2024-09-12",
     "o3",
     "o3-2025-04-16",
     "o4-mini",
@@ -54,7 +59,7 @@ OpenAIModel = Literal[
     "gpt-4o-mini-audio-preview-2024-12-17",
     "gpt-4o-mini-realtime-preview-2024-12-17",
 ]
-xAI_Model = Literal["grok-3-beta", "grok-3-mini-beta"]
+xAI_Model = Literal["grok-3", "grok-3-mini"]
 RetabModel = Literal["auto-large", "auto-small"]
 PureLLMModel = Literal[OpenAIModel, AnthropicModel, xAI_Model, GeminiModel, RetabModel]
 LLMModel = Literal[PureLLMModel, "human"]
@@ -128,7 +133,7 @@ EndpointType = Literal[
 ]
 
 # Define supported features
-FeatureType = Literal["streaming", "function_calling", "structured_outputs", "distillation", "fine_tuning", "predicted_outputs"]
+FeatureType = Literal["streaming", "function_calling", "structured_outputs", "distillation", "fine_tuning", "predicted_outputs", "schema_generation"]
 
 
 class ModelCapabilities(BaseModel):
@@ -142,6 +147,11 @@ class ModelCapabilities(BaseModel):
     features: List[FeatureType]
 
 
+class ModelCardPermissions(BaseModel):
+    show_in_free_picker: bool = False
+    show_in_paid_picker: bool = False
+
+
 class ModelCard(BaseModel):
     """
     Model card that includes pricing and capabilities.
@@ -152,6 +162,11 @@ class ModelCard(BaseModel):
     capabilities: ModelCapabilities
     temperature_support: bool = True
     reasoning_effort_support: bool = False
+    permissions: ModelCardPermissions = ModelCardPermissions()
 
-
-
+    @computed_field
+    @property
+    def is_finetuned(self) -> bool:
+        if "ft:" in self.model:
+            return True
+        return False

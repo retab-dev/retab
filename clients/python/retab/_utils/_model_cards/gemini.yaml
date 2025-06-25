@@ -10,18 +10,33 @@
     modalities: ["text", "image"]
     endpoints: ["chat_completions"]
     features: ["streaming", "function_calling", "structured_outputs"]
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
 
 - model: "gemini-2.5-pro-exp-03-25"
   inherits: "gemini-2.5-pro"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gemini-2.5-pro-preview-06-05"
   inherits: "gemini-2.5-pro"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gemini-2.5-pro-preview-05-06"
   inherits: "gemini-2.5-pro"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gemini-2.5-pro-preview-03-25"
   inherits: "gemini-2.5-pro"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gemini-2.5-flash"
   pricing:
@@ -35,6 +50,9 @@
     modalities: ["text", "image", "audio"]
     endpoints: ["chat_completions"]
     features: ["streaming", "function_calling", "structured_outputs"]
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
 
 - model: "gemini-2.5-flash-preview-05-20"
   pricing:

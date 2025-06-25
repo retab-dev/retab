@@ -4,7 +4,7 @@ from typing import get_args
 
 from ..types.ai_models import AIProvider, GeminiModel, OpenAIModel, xAI_Model, RetabModel, PureLLMModel, ModelCard
 
-MODEL_CARDS_DIR = os.path.join(os.path.dirname(__file__), "model_cards")
+MODEL_CARDS_DIR = os.path.join(os.path.dirname(__file__), "_model_cards")
 
 def merge_model_cards(base: dict, override: dict) -> dict:
     result = base.copy()
@@ -74,7 +74,16 @@ def get_model_card(model: str) -> ModelCard:
     """
     model_name = get_model_from_model_id(model)
     if model_name in model_cards_dict:
-        return model_cards_dict[model_name]
+        model_card = ModelCard(**model_cards_dict[model_name].model_dump())
+        if model_name != model:
+            # Fine-tuned model -> Change the name
+            model_card.model = model
+            # Remove the fine-tuning feature (if exists)
+            try:
+                model_card.capabilities.features.remove("fine_tuning")
+            except ValueError:
+                pass
+        return model_card
 
     raise ValueError(f"No model card found for model: {model_name}")
 

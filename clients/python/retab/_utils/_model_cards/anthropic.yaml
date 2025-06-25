@@ -9,21 +9,15 @@
     modalities: ["text", "image"]
     endpoints: ["chat_completions"]
     features: ["streaming", "function_calling"]
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
 
 - model: "claude-3-5-sonnet-20241022"
   inherits: "claude-3-5-sonnet-latest"
-
-- model: "claude-3-5-haiku-20241022"
-  pricing:
-    text:
-      prompt: 0.80
-      cached_discount: 0.5
-      completion: 4.00
-    audio: null
-  capabilities:
-    modalities: ["text"]
-    endpoints: ["chat_completions"]
-    features: ["streaming", "function_calling"]
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "claude-3-opus-20240229"
   pricing:
@@ -36,6 +30,9 @@
     modalities: ["text", "image"]
     endpoints: ["chat_completions"]
     features: ["streaming", "function_calling"]
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
 
 - model: "claude-3-sonnet-20240229"
   pricing:
