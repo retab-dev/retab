@@ -18,7 +18,7 @@ from pydantic_core import PydanticUndefined
 from tqdm import tqdm
 
 from .._resource import AsyncAPIResource, SyncAPIResource
-from .._utils.ai_models import assert_valid_model_extraction, find_provider_from_model
+from .._utils.ai_models import assert_valid_model_extraction, get_provider_for_model
 from .._utils.chat import convert_to_anthropic_format, convert_to_openai_format, separate_messages
 from .._utils.display import Metrics, display_metrics, process_dataset_and_compute_metrics
 from .._utils.json_schema import load_json_schema
@@ -278,7 +278,7 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         Returns:
             A tuple of (client instance, provider type string)
         """
-        provider = find_provider_from_model(model)
+        provider = get_provider_for_model(model)
 
         if provider == "OpenAI":
             return OpenAI(api_key=self._client.headers["OpenAI-Api-Key"]), provider

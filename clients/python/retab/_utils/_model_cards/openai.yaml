@@ -1,0 +1,316 @@
+
+# Reasoning models
+# o1 family
+- model: "o1"
+  pricing:
+    text:
+      prompt: 15.00
+      cached_discount: 0.5
+      completion: 60.00
+    audio: null
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+  temperature_support: false
+  reasoning_effort_support: true
+
+- model: "o1-2024-12-17"
+  inherits: "o1"
+
+- model: "o1-preview-2024-09-12"
+  inherits: "o1"
+  capabilities:
+    modalities: ["text"]
+
+# o1-mini family
+- model: "o1-mini"
+  pricing:
+    text:
+      prompt: 1.10
+      cached_discount: 0.5
+      completion: 4.40
+    audio: null
+  capabilities:
+    modalities: ["text"]
+    endpoints: ["chat_completions", "responses", "assistants"]
+    features: ["streaming"]
+  temperature_support: false
+  reasoning_effort_support: true
+
+- model: "o1-mini-2024-09-12"
+  inherits: "o1-mini"
+
+# o3 family
+- model: "o3"
+  pricing:
+    text:
+      prompt: 2.0
+      cached_discount: 0.25
+      completion: 8.0
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+  temperature_support: false
+  reasoning_effort_support: true
+
+- model: "o3-2025-04-16"
+  inherits: "o3"
+
+# o3-mini family
+
+- model: "o3-mini"
+  pricing:
+    text:
+      prompt: 1.10
+      cached_discount: 0.5
+      completion: 4.40
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+  temperature_support: false
+  reasoning_effort_support: true
+
+- model: "o3-mini-2025-01-31"
+  inherits: "o3-mini"
+
+
+# o4-mini family
+- model: "o4-mini"
+  pricing:
+    text:
+      prompt: 1.10
+      cached_discount: 0.25
+      completion: 4.40
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+  temperature_support: false
+  reasoning_effort_support: true
+
+- model: "o4-mini-2025-04-16"
+  inherits: "o4-mini"
+
+# Chat models
+# gpt-4.1 family
+- model: "gpt-4.1"
+  pricing:
+    text:
+      prompt: 2.00
+      cached_discount: 0.25
+      completion: 8.00
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+  temperature_support: true
+  reasoning_effort_support: false
+
+- model: "gpt-4.1-2025-04-14"
+  inherits: "gpt-4.1"
+
+- model: "gpt-4.1-mini"
+  pricing:
+    text:
+      prompt: 0.40
+      cached_discount: 0.25
+      completion: 1.60
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+  temperature_support: true
+  reasoning_effort_support: false
+
+- model: "gpt-4.1-mini-2025-04-14"
+  inherits: "gpt-4.1-mini"
+
+- model: "gpt-4.1-nano"
+  pricing:
+    text:
+      prompt: 0.10
+      cached_discount: 0.25
+      completion: 0.40
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+  temperature_support: true
+  reasoning_effort_support: false
+
+
+- model: "gpt-4.1-nano-2025-04-14"
+  inherits: "gpt-4.1-nano"
+
+# gpt-4o family
+- model: "chatgpt-4o-latest"
+  pricing:
+    text:
+      prompt: 2.50
+      cached_discount: 0.5
+      completion: 10.00
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch", "fine_tuning"]
+    features: ["streaming", "function_calling", "structured_outputs", "fine_tuning", "distillation", "predicted_outputs"]
+  temperature_support: true
+
+- model: "gpt-4o"
+  inherits: "chatgpt-4o-latest"
+
+- model: "gpt-4o-2024-08-06"
+  inherits: "chatgpt-4o-latest"
+
+- model: "gpt-4o-2024-11-20"
+  inherits: "chatgpt-4o-latest"
+
+- model: "gpt-4o-2024-05-13"
+  pricing:
+    text:
+      prompt: 5.00
+      cached_discount: 0.5
+      completion: 15.00
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch", "fine_tuning"]
+    features: ["streaming", "function_calling", "structured_outputs", "fine_tuning", "distillation", "predicted_outputs"]
+  temperature_support: true
+
+# gpt-4o-audio family
+- model: "gpt-4o-audio-preview-2024-12-17"
+  pricing:
+    text:
+      prompt: 2.50
+      cached_discount: 0.5
+      completion: 10.00
+    audio:
+      prompt: 40.00
+      cached_discount: 0.2
+      completion: 80.00
+  capabilities:
+    modalities: ["text", "audio"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling"]
+  temperature_support: true
+
+- model: "gpt-4o-audio-preview-2024-10-01"
+  pricing:
+    text:
+      prompt: 2.50
+      cached_discount: 0.5
+      completion: 10.00
+    audio:
+      prompt: 100.00
+      cached_discount: 0.2
+      completion: 200.00
+  capabilities:
+    modalities: ["text", "audio"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling"]
+  temperature_support: true
+
+- model: "gpt-4o-realtime-preview-2024-12-17"
+  pricing:
+    text:
+      prompt: 5.00
+      cached_discount: 0.5
+      completion: 20.00
+    audio:
+      prompt: 40.00
+      cached_discount: 0.2
+      completion: 80.00
+  capabilities:
+    modalities: ["text", "audio"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling"]
+  temperature_support: true
+
+- model: "gpt-4o-realtime-preview-2024-10-01"
+  pricing:
+    text:
+      prompt: 5.00
+      cached_discount: 0.5
+      completion: 20.00
+    audio:
+      prompt: 100.00
+      cached_discount: 0.2
+      completion: 200.00
+  capabilities:
+    modalities: ["text", "audio"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling"]
+  temperature_support: true
+
+# gpt-4o-mini family
+- model: "gpt-4o-mini"
+  pricing:
+    text:
+      prompt: 0.15
+      cached_discount: 0.5
+      completion: 0.60
+    audio: null
+    ft_price_hike: 2.0
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch", "fine_tuning"]
+    features: ["streaming", "function_calling", "structured_outputs", "fine_tuning"]
+  temperature_support: true
+
+- model: "gpt-4o-mini-2024-07-18"
+  inherits: "gpt-4o-mini"
+
+# gpt-4o-mini-audio family
+- model: "gpt-4o-mini-audio-preview-2024-12-17"
+  pricing:
+    text:
+      prompt: 0.15
+      cached_discount: 0.5
+      completion: 0.60
+    audio:
+      prompt: 10.00
+      cached_discount: 0.2
+      completion: 20.00
+    ft_price_hike: 2.0
+  capabilities:
+    modalities: ["text", "audio"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling"]
+  temperature_support: true
+
+- model: "gpt-4o-mini-realtime-preview-2024-12-17"
+  pricing:
+    text:
+      prompt: 0.60
+      cached_discount: 0.5
+      completion: 2.40
+    audio:
+      prompt: 10.00
+      cached_discount: 0.2
+      completion: 20.00
+    ft_price_hike: 2.0
+  capabilities:
+    modalities: ["text", "audio"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling"]
+  temperature_support: true
+
+

@@ -4,7 +4,8 @@ from openai.types.completion_usage import CompletionUsage
 from pydantic import BaseModel, Field
 
 # https://platform.openai.com/docs/guides/prompt-caching
-from ...types.ai_models import Amount, Pricing, get_model_card
+from ...types.ai_models import Amount, Pricing
+from ..._utils.ai_models import get_model_card
 
 # ─── PRICING MODELS ────────────────────────────────────────────────────────────
 

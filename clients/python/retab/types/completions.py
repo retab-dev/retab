@@ -7,7 +7,7 @@ from openai.types.shared_params.reasoning import Reasoning
 from openai.types.shared_params.response_format_json_schema import ResponseFormatJSONSchema
 from pydantic import BaseModel, ConfigDict, Field
 
-from .._utils.ai_models import find_provider_from_model
+from .._utils.ai_models import get_provider_for_model
 from .ai_models import AIProvider
 from .chat import ChatCompletionRetabMessage
 
@@ -34,7 +34,7 @@ class RetabChatCompletionsRequest(BaseModel):
         Returns:
             AIProvider: The AI provider corresponding to the given model.
         """
-        return find_provider_from_model(self.model)
+        return get_provider_for_model(self.model)
 
 
 class RetabChatCompletionsParseRequest(BaseModel):
@@ -59,7 +59,7 @@ class RetabChatCompletionsParseRequest(BaseModel):
         Returns:
             AIProvider: The AI provider corresponding to the given model.
         """
-        return find_provider_from_model(self.model)
+        return get_provider_for_model(self.model)
 
 
 class RetabChatResponseCreateRequest(BaseModel):
@@ -87,4 +87,4 @@ class RetabChatResponseCreateRequest(BaseModel):
         Returns:
             AIProvider: The AI provider corresponding to the given model.
         """
-        return find_provider_from_model(self.model)
+        return get_provider_for_model(self.model)

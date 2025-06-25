@@ -1,74 +1,112 @@
+import os
+import yaml
 from typing import get_args
 
-from ..types.ai_models import AIProvider, GeminiModel, OpenAIModel, xAI_Model
+from ..types.ai_models import AIProvider, GeminiModel, OpenAIModel, xAI_Model, RetabModel, PureLLMModel, ModelCard
+
+MODEL_CARDS_DIR = os.path.join(os.path.dirname(__file__), "model_cards")
+
+def merge_model_cards(base: dict, override: dict) -> dict:
+    result = base.copy()
+    for key, value in override.items():
+        if key == "inherits":
+            continue
+        if isinstance(value, dict) and key in result:
+            result[key] = merge_model_cards(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+def load_model_cards(yaml_file: str) -> list[ModelCard]:
+    raw_cards = yaml.safe_load(open(yaml_file))
+    name_to_card = {c["model"]: c for c in raw_cards if "inherits" not in c}
+
+    final_cards = []
+    for card in raw_cards:
+        if "inherits" in card:
+            parent = name_to_card[card["inherits"]]
+            merged = merge_model_cards(parent, card)
+            final_cards.append(ModelCard(**merged))
+        else:
+            final_cards.append(ModelCard(**card))
+    return final_cards
+
+# Load all model cards
+model_cards = sum([
+    load_model_cards(os.path.join(MODEL_CARDS_DIR, "openai.yaml")),
+    load_model_cards(os.path.join(MODEL_CARDS_DIR, "anthropic.yaml")),
+    load_model_cards(os.path.join(MODEL_CARDS_DIR, "xai.yaml")),
+    load_model_cards(os.path.join(MODEL_CARDS_DIR, "gemini.yaml")),
+    load_model_cards(os.path.join(MODEL_CARDS_DIR, "auto.yaml")),
+], [])
+model_cards_dict = {card.model: card for card in model_cards}
 
 
-def find_provider_from_model(model: str) -> AIProvider:
-    if model in get_args(OpenAIModel):
+# Validate that model cards
+all_model_names = set(model_cards_dict.keys())
+if all_model_names.symmetric_difference(set(get_args(PureLLMModel))):
+    raise ValueError(f"Mismatch between model cards and PureLLMModel type: {all_model_names.symmetric_difference(set(get_args(PureLLMModel)))}")
+
+
+def get_model_from_model_id(model_id: str) -> str:
+    """
+    Get the model name from the model id.
+    """
+    if model_id.startswith("ft:"):
+        parts = model_id.split(":")
+        return parts[1]
+    else:
+        return model_id
+
+
+def get_model_card(model: str) -> ModelCard:
+    """
+    Get the model card for a specific model.
+
+    Args:
+        model: The model name to look up
+
+    Returns:
+        The ModelCard for the specified model
+
+    Raises:
+        ValueError: If no model card is found for the specified model
+    """
+    model_name = get_model_from_model_id(model)
+    if model_name in model_cards_dict:
+        return model_cards_dict[model_name]
+
+    raise ValueError(f"No model card found for model: {model_name}")
+
+
+def get_provider_for_model(model_id: str) -> AIProvider:
+    """
+    Determine the AI provider associated with the given model identifier.
+    Returns one of: "Anthropic", "xAI", "OpenAI", "Gemini", "Retab" or None if unknown.
+    """
+    model_name = get_model_from_model_id(model_id)
+    # if model_name in get_args(AnthropicModel):
+    #     return "Anthropic"
+    # if model_name in get_args(xAI_Model):
+    #     return "xAI"
+    if model_name in get_args(OpenAIModel):
         return "OpenAI"
-    elif ":" in model:
-        # Handle fine-tuned models
-        ft, base_model, model_id = model.split(":", 2)
-        if base_model in get_args(OpenAIModel):
-            return "OpenAI"
-    # elif model in get_args(AnthropicModel):
-    #    return "Anthropic"
-    elif model in get_args(xAI_Model):
-        return "xAI"
-    elif model in get_args(GeminiModel):
+    if model_name in get_args(GeminiModel):
         return "Gemini"
-    raise ValueError(f"Could not determine AI provider for model: {model}")
+    if model_name in get_args(RetabModel):
+        return "Retab"
+    raise ValueError(f"Unknown model: {model_name}")
 
 
 def assert_valid_model_extraction(model: str) -> None:
-    if model in get_args(OpenAIModel):
-        return
-    elif ":" in model:
-        # Handle fine-tuned models
-        ft, base_model, model_id = model.split(":", 2)
-        if base_model in get_args(OpenAIModel):
-            return
-    # elif model in get_args(AnthropicModel):
-    #    return
-    elif model in get_args(xAI_Model):
-        return
-    elif model in get_args(GeminiModel):
-        return
-    raise ValueError(
-        f"Invalid model for extraction: {model}.\nValid OpenAI models: {get_args(OpenAIModel)}\n"
-        # f"Valid Anthropic models: {get_args(AnthropicModel)}\n"
-        # f"Valid xAI models: {get_args(xAI_Model)}\n"
-        # f"Valid Gemini models: {get_args(GeminiModel)}"
-    )
-
-
-def assert_valid_model_batch_processing(model: str) -> None:
-    """Assert that the model is either a standard OpenAI model or a valid fine-tuned model.
-
-    Valid formats:
-    - Standard model: Must be in OpenAIModel
-    - Fine-tuned model: Must be {base_model}:{id} where base_model is in OpenAIModel
-
-    Raises:
-        ValueError: If the model format is invalid
-    """
-    if model in get_args(OpenAIModel):
-        return
-
-    try:
-        ft, base_model, model_id = model.split(":", 2)
-        if base_model not in get_args(OpenAIModel):
-            raise ValueError(f"Invalid base model in fine-tuned model '{model}'. Base model must be one of: {get_args(OpenAIModel)}")
-        if not model_id or not model_id.strip():
-            raise ValueError(f"Model ID cannot be empty in fine-tuned model '{model}'")
+    try: 
+        get_provider_for_model(model)
     except ValueError:
-        if ":" not in model:
-            raise ValueError(
-                f"Invalid model format: {model}. Must be either:\n"
-                f"1. A standard model: {get_args(OpenAIModel)}\n"
-                f"2. A fine-tuned model in format 'base_model:id' where base_model is one of the standard models"
-            ) from None
-        raise
+        raise ValueError(
+            f"Invalid model for extraction: {model}.\nValid OpenAI models: {get_args(OpenAIModel)}\n"
+            f"Valid xAI models: {get_args(xAI_Model)}\n"
+            f"Valid Gemini models: {get_args(GeminiModel)}"
+        ) from None
 
 
 def assert_valid_model_schema_generation(model: str) -> None:
@@ -81,20 +119,11 @@ def assert_valid_model_schema_generation(model: str) -> None:
     Raises:
         ValueError: If the model format is invalid
     """
-    if model in get_args(OpenAIModel):
+    if get_model_from_model_id(model) in get_args(OpenAIModel):
         return
-
-    try:
-        ft, base_model, model_id = model.split(":", 2)
-        if base_model not in get_args(OpenAIModel):
-            raise ValueError(f"Invalid base model in fine-tuned model '{model}'. Base model must be one of: {get_args(OpenAIModel)}")
-        if not model_id or not model_id.strip():
-            raise ValueError(f"Model ID cannot be empty in fine-tuned model '{model}'")
-    except ValueError:
-        if ":" not in model:
-            raise ValueError(
+    else:
+        raise ValueError(
                 f"Invalid model format: {model}. Must be either:\n"
                 f"1. A standard model: {get_args(OpenAIModel)}\n"
-                f"2. A fine-tuned model in format 'base_model:id' where base_model is one of the standard models"
-            ) from None
-        raise
+                f"2. A fine-tuned model in format 'base_model:id' where base_model is one of the standard openai models"
+            ) from None 

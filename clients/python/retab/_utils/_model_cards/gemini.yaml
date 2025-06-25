@@ -1,0 +1,83 @@
+# gemini-2.5-pro family
+- model: "gemini-2.5-pro"
+  pricing:
+    text:
+      prompt: 1.25
+      cached_discount: 0.25
+      completion: 10.00
+    audio: null
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+
+- model: "gemini-2.5-pro-exp-03-25"
+  inherits: "gemini-2.5-pro"
+
+- model: "gemini-2.5-pro-preview-06-05"
+  inherits: "gemini-2.5-pro"
+
+- model: "gemini-2.5-pro-preview-05-06"
+  inherits: "gemini-2.5-pro"
+
+- model: "gemini-2.5-pro-preview-03-25"
+  inherits: "gemini-2.5-pro"
+
+- model: "gemini-2.5-flash"
+  pricing:
+    text:
+      prompt: 0.30
+      completion: 2.50
+    audio:
+      prompt: 1.00
+      completion: 1000
+  capabilities:
+    modalities: ["text", "image", "audio"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+
+- model: "gemini-2.5-flash-preview-05-20"
+  pricing:
+    text:
+      prompt: 0.15
+      completion: 0.60
+    audio: null
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+
+- model: "gemini-2.5-flash-preview-04-17"
+  inherits: "gemini-2.5-flash-preview-05-20"
+
+
+# gemini-2.0-flash family
+- model: "gemini-2.0-flash"
+  pricing:
+    text:
+      prompt: 0.1
+      cached_discount: 0.25
+      completion: 0.40
+    audio:
+      prompt: 0.7
+      cached_discount: 0.25
+      completion: 1000
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "function_calling", "structured_outputs"]
+  temperature_support: true
+
+- model: "gemini-2.0-flash-lite"
+  pricing:
+    text:
+      prompt: 0.075
+      completion: 0.30
+    audio:
+      prompt: 0.075
+      completion: 1000
+  capabilities:
+    modalities: ["text", "image", "audio"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "structured_outputs"]
+  temperature_support: true
