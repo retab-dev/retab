@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 from ..mime import MIMEData, BaseMIMEData
 from ..browser_canvas import BrowserCanvas
 
+TableParsingFormat = Literal["text", "image", "yaml", "html"]
+
 
 class RetabUsage(BaseModel):
     """Usage information for document processing."""
@@ -17,7 +19,7 @@ class ParseRequest(BaseModel):
 
     document: MIMEData = Field(..., description="Document to parse")
     fast_mode: bool = Field(default=False, description="Use fast mode for parsing (may reduce quality)")
-    table_parsing_format: Literal["html", "json", "yaml", "markdown"] = Field(default="html", description="Format for parsing tables")
+    table_parsing_format: TableParsingFormat = Field(default="html", description="Format for parsing tables")
     image_resolution_dpi: int = Field(default=72, description="DPI for image processing")
     browser_canvas: BrowserCanvas = Field(default="A4", description="Canvas size for document rendering")
 

@@ -13,7 +13,7 @@ from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
 from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
 from ...types.documents.extractions import DocumentExtractRequest, RetabParsedChatCompletion
-from ...types.documents.parse import ParseRequest, ParseResult
+from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
 from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
@@ -90,7 +90,7 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         fast_mode: bool = False,
-        table_parsing_format: Literal["html", "json", "yaml", "markdown"] = "html",
+        table_parsing_format: TableParsingFormat = "html",
         image_resolution_dpi: int = 72,
         browser_canvas: BrowserCanvas = "A4",
         idempotency_key: str | None = None,
@@ -291,7 +291,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         fast_mode: bool = False,
-        table_parsing_format: Literal["html", "json", "yaml", "markdown"] = "html",
+        table_parsing_format: TableParsingFormat = "html",
         image_resolution_dpi: int = 72,
         browser_canvas: BrowserCanvas = "A4",
         idempotency_key: str | None = None,
@@ -513,7 +513,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         fast_mode: bool = False,
-        table_parsing_format: Literal["html", "json", "yaml", "markdown"] = "html",
+        table_parsing_format: TableParsingFormat = "html",
         image_resolution_dpi: int = 72,
         browser_canvas: BrowserCanvas = "A4",
         idempotency_key: str | None = None,
