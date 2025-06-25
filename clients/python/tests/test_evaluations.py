@@ -5,7 +5,7 @@ import nanoid  # type: ignore
 import pytest
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.extractions import UiParsedChatCompletion
+from retab.types.documents.extractions import RetabParsedChatCompletion
 
 T = TypeVar("T")
 
@@ -326,7 +326,7 @@ async def test_process_document_method(
         )
 
         # Validate the response
-        assert isinstance(completion_response, UiParsedChatCompletion)
+        assert isinstance(completion_response, RetabParsedChatCompletion)
         assert completion_response.choices is not None
         assert len(completion_response.choices) > 0
         assert completion_response.choices[0].message.content is not None
@@ -455,8 +455,8 @@ async def test_complete_evaluation_workflow(
         assert len(processed_iter1.predictions) > 0
 
         # Verify process_document responses
-        assert isinstance(completion1, UiParsedChatCompletion)
-        assert isinstance(completion2, UiParsedChatCompletion)
+        assert isinstance(completion1, RetabParsedChatCompletion)
+        assert isinstance(completion2, RetabParsedChatCompletion)
         assert completion1.choices[0].message.content is not None
         assert completion2.choices[0].message.content is not None
 
@@ -576,7 +576,7 @@ async def test_iteration_selective_processing(
         )
 
         # Verify the response
-        assert isinstance(completion_response, UiParsedChatCompletion)
+        assert isinstance(completion_response, RetabParsedChatCompletion)
         assert completion_response.choices[0].message.content is not None
 
         # Check that both documents are now processed

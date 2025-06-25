@@ -11,7 +11,7 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from pyngrok import ngrok
 
 from retab.types.automations.webhooks import WebhookRequest
-from retab.types.documents.extractions import UiParsedChatCompletion, UiParsedChoice
+from retab.types.documents.extractions import RetabParsedChatCompletion, RetabParsedChoice
 from retab.types.mime import MIMEData
 
 # Load environment variables
@@ -33,14 +33,14 @@ async def startup_event():
 
     # Print example curl
     example_body = WebhookRequest(
-        completion=UiParsedChatCompletion(
+        completion=RetabParsedChatCompletion(
             id="id",
             created=0,
             model="gpt-4.1-nano",
             object="chat.completion",
             likelihoods={},
             choices=[
-                UiParsedChoice(
+                RetabParsedChoice(
                     index=0,
                     message=ParsedChatCompletionMessage(content="{\"message\": \"Hello, World!\"}", role="assistant"),
                     finish_reason=None,

@@ -10,7 +10,7 @@ from ..._utils.mime import prepare_mime_document
 from ...types.evaluations import DocumentItem, EvaluationDocument, PatchEvaluationDocumentRequest
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
-from ...types.documents.extractions import UiParsedChatCompletion
+from ...types.documents.extractions import RetabParsedChatCompletion
 
 
 class DocumentsMixin:
@@ -134,13 +134,13 @@ class Documents(SyncAPIResource, DocumentsMixin):
         request = self.prepare_delete(evaluation_id, document_id)
         return self._client._prepared_request(request)
 
-    def llm_annotate(self, evaluation_id: str, document_id: str) -> UiParsedChatCompletion:
+    def llm_annotate(self, evaluation_id: str, document_id: str) -> RetabParsedChatCompletion:
         """
         Annotate a document with an LLM. This method updates the document (within the evaluation) with the latest extraction.
         """
         request = self.prepare_llm_annotate(evaluation_id, document_id)
         response = self._client._prepared_request(request)
-        return UiParsedChatCompletion(**response)
+        return RetabParsedChatCompletion(**response)
 
 
 class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
@@ -223,11 +223,11 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         request = self.prepare_delete(evaluation_id, document_id)
         return await self._client._prepared_request(request)
 
-    async def llm_annotate(self, evaluation_id: str, document_id: str) -> UiParsedChatCompletion:
+    async def llm_annotate(self, evaluation_id: str, document_id: str) -> RetabParsedChatCompletion:
         """
         Annotate a document with an LLM.
         This method updates the document (within the evaluation) with the latest extraction.
         """
         request = self.prepare_llm_annotate(evaluation_id, document_id)
         response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion(**response)
+        return RetabParsedChatCompletion(**response)

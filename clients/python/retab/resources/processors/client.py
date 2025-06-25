@@ -12,7 +12,7 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.mime import MIMEData, prepare_mime_document
 from ...types.browser_canvas import BrowserCanvas
-from ...types.documents.extractions import UiParsedChatCompletion
+from ...types.documents.extractions import RetabParsedChatCompletion
 from ...types.logs import ProcessorConfig, UpdateProcessorRequest
 from ...types.modalities import Modality
 from ...types.pagination import ListMetadata
@@ -349,7 +349,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         temperature: float | None = None,
         seed: int | None = None,
         store: bool = True,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """Submit documents to a processor for processing.
 
         Args:
@@ -361,11 +361,11 @@ class Processors(SyncAPIResource, ProcessorsMixin):
             store: Whether to store the results
 
         Returns:
-            UiParsedChatCompletion: The processing result
+            RetabParsedChatCompletion: The processing result
         """
         request = self.prepare_submit(processor_id=processor_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
         response = self._client._prepared_request(request)
-        return UiParsedChatCompletion.model_validate(response)
+        return RetabParsedChatCompletion.model_validate(response)
 
 
 class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
@@ -470,7 +470,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         temperature: float | None = None,
         seed: int | None = None,
         store: bool = True,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """Submit documents to a processor for processing.
 
         Args:
@@ -482,8 +482,8 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
             store: Whether to store the results
 
         Returns:
-            UiParsedChatCompletion: The processing result
+            RetabParsedChatCompletion: The processing result
         """
         request = self.prepare_submit(processor_id=processor_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
         response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion.model_validate(response)
+        return RetabParsedChatCompletion.model_validate(response)
