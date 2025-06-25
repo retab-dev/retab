@@ -96,7 +96,7 @@ class FieldLocation(BaseModel):
     match_level: Literal["token", "line", "block"] | None = Field(default=None, description="The level of the match (token, line, block)")
 
 
-class UiParsedChoice(ParsedChoice):
+class RetabParsedChoice(ParsedChoice):
     # Adaptable ParsedChoice that allows None for the finish_reason
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
     field_locations: dict[str, list[FieldLocation]] | None = Field(default=None, description="The locations of the fields in the document, if available")
@@ -106,9 +106,9 @@ class UiParsedChoice(ParsedChoice):
 LikelihoodsSource = Literal["consensus", "log_probs"]
 
 
-class UiParsedChatCompletion(ParsedChatCompletion):
+class RetabParsedChatCompletion(ParsedChatCompletion):
     extraction_id: str | None = None
-    choices: list[UiParsedChoice]  # type: ignore
+    choices: list[RetabParsedChoice]  # type: ignore
     # Additional metadata fields (UIForm)
     likelihoods: Optional[dict[str, Any]] = Field(
         default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
@@ -159,7 +159,7 @@ class LogExtractionRequest(BaseModel):
         ),
         description="Document analyzed, if not provided a dummy one will be created with the text 'No document provided'",
     )
-    completion: dict | UiParsedChatCompletion | Message | ParsedChatCompletion | ChatCompletion | None = None
+    completion: dict | RetabParsedChatCompletion | Message | ParsedChatCompletion | ChatCompletion | None = None
     openai_responses_output: Response | None = None
     json_schema: dict[str, Any]
     model: str
@@ -215,7 +215,7 @@ class LogExtractionResponse(BaseModel):
     error_message: str | None = None
 
 
-# DocumentExtractResponse = UiParsedChatCompletion
+# DocumentExtractResponse = RetabParsedChatCompletion
 
 
 ###### I'll place here for now -- New Streaming API
@@ -227,7 +227,7 @@ class LogExtractionResponse(BaseModel):
 # - schema_validation_error: ErrorDetail | None = None #  The error in the schema validation of the total accumulated content
 
 
-class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
+class RetabParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     flat_likelihoods: dict[str, float] = {}
     flat_parsed: dict[str, Any] = {}
     flat_deleted_keys: list[str] = []
@@ -236,13 +236,13 @@ class UiParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
 
 
-class UiParsedChoiceChunk(ChoiceChunk):
-    delta: UiParsedChoiceDeltaChunk  # type: ignore
+class RetabParsedChoiceChunk(ChoiceChunk):
+    delta: RetabParsedChoiceDeltaChunk  # type: ignore
 
 
-class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
+class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     extraction_id: str | None = None
-    choices: list[UiParsedChoiceChunk]  # type: ignore
+    choices: list[RetabParsedChoiceChunk]  # type: ignore
     schema_validation_error: ErrorDetail | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
@@ -273,16 +273,16 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                 return None
         return None
 
-    def chunk_accumulator(self, previous_cumulated_chunk: "UiParsedChatCompletionChunk | None" = None) -> "UiParsedChatCompletionChunk":
+    def chunk_accumulator(self, previous_cumulated_chunk: "RetabParsedChatCompletionChunk | None" = None) -> "RetabParsedChatCompletionChunk":
         """
-        Accumulate the chunk into the state, returning a new UiParsedChatCompletionChunk with the accumulated content that could be yielded alone to generate the same state.
+        Accumulate the chunk into the state, returning a new RetabParsedChatCompletionChunk with the accumulated content that could be yielded alone to generate the same state.
         """
 
-        def safe_get_delta(chnk: "UiParsedChatCompletionChunk | None", index: int) -> UiParsedChoiceDeltaChunk:
+        def safe_get_delta(chnk: "RetabParsedChatCompletionChunk | None", index: int) -> RetabParsedChoiceDeltaChunk:
             if chnk is not None and index < len(chnk.choices):
                 return chnk.choices[index].delta
             else:
-                return UiParsedChoiceDeltaChunk(
+                return RetabParsedChoiceDeltaChunk(
                     content="",
                     flat_parsed={},
                     flat_likelihoods={},
@@ -313,7 +313,7 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         last_token_at = self.last_token_at
         request_at = self.request_at
 
-        return UiParsedChatCompletionChunk(
+        return RetabParsedChatCompletionChunk(
             extraction_id=self.extraction_id,
             id=self.id,
             created=self.created,
@@ -321,8 +321,8 @@ class UiParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
             object=self.object,
             usage=usage,
             choices=[
-                UiParsedChoiceChunk(
-                    delta=UiParsedChoiceDeltaChunk(
+                RetabParsedChoiceChunk(
+                    delta=RetabParsedChoiceDeltaChunk(
                         content=acc_content[i],
                         flat_parsed=acc_flat_parsed[i],
                         flat_likelihoods=acc_flat_likelihoods[i],

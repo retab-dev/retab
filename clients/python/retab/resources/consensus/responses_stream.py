@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ...types.completions import UiChatResponseCreateRequest
+from ...types.completions import RetabChatResponseCreateRequest
 from ...types.documents.extractions import UiResponse
 from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest
@@ -44,8 +44,8 @@ class BaseResponsesMixin:
         if instructions is None:
             instructions = schema_obj.developer_system_prompt
 
-        # Create the request object based on the UiChatResponseCreateRequest model
-        request = UiChatResponseCreateRequest(
+        # Create the request object based on the RetabChatResponseCreateRequest model
+        request = RetabChatResponseCreateRequest(
             model=model,
             input=input,
             temperature=temperature,
@@ -81,8 +81,8 @@ class BaseResponsesMixin:
         if instructions is None:
             instructions = schema_obj.developer_system_prompt
 
-        # Create the request object based on the UiChatResponseCreateRequest model
-        request = UiChatResponseCreateRequest(
+        # Create the request object based on the RetabChatResponseCreateRequest model
+        request = RetabChatResponseCreateRequest(
             model=model,
             input=input,
             temperature=temperature,

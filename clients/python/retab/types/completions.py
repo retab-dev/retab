@@ -12,7 +12,7 @@ from .ai_models import AIProvider
 from .chat import ChatCompletionRetabMessage
 
 
-class UiChatCompletionsRequest(BaseModel):
+class RetabChatCompletionsRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     model: str = Field(..., description="Model used for chat completion")
     messages: list[ChatCompletionRetabMessage] = Field(..., description="Messages to be parsed")
@@ -37,7 +37,7 @@ class UiChatCompletionsRequest(BaseModel):
         return find_provider_from_model(self.model)
 
 
-class UiChatCompletionsParseRequest(BaseModel):
+class RetabChatCompletionsParseRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     model: str = Field(..., description="Model used for chat completion")
     messages: list[ChatCompletionRetabMessage] = Field(..., description="Messages to be parsed")
@@ -62,7 +62,7 @@ class UiChatCompletionsParseRequest(BaseModel):
         return find_provider_from_model(self.model)
 
 
-class UiChatResponseCreateRequest(BaseModel):
+class RetabChatResponseCreateRequest(BaseModel):
     input: Union[str, ResponseInputParam] = Field(..., description="Input to be parsed")
     instructions: Optional[str] = None
 

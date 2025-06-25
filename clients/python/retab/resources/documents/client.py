@@ -12,7 +12,7 @@ from ..._utils.json_schema import load_json_schema, filter_auxiliary_fields_json
 from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
 from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
-from ...types.documents.extractions import DocumentExtractRequest, UiParsedChatCompletion
+from ...types.documents.extractions import DocumentExtractRequest, RetabParsedChatCompletion
 from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
@@ -21,7 +21,7 @@ from ...types.standards import PreparedRequest
 from .extractions import AsyncExtractions, Extractions
 
 
-def maybe_parse_to_pydantic(schema: Schema, response: UiParsedChatCompletion, allow_partial: bool = False) -> UiParsedChatCompletion:
+def maybe_parse_to_pydantic(schema: Schema, response: RetabParsedChatCompletion, allow_partial: bool = False) -> RetabParsedChatCompletion:
     if response.choices[0].message.content:
         try:
             if allow_partial:
@@ -198,7 +198,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """
         Process one or more documents using the Retab API for structured data extraction.
         
@@ -220,7 +220,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             store: Whether to store the document in the Retab database
             
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            RetabParsedChatCompletion: Parsed response from the API
             
         Raises:
             ValueError: If neither document nor documents is provided, or if both are provided
@@ -267,7 +267,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(prepared_request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
-        return maybe_parse_to_pydantic(schema, UiParsedChatCompletion.model_validate(response))
+        return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
 
 
 class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
@@ -383,7 +383,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """
         Process one or more documents using the Retab API for structured data extraction asynchronously.
         
@@ -405,7 +405,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             store: Whether to store the document in the Retab database
             
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            RetabParsedChatCompletion: Parsed response from the API
             
         Raises:
             ValueError: If neither document nor documents is provided, or if both are provided
@@ -452,4 +452,4 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         response = await self._client._prepared_request(prepared_request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
-        return maybe_parse_to_pydantic(schema, UiParsedChatCompletion.model_validate(response))
+        return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))

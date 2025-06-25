@@ -7,8 +7,8 @@ from pydantic import BaseModel as ResponseFormatT
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.chat import ChatCompletionRetabMessage
-from ...types.completions import UiChatCompletionsRequest
-from ...types.documents.extractions import UiParsedChatCompletion
+from ...types.completions import RetabChatCompletionsRequest
+from ...types.documents.extractions import RetabParsedChatCompletion
 from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest
 
@@ -31,7 +31,7 @@ class BaseCompletionsMixin:
 
         schema_obj = Schema(json_schema=json_schema)
 
-        request = UiChatCompletionsRequest(
+        request = RetabChatCompletionsRequest(
             model=model,
             messages=messages,
             response_format={
@@ -66,7 +66,7 @@ class BaseCompletionsMixin:
 
         schema_obj = Schema(json_schema=json_schema)
 
-        request = UiChatCompletionsRequest(
+        request = RetabChatCompletionsRequest(
             model=model,
             messages=messages,
             response_format={
@@ -98,7 +98,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         n_consensus: int = 1,
         idempotency_key: str | None = None,
         stream: bool = False,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """
         Create a completion using the Retab API.
         """
@@ -116,7 +116,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
 
         response = self._client._prepared_request(request)
 
-        return UiParsedChatCompletion.model_validate(response)
+        return RetabParsedChatCompletion.model_validate(response)
 
     def parse(
         self,
@@ -127,7 +127,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         n_consensus: int = 1,
         idempotency_key: str | None = None,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """
         Parse messages using the Retab API to extract structured data according to the provided JSON schema.
 
@@ -141,7 +141,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
             store: Whether to store the data in the Retab database
 
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            RetabParsedChatCompletion: Parsed response from the API
         """
         request = self.prepare_parse(
             response_format=response_format,
@@ -155,7 +155,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         )
         response = self._client._prepared_request(request)
 
-        return UiParsedChatCompletion.model_validate(response)
+        return RetabParsedChatCompletion.model_validate(response)
 
 
 class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
@@ -171,7 +171,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         n_consensus: int = 1,
         idempotency_key: str | None = None,
         stream: bool = False,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """
         Create a completion using the Retab API.
         """
@@ -188,7 +188,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         )
 
         response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion.model_validate(response)
+        return RetabParsedChatCompletion.model_validate(response)
 
     async def parse(
         self,
@@ -199,7 +199,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         n_consensus: int = 1,
         idempotency_key: str | None = None,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """
         Parse messages using the Retab API asynchronously.
 
@@ -213,7 +213,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
             idempotency_key: Idempotency key for request
 
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            RetabParsedChatCompletion: Parsed response from the API
         """
         request = self.prepare_parse(
             response_format=response_format,
@@ -226,4 +226,4 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
             idempotency_key=idempotency_key,
         )
         response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion.model_validate(response)
+        return RetabParsedChatCompletion.model_validate(response)

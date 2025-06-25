@@ -17,7 +17,7 @@ from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.responses.response_input_text_param import ResponseInputTextParam
 
 from ..types.chat import ChatCompletionRetabMessage
-from ..types.documents.extractions import UiParsedChatCompletion, UiParsedChoice
+from ..types.documents.extractions import RetabParsedChatCompletion, RetabParsedChoice
 
 
 def convert_to_openai_format(messages: list[ChatCompletionRetabMessage]) -> list[ResponseInputItemParam]:
@@ -116,17 +116,17 @@ def convert_from_openai_format(messages: list[ResponseInputItemParam]) -> list[C
     return formatted_messages
 
 
-def parse_openai_responses_response(response: Response) -> UiParsedChatCompletion:
+def parse_openai_responses_response(response: Response) -> RetabParsedChatCompletion:
     """
-    Convert an OpenAI Response (Responses API) to UiParsedChatCompletion type.
+    Convert an OpenAI Response (Responses API) to RetabParsedChatCompletion type.
 
     Args:
         response: Response from OpenAI Responses API
 
     Returns:
-        Parsed response in UiParsedChatCompletion format
+        Parsed response in RetabParsedChatCompletion format
     """
-    # Create the UiParsedChatCompletion object
+    # Create the RetabParsedChatCompletion object
     if response.usage:
         usage = CompletionUsage(
             prompt_tokens=response.usage.input_tokens,
@@ -148,7 +148,7 @@ def parse_openai_responses_response(response: Response) -> UiParsedChatCompletio
     result_object = from_json(bytes(output_text, "utf-8"), partial_mode=True)  # Attempt to parse the result even if EOF is reached
 
     choices.append(
-        UiParsedChoice(
+        RetabParsedChoice(
             index=0,
             message=ParsedChatCompletionMessage(
                 role="assistant",
@@ -158,7 +158,7 @@ def parse_openai_responses_response(response: Response) -> UiParsedChatCompletio
         )
     )
 
-    return UiParsedChatCompletion(
+    return RetabParsedChatCompletion(
         id=response.id,
         choices=choices,
         created=int(datetime.datetime.now().timestamp()),

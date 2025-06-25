@@ -13,8 +13,8 @@ from ..._utils.ai_models import assert_valid_model_extraction
 from ..._utils.json_schema import unflatten_dict
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionRetabMessage
-from ...types.completions import UiChatCompletionsRequest
-from ...types.documents.extractions import UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice
+from ...types.completions import RetabChatCompletionsRequest
+from ...types.documents.extractions import RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice
 from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest
 
@@ -36,7 +36,7 @@ class BaseCompletionsMixin:
         json_schema = response_format.model_json_schema()
         schema_obj = Schema(json_schema=json_schema)
 
-        request = UiChatCompletionsRequest(
+        request = RetabChatCompletionsRequest(
             messages=messages,
             response_format={
                 "type": "json_schema",
@@ -73,7 +73,7 @@ class BaseCompletionsMixin:
         schema_obj = Schema(json_schema=json_schema)
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = UiChatCompletionsRequest(
+        request = RetabChatCompletionsRequest(
             model=model,
             messages=messages,
             response_format={
@@ -106,7 +106,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         n_consensus: int = 1,
         idempotency_key: str | None = None,
-    ) -> Generator[UiParsedChatCompletion, None, None]:
+    ) -> Generator[RetabParsedChatCompletion, None, None]:
         """
         Process messages using the Retab API with streaming enabled.
 
@@ -119,7 +119,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
             idempotency_key: Idempotency key for request
 
         Returns:
-            Generator[UiParsedChatCompletion]: Stream of parsed responses
+            Generator[RetabParsedChatCompletion]: Stream of parsed responses
 
         Usage:
         ```python
@@ -140,16 +140,16 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         )
 
         # Request the stream and return a context manager
-        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
-        # Initialize the UiParsedChatCompletion object
-        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
+        ui_parsed_chat_completion_cum_chunk: RetabParsedChatCompletionChunk | None = None
+        # Initialize the RetabParsedChatCompletion object
+        ui_parsed_completion: RetabParsedChatCompletion = RetabParsedChatCompletion(
             id="",
             created=0,
             model="",
             object="chat.completion",
             likelihoods={},
             choices=[
-                UiParsedChoice(
+                RetabParsedChoice(
                     index=0,
                     message=ParsedChatCompletionMessage(content="", role="assistant"),
                     finish_reason=None,
@@ -160,7 +160,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
         for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
+            ui_parsed_chat_completion_cum_chunk = RetabParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
             # Basic stuff
             ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
             ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
@@ -192,7 +192,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
         n_consensus: int = 1,
         idempotency_key: str | None = None,
-    ) -> AsyncGenerator[UiParsedChatCompletion, None]:
+    ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
         """
         Parse messages using the Retab API asynchronously with streaming.
 
@@ -206,7 +206,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
             idempotency_key: Idempotency key for request
 
         Returns:
-            AsyncGenerator[UiParsedChatCompletion]: Stream of parsed responses
+            AsyncGenerator[RetabParsedChatCompletion]: Stream of parsed responses
 
         Usage:
         ```python
@@ -227,16 +227,16 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         )
 
         # Request the stream and return a context manager
-        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
-        # Initialize the UiParsedChatCompletion object
-        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
+        ui_parsed_chat_completion_cum_chunk: RetabParsedChatCompletionChunk | None = None
+        # Initialize the RetabParsedChatCompletion object
+        ui_parsed_completion: RetabParsedChatCompletion = RetabParsedChatCompletion(
             id="",
             created=0,
             model="",
             object="chat.completion",
             likelihoods={},
             choices=[
-                UiParsedChoice(
+                RetabParsedChoice(
                     index=0,
                     message=ParsedChatCompletionMessage(content="", role="assistant"),
                     finish_reason=None,
@@ -247,7 +247,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
         async for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
+            ui_parsed_chat_completion_cum_chunk = RetabParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
             # Basic stuff
             ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
             ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created

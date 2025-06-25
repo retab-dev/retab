@@ -19,14 +19,14 @@ from ..._utils.json_schema import filter_auxiliary_fields_json, load_json_schema
 from ..._utils.mime import MIMEData, prepare_mime_document
 from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionRetabMessage
-from ...types.documents.extractions import DocumentExtractRequest, LogExtractionRequest, UiParsedChatCompletion, UiParsedChatCompletionChunk, UiParsedChoice
+from ...types.documents.extractions import DocumentExtractRequest, LogExtractionRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice
 from ...types.browser_canvas import BrowserCanvas
 from ...types.modalities import Modality
 from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest
 
 
-def maybe_parse_to_pydantic(schema: Schema, response: UiParsedChatCompletion, allow_partial: bool = False) -> UiParsedChatCompletion:
+def maybe_parse_to_pydantic(schema: Schema, response: RetabParsedChatCompletion, allow_partial: bool = False) -> RetabParsedChatCompletion:
     if response.choices[0].message.content:
         try:
             if allow_partial:
@@ -152,7 +152,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """
         Process one or more documents using the Retab API.
 
@@ -170,7 +170,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
         Returns:
-            UiParsedChatCompletion: Parsed response from the API
+            RetabParsedChatCompletion: Parsed response from the API
         Raises:
             ValueError: If neither document nor documents is provided, or if both are provided
             HTTPException: If the request fails
@@ -195,7 +195,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         response = self._client._prepared_request(request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
-        return maybe_parse_to_pydantic(schema, UiParsedChatCompletion.model_validate(response))
+        return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
 
     @as_context_manager
     def stream(
@@ -212,7 +212,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> Generator[UiParsedChatCompletion, None, None]:
+    ) -> Generator[RetabParsedChatCompletion, None, None]:
         """
         Process one or more documents using the Retab API with streaming enabled.
 
@@ -231,7 +231,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
             store: Whether to store the document in the Retab database
 
         Returns:
-            Generator[UiParsedChatCompletion]: Stream of parsed responses
+            Generator[RetabParsedChatCompletion]: Stream of parsed responses
         Raises:
             ValueError: If neither document nor documents is provided, or if both are provided
             HTTPException: If the request fails
@@ -266,16 +266,16 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         schema = Schema(json_schema=load_json_schema(json_schema))
 
         # Request the stream and return a context manager
-        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
-        # Initialize the UiParsedChatCompletion object
-        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
+        ui_parsed_chat_completion_cum_chunk: RetabParsedChatCompletionChunk | None = None
+        # Initialize the RetabParsedChatCompletion object
+        ui_parsed_completion: RetabParsedChatCompletion = RetabParsedChatCompletion(
             id="",
             created=0,
             model="",
             object="chat.completion",
             likelihoods={},
             choices=[
-                UiParsedChoice(
+                RetabParsedChoice(
                     index=0,
                     message=ParsedChatCompletionMessage(content="", role="assistant"),
                     finish_reason=None,
@@ -286,7 +286,7 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
+            ui_parsed_chat_completion_cum_chunk = RetabParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
             # Basic stuff
             ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
             ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
@@ -353,7 +353,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> UiParsedChatCompletion:
+    ) -> RetabParsedChatCompletion:
         """
         Extract structured data from one or more documents asynchronously.
 
@@ -371,7 +371,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
         Returns:
-            UiParsedChatCompletion: Parsed response from the API.
+            RetabParsedChatCompletion: Parsed response from the API.
         Raises:
             ValueError: If neither document nor documents is provided, or if both are provided
         """
@@ -392,7 +392,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         )
         response = await self._client._prepared_request(request)
         schema = Schema(json_schema=load_json_schema(json_schema))
-        return maybe_parse_to_pydantic(schema, UiParsedChatCompletion.model_validate(response))
+        return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
 
     @as_async_context_manager
     async def stream(
@@ -409,7 +409,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
         idempotency_key: str | None = None,
         store: bool = False,
-    ) -> AsyncGenerator[UiParsedChatCompletion, None]:
+    ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
         """
         Extract structured data from one or more documents asynchronously with streaming.
 
@@ -427,7 +427,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
         Returns:
-            AsyncGenerator[UiParsedChatCompletion, None]: Stream of parsed responses.
+            AsyncGenerator[RetabParsedChatCompletion, None]: Stream of parsed responses.
         Raises:
             ValueError: If neither document nor documents is provided, or if both are provided
 
@@ -460,16 +460,16 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
             idempotency_key=idempotency_key,
         )
         schema = Schema(json_schema=load_json_schema(json_schema))
-        ui_parsed_chat_completion_cum_chunk: UiParsedChatCompletionChunk | None = None
-        # Initialize the UiParsedChatCompletion object
-        ui_parsed_completion: UiParsedChatCompletion = UiParsedChatCompletion(
+        ui_parsed_chat_completion_cum_chunk: RetabParsedChatCompletionChunk | None = None
+        # Initialize the RetabParsedChatCompletion object
+        ui_parsed_completion: RetabParsedChatCompletion = RetabParsedChatCompletion(
             id="",
             created=0,
             model="",
             object="chat.completion",
             likelihoods={},
             choices=[
-                UiParsedChoice(
+                RetabParsedChoice(
                     index=0,
                     message=ParsedChatCompletionMessage(content="", role="assistant"),
                     finish_reason=None,
@@ -481,7 +481,7 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         async for chunk_json in self._client._prepared_request_stream(request):
             if not chunk_json:
                 continue
-            ui_parsed_chat_completion_cum_chunk = UiParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
+            ui_parsed_chat_completion_cum_chunk = RetabParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
             # Basic stuff
             ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
             ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created

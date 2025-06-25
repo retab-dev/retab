@@ -11,7 +11,7 @@ from .._utils.json_schema import compute_schema_data_id
 from .._utils.mime import generate_blake2b_hash_from_string
 from .._utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
 from .ai_models import Amount
-from .documents.extractions import UiParsedChatCompletion
+from .documents.extractions import RetabParsedChatCompletion
 from .mime import BaseMIMEData
 from .modalities import Modality
 from .pagination import ListMetadata
@@ -199,7 +199,7 @@ class AutomationLog(BaseModel):
     organization_id: str
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     automation_snapshot: AutomationConfig
-    completion: UiParsedChatCompletion | ChatCompletion
+    completion: RetabParsedChatCompletion | ChatCompletion
     file_metadata: Optional[BaseMIMEData]
     external_request_log: Optional[ExternalRequestLog]
     extraction_id: Optional[str] = Field(default=None, description="ID of the extraction")

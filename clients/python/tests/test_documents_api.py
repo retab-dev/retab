@@ -9,7 +9,7 @@ import pytest
 from pydantic import BaseModel
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.extractions import UiParsedChatCompletion
+from retab.types.documents.extractions import RetabParsedChatCompletion
 
 # List of AI Providers to test
 AI_MODELS = Literal[
@@ -28,9 +28,9 @@ ResponseModeType = Literal[
 ]
 
 
-def validate_extraction_response(response: UiParsedChatCompletion | None) -> None:
+def validate_extraction_response(response: RetabParsedChatCompletion | None) -> None:
     # Assert the instance
-    assert isinstance(response, UiParsedChatCompletion), f"Response should be of type UiParsedChatCompletion, received {type(response)}"
+    assert isinstance(response, RetabParsedChatCompletion), f"Response should be of type RetabParsedChatCompletion, received {type(response)}"
 
     # Assert the response content is not None
     assert response.choices[0].message.content is not None, "Response content should not be None"
@@ -56,7 +56,7 @@ async def base_test_extract(
     json_schema = booking_confirmation_json_schema
     document = booking_confirmation_file_path_1
     modality: Literal["text"] = "text"
-    response: UiParsedChatCompletion | None = None
+    response: RetabParsedChatCompletion | None = None
 
     # First create a processor
 

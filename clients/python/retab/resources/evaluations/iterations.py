@@ -9,7 +9,7 @@ from ...types.inference_settings import InferenceSettings
 from ...types.metrics import DistancesResult
 from ...types.modalities import Modality
 from ...types.standards import DeleteResponse, PreparedRequest, FieldUnset
-from ...types.documents.extractions import UiParsedChatCompletion
+from ...types.documents.extractions import RetabParsedChatCompletion
 
 
 class IterationsMixin:
@@ -238,7 +238,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         response = self._client._prepared_request(request)
         return Iteration(**response)
 
-    def process_document(self, evaluation_id: str, iteration_id: str, document_id: str) -> UiParsedChatCompletion:
+    def process_document(self, evaluation_id: str, iteration_id: str, document_id: str) -> RetabParsedChatCompletion:
         """
         Process a single document within an iteration.
         This method updates the iteration document with the latest extraction.
@@ -248,13 +248,13 @@ class Iterations(SyncAPIResource, IterationsMixin):
             document_id: The ID of the document
 
         Returns:
-            UiParsedChatCompletion: The parsed chat completion
+            RetabParsedChatCompletion: The parsed chat completion
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_process_document(evaluation_id, iteration_id, document_id)
         response = self._client._prepared_request(request)
-        return UiParsedChatCompletion(**response)
+        return RetabParsedChatCompletion(**response)
 
     def status(self, evaluation_id: str, iteration_id: str) -> IterationDocumentStatusResponse:
         """
@@ -417,7 +417,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 
-    async def process_document(self, evaluation_id: str, iteration_id: str, document_id: str) -> UiParsedChatCompletion:
+    async def process_document(self, evaluation_id: str, iteration_id: str, document_id: str) -> RetabParsedChatCompletion:
         """
         Process a single document within an iteration.
         This method updates the iteration document with the latest extraction.
@@ -427,13 +427,13 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
             document_id: The ID of the document
 
         Returns:
-            UiParsedChatCompletion: The parsed chat completion
+            RetabParsedChatCompletion: The parsed chat completion
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_process_document(evaluation_id, iteration_id, document_id)
         response = await self._client._prepared_request(request)
-        return UiParsedChatCompletion(**response)
+        return RetabParsedChatCompletion(**response)
 
     async def status(self, evaluation_id: str, iteration_id: str) -> IterationDocumentStatusResponse:
         """
