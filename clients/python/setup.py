@@ -25,4 +25,5 @@ setup(
     python_requires='>=3.6',
     install_requires=requirements_list,
     include_package_data=True,
+    package_data={'retab': ["**/*.yaml"]},
 )

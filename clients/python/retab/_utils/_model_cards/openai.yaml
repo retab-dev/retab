@@ -1,6 +1,6 @@
 
 # Reasoning models
-# o1 family
+# o1 family 
 - model: "o1"
   pricing:
     text:
@@ -18,29 +18,6 @@
 - model: "o1-2024-12-17"
   inherits: "o1"
 
-- model: "o1-preview-2024-09-12"
-  inherits: "o1"
-  capabilities:
-    modalities: ["text"]
-
-# o1-mini family
-- model: "o1-mini"
-  pricing:
-    text:
-      prompt: 1.10
-      cached_discount: 0.5
-      completion: 4.40
-    audio: null
-  capabilities:
-    modalities: ["text"]
-    endpoints: ["chat_completions", "responses", "assistants"]
-    features: ["streaming"]
-  temperature_support: false
-  reasoning_effort_support: true
-
-- model: "o1-mini-2024-09-12"
-  inherits: "o1-mini"
-
 # o3 family
 - model: "o3"
   pricing:
@@ -53,33 +30,18 @@
   capabilities:
     modalities: ["text", "image"]
     endpoints: ["chat_completions", "responses", "assistants", "batch"]
-    features: ["streaming", "function_calling", "structured_outputs"]
+    features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
   temperature_support: false
   reasoning_effort_support: true
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: true
 
 - model: "o3-2025-04-16"
   inherits: "o3"
-
-# o3-mini family
-
-- model: "o3-mini"
-  pricing:
-    text:
-      prompt: 1.10
-      cached_discount: 0.5
-      completion: 4.40
-    audio: null
-    ft_price_hike: 1.5
-  capabilities:
-    modalities: ["text"]
-    endpoints: ["chat_completions", "responses", "assistants", "batch"]
-    features: ["streaming", "function_calling", "structured_outputs"]
-  temperature_support: false
-  reasoning_effort_support: true
-
-- model: "o3-mini-2025-01-31"
-  inherits: "o3-mini"
-
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 # o4-mini family
 - model: "o4-mini"
@@ -93,12 +55,18 @@
   capabilities:
     modalities: ["text", "image"]
     endpoints: ["chat_completions", "responses", "assistants", "batch"]
-    features: ["streaming", "function_calling", "structured_outputs"]
+    features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
   temperature_support: false
   reasoning_effort_support: true
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: true
 
 - model: "o4-mini-2025-04-16"
   inherits: "o4-mini"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 # Chat models
 # gpt-4.1 family
@@ -113,12 +81,18 @@
   capabilities:
     modalities: ["text", "image"]
     endpoints: ["chat_completions", "responses", "assistants", "batch"]
-    features: ["streaming", "function_calling", "structured_outputs"]
+    features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
   temperature_support: true
   reasoning_effort_support: false
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
 
 - model: "gpt-4.1-2025-04-14"
   inherits: "gpt-4.1"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gpt-4.1-mini"
   pricing:
@@ -131,12 +105,18 @@
   capabilities:
     modalities: ["text", "image"]
     endpoints: ["chat_completions", "responses", "assistants", "batch"]
-    features: ["streaming", "function_calling", "structured_outputs"]
+    features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
   temperature_support: true
   reasoning_effort_support: false
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
 
 - model: "gpt-4.1-mini-2025-04-14"
   inherits: "gpt-4.1-mini"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gpt-4.1-nano"
   pricing:
@@ -149,13 +129,18 @@
   capabilities:
     modalities: ["text", "image"]
     endpoints: ["chat_completions", "responses", "assistants", "batch"]
-    features: ["streaming", "function_calling", "structured_outputs"]
+    features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
   temperature_support: true
   reasoning_effort_support: false
-
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
 
 - model: "gpt-4.1-nano-2025-04-14"
   inherits: "gpt-4.1-nano"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 # gpt-4o family
 - model: "chatgpt-4o-latest"
