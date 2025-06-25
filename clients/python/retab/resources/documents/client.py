@@ -1,6 +1,6 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -13,6 +13,7 @@ from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
 from ..._utils.ai_models import assert_valid_model_extraction
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
 from ...types.documents.extractions import DocumentExtractRequest, RetabParsedChatCompletion
+from ...types.documents.parse import ParseRequest, ParseResult
 from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
@@ -85,13 +86,33 @@ class BaseDocumentsMixin:
             data={"document": mime_document.model_dump()},
         )
 
+    def _prepare_parse(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        fast_mode: bool = False,
+        table_parsing_format: Literal["html", "json", "yaml", "markdown"] = "html",
+        image_resolution_dpi: int = 72,
+        browser_canvas: BrowserCanvas = "A4",
+        idempotency_key: str | None = None,
+    ) -> PreparedRequest:
+        mime_document = prepare_mime_document(document)
+
+        parse_request = ParseRequest(
+            document=mime_document,
+            fast_mode=fast_mode,
+            table_parsing_format=table_parsing_format,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+        )
+        return PreparedRequest(method="POST", url="/v1/documents/parse", data=parse_request.model_dump(), idempotency_key=idempotency_key)
+
 
 class Documents(SyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper"""
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        #self.extractions_api = Extractions(client=client)
+        # self.extractions_api = Extractions(client=client)
         # self.batch = Batch(client=client)
 
     def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
@@ -201,7 +222,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     ) -> RetabParsedChatCompletion:
         """
         Process one or more documents using the Retab API for structured data extraction.
-        
+
         This method provides a direct interface to document extraction functionality,
         intended to replace the current `.extractions.parse()` pattern.
 
@@ -218,10 +239,10 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform
             idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
-            
+
         Returns:
             RetabParsedChatCompletion: Parsed response from the API
-            
+
         Raises:
             ValueError: If neither document nor documents is provided, or if both are provided
             HTTPException: If the request fails
@@ -258,16 +279,53 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         )
 
         prepared_request = PreparedRequest(
-            method="POST", 
-            url="/v1/documents/extract", 
-            data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), 
-            idempotency_key=idempotency_key
+            method="POST", url="/v1/documents/extract", data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
         )
-        
+
         response = self._client._prepared_request(prepared_request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
         return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
+
+    def parse(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        fast_mode: bool = False,
+        table_parsing_format: Literal["html", "json", "yaml", "markdown"] = "html",
+        image_resolution_dpi: int = 72,
+        browser_canvas: BrowserCanvas = "A4",
+        idempotency_key: str | None = None,
+    ) -> ParseResult:
+        """
+        Parse a document and extract text content from each page.
+
+        This method processes various document types and returns structured text content
+        along with usage information. Supports different parsing modes and formats.
+
+        Args:
+            document: The document to parse. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
+            fast_mode: Use fast mode for parsing (may reduce quality). Defaults to False.
+            table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
+            image_resolution_dpi: DPI for image processing. Defaults to 72.
+            browser_canvas: Canvas size for document rendering. Defaults to "A4".
+            idempotency_key: Optional idempotency key for the request.
+
+        Returns:
+            ParseResult: Parsed response containing document metadata, usage information, and page text content.
+
+        Raises:
+            HTTPException: If the request fails.
+        """
+        request = self._prepare_parse(
+            document=document,
+            fast_mode=fast_mode,
+            table_parsing_format=table_parsing_format,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            idempotency_key=idempotency_key,
+        )
+        response = self._client._prepared_request(request)
+        return ParseResult.model_validate(response)
 
 
 class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
@@ -275,7 +333,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        #self.extractions_api = AsyncExtractions(client=client)
+        # self.extractions_api = AsyncExtractions(client=client)
 
     async def create_messages(
         self,
@@ -386,7 +444,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     ) -> RetabParsedChatCompletion:
         """
         Process one or more documents using the Retab API for structured data extraction asynchronously.
-        
+
         This method provides a direct interface to document extraction functionality,
         intended to replace the current `.extractions.parse()` pattern.
 
@@ -403,10 +461,10 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform
             idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
-            
+
         Returns:
             RetabParsedChatCompletion: Parsed response from the API
-            
+
         Raises:
             ValueError: If neither document nor documents is provided, or if both are provided
             HTTPException: If the request fails
@@ -443,13 +501,50 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         )
 
         prepared_request = PreparedRequest(
-            method="POST", 
-            url="/v1/documents/extract", 
-            data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), 
-            idempotency_key=idempotency_key
+            method="POST", url="/v1/documents/extract", data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
         )
-        
+
         response = await self._client._prepared_request(prepared_request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
         return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
+
+    async def parse(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        fast_mode: bool = False,
+        table_parsing_format: Literal["html", "json", "yaml", "markdown"] = "html",
+        image_resolution_dpi: int = 72,
+        browser_canvas: BrowserCanvas = "A4",
+        idempotency_key: str | None = None,
+    ) -> ParseResult:
+        """
+        Parse a document and extract text content from each page asynchronously.
+
+        This method processes various document types and returns structured text content
+        along with usage information. Supports different parsing modes and formats.
+
+        Args:
+            document: The document to parse. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
+            fast_mode: Use fast mode for parsing (may reduce quality). Defaults to False.
+            table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
+            image_resolution_dpi: DPI for image processing. Defaults to 72.
+            browser_canvas: Canvas size for document rendering. Defaults to "A4".
+            idempotency_key: Optional idempotency key for the request.
+
+        Returns:
+            ParseResult: Parsed response containing document metadata, usage information, and page text content.
+
+        Raises:
+            HTTPException: If the request fails.
+        """
+        request = self._prepare_parse(
+            document=document,
+            fast_mode=fast_mode,
+            table_parsing_format=table_parsing_format,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            idempotency_key=idempotency_key,
+        )
+        response = await self._client._prepared_request(request)
+        return ParseResult.model_validate(response)
