@@ -149,7 +149,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         )
         response = self._client._prepared_request(request)
 
-        print(f"Outlook automation created. Outlook available at https://www.retab.dev/dashboard/processors/{response['id']}")
+        print(f"Outlook plugin created. Url: https://www.retab.dev/dashboard/processors/automations/{response['id']}")
 
         return Outlook.model_validate(response)
 
@@ -280,7 +280,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
             fetch_params=fetch_params,
         )
         response = await self._client._prepared_request(request)
-        print(f"Outlook automation created. Outlook available at https://www.retab.dev/dashboard/processors/{response['id']}")
+        print(f"Outlook plugin created. Url: https://www.retab.dev/dashboard/processors/automations/{response['id']}")
         return Outlook.model_validate(response)
 
     async def list(
