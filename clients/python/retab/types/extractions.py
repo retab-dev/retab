@@ -3,13 +3,19 @@ from typing import Any, Literal, Optional
 
 import nanoid  # type: ignore
 from openai.types.chat import ChatCompletion
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from openai.types.chat.chat_completion_reasoning_effort import (
+    ChatCompletionReasoningEffort,
+)
 from pydantic import BaseModel, Field, computed_field, model_validator
 
 from retab.types.chat import ChatCompletionRetabMessage
 from retab.types.documents.extractions import RetabParsedChatCompletion
 
-from ..utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
+from ..utils.usage.usage import (
+    CostBreakdown,
+    compute_cost_from_model,
+    compute_cost_from_model_with_breakdown,
+)
 from .ai_models import Amount
 from .modalities import Modality
 
@@ -17,9 +23,18 @@ ValidationsState = Literal["pending", "validated", "invalid"]
 
 
 class ExtractionSource(BaseModel):
-    type: Literal["api", "annotation", "processor", "automation.link", "automation.mailbox", "automation.cron", "automation.outlook", "automation.endpoint", "schema.extract"] = (
-        Field(description="Type of extraction")
-    )
+    type: Literal[
+        "api",
+        "annotation",
+        "processor",
+        "automation",
+        "automation.link",
+        "automation.mailbox",
+        "automation.cron",
+        "automation.outlook",
+        "automation.endpoint",
+        "schema.extract",
+    ] = Field(description="Type of extraction")
     id: str | None = Field(default=None, description="ID the trigger of the extraction")
 
 
@@ -34,7 +49,10 @@ class ExtractionTimingStep(BaseModel):
 
 
 class Extraction(BaseModel):
-    id: str = Field(default_factory=lambda: "extr_" + nanoid.generate(), description="Unique identifier of the analysis")
+    id: str = Field(
+        default_factory=lambda: "extr_" + nanoid.generate(),
+        description="Unique identifier of the analysis",
+    )
     messages: list[ChatCompletionRetabMessage] = Field(default_factory=list)
     messages_gcs: str = Field(..., description="GCS path to the messages")
     file_gcs_paths: list[str] = Field(..., description="GCS paths to the files")
@@ -51,16 +69,23 @@ class Extraction(BaseModel):
     source: ExtractionSource = Field(..., description="Source of the extraction")
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
     browser_canvas: BrowserCanvas = Field(
-        default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
+        default="A4",
+        description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type.",
     )
     modality: Modality = Field(default="native", description="Modality of the extraction")
-    reasoning_effort: Optional[ChatCompletionReasoningEffort] = Field(default=None, description="The effort level for the model to reason about the input data.")
+    reasoning_effort: Optional[ChatCompletionReasoningEffort] = Field(
+        default=None,
+        description="The effort level for the model to reason about the input data.",
+    )
     timings: list[ExtractionTimingStep] = Field(default_factory=list, description="Timings of the extraction")
 
     # Infered from the schema
     schema_id: str = Field(..., description="Version of the schema used for the analysis")
     schema_data_id: str = Field(..., description="Version of the schema data used for the analysis")
-    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp of the creation of the extraction object")
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
+        description="Timestamp of the creation of the extraction object",
+    )
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the extraction request if provided.")
     organization_id: str = Field(..., description="Organization ID of the user or application")
     validation_state: Optional[ValidationsState] = Field(default=None, description="Validation state of the extraction")

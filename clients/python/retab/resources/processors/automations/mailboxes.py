@@ -67,8 +67,8 @@ class MailBoxesMixin:
 
         return PreparedRequest(method="GET", url=self.mailboxes_base_url, params=params)
 
-    def prepare_get(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"{self.mailboxes_base_url}/{email}")
+    def prepare_get(self, mailbox_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"{self.mailboxes_base_url}/{mailbox_id}")
 
     def prepare_get_from_id(self, mailbox_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"{self.mailboxes_base_url}/from_id/{mailbox_id}")
@@ -189,16 +189,16 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         response = self._client._prepared_request(request)
         return ListMailboxes.model_validate(response)
 
-    def get(self, email: str) -> Mailbox:
+    def get(self, mailbox_id: str) -> Mailbox:
         """Get a specific email automation configuration.
 
         Args:
-            email: Email address of the mailbox
+            mailbox_id: ID of the mailbox
 
         Returns:
             Mailbox: The mailbox configuration
         """
-        request = self.prepare_get(email)
+        request = self.prepare_get(mailbox_id)
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
