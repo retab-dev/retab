@@ -70,9 +70,6 @@ class MailBoxesMixin:
     def prepare_get(self, mailbox_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"{self.mailboxes_base_url}/{mailbox_id}")
 
-    def prepare_get_from_id(self, mailbox_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"{self.mailboxes_base_url}/from_id/{mailbox_id}")
-
     def prepare_update(
         self,
         mailbox_id: str,
@@ -95,8 +92,8 @@ class MailBoxesMixin:
         )
         return PreparedRequest(method="PUT", url=f"/v1/processors/automations/mailboxes/{mailbox_id}", data=update_mailbox_request.model_dump(mode="json"))
 
-    def prepare_delete(self, email: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/mailboxes/{email}", raise_for_status=True)
+    def prepare_delete(self, mailbox_id: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/mailboxes/{mailbox_id}", raise_for_status=True)
 
 
 class Mailboxes(SyncAPIResource, MailBoxesMixin):
@@ -241,13 +238,13 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         response = self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
-    def delete(self, email: str) -> None:
+    def delete(self, mailbox_id: str) -> None:
         """Delete an email automation configuration.
 
         Args:
             email: Email address of the mailbox to delete
         """
-        request = self.prepare_delete(email)
+        request = self.prepare_delete(mailbox_id)
         self._client._prepared_request(request)
         return None
 
@@ -339,8 +336,8 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
-    async def delete(self, email: str) -> None:
-        request = self.prepare_delete(email)
+    async def delete(self, mailbox_id: str) -> None:
+        request = self.prepare_delete(mailbox_id)
         await self._client._prepared_request(request)
         return None
 
@@ -348,12 +345,12 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
 class TestMailboxesMixin:
     def prepare_forward(
         self,
-        email: str,
+        mailbox_id: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
         verbose: bool = True,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/processors/automations/mailboxes/tests/forward/{email}", data={"document": mime_document.model_dump()})
+        return PreparedRequest(method="POST", url=f"/v1/processors/automations/mailboxes/tests/forward/{mailbox_id}", data={"document": mime_document.model_dump()})
 
     def print_forward_verbose(self, email_data: EmailData) -> None:
         print("\nTEST EMAIL FORWARDING RESULTS:")
@@ -374,7 +371,7 @@ class TestMailboxesMixin:
 class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
     def forward(
         self,
-        email: str,
+        mailbox_id: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
         verbose: bool = True,
     ) -> EmailData:
@@ -386,7 +383,7 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
         Returns:
             DocumentExtractResponse: The simulated extraction response
         """
-        request = self.prepare_forward(email, document, verbose)
+        request = self.prepare_forward(mailbox_id, document, verbose)
         response = self._client._prepared_request(request)
 
         email_data = EmailData.model_validate(response)
@@ -399,11 +396,11 @@ class TestMailboxes(SyncAPIResource, TestMailboxesMixin):
 class AsyncTestMailboxes(AsyncAPIResource, TestMailboxesMixin):
     async def forward(
         self,
-        email: str,
+        mailbox_id: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
         verbose: bool = True,
     ) -> EmailData:
-        request = self.prepare_forward(email, document, verbose)
+        request = self.prepare_forward(mailbox_id, document, verbose)
         response = await self._client._prepared_request(request)
         email_data = EmailData.model_validate(response)
         if verbose:

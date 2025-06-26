@@ -5,6 +5,6 @@ assert load_dotenv("../../../.env.production")
 
 reclient = Retab()
 
-automation = reclient.processors.automations.outlook.delete(
-    outlook_id="outlook_DDw72RgWgIfKFXGaWXcGu",
+automation = reclient.processors.automations.mailboxes.delete(
+    mailbox_id="mb_FRf6FX5fYkenZ_JJlL5GD",
 )

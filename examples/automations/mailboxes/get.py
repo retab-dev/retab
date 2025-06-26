@@ -6,7 +6,7 @@ assert load_dotenv("../../../.env.production")
 reclient = Retab()
 
 automation = reclient.processors.automations.mailboxes.get(
-    mailbox_id="mb_rAfmknvMdIjX4Yj_SxQeE",
+    mailbox_id="mb_FRf6FX5fYkenZ_JJlL5GD",
 )
 
 print(automation.model_dump_json(indent=2))
