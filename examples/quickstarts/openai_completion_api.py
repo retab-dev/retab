@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from retab import Schema, Retab
-from retab._utils.json_schema import filter_auxiliary_fields_json
+from retab.utils.json_schema import filter_auxiliary_fields_json
 
 # Load environment variables
 load_dotenv()
@@ -21,23 +21,23 @@ assert retab_api_key, "Missing RETAB_API_KEY"
 
 # Define schema
 json_schema = {
-    'X-SystemPrompt': 'You are a useful assistant extracting information from documents.',
-    'properties': {
-        'name': {
-            'description': 'The name of the calendar event.',
-            'title': 'Name',
-            'type': 'string',
+    "X-SystemPrompt": "You are a useful assistant extracting information from documents.",
+    "properties": {
+        "name": {
+            "description": "The name of the calendar event.",
+            "title": "Name",
+            "type": "string",
         },
-        'date': {
-            'X-ReasoningPrompt': 'The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.',
-            'description': 'The date of the calendar event in ISO 8601 format.',
-            'title': 'Date',
-            'type': 'string',
+        "date": {
+            "X-ReasoningPrompt": "The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.",
+            "description": "The date of the calendar event in ISO 8601 format.",
+            "title": "Date",
+            "type": "string",
         },
     },
-    'required': ['name', 'date'],
-    'title': 'CalendarEvent',
-    'type': 'object',
+    "required": ["name", "date"],
+    "title": "CalendarEvent",
+    "type": "object",
 }
 
 # Define model and modality

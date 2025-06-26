@@ -31,7 +31,7 @@ class CalendarEvent(BaseModel):
         ...,
         description="The date of the calendar event in ISO 8601 format.",
         json_schema_extra={
-            'X-ReasoningPrompt': 'The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.',
+            "X-ReasoningPrompt": "The user can mention it in any format, like **next week** or **tomorrow**. Infer the right date format from the user input.",
         },
     )
 
@@ -43,7 +43,7 @@ client = OpenAI(api_key=api_key)
 completion = client.beta.chat.completions.parse(model="gpt-4o", messages=schema_obj.openai_messages + doc_msg.openai_messages, response_format=schema_obj.inference_pydantic_model)
 
 # Validate the response against the original schema if you want to remove the reasoning fields
-from retab._utils.json_schema import filter_auxiliary_fields_json
+from retab.utils.json_schema import filter_auxiliary_fields_json
 
 assert completion.choices[0].message.content is not None
 extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(completion.choices[0].message.content))
