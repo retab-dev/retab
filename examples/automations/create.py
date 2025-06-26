@@ -9,7 +9,6 @@ mailbox = client.processors.automations.mailboxes.create(
     webhook_url="https://your-server.com/webhook",  # Replace with your actual webhook URL
 )
 
-
 # If you just want to send a test request to your webhook
 log = client.processors.automations.tests.webhook(
     automation_id=mailbox.id,
