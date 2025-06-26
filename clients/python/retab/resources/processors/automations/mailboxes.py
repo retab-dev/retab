@@ -43,6 +43,7 @@ class MailBoxesMixin:
 
     def prepare_list(
         self,
+        processor_id: str,
         before: str | None = None,
         after: str | None = None,
         limit: int = 10,
@@ -52,6 +53,7 @@ class MailBoxesMixin:
         webhook_url: Optional[str] = None,
     ) -> PreparedRequest:
         params = {
+            "processor_id": processor_id,
             "before": before,
             "after": after,
             "limit": limit,
@@ -150,6 +152,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
 
     def list(
         self,
+        processor_id: str,
         before: str | None = None,
         after: str | None = None,
         limit: int = 10,
@@ -174,6 +177,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             ListMailboxes: List of mailbox configurations
         """
         request = self.prepare_list(
+            processor_id=processor_id,
             before=before,
             after=after,
             limit=limit,
@@ -284,6 +288,7 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
 
     async def list(
         self,
+        processor_id: str,
         before: str | None = None,
         after: str | None = None,
         limit: int = 10,
@@ -292,7 +297,16 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         name: str | None = None,
         webhook_url: str | None = None,
     ) -> ListMailboxes:
-        request = self.prepare_list(before=before, after=after, limit=limit, order=order, email=email, name=name, webhook_url=webhook_url)
+        request = self.prepare_list(
+            processor_id=processor_id,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            email=email,
+            name=name,
+            webhook_url=webhook_url,
+        )
         response = await self._client._prepared_request(request)
         return ListMailboxes.model_validate(response)
 

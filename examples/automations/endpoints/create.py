@@ -5,8 +5,8 @@ assert load_dotenv("../../../.env.production")
 
 reclient = Retab()
 
-automation = reclient.processors.automations.outlook.create(
-    name="Outlook Automation",
+automation = reclient.processors.automations.endpoints.create(
+    name="Endpoint Automation",
     processor_id="proc_o4dtLxizT0kDAjeKuyVLA",
     webhook_url="https://your-server.com/webhook",
 )
