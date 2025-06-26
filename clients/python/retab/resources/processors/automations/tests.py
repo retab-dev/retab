@@ -6,7 +6,7 @@ from PIL.Image import Image
 from pydantic import HttpUrl
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ...._utils.mime import prepare_mime_document
+from ....utils.mime import prepare_mime_document
 from ....types.logs import AutomationLog
 from ....types.mime import MIMEData
 from ....types.standards import PreparedRequest

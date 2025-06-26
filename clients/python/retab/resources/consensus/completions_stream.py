@@ -9,9 +9,9 @@ from openai.types.shared_params.response_format_json_schema import ResponseForma
 from pydantic import BaseModel as ResponseFormatT
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.ai_models import assert_valid_model_extraction
-from ..._utils.json_schema import unflatten_dict
-from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
+from ...utils.ai_models import assert_valid_model_extraction
+from ...utils.json_schema import unflatten_dict
+from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionRetabMessage
 from ...types.completions import RetabChatCompletionsRequest
 from ...types.documents.extractions import RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice

@@ -7,9 +7,9 @@ from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_validator
 
-from .._utils.json_schema import compute_schema_data_id
-from .._utils.mime import generate_blake2b_hash_from_string
-from .._utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
+from ..utils.json_schema import compute_schema_data_id
+from ..utils.mime import generate_blake2b_hash_from_string
+from ..utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
 from .ai_models import Amount
 from .documents.extractions import RetabParsedChatCompletion
 from .mime import BaseMIMEData

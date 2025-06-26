@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, computed_field, model_validator
 from retab.types.chat import ChatCompletionRetabMessage
 from retab.types.documents.extractions import RetabParsedChatCompletion
 
-from .._utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
+from ..utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
 from .ai_models import Amount
 from .modalities import Modality
 

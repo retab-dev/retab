@@ -1,7 +1,7 @@
 # from typing import Literal, Any
 # from pydantic import BaseModel, computed_field
 # from ..mime import MIMEData
-# from ..._utils.benchmarking import ExtractionAnalysis
+# from ...utils.benchmarking import ExtractionAnalysis
 
 # MAX_CONCURRENCY = 15
 

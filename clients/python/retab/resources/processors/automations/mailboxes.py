@@ -6,7 +6,7 @@ from pydantic import EmailStr, HttpUrl
 from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ...._utils.mime import prepare_mime_document
+from ....utils.mime import prepare_mime_document
 from ....types.automations.mailboxes import ListMailboxes, Mailbox, UpdateMailboxRequest
 from ....types.mime import EmailData, MIMEData
 from ....types.standards import PreparedRequest

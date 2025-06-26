@@ -14,10 +14,10 @@ from pydantic_core import PydanticUndefined
 from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.ai_models import assert_valid_model_extraction
-from ..._utils.json_schema import filter_auxiliary_fields_json, load_json_schema, unflatten_dict
-from ..._utils.mime import MIMEData, prepare_mime_document
-from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
+from ...utils.ai_models import assert_valid_model_extraction
+from ...utils.json_schema import filter_auxiliary_fields_json, load_json_schema, unflatten_dict
+from ...utils.mime import MIMEData, prepare_mime_document
+from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionRetabMessage
 from ...types.documents.extractions import DocumentExtractRequest, LogExtractionRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice
 from ...types.browser_canvas import BrowserCanvas

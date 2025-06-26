@@ -6,8 +6,8 @@ from openai.types.shared_params.reasoning import Reasoning
 from pydantic import BaseModel
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.ai_models import assert_valid_model_extraction
-from ..._utils.stream_context_managers import as_async_context_manager, as_context_manager
+from ...utils.ai_models import assert_valid_model_extraction
+from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.completions import RetabChatResponseCreateRequest
 from ...types.documents.extractions import UiResponse
 from ...types.schemas.object import Schema

@@ -6,8 +6,8 @@ from typing import Any, Optional, Self
 import nanoid  # type: ignore
 from pydantic import BaseModel, Field, computed_field, model_validator
 
-from ..._utils.json_schema import clean_schema
-from ..._utils.mime import generate_blake2b_hash_from_string
+from ...utils.json_schema import clean_schema
+from ...utils.mime import generate_blake2b_hash_from_string
 from ..inference_settings import InferenceSettings
 from ..metrics import MetricResult
 from ..predictions import PredictionData

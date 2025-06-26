@@ -6,8 +6,8 @@ from typing import Any, List, Literal, Optional
 import nanoid  # type: ignore
 from pydantic import BaseModel, Field, computed_field
 
-from .._utils.json_schema import clean_schema, compute_schema_data_id
-from .._utils.mime import generate_blake2b_hash_from_string
+from ..utils.json_schema import clean_schema, compute_schema_data_id
+from ..utils.mime import generate_blake2b_hash_from_string
 from .ai_models import Amount
 from .inference_settings import InferenceSettings
 from .mime import MIMEData
