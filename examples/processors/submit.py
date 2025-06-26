@@ -1,7 +1,5 @@
 from retab import Retab
 
-from retab.types.mime import MIMEData
-
 reclient = Retab()
 
 processor = reclient.processors.create(
