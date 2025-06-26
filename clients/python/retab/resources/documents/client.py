@@ -8,9 +8,9 @@ from pydantic_core import PydanticUndefined
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.json_schema import load_json_schema, filter_auxiliary_fields_json
-from ..._utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
-from ..._utils.ai_models import assert_valid_model_extraction
+from ...utils.json_schema import load_json_schema, filter_auxiliary_fields_json
+from ...utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
+from ...utils.ai_models import assert_valid_model_extraction
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
 from ...types.documents.extractions import DocumentExtractRequest, RetabParsedChatCompletion
 from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat

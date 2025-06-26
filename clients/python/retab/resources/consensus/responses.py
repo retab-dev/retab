@@ -7,7 +7,7 @@ from openai.types.shared_params.reasoning import Reasoning
 from pydantic import BaseModel
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.ai_models import assert_valid_model_extraction
+from ...utils.ai_models import assert_valid_model_extraction
 from ...types.completions import RetabChatResponseCreateRequest
 from ...types.documents.extractions import UiResponse
 from ...types.schemas.object import Schema

@@ -7,9 +7,9 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel
 
 from .._resource import AsyncAPIResource, SyncAPIResource
-from .._utils.ai_models import assert_valid_model_schema_generation
-from .._utils.json_schema import load_json_schema
-from .._utils.mime import prepare_mime_document_list
+from ..utils.ai_models import assert_valid_model_schema_generation
+from ..utils.json_schema import load_json_schema
+from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.modalities import Modality
 from ..types.schemas.enhance import EnhanceSchemaConfig, EnhanceSchemaConfigDict, EnhanceSchemaRequest

@@ -5,7 +5,7 @@ from openai.types.shared_params.response_format_json_schema import ResponseForma
 from pydantic import BaseModel as ResponseFormatT
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.ai_models import assert_valid_model_extraction
+from ...utils.ai_models import assert_valid_model_extraction
 from ...types.chat import ChatCompletionRetabMessage
 from ...types.completions import RetabChatCompletionsRequest
 from ...types.documents.extractions import RetabParsedChatCompletion

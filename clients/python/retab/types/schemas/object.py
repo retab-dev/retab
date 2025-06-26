@@ -10,9 +10,9 @@ from openai.types.chat.chat_completion_message_param import ChatCompletionMessag
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from pydantic import BaseModel, Field, PrivateAttr, computed_field, model_validator
 
-from ..._utils.chat import convert_to_anthropic_format, convert_to_google_genai_format
-from ..._utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format
-from ..._utils.json_schema import (
+from ...utils.chat import convert_to_anthropic_format, convert_to_google_genai_format
+from ...utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format
+from ...utils.json_schema import (
     convert_basemodel_to_partial_basemodel,
     convert_json_schema_to_basemodel,
     create_reasoning_schema,
@@ -25,7 +25,7 @@ from ..._utils.json_schema import (
     load_json_schema,
     schema_to_ts_type,
 )
-from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
+from ...utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
 from ...types.standards import StreamingBaseModel
 from ..chat import ChatCompletionRetabMessage
 

@@ -18,10 +18,10 @@ from pydantic_core import PydanticUndefined
 from tqdm import tqdm
 
 from .._resource import AsyncAPIResource, SyncAPIResource
-from .._utils.ai_models import assert_valid_model_extraction, get_provider_for_model
-from .._utils.chat import convert_to_anthropic_format, convert_to_openai_format, separate_messages
-from .._utils.display import Metrics, display_metrics, process_dataset_and_compute_metrics
-from .._utils.json_schema import load_json_schema
+from ..utils.ai_models import assert_valid_model_extraction, get_provider_for_model
+from ..utils.chat import convert_to_anthropic_format, convert_to_openai_format, separate_messages
+from ..utils.display import Metrics, display_metrics, process_dataset_and_compute_metrics
+from ..utils.json_schema import load_json_schema
 from ..types.chat import ChatCompletionRetabMessage
 from ..types.modalities import Modality
 from ..types.schemas.object import Schema

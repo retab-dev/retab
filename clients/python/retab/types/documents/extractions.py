@@ -15,7 +15,7 @@ from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
-from ..._utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
+from ...utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
 from ..ai_models import Amount
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData

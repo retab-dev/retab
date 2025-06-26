@@ -1,0 +1,170 @@
+{
+  "$defs": {
+    "InvoiceLineItem": {
+      "properties": {
+        "amount": {
+          "description": "Total price for this line item",
+          "title": "Amount",
+          "type": "number"
+        },
+        "description": {
+          "description": "Description of the item",
+          "title": "Description",
+          "type": "string"
+        },
+        "quantity": {
+          "description": "Quantity of the item purchased",
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "unit_price": {
+          "description": "Price per unit of the item",
+          "title": "Unit Price",
+          "type": "number"
+        }
+      },
+      "required": [
+        "amount",
+        "description",
+        "quantity",
+        "unit_price"
+      ],
+      "title": "InvoiceLineItem",
+      "type": "object"
+    }
+  },
+  "X-SystemPrompt": "\nYou are an advanced document processing AI specializing in extracting structured data from invoices. Your task is to analyze invoices and provide structured JSON output that conforms to the predefined `Invoice` Pydantic model. Ensure accuracy in capturing all relevant details from the invoice image or document.\n\n**Requirements:**\n1. Extract and accurately populate the following invoice fields:\n   - Supplier information (name, phone, email, address, website)\n   - Receiver details (name, phone, email, address)\n   - Invoice details (date, ID, currency)\n   - Financial information (total amount, tax amount, net amount, amount due, amount paid since last invoice)\n   - Shipping details (ship-to name, address)\n   - Line items, each containing:\n     - Description\n     - Quantity\n     - Unit price\n     - Amount\n\n2. Handle different invoice formats and ensure robustness in field extraction, considering varying layouts and text alignments.\n\n3. Output must be formatted according to the `Invoice` model:\n\n```python\n{\n    \"supplier_phone\": \"123-456-7890\",\n    \"invoice_date\": \"2024-01-22\",\n    \"amount_due\": 68.01,\n    \"supplier_email\": \"sales@amnoshsuppliers.com\",\n    \"receiver_phone\": \"321-321-1234\",\n    \"total_tax_amount\": 225.87,\n    \"invoice_id\": \"1437\",\n    \"supplier_name\": \"AMNOSH SUPPLIERS\",\n    \"total_amount\": 12113.67,\n    \"receiver_name\": \"Johnson Carrie\",\n    \"supplier_website\": \"http://www.amnoshsuppliers.com\",\n    \"supplier_address\": \"9291 Proin Road, Lake Charles, ME-11292\",\n    \"currency\": \"USD\",\n    \"ship_to_name\": \"Johnny Patel\",\n    \"ship_to_address\": \"45 Lightning Road, Arizona, AZ 88776\",\n    \"line_items\": [\n        {\"description\": \"Drag Series Transmission Build - A WD DSM\", \"quantity\": 3, \"unit_price\": 1129.03, \"amount\": 3387.09},\n        {\"description\": \"Drive Shaft Automatic Right\", \"quantity\": 2, \"unit_price\": 243.01, \"amount\": 486.02},\n        {\"description\": \"MIZOL 20W40 Engine Oil\", \"quantity\": 4, \"unit_price\": 342.00, \"amount\": 1368.00},\n        {\"description\": \"Spirax W2 ATF\", \"quantity\": 3, \"unit_price\": 54.50, \"amount\": 163.50},\n        {\"description\": \"Hydraulic Press-25 Tons\", \"quantity\": 1, \"unit_price\": 6391.85, \"amount\": 6391.85},\n        {\"description\": \"Optional: Slotter Machine\", \"quantity\": 2, \"unit_price\": 45.67, \"amount\": 91.34}\n    ],\n    \"receiver_email\": \"proprietor@abcxyz.com\",\n    \"receiver_address\": \"45 Lightning Road, Arizona, AZ 88776\",\n    \"amount_paid_since_last_invoice\": 12045.66,\n    \"net_amount\": 68.01\n}\n```\n\n4. Ensure the output strictly adheres to the data types and field definitions specified in the model.\n\n5. Provide accurate and consistent values, minimizing extraction errors by leveraging OCR and text recognition best practices.\n",
+  "additionalProperties": true,
+  "properties": {
+    "supplier_phone": {
+      "description": "Phone number of the supplier",
+      "title": "Supplier Phone",
+      "type": "string"
+    },
+    "invoice_date": {
+      "description": "Date of the invoice",
+      "title": "Invoice Date",
+      "type": "string"
+    },
+    "amount_due": {
+      "description": "Total amount due after payments",
+      "title": "Amount Due",
+      "type": "number"
+    },
+    "supplier_email": {
+      "description": "Email address of the supplier",
+      "title": "Supplier Email",
+      "type": "string"
+    },
+    "receiver_phone": {
+      "description": "Phone number of the receiver",
+      "title": "Receiver Phone",
+      "type": "string"
+    },
+    "total_tax_amount": {
+      "description": "Total tax amount applied",
+      "title": "Total Tax Amount",
+      "type": "number"
+    },
+    "invoice_id": {
+      "description": "Unique identifier for the invoice",
+      "title": "Invoice Id",
+      "type": "string"
+    },
+    "supplier_name": {
+      "description": "Name of the supplier",
+      "title": "Supplier Name",
+      "type": "string"
+    },
+    "total_amount": {
+      "description": "Total invoice amount including tax",
+      "title": "Total Amount",
+      "type": "number"
+    },
+    "receiver_name": {
+      "description": "Name of the invoice receiver",
+      "title": "Receiver Name",
+      "type": "string"
+    },
+    "supplier_website": {
+      "description": "Website URL of the supplier",
+      "format": "uri",
+      "maxLength": 2083,
+      "minLength": 1,
+      "title": "Supplier Website",
+      "type": "string"
+    },
+    "supplier_address": {
+      "description": "Address of the supplier",
+      "title": "Supplier Address",
+      "type": "string"
+    },
+    "currency": {
+      "description": "Currency of the invoice amount",
+      "title": "Currency",
+      "type": "string"
+    },
+    "ship_to_name": {
+      "description": "Name of the person the invoice is shipped to",
+      "title": "Ship To Name",
+      "type": "string"
+    },
+    "ship_to_address": {
+      "description": "Shipping address",
+      "title": "Ship To Address",
+      "type": "string"
+    },
+    "line_items": {
+      "description": "List of line items in the invoice",
+      "items": {
+        "$ref": "#/$defs/InvoiceLineItem"
+      },
+      "title": "Line Items",
+      "type": "array"
+    },
+    "receiver_email": {
+      "description": "Email address of the receiver",
+      "title": "Receiver Email",
+      "type": "string"
+    },
+    "receiver_address": {
+      "description": "Address of the invoice receiver",
+      "title": "Receiver Address",
+      "type": "string"
+    },
+    "amount_paid_since_last_invoice": {
+      "description": "Amount paid since the last invoice",
+      "title": "Amount Paid Since Last Invoice",
+      "type": "number"
+    },
+    "net_amount": {
+      "description": "Net amount to be paid after deductions",
+      "title": "Net Amount",
+      "type": "number"
+    }
+  },
+  "required": [
+    "supplier_phone",
+    "invoice_date",
+    "amount_due",
+    "supplier_email",
+    "receiver_phone",
+    "total_tax_amount",
+    "invoice_id",
+    "supplier_name",
+    "total_amount",
+    "receiver_name",
+    "supplier_website",
+    "supplier_address",
+    "currency",
+    "ship_to_name",
+    "ship_to_address",
+    "line_items",
+    "receiver_email",
+    "receiver_address",
+    "amount_paid_since_last_invoice",
+    "net_amount"
+  ],
+  "title": "Invoice",
+  "type": "object"
+}

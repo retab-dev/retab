@@ -7,7 +7,7 @@ from openai.types.shared_params.reasoning import Reasoning
 from openai.types.shared_params.response_format_json_schema import ResponseFormatJSONSchema
 from pydantic import BaseModel, ConfigDict, Field
 
-from .._utils.ai_models import get_provider_for_model
+from ..utils.ai_models import get_provider_for_model
 from .ai_models import AIProvider
 from .chat import ChatCompletionRetabMessage
 

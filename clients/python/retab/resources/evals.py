@@ -7,7 +7,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import HttpUrl
 
 from .._resource import AsyncAPIResource, SyncAPIResource
-from .._utils.mime import prepare_mime_document
+from ..utils.mime import prepare_mime_document
 from ..types.evals import (
     CreateIterationRequest,
     DistancesResult,

@@ -1,7 +1,7 @@
 import base64
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, List, Literal
+from typing import Any, List, Literal
 
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -9,8 +9,9 @@ from pydantic import BaseModel, HttpUrl
 from pydantic_core import PydanticUndefined
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ..._utils.ai_models import assert_valid_model_extraction
-from ..._utils.mime import MIMEData, prepare_mime_document
+from ...utils.ai_models import assert_valid_model_extraction
+from ...utils.json_schema import load_json_schema
+from ...utils.mime import MIMEData, prepare_mime_document
 from ...types.browser_canvas import BrowserCanvas
 from ...types.documents.extractions import RetabParsedChatCompletion
 from ...types.logs import ProcessorConfig, UpdateProcessorRequest
@@ -31,7 +32,7 @@ class ProcessorsMixin:
     def prepare_create(
         self,
         name: str,
-        json_schema: dict[str, Any],
+        json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
@@ -42,9 +43,12 @@ class ProcessorsMixin:
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
+        # Load the JSON schema from file path, string, or dict
+        loaded_schema = load_json_schema(json_schema)
+
         processor_config = ProcessorConfig(
             name=name,
-            json_schema=json_schema,
+            json_schema=loaded_schema,
             modality=modality,
             model=model,
             temperature=temperature,
@@ -104,7 +108,7 @@ class ProcessorsMixin:
         image_resolution_dpi: int | None = None,
         browser_canvas: BrowserCanvas | None = None,
         model: str | None = None,
-        json_schema: dict[str, Any] | None = None,
+        json_schema: dict[str, Any] | Path | str | None = None,
         temperature: float | None = None,
         reasoning_effort: ChatCompletionReasoningEffort | None = None,
         n_consensus: int | None = None,
@@ -112,13 +116,18 @@ class ProcessorsMixin:
         if model is not None:
             assert_valid_model_extraction(model)
 
+        # Load the JSON schema from file path, string, or dict if provided
+        loaded_schema = None
+        if json_schema is not None:
+            loaded_schema = load_json_schema(json_schema)
+
         update_request = UpdateProcessorRequest(
             name=name,
             modality=modality,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
             model=model,
-            json_schema=json_schema,
+            json_schema=loaded_schema,
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             n_consensus=n_consensus,
@@ -203,7 +212,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
     def create(
         self,
         name: str,
-        json_schema: Dict[str, Any],
+        json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
@@ -216,7 +225,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
 
         Args:
             name: Name of the processor
-            json_schema: JSON schema for the processor
+            json_schema: JSON schema for the processor. Can be a dictionary, file path (Path or str), or JSON string.
             image_resolution_dpi: Optional image resolution DPI
             browser_canvas: Optional browser canvas size
             modality: Processing modality (currently only "native" supported)
@@ -295,7 +304,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         image_resolution_dpi: int | None = None,
         browser_canvas: BrowserCanvas | None = None,
         model: str | None = None,
-        json_schema: dict[str, Any] | None = None,
+        json_schema: dict[str, Any] | Path | str | None = None,
         temperature: float | None = None,
         reasoning_effort: ChatCompletionReasoningEffort | None = None,
         n_consensus: int | None = None,
@@ -309,7 +318,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
             image_resolution_dpi: New image resolution DPI
             browser_canvas: New browser canvas size
             model: New AI model
-            json_schema: New JSON schema for the processor
+            json_schema: New JSON schema for the processor. Can be a dictionary, file path (Path or str), or JSON string.
             temperature: New temperature setting
             reasoning_effort: The effort level for the model to reason about the input data.
             n_consensus: New number of consensus required
@@ -378,7 +387,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
     async def create(
         self,
         name: str,
-        json_schema: Dict[str, Any],
+        json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
         temperature: float = PydanticUndefined,  # type: ignore[assignment]
@@ -432,7 +441,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         image_resolution_dpi: int | None = None,
         browser_canvas: BrowserCanvas | None = None,
         model: str | None = None,
-        json_schema: dict[str, Any] | None = None,
+        json_schema: dict[str, Any] | Path | str | None = None,
         temperature: float | None = None,
         reasoning_effort: ChatCompletionReasoningEffort | None = None,
         n_consensus: int | None = None,
@@ -446,7 +455,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
             image_resolution_dpi: New image resolution DPI
             browser_canvas: New browser canvas size
             model: New AI model
-            json_schema: New JSON schema for the processor
+            json_schema: New JSON schema for the processor. Can be a dictionary, file path (Path or str), or JSON string.
             temperature: New temperature setting
             reasoning_effort: The effort level for the model to reason about the input data.
             n_consensus: New number of consensus required

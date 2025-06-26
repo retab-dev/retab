@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 # https://platform.openai.com/docs/guides/prompt-caching
 from ...types.ai_models import Amount, Pricing
-from ..._utils.ai_models import get_model_card
+from ...utils.ai_models import get_model_card
 
 # ─── PRICING MODELS ────────────────────────────────────────────────────────────
 

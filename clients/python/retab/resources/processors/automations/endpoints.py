@@ -3,7 +3,7 @@ from typing import Literal, Optional
 from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ...._utils.ai_models import assert_valid_model_extraction
+from ....utils.ai_models import assert_valid_model_extraction
 from ....types.automations.endpoints import Endpoint, ListEndpoints, UpdateEndpointRequest
 from ....types.standards import PreparedRequest
 

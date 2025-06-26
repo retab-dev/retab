@@ -10,10 +10,10 @@ from openai.types.chat.chat_completion_message_param import ChatCompletionMessag
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from pydantic import BaseModel, Field, computed_field
 
-from ..._utils.chat import convert_to_anthropic_format, convert_to_google_genai_format, str_messages
-from ..._utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format
-from ..._utils.display import count_image_tokens, count_text_tokens
-from ..._utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
+from ...utils.chat import convert_to_anthropic_format, convert_to_google_genai_format, str_messages
+from ...utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format
+from ...utils.display import count_image_tokens, count_text_tokens
+from ...utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..modalities import Modality
