@@ -75,7 +75,7 @@ class MailBoxesMixin:
 
     def prepare_update(
         self,
-        email: str,
+        mailbox_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
@@ -93,7 +93,7 @@ class MailBoxesMixin:
             authorized_domains=authorized_domains,
             authorized_emails=authorized_emails,
         )
-        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/mailboxes/{email}", data=update_mailbox_request.model_dump(mode="json"))
+        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/mailboxes/{mailbox_id}", data=update_mailbox_request.model_dump(mode="json"))
 
     def prepare_delete(self, email: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/mailboxes/{email}", raise_for_status=True)
@@ -204,7 +204,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
 
     def update(
         self,
-        email: str,
+        mailbox_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
@@ -229,7 +229,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
             Mailbox: The updated mailbox configuration
         """
         request = self.prepare_update(
-            email=email,
+            mailbox_id=mailbox_id,
             name=name,
             default_language=default_language,
             webhook_url=webhook_url,
@@ -310,14 +310,14 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         response = await self._client._prepared_request(request)
         return ListMailboxes.model_validate(response)
 
-    async def get(self, email: str) -> Mailbox:
-        request = self.prepare_get(email)
+    async def get(self, mailbox_id: str) -> Mailbox:
+        request = self.prepare_get(mailbox_id)
         response = await self._client._prepared_request(request)
         return Mailbox.model_validate(response)
 
     async def update(
         self,
-        email: str,
+        mailbox_id: str,
         name: str = PydanticUndefined,  # type: ignore[assignment]
         default_language: str = PydanticUndefined,  # type: ignore[assignment]
         webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
@@ -327,7 +327,7 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         authorized_emails: List[str] = PydanticUndefined,  # type: ignore[assignment]
     ) -> Mailbox:
         request = self.prepare_update(
-            email=email,
+            mailbox_id=mailbox_id,
             name=name,
             default_language=default_language,
             webhook_url=webhook_url,
