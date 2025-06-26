@@ -2,7 +2,7 @@
 
 <div align="center" style="margin-bottom: 1em;">
 
-<img src="https://raw.githubusercontent.com/Retab/retab/refs/heads/main/assets/retab-logo.png" alt="Retab Logo" width="150">
+<img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/retab-logo.png" alt="Retab Logo" width="150">
 
 
   *The AI Automation Platform*
@@ -52,7 +52,7 @@ You come with your own API key from your favorite AI provider, and we handle the
 We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthropic](https://www.anthropic.com/api), [Gemini](https://aistudio.google.com/prompts/new_chat) and [xAI](https://x.ai/api) models.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Retab/retab/refs/heads/main/assets/supported_models.png" alt="Supported Models" width="600">
+  <img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/supported_models.png" alt="Supported Models" width="600">
 </p>
 
 ---
@@ -62,7 +62,7 @@ We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthr
 Explore our [Playground](https://www.retab.dev/dashboard/playground) and create your first automations easily 🚀!
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Retab/retab/refs/heads/main/assets/retab-playground.png" alt="Retab Playground" width="600">
+  <img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/retab-playground.png" alt="Retab Playground" width="600">
 </p>
 
 ---
