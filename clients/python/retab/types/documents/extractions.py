@@ -91,7 +91,7 @@ class FieldLocation(BaseModel):
     quote: str = Field(..., description="The quote of the field (verbatim from the document)")
     file_id: str | None = Field(default=None, description="The ID of the file")
     page: int | None = Field(default=None, description="The page number of the field (1-indexed)")
-    bboxes_normalized: list[tuple[float, float, float, float]] | None = Field(default=None, description="The normalized bounding boxes of the field")
+    bbox_normalized: tuple[float, float, float, float] | None = Field(default=None, description="The normalized bounding box of the field")
     score: float | None = Field(default=None, description="The score of the field")
     match_level: Literal["token", "line", "block"] | None = Field(default=None, description="The level of the match (token, line, block)")
 
@@ -99,7 +99,7 @@ class FieldLocation(BaseModel):
 class RetabParsedChoice(ParsedChoice):
     # Adaptable ParsedChoice that allows None for the finish_reason
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
-    field_locations: dict[str, list[FieldLocation]] | None = Field(default=None, description="The locations of the fields in the document, if available")
+    field_locations: dict[str, FieldLocation] | None = Field(default=None, description="The locations of the fields in the document, if available")
     key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
 
 
