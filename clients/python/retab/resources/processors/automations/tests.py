@@ -1,4 +1,5 @@
 import json
+import base64
 from io import IOBase
 from pathlib import Path
 
@@ -15,7 +16,12 @@ from ....types.standards import PreparedRequest
 class TestsMixin:
     def prepare_upload(self, automation_id: str, document: Path | str | IOBase | HttpUrl | Image | MIMEData) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        return PreparedRequest(method="POST", url=f"/v1/processors/automations/tests/upload/{automation_id}", data={"document": mime_document.model_dump(mode="json")})
+
+        # Convert MIME document to file upload format (similar to processors client)
+        files = {"file": (mime_document.filename, base64.b64decode(mime_document.content), mime_document.mime_type)}
+
+        # Send as multipart form data with file upload
+        return PreparedRequest(method="POST", url=f"/v1/processors/automations/tests/upload/{automation_id}", files=files)
 
     def prepare_webhook(self, automation_id: str) -> PreparedRequest:
         return PreparedRequest(method="POST", url=f"/v1/processors/automations/tests/webhook/{automation_id}", data=None)

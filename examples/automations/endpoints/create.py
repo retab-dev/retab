@@ -5,8 +5,9 @@ assert load_dotenv("../../../.env.production")
 
 reclient = Retab()
 
+print("making a query to create an endpoint")
 automation = reclient.processors.automations.endpoints.create(
-    name="Endpoint Automation",
+    name="Endpoint Automation 2",
     processor_id="proc_o4dtLxizT0kDAjeKuyVLA",
     webhook_url="https://your-server.com/webhook",
 )
