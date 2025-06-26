@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from ..mime import MIMEData, BaseMIMEData
 from ..browser_canvas import BrowserCanvas
 
-TableParsingFormat = Literal["text", "image", "yaml", "html"]
+TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 
 
 class RetabUsage(BaseModel):
