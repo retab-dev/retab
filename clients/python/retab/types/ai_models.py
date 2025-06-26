@@ -14,6 +14,7 @@ GeminiModel = Literal[
     "gemini-2.5-pro-preview-03-25",
     "gemini-2.5-flash-preview-05-20",
     "gemini-2.5-flash-preview-04-17",
+    "gemini-2.5-flash-lite-preview-06-25",
     "gemini-2.5-pro-exp-03-25",
     "gemini-2.0-flash-lite",
     "gemini-2.0-flash",
@@ -60,7 +61,7 @@ OpenAIModel = Literal[
     "gpt-4o-mini-realtime-preview-2024-12-17",
 ]
 xAI_Model = Literal["grok-3", "grok-3-mini"]
-RetabModel = Literal["auto-large", "auto-small"]
+RetabModel = Literal["auto-large", "auto-small", "auto-micro"]
 PureLLMModel = Literal[OpenAIModel, AnthropicModel, xAI_Model, GeminiModel, RetabModel]
 LLMModel = Literal[PureLLMModel, "human"]
 

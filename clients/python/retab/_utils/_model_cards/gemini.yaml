@@ -68,7 +68,6 @@
 - model: "gemini-2.5-flash-preview-04-17"
   inherits: "gemini-2.5-flash-preview-05-20"
 
-
 # gemini-2.0-flash family
 - model: "gemini-2.0-flash"
   pricing:
@@ -99,3 +98,20 @@
     endpoints: ["chat_completions"]
     features: ["streaming", "structured_outputs"]
   temperature_support: true
+
+- model: "gemini-2.5-flash-lite-preview-06-17"
+  pricing:
+    text:
+      prompt: 0.10
+      completion: 0.40
+    audio:
+      prompt: 0.50
+      completion: 0.40
+  capabilities:
+    modalities: ["text", "image", "audio", "video"]
+    endpoints: ["chat_completions"]
+    features: ["streaming", "structured_outputs"]
+  temperature_support: true
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
