@@ -3,7 +3,13 @@ from typing import Any, Literal, List
 from pydantic_core import PydanticUndefined
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ....types.automations.outlook import FetchParams, ListOutlooks, MatchParams, Outlook, UpdateOutlookRequest
+from ....types.automations.outlook import (
+    FetchParams,
+    ListOutlooks,
+    MatchParams,
+    Outlook,
+    UpdateOutlookRequest,
+)
 from ....types.standards import PreparedRequest
 
 
@@ -38,10 +44,15 @@ class OutlooksMixin:
             match_params=match_params,
             fetch_params=fetch_params,
         )
-        return PreparedRequest(method="POST", url=self.outlooks_base_url, data=outlook_data.model_dump(mode="json"))
+        return PreparedRequest(
+            method="POST",
+            url=self.outlooks_base_url,
+            data=outlook_data.model_dump(mode="json"),
+        )
 
     def prepare_list(
         self,
+        processor_id: str,
         before: str | None = None,
         after: str | None = None,
         limit: int = 10,
@@ -50,6 +61,7 @@ class OutlooksMixin:
         webhook_url: str | None = None,
     ) -> PreparedRequest:
         params = {
+            "processor_id": processor_id,
             "before": before,
             "after": after,
             "limit": limit,
@@ -92,7 +104,11 @@ class OutlooksMixin:
             fetch_params=fetch_params,
         )
 
-        return PreparedRequest(method="PUT", url=f"{self.outlooks_base_url}/{outlook_id}", data=update_outlook_request.model_dump(mode="json"))
+        return PreparedRequest(
+            method="PUT",
+            url=f"{self.outlooks_base_url}/{outlook_id}",
+            data=update_outlook_request.model_dump(mode="json"),
+        )
 
     def prepare_delete(self, outlook_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"{self.outlooks_base_url}/{outlook_id}")
@@ -155,6 +171,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
 
     def list(
         self,
+        processor_id: str,
         before: str | None = None,
         after: str | None = None,
         limit: int = 10,
@@ -174,7 +191,7 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         Returns:
             List[Outlook]: List of outlook plugin configurations
         """
-        request = self.prepare_list(before, after, limit, order, name, webhook_url)
+        request = self.prepare_list(processor_id, before, after, limit, order, name, webhook_url)
         response = self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
 
@@ -285,6 +302,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
 
     async def list(
         self,
+        processor_id: str,
         before: str | None = None,
         after: str | None = None,
         limit: int = 10,
@@ -292,7 +310,7 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         name: str | None = None,
         webhook_url: str | None = None,
     ) -> ListOutlooks:
-        request = self.prepare_list(before, after, limit, order, name, webhook_url)
+        request = self.prepare_list(processor_id, before, after, limit, order, name, webhook_url)
         response = await self._client._prepared_request(request)
         return ListOutlooks.model_validate(response)
 

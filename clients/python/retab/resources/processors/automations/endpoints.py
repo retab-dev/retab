@@ -31,6 +31,7 @@ class EndpointsMixin:
 
     def prepare_list(
         self,
+        processor_id: str,
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
@@ -40,6 +41,7 @@ class EndpointsMixin:
         webhook_url: Optional[str] = None,
     ) -> PreparedRequest:
         params = {
+            "processor_id": processor_id,
             "before": before,
             "after": after,
             "limit": limit,
@@ -61,7 +63,8 @@ class EndpointsMixin:
         Returns:
             Endpoint: The endpoint configuration
         """
-        return PreparedRequest(method="GET", url=f"/v1/processors/automations/endpoints/{endpoint_id}")
+        params = {"id": endpoint_id}
+        return PreparedRequest(method="GET", url="/v1/processors/automations/endpoints", params=params)
 
     def prepare_update(
         self,
@@ -125,6 +128,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
 
     def list(
         self,
+        processor_id: str,
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
@@ -145,7 +149,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         Returns:
             ListEndpoints: Paginated list of endpoint configurations with metadata
         """
-        request = self.prepare_list(before, after, limit, order, name, webhook_url)
+        request = self.prepare_list(processor_id, before, after, limit, order, name, webhook_url)
         response = self._client._prepared_request(request)
         return ListEndpoints.model_validate(response)
 
@@ -235,6 +239,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
 
     async def list(
         self,
+        processor_id: str,
         before: Optional[str] = None,
         after: Optional[str] = None,
         limit: Optional[int] = 10,
@@ -242,7 +247,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         name: Optional[str] = None,
         webhook_url: Optional[str] = None,
     ) -> ListEndpoints:
-        request = self.prepare_list(before, after, limit, order, name, webhook_url)
+        request = self.prepare_list(processor_id, before, after, limit, order, name, webhook_url)
         response = await self._client._prepared_request(request)
         return ListEndpoints.model_validate(response)
 

@@ -5,7 +5,7 @@ assert load_dotenv("../../../.env.production")
 
 reclient = Retab()
 
-automations = reclient.processors.automations.outlook.list(
+automations = reclient.processors.automations.endpoints.list(
     processor_id="proc_o4dtLxizT0kDAjeKuyVLA",
 )
 
