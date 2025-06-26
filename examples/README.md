@@ -1,4 +1,4 @@
-# <img src="assets/retab-logo.png" alt="Retab Logo" width="24" /> Retab Cookbook
+# <img src="../assets/retab-logo.png" alt="Retab Logo" width="24" /> Retab Cookbook
 
 Visit [docs.retab.dev](https://docs.retab.dev/get-started/automations-quickstart).
 
