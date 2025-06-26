@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from retab import Retab
 
-assert load_dotenv("../../../.env.production")
+assert load_dotenv("../../../.env.local")
 
 reclient = Retab()
 

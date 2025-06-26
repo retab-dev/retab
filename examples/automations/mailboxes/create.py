@@ -7,9 +7,9 @@ reclient = Retab()
 
 automation = reclient.processors.automations.mailboxes.create(
     name="Mailbox Automation",
-    processor_id="proc_o4dtLxizT0kDAjeKuyVLA",
-    webhook_url="https://your-server.com/webhook",
-    email="test@mailbox.retab.dev",
+    processor_id="proc_2BTqDkKOTO_Ddz1N7JwVZ",
+    webhook_url="https://api.retab.dev/test-webhook",
+    email="invoices-new@mailbox.retab.dev",
 )
 
 print(automation.model_dump_json(indent=2))
