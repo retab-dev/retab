@@ -1,5 +1,5 @@
-from retab import Retab
 from dotenv import load_dotenv
+from retab import Retab
 
 assert load_dotenv("../../.env.production")
 
@@ -16,6 +16,5 @@ processor = reclient.processors.create(
     image_resolution_dpi=150,
 )
 
-completion = reclient.processors.submit(processor_id=processor.id, document="../../assets/code/invoice.jpeg")
-
-print(completion.model_dump_json(indent=2))
+print(processor.model_dump_json(indent=2))
+# completion = reclient.processors.submit(processor_id=processor.id, document="../../assets/code/invoice.jpeg")
