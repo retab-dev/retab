@@ -63,8 +63,7 @@ class EndpointsMixin:
         Returns:
             Endpoint: The endpoint configuration
         """
-        params = {"id": endpoint_id}
-        return PreparedRequest(method="GET", url="/v1/processors/automations/endpoints", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/processors/automations/endpoints/{endpoint_id}")
 
     def prepare_update(
         self,
