@@ -108,7 +108,7 @@
       prompt: 0.50
       completion: 0.40
   capabilities:
-    modalities: ["text", "image", "audio", "video"]
+    modalities: ["text", "image", "audio"]
     endpoints: ["chat_completions"]
     features: ["streaming", "structured_outputs"]
   temperature_support: true
