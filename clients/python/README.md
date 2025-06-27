@@ -7,9 +7,9 @@
 
   *The AI Automation Platform*
 
-Made with love by the team at [Retab](https://retab.dev) 🤍.
+Made with love by the team at [Retab](https://retab.com) 🤍.
 
-[Our Website](https://retab.dev) | [Documentation](https://docs.retab.dev/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabdev)
+[Our Website](https://retab.com) | [Documentation](https://docs.retab.com/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabdev)
 
 
 </div>
@@ -59,7 +59,7 @@ We currently support [OpenAI](https://platform.openai.com/docs/overview), [Anthr
 
 ## Quickstart
 
-Explore our [Playground](https://www.retab.dev/dashboard/playground) and create your first automations easily 🚀!
+Explore our [Playground](https://www.retab.com/dashboard/playground) and create your first automations easily 🚀!
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/retab-playground.png" alt="Retab Playground" width="600">
@@ -71,7 +71,7 @@ Explore our [Playground](https://www.retab.dev/dashboard/playground) and create 
 
 ## Dev Mode 🔧
 
-You need more control? You can access the [Documentation](https://docs.retab.dev/get-started/introduction) of our **Python SDK**.
+You need more control? You can access the [Documentation](https://docs.retab.com/get-started/introduction) of our **Python SDK**.
 
 1. **Setup the Python SDK**
 > Install the Retab Python SDK and configure your API keys to start processing documents with your preferred AI provider.
@@ -96,7 +96,7 @@ To get started, install the `retab` package using pip:
 pip install retab
 ```
 
-Then, [create your API key on retab.dev](https://www.retab.dev).
+Then, [create your API key on retab.com](https://www.retab.com).
 
 Create another API key by you favorite API key provider. 
 
@@ -153,7 +153,7 @@ We use a standard JSON Schema with custom annotations (`X-SystemPrompt`, `X-Fiel
 
 These annotations help guide the LLM’s behavior and improve extraction accuracy. 
 
-You can learn more about these in our [JSON Schema documentation](https://docs.retab.dev/get-started/prompting-with-the-JSON-schema).
+You can learn more about these in our [JSON Schema documentation](https://docs.retab.com/get-started/prompting-with-the-JSON-schema).
 
 ```bash
 from retab import Retab
@@ -262,16 +262,16 @@ reclient = Retab()
 
 # Create an automation that uses the webhook URL from Step 2
 automation = reclient.processors.automations.mailboxes.create(
-    email="invoices@mailbox.retab.dev",
+    email="invoices@mailbox.retab.com",
     model="gpt-4.1-nano",
     json_schema=Invoice.model_json_schema(), # use the pydantic model to create the json schema
     webhook_url="https://your-server.com/webhook",  # Replace with your actual webhook URL
 )
 ```
 
-At any email sent to `invoices@mailbox.retab.dev`, the automation will send a POST request to your FastAPI webhook endpoint, where the payload can be processed.
+At any email sent to `invoices@mailbox.retab.com`, the automation will send a POST request to your FastAPI webhook endpoint, where the payload can be processed.
 
-You can see the automation you just created on your [dashboard](https://www.retab.dev/dashboard/processors)!
+You can see the automation you just created on your [dashboard](https://www.retab.com/dashboard/processors)!
 
 ### Step 5: Test your automation
 
@@ -285,18 +285,18 @@ reclient = Retab()
 
 # If you just want to send a test request to your webhook
 log = reclient.processors.automations.mailboxes.tests.webhook(
-    email="test-mailbox-local@devmail.retab.dev", 
+    email="test-mailbox-local@devmail.retab.com", 
 )
 
 # If you want to test the file processing logic: 
 log = reclient.processors.automations.mailboxes.tests.process(
-    email="test-mailbox-local@devmail.retab.dev", 
+    email="test-mailbox-local@devmail.retab.com", 
     document="your_invoice_email.eml"
 )
 
 # If you want to test a full email forwarding
 log = reclient.processors.automations.mailboxes.tests.forward(
-    email="retab-quickstart@mailbox.retab.dev", 
+    email="retab-quickstart@mailbox.retab.com", 
     document="your_invoice_email.eml"
 )
 ```
@@ -310,13 +310,13 @@ reclient = Retab()
 
 # If you just want to send a test request to your webhook
 log = reclient.processors.automations.mailboxes.tests.webhook(
-    email="test-mailbox-local@devmail.retab.dev", 
+    email="test-mailbox-local@devmail.retab.com", 
     webhook_url="http://localhost:8000/webhook" # If you want to try your webhook locally, you can override the webhook url set in the automation
 )
 ```
 
 And that's it! You can start processing documents at scale! 
-You have 1000 free requests to get started, and you can [subscribe](https://www.retab.dev) to the pro plan to get more.
+You have 1000 free requests to get started, and you can [subscribe](https://www.retab.com) to the pro plan to get more.
 
 But this minimalistic example is just the beginning. 
 
@@ -326,11 +326,11 @@ Continue reading to learn more about how to use Retab **to its full potential** 
 
 ## Go further
 
-- [Prompt Engineering Guide](https://docs.retab.dev/get-started/prompting-with-the-json-schema)
-- [General Concepts](https://docs.retab.dev/get-started/General-Concepts)
-    - [Consensus](https://docs.retab.dev/SDK/General-Concepts#consensus)
-- [Create mailboxes](https://docs.retab.dev/SDK/Automations#mailbox)
-- [Create links](https://docs.retab.dev/SDK/Automations#link)
+- [Prompt Engineering Guide](https://docs.retab.com/get-started/prompting-with-the-json-schema)
+- [General Concepts](https://docs.retab.com/get-started/General-Concepts)
+    - [Consensus](https://docs.retab.com/SDK/General-Concepts#consensus)
+- [Create mailboxes](https://docs.retab.com/SDK/Automations#mailbox)
+- [Create links](https://docs.retab.com/SDK/Automations#link)
 - Finetuning (coming soon)
 - Prompt optimization (coming soon)
 - Data-Labelling with our AI-powered annotator (coming soon)

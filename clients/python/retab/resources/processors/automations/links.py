@@ -128,7 +128,7 @@ class Links(SyncAPIResource, LinksMixin):
         )
         response = self._client._prepared_request(request)
 
-        print(f"Link Created. Url: https://www.retab.dev/dashboard/processors/automations/{response['id']}")
+        print(f"Link Created. Url: https://www.retab.com/dashboard/processors/automations/{response['id']}")
         return Link.model_validate(response)
 
     def list(
@@ -248,7 +248,7 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
             password=password,
         )
         response = await self._client._prepared_request(request)
-        print(f"Link Created. Url: https://www.retab.dev/dashboard/processors/automations/{response['id']}")
+        print(f"Link Created. Url: https://www.retab.com/dashboard/processors/automations/{response['id']}")
         return Link.model_validate(response)
 
     async def list(

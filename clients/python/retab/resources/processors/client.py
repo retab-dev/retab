@@ -248,7 +248,7 @@ class Processors(SyncAPIResource, ProcessorsMixin):
             n_consensus=n_consensus,
         )
         response = self._client._prepared_request(request)
-        print(f"Processor ID: {response['id']}. Processor available at https://www.retab.dev/dashboard/processors/{response['id']}")
+        print(f"Processor ID: {response['id']}. Processor available at https://www.retab.com/dashboard/processors/{response['id']}")
         return ProcessorConfig.model_validate(response)
 
     def list(
@@ -408,7 +408,7 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
             n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(request)
-        print(f"Processor ID: {response['id']}. Processor available at https://www.retab.dev/dashboard/processors/{response['id']}")
+        print(f"Processor ID: {response['id']}. Processor available at https://www.retab.com/dashboard/processors/{response['id']}")
 
         return ProcessorConfig.model_validate(response)
 

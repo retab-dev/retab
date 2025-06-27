@@ -11,7 +11,7 @@ from retab import Retab
 async def test_mailboxes_crud(sync_client: Retab, company_json_schema: dict[str, Any], booking_confirmation_file_path_1: str) -> None:
     test_idx = nanoid.generate().lower()
     name = f"test_mailbox_{test_idx}"
-    email_address = f"bert2_{test_idx}@{os.getenv('EMAIL_DOMAIN', 'mailbox.retab.dev')}"
+    email_address = f"bert2_{test_idx}@{os.getenv('EMAIL_DOMAIN', 'mailbox.retab.com')}"
     webhook_url = "http://localhost:4000/product"
     model = "gpt-4o-mini"
 

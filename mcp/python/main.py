@@ -81,7 +81,7 @@ async def get_retab_available_models() -> str:
 
 if __name__ == "__main__":
     api_key = os.getenv("RETAB_API_KEY")
-    base_url = os.getenv("RETAB_BASE_URL", "https://api.retab.dev")
+    base_url = os.getenv("RETAB_BASE_URL", "https://api.retab.com")
     if not api_key:
         raise ValueError("RETAB_API_KEY is not set")
     try:
@@ -92,4 +92,4 @@ if __name__ == "__main__":
         exit(1)
 
     # Initialize and run the server
-    mcp.run(transport='stdio')
+    mcp.run(transport="stdio")

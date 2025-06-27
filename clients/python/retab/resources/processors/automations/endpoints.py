@@ -122,7 +122,7 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
             need_validation=need_validation,
         )
         response = self._client._prepared_request(request)
-        print(f"Endpoint Created. Url: https://www.retab.dev/dashboard/processors/automations/{response['id']}")
+        print(f"Endpoint Created. Url: https://www.retab.com/dashboard/processors/automations/{response['id']}")
         return Endpoint.model_validate(response)
 
     def list(
@@ -232,7 +232,7 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
             need_validation=need_validation,
         )
         response = await self._client._prepared_request(request)
-        print(f"Endpoint Created. Url: https://www.retab.dev/dashboard/processors/automations/{response['id']}")
+        print(f"Endpoint Created. Url: https://www.retab.com/dashboard/processors/automations/{response['id']}")
 
         return Endpoint.model_validate(response)
 

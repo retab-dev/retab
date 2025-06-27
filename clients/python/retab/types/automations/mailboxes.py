@@ -17,7 +17,7 @@ class Mailbox(AutomationConfig):
     def object(self) -> str:
         return "automation.mailbox"
 
-    EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.retab.dev')}$"
+    EMAIL_PATTERN: ClassVar[str] = f".*@{os.getenv('EMAIL_DOMAIN', 'mailbox.retab.com')}$"
     id: str = Field(default_factory=lambda: "mb_" + nanoid.generate(), description="Unique identifier for the mailbox")
 
     # Email Specific config

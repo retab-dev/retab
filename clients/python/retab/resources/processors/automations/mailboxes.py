@@ -143,7 +143,7 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         )
         response = self._client._prepared_request(request)
 
-        print(f"Mailbox {response['email']} created. Url: https://www.retab.dev/dashboard/processors/automations/{response['id']}")
+        print(f"Mailbox {response['email']} created. Url: https://www.retab.com/dashboard/processors/automations/{response['id']}")
 
         return Mailbox.model_validate(response)
 
@@ -279,7 +279,7 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         )
         response = await self._client._prepared_request(request)
 
-        print(f"Mailbox {response['email']} created. Url: https://www.retab.dev/dashboard/processors/automations/{response['id']}")
+        print(f"Mailbox {response['email']} created. Url: https://www.retab.com/dashboard/processors/automations/{response['id']}")
 
         return Mailbox.model_validate(response)
 

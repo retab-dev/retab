@@ -123,7 +123,7 @@ class Completions(SyncAPIResource, BaseCompletionsMixin):
 
         Usage:
         ```python
-        with retab.devpletions.stream(json_schema, messages, model, temperature, reasoning_effort) as stream:
+        with retab.completions.stream(json_schema, messages, model, temperature, reasoning_effort) as stream:
             for response in stream:
                 print(response)
         ```
@@ -210,7 +210,7 @@ class AsyncCompletions(AsyncAPIResource, BaseCompletionsMixin):
 
         Usage:
         ```python
-        async with retab.devpletions.stream(json_schema, messages, model, temperature, reasoning_effort, n_consensus) as stream:
+        async with retab.completions.stream(json_schema, messages, model, temperature, reasoning_effort, n_consensus) as stream:
             async for response in stream:
                 print(response)
         ```
