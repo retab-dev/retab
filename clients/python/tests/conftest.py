@@ -6,7 +6,7 @@ from typing import IO, Any
 
 import pytest
 
-os.environ["EMAIL_DOMAIN"] = "mailbox.retab.dev"
+os.environ["EMAIL_DOMAIN"] = "mailbox.retab.com"
 from enum import Enum
 from typing import Generator
 

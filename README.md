@@ -7,9 +7,9 @@
 
   *The AI Automation Platform*
 
-Made with love by the team at [Retab](https://retab.dev) 🤍.
+Made with love by the team at [Retab](https://retab.com) 🤍.
 
-[Our Website](https://retab.dev) | [Documentation](https://docs.retab.dev/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabdev)
+[Our Website](https://retab.com) | [Documentation](https://docs.retab.com/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabdev)
 
 
 </div>

@@ -1,6 +1,6 @@
 To run the tests:
 
-On the production server `https://api.retab.dev`:
+On the production server `https://api.retab.com`:
 ```bash
 pytest -n auto --dist=load --asyncio-mode=strict -W error -s -v --production
 ```

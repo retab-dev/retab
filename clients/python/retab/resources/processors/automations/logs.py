@@ -147,7 +147,7 @@ class Logs(SyncAPIResource, LogsMixin):
         request = self.prepare_rerun(processor_id, log_id)
         response = self._client._prepared_request(request)
 
-        print(f"Webhook call run successfully. Log available at https://www.retab.dev/dashboard/processors/{processor_id}/logs/{log_id}")
+        print(f"Webhook call run successfully. Log available at https://www.retab.com/dashboard/processors/{processor_id}/logs/{log_id}")
 
         return ExternalRequestLog.model_validate(response)
 
@@ -217,6 +217,6 @@ class AsyncLogs(AsyncAPIResource, LogsMixin):
         request = self.prepare_rerun(processor_id, log_id)
         response = await self._client._prepared_request(request)
 
-        print(f"Webhook call run successfully. Log available at https://www.retab.dev/dashboard/processors/{processor_id}/logs/{log_id}")
+        print(f"Webhook call run successfully. Log available at https://www.retab.com/dashboard/processors/{processor_id}/logs/{log_id}")
 
         return ExternalRequestLog.model_validate(response)
