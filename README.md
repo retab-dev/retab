@@ -28,11 +28,12 @@ Retab solves all the major challenges in document processing with LLMs:
 5. **Evaluations**: Evaluate the performance of models against annotated datasets
 6. **Optimizations**: Identify the most used processors and help you finetune models to reduce costs and improve performance
 
-
-
 We are offering you all the software-defined primitives to build your own document processing solutions. We see it as **Stripe** for document processing.
 
 Our goal is to make the process of analyzing documents and unstructured data as **easy** and **transparent** as possible.
+
+**A new, lighter paradigm**
+Large Language Models collapse entire layers of legacy OCR pipelines into a single, elegant abstraction. When a model can read, reason, and structure text natively, we no longer need brittle heuristics, handcrafted parsers, or heavyweight ETL jobs. Instead, we can expose a small, principled API: "give me the document, tell me the schema, and get back structured truth." Complexity evaporates, reliability rises, speed follows, and costs fall—because every component you remove is one that can no longer break. LLM‑first design lets us focus less on plumbing and more on the questions we actually want answered.
 
 Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
 
@@ -40,21 +41,14 @@ Many people haven't yet realized how powerful LLMs have become at document proce
 
 ## Go further
 
-- [Quickstart](/get-started/quickstart)
-- [API Reference](/api-reference/introduction)
+* [Quickstart](/get-started/quickstart)
+* [API Reference](/api-reference/introduction)
 
 ---
 
-## Jupyter Notebooks
+## Code examples
 
-You can view minimal notebooks that demonstrate how to use Retab to process documents:
-- [Mailbox creation quickstart](https://github.com/Retab-dev/retab/blob/main/notebooks/mailboxes_quickstart.ipynb)
-- [Upload Links creation quickstart](https://github.com/Retab-dev/retab/blob/main/notebooks/links_quickstart.ipynb)
-- [Document Extractions quickstart](https://github.com/Retab-dev/retab/blob/main/notebooks/Quickstart.ipynb)
-- [Document Extractions quickstart - Async](https://github.com/Retab-dev/retab/blob/main/notebooks/Quickstart-Async.ipynb)
-
---- 
-
+## You can check our Github repository to see code examples: [python examples](https://github.com/Retab-dev/retab/tree/main/examples) and [jupyter notebooks](https://github.com/Retab-dev/retab-nodejs/tree/main/notebooks).
 
 ## Community
 
@@ -64,8 +58,8 @@ Join our [discord community](https://discord.com/invite/vc5tWRPqag) to share tip
 
 We can't wait to see how you'll use Retab.
 
-- [Discord](https://discord.com/invite/vc5tWRPqag)
-- [Twitter](https://x.com/retabdev)
+* [Discord](https://discord.com/invite/vc5tWRPqag)
+* [Twitter](https://x.com/retabdev)
 
 ---
 
@@ -75,6 +69,8 @@ We share our roadmap publicly on [Github](https://github.com/Retab-dev/retab)
 
 Among the features we're working on:
 
-- [ ] Node.js SDK
-- [ ] Low-level speed optimizations for Evals Frontend
-- [ ] New JSON Reconciliation Model
+* [ ] Node.js SDK
+* [ ] Low-level speed optimizations for Evals Frontend
+* [ ] Schema optimization autopilot
+* [ ] Sources API
+* [ ] Parse API for RAG
