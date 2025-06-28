@@ -17,6 +17,7 @@ from ...types.documents.parse import ParseRequest, ParseResult, TableParsingForm
 from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
+from ...types.ai_models import LLMModel
 from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest
 from .extractions import AsyncExtractions, Extractions
@@ -89,7 +90,7 @@ class BaseDocumentsMixin:
     def _prepare_parse(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        fast_mode: bool = False,
+        model: LLMModel,
         table_parsing_format: TableParsingFormat = "html",
         image_resolution_dpi: int = 72,
         browser_canvas: BrowserCanvas = "A4",
@@ -99,7 +100,7 @@ class BaseDocumentsMixin:
 
         parse_request = ParseRequest(
             document=mime_document,
-            fast_mode=fast_mode,
+            model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
@@ -290,7 +291,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def parse(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        fast_mode: bool = False,
+        model: LLMModel,
         table_parsing_format: TableParsingFormat = "html",
         image_resolution_dpi: int = 72,
         browser_canvas: BrowserCanvas = "A4",
@@ -304,7 +305,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
         Args:
             document: The document to parse. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
-            fast_mode: Use fast mode for parsing (may reduce quality). Defaults to False.
+            model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
             image_resolution_dpi: DPI for image processing. Defaults to 72.
             browser_canvas: Canvas size for document rendering. Defaults to "A4".
@@ -318,7 +319,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         """
         request = self._prepare_parse(
             document=document,
-            fast_mode=fast_mode,
+            model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
@@ -512,7 +513,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     async def parse(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        fast_mode: bool = False,
+        model: LLMModel,
         table_parsing_format: TableParsingFormat = "html",
         image_resolution_dpi: int = 72,
         browser_canvas: BrowserCanvas = "A4",
@@ -526,7 +527,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         Args:
             document: The document to parse. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
-            fast_mode: Use fast mode for parsing (may reduce quality). Defaults to False.
+            model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
             image_resolution_dpi: DPI for image processing. Defaults to 72.
             browser_canvas: Canvas size for document rendering. Defaults to "A4".
@@ -540,7 +541,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         """
         request = self._prepare_parse(
             document=document,
-            fast_mode=fast_mode,
+            model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
