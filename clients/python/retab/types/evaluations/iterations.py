@@ -71,8 +71,8 @@ class CreateIterationRequest(BaseModel):
     @model_validator(mode="after")
     def validate_one_of_from_iteration_id_or_json_schema(self) -> Self:
         if (self.from_iteration_id is None) ^ (self.json_schema is None):
-            raise ValueError("Exactly one of from_iteration_id or json_schema must be provided")
-        return self
+            return self
+        raise ValueError("Exactly one of from_iteration_id or json_schema must be provided")
 
 
 class PatchIterationRequest(BaseModel):
