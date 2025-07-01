@@ -84,6 +84,7 @@ class Usage(SyncAPIResource, UsageMixin):
     def monthly_credits_usage(self) -> MonthlyUsageResponse:
         """
         Get monthly credits usage information.
+        Credits are calculated dynamically based on MIME type and consumption.
 
         Returns:
             dict: Monthly usage data including credits consumed and limits
@@ -198,6 +199,7 @@ class AsyncUsage(AsyncAPIResource, UsageMixin):
     async def monthly_credits_usage(self) -> MonthlyUsageResponse:
         """
         Get monthly credits usage information.
+        Credits are calculated dynamically based on MIME type and consumption.
 
         Returns:
             dict: Monthly usage data including credits consumed and limits
