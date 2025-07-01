@@ -192,7 +192,7 @@ def get_model_credits(model: str) -> float:
         "gpt-4.1": 2.0,  # Future model
         "o1-mini": 2.0,
         "o1-preview": 2.0,
-        "o3": 2.0,  # Future model
+        "o3": 5.0,  # Future model
         "claude-3-sonnet": 2.0,
         "claude-3-opus": 2.0,
         "claude-3.5-sonnet": 2.0,
