@@ -77,6 +77,7 @@ class Extraction(BaseModel):
         default=None,
         description="The effort level for the model to reason about the input data.",
     )
+    n_consensus: int = Field(default=1, description="Number of consensus models used for the extraction")
     timings: list[ExtractionTimingStep] = Field(default_factory=list, description="Timings of the extraction")
 
     # Infered from the schema
