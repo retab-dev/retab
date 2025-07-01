@@ -79,7 +79,7 @@ class FinetunedModel(BaseModel):
 
 # Monthly Usage
 class MonthlyUsageResponseContent(BaseModel):
-    request_count: int
+    credits_count: float  # Changed to float to support decimal credits
 
 
 MonthlyUsageResponse = MonthlyUsageResponseContent
