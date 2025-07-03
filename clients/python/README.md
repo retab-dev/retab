@@ -69,8 +69,6 @@ We share our roadmap publicly on [Github](https://github.com/Retab-dev/retab)
 Among the features we're working on:
 
 * [ ] Node.js SDK
-* [ ] Low-level speed optimizations for Evals Frontend
 * [ ] Schema optimization autopilot
 * [ ] Sources API
-* [ ] Parse API for RAG
 
