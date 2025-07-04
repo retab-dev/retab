@@ -45,6 +45,7 @@
 **/ENV/
 
 # Node
+**/dist
 **/tsconfig.tsbuildinfo
 **/node_modules/
 **/npm-debug.log*
