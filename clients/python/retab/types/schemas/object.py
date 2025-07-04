@@ -233,6 +233,32 @@ When provided with a **JSON schema** and a **document**, you must:
 
 ---
 
+## Date and Time Formatting
+
+When extracting date, time, or datetime values:
+
+- **Always use ISO format** for dates and times (e.g., "2023-12-25", "14:30:00", "2023-12-25T14:30:00Z")
+- **Include timezone information** when available (e.g., "2023-12-25T14:30:00+02:00")
+- **Use UTC timezone** when timezone is not specified or unclear (e.g., "2023-12-25T14:30:00Z")
+- **Maintain precision** as found in the source document (seconds, milliseconds if present)
+
+**Examples:**
+
+```json
+// Correct ISO formats:
+{"date": "2023-12-25"}
+{"time": "14:30:00"}
+{"datetime": "2023-12-25T14:30:00Z"}
+{"datetime_with_tz": "2023-12-25T14:30:00+02:00"}
+
+// Incorrect formats:
+{"date": "12/25/2023"}
+{"time": "2:30 PM"}
+{"datetime": "Dec 25, 2023 at 2:30 PM"}
+```
+
+---
+
 ## Handling Missing and Nullable Fields
 
 ### Nullable Leaf Attributes
