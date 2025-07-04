@@ -1,6 +1,6 @@
 import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIDuplicateSub from "./duplicate/client";
-import { RetabTypesEvalsEvaluationOutput, RetabTypesEvalsEvaluationInput, RetabTypesEvalsEvaluationOutput, MainServerServicesV1EvalsRoutesPatchEvaluationRequest, RetabTypesEvalsEvaluationOutput } from "@/types";
+import { RetabTypesEvalsEvaluationOutput, RetabTypesEvalsEvaluationInput, MainServerServicesV1EvalsRoutesPatchEvaluationRequest } from "@/types";
 
 export default class APIEvaluationId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +15,7 @@ export default class APIEvaluationId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -28,7 +28,7 @@ export default class APIEvaluationId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -40,7 +40,7 @@ export default class APIEvaluationId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -50,7 +50,7 @@ export default class APIEvaluationId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

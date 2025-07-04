@@ -16,7 +16,7 @@ export default class APIProcessorId extends CompositionClient {
       params: { "time_range": timeRange },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

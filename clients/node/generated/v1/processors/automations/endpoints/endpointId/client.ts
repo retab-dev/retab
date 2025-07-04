@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { EndpointOutput, UpdateEndpointRequest, EndpointOutput } from "@/types";
+import { EndpointOutput, UpdateEndpointRequest } from "@/types";
 
 export default class APIEndpointId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -13,7 +13,7 @@ export default class APIEndpointId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -25,7 +25,7 @@ export default class APIEndpointId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -35,7 +35,7 @@ export default class APIEndpointId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

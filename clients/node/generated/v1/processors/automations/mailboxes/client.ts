@@ -21,7 +21,7 @@ export default class APIMailboxes extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -32,7 +32,7 @@ export default class APIMailboxes extends CompositionClient {
       params: { "processor_id": processorId, "before": before, "after": after, "limit": limit, "order": order, "email": email, "webhook_url": webhookUrl, "schema_id": schemaId, "schema_data_id": schemaDataId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

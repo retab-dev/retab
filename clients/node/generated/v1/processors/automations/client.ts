@@ -28,7 +28,7 @@ export default class APIAutomations extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "id": id, "webhook_url": webhookUrl, "processor_id": processorId, "name": name },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

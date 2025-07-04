@@ -16,7 +16,7 @@ export default class APIEvents extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "id": id, "name": name, "schema_id": schemaId, "schema_data_id": schemaDataId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

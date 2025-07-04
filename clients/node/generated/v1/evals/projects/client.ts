@@ -1,6 +1,6 @@
 import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIProjectIdSub from "./projectId/client";
-import { PaginatedList, Project, Project } from "@/types";
+import { PaginatedList, Project } from "@/types";
 
 export default class APIProjects extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +16,7 @@ export default class APIProjects extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "name": name, "from_date": fromDate, "to_date": toDate },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -28,7 +28,7 @@ export default class APIProjects extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

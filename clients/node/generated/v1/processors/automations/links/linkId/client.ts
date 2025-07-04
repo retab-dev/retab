@@ -1,5 +1,5 @@
 import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { LinkOutput, UpdateLinkRequest, LinkOutput } from "@/types";
+import { LinkOutput, UpdateLinkRequest } from "@/types";
 
 export default class APILinkId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -13,7 +13,7 @@ export default class APILinkId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -23,7 +23,7 @@ export default class APILinkId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -35,7 +35,7 @@ export default class APILinkId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

@@ -15,7 +15,7 @@ export default class APIConvertToEmailDataAndUploadFile extends CompositionClien
       body: body,
       bodyMime: "multipart/form-data",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

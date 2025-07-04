@@ -3,7 +3,7 @@ import APIProviderSub from "./provider/client";
 import APICheckOpenaiKeyValiditySub from "./checkOpenaiKeyValidity/client";
 import APICheckGeminiKeyValiditySub from "./checkGeminiKeyValidity/client";
 import APICheckXaiKeyValiditySub from "./checkXaiKeyValidity/client";
-import { ExternalAPIKeyRequest, ExternalAPIKeyRequest, ExternalAPIKey } from "@/types";
+import { ExternalAPIKeyRequest, ExternalAPIKey } from "@/types";
 
 export default class APIExternalApiKeys extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -23,7 +23,7 @@ export default class APIExternalApiKeys extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -35,7 +35,7 @@ export default class APIExternalApiKeys extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -46,7 +46,7 @@ export default class APIExternalApiKeys extends CompositionClient {
       params: { "include_fallback_api_keys": includeFallbackApiKeys },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

@@ -14,7 +14,7 @@ export default class APIModelCardsForPicker extends CompositionClient {
       params: { "supports_finetuning": supportsFinetuning, "include_finetuned_models": includeFinetunedModels, "supports_schema_generation": supportsSchemaGeneration, "supports_image": supportsImage },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
