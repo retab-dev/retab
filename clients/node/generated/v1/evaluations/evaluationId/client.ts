@@ -2,7 +2,7 @@ import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIDocumentsSub from "./documents/client";
 import APIIterationsSub from "./iterations/client";
 import APIDuplicateSub from "./duplicate/client";
-import { RetabTypesEvaluationsModelEvaluationOutput, RetabTypesEvaluationsModelPatchEvaluationRequest, RetabTypesEvaluationsModelEvaluationOutput } from "@/types";
+import { RetabTypesEvaluationsModelEvaluationOutput, RetabTypesEvaluationsModelPatchEvaluationRequest } from "@/types";
 
 export default class APIEvaluationId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -19,7 +19,7 @@ export default class APIEvaluationId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -31,7 +31,7 @@ export default class APIEvaluationId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -41,7 +41,7 @@ export default class APIEvaluationId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

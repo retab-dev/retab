@@ -180,7 +180,7 @@ function processSchema(schema: any) {
       functionDef += `  });\n`;
       Object.entries(operation.responses["200"].content).forEach(([contentType, value]) => {
         if (contentType === "application/json") {
-          functionDef += `  if (res.headers.get("Content-Type") === "application/json") return res.json();\n`;
+          functionDef += `  if (res.headers.get("Content-Type") === "application/json") return res.json() as any;\n`;
           return;
         }
         if (contentType === "application/stream+json") {
@@ -228,7 +228,7 @@ function processSchema(schema: any) {
     }
     classDef += `}\n`;
     if (typeImports.length > 0) {
-      imports.push(`import { ${typeImports.join(", ")} } from "@/types";`);
+      imports.push(`import { ${[...new Set(typeImports)].join(", ")} } from "@/types";`);
     }
     if (imports.length > 0) {
       classDef = imports.join("\n") + "\n\n" + classDef;
@@ -248,4 +248,5 @@ function processSchema(schema: any) {
   fs.writeFileSync("generated/types.ts", schemas);
 }
 
-fetch("https://api.uiform.com/openapi.json").then(r => r.json()).then(processSchema);
+fs.rmSync("generated", { recursive: true, force: true });
+fetch("https://api.retab.com/openapi.json").then(r => r.json()).then(processSchema);

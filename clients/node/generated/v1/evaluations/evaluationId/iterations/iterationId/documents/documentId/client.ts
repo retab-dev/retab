@@ -1,7 +1,7 @@
 import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIProcessSub from "./process/client";
 import APIDistancesSub from "./distances/client";
-import { PatchIterationDocumentPredictionRequest, RetabTypesPredictionsPredictionDataOutput } from "@/types";
+import { RetabTypesPredictionsPredictionDataOutput, PatchIterationDocumentPredictionRequest } from "@/types";
 
 export default class APIDocumentId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -11,6 +11,16 @@ export default class APIDocumentId extends CompositionClient {
   process = new APIProcessSub(this._client);
   distances = new APIDistancesSub(this._client);
 
+  async get(evaluationId: string, iterationId: string, documentId: string): Promise<RetabTypesPredictionsPredictionDataOutput> {
+    let res = await this._fetch({
+      url: `/v1/evaluations/${evaluationId}/iterations/${iterationId}/documents/${documentId}`,
+      method: "GET",
+      auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
+    });
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    throw new Error("Bad content type");
+  }
+  
   async patch(evaluationId: string, iterationId: string, documentId: string, { ...body }: PatchIterationDocumentPredictionRequest): Promise<RetabTypesPredictionsPredictionDataOutput> {
     let res = await this._fetch({
       url: `/v1/evaluations/${evaluationId}/iterations/${iterationId}/documents/${documentId}`,
@@ -19,7 +29,7 @@ export default class APIDocumentId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

@@ -12,7 +12,7 @@ export default class APIMetrics extends CompositionClient {
       url: `/v1/evaluations/distances/${evaluationId}/${iterationIdx}/metrics`,
       method: "GET",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

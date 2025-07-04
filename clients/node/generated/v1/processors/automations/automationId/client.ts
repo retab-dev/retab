@@ -1,7 +1,7 @@
 import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APIReviewExtractionSub from "./reviewExtraction/client";
 import APIDetachProcessorSub from "./detachProcessor/client";
-import { LinkOutput, MailboxOutput, EndpointOutput, OutlookOutput, UpdateLinkRequest, UpdateMailboxRequest, UpdateEndpointRequest, UpdateOutlookRequest, LinkOutput, MailboxOutput, EndpointOutput, OutlookOutput } from "@/types";
+import { LinkOutput, MailboxOutput, EndpointOutput, OutlookOutput, UpdateLinkRequest, UpdateMailboxRequest, UpdateEndpointRequest, UpdateOutlookRequest } from "@/types";
 
 export default class APIAutomationId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -17,7 +17,7 @@ export default class APIAutomationId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -29,7 +29,7 @@ export default class APIAutomationId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -39,7 +39,7 @@ export default class APIAutomationId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

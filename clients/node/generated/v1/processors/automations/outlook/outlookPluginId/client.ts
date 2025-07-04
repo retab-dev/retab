@@ -1,6 +1,6 @@
 import { AbstractClient, CompositionClient, streamResponse } from '@/client';
 import APISubmitSub from "./submit/client";
-import { OutlookOutput, UpdateOutlookRequest, OutlookOutput } from "@/types";
+import { OutlookOutput, UpdateOutlookRequest } from "@/types";
 
 export default class APIOutlookPluginId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +15,7 @@ export default class APIOutlookPluginId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -27,7 +27,7 @@ export default class APIOutlookPluginId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -37,7 +37,7 @@ export default class APIOutlookPluginId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

@@ -3,7 +3,7 @@ import APIDocumentsSub from "./documents/client";
 import APIStatusSub from "./status/client";
 import APIProcessSub from "./process/client";
 import APIMetricsSub from "./metrics/client";
-import { RetabTypesEvaluationsIterationsIterationOutput, PatchIterationRequest, RetabTypesEvaluationsIterationsIterationOutput } from "@/types";
+import { RetabTypesEvaluationsIterationsIterationOutput, PatchIterationRequest } from "@/types";
 
 export default class APIIterationId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -21,7 +21,7 @@ export default class APIIterationId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -33,7 +33,7 @@ export default class APIIterationId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
@@ -43,7 +43,7 @@ export default class APIIterationId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   

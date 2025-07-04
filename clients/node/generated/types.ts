@@ -1448,7 +1448,7 @@ export type McpRequireApprovalMcpToolApprovalFilterNever = {
 };
 
 export type MessageParam = {
-  content: string | ServerToolUseBlockParam | WebSearchToolResultBlockParam | TextBlockParam | ImageBlockParam | ToolUseBlockParam | ToolResultBlockParam | DocumentBlockParam | ThinkingBlockParam | RedactedThinkingBlockParam | TextBlock | ToolUseBlock | ServerToolUseBlock | WebSearchToolResultBlock | ThinkingBlock | RedactedThinkingBlock[],
+  content: string | TextBlockParam | ImageBlockParam | DocumentBlockParam | ThinkingBlockParam | RedactedThinkingBlockParam | ToolUseBlockParam | ToolResultBlockParam | ServerToolUseBlockParam | WebSearchToolResultBlockParam | TextBlock | ThinkingBlock | RedactedThinkingBlock | ToolUseBlock | ServerToolUseBlock | WebSearchToolResultBlock[],
   role: "user" | "assistant",
 };
 
@@ -1724,7 +1724,7 @@ export type PatchEvaluationDocumentRequest = {
 };
 
 export type PatchIterationDocumentPredictionRequest = {
-  prediction_metadata: PredictionMetadata,
+  metadata: PredictionMetadata,
 };
 
 export type PatchIterationRequest = {
@@ -2636,7 +2636,7 @@ export type DocumentExtractRequest = {
 
 export type AnthropicTypesMessageMessage = {
   id: string,
-  content: TextBlock | ToolUseBlock | ServerToolUseBlock | WebSearchToolResultBlock | ThinkingBlock | RedactedThinkingBlock[],
+  content: TextBlock | ThinkingBlock | RedactedThinkingBlock | ToolUseBlock | ServerToolUseBlock | WebSearchToolResultBlock[],
   model: "claude-3-7-sonnet-latest" | "claude-3-7-sonnet-20250219" | "claude-3-5-haiku-latest" | "claude-3-5-haiku-20241022" | "claude-sonnet-4-20250514" | "claude-sonnet-4-0" | "claude-4-sonnet-20250514" | "claude-3-5-sonnet-latest" | "claude-3-5-sonnet-20241022" | "claude-3-5-sonnet-20240620" | "claude-opus-4-0" | "claude-opus-4-20250514" | "claude-4-opus-20250514" | "claude-3-opus-latest" | "claude-3-opus-20240229" | "claude-3-sonnet-20240229" | "claude-3-haiku-20240307" | "claude-2.1" | "claude-2.0" | string,
   role: string,
   stop_reason?: "end_turn" | "max_tokens" | "stop_sequence" | "tool_use" | "pause_turn" | "refusal" | null,

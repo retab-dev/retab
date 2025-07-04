@@ -20,7 +20,7 @@ export default class APIExtractions extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "source_dot_id": sourceDotId, "completion_dot_id": completionDotId, "schema_id": schemaId, "schema_data_id": schemaDataId, "status": status, "validation_state": validationState, "from_date": fromDate, "to_date": toDate, "model": model },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json();
+    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
     throw new Error("Bad content type");
   }
   
