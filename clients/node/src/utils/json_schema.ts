@@ -7,6 +7,25 @@ export function generateBlake2bHashFromString(input: string): string {
   return crypto.createHash('sha256').update(input).digest('hex').substring(0, 16);
 }
 
+export function filterAuxiliaryFieldsJson(jsonContent: string | object): any {
+  const data = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+  
+  if (typeof data === 'object' && data !== null) {
+    const filtered: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (!key.startsWith('reasoning___') && !key.startsWith('quote___') && !key.startsWith('X-')) {
+        if (typeof value === 'object' && value !== null) {
+          filtered[key] = filterAuxiliaryFieldsJson(value);
+        } else {
+          filtered[key] = value;
+        }
+      }
+    }
+    return filtered;
+  }
+  return data;
+}
+
 export function generateSchemaDataId(jsonSchema: Record<string, any>): string {
   const cleanedSchema = cleanSchema(
     JSON.parse(JSON.stringify(jsonSchema)),
