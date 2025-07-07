@@ -1,0 +1,20 @@
+{
+  "name": "@retab/sdk-examples",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Examples for the Retab Node.js SDK",
+  "scripts": {
+    "extract-api": "node documents/extract_api.js",
+    "json-schema-calendar": "node schemas/json_schema_calendar_event.js",
+    "zod-calendar": "node schemas/zod_calendar_event.js"
+  },
+  "dependencies": {
+    "@retab/node": "file:../../clients/node",
+    "dotenv": "^16.4.5",
+    "openai": "^4.63.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7"
+  }
+}
