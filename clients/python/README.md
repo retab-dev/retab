@@ -47,7 +47,7 @@ Many people haven't yet realized how powerful LLMs have become at document proce
 
 ## Code examples
 
-## You can check our Github repository to see code examples: [python examples](https://github.com/Retab-dev/retab/tree/main/examples) and [jupyter notebooks](https://github.com/Retab-dev/retab-nodejs/tree/main/notebooks).
+You can check our Github repository to see code examples: [python examples](https://github.com/Retab-dev/retab/tree/main/examples) and [jupyter notebooks](https://github.com/Retab-dev/retab-nodejs/tree/main/notebooks).
 
 ## Community
 
