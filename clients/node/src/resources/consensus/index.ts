@@ -79,10 +79,10 @@ export class Consensus extends SyncAPIResource {
     reference_schema?: Record<string, any>;
     mode?: 'direct' | 'aligned';
     idempotency_key?: string;
-  }): ReconciliationResponse {
+  }): any {
     const preparedRequest = this.mixin.prepareReconcile(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as ReconciliationResponse;
+    return response;
   }
 
   extract(params: {
@@ -111,10 +111,10 @@ export class AsyncConsensus extends AsyncAPIResource {
     reference_schema?: Record<string, any>;
     mode?: 'direct' | 'aligned';
     idempotency_key?: string;
-  }): Promise<ReconciliationResponse> {
+  }): Promise<any> {
     const preparedRequest = this.mixin.prepareReconcile(params);
     const response = await this._client._preparedRequest(preparedRequest);
-    return response as ReconciliationResponse;
+    return response;
   }
 
   async extract(params: {
