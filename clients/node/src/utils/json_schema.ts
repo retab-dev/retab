@@ -7,24 +7,6 @@ export function generateBlake2bHashFromString(input: string): string {
   return crypto.createHash('sha256').update(input).digest('hex').substring(0, 16);
 }
 
-export function filterAuxiliaryFieldsJson(jsonContent: string | object): any {
-  const data = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
-  
-  if (typeof data === 'object' && data !== null) {
-    const filtered: any = {};
-    for (const [key, value] of Object.entries(data)) {
-      if (!key.startsWith('reasoning___') && !key.startsWith('quote___') && !key.startsWith('X-')) {
-        if (typeof value === 'object' && value !== null) {
-          filtered[key] = filterAuxiliaryFieldsJson(value);
-        } else {
-          filtered[key] = value;
-        }
-      }
-    }
-    return filtered;
-  }
-  return data;
-}
 
 export function generateSchemaDataId(jsonSchema: Record<string, any>): string {
   const cleanedSchema = cleanSchema(
@@ -208,20 +190,33 @@ export function validatePhoneNumber(value: any): string | null {
 
 // Filter auxiliary fields from JSON
 export function filterAuxiliaryFieldsJson(jsonData: any): any {
-  if (typeof jsonData === 'object' && jsonData !== null) {
-    if (Array.isArray(jsonData)) {
-      return jsonData.map(filterAuxiliaryFieldsJson);
+  // Handle string input by parsing it first
+  let data;
+  if (typeof jsonData === 'string') {
+    try {
+      data = JSON.parse(jsonData);
+    } catch (e) {
+      // If parsing fails, return the string as-is (it might not be JSON)
+      return jsonData;
+    }
+  } else {
+    data = jsonData;
+  }
+  
+  if (typeof data === 'object' && data !== null) {
+    if (Array.isArray(data)) {
+      return data.map(filterAuxiliaryFieldsJson);
     }
 
     const filtered: any = {};
-    for (const [key, value] of Object.entries(jsonData)) {
-      if (!key.startsWith('reasoning___') && !key.startsWith('quote___')) {
+    for (const [key, value] of Object.entries(data)) {
+      if (!key.startsWith('reasoning___') && !key.startsWith('quote___') && !key.startsWith('X-')) {
         filtered[key] = filterAuxiliaryFieldsJson(value);
       }
     }
     return filtered;
   }
-  return jsonData;
+  return data;
 }
 
 // Convert JSON Schema to TypeScript interface

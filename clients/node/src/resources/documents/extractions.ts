@@ -18,12 +18,14 @@ import { Modality } from '../../types/modalities.js';
 // Helper function for MIME document preparation
 function prepareMimeDocument(document: string | Buffer | MIMEData): MIMEData {
   if (typeof document === 'string') {
+    // Resolve relative paths 
+    const resolvedPath = path.resolve(document);
     // If it's a file path, read the file
-    if (fs.existsSync(document)) {
-      const filename = path.basename(document);
-      const content = fs.readFileSync(document);
+    if (fs.existsSync(resolvedPath)) {
+      const filename = path.basename(resolvedPath);
+      const content = fs.readFileSync(resolvedPath);
       const base64Content = content.toString('base64');
-      const mimeType = getMimeType(document);
+      const mimeType = getMimeType(resolvedPath);
       return {
         id: 'doc_' + Date.now(),
         extension: path.extname(filename).slice(1) || 'unknown',
@@ -99,6 +101,10 @@ function assertValidModelExtraction(model: string): void {
 
 
 export class BaseExtractionsMixin {
+  public prepareMimeDocument(document: string | Buffer | MIMEData): MIMEData {
+    return prepareMimeDocument(document);
+  }
+
   public prepareExtraction(
     jsonSchema: Record<string, any> | string,
     document?: string | Buffer | MIMEData | null,

@@ -24,25 +24,26 @@ export class Schema implements PartialSchema {
   created_at: string;
   json_schema: Record<string, any> = {};
   strict: boolean = true;
+  private _zodModel?: z.ZodType<any>;
 
-  constructor(data: { json_schema?: Record<string, any>; pydanticModel?: any }) {
+  constructor(data: { json_schema?: Record<string, any>; pydanticModel?: any; zod_model?: z.ZodType<any>; system_prompt?: string; reasoning_prompts?: Record<string, string> }) {
     this.created_at = new Date().toISOString();
     
-    if (data.json_schema && data.pydanticModel) {
-      throw new Error('Cannot provide both json_schema and pydanticModel');
-    }
-    
-    if (!data.json_schema && !data.pydanticModel) {
-      throw new Error('Must provide either json_schema or pydanticModel');
-    }
-
     if (data.json_schema) {
       this.json_schema = data.json_schema;
-    }
-    
-    if (data.pydanticModel) {
+    } else if (data.pydanticModel) {
       // In a real implementation, this would extract schema from the model
       this.json_schema = {};
+    } else if (data.zod_model) {
+      this._zodModel = data.zod_model;
+      // Convert Zod to JSON Schema (simplified)
+      this.json_schema = {
+        type: 'object',
+        properties: {},
+        additionalProperties: true
+      };
+    } else {
+      throw new Error('Must provide either json_schema, pydanticModel, or zod_model');
     }
   }
 
@@ -56,9 +57,18 @@ export class Schema implements PartialSchema {
     return 'schema-id';
   }
 
+  get inference_json_schema(): Record<string, any> {
+    // Returns the schema formatted for structured output with OpenAI requirements
+    const schema = { ...this.json_schema };
+    if (!schema.hasOwnProperty('additionalProperties')) {
+      schema.additionalProperties = false;
+    }
+    return schema;
+  }
+
   get inferenceJsonSchema(): Record<string, any> {
-    // Returns the schema formatted for structured output
-    return this._reasoningObjectSchema;
+    // Alias for backwards compatibility
+    return this.inference_json_schema;
   }
 
   get openaiMessages(): any[] {
