@@ -214,6 +214,14 @@ You can easily identify the fields that require a source by the \`quote___[attri
     return [{ role: 'developer', content: this.systemPrompt }];
   }
 
+  get zod_model(): z.ZodType<any> {
+    if (this._zodModel) {
+      return this._zodModel;
+    }
+    // Convert JSON schema to basic Zod schema for validation
+    return z.object({}).passthrough();
+  }
+
   getPatternAttribute(_pattern: string, _attribute: 'X-FieldPrompt' | 'X-ReasoningPrompt' | 'type'): string | null {
     // Navigate schema and return the specified attribute
     return null; // Simplified for now
