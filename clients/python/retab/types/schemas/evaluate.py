@@ -3,7 +3,7 @@ from typing import Any, Self
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, Field, model_validator
 
-from ..evals import ItemMetric
+from ..metrics import ItemMetric
 from ..mime import MIMEData
 from ..modalities import Modality
 from ..browser_canvas import BrowserCanvas

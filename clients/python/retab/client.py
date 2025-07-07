@@ -9,7 +9,7 @@ import httpx
 import truststore
 from pydantic_core import PydanticUndefined
 
-from .resources import consensus, documents, evals, files, finetuning, models, processors, schemas, secrets, usage, evaluations
+from .resources import consensus, documents, files, finetuning, models, processors, schemas, secrets, usage, evaluations
 from .types.standards import PreparedRequest
 
 
@@ -196,7 +196,6 @@ class Retab(BaseRetab):
         )
 
         self.client = httpx.Client(timeout=self.timeout)
-        self.evals = evals.Evals(client=self)
         self.evaluations = evaluations.Evaluations(client=self)
         self.files = files.Files(client=self)
         self.fine_tuning = finetuning.FineTuning(client=self)
@@ -465,7 +464,6 @@ class AsyncRetab(BaseRetab):
 
         self.client = httpx.AsyncClient(timeout=self.timeout)
 
-        self.evals = evals.AsyncEvals(client=self)
         self.evaluations = evaluations.AsyncEvaluations(client=self)
         self.files = files.AsyncFiles(client=self)
         self.fine_tuning = finetuning.AsyncFineTuning(client=self)
