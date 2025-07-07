@@ -34,15 +34,23 @@ class IterationsMixin:
         browser_canvas: BrowserCanvas = FieldUnset,
         n_consensus: int = FieldUnset,
     ) -> PreparedRequest:
-        inference_settings = InferenceSettings(
-            model=model,
-            temperature=temperature,
-            modality=modality,
-            reasoning_effort=reasoning_effort,
-            image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            n_consensus=n_consensus,
-        )
+        inference_dict = {}
+        if model is not FieldUnset:
+            inference_dict["model"] = model
+        if temperature is not FieldUnset:
+            inference_dict["temperature"] = temperature
+        if modality is not FieldUnset:
+            inference_dict["modality"] = modality
+        if reasoning_effort is not FieldUnset:
+            inference_dict["reasoning_effort"] = reasoning_effort
+        if image_resolution_dpi is not FieldUnset:
+            inference_dict["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas is not FieldUnset:
+            inference_dict["browser_canvas"] = browser_canvas
+        if n_consensus is not FieldUnset:
+            inference_dict["n_consensus"] = n_consensus
+        
+        inference_settings = InferenceSettings(**inference_dict)
 
         request = CreateIterationRequest(inference_settings=inference_settings, json_schema=json_schema)
 
@@ -61,19 +69,29 @@ class IterationsMixin:
         browser_canvas: BrowserCanvas = FieldUnset,
         n_consensus: int = FieldUnset,
     ) -> PreparedRequest:
-        inference_settings = InferenceSettings(
-            model=model,
-            temperature=temperature,
-            modality=modality,
-            reasoning_effort=reasoning_effort,
-            image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            n_consensus=n_consensus,
-        )
-        if not inference_settings.model_dump(exclude_unset=True, mode="json"):
-            inference_settings = FieldUnset
+        inference_dict = {}
+        if model is not FieldUnset:
+            inference_dict["model"] = model
+        if temperature is not FieldUnset:
+            inference_dict["temperature"] = temperature
+        if modality is not FieldUnset:
+            inference_dict["modality"] = modality
+        if reasoning_effort is not FieldUnset:
+            inference_dict["reasoning_effort"] = reasoning_effort
+        if image_resolution_dpi is not FieldUnset:
+            inference_dict["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas is not FieldUnset:
+            inference_dict["browser_canvas"] = browser_canvas
+        if n_consensus is not FieldUnset:
+            inference_dict["n_consensus"] = n_consensus
+        
+        iteration_dict = {}
+        if json_schema is not FieldUnset:
+            iteration_dict["json_schema"] = json_schema
+        if inference_dict:  # Only add inference_settings if we have at least one field
+            iteration_dict["inference_settings"] = InferenceSettings(**inference_dict)
 
-        iteration_data = PatchIterationRequest(json_schema=json_schema, inference_settings=inference_settings)
+        iteration_data = PatchIterationRequest(**iteration_dict)
 
         return PreparedRequest(
             method="PATCH", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
@@ -136,14 +154,14 @@ class Iterations(SyncAPIResource, IterationsMixin):
     def create(
         self,
         evaluation_id: str,
-        model: str,
-        temperature: float = 0.0,
-        modality: Modality = "native",
-        json_schema: Optional[Dict[str, Any]] = None,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        image_resolution_dpi: int = 96,
-        browser_canvas: BrowserCanvas = "A4",
-        n_consensus: int = 1,
+        model: str = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        json_schema: Optional[Dict[str, Any]] = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        n_consensus: int = FieldUnset,
     ) -> Iteration:
         """
         Create a new iteration for an evaluation.

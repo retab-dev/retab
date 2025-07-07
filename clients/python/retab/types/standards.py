@@ -1,14 +1,14 @@
 from typing import Any, List, Literal, Optional, Tuple, TypeVar, TypedDict
 
 from pydantic import BaseModel, Field
-from pydantic.fields import _Unset
+from pydantic_core import PydanticUndefined
 
 # API Standards
 
 # Define a type variable to represent the content type
 T = TypeVar("T")
 
-FieldUnset = _Unset
+FieldUnset: Any = PydanticUndefined
 
 
 # Define the ErrorDetail model

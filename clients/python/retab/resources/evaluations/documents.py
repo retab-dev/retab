@@ -25,7 +25,7 @@ class DocumentsMixin:
     def prepare_list(self, evaluation_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/documents")
 
-    def prepare_update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any] = FieldUnset) -> PreparedRequest:
+    def prepare_update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any]) -> PreparedRequest:
         update_request = PatchEvaluationDocumentRequest(annotation=annotation)
         return PreparedRequest(
             method="PATCH", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True)
@@ -101,7 +101,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
-    def update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any] = FieldUnset) -> EvaluationDocument:
+    def update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any]) -> EvaluationDocument:
         """
         Update a document.
 
@@ -189,7 +189,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         response = await self._client._prepared_request(request)
         return [EvaluationDocument(**item) for item in response.get("data", [])]
 
-    async def update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any] = FieldUnset) -> EvaluationDocument:
+    async def update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any]) -> EvaluationDocument:
         """
         Update a document.
 
