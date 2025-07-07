@@ -45,16 +45,18 @@ class BaseDocumentsMixin:
         mime_document = prepare_mime_document(document)
 
         loading_request_dict = {
-            'document': mime_document,
-            'modality': modality,
+            "document": mime_document,
+            "modality": modality,
         }
         if image_resolution_dpi is not FieldUnset:
-            loading_request_dict['image_resolution_dpi'] = image_resolution_dpi
+            loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
         if browser_canvas is not FieldUnset:
-            loading_request_dict['browser_canvas'] = browser_canvas
+            loading_request_dict["browser_canvas"] = browser_canvas
 
         loading_request = DocumentCreateMessageRequest(**loading_request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key)
+        return PreparedRequest(
+            method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key
+        )
 
     def _prepare_create_inputs(
         self,
@@ -69,14 +71,14 @@ class BaseDocumentsMixin:
         loaded_schema = load_json_schema(json_schema)
 
         loading_request_dict = {
-            'document': mime_document,
-            'modality': modality,
-            'json_schema': loaded_schema,
+            "document": mime_document,
+            "modality": modality,
+            "json_schema": loaded_schema,
         }
         if image_resolution_dpi is not FieldUnset:
-            loading_request_dict['image_resolution_dpi'] = image_resolution_dpi
+            loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
         if browser_canvas is not FieldUnset:
-            loading_request_dict['browser_canvas'] = browser_canvas
+            loading_request_dict["browser_canvas"] = browser_canvas
 
         loading_request = DocumentCreateInputRequest(**loading_request_dict)
         return PreparedRequest(method="POST", url="/v1/documents/create_inputs", data=loading_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key)
@@ -272,24 +274,24 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
         # Build request dictionary with only provided fields
         request_dict = {
-            'json_schema': json_schema,
-            'documents': processed_documents,
-            'model': model,
-            'stream': False,
-            'store': store,
+            "json_schema": json_schema,
+            "documents": processed_documents,
+            "model": model,
+            "stream": False,
+            "store": store,
         }
         if temperature is not FieldUnset:
-            request_dict['temperature'] = temperature
+            request_dict["temperature"] = temperature
         if modality is not FieldUnset:
-            request_dict['modality'] = modality
+            request_dict["modality"] = modality
         if reasoning_effort is not FieldUnset:
-            request_dict['reasoning_effort'] = reasoning_effort
+            request_dict["reasoning_effort"] = reasoning_effort
         if n_consensus is not FieldUnset:
-            request_dict['n_consensus'] = n_consensus
+            request_dict["n_consensus"] = n_consensus
         if image_resolution_dpi is not FieldUnset:
-            request_dict['image_resolution_dpi'] = image_resolution_dpi
+            request_dict["image_resolution_dpi"] = image_resolution_dpi
         if browser_canvas is not FieldUnset:
-            request_dict['browser_canvas'] = browser_canvas
+            request_dict["browser_canvas"] = browser_canvas
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = DocumentExtractRequest(**request_dict)
@@ -503,24 +505,24 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         # Build request dictionary with only provided fields
         request_dict = {
-            'json_schema': json_schema,
-            'documents': processed_documents,
-            'model': model,
-            'stream': False,
-            'store': store,
+            "json_schema": json_schema,
+            "documents": processed_documents,
+            "model": model,
+            "stream": False,
+            "store": store,
         }
         if temperature is not FieldUnset:
-            request_dict['temperature'] = temperature
+            request_dict["temperature"] = temperature
         if modality is not FieldUnset:
-            request_dict['modality'] = modality
+            request_dict["modality"] = modality
         if reasoning_effort is not FieldUnset:
-            request_dict['reasoning_effort'] = reasoning_effort
+            request_dict["reasoning_effort"] = reasoning_effort
         if n_consensus is not FieldUnset:
-            request_dict['n_consensus'] = n_consensus
+            request_dict["n_consensus"] = n_consensus
         if image_resolution_dpi is not FieldUnset:
-            request_dict['image_resolution_dpi'] = image_resolution_dpi
+            request_dict["image_resolution_dpi"] = image_resolution_dpi
         if browser_canvas is not FieldUnset:
-            request_dict['browser_canvas'] = browser_canvas
+            request_dict["browser_canvas"] = browser_canvas
 
         # Validate DocumentAPIRequest data (raises exception if invalid)
         request = DocumentExtractRequest(**request_dict)
