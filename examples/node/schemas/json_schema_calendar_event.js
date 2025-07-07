@@ -21,7 +21,9 @@ if (!retabApiKey) {
 }
 
 const reclient = new Retab({ api_key: retabApiKey });
-const docMsg = await reclient.documents.create_messages({ document: '../../assets/calendar_event.xlsx' });
+const docMsg = await reclient.documents.create_messages({ document: '../../../assets/code/calendar_event.xlsx' });
+
+console.log('Document message:', JSON.stringify(docMsg, null, 2));
 
 // Define schema
 const schemaObj = new Schema({
@@ -42,11 +44,14 @@ const schemaObj = new Schema({
   },
 });
 
+// Transform the messages to OpenAI format
+const openaiMessages = docMsg.messages || [];
+
 // Now you can use your favorite model to analyze your document
 const client = new OpenAI({ apiKey });
 const completion = await client.chat.completions.create({
   model: 'gpt-4o',
-  messages: [...schemaObj.openai_messages, ...docMsg.openai_messages],
+  messages: [...schemaObj.openai_messages, ...openaiMessages],
   response_format: { 
     type: 'json_schema', 
     json_schema: { 
@@ -56,6 +61,9 @@ const completion = await client.chat.completions.create({
     } 
   },
 });
+
+// Debug the completion response
+console.log('Completion response:', JSON.stringify(completion, null, 2));
 
 // Validate the response against the original schema if you want to remove the reasoning fields
 if (!completion.choices[0].message.content) {

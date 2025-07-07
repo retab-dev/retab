@@ -22,7 +22,9 @@ if (!retabApiKey) {
 }
 
 const reclient = new Retab({ api_key: retabApiKey });
-const docMsg = await reclient.documents.create_messages({ document: '../../assets/calendar_event.xlsx' });
+const docMsg = await reclient.documents.create_messages({ document: '../../../assets/code/calendar_event.xlsx' });
+
+console.log('Document message:', JSON.stringify(docMsg, null, 2));
 
 // Define schema using Zod
 const CalendarEventSchema = z.object({
@@ -39,11 +41,14 @@ const schemaObj = new Schema({
   },
 });
 
+// Transform the messages to OpenAI format
+const openaiMessages = docMsg.messages || [];
+
 // Now you can use your favorite model to analyze your document
 const client = new OpenAI({ apiKey });
 const completion = await client.chat.completions.create({
   model: 'gpt-4o',
-  messages: [...schemaObj.openai_messages, ...docMsg.openai_messages],
+  messages: [...schemaObj.openai_messages, ...openaiMessages],
   response_format: { 
     type: 'json_schema', 
     json_schema: { 

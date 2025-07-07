@@ -33,8 +33,16 @@ export class Documents extends SyncAPIResource {
   }
 
   create_messages(params: { document: string }): any {
-    // Simple message creation - will implement properly later
-    return { openai_messages: [{ role: 'user', content: `Process document: ${params.document}` }] };
+    const mimeDocument = this.mixin.prepareMimeDocument(params.document);
+    const preparedRequest = {
+      method: 'POST' as const,
+      url: '/v1/documents/create_messages',
+      data: {
+        document: mimeDocument,
+        modality: 'native' // Default modality
+      }
+    };
+    return this._client._preparedRequest(preparedRequest);
   }
 }
 
@@ -69,7 +77,15 @@ export class AsyncDocuments extends AsyncAPIResource {
   }
 
   async create_messages(params: { document: string }): Promise<any> {
-    // Simple message creation - will implement properly later
-    return { openai_messages: [{ role: 'user', content: `Process document: ${params.document}` }] };
+    const mimeDocument = this.mixin.prepareMimeDocument(params.document);
+    const preparedRequest = {
+      method: 'POST' as const,
+      url: '/v1/documents/create_messages',
+      data: {
+        document: mimeDocument,
+        modality: 'native' // Default modality
+      }
+    };
+    return this._client._preparedRequest(preparedRequest);
   }
 }
