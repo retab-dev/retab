@@ -78,6 +78,7 @@ class CreateIterationRequest(BaseModel):
 class PatchIterationRequest(BaseModel):
     inference_settings: Optional[InferenceSettings] = Field(default=None, description="The new inference settings of the iteration")
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The new json schema of the iteration")
+    version: Optional[int] = Field(default=None, description="Current version for optimistic locking")
 
 
 class ProcessIterationRequest(BaseModel):

@@ -17,13 +17,17 @@ class EvaluationsMixin:
         default_inference_settings: InferenceSettings = FieldUnset,
     ) -> PreparedRequest:
         # Use CreateEvaluation model
-        eval_data = CreateEvaluation(
-            name=name,
-            json_schema=json_schema,
-            project_id=project_id,
-            default_inference_settings=default_inference_settings,
-        )
-        return PreparedRequest(method="POST", url="/v1/evaluations", data=eval_data.model_dump(exclude_none=True, mode="json"))
+        eval_dict = {
+            "name": name,
+            "json_schema": json_schema,
+        }
+        if project_id is not FieldUnset:
+            eval_dict["project_id"] = project_id
+        if default_inference_settings is not FieldUnset:
+            eval_dict["default_inference_settings"] = default_inference_settings
+        
+        eval_data = CreateEvaluation(**eval_dict)
+        return PreparedRequest(method="POST", url="/v1/evaluations", data=eval_data.model_dump(exclude_unset=True, mode="json"))
 
     def prepare_get(self, evaluation_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}")
@@ -42,12 +46,17 @@ class EvaluationsMixin:
         Only the provided fields will be updated. Fields set to None will be excluded from the update.
         """
         # Build a dictionary with only the provided fields
-        data = PatchEvaluationRequest(
-            name=name,
-            project_id=project_id,
-            json_schema=json_schema,
-            default_inference_settings=default_inference_settings,
-        ).model_dump(exclude_unset=True, mode="json")
+        update_dict = {}
+        if name is not FieldUnset:
+            update_dict["name"] = name
+        if project_id is not FieldUnset:
+            update_dict["project_id"] = project_id
+        if json_schema is not FieldUnset:
+            update_dict["json_schema"] = json_schema
+        if default_inference_settings is not FieldUnset:
+            update_dict["default_inference_settings"] = default_inference_settings
+        
+        data = PatchEvaluationRequest(**update_dict).model_dump(exclude_unset=True, mode="json")
 
         return PreparedRequest(method="PATCH", url=f"/v1/evaluations/{evaluation_id}", data=data)
 
@@ -68,7 +77,11 @@ class EvaluationsMixin:
         Returns:
             PreparedRequest: The prepared request
         """
-        params = ListEvaluationParams(project_id=project_id).model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
+        params_dict = {}
+        if project_id is not FieldUnset:
+            params_dict["project_id"] = project_id
+        
+        params = ListEvaluationParams(**params_dict).model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
         return PreparedRequest(method="GET", url="/v1/evaluations", params=params)
 
     def prepare_delete(self, id: str) -> PreparedRequest:
