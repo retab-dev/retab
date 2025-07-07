@@ -2,6 +2,14 @@ import { SyncAPIResource, AsyncAPIResource } from '../../resource.js';
 import { z } from 'zod';
 import { prepareMimeDocument } from '../../utils/mime.js';
 import { loadJsonSchema } from '../../utils/json_schema.js';
+import { 
+  Endpoints, AsyncEndpoints,
+  Links, AsyncLinks,
+  Mailboxes, AsyncMailboxes,
+  OutlookAutomations, AsyncOutlookAutomations,
+  Tests, AsyncTests,
+  Logs, AsyncLogs
+} from './automations/index.js';
 
 // Processor configuration schema
 const ProcessorConfigSchema = z.object({
@@ -244,6 +252,15 @@ export class ProcessorsMixin {
 
 export class Processors extends SyncAPIResource {
   mixin = new ProcessorsMixin();
+  
+  automations = {
+    endpoints: new Endpoints(this._client),
+    links: new Links(this._client),
+    mailboxes: new Mailboxes(this._client),
+    outlook: new OutlookAutomations(this._client),
+    tests: new Tests(this._client),
+    logs: new Logs(this._client),
+  };
 
   create(params: {
     name: string;
@@ -324,6 +341,15 @@ export class Processors extends SyncAPIResource {
 
 export class AsyncProcessors extends AsyncAPIResource {
   mixin = new ProcessorsMixin();
+  
+  automations = {
+    endpoints: new AsyncEndpoints(this._client),
+    links: new AsyncLinks(this._client),
+    mailboxes: new AsyncMailboxes(this._client),
+    outlook: new AsyncOutlookAutomations(this._client),
+    tests: new AsyncTests(this._client),
+    logs: new AsyncLogs(this._client),
+  };
 
   async create(params: {
     name: string;

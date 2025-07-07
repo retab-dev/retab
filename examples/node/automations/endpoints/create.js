@@ -1,15 +1,11 @@
 import { config } from 'dotenv';
 import { AsyncRetab } from '@retab/node';
 
-config();
+// Load environment variables  
+config({ path: '../../../.env.local' });
 
 const reclient = new AsyncRetab();
 
-console.log("Note: Endpoint automations are not yet fully implemented in the Node.js SDK");
-console.log("This is a placeholder example showing the intended structure");
-
-// This would be the intended usage once endpoint automations are fully implemented:
-/*
 console.log("making a query to create an endpoint");
 const automation = await reclient.processors.automations.endpoints.create({
   name: "Endpoint Automation 2",
@@ -18,4 +14,3 @@ const automation = await reclient.processors.automations.endpoints.create({
 });
 
 console.log(JSON.stringify(automation, null, 2));
-*/
