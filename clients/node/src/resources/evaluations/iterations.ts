@@ -4,7 +4,6 @@ import {
   CreateIterationRequest,
   PatchIterationRequest,
   ProcessIterationRequest,
-  DocumentStatus,
   IterationDocumentStatusResponse,
   AddIterationFromJsonlRequest
 } from '../../types/evaluations/iterations.js';
@@ -93,10 +92,10 @@ export class IterationsMixin {
 export class Iterations extends SyncAPIResource {
   mixin = new IterationsMixin();
 
-  create(evaluation_id: string, params: CreateIterationRequest): Iteration {
+  create(evaluation_id: string, params: CreateIterationRequest): any {
     const preparedRequest = this.mixin.prepareCreate(evaluation_id, params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Iteration;
+    return response;
   }
 
   list(evaluation_id: string, params: {
