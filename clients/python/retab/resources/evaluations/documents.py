@@ -28,7 +28,7 @@ class DocumentsMixin:
     def prepare_update(self, evaluation_id: str, document_id: str, annotation: dict[str, Any]) -> PreparedRequest:
         update_request = PatchEvaluationDocumentRequest(annotation=annotation)
         return PreparedRequest(
-            method="PATCH", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True)
+            method="PATCH", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_unset=True)
         )
 
     def prepare_delete(self, evaluation_id: str, document_id: str) -> PreparedRequest:

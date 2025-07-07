@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, List, Literal, Optional
 
 from pydantic import EmailStr, HttpUrl
-from pydantic_core import PydanticUndefined
+from ....types.standards import FieldUnset
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....utils.mime import prepare_mime_document
@@ -21,25 +21,32 @@ class MailBoxesMixin:
         name: str,
         processor_id: str,
         webhook_url: str,
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = FieldUnset,
+        authorized_emails: list[EmailStr] = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        default_language: str = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> PreparedRequest:
         """Create a new email automation configuration."""
-        mailbox = Mailbox(
-            name=name,
-            processor_id=processor_id,
-            default_language=default_language,
-            webhook_url=webhook_url,
-            webhook_headers=webhook_headers,
-            need_validation=need_validation,
-            email=email,
-            authorized_domains=authorized_domains,
-            authorized_emails=authorized_emails,
-        )
-        return PreparedRequest(method="POST", url=self.mailboxes_base_url, data=mailbox.model_dump(mode="json"))
+        mailbox_dict: dict[str, Any] = {
+            'name': name,
+            'processor_id': processor_id,
+            'webhook_url': webhook_url,
+            'email': email,
+        }
+        if default_language is not FieldUnset:
+            mailbox_dict['default_language'] = default_language
+        if webhook_headers is not FieldUnset:
+            mailbox_dict['webhook_headers'] = webhook_headers
+        if need_validation is not FieldUnset:
+            mailbox_dict['need_validation'] = need_validation
+        if authorized_domains is not FieldUnset:
+            mailbox_dict['authorized_domains'] = authorized_domains
+        if authorized_emails is not FieldUnset:
+            mailbox_dict['authorized_emails'] = authorized_emails
+
+        mailbox = Mailbox(**mailbox_dict)
+        return PreparedRequest(method="POST", url=self.mailboxes_base_url, data=mailbox.model_dump(mode="json", exclude_unset=True))
 
     def prepare_list(
         self,
@@ -73,24 +80,32 @@ class MailBoxesMixin:
     def prepare_update(
         self,
         mailbox_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: list[str] = FieldUnset,
+        authorized_emails: list[str] = FieldUnset,
     ) -> PreparedRequest:
-        update_mailbox_request = UpdateMailboxRequest(
-            name=name,
-            default_language=default_language,
-            webhook_url=webhook_url,
-            webhook_headers=webhook_headers,
-            need_validation=need_validation,
-            authorized_domains=authorized_domains,
-            authorized_emails=authorized_emails,
-        )
-        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/mailboxes/{mailbox_id}", data=update_mailbox_request.model_dump(mode="json"))
+        update_dict: dict[str, Any] = {}
+        if name is not FieldUnset:
+            update_dict['name'] = name
+        if default_language is not FieldUnset:
+            update_dict['default_language'] = default_language
+        if webhook_url is not FieldUnset:
+            update_dict['webhook_url'] = webhook_url
+        if webhook_headers is not FieldUnset:
+            update_dict['webhook_headers'] = webhook_headers
+        if need_validation is not FieldUnset:
+            update_dict['need_validation'] = need_validation
+        if authorized_domains is not FieldUnset:
+            update_dict['authorized_domains'] = authorized_domains
+        if authorized_emails is not FieldUnset:
+            update_dict['authorized_emails'] = authorized_emails
+
+        update_mailbox_request = UpdateMailboxRequest(**update_dict)
+        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/mailboxes/{mailbox_id}", data=update_mailbox_request.model_dump(mode="json", exclude_unset=True))
 
     def prepare_delete(self, mailbox_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/mailboxes/{mailbox_id}", raise_for_status=True)
@@ -109,11 +124,11 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
         name: str,
         webhook_url: str,
         processor_id: str,
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: list[str] = FieldUnset,
+        authorized_emails: list[EmailStr] = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        default_language: str = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> Mailbox:
         """Create a new email automation configuration.
 
@@ -202,13 +217,13 @@ class Mailboxes(SyncAPIResource, MailBoxesMixin):
     def update(
         self,
         mailbox_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: List[str] = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: List[str] = FieldUnset,
+        authorized_emails: List[str] = FieldUnset,
     ) -> Mailbox:
         """Update an email automation configuration.
 
@@ -260,11 +275,11 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
         name: str,
         webhook_url: str,
         processor_id: str,
-        authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: List[EmailStr] = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        authorized_domains: List[str] = FieldUnset,
+        authorized_emails: List[EmailStr] = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        default_language: str = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> Mailbox:
         request = self.prepare_create(
             email=email,
@@ -315,13 +330,13 @@ class AsyncMailboxes(AsyncAPIResource, MailBoxesMixin):
     async def update(
         self,
         mailbox_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: List[str] = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: List[str] = FieldUnset,
+        authorized_emails: List[str] = FieldUnset,
     ) -> Mailbox:
         request = self.prepare_update(
             mailbox_id=mailbox_id,

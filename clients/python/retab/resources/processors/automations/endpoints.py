@@ -1,6 +1,6 @@
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
-from pydantic_core import PydanticUndefined
+from ....types.standards import FieldUnset
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....utils.ai_models import assert_valid_model_extraction
@@ -15,19 +15,23 @@ class EndpointsMixin:
         name: str,
         webhook_url: str,
         model: str = "gpt-4o-mini",
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
-        request = Endpoint(
-            processor_id=processor_id,
-            name=name,
-            webhook_url=webhook_url,
-            webhook_headers=webhook_headers,
-            need_validation=need_validation,
-        )
-        return PreparedRequest(method="POST", url="/v1/processors/automations/endpoints", data=request.model_dump(mode="json"))
+        endpoint_dict: dict[str, Any] = {
+            'processor_id': processor_id,
+            'name': name,
+            'webhook_url': webhook_url,
+        }
+        if webhook_headers is not FieldUnset:
+            endpoint_dict['webhook_headers'] = webhook_headers
+        if need_validation is not FieldUnset:
+            endpoint_dict['need_validation'] = need_validation
+
+        request = Endpoint(**endpoint_dict)
+        return PreparedRequest(method="POST", url="/v1/processors/automations/endpoints", data=request.model_dump(mode="json", exclude_unset=True))
 
     def prepare_list(
         self,
@@ -68,20 +72,26 @@ class EndpointsMixin:
     def prepare_update(
         self,
         endpoint_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> PreparedRequest:
-        request = UpdateEndpointRequest(
-            name=name,
-            default_language=default_language,
-            webhook_url=webhook_url,
-            webhook_headers=webhook_headers,
-            need_validation=need_validation,
-        )
-        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/endpoints/{endpoint_id}", data=request.model_dump(mode="json"))
+        update_dict: dict[str, Any] = {}
+        if name is not FieldUnset:
+            update_dict['name'] = name
+        if default_language is not FieldUnset:
+            update_dict['default_language'] = default_language
+        if webhook_url is not FieldUnset:
+            update_dict['webhook_url'] = webhook_url
+        if webhook_headers is not FieldUnset:
+            update_dict['webhook_headers'] = webhook_headers
+        if need_validation is not FieldUnset:
+            update_dict['need_validation'] = need_validation
+
+        request = UpdateEndpointRequest(**update_dict)
+        return PreparedRequest(method="PUT", url=f"/v1/processors/automations/endpoints/{endpoint_id}", data=request.model_dump(mode="json", exclude_unset=True))
 
     def prepare_delete(self, endpoint_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/processors/automations/endpoints/{endpoint_id}")
@@ -95,8 +105,8 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
         processor_id: str,
         name: str,
         webhook_url: str,
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> Endpoint:
         """Create a new endpoint configuration.
 
@@ -168,11 +178,11 @@ class Endpoints(SyncAPIResource, EndpointsMixin):
     def update(
         self,
         endpoint_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> Endpoint:
         """Update an endpoint configuration.
 
@@ -221,8 +231,8 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
         processor_id: str,
         name: str,
         webhook_url: str,
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> Endpoint:
         request = self.prepare_create(
             processor_id=processor_id,
@@ -258,11 +268,11 @@ class AsyncEndpoints(AsyncAPIResource, EndpointsMixin):
     async def update(
         self,
         endpoint_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> Endpoint:
         request = self.prepare_update(
             endpoint_id=endpoint_id,

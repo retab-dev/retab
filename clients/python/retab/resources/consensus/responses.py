@@ -55,7 +55,7 @@ class BaseResponsesMixin:
             instructions=instructions,
         )
 
-        return PreparedRequest(method="POST", url="/v1/responses", data=request.model_dump(), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/responses", data=request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key)
 
     def prepare_parse(
         self,

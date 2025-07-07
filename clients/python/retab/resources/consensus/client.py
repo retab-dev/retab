@@ -21,7 +21,7 @@ class BaseConsensusMixin:
             mode=mode,
         )
 
-        return PreparedRequest(method="POST", url="/v1/consensus/reconcile", data=request.model_dump(), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/consensus/reconcile", data=request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key)
 
 
 class Consensus(SyncAPIResource, BaseConsensusMixin):

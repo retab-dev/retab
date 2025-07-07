@@ -14,9 +14,8 @@ from anthropic import Anthropic
 from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from pydantic import BaseModel
-from pydantic_core import PydanticUndefined
 from tqdm import tqdm
-
+from .types.standards import FieldUnset
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..utils.ai_models import assert_valid_model_extraction, get_provider_for_model
 from ..utils.chat import convert_to_anthropic_format, convert_to_openai_format, separate_messages
@@ -139,8 +138,8 @@ class Datasets(SyncAPIResource, BaseDatasetsMixin):
         json_schema: dict[str, Any] | Path | str,
         document_annotation_pairs_paths: list[dict[str, Path | str]],
         dataset_path: Path | str,
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
         modality: Modality = "native",
     ) -> None:
         """Save document-annotation pairs to a JSONL training set.

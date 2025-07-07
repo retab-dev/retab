@@ -10,7 +10,6 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
-from pydantic_core import PydanticUndefined
 from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
@@ -23,7 +22,7 @@ from ...types.documents.extractions import DocumentExtractRequest, LogExtraction
 from ...types.browser_canvas import BrowserCanvas
 from ...types.modalities import Modality
 from ...types.schemas.object import Schema
-from ...types.standards import PreparedRequest
+from ...types.standards import PreparedRequest, FieldUnset
 
 
 def maybe_parse_to_pydantic(schema: Schema, response: RetabParsedChatCompletion, allow_partial: bool = False) -> RetabParsedChatCompletion:
@@ -44,14 +43,14 @@ class BaseExtractionsMixin:
         json_schema: dict[str, Any] | Path | str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
-        model: str = PydanticUndefined,  # type: ignore[assignment]
-        temperature: float = PydanticUndefined,  # type: ignore[assignment]
-        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
-        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        model: str = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         stream: bool = False,
-        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        n_consensus: int = FieldUnset,
         store: bool = False,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
@@ -71,20 +70,30 @@ class BaseExtractionsMixin:
         else:
             raise ValueError("Must provide either 'document' or 'documents' parameter.")
 
+        # Build request dictionary with only provided fields
+        request_dict = {
+            'json_schema': json_schema,
+            'documents': processed_documents,
+            'stream': stream,
+            'store': store,
+        }
+        if model is not FieldUnset:
+            request_dict['model'] = model
+        if temperature is not FieldUnset:
+            request_dict['temperature'] = temperature
+        if modality is not FieldUnset:
+            request_dict['modality'] = modality
+        if reasoning_effort is not FieldUnset:
+            request_dict['reasoning_effort'] = reasoning_effort
+        if n_consensus is not FieldUnset:
+            request_dict['n_consensus'] = n_consensus
+        if image_resolution_dpi is not FieldUnset:
+            request_dict['image_resolution_dpi'] = image_resolution_dpi
+        if browser_canvas is not FieldUnset:
+            request_dict['browser_canvas'] = browser_canvas
+
         # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = DocumentExtractRequest(
-            json_schema=json_schema,
-            documents=processed_documents,
-            model=model,
-            temperature=temperature,
-            stream=stream,
-            modality=modality,
-            store=store,
-            reasoning_effort=reasoning_effort,
-            n_consensus=n_consensus,
-            image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-        )
+        request = DocumentExtractRequest(**request_dict)
 
         return PreparedRequest(
             method="POST", url="/v1/documents/extractions", data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
@@ -144,12 +153,12 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
-        temperature: float = PydanticUndefined,  # type: ignore[assignment]
-        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
-        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
-        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        n_consensus: int = FieldUnset,
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> RetabParsedChatCompletion:
@@ -204,12 +213,12 @@ class Extractions(SyncAPIResource, BaseExtractionsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
-        temperature: float = PydanticUndefined,  # type: ignore[assignment]
-        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
-        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
-        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        n_consensus: int = FieldUnset,
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> Generator[RetabParsedChatCompletion, None, None]:
@@ -345,12 +354,12 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
-        temperature: float = PydanticUndefined,  # type: ignore[assignment]
-        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
-        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
-        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        n_consensus: int = FieldUnset,
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> RetabParsedChatCompletion:
@@ -401,12 +410,12 @@ class AsyncExtractions(AsyncAPIResource, BaseExtractionsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | None = None,
         documents: list[Path | str | IOBase | HttpUrl] | None = None,
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
-        temperature: float = PydanticUndefined,  # type: ignore[assignment]
-        modality: Modality = PydanticUndefined,  # type: ignore[assignment]
-        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
-        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        n_consensus: int = FieldUnset,
         idempotency_key: str | None = None,
         store: bool = False,
     ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
