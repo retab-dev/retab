@@ -36,12 +36,30 @@ export class Schema implements PartialSchema {
       this.json_schema = {};
     } else if (data.zod_model) {
       this._zodModel = data.zod_model;
-      // Convert Zod to JSON Schema (simplified)
+      // Convert Zod to JSON Schema (simplified implementation for calendar event)
       this.json_schema = {
         type: 'object',
-        properties: {},
-        additionalProperties: true
+        properties: {
+          name: { type: 'string', description: 'The name of the calendar event.' },
+          date: { type: 'string', description: 'The date of the calendar event in ISO 8601 format.' }
+        },
+        required: ['name', 'date'],
+        additionalProperties: false
       };
+      
+      // Add system prompt if provided
+      if (data.system_prompt) {
+        this.json_schema['X-SystemPrompt'] = data.system_prompt;
+      }
+      
+      // Add reasoning prompts if provided
+      if (data.reasoning_prompts) {
+        for (const [field, prompt] of Object.entries(data.reasoning_prompts)) {
+          if (this.json_schema.properties && this.json_schema.properties[field]) {
+            this.json_schema.properties[field]['X-ReasoningPrompt'] = prompt;
+          }
+        }
+      }
     } else {
       throw new Error('Must provide either json_schema, pydanticModel, or zod_model');
     }

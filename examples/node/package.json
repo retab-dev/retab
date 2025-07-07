@@ -6,7 +6,9 @@
   "scripts": {
     "extract-api": "node documents/extract_api.js",
     "json-schema-calendar": "node schemas/json_schema_calendar_event.js",
-    "zod-calendar": "node schemas/zod_calendar_event.js"
+    "zod-calendar": "node schemas/zod_calendar_event.js",
+    "consensus-extract": "node consensus/extract_api.js",
+    "consensus-reconcile": "node consensus/reconcile.js"
   },
   "dependencies": {
     "@retab/node": "file:../../clients/node",
