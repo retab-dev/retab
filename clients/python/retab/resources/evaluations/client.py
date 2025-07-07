@@ -65,11 +65,11 @@ class EvaluationsMixin:
         Prepare a request to list evaluations.
 
         Usage:
-        >>> client.evals.list(project_id="project_id")   # List all evaluations for a project
-        >>> client.evals.list()                          # List all evaluations (no project_id)
+        >>> client.evaluations.list(project_id="project_id")   # List all evaluations for a project
+        >>> client.evaluations.list()                          # List all evaluations (no project_id)
 
         This does not work:
-        >>> client.evals.list(project_id=None)
+        >>> client.evaluations.list(project_id=None)
 
         Args:
             project_id: The project ID to list evaluations for
