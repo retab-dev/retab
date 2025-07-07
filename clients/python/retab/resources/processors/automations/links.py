@@ -1,10 +1,8 @@
 from typing import Any, Literal, Optional
 
-from pydantic_core import PydanticUndefined
-
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.automations.links import Link, ListLinks, UpdateLinkRequest
-from ....types.standards import PreparedRequest
+from ....types.standards import PreparedRequest, FieldUnset
 
 
 class LinksMixin:
@@ -15,19 +13,24 @@ class LinksMixin:
         processor_id: str,
         name: str,
         webhook_url: str,
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        password: str | None = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        password: str | None = FieldUnset,
     ) -> PreparedRequest:
-        request = Link(
-            processor_id=processor_id,
-            name=name,
-            webhook_url=webhook_url,
-            webhook_headers=webhook_headers,
-            need_validation=need_validation,
-            password=password,
-        )
-        return PreparedRequest(method="POST", url=self.links_base_url, data=request.model_dump(mode="json"))
+        link_dict: dict[str, Any] = {
+            'processor_id': processor_id,
+            'name': name,
+            'webhook_url': webhook_url,
+        }
+        if webhook_headers is not FieldUnset:
+            link_dict['webhook_headers'] = webhook_headers
+        if need_validation is not FieldUnset:
+            link_dict['need_validation'] = need_validation
+        if password is not FieldUnset:
+            link_dict['password'] = password
+
+        request = Link(**link_dict)
+        return PreparedRequest(method="POST", url=self.links_base_url, data=request.model_dump(mode="json", exclude_unset=True))
 
     def prepare_list(
         self,
@@ -66,19 +69,25 @@ class LinksMixin:
     def prepare_update(
         self,
         link_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        password: str | None = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        password: str | None = FieldUnset,
     ) -> PreparedRequest:
-        request = UpdateLinkRequest(
-            name=name,
-            webhook_url=webhook_url,
-            webhook_headers=webhook_headers,
-            need_validation=need_validation,
-            password=password,
-        )
+        update_dict: dict[str, Any] = {}
+        if name is not FieldUnset:
+            update_dict['name'] = name
+        if webhook_url is not FieldUnset:
+            update_dict['webhook_url'] = webhook_url
+        if webhook_headers is not FieldUnset:
+            update_dict['webhook_headers'] = webhook_headers
+        if need_validation is not FieldUnset:
+            update_dict['need_validation'] = need_validation
+        if password is not FieldUnset:
+            update_dict['password'] = password
+
+        request = UpdateLinkRequest(**update_dict)
         return PreparedRequest(method="PUT", url=f"{self.links_base_url}/{link_id}", data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True))
 
     def prepare_delete(self, link_id: str) -> PreparedRequest:
@@ -96,9 +105,9 @@ class Links(SyncAPIResource, LinksMixin):
         processor_id: str,
         name: str,
         webhook_url: str,
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        password: str | None = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        password: str | None = FieldUnset,
     ) -> Link:
         """Create a new extraction link configuration.
 
@@ -174,11 +183,11 @@ class Links(SyncAPIResource, LinksMixin):
     def update(
         self,
         link_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        password: str | None = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        password: str | None = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> Link:
         """Update an extraction link configuration.
 
@@ -235,9 +244,9 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
         processor_id: str,
         name: str,
         webhook_url: str,
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        password: str | None = PydanticUndefined,  # type: ignore[assignment]
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        password: str | None = FieldUnset,
     ) -> Link:
         request = self.prepare_create(
             processor_id=processor_id,
@@ -272,11 +281,11 @@ class AsyncLinks(AsyncAPIResource, LinksMixin):
     async def update(
         self,
         link_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        password: str | None = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        password: str | None = FieldUnset,
+        need_validation: bool = FieldUnset,
     ) -> Link:
         request = self.prepare_update(
             link_id=link_id,

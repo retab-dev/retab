@@ -1,6 +1,6 @@
 from typing import Any, Literal, List
 
-from pydantic_core import PydanticUndefined
+from ....types.standards import FieldUnset
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.automations.outlook import (
@@ -21,33 +21,44 @@ class OutlooksMixin:
         name: str,
         processor_id: str,
         webhook_url: str,
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
-        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
-        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: list[str] = FieldUnset,
+        authorized_emails: list[str] = FieldUnset,
+        layout_schema: dict[str, Any] = FieldUnset,
+        match_params: list[MatchParams] = FieldUnset,
+        fetch_params: list[FetchParams] = FieldUnset,
     ) -> PreparedRequest:
+        # Build outlook dictionary with only provided fields
+        outlook_dict: dict[str, Any] = {
+            'processor_id': processor_id,
+            'name': name,
+            'webhook_url': webhook_url,
+        }
+        if default_language is not FieldUnset:
+            outlook_dict['default_language'] = default_language
+        if webhook_headers is not FieldUnset:
+            outlook_dict['webhook_headers'] = webhook_headers
+        if need_validation is not FieldUnset:
+            outlook_dict['need_validation'] = need_validation
+        if authorized_domains is not FieldUnset:
+            outlook_dict['authorized_domains'] = authorized_domains
+        if authorized_emails is not FieldUnset:
+            outlook_dict['authorized_emails'] = authorized_emails
+        if layout_schema is not FieldUnset:
+            outlook_dict['layout_schema'] = layout_schema
+        if match_params is not FieldUnset:
+            outlook_dict['match_params'] = match_params
+        if fetch_params is not FieldUnset:
+            outlook_dict['fetch_params'] = fetch_params
+
         # Validate the data
-        outlook_data = Outlook(
-            processor_id=processor_id,
-            name=name,
-            default_language=default_language,
-            webhook_url=webhook_url,
-            webhook_headers=webhook_headers,
-            need_validation=need_validation,
-            authorized_domains=authorized_domains,
-            authorized_emails=authorized_emails,
-            layout_schema=layout_schema,
-            match_params=match_params,
-            fetch_params=fetch_params,
-        )
+        outlook_data = Outlook(**outlook_dict)
         return PreparedRequest(
             method="POST",
             url=self.outlooks_base_url,
-            data=outlook_data.model_dump(mode="json"),
+            data=outlook_data.model_dump(mode="json", exclude_unset=True),
         )
 
     def prepare_list(
@@ -80,34 +91,45 @@ class OutlooksMixin:
     def prepare_update(
         self,
         outlook_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
-        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
-        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: list[str] = FieldUnset,
+        authorized_emails: list[str] = FieldUnset,
+        match_params: list[MatchParams] = FieldUnset,
+        fetch_params: list[FetchParams] = FieldUnset,
+        layout_schema: dict[str, Any] = FieldUnset,
     ) -> PreparedRequest:
-        update_outlook_request = UpdateOutlookRequest(
-            name=name,
-            default_language=default_language,
-            webhook_url=webhook_url,
-            webhook_headers=webhook_headers,
-            need_validation=need_validation,
-            authorized_domains=authorized_domains,
-            authorized_emails=authorized_emails,
-            layout_schema=layout_schema,
-            match_params=match_params,
-            fetch_params=fetch_params,
-        )
+        update_dict: dict[str, Any] = {}
+        if name is not FieldUnset:
+            update_dict['name'] = name
+        if default_language is not FieldUnset:
+            update_dict['default_language'] = default_language
+        if webhook_url is not FieldUnset:
+            update_dict['webhook_url'] = webhook_url
+        if webhook_headers is not FieldUnset:
+            update_dict['webhook_headers'] = webhook_headers
+        if need_validation is not FieldUnset:
+            update_dict['need_validation'] = need_validation
+        if authorized_domains is not FieldUnset:
+            update_dict['authorized_domains'] = authorized_domains
+        if authorized_emails is not FieldUnset:
+            update_dict['authorized_emails'] = authorized_emails
+        if layout_schema is not FieldUnset:
+            update_dict['layout_schema'] = layout_schema
+        if match_params is not FieldUnset:
+            update_dict['match_params'] = match_params
+        if fetch_params is not FieldUnset:
+            update_dict['fetch_params'] = fetch_params
+
+        update_outlook_request = UpdateOutlookRequest(**update_dict)
 
         return PreparedRequest(
             method="PUT",
             url=f"{self.outlooks_base_url}/{outlook_id}",
-            data=update_outlook_request.model_dump(mode="json"),
+            data=update_outlook_request.model_dump(mode="json", exclude_unset=True),
         )
 
     def prepare_delete(self, outlook_id: str) -> PreparedRequest:
@@ -125,14 +147,14 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
         name: str,
         processor_id: str,
         webhook_url: str,
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
-        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
-        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: list[str] = FieldUnset,
+        authorized_emails: list[str] = FieldUnset,
+        layout_schema: dict[str, Any] = FieldUnset,
+        match_params: list[MatchParams] = FieldUnset,
+        fetch_params: list[FetchParams] = FieldUnset,
     ) -> Outlook:
         """Create a new outlook automation configuration.
 
@@ -211,16 +233,16 @@ class Outlooks(SyncAPIResource, OutlooksMixin):
     def update(
         self,
         outlook_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: List[str] = PydanticUndefined,  # type: ignore[assignment]
-        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
-        match_params: List[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
-        fetch_params: List[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: List[str] = FieldUnset,
+        authorized_emails: List[str] = FieldUnset,
+        layout_schema: dict[str, Any] = FieldUnset,
+        match_params: List[MatchParams] = FieldUnset,
+        fetch_params: List[FetchParams] = FieldUnset,
     ) -> Outlook:
         """Update an outlook automation configuration.
 
@@ -274,14 +296,14 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
         name: str,
         processor_id: str,
         webhook_url: str,
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: list[str] = PydanticUndefined,  # type: ignore[assignment]
-        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
-        match_params: list[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
-        fetch_params: list[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
+        default_language: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: list[str] = FieldUnset,
+        authorized_emails: list[str] = FieldUnset,
+        layout_schema: dict[str, Any] = FieldUnset,
+        match_params: list[MatchParams] = FieldUnset,
+        fetch_params: list[FetchParams] = FieldUnset,
     ) -> Outlook:
         request = self.prepare_create(
             name=name,
@@ -322,16 +344,16 @@ class AsyncOutlooks(AsyncAPIResource, OutlooksMixin):
     async def update(
         self,
         outlook_id: str,
-        name: str = PydanticUndefined,  # type: ignore[assignment]
-        default_language: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_url: str = PydanticUndefined,  # type: ignore[assignment]
-        webhook_headers: dict[str, str] = PydanticUndefined,  # type: ignore[assignment]
-        need_validation: bool = PydanticUndefined,  # type: ignore[assignment]
-        authorized_domains: List[str] = PydanticUndefined,  # type: ignore[assignment]
-        authorized_emails: List[str] = PydanticUndefined,  # type: ignore[assignment]
-        layout_schema: dict[str, Any] = PydanticUndefined,  # type: ignore[assignment]
-        match_params: List[MatchParams] = PydanticUndefined,  # type: ignore[assignment]
-        fetch_params: List[FetchParams] = PydanticUndefined,  # type: ignore[assignment]
+        name: str = FieldUnset,
+        default_language: str = FieldUnset,
+        webhook_url: str = FieldUnset,
+        webhook_headers: dict[str, str] = FieldUnset,
+        need_validation: bool = FieldUnset,
+        authorized_domains: List[str] = FieldUnset,
+        authorized_emails: List[str] = FieldUnset,
+        layout_schema: dict[str, Any] = FieldUnset,
+        match_params: List[MatchParams] = FieldUnset,
+        fetch_params: List[FetchParams] = FieldUnset,
     ) -> Outlook:
         request = self.prepare_update(
             outlook_id=outlook_id,

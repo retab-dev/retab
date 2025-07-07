@@ -6,8 +6,6 @@ from typing import Any, List, Literal
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, HttpUrl
-from pydantic_core import PydanticUndefined
-
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.ai_models import assert_valid_model_extraction
 from ...utils.json_schema import load_json_schema
@@ -17,7 +15,7 @@ from ...types.documents.extractions import RetabParsedChatCompletion
 from ...types.logs import ProcessorConfig, UpdateProcessorRequest
 from ...types.modalities import Modality
 from ...types.pagination import ListMetadata
-from ...types.standards import PreparedRequest
+from ...types.standards import PreparedRequest, FieldUnset
 from .automations.client import AsyncAutomations, Automations
 
 
@@ -35,30 +33,37 @@ class ProcessorsMixin:
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
-        temperature: float = PydanticUndefined,  # type: ignore[assignment]
-        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
-        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        n_consensus: int = FieldUnset,
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
 
         # Load the JSON schema from file path, string, or dict
         loaded_schema = load_json_schema(json_schema)
 
-        processor_config = ProcessorConfig(
-            name=name,
-            json_schema=loaded_schema,
-            modality=modality,
-            model=model,
-            temperature=temperature,
-            reasoning_effort=reasoning_effort,
-            image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            n_consensus=n_consensus,
-        )
+        config_dict = {
+            'name': name,
+            'json_schema': loaded_schema,
+            'modality': modality,
+            'model': model,
+        }
+        if temperature is not FieldUnset:
+            config_dict['temperature'] = temperature
+        if reasoning_effort is not FieldUnset:
+            config_dict['reasoning_effort'] = reasoning_effort
+        if image_resolution_dpi is not FieldUnset:
+            config_dict['image_resolution_dpi'] = image_resolution_dpi
+        if browser_canvas is not FieldUnset:
+            config_dict['browser_canvas'] = browser_canvas
+        if n_consensus is not FieldUnset:
+            config_dict['n_consensus'] = n_consensus
 
-        return PreparedRequest(method="POST", url="/v1/processors", data=processor_config.model_dump(mode="json"))
+        processor_config = ProcessorConfig(**config_dict)
+
+        return PreparedRequest(method="POST", url="/v1/processors", data=processor_config.model_dump(mode="json", exclude_unset=True))
 
     def prepare_list(
         self,
@@ -215,11 +220,11 @@ class Processors(SyncAPIResource, ProcessorsMixin):
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
-        temperature: float = PydanticUndefined,  # type: ignore[assignment]
-        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
-        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        n_consensus: int = FieldUnset,
     ) -> ProcessorConfig:
         """Create a new processor configuration.
 
@@ -390,11 +395,11 @@ class AsyncProcessors(AsyncAPIResource, ProcessorsMixin):
         json_schema: dict[str, Any] | Path | str,
         modality: Modality = "native",
         model: str = "gpt-4o-mini",
-        temperature: float = PydanticUndefined,  # type: ignore[assignment]
-        reasoning_effort: ChatCompletionReasoningEffort = PydanticUndefined,  # type: ignore[assignment]
-        image_resolution_dpi: int = PydanticUndefined,  # type: ignore[assignment]
-        browser_canvas: BrowserCanvas = PydanticUndefined,  # type: ignore[assignment]
-        n_consensus: int = PydanticUndefined,  # type: ignore[assignment]
+        temperature: float = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        n_consensus: int = FieldUnset,
     ) -> ProcessorConfig:
         request = self.prepare_create(
             name=name,
