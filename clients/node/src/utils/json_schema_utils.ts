@@ -2,6 +2,23 @@ import * as fs from 'fs';
 import { generateBlake2bHashFromString } from './hash.js';
 
 /**
+ * Recursively sort all object keys to match Python's json.dumps(sort_keys=True).
+ */
+function sortKeysRecursively(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(sortKeysRecursively);
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj)
+      .sort()
+      .reduce((result: any, key) => {
+        result[key] = sortKeysRecursively(obj[key]);
+        return result;
+      }, {});
+  }
+  return obj;
+}
+
+/**
  * Clean a schema by removing specified fields and custom fields.
  */
 export function cleanSchema(
@@ -45,6 +62,7 @@ export function cleanSchema(
 
 /**
  * Generate a schema data ID (hash of schema data, ignoring prompt/description/default fields).
+ * Uses Python-compatible JSON formatting with spaces and recursive key sorting.
  */
 export function generateSchemaDataId(jsonSchema: Record<string, any>): string {
   const cleanedSchema = cleanSchema(jsonSchema, {
@@ -61,16 +79,44 @@ export function generateSchemaDataId(jsonSchema: Record<string, any>): string {
     ]
   });
 
-  const hashInput = JSON.stringify(cleanedSchema, Object.keys(cleanedSchema).sort()).trim();
+  const sortedSchema = sortKeysRecursively(cleanedSchema);
+  const hashInput = pythonJsonStringify(sortedSchema);
   return 'sch_data_id_' + generateBlake2bHashFromString(hashInput);
 }
 
 /**
  * Generate a schema ID (hash of the complete schema).
+ * Uses Python-compatible JSON formatting (sort_keys=True, default separators).
  */
 export function generateSchemaId(jsonSchema: Record<string, any>): string {
-  const hashInput = JSON.stringify(jsonSchema, Object.keys(jsonSchema).sort()).trim();
+  const sortedSchema = sortKeysRecursively(jsonSchema);
+  const hashInput = pythonJsonStringify(sortedSchema);
   return 'sch_id_' + generateBlake2bHashFromString(hashInput);
+}
+
+/**
+ * Stringify JSON to match Python's json.dumps() format exactly.
+ * Python uses separators (',', ': ') by default.
+ */
+function pythonJsonStringify(obj: any): string {
+  if (obj === null) return 'null';
+  if (typeof obj === 'boolean') return obj.toString();
+  if (typeof obj === 'number') return obj.toString();
+  if (typeof obj === 'string') return `"${obj}"`;
+  
+  if (Array.isArray(obj)) {
+    const items = obj.map(pythonJsonStringify);
+    return `[${items.join(', ')}]`;
+  }
+  
+  if (typeof obj === 'object') {
+    const pairs = Object.keys(obj)
+      .sort() // Ensure sorted keys
+      .map(key => `"${key}": ${pythonJsonStringify(obj[key])}`);
+    return `{${pairs.join(', ')}}`;
+  }
+  
+  return 'null';
 }
 
 /**
