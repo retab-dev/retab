@@ -1,6 +1,7 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APILogIdSub from "./logId/client";
-import { ListLogs } from "@/types";
+import { ZListLogs, ListLogs } from "@/types";
 
 export default class APILogs extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +17,7 @@ export default class APILogs extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "automation_id": automationId, "processor_id": processorId, "webhook_url": webhookUrl, "schema_id": schemaId, "schema_data_id": schemaDataId, "status_code": statusCode, "status_class": statusClass },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZListLogs.parse(await res.json());
     throw new Error("Bad content type");
   }
   

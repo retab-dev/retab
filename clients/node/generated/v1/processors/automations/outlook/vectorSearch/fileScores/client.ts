@@ -1,4 +1,5 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIFileIdSub from "./fileId/client";
 
 export default class APIFileScores extends CompositionClient {

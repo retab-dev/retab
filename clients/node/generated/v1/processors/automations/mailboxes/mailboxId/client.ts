@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { MailboxOutput, UpdateMailboxRequest } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZMailboxOutput, MailboxOutput, ZUpdateMailboxRequest, UpdateMailboxRequest } from "@/types";
 
 export default class APIMailboxId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -13,7 +14,7 @@ export default class APIMailboxId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZMailboxOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -25,7 +26,7 @@ export default class APIMailboxId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZMailboxOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -35,7 +36,7 @@ export default class APIMailboxId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.object({}).parse(await res.json());
     throw new Error("Bad content type");
   }
   

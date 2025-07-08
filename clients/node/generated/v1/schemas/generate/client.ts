@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { GenerateSchemaRequest, PartialSchema } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZGenerateSchemaRequest, GenerateSchemaRequest, ZPartialSchema, PartialSchema } from "@/types";
 
 export default class APIGenerate extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +17,7 @@ export default class APIGenerate extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZPartialSchema.parse(await res.json());
     throw new Error("Bad content type");
   }
   

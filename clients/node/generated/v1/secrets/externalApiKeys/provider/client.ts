@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { ExternalAPIKey } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZExternalAPIKey, ExternalAPIKey } from "@/types";
 
 export default class APIProvider extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -14,7 +15,7 @@ export default class APIProvider extends CompositionClient {
       params: { "include_fallback_api_keys": includeFallbackApiKeys },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZExternalAPIKey.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -24,7 +25,7 @@ export default class APIProvider extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.object({}).parse(await res.json());
     throw new Error("Bad content type");
   }
   

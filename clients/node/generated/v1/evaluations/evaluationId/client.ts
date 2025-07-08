@@ -1,8 +1,9 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIDocumentsSub from "./documents/client";
 import APIIterationsSub from "./iterations/client";
 import APIDuplicateSub from "./duplicate/client";
-import { RetabTypesEvaluationsModelEvaluationOutput, RetabTypesEvaluationsModelPatchEvaluationRequest } from "@/types";
+import { ZRetabTypesEvaluationsModelEvaluationOutput, RetabTypesEvaluationsModelEvaluationOutput, ZRetabTypesEvaluationsModelPatchEvaluationRequest, RetabTypesEvaluationsModelPatchEvaluationRequest } from "@/types";
 
 export default class APIEvaluationId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -19,7 +20,7 @@ export default class APIEvaluationId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZRetabTypesEvaluationsModelEvaluationOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -31,7 +32,7 @@ export default class APIEvaluationId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZRetabTypesEvaluationsModelEvaluationOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -41,7 +42,7 @@ export default class APIEvaluationId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.object({}).parse(await res.json());
     throw new Error("Bad content type");
   }
   

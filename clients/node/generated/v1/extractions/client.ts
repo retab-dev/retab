@@ -1,8 +1,9 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIDownloadSub from "./download/client";
 import APIExtractionIdSub from "./extractionId/client";
 import APIFieldsSub from "./fields/client";
-import { PaginatedList } from "@/types";
+import { ZPaginatedList, PaginatedList } from "@/types";
 
 export default class APIExtractions extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -20,7 +21,7 @@ export default class APIExtractions extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "source_dot_id": sourceDotId, "completion_dot_id": completionDotId, "schema_id": schemaId, "schema_data_id": schemaDataId, "status": status, "validation_state": validationState, "from_date": fromDate, "to_date": toDate, "model": model },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZPaginatedList.parse(await res.json());
     throw new Error("Bad content type");
   }
   

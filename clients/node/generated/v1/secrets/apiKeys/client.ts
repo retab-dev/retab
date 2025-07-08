@@ -1,8 +1,9 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIKeyIdSub from "./keyId/client";
 import APIWebhookSignatureSub from "./webhookSignature/client";
 import APIGetOneApiKeySub from "./getOneApiKey/client";
-import { APIKeyInfo, APIKeyCreate, APIKeyResponse } from "@/types";
+import { ZAPIKeyInfo, APIKeyInfo, ZAPIKeyCreate, APIKeyCreate, ZAPIKeyResponse, APIKeyResponse } from "@/types";
 
 export default class APIApiKeys extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -19,7 +20,7 @@ export default class APIApiKeys extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.array(ZAPIKeyInfo).parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -31,7 +32,7 @@ export default class APIApiKeys extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZAPIKeyResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

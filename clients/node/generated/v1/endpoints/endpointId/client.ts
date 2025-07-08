@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { BodyHandleEndpointProcessingV1EndpointsEndpointIdPost, AutomationLog } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZBodyHandleEndpointProcessingV1EndpointsEndpointIdPost, BodyHandleEndpointProcessingV1EndpointsEndpointIdPost, ZAutomationLog, AutomationLog } from "@/types";
 
 export default class APIEndpointId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIEndpointId extends CompositionClient {
       body: body,
       bodyMime: "multipart/form-data",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZAutomationLog.parse(await res.json());
     throw new Error("Bad content type");
   }
   

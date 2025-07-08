@@ -1,6 +1,7 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APITemplateIdSub from "./templateId/client";
-import { ListTemplates, MainServerServicesV1SchemasDefaultTemplatesRoutesCreateTemplateRequest, TemplateSchema } from "@/types";
+import { ZListTemplates, ListTemplates, ZMainServerServicesV1SchemasDefaultTemplatesRoutesCreateTemplateRequest, MainServerServicesV1SchemasDefaultTemplatesRoutesCreateTemplateRequest, ZTemplateSchema, TemplateSchema } from "@/types";
 
 export default class APIDefaultTemplates extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +17,7 @@ export default class APIDefaultTemplates extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "name": name, "id": id, "data_id": dataId, "sort_by": sortBy },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZListTemplates.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -28,7 +29,7 @@ export default class APIDefaultTemplates extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZTemplateSchema.parse(await res.json());
     throw new Error("Bad content type");
   }
   

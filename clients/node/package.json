@@ -1,7 +1,9 @@
 {
   "name": "node",
   "version": "1.0.0",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -11,7 +13,10 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@types/node": "^24.0.10",
-    "tsc": "^2.0.4"
+    "@types/node": "^24.0.10"
+  },
+  "dependencies": {
+    "typescript": "^5.8.3",
+    "zod": "^3.25.75"
   }
 }

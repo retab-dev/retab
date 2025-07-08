@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { GenerateSystemPromptRequest } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZGenerateSystemPromptRequest, GenerateSystemPromptRequest } from "@/types";
 
 export default class APISystemPromptEndpoint extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APISystemPromptEndpoint extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.any().parse(await res.json());
     throw new Error("Bad content type");
   }
   

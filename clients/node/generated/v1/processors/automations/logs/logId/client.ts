@@ -1,6 +1,7 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIRerunSub from "./rerun/client";
-import { AutomationLog } from "@/types";
+import { ZAutomationLog, AutomationLog } from "@/types";
 
 export default class APILogId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APILogId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZAutomationLog.parse(await res.json());
     throw new Error("Bad content type");
   }
   

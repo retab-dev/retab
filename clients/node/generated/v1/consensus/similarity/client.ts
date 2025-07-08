@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { ComputeDictSimilarityRequest, ComputeDictSimilarityResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZComputeDictSimilarityRequest, ComputeDictSimilarityRequest, ZComputeDictSimilarityResponse, ComputeDictSimilarityResponse } from "@/types";
 
 export default class APISimilarity extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APISimilarity extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZComputeDictSimilarityResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

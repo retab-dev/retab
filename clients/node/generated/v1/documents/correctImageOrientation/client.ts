@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { DocumentTransformRequest, DocumentTransformResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZDocumentTransformRequest, DocumentTransformRequest, ZDocumentTransformResponse, DocumentTransformResponse } from "@/types";
 
 export default class APICorrectImageOrientation extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APICorrectImageOrientation extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZDocumentTransformResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

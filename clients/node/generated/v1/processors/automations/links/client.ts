@@ -1,8 +1,9 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APILinkIdSub from "./linkId/client";
 import APIParseSub from "./parse/client";
 import APIVerifyPasswordSub from "./verifyPassword/client";
-import { LinkInput, LinkOutput, ListLinks } from "@/types";
+import { ZLinkInput, LinkInput, ZLinkOutput, LinkOutput, ZListLinks, ListLinks } from "@/types";
 
 export default class APILinks extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -21,7 +22,7 @@ export default class APILinks extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZLinkOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -32,7 +33,7 @@ export default class APILinks extends CompositionClient {
       params: { "processor_id": processorId, "before": before, "after": after, "limit": limit, "order": order },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZListLinks.parse(await res.json());
     throw new Error("Bad content type");
   }
   

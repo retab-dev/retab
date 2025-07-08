@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { DocumentCreateMessageRequest, DocumentMessage } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZDocumentCreateMessageRequest, DocumentCreateMessageRequest, ZDocumentMessage, DocumentMessage } from "@/types";
 
 export default class APICreateMessages extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +17,7 @@ export default class APICreateMessages extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZDocumentMessage.parse(await res.json());
     throw new Error("Bad content type");
   }
   

@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { ModelCardsResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZModelCardsResponse, ModelCardsResponse } from "@/types";
 
 export default class APIModelCardsForPicker extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -14,7 +15,7 @@ export default class APIModelCardsForPicker extends CompositionClient {
       params: { "supports_finetuning": supportsFinetuning, "include_finetuned_models": includeFinetunedModels, "supports_schema_generation": supportsSchemaGeneration, "supports_image": supportsImage },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZModelCardsResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

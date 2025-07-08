@@ -1,4 +1,5 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 
 export default class APIWebhook extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -11,7 +12,7 @@ export default class APIWebhook extends CompositionClient {
       url: `/v1/processors/automations/mailboxes/webhook`,
       method: "POST",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.any().parse(await res.json());
     throw new Error("Bad content type");
   }
   
