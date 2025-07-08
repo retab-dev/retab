@@ -90,7 +90,8 @@ try {
     throw new Error('No content in response');
   }
 
-  const extraction = schemaObj.zod_model.parse(filterAuxiliaryFieldsJson(response.choices[0].message.content));
+  const parsedContent = JSON.parse(response.choices[0].message.content);
+  const extraction = filterAuxiliaryFieldsJson(parsedContent);
 
   // Output
   console.log('\n✅ Extracted Result (Completions API):');
