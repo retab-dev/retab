@@ -92,6 +92,10 @@ export abstract class BaseRetab {
     }
   }
 
+  public getHeaders(): Record<string, string> {
+    return { ...this.headers };
+  }
+
   protected _getHeaders(idempotencyKey?: string | null): Record<string, string> {
     const headers = { ...this.headers };
     if (idempotencyKey) {

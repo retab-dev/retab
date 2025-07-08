@@ -1,5 +1,5 @@
 import { SyncAPIResource, AsyncAPIResource } from '../../../resource.js';
-import { Mailbox, ListMailboxes, UpdateMailboxRequest } from '../../../types/automations/mailboxes.js';
+import { Mailbox, ListMailboxes } from '../../../types/automations/mailboxes.js';
 
 export class MailboxesMixin {
   readonly mailboxesBaseUrl = '/v1/processors/automations/mailboxes';
@@ -150,11 +150,14 @@ export class Mailboxes extends SyncAPIResource {
     need_validation?: boolean;
     authorized_domains?: string[];
     authorized_emails?: string[];
-  }): Mailbox {
+  }): Promise<Mailbox> {
     const preparedRequest = this.mixin.prepareCreate(params);
     const response = this._client._preparedRequest(preparedRequest);
-    console.log(`Mailbox Created. Url: https://www.retab.com/dashboard/processors/automations/${response.id}`);
-    return response as Mailbox;
+    // Note: response is a Promise, access id after awaiting
+    response.then((r: any) => {
+      console.log(`Mailbox Created. Url: https://www.retab.com/dashboard/processors/automations/${r?.id || 'unknown'}`);
+    }).catch(() => {});
+    return response as Promise<Mailbox>;
   }
 
   list(params: {
@@ -165,16 +168,16 @@ export class Mailboxes extends SyncAPIResource {
     processor_id?: string;
     name?: string;
     email?: string;
-  } = {}): ListMailboxes {
+  } = {}): Promise<ListMailboxes> {
     const preparedRequest = this.mixin.prepareList(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as ListMailboxes;
+    return response as Promise<ListMailboxes>;
   }
 
-  get(mailbox_id: string): Mailbox {
+  get(mailbox_id: string): Promise<Mailbox> {
     const preparedRequest = this.mixin.prepareGet(mailbox_id);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Mailbox;
+    return response as Promise<Mailbox>;
   }
 
   update(params: {
@@ -185,16 +188,17 @@ export class Mailboxes extends SyncAPIResource {
     need_validation?: boolean;
     authorized_domains?: string[];
     authorized_emails?: string[];
-  }): Mailbox {
+  }): Promise<Mailbox> {
     const preparedRequest = this.mixin.prepareUpdate(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Mailbox;
+    return response as Promise<Mailbox>;
   }
 
-  delete(mailbox_id: string): void {
+  delete(mailbox_id: string): Promise<void> {
     const preparedRequest = this.mixin.prepareDelete(mailbox_id);
-    this._client._preparedRequest(preparedRequest);
+    const response = this._client._preparedRequest(preparedRequest);
     console.log(`Mailbox Deleted. ID: ${mailbox_id}`);
+    return response as Promise<void>;
   }
 }
 
@@ -213,7 +217,7 @@ export class AsyncMailboxes extends AsyncAPIResource {
   }): Promise<Mailbox> {
     const preparedRequest = this.mixin.prepareCreate(params);
     const response = await this._client._preparedRequest(preparedRequest);
-    console.log(`Mailbox Created. Url: https://www.retab.com/dashboard/processors/automations/${response.id}`);
+    console.log(`Mailbox Created. Url: https://www.retab.com/dashboard/processors/automations/${response?.id || 'unknown'}`);
     return response as Mailbox;
   }
 

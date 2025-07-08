@@ -3,6 +3,7 @@ import path from 'path';
 import { SyncAPIResource, AsyncAPIResource } from '../resource.js';
 import { PreparedRequest } from '../types/standards.js';
 import { Schema } from '../types/schemas/object.js';
+import { loadJsonSchema } from '../utils/json_schema_utils.js';
 
 // TypeScript equivalents of Python types
 export type MIMEData = string | Buffer | { filename: string; content: Buffer; mimeType: string };
@@ -91,15 +92,6 @@ function getMimeType(filePath: string): string {
   return mimeTypes[ext] || 'application/octet-stream';
 }
 
-function loadJsonSchema(jsonSchema: Record<string, any> | string): Record<string, any> {
-  if (typeof jsonSchema === 'string') {
-    if (fs.existsSync(jsonSchema)) {
-      return JSON.parse(fs.readFileSync(jsonSchema, 'utf-8'));
-    }
-    return JSON.parse(jsonSchema);
-  }
-  return jsonSchema;
-}
 
 class SchemasMixin {
   public prepareGenerate(
@@ -200,15 +192,13 @@ class SchemasMixin {
 export class Schemas extends SyncAPIResource {
   private mixin = new SchemasMixin();
 
-  load(options: { jsonSchema?: Record<string, any> | string; pydanticModel?: any }): Schema {
-    const { jsonSchema, pydanticModel } = options;
-    
+  load(jsonSchema?: Record<string, any> | string | null, pydanticModel?: any | null): Schema {
     if (jsonSchema) {
       return new Schema({ json_schema: loadJsonSchema(jsonSchema) });
     } else if (pydanticModel) {
       return new Schema({ pydanticModel });
     } else {
-      throw new Error('Either jsonSchema or pydanticModel must be provided');
+      throw new Error('Either json_schema or pydantic_model must be provided');
     }
   }
 
@@ -281,15 +271,13 @@ export class Schemas extends SyncAPIResource {
 export class AsyncSchemas extends AsyncAPIResource {
   private mixin = new SchemasMixin();
 
-  async load(options: { jsonSchema?: Record<string, any> | string; pydanticModel?: any }): Promise<Schema> {
-    const { jsonSchema, pydanticModel } = options;
-    
+  async load(jsonSchema?: Record<string, any> | string | null, pydanticModel?: any | null): Promise<Schema> {
     if (jsonSchema) {
       return new Schema({ json_schema: loadJsonSchema(jsonSchema) });
     } else if (pydanticModel) {
       return new Schema({ pydanticModel });
     } else {
-      throw new Error('Either jsonSchema or pydanticModel must be provided');
+      throw new Error('Either json_schema or pydantic_model must be provided');
     }
   }
 

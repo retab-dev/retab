@@ -51,14 +51,14 @@ const browserCanvas = 'A4';
 // Retab Setup
 const reclient = new Retab({ api_key: retabApiKey });
 const docMsg = await reclient.documents.create_messages({
-  document: '../../../assets/code/calendar_event.xlsx',
+  document: '../../assets/code/calendar_event.xlsx',
   // Note: Additional parameters like modality, image_resolution_dpi, browser_canvas 
   // would be supported by extending the create_messages implementation
 });
 const schemaObj = new Schema({ json_schema: jsonSchema });
 
 // Transform the messages to OpenAI format
-const openaiMessages = docMsg.messages || [];
+const openaiMessages = docMsg.openai_messages || [];
 
 // OpenAI Chat Completion with schema-based prompting
 const client = new OpenAI({ apiKey });
@@ -89,7 +89,7 @@ if (!completion.choices[0].message.content) {
   throw new Error('No content in response');
 }
 
-const extraction = schemaObj.zod_model.parse(filterAuxiliaryFieldsJson(completion.choices[0].message.content));
+const extraction = schemaObj.pydantic_model.model_validate(filterAuxiliaryFieldsJson(completion.choices[0].message.content));
 
 // Output
 console.log('\n✅ Extracted Result:');

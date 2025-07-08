@@ -1,5 +1,5 @@
 import { SyncAPIResource, AsyncAPIResource } from '../../../resource.js';
-import { Outlook, ListOutlooks, UpdateOutlookRequest, MatchParams, FetchParams } from '../../../types/automations/outlook.js';
+import { Outlook, ListOutlooks, MatchParams, FetchParams } from '../../../types/automations/outlook.js';
 
 export class OutlookMixin {
   readonly outlookBaseUrl = '/v1/processors/automations/outlook';
@@ -170,11 +170,13 @@ export class OutlookAutomations extends SyncAPIResource {
     layout_schema?: Record<string, any>;
     match_params?: MatchParams[];
     fetch_params?: FetchParams[];
-  }): Outlook {
+  }): Promise<Outlook> {
     const preparedRequest = this.mixin.prepareCreate(params);
     const response = this._client._preparedRequest(preparedRequest);
-    console.log(`Outlook automation Created. Url: https://www.retab.com/dashboard/processors/automations/${response.id}`);
-    return response as Outlook;
+    response.then((result: any) => {
+      console.log(`Outlook automation Created. Url: https://www.retab.com/dashboard/processors/automations/${result.id}`);
+    });
+    return response as Promise<Outlook>;
   }
 
   list(params: {
@@ -184,16 +186,16 @@ export class OutlookAutomations extends SyncAPIResource {
     order?: 'asc' | 'desc';
     processor_id?: string;
     name?: string;
-  } = {}): ListOutlooks {
+  } = {}): Promise<ListOutlooks> {
     const preparedRequest = this.mixin.prepareList(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as ListOutlooks;
+    return response as Promise<ListOutlooks>;
   }
 
-  get(outlook_id: string): Outlook {
+  get(outlook_id: string): Promise<Outlook> {
     const preparedRequest = this.mixin.prepareGet(outlook_id);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Outlook;
+    return response as Promise<Outlook>;
   }
 
   update(params: {
@@ -207,16 +209,19 @@ export class OutlookAutomations extends SyncAPIResource {
     match_params?: MatchParams[];
     fetch_params?: FetchParams[];
     layout_schema?: Record<string, any>;
-  }): Outlook {
+  }): Promise<Outlook> {
     const preparedRequest = this.mixin.prepareUpdate(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Outlook;
+    return response as Promise<Outlook>;
   }
 
-  delete(outlook_id: string): void {
+  delete(outlook_id: string): Promise<void> {
     const preparedRequest = this.mixin.prepareDelete(outlook_id);
-    this._client._preparedRequest(preparedRequest);
-    console.log(`Outlook automation Deleted. ID: ${outlook_id}`);
+    const response = this._client._preparedRequest(preparedRequest);
+    response.then(() => {
+      console.log(`Outlook automation Deleted. ID: ${outlook_id}`);
+    });
+    return response as Promise<void>;
   }
 }
 

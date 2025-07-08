@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { ChatCompletionRetabMessageSchema } from '../chat.js';
+import { generateSchemaDataId, generateSchemaId, getPatternAttribute, setPatternAttribute, loadJsonSchema } from '../../utils/json_schema_utils.js';
+import { zodToJsonSchema } from '../../utils/zod_to_json_schema.js';
 
 export const PartialSchemaSchema = z.object({
   object: z.literal('schema'),
@@ -26,26 +28,24 @@ export class Schema implements PartialSchema {
   strict: boolean = true;
   private _zodModel?: z.ZodType<any>;
 
-  constructor(data: { json_schema?: Record<string, any>; pydanticModel?: any; zod_model?: z.ZodType<any>; system_prompt?: string; reasoning_prompts?: Record<string, string> }) {
+  constructor(data: { 
+    json_schema?: Record<string, any> | string; 
+    pydanticModel?: any; 
+    zod_model?: z.ZodType<any>; 
+    system_prompt?: string; 
+    reasoning_prompts?: Record<string, string> 
+  }) {
     this.created_at = new Date().toISOString();
     
     if (data.json_schema) {
-      this.json_schema = data.json_schema;
+      this.json_schema = loadJsonSchema(data.json_schema);
     } else if (data.pydanticModel) {
       // In a real implementation, this would extract schema from the model
       this.json_schema = {};
     } else if (data.zod_model) {
       this._zodModel = data.zod_model;
-      // Convert Zod to JSON Schema (simplified implementation for calendar event)
-      this.json_schema = {
-        type: 'object',
-        properties: {
-          name: { type: 'string', description: 'The name of the calendar event.' },
-          date: { type: 'string', description: 'The date of the calendar event in ISO 8601 format.' }
-        },
-        required: ['name', 'date'],
-        additionalProperties: false
-      };
+      // Convert Zod to JSON Schema using proper converter
+      this.json_schema = zodToJsonSchema(data.zod_model);
       
       // Add system prompt if provided
       if (data.system_prompt) {
@@ -66,22 +66,26 @@ export class Schema implements PartialSchema {
   }
 
   get dataId(): string {
-    // In a real implementation, this would generate SHA1 hash of schema data
-    return 'schema-data-id';
+    return generateSchemaDataId(this.json_schema);
   }
 
   get id(): string {
-    // In a real implementation, this would generate SHA1 hash of complete schema
-    return 'schema-id';
+    return generateSchemaId(this.json_schema);
   }
 
   get inference_json_schema(): Record<string, any> {
     // Returns the schema formatted for structured output with OpenAI requirements
-    const schema = { ...this.json_schema };
-    if (!schema.hasOwnProperty('additionalProperties')) {
-      schema.additionalProperties = false;
+    if (this.strict) {
+      // For strict schemas, convert to OpenAI-compatible format
+      const inferenceSchema = this.jsonSchemaToStrictOpenaiSchema(JSON.parse(JSON.stringify(this._reasoningObjectSchema)));
+      if (typeof inferenceSchema !== 'object' || inferenceSchema === null) {
+        throw new Error('Validation Error: The inference_json_schema is not a dict');
+      }
+      return inferenceSchema;
+    } else {
+      // For non-strict schemas, return a deep copy of the reasoning schema
+      return JSON.parse(JSON.stringify(this._reasoningObjectSchema));
     }
-    return schema;
   }
 
   get inferenceJsonSchema(): Record<string, any> {
@@ -123,13 +127,13 @@ export class Schema implements PartialSchema {
   }
 
   get inferenceTypescriptInterface(): string {
-    // Returns TypeScript interface representation
-    return '// TypeScript interface would be generated here';
+    // Returns TypeScript interface representation of the inference schema
+    return this.jsonSchemaToTypescriptInterface(this._reasoningObjectSchema);
   }
 
   get inferenceNlpDataStructure(): string {
-    // Returns NLP data structure representation
-    return '// NLP data structure would be generated here';
+    // Returns NLP data structure representation of the inference schema
+    return this.jsonSchemaToNlpDataStructure(this._reasoningObjectSchema);
   }
 
   get developerSystemPrompt(): string {
@@ -225,12 +229,12 @@ You can easily identify the fields that require a source by the \`quote___[attri
 
   private get _expandedObjectSchema(): Record<string, any> {
     // Returns schema with all references expanded inline
-    return this.json_schema; // Simplified for now
+    return this.expandRefs(JSON.parse(JSON.stringify(this.json_schema)));
   }
 
   private get _reasoningObjectSchema(): Record<string, any> {
-    // Returns schema with inference-specific modifications
-    return this._expandedObjectSchema; // Simplified for now
+    // Returns schema with inference-specific modifications (reasoning fields added)
+    return this.createReasoningSchema(JSON.parse(JSON.stringify(this._expandedObjectSchema)));
   }
 
 
@@ -250,18 +254,16 @@ You can easily identify the fields that require a source by the \`quote___[attri
     return z.object({}).passthrough();
   }
 
-  getPatternAttribute(_pattern: string, _attribute: 'X-FieldPrompt' | 'X-ReasoningPrompt' | 'type'): string | null {
-    // Navigate schema and return the specified attribute
-    return null; // Simplified for now
+  getPatternAttribute(pattern: string, attribute: 'X-FieldPrompt' | 'X-ReasoningPrompt' | 'type'): string | null {
+    return getPatternAttribute(this.json_schema, pattern, attribute);
   }
 
   setPatternAttribute(
-    _pattern: string, 
-    _attribute: 'X-FieldPrompt' | 'X-ReasoningPrompt' | 'X-SystemPrompt' | 'description', 
-    _value: string
+    pattern: string, 
+    attribute: 'X-FieldPrompt' | 'X-ReasoningPrompt' | 'X-SystemPrompt' | 'description', 
+    value: string
   ): void {
-    // Set attribute value at specific path in schema
-    // Simplified for now
+    setPatternAttribute(this.json_schema, pattern, attribute, value);
   }
 
   save(_path: string): void {
@@ -272,5 +274,219 @@ You can easily identify the fields that require a source by the \`quote___[attri
 
   static validate(data: any): Schema {
     return new Schema(data);
+  }
+
+  private createReasoningSchema(schema: Record<string, any>): Record<string, any> {
+    // Add reasoning fields to the schema structure
+    function addReasoningFields(obj: Record<string, any>, path: string = ''): void {
+      if (obj.type === 'object' && obj.properties) {
+        // Add reasoning field for the object itself
+        const reasoningField = path ? `reasoning___${path.split('.').pop()}` : 'reasoning___root';
+        obj.properties[reasoningField] = {
+          type: 'string',
+          description: 'Reasoning for this object'
+        };
+
+        // Process each property
+        for (const [key, prop] of Object.entries(obj.properties)) {
+          if (key.startsWith('reasoning___')) continue; // Skip already added reasoning fields
+          
+          const newPath = path ? `${path}.${key}` : key;
+          if (typeof prop === 'object' && prop !== null) {
+            const typedProp = prop as any;
+            if (typedProp.type === 'array' && typedProp.items) {
+              // Add reasoning field for the array
+              obj.properties[`reasoning___${key}`] = {
+                type: 'string',
+                description: `Reasoning for array ${key}`
+              };
+              
+              // Process array items
+              if (typeof typedProp.items === 'object') {
+                addReasoningFields(typedProp.items, `${newPath}.item`);
+              }
+            } else if (typedProp.type === 'object') {
+              addReasoningFields(typedProp, newPath);
+            } else {
+              // Add reasoning field for leaf properties
+              obj.properties[`reasoning___${key}`] = {
+                type: 'string',
+                description: `Reasoning for ${key}`
+              };
+            }
+          }
+        }
+      }
+    }
+
+    addReasoningFields(schema);
+    return schema;
+  }
+
+  private jsonSchemaToStrictOpenaiSchema(schema: Record<string, any>): Record<string, any> {
+    // Convert schema to OpenAI strict format
+    function makeStrict(obj: Record<string, any>): Record<string, any> {
+      const result = { ...obj };
+      
+      // Ensure additionalProperties is false for objects
+      if (result.type === 'object') {
+        result.additionalProperties = false;
+        
+        if (result.properties) {
+          const newProperties: Record<string, any> = {};
+          for (const [key, prop] of Object.entries(result.properties)) {
+            newProperties[key] = makeStrict(prop as Record<string, any>);
+          }
+          result.properties = newProperties;
+        }
+      }
+      
+      // Process array items
+      if (result.type === 'array' && result.items) {
+        result.items = makeStrict(result.items);
+      }
+      
+      // Handle anyOf by taking the first non-null option
+      if (result.anyOf) {
+        const nonNullOptions = result.anyOf.filter((option: any) => option.type !== 'null');
+        if (nonNullOptions.length > 0) {
+          const chosen = makeStrict(nonNullOptions[0]);
+          // Merge the chosen option into the result
+          Object.assign(result, chosen);
+          delete result.anyOf;
+        }
+      }
+      
+      // Remove unsupported fields
+      delete result.format;
+      
+      return result;
+    }
+    
+    return makeStrict(schema);
+  }
+
+  private expandRefs(schema: Record<string, any>): Record<string, any> {
+    // Expand $ref references inline
+    function expand(obj: any, defs: Record<string, any>): any {
+      if (typeof obj !== 'object' || obj === null) {
+        return obj;
+      }
+      
+      if (Array.isArray(obj)) {
+        return obj.map(item => expand(item, defs));
+      }
+      
+      if (obj.$ref) {
+        // Handle $ref
+        const refPath = obj.$ref;
+        if (refPath.startsWith('#/$defs/')) {
+          const defName = refPath.substring('#/$defs/'.length);
+          if (defs[defName]) {
+            return expand(defs[defName], defs);
+          }
+        }
+        return obj; // Return as-is if ref not found
+      }
+      
+      const result: Record<string, any> = {};
+      for (const [key, value] of Object.entries(obj)) {
+        result[key] = expand(value, defs);
+      }
+      return result;
+    }
+    
+    const defs = schema.$defs || {};
+    return expand(schema, defs);
+  }
+
+  private jsonSchemaToTypescriptInterface(schema: Record<string, any>): string {
+    // Convert JSON schema to TypeScript interface
+    function convertType(obj: any, depth: number = 0): string {
+      const indent = '  '.repeat(depth);
+      
+      if (!obj || typeof obj !== 'object') {
+        return 'any';
+      }
+      
+      if (obj.type === 'string') return 'string';
+      if (obj.type === 'number' || obj.type === 'integer') return 'number';
+      if (obj.type === 'boolean') return 'boolean';
+      if (obj.type === 'null') return 'null';
+      
+      if (obj.type === 'array') {
+        const itemType = obj.items ? convertType(obj.items, depth) : 'any';
+        return `${itemType}[]`;
+      }
+      
+      if (obj.type === 'object' && obj.properties) {
+        const props = Object.entries(obj.properties)
+          .map(([key, prop]: [string, any]) => {
+            const optional = !obj.required?.includes(key) ? '?' : '';
+            const type = convertType(prop, depth + 1);
+            const desc = prop.description ? ` // ${prop.description}` : '';
+            return `${indent}  ${key}${optional}: ${type};${desc}`;
+          })
+          .join('\n');
+        
+        return `{\n${props}\n${indent}}`;
+      }
+      
+      if (obj.anyOf) {
+        return obj.anyOf.map((subSchema: any) => convertType(subSchema, depth)).join(' | ');
+      }
+      
+      return 'any';
+    }
+    
+    const interfaceName = schema.title || 'Schema';
+    const interfaceBody = convertType(schema, 0);
+    
+    return `interface ${interfaceName} ${interfaceBody}`;
+  }
+
+  private jsonSchemaToNlpDataStructure(schema: Record<string, any>): string {
+    // Convert JSON schema to natural language data structure description
+    function describe(obj: any, depth: number = 0): string {
+      const indent = '  '.repeat(depth);
+      
+      if (!obj || typeof obj !== 'object') {
+        return 'any value';
+      }
+      
+      if (obj.description) {
+        return obj.description;
+      }
+      
+      if (obj.type === 'string') return 'text string';
+      if (obj.type === 'number' || obj.type === 'integer') return 'number';
+      if (obj.type === 'boolean') return 'true/false value';
+      if (obj.type === 'null') return 'null value';
+      
+      if (obj.type === 'array') {
+        const itemDesc = obj.items ? describe(obj.items, depth) : 'any item';
+        return `array of ${itemDesc}`;
+      }
+      
+      if (obj.type === 'object' && obj.properties) {
+        const props = Object.entries(obj.properties)
+          .map(([key, prop]: [string, any]) => {
+            const optional = !obj.required?.includes(key) ? ' (optional)' : '';
+            const desc = describe(prop, depth + 1);
+            return `${indent}- ${key}${optional}: ${desc}`;
+          })
+          .join('\n');
+        
+        return `object containing:\n${props}`;
+      }
+      
+      if (obj.anyOf) {
+        return `one of: ${obj.anyOf.map((subSchema: any) => describe(subSchema, depth)).join(', ')}`;
+      }
+      
+      return 'value';
+    }
+    
+    return describe(schema, 0);
   }
 }

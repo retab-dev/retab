@@ -1,4 +1,5 @@
 import { SyncAPIResource, AsyncAPIResource } from '../../../resource.js';
+import { Endpoint, ListEndpoints } from '../../../types/automations/endpoints.js';
 
 export class EndpointsMixin {
   prepareCreate(params: {
@@ -131,11 +132,14 @@ export class Endpoints extends SyncAPIResource {
     webhook_url: string;
     webhook_headers?: Record<string, string>;
     need_validation?: boolean;
-  }): any {
+  }): Promise<Endpoint> {
     const preparedRequest = this.mixin.prepareCreate(params);
     const response = this._client._preparedRequest(preparedRequest);
-    console.log(`Endpoint Created. Url: https://www.retab.com/dashboard/processors/automations/${response?.id || 'unknown'}`);
-    return response;
+    // Note: response is a Promise, access id after awaiting
+    response.then((r: any) => {
+      console.log(`Endpoint Created. Url: https://www.retab.com/dashboard/processors/automations/${r?.id || 'unknown'}`);
+    }).catch(() => {});
+    return response as Promise<Endpoint>;
   }
 
   list(params: {
@@ -146,16 +150,16 @@ export class Endpoints extends SyncAPIResource {
     order?: 'asc' | 'desc';
     name?: string;
     webhook_url?: string;
-  }): ListEndpoints {
+  }): Promise<ListEndpoints> {
     const preparedRequest = this.mixin.prepareList(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response;
+    return response as Promise<ListEndpoints>;
   }
 
-  get(endpoint_id: string): any {
+  get(endpoint_id: string): Promise<Endpoint> {
     const preparedRequest = this.mixin.prepareGet(endpoint_id);
     const response = this._client._preparedRequest(preparedRequest);
-    return response;
+    return response as Promise<Endpoint>;
   }
 
   update(params: {
@@ -165,16 +169,17 @@ export class Endpoints extends SyncAPIResource {
     webhook_url?: string;
     webhook_headers?: Record<string, string>;
     need_validation?: boolean;
-  }): any {
+  }): Promise<Endpoint> {
     const preparedRequest = this.mixin.prepareUpdate(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response;
+    return response as Promise<Endpoint>;
   }
 
-  delete(endpoint_id: string): void {
+  delete(endpoint_id: string): Promise<void> {
     const preparedRequest = this.mixin.prepareDelete(endpoint_id);
-    this._client._preparedRequest(preparedRequest);
+    const response = this._client._preparedRequest(preparedRequest);
     console.log(`Endpoint Deleted. ID: ${endpoint_id}`);
+    return response as Promise<void>;
   }
 }
 
@@ -187,11 +192,11 @@ export class AsyncEndpoints extends AsyncAPIResource {
     webhook_url: string;
     webhook_headers?: Record<string, string>;
     need_validation?: boolean;
-  }): Promise<any> {
+  }): Promise<Endpoint> {
     const preparedRequest = this.mixin.prepareCreate(params);
     const response = await this._client._preparedRequest(preparedRequest);
     console.log(`Endpoint Created. Url: https://www.retab.com/dashboard/processors/automations/${response?.id || 'unknown'}`);
-    return response;
+    return response as Endpoint;
   }
 
   async list(params: {
@@ -202,16 +207,16 @@ export class AsyncEndpoints extends AsyncAPIResource {
     order?: 'asc' | 'desc';
     name?: string;
     webhook_url?: string;
-  }): Promise<any> {
+  }): Promise<ListEndpoints> {
     const preparedRequest = this.mixin.prepareList(params);
     const response = await this._client._preparedRequest(preparedRequest);
-    return response;
+    return response as ListEndpoints;
   }
 
-  async get(endpoint_id: string): Promise<any> {
+  async get(endpoint_id: string): Promise<Endpoint> {
     const preparedRequest = this.mixin.prepareGet(endpoint_id);
     const response = await this._client._preparedRequest(preparedRequest);
-    return response;
+    return response as Endpoint;
   }
 
   async update(params: {
@@ -221,10 +226,10 @@ export class AsyncEndpoints extends AsyncAPIResource {
     webhook_url?: string;
     webhook_headers?: Record<string, string>;
     need_validation?: boolean;
-  }): Promise<any> {
+  }): Promise<Endpoint> {
     const preparedRequest = this.mixin.prepareUpdate(params);
     const response = await this._client._preparedRequest(preparedRequest);
-    return response;
+    return response as Endpoint;
   }
 
   async delete(endpoint_id: string): Promise<void> {

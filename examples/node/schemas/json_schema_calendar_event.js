@@ -21,7 +21,7 @@ if (!retabApiKey) {
 }
 
 const reclient = new Retab({ api_key: retabApiKey });
-const docMsg = await reclient.documents.create_messages({ document: '../../../assets/code/calendar_event.xlsx' });
+const docMsg = await reclient.documents.create_messages({ document: '../../assets/code/calendar_event.xlsx' });
 
 console.log('Document message:', JSON.stringify(docMsg, null, 2));
 
@@ -45,7 +45,7 @@ const schemaObj = new Schema({
 });
 
 // Transform the messages to OpenAI format
-const openaiMessages = docMsg.messages || [];
+const openaiMessages = docMsg.openai_messages || [];
 
 // Now you can use your favorite model to analyze your document
 const client = new OpenAI({ apiKey });
@@ -70,7 +70,7 @@ if (!completion.choices[0].message.content) {
   throw new Error('No content in response');
 }
 
-const extraction = schemaObj.zod_model.parse(filterAuxiliaryFieldsJson(completion.choices[0].message.content));
+const extraction = schemaObj.pydantic_model.model_validate(filterAuxiliaryFieldsJson(completion.choices[0].message.content));
 
 console.log('\n✅ Extracted Calendar Event:');
 console.log(JSON.stringify(extraction, null, 2));

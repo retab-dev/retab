@@ -51,14 +51,14 @@ const browserCanvas = 'A4';
 // Retab Setup
 const reclient = new Retab({ api_key: retabApiKey });
 const docMsg = await reclient.documents.create_messages({
-  document: '../../../assets/code/calendar_event.xlsx',
+  document: '../../assets/code/calendar_event.xlsx',
   // Note: Additional parameters like modality, image_resolution_dpi, browser_canvas 
   // would be supported by extending the create_messages implementation
 });
 const schemaObj = new Schema({ json_schema: jsonSchema });
 
 // Transform the messages to OpenAI format
-const openaiMessages = docMsg.messages || [];
+const openaiMessages = docMsg.openai_messages || [];
 
 // OpenAI Responses API call
 const client = new OpenAI({ apiKey });
