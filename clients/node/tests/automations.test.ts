@@ -1,9 +1,6 @@
 import { Retab, AsyncRetab } from '../src/index.js';
 import { 
-  TEST_API_KEY,
-  bookingConfirmationSchema,
-  generateRandomId,
-  generateTestEmail
+  TEST_API_KEY
 } from './fixtures.js';
 
 describe('Automations', () => {
@@ -42,49 +39,18 @@ describe('Automations', () => {
   describe('Automation Links', () => {
     ['sync', 'async'].forEach(clientType => {
       describe(`${clientType} client`, () => {
-        it('should manage automation links', async () => {
+        it('should have links resource structure', () => {
           const client = clientType === 'sync' ? syncClient : asyncClient;
-          const linkName = `test_link_${generateRandomId()}`;
-          let processorId: string | undefined;
-          let linkId: string | undefined;
 
-          try {
-            // Create a processor using the actual CRUD methods
-            const processor = await (clientType === 'async'
-              ? client.processors.create({
-                  name: `test_processor_${generateRandomId()}`,
-                  json_schema: bookingConfirmationSchema,
-                  model: 'gpt-4o-mini'
-                })
-              : client.processors.create({
-                  name: `test_processor_${generateRandomId()}`,
-                  json_schema: bookingConfirmationSchema,
-                  model: 'gpt-4o-mini'
-                }));
-            processorId = processor.id;
-
-            // Test automation links resource structure
-            expect(client.processors.automations.links).toBeDefined();
-            
-            // Check that the links resource has expected prototype methods
-            const linkMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(client.processors.automations.links));
-            expect(linkMethods.length).toBeGreaterThan(0);
-            
-            // Note: Automation link CRUD operations not yet fully implemented
-            // This ensures the resource structure exists
-            }
-          } finally {
-            // Clean up processor
-            if (processorId) {
-              try {
-                await (clientType === 'async'
-                  ? client.processors.delete(processorId)
-                  : client.processors.delete(processorId));
-              } catch (error) {
-                // Ignore cleanup errors
-              }
-            }
-          }
+          // Test automation links resource structure
+          expect(client.processors.automations.links).toBeDefined();
+          
+          // Check that the links resource has expected prototype methods
+          const linkMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(client.processors.automations.links));
+          expect(linkMethods.length).toBeGreaterThan(0);
+          
+          // Note: Automation link CRUD operations not yet fully implemented
+          // This ensures the resource structure exists
         });
       });
     });
@@ -170,8 +136,8 @@ describe('Automations', () => {
       ];
 
       outlookMethods.forEach(method => {
-        if (typeof client.processors.automations.outlook[method] === 'function') {
-          expect(client.processors.automations.outlook[method]).toBeDefined();
+        if (typeof (client.processors.automations.outlook as any)[method] === 'function') {
+          expect((client.processors.automations.outlook as any)[method]).toBeDefined();
         }
       });
     });
