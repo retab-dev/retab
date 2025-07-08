@@ -18,7 +18,7 @@ Made with love by the team at [Retab](https://retab.com) 🤍.
 
 ### What is Retab?
 
-Retab solves all the major challenges in document processing with LLMs:
+Retab solves all the major challenges in document processing with Large Language Models:
 
 1. **Universal Document Preprocessing**: Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without writing custom parsers
 2. **Structured, Schema-driven Extraction**: Get consistent, reliable outputs using schema-based prompt engineering
