@@ -37,11 +37,27 @@ export class Schema implements PartialSchema {
   }) {
     this.created_at = new Date().toISOString();
     
+    // Validate input like Python version
+    if (data.json_schema && data.pydanticModel) {
+      throw new Error('Cannot provide both json_schema and pydanticModel');
+    }
+    
+    if (!data.json_schema && !data.pydanticModel && !data.zod_model) {
+      throw new Error('Must provide either json_schema, pydanticModel, or zod_model');
+    }
+    
     if (data.json_schema) {
       this.json_schema = loadJsonSchema(data.json_schema);
     } else if (data.pydanticModel) {
-      // In a real implementation, this would extract schema from the model
-      this.json_schema = {};
+      // For pydantic models, we expect the model to have a model_json_schema() method
+      // In Node.js context, this would be a pre-serialized schema from Python
+      if (typeof data.pydanticModel === 'object' && data.pydanticModel.model_json_schema) {
+        this.json_schema = data.pydanticModel.model_json_schema();
+      } else if (typeof data.pydanticModel === 'object' && data.pydanticModel.schema) {
+        this.json_schema = data.pydanticModel.schema;
+      } else {
+        throw new Error('pydanticModel must have a model_json_schema() method or schema property');
+      }
     } else if (data.zod_model) {
       this._zodModel = data.zod_model;
       // Convert Zod to JSON Schema using proper converter
@@ -60,8 +76,6 @@ export class Schema implements PartialSchema {
           }
         }
       }
-    } else {
-      throw new Error('Must provide either json_schema, pydanticModel, or zod_model');
     }
   }
 
@@ -266,10 +280,17 @@ You can easily identify the fields that require a source by the \`quote___[attri
     this._setPatternAttribute(pattern, attribute, value);
   }
 
-  save(_path: string): void {
+  save(path: string): void {
     // Save JSON schema to file
-    // In a real implementation, this would write to filesystem
-    throw new Error('save() method not implemented in browser environment');
+    try {
+      const fs = require('fs');
+      fs.writeFileSync(path, JSON.stringify(this.json_schema, null, 2), 'utf8');
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Cannot find module')) {
+        throw new Error('save() method not available in browser environment');
+      }
+      throw error;
+    }
   }
 
   static validate(data: any): Schema {
