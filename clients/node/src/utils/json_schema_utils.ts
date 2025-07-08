@@ -28,6 +28,9 @@ export function cleanSchema(
     fieldsToRemove?: string[];
   } = {}
 ): Record<string, any> {
+  if (!jsonSchema || typeof jsonSchema !== 'object') {
+    throw new Error('Invalid schema provided');
+  }
   const { removeCustomFields = false, fieldsToRemove = [] } = options;
   const cleaned = JSON.parse(JSON.stringify(jsonSchema)); // Deep clone
 
@@ -89,6 +92,9 @@ export function generateSchemaDataId(jsonSchema: Record<string, any>): string {
  * Uses Python-compatible JSON formatting (sort_keys=True, default separators).
  */
 export function generateSchemaId(jsonSchema: Record<string, any>): string {
+  if (!jsonSchema || typeof jsonSchema !== 'object') {
+    throw new Error('Invalid schema provided');
+  }
   const sortedSchema = sortKeysRecursively(jsonSchema);
   const hashInput = pythonJsonStringify(sortedSchema);
   return 'sch_id_' + generateBlake2bHashFromString(hashInput);
