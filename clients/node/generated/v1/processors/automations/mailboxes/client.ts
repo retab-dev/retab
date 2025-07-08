@@ -1,8 +1,9 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APITestsSub from "./tests/client";
 import APIMailboxIdSub from "./mailboxId/client";
 import APIWebhookSub from "./webhook/client";
-import { MailboxInput, MailboxOutput, PaginatedList } from "@/types";
+import { ZMailboxInput, MailboxInput, ZMailboxOutput, MailboxOutput, ZPaginatedList, PaginatedList } from "@/types";
 
 export default class APIMailboxes extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -21,7 +22,7 @@ export default class APIMailboxes extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZMailboxOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -32,7 +33,7 @@ export default class APIMailboxes extends CompositionClient {
       params: { "processor_id": processorId, "before": before, "after": after, "limit": limit, "order": order, "email": email, "webhook_url": webhookUrl, "schema_id": schemaId, "schema_data_id": schemaDataId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZPaginatedList.parse(await res.json());
     throw new Error("Bad content type");
   }
   

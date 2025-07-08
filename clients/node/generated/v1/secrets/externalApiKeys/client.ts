@@ -1,9 +1,10 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIProviderSub from "./provider/client";
 import APICheckOpenaiKeyValiditySub from "./checkOpenaiKeyValidity/client";
 import APICheckGeminiKeyValiditySub from "./checkGeminiKeyValidity/client";
 import APICheckXaiKeyValiditySub from "./checkXaiKeyValidity/client";
-import { ExternalAPIKeyRequest, ExternalAPIKey } from "@/types";
+import { ZExternalAPIKeyRequest, ExternalAPIKeyRequest, ZExternalAPIKey, ExternalAPIKey } from "@/types";
 
 export default class APIExternalApiKeys extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -23,7 +24,7 @@ export default class APIExternalApiKeys extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.object({}).parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -35,7 +36,7 @@ export default class APIExternalApiKeys extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.object({}).parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -46,7 +47,7 @@ export default class APIExternalApiKeys extends CompositionClient {
       params: { "include_fallback_api_keys": includeFallbackApiKeys },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.array(ZExternalAPIKey).parse(await res.json());
     throw new Error("Bad content type");
   }
   

@@ -1,4 +1,5 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 
 export default class APITestIngestCompletion extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -11,7 +12,7 @@ export default class APITestIngestCompletion extends CompositionClient {
       url: `/v1/test_ingest_completion`,
       method: "POST",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.object({}).parse(await res.json());
     throw new Error("Bad content type");
   }
   

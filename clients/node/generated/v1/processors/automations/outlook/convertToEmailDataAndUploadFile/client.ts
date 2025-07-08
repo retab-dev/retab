@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { BodyConvertToEmailDataAndUploadFileV1ProcessorsAutomationsOutlookConvertToEmailDataAndUploadFilePost, EmailDataOutput } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZBodyConvertToEmailDataAndUploadFileV1ProcessorsAutomationsOutlookConvertToEmailDataAndUploadFilePost, BodyConvertToEmailDataAndUploadFileV1ProcessorsAutomationsOutlookConvertToEmailDataAndUploadFilePost, ZEmailDataOutput, EmailDataOutput } from "@/types";
 
 export default class APIConvertToEmailDataAndUploadFile extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIConvertToEmailDataAndUploadFile extends CompositionClien
       body: body,
       bodyMime: "multipart/form-data",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZEmailDataOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   

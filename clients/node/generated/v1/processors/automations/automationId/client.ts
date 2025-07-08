@@ -1,7 +1,8 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIReviewExtractionSub from "./reviewExtraction/client";
 import APIDetachProcessorSub from "./detachProcessor/client";
-import { LinkOutput, MailboxOutput, EndpointOutput, OutlookOutput, UpdateLinkRequest, UpdateMailboxRequest, UpdateEndpointRequest, UpdateOutlookRequest } from "@/types";
+import { ZLinkOutput, LinkOutput, ZMailboxOutput, MailboxOutput, ZEndpointOutput, EndpointOutput, ZOutlookOutput, OutlookOutput, ZUpdateLinkRequest, UpdateLinkRequest, ZUpdateMailboxRequest, UpdateMailboxRequest, ZUpdateEndpointRequest, UpdateEndpointRequest, ZUpdateOutlookRequest, UpdateOutlookRequest } from "@/types";
 
 export default class APIAutomationId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -17,7 +18,7 @@ export default class APIAutomationId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.union([ZLinkOutput, ZMailboxOutput, ZEndpointOutput, ZOutlookOutput]).parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -29,7 +30,7 @@ export default class APIAutomationId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.union([ZLinkOutput, ZMailboxOutput, ZEndpointOutput, ZOutlookOutput]).parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -39,7 +40,7 @@ export default class APIAutomationId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.any().parse(await res.json());
     throw new Error("Bad content type");
   }
   

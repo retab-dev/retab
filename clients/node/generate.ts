@@ -101,6 +101,82 @@ function schemaToTs(schema: any, context: any, ignoreNamed: boolean = false): st
   return "any";
 }
 
+function indentLastLines(str: string) {
+  return str.split("\n").map((line, i) => i === 0 ? line : `  ${line}`).join("\n");
+}
+
+function schemaToZod(schema: any, context: any, ignoreNamed: boolean = false): string {
+  if (!ignoreNamed && findNamedSchema(schema)) {
+    let res = findNamedSchema(schema)!;
+    schemaToTsImports.push(res);
+    return "Z" + res;
+  }
+  switch (schema.type) {
+    case "string":
+      switch (schema.format) {
+        case "date":
+          return "DateOrISO";
+        case "date-time":
+          return "DateOrISO";
+        case "uuid":
+          return "z.string().uuid()";
+        case "binary":
+          return "z.instanceof(File)";
+        default:
+          if (schema.enum) {
+            return `z.enum([${schema.enum.map(JSON.stringify).join(", ")}])`;
+          }
+          return "z.string()";
+      }
+    case "number":
+    case "integer":
+      return "z.number()";
+    case "boolean":
+      return "z.boolean()";
+    case "null":
+      return "z.null()";
+    case "array":
+      if (schema.items) {
+        return `z.array(${schemaToZod(schema.items, context)})`;
+      } else if (schema.prefixItems) {
+        return `z.tuple([${schema.prefixItems.map((item: any) => schemaToZod(item, context)).join(", ")}])`;
+      } else {
+        return "z.array(z.any())";
+      }
+    case "object":
+      if (!schema.properties) return "z.object({})";
+      const properties = schema.properties;
+      const required = schema.required || [];
+      const zProperties = Object.entries(properties).map(([key, value]) => {
+        return `  ${key}: ${indentLastLines(schemaToZod(value, context))}${required.includes(key) ? "" : ".optional()"},`;
+      });
+      return `z.object({\n${zProperties.join("\n")}\n})`;
+  }
+  if ("$ref" in schema) {
+    const ref = schema.$ref.split("/");
+    if (ref[0] !== "#") {
+      throw new Error("External references are not supported");
+    }
+    let res = context;
+    for (const part of ref.slice(1)) {
+      if (res[part]) {
+        res = res[part];
+      } else {
+        throw new Error(`Reference ${schema.$ref} not found`);
+      }
+    }
+    return schemaToZod(res, context);
+  }
+  if ("allOf" in schema) {
+    return `z.intersection(${schema.allOf.map((s: any) => schemaToZod(s, context)).join(", ")})`;
+  }
+  if ("anyOf" in schema) {
+    let results = schema.anyOf.map((s: any) => schemaToZod(s, context));
+    return `z.union([${results.join(", ")}])`;
+  }
+  return "z.any()";
+}
+
 function processSchema(schema: any) {
 
   let classStructure: Record<string, any> = {};
@@ -149,11 +225,15 @@ function processSchema(schema: any) {
         }
         functionParams.push(`{ ${otherParamsNames.join(", ")} }: ${types.join(" & ")}${!bodyType && otherParamTypesOptional ? " = {}" : ""}`);
       }
+      let jsonReturnTypeSchema: any;
+      let streamJsonReturnTypeSchema: any;
       let returnTypes = Object.entries(operation.responses["200"].content).map(([contentType, value]: [string, any]) => {
         if (contentType === "application/json") {
+          jsonReturnTypeSchema = value.schema;
           return schemaToTs(value.schema, schema);
         }
         if (contentType === "application/stream+json") {
+          streamJsonReturnTypeSchema = value.schema;
           return `AsyncGenerator<${schemaToTs(value.schema, schema)}>`;
         }
         throw new Error(`Unsupported content type ${contentType}`);
@@ -180,11 +260,11 @@ function processSchema(schema: any) {
       functionDef += `  });\n`;
       Object.entries(operation.responses["200"].content).forEach(([contentType, value]) => {
         if (contentType === "application/json") {
-          functionDef += `  if (res.headers.get("Content-Type") === "application/json") return res.json() as any;\n`;
+          functionDef += `  if (res.headers.get("Content-Type") === "application/json") return ${schemaToZod(jsonReturnTypeSchema, schema)}.parse(await res.json());\n`;
           return;
         }
         if (contentType === "application/stream+json") {
-          functionDef += `  if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res);\n`;
+          functionDef += `  if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res, ${schemaToZod(streamJsonReturnTypeSchema, schema)});\n`;
           return;
         }
       });
@@ -206,7 +286,7 @@ function processSchema(schema: any) {
 
   function generateClass(name: string, path: string, structure: Record<string, any>) {
     let typeImports = [];
-    let imports = ["import { AbstractClient, CompositionClient, streamResponse } from '@/client';"];
+    let imports = ["import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';", "import * as z from 'zod';"];
     let classDef = `export default class API${capitalise(name)} extends CompositionClient {
   constructor(client: AbstractClient) {
     super(client);
@@ -222,7 +302,10 @@ function processSchema(schema: any) {
     for (const [key, value] of Object.entries(structure)) {
       if (Array.isArray(value)) {
         let [code, codeImports] = value;
-        typeImports.push(...codeImports);
+        for (let importName of codeImports) {
+          typeImports.push("Z" + importName);
+          typeImports.push(importName);
+        }
         classDef += code.split("\n").map((line: string) => `  ${line}`).join("\n") + "\n";
       }
     }
@@ -239,10 +322,12 @@ function processSchema(schema: any) {
 
   generateClass("generated", "generated", classStructure);
 
-  let schemas = "";
+  let schemas = "import * as z from 'zod'\nimport { DateOrISO } from '@/client';\n\n";
   for (const [key, value] of Object.entries(schema.components.schemas)) {
     if (isNamedSchemaName(key)) {
-      schemas += `export type ${capitalise(camelCase(key))} = ${schemaToTs(value, schema, true)};\n\n`;
+      let name = capitalise(camelCase(key));
+      schemas += `export const Z${name} = z.lazy(() => ${schemaToZod(value, schema, true)});\n`;
+      schemas += `export type ${name} = z.infer<typeof Z${name}>;\n\n`;
     }
   }
   fs.writeFileSync("generated/types.ts", schemas);

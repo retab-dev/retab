@@ -1,6 +1,7 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIModelIdSub from "./modelId/client";
-import { ListFinetunedModels } from "@/types";
+import { ZListFinetunedModels, ListFinetunedModels } from "@/types";
 
 export default class APIFinetuning extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +17,7 @@ export default class APIFinetuning extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "schema_id": schemaId, "schema_data_id": schemaDataId, "sort_by": sortBy },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZListFinetunedModels.parse(await res.json());
     throw new Error("Bad content type");
   }
   

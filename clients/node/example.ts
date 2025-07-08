@@ -12,8 +12,7 @@ const client = new UiFormClient().v1;
 (async () => {
   console.log(await client.secrets.apiKeys.get());
 
-  let data = fs.readFileSync("test.pdf");
-  let base64 = data.toString("base64");
+  let base64 = fs.readFileSync("test.pdf", "base64");
   let gen = await client.documents.extractions.stream.post({
     json_schema: {
       type: "object",

@@ -1,6 +1,7 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIStreamSub from "./stream/client";
-import { BodySubmitToProcessorV1ProcessorsProcessorIdSubmitPost, RetabParsedChatCompletionOutput } from "@/types";
+import { ZBodySubmitToProcessorV1ProcessorsProcessorIdSubmitPost, BodySubmitToProcessorV1ProcessorsProcessorIdSubmitPost, ZRetabParsedChatCompletionOutput, RetabParsedChatCompletionOutput } from "@/types";
 
 export default class APISubmit extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -18,7 +19,7 @@ export default class APISubmit extends CompositionClient {
       bodyMime: "multipart/form-data",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZRetabParsedChatCompletionOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   

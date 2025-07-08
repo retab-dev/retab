@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { UpdateEmailDataRequest, EmailDataOutput } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZUpdateEmailDataRequest, UpdateEmailDataRequest, ZEmailDataOutput, EmailDataOutput } from "@/types";
 
 export default class APIUpdateEmailData extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -14,7 +15,7 @@ export default class APIUpdateEmailData extends CompositionClient {
       body: body,
       bodyMime: "application/json",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZEmailDataOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   

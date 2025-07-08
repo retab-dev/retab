@@ -1,6 +1,7 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIIterationIdSub from "./iterationId/client";
-import { MainServerServicesV1EvaluationsIterationsRoutesListIterationsResponse, RetabTypesEvaluationsIterationsCreateIterationRequest, RetabTypesEvaluationsIterationsIterationOutput } from "@/types";
+import { ZMainServerServicesV1EvaluationsIterationsRoutesListIterationsResponse, MainServerServicesV1EvaluationsIterationsRoutesListIterationsResponse, ZRetabTypesEvaluationsIterationsCreateIterationRequest, RetabTypesEvaluationsIterationsCreateIterationRequest, ZRetabTypesEvaluationsIterationsIterationOutput, RetabTypesEvaluationsIterationsIterationOutput } from "@/types";
 
 export default class APIIterations extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +17,7 @@ export default class APIIterations extends CompositionClient {
       params: { "model": model },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZMainServerServicesV1EvaluationsIterationsRoutesListIterationsResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -28,7 +29,7 @@ export default class APIIterations extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZRetabTypesEvaluationsIterationsIterationOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   

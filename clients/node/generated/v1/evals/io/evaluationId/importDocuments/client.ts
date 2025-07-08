@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { BodyImportDocumentsV1EvalsIoEvaluationIdImportDocumentsPost } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZBodyImportDocumentsV1EvalsIoEvaluationIdImportDocumentsPost, BodyImportDocumentsV1EvalsIoEvaluationIdImportDocumentsPost } from "@/types";
 
 export default class APIImportDocuments extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIImportDocuments extends CompositionClient {
       bodyMime: "multipart/form-data",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.object({}).parse(await res.json());
     throw new Error("Bad content type");
   }
   

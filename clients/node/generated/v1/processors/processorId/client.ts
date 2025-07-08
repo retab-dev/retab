@@ -1,6 +1,7 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APISubmitSub from "./submit/client";
-import { UpdateProcessorRequest, StoredProcessor } from "@/types";
+import { ZUpdateProcessorRequest, UpdateProcessorRequest, ZStoredProcessor, StoredProcessor } from "@/types";
 
 export default class APIProcessorId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -17,7 +18,7 @@ export default class APIProcessorId extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZStoredProcessor.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -27,7 +28,7 @@ export default class APIProcessorId extends CompositionClient {
       method: "GET",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZStoredProcessor.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -37,7 +38,7 @@ export default class APIProcessorId extends CompositionClient {
       method: "DELETE",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return z.object({}).parse(await res.json());
     throw new Error("Bad content type");
   }
   

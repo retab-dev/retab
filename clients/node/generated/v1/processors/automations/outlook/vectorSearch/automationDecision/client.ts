@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { AutomationDecisionRequest, AutomationDecisionResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZAutomationDecisionRequest, AutomationDecisionRequest, ZAutomationDecisionResponse, AutomationDecisionResponse } from "@/types";
 
 export default class APIAutomationDecision extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIAutomationDecision extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZAutomationDecisionResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

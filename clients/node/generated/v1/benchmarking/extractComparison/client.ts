@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { ComparisonRequest, ComparisonResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZComparisonRequest, ComparisonRequest, ZComparisonResponse, ComparisonResponse } from "@/types";
 
 export default class APIExtractComparison extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -14,7 +15,7 @@ export default class APIExtractComparison extends CompositionClient {
       body: body,
       bodyMime: "application/json",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZComparisonResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { LogExtractionRequest, LogExtractionResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZLogExtractionRequest, LogExtractionRequest, ZLogExtractionResponse, LogExtractionResponse } from "@/types";
 
 export default class APILogExtraction extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +17,7 @@ export default class APILogExtraction extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZLogExtractionResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

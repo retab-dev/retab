@@ -1,7 +1,8 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIAutomationsSub from "./automations/client";
 import APIProcessorIdSub from "./processorId/client";
-import { PaginatedList, ProcessorConfig, StoredProcessor } from "@/types";
+import { ZPaginatedList, PaginatedList, ZProcessorConfig, ProcessorConfig, ZStoredProcessor, StoredProcessor } from "@/types";
 
 export default class APIProcessors extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -18,7 +19,7 @@ export default class APIProcessors extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "id": id, "name": name, "modality": modality, "model": model, "schema_id": schemaId, "schema_data_id": schemaDataId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZPaginatedList.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -30,7 +31,7 @@ export default class APIProcessors extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZStoredProcessor.parse(await res.json());
     throw new Error("Bad content type");
   }
   

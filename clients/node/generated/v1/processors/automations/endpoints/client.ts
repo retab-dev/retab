@@ -1,7 +1,8 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIEndpointIdSub from "./endpointId/client";
 import APIProcessSub from "./process/client";
-import { EndpointInput, EndpointOutput, ListEndpoints } from "@/types";
+import { ZEndpointInput, EndpointInput, ZEndpointOutput, EndpointOutput, ZListEndpoints, ListEndpoints } from "@/types";
 
 export default class APIEndpoints extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -19,7 +20,7 @@ export default class APIEndpoints extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZEndpointOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -30,7 +31,7 @@ export default class APIEndpoints extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "id": id, "name": name, "webhook_url": webhookUrl, "processor_id": processorId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZListEndpoints.parse(await res.json());
     throw new Error("Bad content type");
   }
   

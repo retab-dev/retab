@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { EvaluateSchemaRequest, EvaluateSchemaResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZEvaluateSchemaRequest, EvaluateSchemaRequest, ZEvaluateSchemaResponse, EvaluateSchemaResponse } from "@/types";
 
 export default class APIEvaluate extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIEvaluate extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZEvaluateSchemaResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

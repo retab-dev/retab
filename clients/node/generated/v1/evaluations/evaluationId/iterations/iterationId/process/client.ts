@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { ProcessIterationRequest, RetabTypesEvaluationsIterationsIterationOutput } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZProcessIterationRequest, ProcessIterationRequest, ZRetabTypesEvaluationsIterationsIterationOutput, RetabTypesEvaluationsIterationsIterationOutput } from "@/types";
 
 export default class APIProcess extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIProcess extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZRetabTypesEvaluationsIterationsIterationOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   

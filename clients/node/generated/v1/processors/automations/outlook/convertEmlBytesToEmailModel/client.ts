@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { EmailConversionRequest, EmailDataOutput } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZEmailConversionRequest, EmailConversionRequest, ZEmailDataOutput, EmailDataOutput } from "@/types";
 
 export default class APIConvertEmlBytesToEmailModel extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -14,7 +15,7 @@ export default class APIConvertEmlBytesToEmailModel extends CompositionClient {
       body: body,
       bodyMime: "application/json",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZEmailDataOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   

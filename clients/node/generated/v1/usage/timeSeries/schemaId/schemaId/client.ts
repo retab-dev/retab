@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { TimeRange, UsageTimeSeries } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZTimeRange, TimeRange, ZUsageTimeSeries, UsageTimeSeries } from "@/types";
 
 export default class APISchemaId extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -14,7 +15,7 @@ export default class APISchemaId extends CompositionClient {
       params: { "time_range": timeRange },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZUsageTimeSeries.parse(await res.json());
     throw new Error("Bad content type");
   }
   

@@ -1,9 +1,10 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIDistancesSub from "./distances/client";
 import APIIoSub from "./io/client";
 import APIProjectsSub from "./projects/client";
 import APIEvaluationIdSub from "./evaluationId/client";
-import { CreateEvaluation, RetabTypesEvaluationsModelEvaluationOutput, MainServerServicesV1EvaluationsRoutesListEvaluations } from "@/types";
+import { ZCreateEvaluation, CreateEvaluation, ZRetabTypesEvaluationsModelEvaluationOutput, RetabTypesEvaluationsModelEvaluationOutput, ZMainServerServicesV1EvaluationsRoutesListEvaluations, MainServerServicesV1EvaluationsRoutesListEvaluations } from "@/types";
 
 export default class APIEvaluations extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -23,7 +24,7 @@ export default class APIEvaluations extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZRetabTypesEvaluationsModelEvaluationOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -34,7 +35,7 @@ export default class APIEvaluations extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "project_id": projectId, "schema_id": schemaId, "schema_data_id": schemaDataId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZMainServerServicesV1EvaluationsRoutesListEvaluations.parse(await res.json());
     throw new Error("Bad content type");
   }
   

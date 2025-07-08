@@ -1,4 +1,5 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APIMailboxesSub from "./mailboxes/client";
 import APILinksSub from "./links/client";
 import APIOutlookSub from "./outlook/client";
@@ -6,7 +7,7 @@ import APIEndpointsSub from "./endpoints/client";
 import APILogsSub from "./logs/client";
 import APITestsSub from "./tests/client";
 import APIAutomationIdSub from "./automationId/client";
-import { ListAutomations } from "@/types";
+import { ZListAutomations, ListAutomations } from "@/types";
 
 export default class APIAutomations extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -28,7 +29,7 @@ export default class APIAutomations extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "id": id, "webhook_url": webhookUrl, "processor_id": processorId, "name": name },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZListAutomations.parse(await res.json());
     throw new Error("Bad content type");
   }
   

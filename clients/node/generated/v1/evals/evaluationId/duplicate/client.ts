@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { DuplicateEvaluationRequest, RetabTypesEvalsEvaluationOutput } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZDuplicateEvaluationRequest, DuplicateEvaluationRequest, ZRetabTypesEvalsEvaluationOutput, RetabTypesEvalsEvaluationOutput } from "@/types";
 
 export default class APIDuplicate extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIDuplicate extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZRetabTypesEvalsEvaluationOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   

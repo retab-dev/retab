@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { ComputeDictSimilarityResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZComputeDictSimilarityResponse, ComputeDictSimilarityResponse } from "@/types";
 
 export default class APIDistances extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -14,7 +15,7 @@ export default class APIDistances extends CompositionClient {
       params: { "metric_type": metricType },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZComputeDictSimilarityResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

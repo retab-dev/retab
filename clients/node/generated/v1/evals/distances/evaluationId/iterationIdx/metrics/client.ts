@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { OptimizedIterationMetrics } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZOptimizedIterationMetrics, OptimizedIterationMetrics } from "@/types";
 
 export default class APIMetrics extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -12,7 +13,7 @@ export default class APIMetrics extends CompositionClient {
       url: `/v1/evals/distances/${evaluationId}/${iterationIdx}/metrics`,
       method: "GET",
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZOptimizedIterationMetrics.parse(await res.json());
     throw new Error("Bad content type");
   }
   

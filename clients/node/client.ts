@@ -1,3 +1,5 @@
+import * as z from "zod";
+
 export class AbstractClient {
   protected _fetch(params: {
     url: string,
@@ -41,7 +43,7 @@ export class APIError extends Error {
   }
 }
 
-export async function* streamResponse<T>(response: Response): AsyncGenerator<T> {
+export async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(response: Response, schema: ZodSchema): AsyncGenerator<z.output<ZodSchema>> {
   let body = "";
   let depth = 0;
   let inString = false;
@@ -52,7 +54,7 @@ export async function* streamResponse<T>(response: Response): AsyncGenerator<T> 
   while (true) {
     let chunk = await reader.read();
     if (!chunk.value) break;
-    let string = String.fromCharCode(...chunk.value);
+    let string = new TextDecoder().decode(chunk.value, {stream: true});
     let prevBodyLength = body.length;
     body += string;
     for (let i = 0; i < string.length; i++) {
@@ -70,7 +72,7 @@ export async function* streamResponse<T>(response: Response): AsyncGenerator<T> 
         } else if (char === "}") {
           depth--;
           if (depth === 0) {
-            yield JSON.parse(body.slice(0, prevBodyLength + i + 1)) as T;
+            yield schema.parse(JSON.parse(body.slice(0, prevBodyLength + i + 1)));
             body = body.slice(prevBodyLength + i + 1);
             prevBodyLength = -i - 1;
           }
@@ -81,3 +83,9 @@ export async function* streamResponse<T>(response: Response): AsyncGenerator<T> 
   }
 }
 
+export const DateOrISO = z.union([
+  z.date(),
+  z.string().refine(val => !isNaN(Date.parse(val)), {
+    message: "Invalid date string",
+  }).transform(val => new Date(val)),
+]);

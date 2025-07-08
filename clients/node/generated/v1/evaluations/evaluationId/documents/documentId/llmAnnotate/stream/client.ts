@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { LLMAnnotateDocumentRequest } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZLLMAnnotateDocumentRequest, LLMAnnotateDocumentRequest } from "@/types";
 
 export default class APIStream extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIStream extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res);
+    if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res, z.string());
     throw new Error("Bad content type");
   }
   

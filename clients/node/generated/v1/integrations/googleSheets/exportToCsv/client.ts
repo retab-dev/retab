@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { ExportToCsvRequest, MainServerServicesV1IntegrationsGoogleSheetsRoutesExportToCsvResponse } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZExportToCsvRequest, ExportToCsvRequest, ZMainServerServicesV1IntegrationsGoogleSheetsRoutesExportToCsvResponse, MainServerServicesV1IntegrationsGoogleSheetsRoutesExportToCsvResponse } from "@/types";
 
 export default class APIExportToCsv extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -15,7 +16,7 @@ export default class APIExportToCsv extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZMainServerServicesV1IntegrationsGoogleSheetsRoutesExportToCsvResponse.parse(await res.json());
     throw new Error("Bad content type");
   }
   

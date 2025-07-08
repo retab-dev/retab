@@ -1,4 +1,5 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
 import APITestsSub from "./tests/client";
 import APIVectorSearchSub from "./vectorSearch/client";
 import APIOutlookPluginIdSub from "./outlookPluginId/client";
@@ -7,7 +8,7 @@ import APIUpdateEmailDataSub from "./updateEmailData/client";
 import APIConvertEmlBytesToEmailModelSub from "./convertEmlBytesToEmailModel/client";
 import APIConvertMsgToEmailModelSub from "./convertMsgToEmailModel/client";
 import APIManifestSub from "./manifest/client";
-import { OutlookInput, OutlookOutput, PaginatedList } from "@/types";
+import { ZOutlookInput, OutlookInput, ZOutlookOutput, OutlookOutput, ZPaginatedList, PaginatedList } from "@/types";
 
 export default class APIOutlook extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -31,7 +32,7 @@ export default class APIOutlook extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZOutlookOutput.parse(await res.json());
     throw new Error("Bad content type");
   }
   
@@ -42,7 +43,7 @@ export default class APIOutlook extends CompositionClient {
       params: { "before": before, "after": after, "limit": limit, "order": order, "id": id, "name": name, "webhook_url": webhookUrl, "processor_id": processorId },
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/json") return res.json() as any;
+    if (res.headers.get("Content-Type") === "application/json") return ZPaginatedList.parse(await res.json());
     throw new Error("Bad content type");
   }
   

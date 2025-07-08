@@ -1,5 +1,6 @@
-import { AbstractClient, CompositionClient, streamResponse } from '@/client';
-import { DocumentExtractRequest, RetabParsedChatCompletionChunk } from "@/types";
+import { AbstractClient, CompositionClient, streamResponse, DateOrISO } from '@/client';
+import * as z from 'zod';
+import { ZDocumentExtractRequest, DocumentExtractRequest, ZRetabParsedChatCompletionChunk, RetabParsedChatCompletionChunk } from "@/types";
 
 export default class APIStream extends CompositionClient {
   constructor(client: AbstractClient) {
@@ -16,7 +17,7 @@ export default class APIStream extends CompositionClient {
       bodyMime: "application/json",
       auth: ["HTTPBearer", "Master Key", "API Key", "Outlook Auth"],
     });
-    if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res);
+    if (res.headers.get("Content-Type") === "application/stream+json") return streamResponse(res, ZRetabParsedChatCompletionChunk);
     throw new Error("Bad content type");
   }
   
