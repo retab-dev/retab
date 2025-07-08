@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ChatCompletionRetabMessageSchema } from '../chat.js';
-import { generateSchemaDataId, generateSchemaId, getPatternAttribute, setPatternAttribute, loadJsonSchema } from '../../utils/json_schema_utils.js';
+import { generateSchemaDataId, generateSchemaId, loadJsonSchema } from '../../utils/json_schema_utils.js';
 import { zodToJsonSchema } from '../../utils/zod_to_json_schema.js';
 
 export const PartialSchemaSchema = z.object({
@@ -478,12 +478,11 @@ You can easily identify the fields that require a source by the \`quote___[attri
     const definitions = schema.$defs ? { ...schema.$defs } : {};
     delete schema.$defs; // Remove $defs from the schema copy
     
-    // Handle allOf at root level
+    // Handle allOf at root level - merge all schemas
     if (schema.allOf) {
-      if (schema.allOf.length !== 1) {
-        throw new Error(`Property schema must have a single element in 'allOf'. Found: ${JSON.stringify(schema.allOf)}`);
-      }
-      Object.assign(schema, schema.allOf[0]);
+      const merged = this.mergeAllOfSchemas(schema.allOf);
+      // Merge the allOf result into the current schema
+      Object.assign(schema, merged);
       delete schema.allOf;
     }
     
@@ -634,6 +633,10 @@ You can easily identify the fields that require a source by the \`quote___[attri
         return 'any';
       }
       
+      if (obj.enum) {
+        return obj.enum.map((e: any) => typeof e === 'string' ? `"${e}"` : String(e)).join(' | ');
+      }
+      
       if (obj.type === 'string') return 'string';
       if (obj.type === 'number' || obj.type === 'integer') return 'number';
       if (obj.type === 'boolean') return 'boolean';
@@ -713,5 +716,229 @@ You can easily identify the fields that require a source by the \`quote___[attri
     }
     
     return describe(schema, 0);
+  }
+
+  private _getPatternAttribute(pattern: string, attribute: 'X-FieldPrompt' | 'X-ReasoningPrompt' | 'type'): string | null {
+    // Navigate schema using pattern and return specified attribute
+    const currentSchema = this._expandedObjectSchema;
+    
+    // Special case: "*" means the root schema itself
+    if (pattern.trim() === '*') {
+      if (attribute === 'X-FieldPrompt') {
+        return currentSchema[attribute] || currentSchema.description || null;
+      }
+      if (attribute === 'type') {
+        return this.schemaToTsType(currentSchema);
+      }
+      return currentSchema[attribute] || null;
+    }
+
+    const parts = pattern.split('.');
+    let current = currentSchema;
+    let index = 0;
+
+    while (index < parts.length) {
+      const part = parts[index];
+
+      if (part === '*' || /^\d+$/.test(part)) {
+        // Handle wildcard case for arrays
+        if (current.items) {
+          current = current.items;
+          index++;
+        } else {
+          // Invalid use of "*" for the current schema
+          return null;
+        }
+      } else if (current.properties && part in current.properties) {
+        // Handle normal property navigation
+        current = current.properties[part];
+        index++;
+      } else {
+        // Cannot navigate further; invalid pattern
+        return null;
+      }
+    }
+
+    // At this point, we've navigated to the target node
+    if (attribute === 'X-FieldPrompt') {
+      return current[attribute] || current.description || null;
+    } else if (attribute === 'type') {
+      return this.schemaToTsType(current);
+    }
+    return current[attribute] || null;
+  }
+
+  private _setPatternAttribute(pattern: string, attribute: 'X-FieldPrompt' | 'X-ReasoningPrompt' | 'X-SystemPrompt' | 'description', value: string): void {
+    // Navigate schema using pattern and set attribute at target location
+    let current = this.json_schema;
+    const definitions = this.json_schema.$defs || {};
+    const parts = pattern.split('.');
+
+    if (pattern.trim() === '*') {
+      // Special case: "*" means the root schema itself
+      current[attribute] = value;
+      return;
+    }
+
+    if (attribute === 'X-SystemPrompt') {
+      throw new Error('Cannot set the X-SystemPrompt attribute other than at the root schema.');
+    }
+
+    let index = 0;
+    while (index < parts.length) {
+      const part = parts[index];
+      
+      if (part === '*' || /^\d+$/.test(part)) {
+        // Handle the array case
+        if (current.items) {
+          current = current.items;
+          index++;
+        } else {
+          return; // Invalid pattern for the current schema
+        }
+      } else if (current.properties && part in current.properties) {
+        // Handle the properties case
+        current = current.properties[part];
+        index++;
+      } else if (current.$ref) {
+        // Handle the $ref case
+        const ref = current.$ref;
+        if (!ref.startsWith('#/$defs/')) {
+          return;
+        }
+        
+        const refName = ref.substring('#/$defs/'.length);
+        if (!definitions[refName]) {
+          return;
+        }
+
+        // Count how many times this ref is used in the entire schema
+        const refCount = JSON.stringify(this.json_schema).split(`"${ref}"`).length - 1;
+
+        if (refCount > 1) {
+          // Create a unique copy name by appending a number
+          let copyNum = 1;
+          let nextCopyName = `${refName}Copy${copyNum}`;
+          while (definitions[nextCopyName]) {
+            copyNum++;
+            nextCopyName = `${refName}Copy${copyNum}`;
+          }
+
+          // Create a copy of the definition
+          const defCopy = JSON.parse(JSON.stringify(definitions[refName]));
+
+          // Change the title and name of the definition
+          if (defCopy.title) {
+            defCopy.title = `${defCopy.title} Copy ${copyNum}`;
+          }
+          if (defCopy.name) {
+            defCopy.name = nextCopyName;
+          }
+
+          // Add the new copy to definitions
+          definitions[nextCopyName] = defCopy;
+
+          // Update the reference
+          current.$ref = `#/$defs/${nextCopyName}`;
+          current = definitions[nextCopyName];
+        } else {
+          // Reference is used only once; directly navigate to the definition
+          current = definitions[refName];
+        }
+      } else {
+        // Cannot navigate further; invalid pattern
+        return;
+      }
+    }
+
+    // Once we have navigated to the correct node, set the attribute
+    current[attribute] = value;
+  }
+
+  private schemaToTsType(schema: Record<string, any>): string {
+    // Convert JSON schema type to TypeScript type representation
+    if (!schema || typeof schema !== 'object') {
+      return 'any';
+    }
+
+    if (schema.type === 'string') return 'string';
+    if (schema.type === 'number' || schema.type === 'integer') return 'number';
+    if (schema.type === 'boolean') return 'boolean';
+    if (schema.type === 'null') return 'null';
+
+    if (schema.type === 'array') {
+      const itemType = schema.items ? this.schemaToTsType(schema.items) : 'any';
+      return `${itemType}[]`;
+    }
+
+    if (schema.type === 'object') {
+      if (schema.properties) {
+        const props = Object.entries(schema.properties)
+          .map(([key, prop]: [string, any]) => {
+            const optional = !schema.required?.includes(key) ? '?' : '';
+            const type = this.schemaToTsType(prop);
+            return `${key}${optional}: ${type}`;
+          })
+          .join('; ');
+        return `{ ${props} }`;
+      }
+      return 'object';
+    }
+
+    if (schema.anyOf) {
+      return schema.anyOf.map((subSchema: any) => this.schemaToTsType(subSchema)).join(' | ');
+    }
+
+    if (schema.enum) {
+      return schema.enum.map((e: any) => typeof e === 'string' ? `"${e}"` : String(e)).join(' | ');
+    }
+
+    return 'any';
+  }
+
+  private mergeAllOfSchemas(allOfSchemas: any[]): Record<string, any> {
+    // Merge multiple schemas from allOf into a single schema
+    const merged: Record<string, any> = {};
+
+    for (const subschema of allOfSchemas) {
+      if (subschema.$ref) {
+        // Handle $ref within allOf - this would need to be resolved first
+        // For now, we'll include the $ref as-is
+        Object.assign(merged, subschema);
+      } else {
+        // Merge properties, required fields, etc.
+        if (subschema.type && !merged.type) {
+          merged.type = subschema.type;
+        }
+
+        if (subschema.properties) {
+          if (!merged.properties) {
+            merged.properties = {};
+          }
+          Object.assign(merged.properties, subschema.properties);
+        }
+
+        if (subschema.required) {
+          if (!merged.required) {
+            merged.required = [];
+          }
+          // Merge required arrays, avoiding duplicates
+          for (const field of subschema.required) {
+            if (!merged.required.includes(field)) {
+              merged.required.push(field);
+            }
+          }
+        }
+
+        // Copy other schema properties
+        for (const [key, value] of Object.entries(subschema)) {
+          if (!['type', 'properties', 'required'].includes(key) && !merged[key]) {
+            merged[key] = value;
+          }
+        }
+      }
+    }
+
+    return merged;
   }
 }
