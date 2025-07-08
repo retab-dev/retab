@@ -41,7 +41,7 @@ describe('Retab SDK', () => {
     });
 
     it('should throw error when neither json_schema nor pydanticModel provided', () => {
-      expect(() => new Schema({})).toThrow('Must provide either json_schema or pydanticModel');
+      expect(() => new Schema({})).toThrow('Must provide either json_schema, pydanticModel, or zod_model');
     });
 
     it('should throw error when both json_schema and pydanticModel provided', () => {
@@ -80,7 +80,7 @@ describe('Retab SDK', () => {
         }
       };
       
-      const schema = client.schemas.load({ jsonSchema });
+      const schema = client.schemas.load(jsonSchema);
       expect(schema).toBeInstanceOf(Schema);
       expect(schema.json_schema).toEqual(jsonSchema);
     });
