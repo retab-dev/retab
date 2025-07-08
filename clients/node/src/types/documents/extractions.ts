@@ -112,7 +112,11 @@ export const RetabParsedChatCompletionSchema = z.object({
 }).transform((data) => ({
   ...data,
   get api_cost(): Amount | null {
-    // Implementation would compute cost from model and usage
+    if (data.usage && data.model) {
+      // Import is done inline to avoid circular dependencies
+      const { computeCostFromModel } = require('../../utils/cost_calculation.js');
+      return computeCostFromModel(data.model, data.usage);
+    }
     return null;
   },
 }));
@@ -227,7 +231,11 @@ export const RetabParsedChatCompletionChunkSchema = z.object({
 }).transform((data) => ({
   ...data,
   get api_cost(): Amount | null {
-    // Implementation would compute cost from model and usage
+    if (data.usage && data.model) {
+      // Import is done inline to avoid circular dependencies
+      const { computeCostFromModel } = require('../../utils/cost_calculation.js');
+      return computeCostFromModel(data.model, data.usage);
+    }
     return null;
   },
   chunk_accumulator(_previous?: RetabParsedChatCompletionChunk): RetabParsedChatCompletionChunk {

@@ -1,5 +1,5 @@
 import { SyncAPIResource, AsyncAPIResource } from '../../../resource.js';
-import { Link, ListLinks, UpdateLinkRequest } from '../../../types/automations/links.js';
+import { Link, ListLinks } from '../../../types/automations/links.js';
 
 export class LinksMixin {
   readonly linksBaseUrl = '/v1/processors/automations/links';
@@ -133,11 +133,14 @@ export class Links extends SyncAPIResource {
     webhook_headers?: Record<string, string>;
     need_validation?: boolean;
     password?: string;
-  }): Link {
+  }): Promise<Link> {
     const preparedRequest = this.mixin.prepareCreate(params);
     const response = this._client._preparedRequest(preparedRequest);
-    console.log(`Link Created. Url: https://www.retab.com/dashboard/processors/automations/${response.id}`);
-    return response as Link;
+    // Note: response is a Promise, access id after awaiting
+    response.then((r: any) => {
+      console.log(`Link Created. Url: https://www.retab.com/dashboard/processors/automations/${r?.id || 'unknown'}`);
+    }).catch(() => {});
+    return response as Promise<Link>;
   }
 
   list(params: {
@@ -147,16 +150,16 @@ export class Links extends SyncAPIResource {
     order?: 'asc' | 'desc';
     processor_id?: string;
     name?: string;
-  } = {}): ListLinks {
+  } = {}): Promise<ListLinks> {
     const preparedRequest = this.mixin.prepareList(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as ListLinks;
+    return response as Promise<ListLinks>;
   }
 
-  get(link_id: string): Link {
+  get(link_id: string): Promise<Link> {
     const preparedRequest = this.mixin.prepareGet(link_id);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Link;
+    return response as Promise<Link>;
   }
 
   update(params: {
@@ -166,15 +169,16 @@ export class Links extends SyncAPIResource {
     webhook_headers?: Record<string, string>;
     password?: string;
     need_validation?: boolean;
-  }): Link {
+  }): Promise<Link> {
     const preparedRequest = this.mixin.prepareUpdate(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Link;
+    return response as Promise<Link>;
   }
 
-  delete(link_id: string): void {
+  delete(link_id: string): Promise<void> {
     const preparedRequest = this.mixin.prepareDelete(link_id);
-    this._client._preparedRequest(preparedRequest);
+    const response = this._client._preparedRequest(preparedRequest);
+    return response as Promise<void>;
   }
 }
 

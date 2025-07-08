@@ -22,7 +22,7 @@ if (!retabApiKey) {
 }
 
 const reclient = new Retab({ api_key: retabApiKey });
-const docMsg = await reclient.documents.create_messages({ document: '../../../assets/code/calendar_event.xlsx' });
+const docMsg = await reclient.documents.create_messages({ document: '../../assets/code/calendar_event.xlsx' });
 
 console.log('Document message:', JSON.stringify(docMsg, null, 2));
 
@@ -42,7 +42,7 @@ const schemaObj = new Schema({
 });
 
 // Transform the messages to OpenAI format
-const openaiMessages = docMsg.messages || [];
+const openaiMessages = docMsg.openai_messages || [];
 
 // Now you can use your favorite model to analyze your document
 const client = new OpenAI({ apiKey });

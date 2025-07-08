@@ -1,5 +1,5 @@
 import { SyncAPIResource, AsyncAPIResource } from '../../resource.js';
-import { ReconciliationRequest, ReconciliationResponse } from '../../types/consensus.js';
+import { ReconciliationRequest } from '../../types/consensus.js';
 
 export class ConsensusMixin {
   prepareReconcile(params: {

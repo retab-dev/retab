@@ -5,6 +5,7 @@
 import OpenAI from 'openai';
 import { config } from 'dotenv';
 import { Schema, Retab } from '@retab/node';
+import { filterAuxiliaryFieldsJson } from '@retab/node/utils/json_schema';
 
 // Load environment variables
 config();
@@ -19,8 +20,8 @@ if (!retabApiKey) {
   throw new Error('Missing RETAB_API_KEY');
 }
 
-const reclient = new Retab({ apiKey: retabApiKey });
-const docMsg = await reclient.documents.createMessages({ document: '../../assets/calendar_event.xlsx' });
+const reclient = new Retab({ api_key: retabApiKey });
+const docMsg = await reclient.documents.create_messages({ document: '../../assets/code/calendar_event.xlsx' });
 
 // Define schema using JSON Schema (equivalent to Pydantic BaseModel)
 const CalendarEventJsonSchema = {
@@ -43,7 +44,7 @@ const CalendarEventJsonSchema = {
   "type": "object"
 };
 
-const schemaObj = new Schema({ jsonSchema: CalendarEventJsonSchema });
+const schemaObj = new Schema({ json_schema: CalendarEventJsonSchema });
 
 // Now you can use your favorite model to analyze your document
 const client = new OpenAI({ apiKey });
@@ -51,25 +52,29 @@ const client = new OpenAI({ apiKey });
 // Use the beta.chat.completions.parse equivalent (structured outputs)
 const completion = await client.chat.completions.create({
   model: 'gpt-4o',
-  messages: [...schemaObj.openaiMessages, ...docMsg.openaiMessages],
+  messages: [...schemaObj.openai_messages, ...docMsg.openai_messages],
   response_format: { 
     type: 'json_schema', 
     json_schema: { 
       name: schemaObj.id, 
-      schema: schemaObj.inferenceJsonSchema, 
+      schema: schemaObj.inference_json_schema, 
       strict: true 
     } 
   },
 });
+
+// Debug the completion
+console.log('Completion:', JSON.stringify(completion, null, 2));
 
 // Validate the response against the original schema if you want to remove the reasoning fields
 if (!completion.choices[0].message.content) {
   throw new Error('No content in response');
 }
 
-// Parse and validate using the schema's validation method
+// Parse and validate using JSON parse and filter
 const rawContent = completion.choices[0].message.content;
-const extraction = schemaObj.validate(rawContent);
+const parsedContent = JSON.parse(rawContent);
+const extraction = filterAuxiliaryFieldsJson(parsedContent);
 
 console.log('\n✅ Extracted Calendar Event:');
 console.log('Extraction:', extraction);

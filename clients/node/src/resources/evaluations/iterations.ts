@@ -109,16 +109,16 @@ export class Iterations extends SyncAPIResource {
     return response;
   }
 
-  get(evaluation_id: string, iteration_id: string): Iteration {
+  get(evaluation_id: string, iteration_id: string): Promise<Iteration> {
     const preparedRequest = this.mixin.prepareGet(evaluation_id, iteration_id);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Iteration;
+    return response as Promise<Iteration>;
   }
 
-  patch(evaluation_id: string, iteration_id: string, params: PatchIterationRequest): Iteration {
+  patch(evaluation_id: string, iteration_id: string, params: PatchIterationRequest): Promise<Iteration> {
     const preparedRequest = this.mixin.preparePatch(evaluation_id, iteration_id, params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Iteration;
+    return response as Promise<Iteration>;
   }
 
   delete(evaluation_id: string, iteration_id: string): void {
@@ -132,16 +132,16 @@ export class Iterations extends SyncAPIResource {
     return response;
   }
 
-  documentStatus(evaluation_id: string, iteration_id: string): IterationDocumentStatusResponse {
+  documentStatus(evaluation_id: string, iteration_id: string): Promise<IterationDocumentStatusResponse> {
     const preparedRequest = this.mixin.prepareDocumentStatus(evaluation_id, iteration_id);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as IterationDocumentStatusResponse;
+    return response as Promise<IterationDocumentStatusResponse>;
   }
 
-  addFromJsonl(evaluation_id: string, params: AddIterationFromJsonlRequest): Iteration {
+  addFromJsonl(evaluation_id: string, params: AddIterationFromJsonlRequest): Promise<Iteration> {
     const preparedRequest = this.mixin.prepareAddFromJsonl(evaluation_id, params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as Iteration;
+    return response as Promise<Iteration>;
   }
 }
 

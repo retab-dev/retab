@@ -50,16 +50,16 @@ export class Logs extends SyncAPIResource {
     after?: string;
     limit?: number;
     order?: 'asc' | 'desc';
-  }): ListLogs {
+  }): Promise<ListLogs> {
     const preparedRequest = this.mixin.prepareList(params);
     const response = this._client._preparedRequest(preparedRequest);
-    return response as ListLogs;
+    return response as Promise<ListLogs>;
   }
 
-  get(log_id: string): any {
+  get(log_id: string): Promise<any> {
     const preparedRequest = this.mixin.prepareGet(log_id);
     const response = this._client._preparedRequest(preparedRequest);
-    return response;
+    return response as Promise<any>;
   }
 }
 
