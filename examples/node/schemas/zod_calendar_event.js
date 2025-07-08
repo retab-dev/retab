@@ -22,7 +22,9 @@ if (!retabApiKey) {
 }
 
 const reclient = new Retab({ api_key: retabApiKey });
-const docMsg = await reclient.documents.create_messages({ document: '../../assets/calendar_event.xlsx' });
+const docMsg = await reclient.documents.create_messages({ document: '../../../assets/code/calendar_event.xlsx' });
+
+console.log('Document message:', JSON.stringify(docMsg, null, 2));
 
 // Define schema using Zod
 const CalendarEventSchema = z.object({
@@ -57,6 +59,9 @@ const completion = await client.chat.completions.create({
   },
 });
 
+
+// Debug the completion response
+console.log('Completion response:', JSON.stringify(completion, null, 2));
 
 // Validate the response against the original schema if you want to remove the reasoning fields
 if (!completion.choices[0].message.content) {
