@@ -271,7 +271,7 @@ export class Schemas extends SyncAPIResource {
 export class AsyncSchemas extends AsyncAPIResource {
   private mixin = new SchemasMixin();
 
-  async load(jsonSchema?: Record<string, any> | string | null, pydanticModel?: any | null): Promise<Schema> {
+  load(jsonSchema?: Record<string, any> | string | null, pydanticModel?: any | null): Schema {
     if (jsonSchema) {
       return new Schema({ json_schema: loadJsonSchema(jsonSchema) });
     } else if (pydanticModel) {
