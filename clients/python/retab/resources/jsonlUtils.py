@@ -15,7 +15,7 @@ from openai import OpenAI
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from pydantic import BaseModel
 from tqdm import tqdm
-from .types.standards import FieldUnset
+from ..types.standards import FieldUnset
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..utils.ai_models import assert_valid_model_extraction, get_provider_for_model
 from ..utils.chat import convert_to_anthropic_format, convert_to_openai_format, separate_messages

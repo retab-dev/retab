@@ -16,23 +16,6 @@ from ..types.modalities import SUPPORTED_TYPES
 
 T = TypeVar("T")
 
-
-def generate_blake2b_hash_from_bytes(bytes_: bytes) -> str:
-    return hashlib.blake2b(bytes_, digest_size=8).hexdigest()
-
-
-def generate_blake2b_hash_from_base64(base64_string: str) -> str:
-    return generate_blake2b_hash_from_bytes(base64.b64decode(base64_string))
-
-
-def generate_blake2b_hash_from_string(input_string: str) -> str:
-    return generate_blake2b_hash_from_bytes(input_string.encode("utf-8"))
-
-
-def generate_blake2b_hash_from_dict(input_dict: dict) -> str:
-    return generate_blake2b_hash_from_string(json.dumps(input_dict, sort_keys=True).strip())
-
-
 def convert_pil_image_to_mime_data(image: PIL.Image.Image) -> MIMEData:
     """Convert a PIL Image object to a MIMEData object.
 
