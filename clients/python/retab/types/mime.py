@@ -1,21 +1,12 @@
 import base64
 import datetime
 import gzip
-import hashlib
 import mimetypes
 import re
 from typing import Any, Optional, Self, Sequence
 
 from pydantic import BaseModel, Field, field_validator
-
-
-def generate_blake2b_hash_from_bytes(bytes_: bytes) -> str:
-    return hashlib.blake2b(bytes_, digest_size=8).hexdigest()
-
-
-def generate_blake2b_hash_from_base64(base64_string: str) -> str:
-    return generate_blake2b_hash_from_bytes(base64.b64decode(base64_string))
-
+from ..utils.hashing import generate_blake2b_hash_from_base64
 
 # **** OCR DATACLASSES (DocumentAI-compatible) ****
 class Point(BaseModel):

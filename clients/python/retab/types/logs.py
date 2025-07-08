@@ -7,8 +7,7 @@ from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, computed_field, field_validator
 
-from ..utils.json_schema import compute_schema_data_id
-from ..utils.mime import generate_blake2b_hash_from_string
+from ..utils.json_schema import generate_schema_data_id, generate_schema_id
 from ..utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
 from .ai_models import Amount
 from .documents.extractions import RetabParsedChatCompletion
@@ -47,7 +46,7 @@ class ProcessorConfig(BaseModel):
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return compute_schema_data_id(self.json_schema)
+        return generate_schema_data_id(self.json_schema)
 
     # This is a computed field, it is exposed when serializing the object
     @computed_field  # type: ignore
@@ -58,7 +57,7 @@ class ProcessorConfig(BaseModel):
         Returns:
             str: A SHA1 hash string representing the complete schema version.
         """
-        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
+        return generate_schema_id(self.json_schema)
 
 
 class AutomationConfig(BaseModel):
@@ -111,7 +110,7 @@ class UpdateProcessorRequest(BaseModel):
         """
         if self.json_schema is None:
             return None
-        return compute_schema_data_id(self.json_schema)
+        return generate_schema_data_id(self.json_schema)
 
     @computed_field  # type: ignore
     @property
@@ -123,7 +122,7 @@ class UpdateProcessorRequest(BaseModel):
         """
         if self.json_schema is None:
             return None
-        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
+        return generate_schema_id(self.json_schema)
 
 
 class UpdateAutomationRequest(BaseModel):

@@ -1,12 +1,10 @@
 import datetime
-import json
 from typing import Any, Optional
 
 import nanoid  # type: ignore
 from pydantic import BaseModel, Field, computed_field
 
-from ...utils.json_schema import compute_schema_data_id
-from ...utils.mime import generate_blake2b_hash_from_string
+from ...utils.json_schema import generate_schema_data_id, generate_schema_id
 from ..inference_settings import InferenceSettings
 from .documents import EvaluationDocument
 from .iterations import Iteration
@@ -35,7 +33,7 @@ class Evaluation(BaseModel):
         Returns:
             str: A SHA1 hash string representing the schema data version.
         """
-        return compute_schema_data_id(self.json_schema)
+        return generate_schema_data_id(self.json_schema)
 
     # This is a computed field, it is exposed when serializing the object
     @computed_field  # type: ignore
@@ -46,7 +44,7 @@ class Evaluation(BaseModel):
         Returns:
             str: A SHA1 hash string representing the complete schema version.
         """
-        return "sch_id_" + generate_blake2b_hash_from_string(json.dumps(self.json_schema, sort_keys=True).strip())
+        return generate_schema_id(self.json_schema)
 
 
 class CreateEvaluation(BaseModel):
