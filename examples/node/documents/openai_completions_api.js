@@ -58,7 +58,7 @@ const docMsg = await reclient.documents.create_messages({
 const schemaObj = new Schema({ json_schema: jsonSchema });
 
 // Transform the messages to OpenAI format
-const openaiMessages = docMsg.openai_messages || [];
+const openaiMessages = docMsg.messages || [];
 
 // OpenAI Chat Completion with schema-based prompting
 const client = new OpenAI({ apiKey });
@@ -89,7 +89,8 @@ if (!completion.choices[0].message.content) {
   throw new Error('No content in response');
 }
 
-const extraction = schemaObj.pydantic_model.model_validate(filterAuxiliaryFieldsJson(completion.choices[0].message.content));
+// For JSON schema, parse and filter the auxiliary fields
+const extraction = filterAuxiliaryFieldsJson(completion.choices[0].message.content);
 
 // Output
 console.log('\n✅ Extracted Result:');
