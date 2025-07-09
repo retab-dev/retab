@@ -8,7 +8,11 @@
     "json-schema-calendar": "node schemas/json_schema_calendar_event.js",
     "zod-calendar": "node schemas/zod_calendar_event.js",
     "consensus-extract": "node consensus/extract_api.js",
-    "consensus-reconcile": "node consensus/reconcile.js"
+    "consensus-reconcile": "node consensus/reconcile.js",
+    "consensus-stream-completions": "node consensus/stream_completions.js",
+    "consensus-stream-responses": "node consensus/stream_responses.js",
+    "jsonl-utils": "node utilities/jsonl_example.js",
+    "prompt-optimization": "node utilities/prompt_optimization_example.js"
   },
   "dependencies": {
     "@retab/node": "file:../../clients/node",

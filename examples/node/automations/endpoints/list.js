@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 import { Retab } from '@retab/node';
 
 // Load environment variables
-config({ path: '../../../.env.production' });
+config();
 
 const reclient = new Retab();
 
