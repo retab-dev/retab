@@ -45,7 +45,7 @@ const schemaObj = new Schema({
 });
 
 // Transform the messages to OpenAI format
-const openaiMessages = docMsg.openai_messages || [];
+const openaiMessages = docMsg.messages || [];
 
 // Now you can use your favorite model to analyze your document
 const client = new OpenAI({ apiKey });
@@ -70,7 +70,8 @@ if (!completion.choices[0].message.content) {
   throw new Error('No content in response');
 }
 
-const extraction = schemaObj.pydantic_model.model_validate(filterAuxiliaryFieldsJson(completion.choices[0].message.content));
+// For JSON schema, we just parse and filter the auxiliary fields
+const extraction = filterAuxiliaryFieldsJson(completion.choices[0].message.content);
 
 console.log('\n✅ Extracted Calendar Event:');
 console.log(JSON.stringify(extraction, null, 2));

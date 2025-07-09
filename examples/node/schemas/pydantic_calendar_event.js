@@ -52,7 +52,7 @@ const client = new OpenAI({ apiKey });
 // Use the beta.chat.completions.parse equivalent (structured outputs)
 const completion = await client.chat.completions.create({
   model: 'gpt-4o',
-  messages: [...schemaObj.openai_messages, ...docMsg.openai_messages],
+  messages: [...schemaObj.openai_messages, ...docMsg.messages],
   response_format: { 
     type: 'json_schema', 
     json_schema: { 

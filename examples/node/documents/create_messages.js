@@ -31,7 +31,7 @@ const client = new OpenAI({ apiKey });
 const completion = await client.chat.completions.create({
   model: 'gpt-4o-mini',
   messages: [
-    ...docMsg.openai_messages,
+    ...docMsg.messages,
     { role: 'user', content: 'Summarize the document' }
   ]
 });
