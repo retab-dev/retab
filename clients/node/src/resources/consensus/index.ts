@@ -1,5 +1,7 @@
 import { SyncAPIResource, AsyncAPIResource } from '../../resource.js';
 import { ReconciliationRequest } from '../../types/consensus.js';
+import { Completions, AsyncCompletions } from './completions.js';
+import { Responses, AsyncResponses } from './responses.js';
 
 export class ConsensusMixin {
   prepareReconcile(params: {
@@ -73,6 +75,14 @@ export class ConsensusMixin {
 
 export class Consensus extends SyncAPIResource {
   mixin = new ConsensusMixin();
+  completions: Completions;
+  responses: Responses;
+
+  constructor(client: any) {
+    super(client);
+    this.completions = new Completions(client);
+    this.responses = new Responses(client);
+  }
 
   reconcile(params: {
     list_dicts: Array<Record<string, any>>;
@@ -105,6 +115,14 @@ export class Consensus extends SyncAPIResource {
 
 export class AsyncConsensus extends AsyncAPIResource {
   mixin = new ConsensusMixin();
+  completions: AsyncCompletions;
+  responses: AsyncResponses;
+
+  constructor(client: any) {
+    super(client);
+    this.completions = new AsyncCompletions(client);
+    this.responses = new AsyncResponses(client);
+  }
 
   async reconcile(params: {
     list_dicts: Array<Record<string, any>>;

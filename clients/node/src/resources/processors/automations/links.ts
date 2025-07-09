@@ -139,7 +139,9 @@ export class Links extends SyncAPIResource {
     // Note: response is a Promise, access id after awaiting
     response.then((r: any) => {
       console.log(`Link Created. Url: https://www.retab.com/dashboard/processors/automations/${r?.id || 'unknown'}`);
-    }).catch(() => {});
+    }).catch(() => {
+      // Ignore console logging errors - main response still valid
+    });
     return response as Promise<Link>;
   }
 

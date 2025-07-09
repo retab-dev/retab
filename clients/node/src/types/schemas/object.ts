@@ -136,8 +136,37 @@ export class Schema implements PartialSchema {
   get inferenceGeminiJsonSchema(): Record<string, any> {
     // Convert schema for Gemini compatibility (no anyOf, etc.)
     const schema = { ...this._reasoningObjectSchema };
-    // Implementation would remove unsupported fields like anyOf
-    return schema;
+    
+    // Remove unsupported Gemini fields recursively
+    const removeUnsupportedFields = (obj: any): any => {
+      if (typeof obj !== 'object' || obj === null) return obj;
+      
+      if (Array.isArray(obj)) {
+        return obj.map(removeUnsupportedFields);
+      }
+      
+      const result = { ...obj };
+      
+      // Remove Gemini-unsupported fields
+      delete result.anyOf;
+      delete result.oneOf;
+      delete result.allOf;
+      delete result.not;
+      delete result.if;
+      delete result.then;
+      delete result.else;
+      
+      // Recursively process nested objects
+      Object.keys(result).forEach(key => {
+        if (typeof result[key] === 'object' && result[key] !== null) {
+          result[key] = removeUnsupportedFields(result[key]);
+        }
+      });
+      
+      return result;
+    };
+    
+    return removeUnsupportedFields(schema);
   }
 
   get inferenceTypescriptInterface(): string {
@@ -492,7 +521,7 @@ You can easily identify the fields that require a source by the \`quote___[attri
   private expandRefs(schema: Record<string, any>): Record<string, any> {
     // Check for cyclic references first
     if (this.hasCyclicRefs(schema)) {
-      console.log("Cyclic refs found, keeping schema as is");
+      // Cyclic references detected, keeping schema unchanged
       return schema;
     }
     

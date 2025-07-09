@@ -266,6 +266,12 @@ export class Schemas extends SyncAPIResource {
     const response = await this._client._preparedRequest(preparedRequest);
     return new Schema({ json_schema: response.json_schema });
   }
+
+  async get(schemaId: string): Promise<Schema> {
+    const preparedRequest = this.mixin.prepareGet(schemaId);
+    const response = await this._client._preparedRequest(preparedRequest);
+    return Schema.validate(response);
+  }
 }
 
 export class AsyncSchemas extends AsyncAPIResource {
