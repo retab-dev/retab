@@ -112,11 +112,4 @@ export interface AnnotationStats {
   }>;
 }
 
-export default {
-  AnnotationParameters,
-  Annotation,
-  AnnotationCreate,
-  AnnotationUpdate,
-  AnnotationQuery,
-  AnnotationStats,
-};
+// No default export for type-only modules

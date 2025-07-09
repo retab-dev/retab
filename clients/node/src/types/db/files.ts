@@ -137,11 +137,4 @@ export interface FileProcessingJob {
   max_retries: number;
 }
 
-export default {
-  DBFile,
-  DBFileCreate,
-  DBFileUpdate,
-  DBFileQuery,
-  FileStorageConfig,
-  FileProcessingJob,
-};
+// No default export for type-only modules
