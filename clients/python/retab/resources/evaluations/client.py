@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.evaluations import Evaluation, PatchEvaluationRequest, ListEvaluationParams, CreateEvaluation
+from ...types.evaluations import Evaluation, PatchEvaluationRequest, ListEvaluationParams, BaseEvaluation
 from ...types.inference_settings import InferenceSettings
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 from .documents import Documents, AsyncDocuments
@@ -16,7 +16,7 @@ class EvaluationsMixin:
         project_id: str = FieldUnset,
         default_inference_settings: InferenceSettings = FieldUnset,
     ) -> PreparedRequest:
-        # Use CreateEvaluation model
+        # Use BaseEvaluation model
         eval_dict = {
             "name": name,
             "json_schema": json_schema,
@@ -26,7 +26,7 @@ class EvaluationsMixin:
         if default_inference_settings is not FieldUnset:
             eval_dict["default_inference_settings"] = default_inference_settings
         
-        eval_data = CreateEvaluation(**eval_dict)
+        eval_data = BaseEvaluation(**eval_dict)
         return PreparedRequest(method="POST", url="/v1/evaluations", data=eval_data.model_dump(exclude_unset=True, mode="json"))
 
     def prepare_get(self, evaluation_id: str) -> PreparedRequest:
