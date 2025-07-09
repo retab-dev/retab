@@ -4,8 +4,7 @@ export interface Iteration {
   inference_settings: any; // InferenceSettings
   json_schema: Record<string, any>;
   predictions: Record<string, any>; // PredictionData
-  metric_results?: any; // MetricResult
-  schema_data_id: string;
+  // schema_data_id: string;
   schema_id: string;
 }
 

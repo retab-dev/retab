@@ -9,21 +9,19 @@ from ..inference_settings import InferenceSettings
 from .documents import EvaluationDocument
 from .iterations import Iteration
 
-
-# Actual Object stored in DB
-class Evaluation(BaseModel):
+class BaseEvaluation(BaseModel):
     id: str = Field(default_factory=lambda: "eval_" + nanoid.generate())
+    name: str
+    json_schema: dict[str, Any]
+    project_id: str = Field(description="The ID of the project", default="default_spreadsheets")
+    default_inference_settings: InferenceSettings = Field(default=InferenceSettings(), description="The default inference properties for the evaluation.")
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
 
-    name: str
+
+# Actual Object stored in DB
+class Evaluation(BaseEvaluation):
     documents: list[EvaluationDocument] = Field(default_factory=list)
     iterations: list[Iteration] = Field(default_factory=list)
-    json_schema: dict[str, Any]
-
-    project_id: str = Field(description="The ID of the project", default="default_spreadsheets")
-    default_inference_settings: InferenceSettings = Field(
-        default=InferenceSettings(), description="The default inference properties for the evaluation (mostly used in the frontend)"
-    )
 
     @computed_field  # type: ignore
     @property
@@ -47,19 +45,21 @@ class Evaluation(BaseModel):
         return generate_schema_id(self.json_schema)
 
 
-class CreateEvaluation(BaseModel):
-    name: str
-    json_schema: dict[str, Any]
-    project_id: str = Field(description="The ID of the project", default="default_spreadsheets")
-    default_inference_settings: InferenceSettings = Field(default=InferenceSettings(), description="The default inference properties for the evaluation.")
-
-
 class ListEvaluationParams(BaseModel):
     project_id: Optional[str] = Field(default=None, description="The ID of the project")
     schema_id: Optional[str] = Field(default=None, description="The ID of the schema")
     schema_data_id: Optional[str] = Field(default=None, description="The ID of the schema data")
 
 
+class CreateEvaluationRequest(BaseModel):
+    name: str
+    project_id: str
+    json_schema: dict[str, Any]
+    default_inference_settings: InferenceSettings
+
+
+# This is basically the same as BaseEvaluation, but everything is optional.
+# Could be achieved by convert_basemodel_to_partial_basemodel(BaseEvaluation) but we prefer explicitness
 class PatchEvaluationRequest(BaseModel):
     name: Optional[str] = Field(default=None, description="The name of the document")
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the evaluation")

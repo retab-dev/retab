@@ -2,46 +2,23 @@ import datetime
 from typing import Any, Optional, Self
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
-from ...utils.json_schema import generate_schema_id, generate_schema_data_id
 from ..inference_settings import InferenceSettings
-from ..metrics import MetricResult
 from ..predictions import PredictionData
 
 
-class Iteration(BaseModel):
+class BaseIteration(BaseModel):
     id: str = Field(default_factory=lambda: "eval_iter_" + nanoid.generate())
+    inference_settings: InferenceSettings
+    json_schema: dict[str, Any]
     updated_at: datetime.datetime = Field(
         default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc),
         description="The last update date of inference settings or json schema",
     )
-    inference_settings: InferenceSettings
-    json_schema: dict[str, Any]
+
+class Iteration(BaseIteration):
     predictions: dict[str, PredictionData] = Field(default_factory=dict, description="The predictions of the iteration for all the documents")
-    metric_results: Optional[MetricResult] = Field(default=None, description="The metric results of the iteration")
-
-    @computed_field  # type: ignore
-    @property
-    def schema_data_id(self) -> str:
-        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
-
-        Returns:
-            str: A SHA1 hash string representing the schema data version.
-        """
-        return generate_schema_data_id(self.json_schema)
-
-    # This is a computed field, it is exposed when serializing the object
-    @computed_field  # type: ignore
-    @property
-    def schema_id(self) -> str:
-        """Returns the SHA1 hash of the complete schema.
-
-        Returns:
-            str: A SHA1 hash string representing the complete schema version.
-        """
-        return generate_schema_id(self.json_schema)
-
 
 class CreateIterationRequest(BaseModel):
     """
