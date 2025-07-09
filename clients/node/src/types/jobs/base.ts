@@ -171,16 +171,4 @@ export interface JobStepExecution {
   retry_count: number;
 }
 
-export default {
-  BaseJobResponse,
-  JobCreate,
-  JobUpdate,
-  JobQuery,
-  JobStats,
-  WorkflowDefinition,
-  WorkflowStep,
-  WorkflowTrigger,
-  WorkflowCondition,
-  WorkflowExecution,
-  JobStepExecution,
-};
+// No default export for type-only modules

@@ -1,108 +1,63 @@
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant' | 'developer';
-  content: string | ChatContentPart[];
-}
+/**
+ * Response processing utilities
+ * Equivalent to Python's utils/responses.py
+ */
 
-export interface ChatContentPart {
-  type: 'text' | 'image_url' | 'input_audio';
-  text?: string;
-  image_url?: {
-    url: string;
-    detail?: 'low' | 'high' | 'auto';
+export interface ResponseMetadata {
+  request_id: string;
+  timestamp: Date;
+  processing_time_ms: number;
+  model_used: string;
+  provider: string;
+  tokens_used: {
+    input: number;
+    output: number;
+    total: number;
   };
-  input_audio?: {
-    data: string;
-    format: string;
+  cost_usd?: number;
+}
+
+export interface ProcessedResponse<T = any> {
+  data: T;
+  metadata: ResponseMetadata;
+  raw_response?: any;
+  validation_errors?: string[];
+  confidence_score?: number;
+}
+
+/**
+ * Process raw API response and extract metadata
+ */
+export function processResponse<T>(rawResponse: any): ProcessedResponse<T> {
+  return {
+    data: extractResponseData(rawResponse),
+    metadata: extractResponseMetadata(rawResponse),
   };
 }
 
-export interface ParsedChatCompletion {
-  id: string;
-  object: 'chat.completion';
-  created: number;
-  model: string;
-  choices: Array<{
-    index: number;
-    message: {
-      role: 'assistant';
-      content: string;
-    };
-    finish_reason: string;
-  }>;
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-  likelihoods?: Record<string, any>;
-}
-
-export function convertToOpenAIFormat(messages: ChatMessage[]): any[] {
-  return messages.map(message => ({
-    role: message.role,
-    content: message.content,
-  }));
-}
-
-export function convertFromOpenAIFormat(messages: any[]): ChatMessage[] {
-  return messages.map(message => ({
-    role: message.role,
-    content: message.content,
-  }));
-}
-
-export function separateMessages(messages: ChatMessage[]): {
-  systemMessage?: ChatMessage;
-  userMessages: ChatMessage[];
-  assistantMessages: ChatMessage[];
-} {
-  let systemMessage: ChatMessage | undefined;
-  const userMessages: ChatMessage[] = [];
-  const assistantMessages: ChatMessage[] = [];
-
-  for (const message of messages) {
-    if (message.role === 'system' || message.role === 'developer') {
-      systemMessage = message;
-    } else if (message.role === 'user') {
-      userMessages.push(message);
-    } else if (message.role === 'assistant') {
-      assistantMessages.push(message);
-    }
+function extractResponseData(rawResponse: any): any {
+  if (rawResponse.choices && rawResponse.choices.length > 0) {
+    return rawResponse.choices[0].message?.content || rawResponse.choices[0].text;
   }
-
-  return { systemMessage, userMessages, assistantMessages };
+  return rawResponse.content || rawResponse.data || rawResponse;
 }
 
-export function stringifyMessages(messages: ChatMessage[], maxLength: number = 100): string {
-  const truncate = (text: string, maxLen: number): string => {
-    return text.length <= maxLen ? text : `${text.substring(0, maxLen)}...`;
+function extractResponseMetadata(rawResponse: any): ResponseMetadata {
+  return {
+    request_id: rawResponse.id || 'unknown',
+    timestamp: new Date(),
+    processing_time_ms: rawResponse.processing_time_ms || 0,
+    model_used: rawResponse.model || 'unknown',
+    provider: 'unknown',
+    tokens_used: {
+      input: rawResponse.usage?.prompt_tokens || 0,
+      output: rawResponse.usage?.completion_tokens || 0,
+      total: rawResponse.usage?.total_tokens || 0,
+    },
   };
-
-  const serialized = messages.map(message => {
-    const { role, content } = message;
-
-    if (typeof content === 'string') {
-      return { role, content: truncate(content, maxLength) };
-    } else if (Array.isArray(content)) {
-      const truncatedContent = content.map(part => {
-        if (part.type === 'text' && part.text) {
-          return { ...part, text: truncate(part.text, maxLength) };
-        } else if (part.type === 'image_url' && part.image_url) {
-          return {
-            ...part,
-            image_url: {
-              ...part.image_url,
-              url: truncate(part.image_url.url, maxLength)
-            }
-          };
-        }
-        return part;
-      });
-      return { role, content: truncatedContent };
-    }
-
-    return { role, content };
-  });
-
-  return JSON.stringify(serialized, null, 2);
 }
+
+export default {
+  processResponse,
+  extractResponseData,
+};
