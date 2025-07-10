@@ -8,6 +8,7 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import prepare_mime_document
 from ...types.evaluations import DocumentItem, EvaluationDocument, PatchEvaluationDocumentRequest
+from ...types.predictions import PredictionMetadata
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 from ...types.documents.extractions import RetabParsedChatCompletion
@@ -17,9 +18,9 @@ class DocumentsMixin:
     def prepare_get(self, evaluation_id: str, document_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/documents/{document_id}")
 
-    def prepare_create(self, evaluation_id: str, document: MIMEData, annotation: dict[str, Any]) -> PreparedRequest:
+    def prepare_create(self, evaluation_id: str, document: MIMEData, annotation: dict[str, Any], annotation_metadata: dict[str, Any] | None = None) -> PreparedRequest:
         # Serialize the MIMEData
-        document_item = DocumentItem(mime_data=document, annotation=annotation, annotation_metadata=None)
+        document_item = DocumentItem(mime_data=document, annotation=annotation, annotation_metadata=PredictionMetadata(**annotation_metadata) if annotation_metadata else None)
         return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/documents", data=document_item.model_dump(mode="json"))
 
     def prepare_list(self, evaluation_id: str) -> PreparedRequest:
@@ -41,7 +42,7 @@ class DocumentsMixin:
 class Documents(SyncAPIResource, DocumentsMixin):
     """Documents API wrapper for evaluations"""
 
-    def create(self, evaluation_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
+    def create(self, evaluation_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any], annotation_metadata: Dict[str, Any] | None = None) -> EvaluationDocument:
         """
         Create a document for an evaluation.
 
@@ -64,7 +65,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         mime_document: MIMEData = prepare_mime_document(document)
 
         # Let prepare_create handle the serialization
-        request = self.prepare_create(evaluation_id, mime_document, annotation)
+        request = self.prepare_create(evaluation_id, mime_document, annotation, annotation_metadata)
         response = self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
@@ -146,7 +147,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
 class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
     """Async Documents API wrapper for evaluations"""
 
-    async def create(self, evaluation_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any]) -> EvaluationDocument:
+    async def create(self, evaluation_id: str, document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl], annotation: Dict[str, Any], annotation_metadata: Dict[str, Any] | None = None) -> EvaluationDocument:
         """
         Create a document for an evaluation.
 
@@ -159,7 +160,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
                 - A PIL Image object
                 - A URL (HttpUrl)
             annotation: The ground truth for the document
-
+            annotation_metadata: The metadata of the annotation
         Returns:
             EvaluationDocument: The created document
         Raises:
@@ -169,7 +170,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         mime_document: MIMEData = prepare_mime_document(document)
 
         # Let prepare_create handle the serialization
-        request = self.prepare_create(evaluation_id, mime_document, annotation)
+        request = self.prepare_create(evaluation_id, mime_document, annotation, annotation_metadata)
         response = await self._client._prepared_request(request)
         return EvaluationDocument(**response)
 
