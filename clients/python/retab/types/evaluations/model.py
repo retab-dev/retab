@@ -11,8 +11,8 @@ from .iterations import Iteration
 
 class BaseEvaluation(BaseModel):
     id: str = Field(default_factory=lambda: "eval_" + nanoid.generate())
-    name: str
-    json_schema: dict[str, Any]
+    name: str = Field(default="", description="The name of the evaluation")
+    json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the evaluation")
     project_id: str = Field(description="The ID of the project", default="default_spreadsheets")
     default_inference_settings: InferenceSettings = Field(default=InferenceSettings(), description="The default inference properties for the evaluation.")
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
