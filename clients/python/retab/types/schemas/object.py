@@ -237,10 +237,7 @@ When provided with a **JSON schema** and a **document**, you must:
 
 When extracting date, time, or datetime values:
 
-- **Always use ISO format** for dates and times (e.g., "2023-12-25", "14:30:00", "2023-12-25T14:30:00Z")
-- **Include timezone information** when available (e.g., "2023-12-25T14:30:00+02:00")
-- **Use UTC timezone** when timezone is not specified or unclear (e.g., "2023-12-25T14:30:00Z")
-- **Maintain precision** as found in the source document (seconds, milliseconds if present)
+- **Always use ISO format** for dates and times (e.g., "2023-12-25", "14:30:00", "2023-12-25T14:30:00")
 
 **Examples:**
 
@@ -383,32 +380,11 @@ When performing extraction, explicitly follow these core principles:
 - **Structure Preservation**: Always maintain explicitly the full schema structure, even when entire nested objects lack data (leaf attributes as null).
 
 
-## Source Fields
-
-Some leaf fields require you to explicitly provide the source of the data (verbatim from the document).
-The idea is to simply provide a verbatim quote from the document, without any additional formatting or commentary, keeping it as close as possible to the original text.
-Make sure to reasonably include some surrounding text to provide context about the quote.
-
-You can easily identify the fields that require a source by the `quote___[attributename]` naming pattern.
-
-**Example:**
-
-```json
-{
-  "quote___name": "NAME:\nJohn Doe",
-  "name": "John Doe"
-}
-```
-
----
-
-# User Defined System Prompt
-
-"""
+---"""
 
     @property
-    def user_system_prompt(self) -> str:
-        return self.json_schema.get("X-SystemPrompt", "")
+    def user_system_prompt(self) -> str | None:
+        return self.json_schema.get("X-SystemPrompt", None)
 
     @property
     def schema_system_prompt(self) -> str:
@@ -423,7 +399,7 @@ You can easily identify the fields that require a source by the `quote___[attrib
         Returns:
             str: The combined system prompt string.
         """
-        return self.developer_system_prompt + "\n\n" + self.user_system_prompt + "\n\n" + self.schema_system_prompt
+        return self.developer_system_prompt + "\n\n" + (self.user_system_prompt + "\n\n" if self.user_system_prompt else "") + self.schema_system_prompt
 
     @property
     def title(self) -> str:
