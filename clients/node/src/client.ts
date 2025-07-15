@@ -1,16 +1,25 @@
 import * as z from "zod";
 
+type FetchParams = {
+  url: string,
+  method: string,
+  params?: Record<string, any>,
+  headers?: Record<string, any>,
+  bodyMime?: "application/json" | "multipart/form-data",
+  body?: Record<string, any>,
+  auth?: string[],
+};
 export class AbstractClient {
-  protected _fetch(params: {
-    url: string,
-    method: string,
-    params?: Record<string, any>,
-    headers?: Record<string, any>,
-    bodyMime?: "application/json" | "multipart/form-data",
-    body?: Record<string, any>,
-    auth?: string[],
-  }): Promise<Response> {
+  protected _fetch(_: FetchParams): Promise<Response> {
     throw new Error("Method not implemented");
+  }
+  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(bodyType: ZodSchema, params: FetchParams): Promise<z.output<ZodSchema>> {
+    let response = await this._fetch(params);
+    if (!response.ok) {
+      throw new APIError(response.status, await response.text());
+    }
+    if (response.headers.get("Content-Type") !== "application/json") throw new APIError(response.status, "Response is not JSON");
+    return bodyType.parse(await response.json());
   }
 }
 
@@ -20,15 +29,7 @@ export class CompositionClient extends AbstractClient {
     super();
     this._client = client;
   }
-  protected _fetch(params: {
-    url: string,
-    method: string,
-    params?: Record<string, any>,
-    headers?: Record<string, any>,
-    bodyMime?: "application/json" | "multipart/form-data",
-    body?: Record<string, any>,
-    auth?: string[],
-  }): Promise<Response> {
+  protected _fetch(params: FetchParams): Promise<Response> {
     return this._client["_fetch"](params);
   }
 }
@@ -91,14 +92,13 @@ export const DateOrISO = z.union([
 ]);
 
 type AuthTypes = { "bearer": string } | { "masterKey": string } | { "apiKey": string } | {};
-type UiFormClientOptions = {
+export type ClientOptions = {
   baseUrl?: string,
-  basicAuth?: { username: string, password: string },
 } & AuthTypes;
 
-class UiFormClientFetcher extends AbstractClient {
-  options: UiFormClientOptions;
-  constructor(options?: UiFormClientOptions) {
+export class FetcherClient extends AbstractClient {
+  options: ClientOptions;
+  constructor(options?: ClientOptions) {
     super();
     this.options = options || {};
   }
@@ -110,49 +110,42 @@ class UiFormClientFetcher extends AbstractClient {
     headers?: Record<string, any>;
     bodyMime?: "application/json" | "multipart/form-data";
     body?: Record<string, any>,
-    auth?: string[];
   }): Promise<Response> {
     let query = "";
     if (params.params) {
       query = "?" + new URLSearchParams(
         Object.fromEntries(
-          Object.entries(params.params).filter(([k, v]) => v !== undefined)
+          Object.entries(params.params).filter(([_, v]) => v !== undefined)
         )
       ).toString();
     }
-    let url = (this.options.baseUrl || "https://api.uiform.com") + params.url + query;
+    let url = (this.options.baseUrl || "https://api.retab.com") + params.url + query;
     let headers = params.headers || {};
     let init: RequestInit = {
       method: params.method,
     };
     if (params.method !== "GET") {
-      headers["Content-Type"] = params.bodyMime;
-      if (params.bodyMime === "application/json") {
-        init.body = JSON.stringify(params.body);
-      } else {
+      headers["Content-Type"] = params.bodyMime || "application/json";
+      if (params.bodyMime === "multipart/form-data") {
         let formData: FormData = new FormData();
         for (const key of Object.keys(params.body || {})) {
           formData.append(key, params.body![key]);
         }
         init.body = formData;
+      } else {
+        init.body = JSON.stringify(params.body);
       }
     }
-    if (params.auth) {
-      let bearerToken = "bearer" in this.options ? this.options.bearer : process.env["UIFORM_BEARER_TOKEN"];
-      let masterKey = "masterKey" in this.options ? this.options.masterKey : process.env["UIFORM_MASTER_KEY"];
-      let apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["UIFORM_API_KEY"];
-      let basicUsername = this.options.basicAuth ? this.options.basicAuth.username : process.env["UIFORM_BASIC_USERNAME"];
-      let basicPassword = this.options.basicAuth ? this.options.basicAuth.password : process.env["UIFORM_BASIC_PASSWORD"];
+    let bearerToken = "bearer" in this.options ? this.options.bearer : process.env["RETAB_BEARER_TOKEN"];
+    let masterKey = "masterKey" in this.options ? this.options.masterKey : process.env["RETAB_MASTER_KEY"];
+    let apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
 
-      if (params.auth.includes("HTTPBearer") && bearerToken) {
-        headers["Authorization"] = `Bearer ${bearerToken}`;
-      } else if (params.auth.includes("Master Key") && masterKey) {
-        headers["Master-Key"] = masterKey;
-      } else if (params.auth.includes("API Key") && apiKey) {
-        headers["Api-Key"] = apiKey;
-      } else if (params.auth.includes("HTTPBasic") && basicUsername && basicPassword) {
-        headers["Authorization"] = `Basic ${btoa(`${basicUsername}:${basicPassword}`)}`;
-      }
+    if (bearerToken) {
+      headers["Authorization"] = `Bearer ${bearerToken}`;
+    } else if (masterKey) {
+      headers["Master-Key"] = masterKey;
+    } else if (apiKey) {
+      headers["Api-Key"] = apiKey;
     }
     init.headers = headers;
     let res = await fetch(url, init);
@@ -160,11 +153,5 @@ class UiFormClientFetcher extends AbstractClient {
       throw new APIError(res.status, await res.text());
     }
     return res;
-  }
-}
-
-export class UiFormClient extends APIGenerated {
-  constructor(options?: UiFormClientOptions) {
-    super(new UiFormClientFetcher(options));
   }
 }
