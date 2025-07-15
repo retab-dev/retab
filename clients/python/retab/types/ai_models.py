@@ -2,6 +2,7 @@ import datetime
 from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, computed_field
 from retab.types.inference_settings import InferenceSettings
+from openai.types.model import Model
 
 
 AIProvider = Literal["OpenAI", "Anthropic", "Gemini", "xAI", "Retab"]
