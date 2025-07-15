@@ -1,21 +1,20 @@
-import { CompositionClient } from "../../client";
-import { Model, ZModel } from "../../types";
-
+import { CompositionClient } from "@/client";
+import { ZModel } from "@/types";
+import * as z from "zod";
 export default class APIModels extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
     }
     
-    async list(params: {
+    async list(params?: {
         supports_finetuning?: boolean,
         supports_image?: boolean,
         include_finetuned_models?: boolean,
-    }): Promise<Model[]> {
-        let response = await this._fetch({
-            url: "/api/v1/models",
+    }) {
+        return await this._fetchJson(z.object({ data: z.array(ZModel) }), {
+            url: "/v1/models",
             method: "GET",
-            params,
+            params: params,
         });
-        return ZModel.array().parse(await response.json());
     }
 }

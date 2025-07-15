@@ -4,8 +4,7 @@
   "description": "Retab official Node.js library",
   "main": "dist/index.js",
   "exports": {
-    ".": "./dist/index.js",
-    "./utils/json_schema": "./dist/utils/json_schema.js"
+    ".": "./dist/index.js"
   },
   "types": "dist/index.d.ts",
   "type": "module",
