@@ -1,5 +1,5 @@
 import { CompositionClient } from "@/client";
-import { ReconciliationRequest, ReconciliationResponse, ZReconciliationResponse } from "@/types";
+import { ReconciliationRequest, ReconciliationResponse, ZReconciliationRequest, ZReconciliationResponse } from "@/types";
 
 export default class APIConsensus extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -9,7 +9,7 @@ export default class APIConsensus extends CompositionClient {
         return await this._fetchJson(ZReconciliationResponse, {
             url: "/v1/consensus/reconcile",
             method: "POST",
-            body: params,
+            body: ZReconciliationRequest.parse(params),
         });
     }
 }

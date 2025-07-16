@@ -10,6 +10,7 @@ from datetime import datetime, date
 from typing import Any, Type, get_args, get_origin, Union, Literal, is_typeddict
 from typing_extensions import is_typeddict as is_typeddict_ext
 import typing_extensions
+from pydantic_core import PydanticUndefined
 from pydantic import BaseModel, EmailStr
 import PIL.Image
 
@@ -48,15 +49,21 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
             excluded_fields = set()
             typename = "z.object({\n"
             ts_typename = "{\n"
-            props = [(n, f.annotation) for n, f in origin.model_fields.items()] if issubclass(origin, BaseModel) else origin.__annotations__.items()
+            props = [(n, f.annotation, f.default) for n, f in origin.model_fields.items()] if issubclass(origin, BaseModel) else \
+                    [(n, f, PydanticUndefined) for n, f in origin.__annotations__.items()]
 
-            for [field_name, field] in props:
+            for field_name, field, default in props:
                 if field_name in excluded_fields:
                     continue
                 ts_compiled = type_to_zod(field, ts=True)
-
-                typename += f"    {field_name}: {type_to_zod(field)},\n"
-                ts_typename += f"    {field_name}{"?" if ts_compiled.endswith(" | undefined") else ""}: {ts_compiled},\n"
+                default_str = ""
+                if default is not PydanticUndefined and default is not None:
+                    if isinstance(default, BaseModel):
+                        default_str = f".default({json.dumps(default.model_dump(mode="json", exclude_unset=True))})"
+                    else:
+                        default_str = f".default({json.dumps(default)})"
+                typename += f"    {field_name}: {type_to_zod(field)}{default_str},\n"
+                ts_typename += f"    {field_name}{"?" if ts_compiled.endswith(" | undefined") or default is not PydanticUndefined else ""}: {ts_compiled},\n"
             typename += "})"
             ts_typename += "}"
 
@@ -118,9 +125,9 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
     else:
         raise ValueError(f"Unsupported type: {field_type} ({origin})")
     if ts:
-        return ts_typename if not optional else ts_typename + " | undefined"
+        return ts_typename if not optional else ts_typename + " | null | undefined"
     else:
-        return typename if not optional else typename + ".optional()"
+        return typename if not optional else typename + ".nullable().optional()"
     
 
 # SET of names of python builtin types starting with a capital
@@ -164,6 +171,7 @@ if __name__ == "__main__":
             compiled_ts = type_to_zod(model, False, ts=True)
         except Exception as e:
             if not necessary:
+                print(f"Skipping {name} {model} due to error: {e}", file=sys.stderr)
                 continue
             print(f"Error compiling {name} {model}", file=sys.stderr)
             raise e
