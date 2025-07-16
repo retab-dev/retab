@@ -117,7 +117,6 @@ class CompletionsUsage(BaseModel):
     input_audio_tokens: int = Field(description="The aggregated number of audio input tokens used, including cached tokens.")
     output_audio_tokens: int = Field(description="The aggregated number of audio output tokens used.")
     num_model_requests: int = Field(description="The count of requests made to the model.")
-    project_id: Optional[str] = Field(default=None, description="When group_by=project_id, this field provides the project ID of the grouped usage result.")
     user_id: Optional[str] = Field(default=None, description="When group_by=user_id, this field provides the user ID of the grouped usage result.")
     api_key_id: Optional[str] = Field(default=None, description="When group_by=api_key_id, this field provides the API key ID of the grouped usage result.")
     model: Optional[str] = Field(default=None, description="When group_by=model, this field provides the model name of the grouped usage result.")

@@ -450,7 +450,7 @@ export const ZRetabChatResponseCreateRequest = z.lazy(() => z.object({
     reasoning: ZReasoning.nullable().optional(),
     stream: z.boolean().nullable().optional().default(false),
     seed: z.number().nullable().optional(),
-    text: ZResponseTextConfigParam.default({"format": {"type": "text"}}),
+    text: ZResponseTextConfigParam.default({ "format": { "type": "text" } }),
     n_consensus: z.number().default(1),
 }));
 export type RetabChatResponseCreateRequest = z.infer<typeof ZRetabChatResponseCreateRequest>;
@@ -722,7 +722,6 @@ export const ZEvaluation = z.lazy(() => z.object({
     documents: z.array(ZEvaluationDocument),
     iterations: z.array(ZIteration),
     json_schema: z.record(z.string(), z.any()),
-    project_id: z.string().default("default_spreadsheets"),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
 }));
 export type Evaluation = z.infer<typeof ZEvaluation>;
@@ -751,12 +750,20 @@ export const ZUpdateEvaluationDocumentRequest = z.lazy(() => z.object({
 export type UpdateEvaluationDocumentRequest = z.infer<typeof ZUpdateEvaluationDocumentRequest>;
 
 export const ZUpdateEvaluationRequest = z.lazy(() => z.object({
+<<<<<<< HEAD
     name: z.string().nullable().optional(),
     documents: z.array(ZEvaluationDocument).nullable().optional(),
     iterations: z.array(ZIteration).nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
     project_id: z.string().nullable().optional(),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
+=======
+    name: z.string().optional(),
+    documents: z.array(ZEvaluationDocument).optional(),
+    iterations: z.array(ZIteration).optional(),
+    json_schema: z.record(z.string(), z.any()).optional(),
+    default_inference_settings: ZInferenceSettings.optional(),
+>>>>>>> adf181a (Broad update)
 }));
 export type UpdateEvaluationRequest = z.infer<typeof ZUpdateEvaluationRequest>;
 
@@ -817,32 +824,46 @@ export const ZBaseEvaluation = z.lazy(() => z.object({
     id: z.string(),
     name: z.string().default(""),
     json_schema: z.record(z.string(), z.any()),
+<<<<<<< HEAD
     project_id: z.string().default("default_spreadsheets"),
     default_inference_settings: ZInferenceSettings.default({}),
+=======
+    default_inference_settings: ZInferenceSettings,
+>>>>>>> adf181a (Broad update)
     updated_at: z.string(),
 }));
 export type BaseEvaluation = z.infer<typeof ZBaseEvaluation>;
 
 export const ZCreateEvaluationRequest = z.lazy(() => z.object({
     name: z.string(),
-    project_id: z.string(),
     json_schema: z.record(z.string(), z.any()),
     default_inference_settings: ZInferenceSettings,
 }));
 export type CreateEvaluationRequest = z.infer<typeof ZCreateEvaluationRequest>;
 
 export const ZListEvaluationParams = z.lazy(() => z.object({
+<<<<<<< HEAD
     project_id: z.string().nullable().optional(),
     schema_id: z.string().nullable().optional(),
     schema_data_id: z.string().nullable().optional(),
+=======
+    schema_id: z.string().optional(),
+    schema_data_id: z.string().optional(),
+>>>>>>> adf181a (Broad update)
 }));
 export type ListEvaluationParams = z.infer<typeof ZListEvaluationParams>;
 
 export const ZPatchEvaluationRequest = z.lazy(() => z.object({
+<<<<<<< HEAD
     name: z.string().nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
     project_id: z.string().nullable().optional(),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
+=======
+    name: z.string().optional(),
+    json_schema: z.record(z.string(), z.any()).optional(),
+    default_inference_settings: ZInferenceSettings.optional(),
+>>>>>>> adf181a (Broad update)
 }));
 export type PatchEvaluationRequest = z.infer<typeof ZPatchEvaluationRequest>;
 
@@ -1385,7 +1406,7 @@ export const ZLogExtractionRequest = z.lazy(() => z.object({
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZFunctionCallOutput, ZResponseReasoningItemParam, ZImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZLocalShellCall, ZLocalShellCallOutput, ZMcpListTools, ZMcpApprovalRequest, ZMcpApprovalResponse, ZMcpCall, ZItemReference])).nullable().optional(),
     anthropic_messages: z.array(ZMessageParam).nullable().optional(),
     anthropic_system_prompt: z.string().nullable().optional(),
-    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
+    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZMessage, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
