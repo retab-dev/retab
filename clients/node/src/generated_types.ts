@@ -750,20 +750,11 @@ export const ZUpdateEvaluationDocumentRequest = z.lazy(() => z.object({
 export type UpdateEvaluationDocumentRequest = z.infer<typeof ZUpdateEvaluationDocumentRequest>;
 
 export const ZUpdateEvaluationRequest = z.lazy(() => z.object({
-<<<<<<< HEAD
     name: z.string().nullable().optional(),
     documents: z.array(ZEvaluationDocument).nullable().optional(),
     iterations: z.array(ZIteration).nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
-    project_id: z.string().nullable().optional(),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
-=======
-    name: z.string().optional(),
-    documents: z.array(ZEvaluationDocument).optional(),
-    iterations: z.array(ZIteration).optional(),
-    json_schema: z.record(z.string(), z.any()).optional(),
-    default_inference_settings: ZInferenceSettings.optional(),
->>>>>>> adf181a (Broad update)
 }));
 export type UpdateEvaluationRequest = z.infer<typeof ZUpdateEvaluationRequest>;
 
@@ -824,12 +815,7 @@ export const ZBaseEvaluation = z.lazy(() => z.object({
     id: z.string(),
     name: z.string().default(""),
     json_schema: z.record(z.string(), z.any()),
-<<<<<<< HEAD
-    project_id: z.string().default("default_spreadsheets"),
     default_inference_settings: ZInferenceSettings.default({}),
-=======
-    default_inference_settings: ZInferenceSettings,
->>>>>>> adf181a (Broad update)
     updated_at: z.string(),
 }));
 export type BaseEvaluation = z.infer<typeof ZBaseEvaluation>;
@@ -842,28 +828,15 @@ export const ZCreateEvaluationRequest = z.lazy(() => z.object({
 export type CreateEvaluationRequest = z.infer<typeof ZCreateEvaluationRequest>;
 
 export const ZListEvaluationParams = z.lazy(() => z.object({
-<<<<<<< HEAD
-    project_id: z.string().nullable().optional(),
     schema_id: z.string().nullable().optional(),
     schema_data_id: z.string().nullable().optional(),
-=======
-    schema_id: z.string().optional(),
-    schema_data_id: z.string().optional(),
->>>>>>> adf181a (Broad update)
 }));
 export type ListEvaluationParams = z.infer<typeof ZListEvaluationParams>;
 
 export const ZPatchEvaluationRequest = z.lazy(() => z.object({
-<<<<<<< HEAD
     name: z.string().nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
-    project_id: z.string().nullable().optional(),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
-=======
-    name: z.string().optional(),
-    json_schema: z.record(z.string(), z.any()).optional(),
-    default_inference_settings: ZInferenceSettings.optional(),
->>>>>>> adf181a (Broad update)
 }));
 export type PatchEvaluationRequest = z.infer<typeof ZPatchEvaluationRequest>;
 
