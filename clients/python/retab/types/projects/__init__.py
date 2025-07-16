@@ -1,5 +1,5 @@
-from .model import Evaluation, BaseEvaluation, CreateEvaluationRequest, PatchEvaluationRequest, ListEvaluationParams
-from .documents import AnnotatedDocument, DocumentItem, EvaluationDocument, CreateEvaluationDocumentRequest, PatchEvaluationDocumentRequest
+from .model import Project, BaseProject, CreateProjectRequest, PatchProjectRequest, ListProjectParams
+from .documents import AnnotatedDocument, DocumentItem, ProjectDocument, CreateProjectDocumentRequest, PatchProjectDocumentRequest
 from .iterations import (
     BaseIteration,
     Iteration,
@@ -13,16 +13,16 @@ from .iterations import (
 
 
 __all__ = [
-    "Evaluation",
-    "BaseEvaluation",
-    "CreateEvaluationRequest",
-    "PatchEvaluationRequest",
-    "ListEvaluationParams",
+    "Project",
+    "BaseProject",
+    "CreateProjectRequest",
+    "PatchProjectRequest",
+    "ListProjectParams",
     "AnnotatedDocument",
     "DocumentItem",
-    "EvaluationDocument",
-    "CreateEvaluationDocumentRequest",
-    "PatchEvaluationDocumentRequest",
+    "ProjectDocument",
+    "CreateProjectDocumentRequest",
+    "PatchProjectDocumentRequest",
     "BaseIteration",
     "Iteration",
     "CreateIterationRequest",

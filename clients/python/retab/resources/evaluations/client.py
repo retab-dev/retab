@@ -1,21 +1,21 @@
 from typing import Any, Dict, List
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.evaluations import Evaluation, PatchEvaluationRequest, ListEvaluationParams, BaseEvaluation
+from ...types.projects import Project, PatchProjectRequest, ListProjectParams, BaseProject
 from ...types.inference_settings import InferenceSettings
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 from .documents import Documents, AsyncDocuments
 from .iterations import Iterations, AsyncIterations
 
 
-class EvaluationsMixin:
+class ProjectsMixin:
     def prepare_create(
         self,
         name: str,
         json_schema: dict[str, Any],
         default_inference_settings: InferenceSettings = FieldUnset,
     ) -> PreparedRequest:
-        # Use BaseEvaluation model
+        # Use BaseProject model
         eval_dict = {
             "name": name,
             "json_schema": json_schema,
@@ -23,11 +23,11 @@ class EvaluationsMixin:
         if default_inference_settings is not FieldUnset:
             eval_dict["default_inference_settings"] = default_inference_settings
 
-        eval_data = BaseEvaluation(**eval_dict)
+        eval_data = BaseProject(**eval_dict)
         return PreparedRequest(method="POST", url="/v1/evaluations", data=eval_data.model_dump(exclude_unset=True, mode="json"))
 
     def prepare_get(self, evaluation_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}")
+        return PreparedRequest(method="GET", url=f"/v1/projects/{evaluation_id}")
 
     def prepare_update(
         self,
@@ -50,9 +50,9 @@ class EvaluationsMixin:
         if default_inference_settings is not FieldUnset:
             update_dict["default_inference_settings"] = default_inference_settings
 
-        data = PatchEvaluationRequest(**update_dict).model_dump(exclude_unset=True, mode="json")
+        data = PatchProjectRequest(**update_dict).model_dump(exclude_unset=True, mode="json")
 
-        return PreparedRequest(method="PATCH", url=f"/v1/evaluations/{evaluation_id}", data=data)
+        return PreparedRequest(method="PATCH", url=f"/v1/projects/{evaluation_id}", data=data)
 
     def prepare_list(self) -> PreparedRequest:
         """
@@ -66,15 +66,15 @@ class EvaluationsMixin:
         """
         params_dict = {}
 
-        params = ListEvaluationParams(**params_dict).model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
+        params = ListProjectParams(**params_dict).model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
         return PreparedRequest(method="GET", url="/v1/evaluations", params=params)
 
     def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/evaluations/{id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/projects/{id}")
 
 
-class Evaluations(SyncAPIResource, EvaluationsMixin):
-    """Evaluations API wrapper"""
+class Projects(SyncAPIResource, ProjectsMixin):
+    """Projects API wrapper"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -86,7 +86,7 @@ class Evaluations(SyncAPIResource, EvaluationsMixin):
         name: str,
         json_schema: dict[str, Any],
         default_inference_settings: InferenceSettings = FieldUnset,
-    ) -> Evaluation:
+    ) -> Project:
         """
         Create a new evaluation.
 
@@ -97,15 +97,15 @@ class Evaluations(SyncAPIResource, EvaluationsMixin):
             default_inference_settings: The default inference settings to associate with the evaluation
 
         Returns:
-            Evaluation: The created evaluation
+            Project: The created evaluation
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_create(name, json_schema, default_inference_settings=default_inference_settings)
         response = self._client._prepared_request(request)
-        return Evaluation(**response)
+        return Project(**response)
 
-    def get(self, evaluation_id: str) -> Evaluation:
+    def get(self, evaluation_id: str) -> Project:
         """
         Get an evaluation by ID.
 
@@ -113,13 +113,13 @@ class Evaluations(SyncAPIResource, EvaluationsMixin):
             evaluation_id: The ID of the evaluation to retrieve
 
         Returns:
-            Evaluation: The evaluation
+            Project: The evaluation
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_get(evaluation_id)
         response = self._client._prepared_request(request)
-        return Evaluation(**response)
+        return Project(**response)
 
     def update(
         self,
@@ -127,7 +127,7 @@ class Evaluations(SyncAPIResource, EvaluationsMixin):
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
         default_inference_settings: InferenceSettings = FieldUnset,
-    ) -> Evaluation:
+    ) -> Project:
         """
         Update an evaluation with partial updates.
 
@@ -140,7 +140,7 @@ class Evaluations(SyncAPIResource, EvaluationsMixin):
             default_inference_settings: Optional annotation properties
 
         Returns:
-            Evaluation: The updated evaluation
+            Project: The updated evaluation
         Raises:
             HTTPException if the request fails
         """
@@ -151,21 +151,21 @@ class Evaluations(SyncAPIResource, EvaluationsMixin):
             default_inference_settings=default_inference_settings,
         )
         response = self._client._prepared_request(request)
-        return Evaluation(**response)
+        return Project(**response)
 
-    def list(self) -> List[Evaluation]:
+    def list(self) -> List[Project]:
         """
         List evaluations for a project.
 
         Args:
         Returns:
-            List[Evaluation]: List of evaluations
+            List[Project]: List of evaluations
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_list()
         response = self._client._prepared_request(request)
-        return [Evaluation(**item) for item in response.get("data", [])]
+        return [Project(**item) for item in response.get("data", [])]
 
     def delete(self, evaluation_id: str) -> DeleteResponse:
         """
@@ -183,15 +183,15 @@ class Evaluations(SyncAPIResource, EvaluationsMixin):
         return self._client._prepared_request(request)
 
 
-class AsyncEvaluations(AsyncAPIResource, EvaluationsMixin):
-    """Async Evaluations API wrapper"""
+class AsyncProjects(AsyncAPIResource, ProjectsMixin):
+    """Async Projects API wrapper"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.documents = AsyncDocuments(self._client)
         self.iterations = AsyncIterations(self._client)
 
-    async def create(self, name: str, json_schema: Dict[str, Any]) -> Evaluation:
+    async def create(self, name: str, json_schema: Dict[str, Any]) -> Project:
         """
         Create a new evaluation.
 
@@ -200,15 +200,15 @@ class AsyncEvaluations(AsyncAPIResource, EvaluationsMixin):
             json_schema: The JSON schema for the evaluation
 
         Returns:
-            Evaluation: The created evaluation
+            Project: The created evaluation
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_create(name, json_schema)
         response = await self._client._prepared_request(request)
-        return Evaluation(**response)
+        return Project(**response)
 
-    async def get(self, evaluation_id: str) -> Evaluation:
+    async def get(self, evaluation_id: str) -> Project:
         """
         Get an evaluation by ID.
 
@@ -216,13 +216,13 @@ class AsyncEvaluations(AsyncAPIResource, EvaluationsMixin):
             evaluation_id: The ID of the evaluation to retrieve
 
         Returns:
-            Evaluation: The evaluation
+            Project: The evaluation
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_get(evaluation_id)
         response = await self._client._prepared_request(request)
-        return Evaluation(**response)
+        return Project(**response)
 
     async def update(
         self,
@@ -230,7 +230,7 @@ class AsyncEvaluations(AsyncAPIResource, EvaluationsMixin):
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
         default_inference_settings: InferenceSettings = FieldUnset,
-    ) -> Evaluation:
+    ) -> Project:
         """
         Update an evaluation with partial updates.
 
@@ -243,7 +243,7 @@ class AsyncEvaluations(AsyncAPIResource, EvaluationsMixin):
             default_inference_settings: Optional annotation properties
 
         Returns:
-            Evaluation: The updated evaluation
+            Project: The updated evaluation
         Raises:
             HTTPException if the request fails
         """
@@ -254,20 +254,20 @@ class AsyncEvaluations(AsyncAPIResource, EvaluationsMixin):
             default_inference_settings=default_inference_settings,
         )
         response = await self._client._prepared_request(request)
-        return Evaluation(**response)
+        return Project(**response)
 
-    async def list(self) -> List[Evaluation]:
+    async def list(self) -> List[Project]:
         """
         List evaluations for a project.
 
         Returns:
-            List[Evaluation]: List of evaluations
+            List[Project]: List of evaluations
         Raises:
             HTTPException if the request fails
         """
         request = self.prepare_list()
         response = await self._client._prepared_request(request)
-        return [Evaluation(**item) for item in response.get("data", [])]
+        return [Project(**item) for item in response.get("data", [])]
 
     async def delete(self, evaluation_id: str) -> DeleteResponse:
         """

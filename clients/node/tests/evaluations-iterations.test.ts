@@ -1,7 +1,7 @@
 import { Retab, AsyncRetab } from '../src/index.js';
 import { TEST_API_KEY } from './fixtures.js';
 
-describe('Evaluations Iterations Tests', () => {
+describe('Projects Iterations Tests', () => {
   let syncClient: Retab;
   let asyncClient: AsyncRetab;
 
@@ -58,7 +58,7 @@ describe('Evaluations Iterations Tests', () => {
       );
 
       expect(prepared.method).toBe('POST');
-      expect(prepared.url).toBe(`/v1/evaluations/${evaluationId}/iterations`);
+      expect(prepared.url).toBe(`/v1/projects/${evaluationId}/iterations`);
       expect(prepared.data).toEqual(createParams);
     });
 
@@ -76,7 +76,7 @@ describe('Evaluations Iterations Tests', () => {
           { inference_settings: { temperature: 0.5 } }
         );
 
-        expect(prepared.url).toBe(`/v1/evaluations/${evalId}/iterations`);
+        expect(prepared.url).toBe(`/v1/projects/${evalId}/iterations`);
       });
     });
 
@@ -115,7 +115,7 @@ describe('Evaluations Iterations Tests', () => {
       const prepared = (syncClient.evaluations.iterations as any).mixin.prepareList(evaluationId);
 
       expect(prepared.method).toBe('GET');
-      expect(prepared.url).toBe(`/v1/evaluations/${evaluationId}/iterations`);
+      expect(prepared.url).toBe(`/v1/projects/${evaluationId}/iterations`);
       expect(prepared.params).toEqual({
         limit: 10,
         order: 'desc'
@@ -146,7 +146,7 @@ describe('Evaluations Iterations Tests', () => {
 
     it('should handle partial pagination parameters', () => {
       const evaluationId = 'eval-123';
-      
+
       // Test with only before
       const beforeOnly = (syncClient.evaluations.iterations as any).mixin.prepareList(
         evaluationId,
@@ -168,7 +168,7 @@ describe('Evaluations Iterations Tests', () => {
 
     it('should handle edge cases for pagination', () => {
       const evaluationId = 'eval-123';
-      
+
       const edgeCases = [
         { limit: 0 },
         { limit: 1 },
@@ -198,7 +198,7 @@ describe('Evaluations Iterations Tests', () => {
       );
 
       expect(prepared.method).toBe('GET');
-      expect(prepared.url).toBe(`/v1/evaluations/${evaluationId}/iterations/${iterationId}`);
+      expect(prepared.url).toBe(`/v1/projects/${evaluationId}/iterations/${iterationId}`);
       expect(prepared.data).toBeUndefined();
       expect(prepared.params).toBeUndefined();
     });
@@ -218,7 +218,7 @@ describe('Evaluations Iterations Tests', () => {
           iterId
         );
 
-        expect(prepared.url).toBe(`/v1/evaluations/${evalId}/iterations/${iterId}`);
+        expect(prepared.url).toBe(`/v1/projects/${evalId}/iterations/${iterId}`);
       });
     });
   });
@@ -242,7 +242,7 @@ describe('Evaluations Iterations Tests', () => {
       );
 
       expect(prepared.method).toBe('PATCH');
-      expect(prepared.url).toBe(`/v1/evaluations/${evaluationId}/iterations/${iterationId}`);
+      expect(prepared.url).toBe(`/v1/projects/${evaluationId}/iterations/${iterationId}`);
       expect(prepared.data).toEqual(patchParams);
     });
 
@@ -281,7 +281,7 @@ describe('Evaluations Iterations Tests', () => {
       );
 
       expect(prepared.method).toBe('DELETE');
-      expect(prepared.url).toBe(`/v1/evaluations/${evaluationId}/iterations/${iterationId}`);
+      expect(prepared.url).toBe(`/v1/projects/${evaluationId}/iterations/${iterationId}`);
       expect(prepared.data).toBeUndefined();
       expect(prepared.params).toBeUndefined();
     });
@@ -303,7 +303,7 @@ describe('Evaluations Iterations Tests', () => {
       );
 
       expect(prepared.method).toBe('POST');
-      expect(prepared.url).toBe(`/v1/evaluations/${evaluationId}/iterations/${iterationId}/process`);
+      expect(prepared.url).toBe(`/v1/projects/${evaluationId}/iterations/${iterationId}/process`);
       expect(prepared.data).toEqual(processParams);
     });
 
@@ -351,7 +351,7 @@ describe('Evaluations Iterations Tests', () => {
       );
 
       expect(prepared.method).toBe('GET');
-      expect(prepared.url).toBe(`/v1/evaluations/${evaluationId}/iterations/${iterationId}/document-status`);
+      expect(prepared.url).toBe(`/v1/projects/${evaluationId}/iterations/${iterationId}/document-status`);
       expect(prepared.data).toBeUndefined();
       expect(prepared.params).toBeUndefined();
     });
@@ -370,13 +370,13 @@ describe('Evaluations Iterations Tests', () => {
       );
 
       expect(prepared.method).toBe('POST');
-      expect(prepared.url).toBe(`/v1/evaluations/${evaluationId}/iterations/add-from-jsonl`);
+      expect(prepared.url).toBe(`/v1/projects/${evaluationId}/iterations/add-from-jsonl`);
       expect(prepared.data).toEqual(jsonlParams);
     });
 
     it('should handle different GCS paths', () => {
       const evaluationId = 'eval-123';
-      
+
       const gcsPaths = [
         'gs://bucket/data.jsonl',
         'gs://my-bucket/folder/subfolder/data.jsonl',
@@ -427,42 +427,42 @@ describe('Evaluations Iterations Tests', () => {
         {
           method: 'prepareCreate',
           params: [evaluationId, { inference_settings: { temperature: 0.5 } }],
-          expectedUrl: `/v1/evaluations/${evaluationId}/iterations`
+          expectedUrl: `/v1/projects/${evaluationId}/iterations`
         },
         {
           method: 'prepareList',
           params: [evaluationId, {}],
-          expectedUrl: `/v1/evaluations/${evaluationId}/iterations`
+          expectedUrl: `/v1/projects/${evaluationId}/iterations`
         },
         {
           method: 'prepareGet',
           params: [evaluationId, iterationId],
-          expectedUrl: `/v1/evaluations/${evaluationId}/iterations/${iterationId}`
+          expectedUrl: `/v1/projects/${evaluationId}/iterations/${iterationId}`
         },
         {
           method: 'preparePatch',
           params: [evaluationId, iterationId, { version: 2 }],
-          expectedUrl: `/v1/evaluations/${evaluationId}/iterations/${iterationId}`
+          expectedUrl: `/v1/projects/${evaluationId}/iterations/${iterationId}`
         },
         {
           method: 'prepareDelete',
           params: [evaluationId, iterationId],
-          expectedUrl: `/v1/evaluations/${evaluationId}/iterations/${iterationId}`
+          expectedUrl: `/v1/projects/${evaluationId}/iterations/${iterationId}`
         },
         {
           method: 'prepareProcess',
           params: [evaluationId, iterationId, { only_outdated: true }],
-          expectedUrl: `/v1/evaluations/${evaluationId}/iterations/${iterationId}/process`
+          expectedUrl: `/v1/projects/${evaluationId}/iterations/${iterationId}/process`
         },
         {
           method: 'prepareDocumentStatus',
           params: [evaluationId, iterationId],
-          expectedUrl: `/v1/evaluations/${evaluationId}/iterations/${iterationId}/document-status`
+          expectedUrl: `/v1/projects/${evaluationId}/iterations/${iterationId}/document-status`
         },
         {
           method: 'prepareAddFromJsonl',
           params: [evaluationId, { jsonl_gcs_path: 'gs://bucket/data.jsonl' }],
-          expectedUrl: `/v1/evaluations/${evaluationId}/iterations/add-from-jsonl`
+          expectedUrl: `/v1/projects/${evaluationId}/iterations/add-from-jsonl`
         }
       ];
 
@@ -588,7 +588,7 @@ describe('Evaluations Iterations Tests', () => {
     it('should handle various process parameter configurations', () => {
       const evaluationId = 'eval-123';
       const iterationId = 'iter-456';
-      
+
       const processConfigs = [
         { document_ids: ['doc-1', 'doc-2'], only_outdated: false },
         { document_ids: ['doc-1'], only_outdated: true },

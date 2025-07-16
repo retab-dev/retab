@@ -93,7 +93,7 @@ class DocumentItem(AnnotatedDocument):
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
 
 
-class EvaluationDocument(DocumentItem):
+class ProjectDocument(DocumentItem):
     id: str = Field(description="The ID of the document. Equal to mime_data.id but robust to the case where mime_data is a BaseMIMEData")
 
 
@@ -106,14 +106,14 @@ class CreateIterationRequest(BaseModel):
     json_schema: Optional[dict[str, Any]] = None
 
 
-class UpdateEvaluationDocumentRequest(BaseModel):
+class UpdateProjectDocumentRequest(BaseModel):
     annotation: Optional[dict[str, Any]] = Field(default=None, description="The ground truth of the document")
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
 
 
-class UpdateEvaluationRequest(BaseModel):
+class UpdateProjectRequest(BaseModel):
     name: Optional[str] = Field(default=None, description="The name of the document")
-    documents: Optional[list[EvaluationDocument]] = Field(default=None, description="The documents of the evaluation")
+    documents: Optional[list[ProjectDocument]] = Field(default=None, description="The documents of the evaluation")
     iterations: Optional[list[Iteration]] = Field(default=None, description="The iterations of the evaluation")
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the evaluation")
 
@@ -147,13 +147,13 @@ class UpdateEvaluationRequest(BaseModel):
         return generate_schema_id(self.json_schema)
 
 
-class Evaluation(BaseModel):
+class Project(BaseModel):
     id: str = Field(default_factory=lambda: "eval_" + nanoid.generate())
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
 
     name: str
-    old_documents: list[EvaluationDocument] | None = None
-    documents: list[EvaluationDocument]
+    old_documents: list[ProjectDocument] | None = None
+    documents: list[ProjectDocument]
     iterations: list[Iteration]
     json_schema: dict[str, Any]
 

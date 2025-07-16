@@ -24,7 +24,7 @@ Retab solves all the major challenges in document processing with Large Language
 2. **Structured, Schema-driven Extraction**: Get consistent, reliable outputs using schema-based prompt engineering
 3. **Processors**: Publish a live, stable, shareable document processor.
 4. **Automations**: Create document processing workflows that can be triggered by events (mailbox, upload link, endpoint, outlook plugin).
-5. **Evaluations**: Evaluate the performance of models against annotated datasets
+5. **Projects**: Evaluate the performance of models against annotated datasets
 6. **Optimizations**: Identify the most used processors and help you finetune models to reduce costs and improve performance
 
 We are offering you all the software-defined primitives to build your own document processing solutions. We see it as **Stripe** for document processing.

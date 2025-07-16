@@ -714,25 +714,25 @@ export const ZDocumentItem = z.lazy(() => z.object({
 }).merge(ZAnnotatedDocument.schema));
 export type DocumentItem = z.infer<typeof ZDocumentItem>;
 
-export const ZEvaluation = z.lazy(() => z.object({
+export const ZProject = z.lazy(() => z.object({
     id: z.string(),
     updated_at: z.string(),
     name: z.string(),
-    old_documents: z.array(ZEvaluationDocument).nullable().optional(),
-    documents: z.array(ZEvaluationDocument),
+    old_documents: z.array(ZProjectDocument).nullable().optional(),
+    documents: z.array(ZProjectDocument),
     iterations: z.array(ZIteration),
     json_schema: z.record(z.string(), z.any()),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
 }));
-export type Evaluation = z.infer<typeof ZEvaluation>;
+export type Project = z.infer<typeof ZProject>;
 
-export const ZEvaluationDocument = z.lazy(() => z.object({
+export const ZProjectDocument = z.lazy(() => z.object({
     mime_data: ZMIMEData,
     annotation: z.record(z.string(), z.any()).default({}),
     annotation_metadata: ZPredictionMetadata.nullable().optional(),
     id: z.string(),
 }).merge(ZDocumentItem.schema));
-export type EvaluationDocument = z.infer<typeof ZEvaluationDocument>;
+export type ProjectDocument = z.infer<typeof ZProjectDocument>;
 
 export const ZIteration = z.lazy(() => z.object({
     id: z.string(),
@@ -743,20 +743,20 @@ export const ZIteration = z.lazy(() => z.object({
 }));
 export type Iteration = z.infer<typeof ZIteration>;
 
-export const ZUpdateEvaluationDocumentRequest = z.lazy(() => z.object({
+export const ZUpdateProjectDocumentRequest = z.lazy(() => z.object({
     annotation: z.record(z.string(), z.any()).nullable().optional(),
     annotation_metadata: ZPredictionMetadata.nullable().optional(),
 }));
-export type UpdateEvaluationDocumentRequest = z.infer<typeof ZUpdateEvaluationDocumentRequest>;
+export type UpdateProjectDocumentRequest = z.infer<typeof ZUpdateProjectDocumentRequest>;
 
-export const ZUpdateEvaluationRequest = z.lazy(() => z.object({
+export const ZUpdateProjectRequest = z.lazy(() => z.object({
     name: z.string().nullable().optional(),
-    documents: z.array(ZEvaluationDocument).nullable().optional(),
+    documents: z.array(ZProjectDocument).nullable().optional(),
     iterations: z.array(ZIteration).nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
 }));
-export type UpdateEvaluationRequest = z.infer<typeof ZUpdateEvaluationRequest>;
+export type UpdateProjectRequest = z.infer<typeof ZUpdateProjectRequest>;
 
 export const ZBaseIteration = z.lazy(() => z.object({
     id: z.string(),
@@ -798,47 +798,47 @@ export const ZProcessIterationRequest = z.lazy(() => z.object({
 }));
 export type ProcessIterationRequest = z.infer<typeof ZProcessIterationRequest>;
 
-export const ZCreateEvaluationDocumentRequest = z.lazy(() => z.object({
+export const ZCreateProjectDocumentRequest = z.lazy(() => z.object({
     mime_data: ZMIMEData,
     annotation: z.record(z.string(), z.any()).default({}),
     annotation_metadata: ZPredictionMetadata.nullable().optional(),
 }).merge(ZDocumentItem.schema));
-export type CreateEvaluationDocumentRequest = z.infer<typeof ZCreateEvaluationDocumentRequest>;
+export type CreateProjectDocumentRequest = z.infer<typeof ZCreateProjectDocumentRequest>;
 
-export const ZPatchEvaluationDocumentRequest = z.lazy(() => z.object({
+export const ZPatchProjectDocumentRequest = z.lazy(() => z.object({
     annotation: z.record(z.string(), z.any()).nullable().optional(),
     annotation_metadata: ZPredictionMetadata.nullable().optional(),
 }));
-export type PatchEvaluationDocumentRequest = z.infer<typeof ZPatchEvaluationDocumentRequest>;
+export type PatchProjectDocumentRequest = z.infer<typeof ZPatchProjectDocumentRequest>;
 
-export const ZBaseEvaluation = z.lazy(() => z.object({
+export const ZBaseProject = z.lazy(() => z.object({
     id: z.string(),
     name: z.string().default(""),
     json_schema: z.record(z.string(), z.any()),
     default_inference_settings: ZInferenceSettings.default({}),
     updated_at: z.string(),
 }));
-export type BaseEvaluation = z.infer<typeof ZBaseEvaluation>;
+export type BaseProject = z.infer<typeof ZBaseProject>;
 
-export const ZCreateEvaluationRequest = z.lazy(() => z.object({
+export const ZCreateProjectRequest = z.lazy(() => z.object({
     name: z.string(),
     json_schema: z.record(z.string(), z.any()),
     default_inference_settings: ZInferenceSettings,
 }));
-export type CreateEvaluationRequest = z.infer<typeof ZCreateEvaluationRequest>;
+export type CreateProjectRequest = z.infer<typeof ZCreateProjectRequest>;
 
-export const ZListEvaluationParams = z.lazy(() => z.object({
+export const ZListProjectParams = z.lazy(() => z.object({
     schema_id: z.string().nullable().optional(),
     schema_data_id: z.string().nullable().optional(),
 }));
-export type ListEvaluationParams = z.infer<typeof ZListEvaluationParams>;
+export type ListProjectParams = z.infer<typeof ZListProjectParams>;
 
-export const ZPatchEvaluationRequest = z.lazy(() => z.object({
+export const ZPatchProjectRequest = z.lazy(() => z.object({
     name: z.string().nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
 }));
-export type PatchEvaluationRequest = z.infer<typeof ZPatchEvaluationRequest>;
+export type PatchProjectRequest = z.infer<typeof ZPatchProjectRequest>;
 
 export const ZExternalAPIKey = z.lazy(() => z.object({
     provider: z.union([z.literal("OpenAI"), z.literal("Anthropic"), z.literal("Gemini"), z.literal("xAI"), z.literal("Retab")]),
@@ -863,13 +863,13 @@ export type AnnotationInputData = z.infer<typeof ZAnnotationInputData>;
 export const ZAnnotationModel = z.lazy(() => z.union([z.literal("human"), z.string()]));
 export type AnnotationModel = z.infer<typeof ZAnnotationModel>;
 
-export const ZEvaluationInputData = z.lazy(() => z.object({
+export const ZProjectInputData = z.lazy(() => z.object({
     eval_data_file: z.string(),
     schema_id: z.string(),
     inference_settings_1: ZInferenceSettings.nullable().optional(),
     inference_settings_2: ZInferenceSettings,
 }));
-export type EvaluationInputData = z.infer<typeof ZEvaluationInputData>;
+export type ProjectInputData = z.infer<typeof ZProjectInputData>;
 
 export const ZFinetuningWorkflowInputData = z.lazy(() => z.object({
     prepare_dataset_input_data: ZPrepareDatasetInputData,
@@ -894,13 +894,13 @@ export const ZStandaloneAnnotationWorkflowInputData = z.lazy(() => z.object({
 }).merge(ZAnnotationInputData.schema));
 export type StandaloneAnnotationWorkflowInputData = z.infer<typeof ZStandaloneAnnotationWorkflowInputData>;
 
-export const ZStandaloneEvaluationWorkflowInputData = z.lazy(() => z.object({
+export const ZStandaloneProjectWorkflowInputData = z.lazy(() => z.object({
     eval_data_file: z.string(),
     schema_id: z.string(),
     inference_settings_1: ZInferenceSettings.nullable().optional(),
     inference_settings_2: ZInferenceSettings,
-}).merge(ZEvaluationInputData.schema));
-export type StandaloneEvaluationWorkflowInputData = z.infer<typeof ZStandaloneEvaluationWorkflowInputData>;
+}).merge(ZProjectInputData.schema));
+export type StandaloneProjectWorkflowInputData = z.infer<typeof ZStandaloneProjectWorkflowInputData>;
 
 export const ZWorkflows = z.lazy(() => z.union([z.literal("finetuning-workflow"), z.literal("annotation-workflow"), z.literal("evaluation-workflow")]));
 export type Workflows = z.infer<typeof ZWorkflows>;

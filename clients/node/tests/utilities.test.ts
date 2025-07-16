@@ -1,7 +1,7 @@
-import { 
+import {
   calculateCost,
   calculateAudioCost,
-  calculateVideoEvaluationCost,
+  calculateVideoProjectCost,
   CalculationConfig
 } from '../src/utils/cost_calculation.js';
 import { hashString } from '../src/utils/hash.js';
@@ -18,7 +18,7 @@ describe('Utility Functions Tests', () => {
           inputTokens: 1000,
           outputTokens: 500
         };
-        
+
         const cost = calculateCost(config);
         expect(typeof cost).toBe('number');
         expect(cost).toBeGreaterThan(0);
@@ -26,14 +26,14 @@ describe('Utility Functions Tests', () => {
 
       it('should handle different models', () => {
         const models = ['gpt-4o', 'gpt-4o-mini', 'claude-3-5-sonnet-latest'];
-        
+
         models.forEach(model => {
           const config: CalculationConfig = {
             model,
             inputTokens: 1000,
             outputTokens: 500
           };
-          
+
           const cost = calculateCost(config);
           expect(typeof cost).toBe('number');
           expect(cost).toBeGreaterThan(0);
@@ -46,7 +46,7 @@ describe('Utility Functions Tests', () => {
           inputTokens: 0,
           outputTokens: 0
         };
-        
+
         const cost = calculateCost(config);
         expect(cost).toBe(0);
       });
@@ -57,7 +57,7 @@ describe('Utility Functions Tests', () => {
           inputTokens: 1000000,
           outputTokens: 500000
         };
-        
+
         const cost = calculateCost(config);
         expect(typeof cost).toBe('number');
         expect(cost).toBeGreaterThan(0);
@@ -70,22 +70,22 @@ describe('Utility Functions Tests', () => {
           outputTokens: 500,
           imageCount: 2
         };
-        
+
         const configWithoutImage: CalculationConfig = {
           model: 'gpt-4o',
           inputTokens: 1000,
           outputTokens: 500
         };
-        
+
         const costWithImage = calculateCost(configWithImage);
         const costWithoutImage = calculateCost(configWithoutImage);
-        
+
         expect(costWithImage).toBeGreaterThan(costWithoutImage);
       });
 
       it('should handle different image sizes', () => {
         const imageSizes = ['low', 'high'] as const;
-        
+
         imageSizes.forEach(size => {
           const config: CalculationConfig = {
             model: 'gpt-4o',
@@ -94,7 +94,7 @@ describe('Utility Functions Tests', () => {
             imageCount: 1,
             imageSize: size
           };
-          
+
           const cost = calculateCost(config);
           expect(typeof cost).toBe('number');
           expect(cost).toBeGreaterThan(0);
@@ -127,28 +127,28 @@ describe('Utility Functions Tests', () => {
       });
     });
 
-    describe('calculateVideoEvaluationCost', () => {
+    describe('calculateVideoProjectCost', () => {
       it('should calculate video evaluation cost correctly', () => {
-        const cost = calculateVideoEvaluationCost(120); // 2 minutes
+        const cost = calculateVideoProjectCost(120); // 2 minutes
         expect(typeof cost).toBe('number');
         expect(cost).toBeGreaterThan(0);
       });
 
       it('should handle zero duration', () => {
-        const cost = calculateVideoEvaluationCost(0);
+        const cost = calculateVideoProjectCost(0);
         expect(cost).toBe(0);
       });
 
       it('should handle fractional duration', () => {
-        const cost = calculateVideoEvaluationCost(90.5);
+        const cost = calculateVideoProjectCost(90.5);
         expect(typeof cost).toBe('number');
         expect(cost).toBeGreaterThan(0);
       });
 
       it('should scale with duration', () => {
-        const shortCost = calculateVideoEvaluationCost(60);
-        const longCost = calculateVideoEvaluationCost(120);
-        
+        const shortCost = calculateVideoProjectCost(60);
+        const longCost = calculateVideoProjectCost(120);
+
         expect(longCost).toBeGreaterThan(shortCost);
       });
     });
@@ -160,7 +160,7 @@ describe('Utility Functions Tests', () => {
         const input = 'test string';
         const hash1 = hashString(input);
         const hash2 = hashString(input);
-        
+
         expect(hash1).toBe(hash2);
         expect(typeof hash1).toBe('string');
         expect(hash1.length).toBeGreaterThan(0);
@@ -169,7 +169,7 @@ describe('Utility Functions Tests', () => {
       it('should generate different hashes for different inputs', () => {
         const hash1 = hashString('input1');
         const hash2 = hashString('input2');
-        
+
         expect(hash1).not.toBe(hash2);
       });
 
@@ -186,7 +186,7 @@ describe('Utility Functions Tests', () => {
           'newlines\nand\ttabs',
           'very long string'.repeat(100)
         ];
-        
+
         specialStrings.forEach(str => {
           const hash = hashString(str);
           expect(typeof hash).toBe('string');
@@ -197,14 +197,14 @@ describe('Utility Functions Tests', () => {
       it('should be case sensitive', () => {
         const hash1 = hashString('Test');
         const hash2 = hashString('test');
-        
+
         expect(hash1).not.toBe(hash2);
       });
 
       it('should handle very long strings', () => {
         const longString = 'a'.repeat(10000);
         const hash = hashString(longString);
-        
+
         expect(typeof hash).toBe('string');
         expect(hash.length).toBeGreaterThan(0);
       });
@@ -221,7 +221,7 @@ describe('Utility Functions Tests', () => {
             age: { type: 'number' }
           }
         };
-        
+
         const loaded = loadJsonSchema(schema);
         expect(loaded).toEqual(schema);
       });
@@ -233,10 +233,10 @@ describe('Utility Functions Tests', () => {
             name: { type: 'string' }
           }
         };
-        
+
         const jsonString = JSON.stringify(schema);
         const loaded = loadJsonSchema(jsonString);
-        
+
         expect(loaded).toEqual(schema);
       });
 
@@ -269,7 +269,7 @@ describe('Utility Functions Tests', () => {
           },
           required: ['user']
         };
-        
+
         const loaded = loadJsonSchema(complexSchema);
         expect(loaded).toEqual(complexSchema);
       });
@@ -278,7 +278,7 @@ describe('Utility Functions Tests', () => {
         const schema = {
           type: 'object',
           properties: {
-            name: { 
+            name: {
               type: 'string',
               description: 'User name',
               minLength: 1,
@@ -288,7 +288,7 @@ describe('Utility Functions Tests', () => {
           required: ['name'],
           additionalProperties: false
         };
-        
+
         const loaded = loadJsonSchema(schema);
         expect(loaded).toEqual(schema);
         expect(loaded.properties.name.description).toBe('User name');
@@ -305,9 +305,9 @@ describe('Utility Functions Tests', () => {
           name: z.string(),
           age: z.number()
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.type).toBe('object');
         expect(jsonSchema.properties).toBeDefined();
         expect(jsonSchema.properties.name).toEqual({ type: 'string' });
@@ -319,9 +319,9 @@ describe('Utility Functions Tests', () => {
           email: z.string().email(),
           name: z.string().min(1).max(100)
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.properties.email).toBeDefined();
         expect(jsonSchema.properties.name).toBeDefined();
         expect(jsonSchema.properties.name.minLength).toBe(1);
@@ -333,9 +333,9 @@ describe('Utility Functions Tests', () => {
           age: z.number().min(0).max(120),
           score: z.number().positive()
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.properties.age.minimum).toBe(0);
         expect(jsonSchema.properties.age.maximum).toBe(120);
         expect(jsonSchema.properties.score.minimum).toBeGreaterThan(0);
@@ -346,9 +346,9 @@ describe('Utility Functions Tests', () => {
           tags: z.array(z.string()),
           scores: z.array(z.number()).min(1).max(10)
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.properties.tags.type).toBe('array');
         expect(jsonSchema.properties.tags.items.type).toBe('string');
         expect(jsonSchema.properties.scores.type).toBe('array');
@@ -367,9 +367,9 @@ describe('Utility Functions Tests', () => {
             })
           })
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.properties.user.type).toBe('object');
         expect(jsonSchema.properties.user.properties.name.type).toBe('string');
         expect(jsonSchema.properties.user.properties.profile.type).toBe('object');
@@ -381,9 +381,9 @@ describe('Utility Functions Tests', () => {
           required: z.string(),
           optional: z.string().optional()
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.required).toContain('required');
         expect(jsonSchema.required).not.toContain('optional');
       });
@@ -393,9 +393,9 @@ describe('Utility Functions Tests', () => {
           status: z.enum(['active', 'inactive', 'pending']),
           priority: z.union([z.literal('low'), z.literal('medium'), z.literal('high')])
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.properties.status.enum).toEqual(['active', 'inactive', 'pending']);
       });
 
@@ -406,9 +406,9 @@ describe('Utility Functions Tests', () => {
         }).refine(data => data.password === data.confirmPassword, {
           message: "Passwords don't match"
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.properties.password.minLength).toBe(8);
         expect(jsonSchema.properties.password.pattern).toBeDefined();
       });
@@ -423,9 +423,9 @@ describe('Utility Functions Tests', () => {
           url: z.string().url(),
           email: z.string().email()
         });
-        
+
         const jsonSchema = zodToJsonSchema(zodSchema);
-        
+
         expect(jsonSchema.properties.string.type).toBe('string');
         expect(jsonSchema.properties.number.type).toBe('number');
         expect(jsonSchema.properties.boolean.type).toBe('boolean');
@@ -444,23 +444,23 @@ describe('Utility Functions Tests', () => {
         email: z.string().email(),
         age: z.number().min(0)
       });
-      
+
       // Convert to JSON schema
       const jsonSchema = zodToJsonSchema(zodSchema);
-      
+
       // Load the JSON schema
       const loadedSchema = loadJsonSchema(jsonSchema);
-      
+
       // Hash the schema for caching
       const schemaHash = hashString(JSON.stringify(loadedSchema));
-      
+
       // Calculate cost for processing this schema
       const cost = calculateCost({
         model: 'gpt-4o',
         inputTokens: 1000,
         outputTokens: 500
       });
-      
+
       expect(loadedSchema).toEqual(jsonSchema);
       expect(typeof schemaHash).toBe('string');
       expect(typeof cost).toBe('number');
@@ -471,11 +471,11 @@ describe('Utility Functions Tests', () => {
       const schema1 = { type: 'object', properties: { name: { type: 'string' } } };
       const schema2 = { type: 'object', properties: { name: { type: 'string' } } };
       const schema3 = { type: 'object', properties: { age: { type: 'number' } } };
-      
+
       const hash1 = hashString(JSON.stringify(loadJsonSchema(schema1)));
       const hash2 = hashString(JSON.stringify(loadJsonSchema(schema2)));
       const hash3 = hashString(JSON.stringify(loadJsonSchema(schema3)));
-      
+
       expect(hash1).toBe(hash2); // Same schemas should have same hash
       expect(hash1).not.toBe(hash3); // Different schemas should have different hashes
     });
@@ -486,7 +486,7 @@ describe('Utility Functions Tests', () => {
         { model: 'gpt-4o', inputTokens: 1000, outputTokens: 500, imageCount: 1 },
         { model: 'claude-3-5-sonnet-latest', inputTokens: 2000, outputTokens: 1000 }
       ];
-      
+
       scenarios.forEach(scenario => {
         const cost = calculateCost(scenario);
         expect(typeof cost).toBe('number');
@@ -503,7 +503,7 @@ describe('Utility Functions Tests', () => {
         { model: 'gpt-4o', inputTokens: 100, outputTokens: -1 },
         { model: 'gpt-4o', inputTokens: 100, outputTokens: 50, imageCount: -1 }
       ];
-      
+
       edgeCases.forEach(scenario => {
         expect(() => calculateCost(scenario)).not.toThrow();
       });
@@ -517,7 +517,7 @@ describe('Utility Functions Tests', () => {
         [],
         { invalid: 'schema without type' }
       ];
-      
+
       invalidInputs.forEach(input => {
         if (input === null || input === undefined) {
           expect(() => loadJsonSchema(input as any)).toThrow();
@@ -538,7 +538,7 @@ describe('Utility Functions Tests', () => {
           })
         }).optional()
       });
-      
+
       expect(() => zodToJsonSchema(complexSchema)).not.toThrow();
     });
   });
