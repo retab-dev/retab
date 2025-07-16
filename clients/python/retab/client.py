@@ -8,7 +8,7 @@ import backoff.types
 import httpx
 import truststore
 
-from .resources import consensus, documents, files, finetuning, models, processors, schemas, secrets, usage, evaluations
+from .resources import consensus, deployments, documents, files, finetuning, models, processors, schemas, secrets, usage, projects
 from .types.standards import PreparedRequest, FieldUnset
 
 
@@ -135,7 +135,7 @@ class Retab(BaseRetab):
     """Synchronous client for interacting with the Retab API.
 
     This client provides synchronous access to all Retab API resources including files, fine-tuning,
-    prompt optimization, documents, models, datasets, and schemas.
+    prompt optimization, documents, models, processors, deployments, and schemas.
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
@@ -151,7 +151,8 @@ class Retab(BaseRetab):
         prompt_optimization: Access to prompt optimization operations
         documents: Access to document operations
         models: Access to model operations
-        datasets: Access to dataset operations
+        processors: Access to processor operations
+        deployments: Access to deployment operations
         schemas: Access to schema operations
         responses: Access to responses API (OpenAI Responses API compatible interface)
     """
@@ -175,13 +176,14 @@ class Retab(BaseRetab):
         )
 
         self.client = httpx.Client(timeout=self.timeout)
-        self.evaluations = evaluations.Projects(client=self)
+        self.projects = projects.Projects(client=self)
         self.files = files.Files(client=self)
         self.fine_tuning = finetuning.FineTuning(client=self)
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
         self.processors = processors.Processors(client=self)
+        self.deployments = deployments.Deployments(client=self)
         self.secrets = secrets.Secrets(client=self)
         self.usage = usage.Usage(client=self)
         self.consensus = consensus.Consensus(client=self)
@@ -395,7 +397,7 @@ class AsyncRetab(BaseRetab):
     """Asynchronous client for interacting with the Retab API.
 
     This client provides asynchronous access to all Retab API resources including files, fine-tuning,
-    prompt optimization, documents, models, datasets, and schemas.
+    prompt optimization, documents, models, processors, deployments, and schemas.
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
@@ -413,7 +415,8 @@ class AsyncRetab(BaseRetab):
         prompt_optimization: Access to asynchronous prompt optimization operations
         documents: Access to asynchronous document operations
         models: Access to asynchronous model operations
-        datasets: Access to asynchronous dataset operations
+        processors: Access to asynchronous processor operations
+        deployments: Access to asynchronous deployment operations
         schemas: Access to asynchronous schema operations
         responses: Access to responses API (OpenAI Responses API compatible interface)
     """
@@ -438,13 +441,14 @@ class AsyncRetab(BaseRetab):
 
         self.client = httpx.AsyncClient(timeout=self.timeout)
 
-        self.evaluations = evaluations.AsyncProjects(client=self)
+        self.projects = projects.AsyncProjects(client=self)
         self.files = files.AsyncFiles(client=self)
         self.fine_tuning = finetuning.AsyncFineTuning(client=self)
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
         self.processors = processors.AsyncProcessors(client=self)
+        self.deployments = deployments.AsyncDeployments(client=self)
         self.secrets = secrets.AsyncSecrets(client=self)
         self.usage = usage.AsyncUsage(client=self)
         self.consensus = consensus.AsyncConsensus(client=self)
