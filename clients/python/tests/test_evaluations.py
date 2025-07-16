@@ -39,17 +39,10 @@ async def test_evaluation_crud_basic(
     client = sync_client if client_type == "sync" else async_client
 
     # CREATE - Create a new evaluation
-    evaluation = await await_or_return(
-        client.evaluations.create(
-            name=evaluation_name,
-            json_schema=booking_confirmation_json_schema,
-            project_id="test_project",
-        )
-    )
+    evaluation = await await_or_return(client.evaluations.create(name=evaluation_name, json_schema=booking_confirmation_json_schema))
 
     assert evaluation.name == evaluation_name
     assert evaluation.json_schema == booking_confirmation_json_schema
-    assert evaluation.project_id == "test_project"
     assert len(evaluation.documents) == 0
     assert len(evaluation.iterations) == 0
 
@@ -62,7 +55,7 @@ async def test_evaluation_crud_basic(
         assert retrieved_evaluation.name == evaluation_name
 
         # LIST - List evaluations
-        evaluations = await await_or_return(client.evaluations.list(project_id="test_project"))
+        evaluations = await await_or_return(client.evaluations.list())
         assert any(e.id == evaluation_id for e in evaluations)
 
         # UPDATE - Update the evaluation
@@ -71,11 +64,9 @@ async def test_evaluation_crud_basic(
             client.evaluations.update(
                 evaluation_id,
                 name=updated_name,
-                project_id="updated_project",
             )
         )
         assert updated_evaluation.name == updated_name
-        assert updated_evaluation.project_id == "updated_project"
 
     finally:
         # DELETE - Clean up
@@ -105,7 +96,6 @@ async def test_evaluation_with_documents(
         client.evaluations.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
-            project_id="test_project",
         )
     )
 
@@ -183,7 +173,6 @@ async def test_iteration_crud_and_processing(
         client.evaluations.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
-            project_id="test_project",
         )
     )
 
@@ -281,7 +270,6 @@ async def test_process_document_method(
         client.evaluations.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
-            project_id="test_project",
         )
     )
 
@@ -373,7 +361,6 @@ async def test_complete_evaluation_workflow(
         client.evaluations.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
-            project_id="test_project_complete",
         )
     )
 
@@ -509,7 +496,6 @@ async def test_iteration_selective_processing(
         client.evaluations.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
-            project_id="test_project",
         )
     )
 
