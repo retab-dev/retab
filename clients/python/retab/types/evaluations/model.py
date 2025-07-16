@@ -11,7 +11,7 @@ from .iterations import Iteration
 
 
 class BaseEvaluation(BaseModel):
-    id: str = Field(default_factory=lambda: "eval_" + nanoid.generate())
+    id: str = Field(default_factory=lambda: "proj_" + nanoid.generate())
     name: str = Field(default="", description="The name of the evaluation")
     json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the evaluation")
     default_inference_settings: InferenceSettings = Field(default=InferenceSettings(), description="The default inference properties for the evaluation.")
