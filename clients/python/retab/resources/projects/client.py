@@ -24,7 +24,7 @@ class ProjectsMixin:
             eval_dict["default_inference_settings"] = default_inference_settings
 
         eval_data = BaseProject(**eval_dict)
-        return PreparedRequest(method="POST", url="/v1/evaluations", data=eval_data.model_dump(exclude_unset=True, mode="json"))
+        return PreparedRequest(method="POST", url="/v1/projects", data=eval_data.model_dump(exclude_unset=True, mode="json"))
 
     def prepare_get(self, evaluation_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/projects/{evaluation_id}")
@@ -67,7 +67,7 @@ class ProjectsMixin:
         params_dict = {}
 
         params = ListProjectParams(**params_dict).model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
-        return PreparedRequest(method="GET", url="/v1/evaluations", params=params)
+        return PreparedRequest(method="GET", url="/v1/projects", params=params)
 
     def prepare_delete(self, id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/projects/{id}")
