@@ -4,6 +4,7 @@ import {ZFieldItem, FieldItem, ZRefObject, RefObject, ZRowList, RowList} from ".
 export * from "./generated_types";
 import * as z from "zod";
 import { inferFileInfo } from "./mime";
+import fs from "fs";
 
 export const ZColumn: z.ZodType<{
     type: "column";
@@ -51,8 +52,30 @@ export const ZMIMEData = z.union([
 })
 export type MIMEDataInput = z.input<typeof ZMIMEData>;
 
+export const ZJSONSchema = z.union([
+    z.string(),
+    z.record(z.any()),
+]).transform(async (input, ctx) => {
+    if (typeof input === "object") {
+        return input;
+    }
+    try {
+        return JSON.parse(await fs.promises.readFile(input, "utf-8")) as Record<string, any>;
+    } catch (error: any) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Error occured when reading JSCON schema: " + error.message,
+            fatal: true,
+        });
+        return z.NEVER;
+    }
+})
+export type JSONSchemaInput = z.input<typeof ZJSONSchema>;
+export type JSONSchema = z.output<typeof ZJSONSchema>;
+
 export const ZDocumentExtractRequest = z.object({
     ...(({document, ...rest}) => rest)(generated.ZDocumentExtractRequest.schema.shape),
     documents: z.array(ZMIMEData),
+    json_schema: ZJSONSchema,
 })
 export type DocumentExtractRequest = z.input<typeof ZDocumentExtractRequest>;
