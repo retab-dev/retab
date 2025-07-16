@@ -45,7 +45,7 @@ class EvaluateSchemaRequest(BaseModel):
             if len(self.documents) != len(self.ground_truths):
                 raise ValueError("Distance mode requires equal number of documents and ground_truths")
         if len(self.documents) == 0:
-            raise ValueError("Evaluation mode requires at least one document")
+            raise ValueError("Project mode requires at least one document")
 
         return self
 

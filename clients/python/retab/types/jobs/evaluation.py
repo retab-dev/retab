@@ -6,7 +6,7 @@ from ..inference_settings import InferenceSettings
 # It will then evaluate the two datasets using the evaluation metrics and return an EvalMetrics object
 
 
-class EvaluationInputData(BaseModel):
+class ProjectInputData(BaseModel):
     original_dataset_id: str
     schema_id: str
     schema_data_id: str

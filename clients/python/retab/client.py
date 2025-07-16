@@ -175,7 +175,7 @@ class Retab(BaseRetab):
         )
 
         self.client = httpx.Client(timeout=self.timeout)
-        self.evaluations = evaluations.Evaluations(client=self)
+        self.evaluations = evaluations.Projects(client=self)
         self.files = files.Files(client=self)
         self.fine_tuning = finetuning.FineTuning(client=self)
         self.documents = documents.Documents(client=self)
@@ -438,7 +438,7 @@ class AsyncRetab(BaseRetab):
 
         self.client = httpx.AsyncClient(timeout=self.timeout)
 
-        self.evaluations = evaluations.AsyncEvaluations(client=self)
+        self.evaluations = evaluations.AsyncProjects(client=self)
         self.files = files.AsyncFiles(client=self)
         self.fine_tuning = finetuning.AsyncFineTuning(client=self)
         self.documents = documents.AsyncDocuments(client=self)

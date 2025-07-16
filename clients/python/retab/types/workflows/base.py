@@ -2,7 +2,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, model_validator
 from ..inference_settings import InferenceSettings
-from ..jobs.base import AnnotationInputData, EvaluationInputData, PrepareDatasetInputData
+from ..jobs.base import AnnotationInputData, ProjectInputData, PrepareDatasetInputData
 
 Workflows = Literal["finetuning-workflow", "annotation-workflow", "evaluation-workflow"]
 
@@ -15,7 +15,7 @@ class StandaloneAnnotationWorkflowInputData(AnnotationInputData):
 
 
 # This is the input data for the standalone evaluation workflow (Fully automated)
-class StandaloneEvaluationWorkflowInputData(EvaluationInputData):
+class StandaloneProjectWorkflowInputData(ProjectInputData):
     pass
 
 

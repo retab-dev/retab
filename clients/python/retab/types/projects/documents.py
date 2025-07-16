@@ -17,14 +17,14 @@ class DocumentItem(AnnotatedDocument):
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
 
 
-class EvaluationDocument(DocumentItem):
+class ProjectDocument(DocumentItem):
     id: str = Field(description="The ID of the document. Equal to mime_data.id but robust to the case where mime_data is a BaseMIMEData")
 
 
-class CreateEvaluationDocumentRequest(DocumentItem):
+class CreateProjectDocumentRequest(DocumentItem):
     pass
 
 
-class PatchEvaluationDocumentRequest(BaseModel):
+class PatchProjectDocumentRequest(BaseModel):
     annotation: Optional[dict[str, Any]] = Field(default=None, description="The ground truth of the document")
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")

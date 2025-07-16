@@ -4,7 +4,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.browser_canvas import BrowserCanvas
-from ...types.evaluations import CreateIterationRequest, Iteration, ProcessIterationRequest, IterationDocumentStatusResponse, PatchIterationRequest
+from ...types.projects import CreateIterationRequest, Iteration, ProcessIterationRequest, IterationDocumentStatusResponse, PatchIterationRequest
 from ...types.inference_settings import InferenceSettings
 from ...types.metrics import DistancesResult
 from ...types.modalities import Modality
@@ -14,13 +14,13 @@ from ...types.documents.extractions import RetabParsedChatCompletion
 
 class IterationsMixin:
     def prepare_get(self, evaluation_id: str, iteration_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}")
+        return PreparedRequest(method="GET", url=f"/v1/projects/{evaluation_id}/iterations/{iteration_id}")
 
     def prepare_list(self, evaluation_id: str, model: Optional[str] = None) -> PreparedRequest:
         params = {}
         if model:
             params["model"] = model
-        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/iterations", params=params)
+        return PreparedRequest(method="GET", url=f"/v1/projects/{evaluation_id}/iterations", params=params)
 
     def prepare_create(
         self,
@@ -49,12 +49,12 @@ class IterationsMixin:
             inference_dict["browser_canvas"] = browser_canvas
         if n_consensus is not FieldUnset:
             inference_dict["n_consensus"] = n_consensus
-        
+
         inference_settings = InferenceSettings(**inference_dict)
 
         request = CreateIterationRequest(inference_settings=inference_settings, json_schema=json_schema)
 
-        return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/iterations", data=request.model_dump(exclude_unset=True, exclude_defaults=True, mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/projects/{evaluation_id}/iterations", data=request.model_dump(exclude_unset=True, exclude_defaults=True, mode="json"))
 
     def prepare_update(
         self,
@@ -84,7 +84,7 @@ class IterationsMixin:
             inference_dict["browser_canvas"] = browser_canvas
         if n_consensus is not FieldUnset:
             inference_dict["n_consensus"] = n_consensus
-        
+
         iteration_dict = {}
         if json_schema is not FieldUnset:
             iteration_dict["json_schema"] = json_schema
@@ -94,14 +94,14 @@ class IterationsMixin:
         iteration_data = PatchIterationRequest(**iteration_dict)
 
         return PreparedRequest(
-            method="PATCH", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
+            method="PATCH", url=f"/v1/projects/{evaluation_id}/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
         )
 
     def prepare_delete(self, evaluation_id: str, iteration_id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}")
+        return PreparedRequest(method="DELETE", url=f"/v1/projects/{evaluation_id}/iterations/{iteration_id}")
 
     def prepare_compute_distances(self, evaluation_id: str, iteration_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}/documents/{document_id}/distances")
+        return PreparedRequest(method="GET", url=f"/v1/projects/{evaluation_id}/iterations/{iteration_id}/documents/{document_id}/distances")
 
     def prepare_process(
         self,
@@ -114,13 +114,13 @@ class IterationsMixin:
             document_ids=document_ids,
             only_outdated=only_outdated,
         )
-        return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}/process", data=request.model_dump(exclude_none=True, mode="json"))
+        return PreparedRequest(method="POST", url=f"/v1/projects/{evaluation_id}/iterations/{iteration_id}/process", data=request.model_dump(exclude_none=True, mode="json"))
 
     def prepare_process_document(self, evaluation_id: str, iteration_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}/documents/{document_id}/process", data={"stream": False})
+        return PreparedRequest(method="POST", url=f"/v1/projects/{evaluation_id}/iterations/{iteration_id}/documents/{document_id}/process", data={"stream": False})
 
     def prepare_status(self, evaluation_id: str, iteration_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/evaluations/{evaluation_id}/iterations/{iteration_id}/status")
+        return PreparedRequest(method="GET", url=f"/v1/projects/{evaluation_id}/iterations/{iteration_id}/status")
 
 
 class Iterations(SyncAPIResource, IterationsMixin):

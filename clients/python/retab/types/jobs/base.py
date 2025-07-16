@@ -47,7 +47,7 @@ class AnnotationInputData(BaseModel):
 
 
 # This is the input data for the evaluation job
-class EvaluationInputData(BaseModel):
+class ProjectInputData(BaseModel):
     eval_data_file: str
     schema_id: str
     inference_settings_1: InferenceSettings | None = None
