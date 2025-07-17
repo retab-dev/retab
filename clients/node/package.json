@@ -41,7 +41,8 @@
     "form-data": "^4.0.0",
     "js-yaml": "^4.1.0",
     "openai": "^5.8.2",
-    "zod": "^3.22.0"
+    "zod": "^3.22.0",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@types/blake2": "^4.0.4",
