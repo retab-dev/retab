@@ -12,7 +12,7 @@ from ...types.standards import PreparedRequest
 
 
 class DeploymentsMixin:
-    def prepare_submit(
+    def prepare_extract(
         self,
         project_id: str,
         iteration_id: str,
@@ -22,7 +22,7 @@ class DeploymentsMixin:
         seed: int | None = None,
         store: bool = True,
     ) -> PreparedRequest:
-        """Prepare a request to submit documents to a processor.
+        """Prepare a request to extract documents from a deployment.
 
         Args:
             project_id: ID of the project
@@ -73,7 +73,7 @@ class DeploymentsMixin:
                 )
             files = files_list
 
-        url = f"/v1/deployments/{project_id}/{iteration_id}/submit"
+        url = f"/v1/deployments/extract/{project_id}/{iteration_id}"
 
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 
@@ -84,7 +84,7 @@ class Deployments(SyncAPIResource, DeploymentsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
 
-    def submit(
+    def extract(
         self,
         project_id: str,
         iteration_id: str,
@@ -94,7 +94,7 @@ class Deployments(SyncAPIResource, DeploymentsMixin):
         seed: int | None = None,
         store: bool = True,
     ) -> RetabParsedChatCompletion:
-        """Submit documents to a deployment for processing.
+        """Extract documents from a deployment.
 
         Args:
             project_id: ID of the project
@@ -108,7 +108,7 @@ class Deployments(SyncAPIResource, DeploymentsMixin):
         Returns:
             RetabParsedChatCompletion: The processing result
         """
-        request = self.prepare_submit(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
+        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
         response = self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)
 
@@ -119,7 +119,7 @@ class AsyncDeployments(AsyncAPIResource, DeploymentsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
 
-    async def submit(
+    async def extract(
         self,
         project_id: str,
         iteration_id: str,
@@ -129,7 +129,7 @@ class AsyncDeployments(AsyncAPIResource, DeploymentsMixin):
         seed: int | None = None,
         store: bool = True,
     ) -> RetabParsedChatCompletion:
-        """Submit documents to a deployment for processing.
+        """Extract documents from a deployment.
 
         Args:
             project_id: ID of the project
@@ -143,6 +143,6 @@ class AsyncDeployments(AsyncAPIResource, DeploymentsMixin):
         Returns:
             RetabParsedChatCompletion: The processing result
         """
-        request = self.prepare_submit(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
+        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
         response = await self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)
