@@ -1,10 +1,11 @@
 import { Readable } from "stream";
 import * as generated from "./generated_types";
-import {ZFieldItem, FieldItem, ZRefObject, RefObject, ZRowList, RowList} from "./generated_types";
+import {ZFieldItem, FieldItem, ZRefObject, RefObject, ZRowList, RowList, ZDocumentExtractRequest} from "./generated_types";
 export * from "./generated_types";
 import * as z from "zod";
 import { inferFileInfo } from "./mime";
 import fs from "fs";
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export const ZColumn: z.ZodType<{
     type: "column";
@@ -55,7 +56,11 @@ export type MIMEDataInput = z.input<typeof ZMIMEData>;
 export const ZJSONSchema = z.union([
     z.string(),
     z.record(z.any()),
+    z.custom<z.ZodType>(v => v instanceof z.ZodType),
 ]).transform(async (input, ctx) => {
+    if (input instanceof z.ZodType) {
+        return zodToJsonSchema(input) as Record<string, any>;
+    }
     if (typeof input === "object") {
         return input;
     }
@@ -71,9 +76,9 @@ export const ZJSONSchema = z.union([
     }
 })
 export type JSONSchemaInput = z.input<typeof ZJSONSchema>;
-export type JSONSchema = z.output<typeof ZJSONSchema>;
+export type JSONSchema = z.output<(typeof ZJSONSchema)>;
 
-export const ZDocumentExtractRequest = z.object({
+export const ZDocumentExtractRequestParam = z.object({
     ...(({document, ...rest}) => rest)(generated.ZDocumentExtractRequest.schema.shape),
     documents: z.array(ZMIMEData),
     json_schema: ZJSONSchema,
