@@ -5,12 +5,18 @@ config();
 
 const client = new Retab();
 
-const response = await client.documents.extract({
-    documents: ["Invoice.pdf"],
-    modality: "native",
-    model: "gpt-4o-mini",
-    json_schema: "Invoice_schema.json",
-    temperature: 0,
+const result = await client.documents.parse({
+    document: "document.pdf",
+    model: "gemini-2.5.flash",
+    table_parsing_format: "html",
+    image_resolution_dpi: 72,
+    browser_canvas: "A4"
 });
 
-console.log(JSON.stringify(response, null, 2));
+// Access parsed content
+result.pages.forEach((pageContent, index) => {
+    console.log(`Page ${index + 1}: ${pageContent}`);
+});
+
+console.log(`Total pages: ${result.usage.page_count}`);
+console.log(`Credits used: ${result.usage.credits}`);
