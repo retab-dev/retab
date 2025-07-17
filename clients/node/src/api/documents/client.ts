@@ -17,7 +17,7 @@ export default class APIDocuments extends CompositionClient {
         return await this._fetchJson(ZParseResult, {
             url: "/v1/documents/parse",
             method: "POST",
-            body: ZParseRequest.parse(params),
+            body: await ZParseRequest.parseAsync(params),
         });
     }
 }
