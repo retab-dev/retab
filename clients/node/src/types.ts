@@ -56,7 +56,7 @@ export type MIMEDataInput = z.input<typeof ZMIMEData>;
 export const ZJSONSchema = z.union([
     z.string(),
     z.record(z.any()),
-    z.custom<z.ZodType>(v => v instanceof z.ZodType),
+    z.instanceof(z.ZodType),
 ]).transform(async (input, ctx) => {
     if (input instanceof z.ZodType) {
         return zodToJsonSchema(input) as Record<string, any>;
@@ -84,3 +84,9 @@ export const ZDocumentExtractRequestParam = z.object({
     json_schema: ZJSONSchema,
 })
 export type DocumentExtractRequest = z.input<typeof ZDocumentExtractRequest>;
+
+export const ZParseRequest = z.object({
+    ...generated.ZParseRequest.schema.shape,
+    document: ZMIMEData,
+});
+export type ParseRequest = z.input<typeof ZParseRequest>;
