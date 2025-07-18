@@ -59,7 +59,7 @@ export const ZJSONSchema = z.union([
     z.instanceof(z.ZodType),
 ]).transform(async (input, ctx) => {
     if (input instanceof z.ZodType) {
-        return zodToJsonSchema(input) as Record<string, any>;
+        return zodToJsonSchema(input, {target: "openAi"}) as Record<string, any>;
     }
     if (typeof input === "object") {
         return input;
@@ -90,3 +90,22 @@ export const ZParseRequest = z.object({
     document: ZMIMEData,
 });
 export type ParseRequest = z.input<typeof ZParseRequest>;
+
+export const ZDocumentCreateMessageRequest = z.object({
+    ...generated.ZDocumentCreateMessageRequest.schema.shape,
+    document: ZMIMEData,
+});
+export type DocumentCreateMessageRequest = z.input<typeof ZDocumentCreateMessageRequest>;
+
+export const ZDocumentCreateInputRequest = z.object({
+    ...generated.ZDocumentCreateInputRequest.schema.shape,
+    document: ZMIMEData,
+    json_schema: ZJSONSchema,
+});
+export type DocumentCreateInputRequest = z.input<typeof ZDocumentCreateInputRequest>;
+
+export const ZGenerateSchemaRequest = z.object({
+    ...generated.ZGenerateSchemaRequest.schema.shape,
+    documents: ZMIMEData.array(),
+});
+export type GenerateSchemaRequest = z.input<typeof ZGenerateSchemaRequest>;

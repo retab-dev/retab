@@ -49,7 +49,7 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
             excluded_fields = set()
             typename = "z.object({\n"
             ts_typename = "{\n"
-            props = [(n, f.annotation, f.default) for n, f in origin.model_fields.items()] if issubclass(origin, BaseModel) else \
+            props = [(n, f.annotation, f.default) for n, f in origin.model_fields.items() if not f.exclude] if issubclass(origin, BaseModel) else \
                     [(n, f, PydanticUndefined) for n, f in origin.__annotations__.items()]
 
             for field_name, field, default in props:
