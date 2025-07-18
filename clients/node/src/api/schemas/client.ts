@@ -6,11 +6,11 @@ export default class APIModels extends CompositionClient {
         super(client);
     }
     
-    async list(params: GenerateSchemaRequest) {
+    async generate(params: GenerateSchemaRequest) {
         return await this._fetchJson(ZSchema, {
             url: "/v1/schemas/generate",
             method: "POST",
-            params: await ZGenerateSchemaRequest.parseAsync(params),
+            body: await ZGenerateSchemaRequest.parseAsync(params),
         });
     }
 }
