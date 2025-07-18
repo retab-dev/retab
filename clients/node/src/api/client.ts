@@ -3,6 +3,7 @@ import APIModels from "./models/client";
 import APIConsensus from "./consensus/client";
 import APIDocuments from "./documents/client";
 import APISchemas from "./schemas/client";
+import APIDeployments from "./deployments/client";
 
 export default class APIV1 extends CompositionClient {
     constructor(client: AbstractClient) {
@@ -13,4 +14,5 @@ export default class APIV1 extends CompositionClient {
     consensus = new APIConsensus(this);
     documents = new APIDocuments(this);
     schemas = new APISchemas(this);
+    deployments = new APIDeployments(this);
 }

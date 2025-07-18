@@ -129,7 +129,14 @@ export class FetcherClient extends AbstractClient {
       if (params.bodyMime === "multipart/form-data") {
         let formData: FormData = new FormData();
         for (const key of Object.keys(params.body || {})) {
-          formData.append(key, params.body![key]);
+          let value = params.body![key];
+          if (Array.isArray(value)) {
+            for (const item of value) {
+              formData.append(key, item);
+            }
+            continue;
+          }
+          formData.append(key, value);
         }
         init.body = formData;
       } else {
