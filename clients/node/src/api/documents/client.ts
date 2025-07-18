@@ -1,5 +1,5 @@
 import { CompositionClient } from "@/client";
-import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest } from "@/types";
+import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest } from "@/types";
 
 
 export default class APIDocuments extends CompositionClient {
@@ -18,6 +18,20 @@ export default class APIDocuments extends CompositionClient {
             url: "/v1/documents/parse",
             method: "POST",
             body: await ZParseRequest.parseAsync(params),
+        });
+    }
+    async createMessages(params: DocumentCreateMessageRequest): Promise<DocumentMessage> {
+        return await this._fetchJson(ZDocumentMessage, {
+            url: "/v1/documents/create_messages",
+            method: "POST",
+            body: await ZDocumentCreateMessageRequest.parseAsync(params),
+        });
+    }
+    async createInputs(params: DocumentCreateInputRequest): Promise<DocumentMessage> {
+        return await this._fetchJson(ZDocumentMessage, {
+            url: "/v1/documents/create_inputs",
+            method: "POST",
+            body: await ZDocumentCreateInputRequest.parseAsync(params),
         });
     }
 }

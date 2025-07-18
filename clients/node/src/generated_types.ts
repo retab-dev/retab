@@ -450,7 +450,7 @@ export const ZRetabChatResponseCreateRequest = z.lazy(() => z.object({
     reasoning: ZReasoning.nullable().optional(),
     stream: z.boolean().nullable().optional().default(false),
     seed: z.number().nullable().optional(),
-    text: ZResponseTextConfigParam.default({ "format": { "type": "text" } }),
+    text: ZResponseTextConfigParam.default({"format": {"type": "text"}}),
     n_consensus: z.number().default(1),
 }));
 export type RetabChatResponseCreateRequest = z.infer<typeof ZRetabChatResponseCreateRequest>;
@@ -714,6 +714,15 @@ export const ZDocumentItem = z.lazy(() => z.object({
 }).merge(ZAnnotatedDocument.schema));
 export type DocumentItem = z.infer<typeof ZDocumentItem>;
 
+export const ZIteration = z.lazy(() => z.object({
+    id: z.string(),
+    inference_settings: ZInferenceSettings,
+    json_schema: z.record(z.string(), z.any()),
+    predictions: z.array(ZPredictionData),
+    metric_results: ZMetricResult.nullable().optional(),
+}));
+export type Iteration = z.infer<typeof ZIteration>;
+
 export const ZProject = z.lazy(() => z.object({
     id: z.string(),
     updated_at: z.string(),
@@ -722,6 +731,7 @@ export const ZProject = z.lazy(() => z.object({
     documents: z.array(ZProjectDocument),
     iterations: z.array(ZIteration),
     json_schema: z.record(z.string(), z.any()),
+    project_id: z.string().default("default_spreadsheets"),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
 }));
 export type Project = z.infer<typeof ZProject>;
@@ -734,15 +744,6 @@ export const ZProjectDocument = z.lazy(() => z.object({
 }).merge(ZDocumentItem.schema));
 export type ProjectDocument = z.infer<typeof ZProjectDocument>;
 
-export const ZIteration = z.lazy(() => z.object({
-    id: z.string(),
-    inference_settings: ZInferenceSettings,
-    json_schema: z.record(z.string(), z.any()),
-    predictions: z.array(ZPredictionData),
-    metric_results: ZMetricResult.nullable().optional(),
-}));
-export type Iteration = z.infer<typeof ZIteration>;
-
 export const ZUpdateProjectDocumentRequest = z.lazy(() => z.object({
     annotation: z.record(z.string(), z.any()).nullable().optional(),
     annotation_metadata: ZPredictionMetadata.nullable().optional(),
@@ -754,9 +755,23 @@ export const ZUpdateProjectRequest = z.lazy(() => z.object({
     documents: z.array(ZProjectDocument).nullable().optional(),
     iterations: z.array(ZIteration).nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
+    project_id: z.string().nullable().optional(),
     default_inference_settings: ZInferenceSettings.nullable().optional(),
 }));
 export type UpdateProjectRequest = z.infer<typeof ZUpdateProjectRequest>;
+
+export const ZExternalAPIKey = z.lazy(() => z.object({
+    provider: z.union([z.literal("OpenAI"), z.literal("Anthropic"), z.literal("Gemini"), z.literal("xAI"), z.literal("Retab")]),
+    is_configured: z.boolean(),
+    last_updated: z.string().nullable().optional(),
+}));
+export type ExternalAPIKey = z.infer<typeof ZExternalAPIKey>;
+
+export const ZExternalAPIKeyRequest = z.lazy(() => z.object({
+    provider: z.union([z.literal("OpenAI"), z.literal("Anthropic"), z.literal("Gemini"), z.literal("xAI"), z.literal("Retab")]),
+    api_key: z.string(),
+}));
+export type ExternalAPIKeyRequest = z.infer<typeof ZExternalAPIKeyRequest>;
 
 export const ZBaseIteration = z.lazy(() => z.object({
     id: z.string(),
@@ -840,19 +855,6 @@ export const ZPatchProjectRequest = z.lazy(() => z.object({
 }));
 export type PatchProjectRequest = z.infer<typeof ZPatchProjectRequest>;
 
-export const ZExternalAPIKey = z.lazy(() => z.object({
-    provider: z.union([z.literal("OpenAI"), z.literal("Anthropic"), z.literal("Gemini"), z.literal("xAI"), z.literal("Retab")]),
-    is_configured: z.boolean(),
-    last_updated: z.string().nullable().optional(),
-}));
-export type ExternalAPIKey = z.infer<typeof ZExternalAPIKey>;
-
-export const ZExternalAPIKeyRequest = z.lazy(() => z.object({
-    provider: z.union([z.literal("OpenAI"), z.literal("Anthropic"), z.literal("Gemini"), z.literal("xAI"), z.literal("Retab")]),
-    api_key: z.string(),
-}));
-export type ExternalAPIKeyRequest = z.infer<typeof ZExternalAPIKeyRequest>;
-
 export const ZAnnotationInputData = z.lazy(() => z.object({
     data_file: z.string(),
     schema_id: z.string(),
@@ -862,14 +864,6 @@ export type AnnotationInputData = z.infer<typeof ZAnnotationInputData>;
 
 export const ZAnnotationModel = z.lazy(() => z.union([z.literal("human"), z.string()]));
 export type AnnotationModel = z.infer<typeof ZAnnotationModel>;
-
-export const ZProjectInputData = z.lazy(() => z.object({
-    eval_data_file: z.string(),
-    schema_id: z.string(),
-    inference_settings_1: ZInferenceSettings.nullable().optional(),
-    inference_settings_2: ZInferenceSettings,
-}));
-export type ProjectInputData = z.infer<typeof ZProjectInputData>;
 
 export const ZFinetuningWorkflowInputData = z.lazy(() => z.object({
     prepare_dataset_input_data: ZPrepareDatasetInputData,
@@ -886,6 +880,14 @@ export const ZPrepareDatasetInputData = z.lazy(() => z.object({
     selection_model: z.union([z.literal("all"), z.literal("manual")]).default("all"),
 }));
 export type PrepareDatasetInputData = z.infer<typeof ZPrepareDatasetInputData>;
+
+export const ZProjectInputData = z.lazy(() => z.object({
+    eval_data_file: z.string(),
+    schema_id: z.string(),
+    inference_settings_1: ZInferenceSettings.nullable().optional(),
+    inference_settings_2: ZInferenceSettings,
+}));
+export type ProjectInputData = z.infer<typeof ZProjectInputData>;
 
 export const ZStandaloneAnnotationWorkflowInputData = z.lazy(() => z.object({
     data_file: z.string(),
@@ -935,6 +937,14 @@ export type PartialSchemaChunk = z.infer<typeof ZPartialSchemaChunk>;
 
 export const ZResponseInputItemParam = z.lazy(() => z.union([ZEasyInputMessageParam, ZMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZFunctionCallOutput, ZResponseReasoningItemParam, ZImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZLocalShellCall, ZLocalShellCallOutput, ZMcpListTools, ZMcpApprovalRequest, ZMcpApprovalResponse, ZMcpCall, ZItemReference]));
 export type ResponseInputItemParam = z.infer<typeof ZResponseInputItemParam>;
+
+export const ZSchema = z.lazy(() => z.object({
+    object: z.literal("schema").default("schema"),
+    created_at: z.string(),
+    json_schema: z.record(z.string(), z.any()).default({}),
+    strict: z.boolean().default(true),
+}).merge(ZPartialSchema.schema));
+export type Schema = z.infer<typeof ZSchema>;
 
 export const ZGenerateSchemaRequest = z.lazy(() => z.object({
     documents: z.array(ZMIMEData),
@@ -1042,6 +1052,17 @@ export const ZEnhanceSchemaRequest = z.lazy(() => z.object({
     flat_likelihoods: z.union([z.array(z.record(z.string(), z.number())), z.record(z.string(), z.number())]).nullable().optional(),
 }));
 export type EnhanceSchemaRequest = z.infer<typeof ZEnhanceSchemaRequest>;
+
+export const ZTemplateSchema = z.lazy(() => z.object({
+    id: z.string(),
+    name: z.string(),
+    object: z.literal("template").default("template"),
+    updated_at: z.string(),
+    json_schema: z.record(z.string(), z.any()).default({}),
+    python_code: z.string().nullable().optional(),
+    sample_document_filename: z.string().nullable().optional(),
+}));
+export type TemplateSchema = z.infer<typeof ZTemplateSchema>;
 
 export const ZUpdateTemplateRequest = z.lazy(() => z.object({
     id: z.string(),
@@ -1379,7 +1400,7 @@ export const ZLogExtractionRequest = z.lazy(() => z.object({
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZFunctionCallOutput, ZResponseReasoningItemParam, ZImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZLocalShellCall, ZLocalShellCallOutput, ZMcpListTools, ZMcpApprovalRequest, ZMcpApprovalResponse, ZMcpCall, ZItemReference])).nullable().optional(),
     anthropic_messages: z.array(ZMessageParam).nullable().optional(),
     anthropic_system_prompt: z.string().nullable().optional(),
-    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
+    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZMessage, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
