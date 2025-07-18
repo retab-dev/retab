@@ -1,7 +1,7 @@
 import { CompositionClient } from "@/client";
 import { GenerateSchemaRequest, ZGenerateSchemaRequest, ZSchema } from "@/types";
 
-export default class APIModels extends CompositionClient {
+export default class APISchemas extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
     }
