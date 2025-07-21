@@ -6,7 +6,7 @@ export default class APIConsensus extends CompositionClient {
         super(client);
     }
     async reconcile(params: ReconciliationRequest): Promise<ReconciliationResponse> {
-        return await this._fetchJson(ZReconciliationResponse, {
+        return this._fetchJson(ZReconciliationResponse, {
             url: "/v1/consensus/reconcile",
             method: "POST",
             body: ZReconciliationRequest.parse(params),

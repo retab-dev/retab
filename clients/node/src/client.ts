@@ -9,42 +9,8 @@ type FetchParams = {
   body?: Record<string, any>,
   auth?: string[],
 };
-export class AbstractClient {
-  protected _fetch(_: FetchParams): Promise<Response> {
-    throw new Error("Method not implemented");
-  }
-  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(bodyType: ZodSchema, params: FetchParams): Promise<z.output<ZodSchema>> {
-    let response = await this._fetch(params);
-    if (!response.ok) {
-      throw new APIError(response.status, await response.text());
-    }
-    if (response.headers.get("Content-Type") !== "application/json") throw new APIError(response.status, "Response is not JSON");
-    return bodyType.parse(await response.json());
-  }
-}
 
-export class CompositionClient extends AbstractClient {
-  protected _client: AbstractClient;
-  constructor(client: AbstractClient) {
-    super();
-    this._client = client;
-  }
-  protected _fetch(params: FetchParams): Promise<Response> {
-    return this._client["_fetch"](params);
-  }
-}
-
-export class APIError extends Error {
-  status: number;
-  info: string;
-  constructor(status: number, info: string) {
-    super(`API Error ${status}: ${info}`);
-    this.status = status;
-    this.info = info;
-  }
-}
-
-export async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(response: Response, schema: ZodSchema): AsyncGenerator<z.output<ZodSchema>> {
+async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, response: Response): AsyncGenerator<z.output<ZodSchema>> {
   let body = "";
   let depth = 0;
   let inString = false;
@@ -73,7 +39,7 @@ export async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>
         } else if (char === "}") {
           depth--;
           if (depth === 0) {
-            yield schema.parse(JSON.parse(body.slice(0, prevBodyLength + i + 1)));
+            yield schema.parseAsync(JSON.parse(body.slice(0, prevBodyLength + i + 1)));
             body = body.slice(prevBodyLength + i + 1);
             prevBodyLength = -i - 1;
           }
@@ -81,6 +47,48 @@ export async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>
       }
     }
     if (chunk.done) break;
+  }
+}
+export class AbstractClient {
+  protected _fetch(_: FetchParams): Promise<Response> {
+    throw new Error("Method not implemented");
+  }
+  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(bodyType: ZodSchema, params: FetchParams): Promise<z.output<ZodSchema>> {
+    let response = await this._fetch(params);
+    if (!response.ok) {
+      throw new APIError(response.status, await response.text());
+    }
+    if (response.headers.get("Content-Type") !== "application/json") throw new APIError(response.status, "Response is not JSON");
+    return bodyType.parseAsync(await response.json());
+  }
+  protected async _fetchStream<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, params: FetchParams): Promise<AsyncGenerator<z.output<ZodSchema>>> {
+    let response = await this._fetch(params);
+    if (!response.ok) {
+      throw new APIError(response.status, await response.text());
+    }
+    if (response.headers.get("Content-Type") !== "application/stream+json") throw new APIError(response.status, "Response is not stream JSON");
+    return streamResponse(schema, response);
+  }
+}
+
+export class CompositionClient extends AbstractClient {
+  protected _client: AbstractClient;
+  constructor(client: AbstractClient) {
+    super();
+    this._client = client;
+  }
+  protected _fetch(params: FetchParams): Promise<Response> {
+    return this._client["_fetch"](params);
+  }
+}
+
+export class APIError extends Error {
+  status: number;
+  info: string;
+  constructor(status: number, info: string) {
+    super(`API Error ${status}: ${info}`);
+    this.status = status;
+    this.info = info;
   }
 }
 

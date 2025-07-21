@@ -1,5 +1,5 @@
 import { CompositionClient } from "@/client";
-import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest } from "@/types";
+import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk } from "@/types";
 
 
 export default class APIDocuments extends CompositionClient {
@@ -7,28 +7,37 @@ export default class APIDocuments extends CompositionClient {
         super(client);
     }
     async extract(params: DocumentExtractRequest): Promise<RetabParsedChatCompletion> {
-        return await this._fetchJson(ZRetabParsedChatCompletion, {
+        let request = await ZDocumentExtractRequest.parseAsync(params);
+        return this._fetchJson(ZRetabParsedChatCompletion, {
             url: "/v1/documents/extract",
             method: "POST",
-            body: await ZDocumentExtractRequest.parseAsync(params),
+            body: request,
+        });
+    }
+    async extractStream(params: DocumentExtractRequest): Promise<AsyncGenerator<RetabParsedChatCompletionChunk>> {
+        let request = await ZDocumentExtractRequest.parseAsync(params);
+        return this._fetchStream(ZRetabParsedChatCompletionChunk, {
+            url: "/v1/documents/extract",
+            method: "POST",
+            body: {...request, stream: true},
         });
     }
     async parse(params: ParseRequest): Promise<ParseResult> {
-        return await this._fetchJson(ZParseResult, {
+        return this._fetchJson(ZParseResult, {
             url: "/v1/documents/parse",
             method: "POST",
             body: await ZParseRequest.parseAsync(params),
         });
     }
     async createMessages(params: DocumentCreateMessageRequest): Promise<DocumentMessage> {
-        return await this._fetchJson(ZDocumentMessage, {
+        return this._fetchJson(ZDocumentMessage, {
             url: "/v1/documents/create_messages",
             method: "POST",
             body: await ZDocumentCreateMessageRequest.parseAsync(params),
         });
     }
     async createInputs(params: DocumentCreateInputRequest): Promise<DocumentMessage> {
-        return await this._fetchJson(ZDocumentMessage, {
+        return this._fetchJson(ZDocumentMessage, {
             url: "/v1/documents/create_inputs",
             method: "POST",
             body: await ZDocumentCreateInputRequest.parseAsync(params),

@@ -28,7 +28,7 @@ export default class APIDeployments extends CompositionClient {
             throw new Error("Either 'document' or 'documents' must be provided.");
         }
         let url = `/v1/deployments/extract/${project_id}/${iteration_id}`;
-        return await this._fetchJson(ZSchema, {
+        return this._fetchJson(ZSchema, {
             url,
             method: "POST",
             body: {
