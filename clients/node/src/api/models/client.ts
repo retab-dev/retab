@@ -11,7 +11,7 @@ export default class APIModels extends CompositionClient {
         supports_image?: boolean,
         include_finetuned_models?: boolean,
     }) {
-        return await this._fetchJson(z.object({ data: z.array(ZModel) }), {
+        return this._fetchJson(z.object({ data: z.array(ZModel) }), {
             url: "/v1/models",
             method: "GET",
             params: params,

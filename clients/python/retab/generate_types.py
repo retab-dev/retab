@@ -16,6 +16,25 @@ import PIL.Image
 
 to_compile: list[tuple[str, Type, bool]] = []
 
+def to_camel_case(snake_str: str) -> str:
+    components = snake_str.split('_')
+    return ''.join(x.title() for x in components)
+
+names = {}
+def is_named(cls: Type) -> bool:
+    return (cls.__module__, cls.__name__) in names
+def get_class_name(cls: Type) -> str:
+    key = (cls.__module__, cls.__name__)
+    if key in names:
+        return names[key]
+    name = cls.__name__
+    parts = cls.__module__.split('.')
+    while name in names.values():
+        name = f"{to_camel_case(parts.pop())}{name}"
+    names[key] = name
+    return name
+
+
 def is_base_model(field_type: Type) -> bool:
     return getattr(field_type, "__name__", None) in ["BaseModel", "GenericModel", "ConfigDict", "Generic"]
 
@@ -42,18 +61,27 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
         ts_typename = make_ts_union([type_to_zod(x, ts=True) for x in args])
     elif issubclass(origin, BaseModel) or is_typeddict(origin) or is_typeddict_ext(origin):
         if put_names:
-            typename = "Z" + origin.__name__
-            ts_typename = origin.__name__
-            to_compile.append((origin.__name__, field_type, True))
+            name = get_class_name(origin)
+            typename = "Z" + name
+            ts_typename = name
+            to_compile.append((name, field_type, True))
         else:
-            excluded_fields = set()
-            typename = "z.object({\n"
-            ts_typename = "{\n"
+            typename = "("
+            ts_typename = ""
+            based = origin.__bases__
+            for i in range(0, len(based)):
+                if is_base_model(based[i]) or based[i] is dict:
+                    break
+                typename += "Z" + get_class_name(based[i]) + ".schema).merge("
+                ts_typename += get_class_name(based[i]) + " & "
+
+            typename += "z.object({\n"
+            ts_typename += "{\n"
             props = [(n, f.annotation, f.default) for n, f in origin.model_fields.items() if not f.exclude] if issubclass(origin, BaseModel) else \
                     [(n, f, PydanticUndefined) for n, f in origin.__annotations__.items()]
 
             for field_name, field, default in props:
-                if field_name in excluded_fields:
+                if field_name not in origin.__annotations__.keys():
                     continue
                 ts_compiled = type_to_zod(field, ts=True)
                 default_str = ""
@@ -64,17 +92,8 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
                         default_str = f".default({json.dumps(default)})"
                 typename += f"    {field_name}: {type_to_zod(field)}{default_str},\n"
                 ts_typename += f"    {field_name}{"?" if ts_compiled.endswith(" | undefined") or default is not PydanticUndefined else ""}: {ts_compiled},\n"
-            typename += "})"
+            typename += "}))"
             ts_typename += "}"
-
-            based = origin.__bases__
-            for i in range(0, len(based)):
-                if is_base_model(based[i]) or based[i] is dict:
-                    break
-                if issubclass(based[i], BaseModel):
-                    excluded_fields.update(based[i].model_fields.keys())
-                typename += ".merge(Z" + based[i].__name__ + ".schema)"
-                ts_typename += " & " + based[i].__name__
     elif origin is list or origin is typing.List or origin is collections.abc.Sequence or origin is collections.abc.Iterable:
         typename = "z.array(" + type_to_zod(get_args(field_type)[0]) + ")"
         ts_typename = "Array<" + type_to_zod(get_args(field_type)[0], ts=True) + ">"
@@ -156,16 +175,18 @@ if __name__ == "__main__":
 
     for module_name in modules:
         for name, obj in inspect.getmembers(sys.modules[module_name]):
-            if name[0] != name[0].lower() and name not in builtin_types:
-                to_compile.append((name, obj, False))
+            if name[0] != name[0].lower() and isinstance(obj, type) and name not in builtin_types:
+                objname = get_class_name(obj)
+                to_compile.append((objname, obj, False))
 
     print("import * as z from 'zod';\n")
     
-    defined = {}
+    defined = set()
     while len(to_compile) > 0:
         name, model, necessary = to_compile.pop(0)
-        if name in defined: continue
-        defined[name] = True
+        if name in defined:
+            continue
+        defined.add(name)
         try:
             compiled = type_to_zod(model, False)
             compiled_ts = type_to_zod(model, False, ts=True)
