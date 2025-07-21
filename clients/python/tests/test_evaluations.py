@@ -46,23 +46,23 @@ async def test_evaluation_crud_basic(
     assert len(evaluation.documents) == 0
     assert len(evaluation.iterations) == 0
 
-    evaluation_id = evaluation.id
+    project_id = evaluation.id
 
     try:
         # READ - Get the evaluation by ID
-        retrieved_evaluation = await await_or_return(client.evaluations.get(evaluation_id))
-        assert retrieved_evaluation.id == evaluation_id
+        retrieved_evaluation = await await_or_return(client.evaluations.get(project_id))
+        assert retrieved_evaluation.id == project_id
         assert retrieved_evaluation.name == evaluation_name
 
         # LIST - List evaluations
         evaluations = await await_or_return(client.evaluations.list())
-        assert any(e.id == evaluation_id for e in evaluations)
+        assert any(e.id == project_id for e in evaluations)
 
         # UPDATE - Update the evaluation
         updated_name = f"updated_{evaluation_name}"
         updated_evaluation = await await_or_return(
             client.evaluations.update(
-                evaluation_id,
+                project_id,
                 name=updated_name,
             )
         )
@@ -71,7 +71,7 @@ async def test_evaluation_crud_basic(
     finally:
         # DELETE - Clean up
         try:
-            await await_or_return(client.evaluations.delete(evaluation_id))
+            await await_or_return(client.evaluations.delete(project_id))
         except Exception:
             pass
 
@@ -99,13 +99,13 @@ async def test_evaluation_with_documents(
         )
     )
 
-    evaluation_id = evaluation.id
+    project_id = evaluation.id
 
     try:
         # CREATE - Add a document
         document = await await_or_return(
             client.evaluations.documents.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document=booking_confirmation_file_path_1,
                 annotation=booking_confirmation_data_1,
             )
@@ -115,7 +115,7 @@ async def test_evaluation_with_documents(
         document_id = document.id
 
         # LIST - List documents in the evaluation
-        documents = await await_or_return(client.evaluations.documents.list(evaluation_id))
+        documents = await await_or_return(client.evaluations.documents.list(project_id))
         assert len(documents) == 1
         assert documents[0].id == document_id
 
@@ -123,7 +123,7 @@ async def test_evaluation_with_documents(
         # Change the first string value
         updated_document = await await_or_return(
             client.evaluations.documents.update(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document_id=document_id,
                 annotation=booking_confirmation_data_2,
             )
@@ -131,25 +131,25 @@ async def test_evaluation_with_documents(
         assert updated_document.annotation == booking_confirmation_data_2
 
         # Verify the evaluation still exists and has the document
-        updated_eval = await await_or_return(client.evaluations.get(evaluation_id))
+        updated_eval = await await_or_return(client.evaluations.get(project_id))
         assert len(updated_eval.documents) == 1
 
         # DELETE - Remove the document
         await await_or_return(
             client.evaluations.documents.delete(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document_id=document_id,
             )
         )
 
         # Verify document was removed
-        documents_after = await await_or_return(client.evaluations.documents.list(evaluation_id))
+        documents_after = await await_or_return(client.evaluations.documents.list(project_id))
         assert len(documents_after) == 0
 
     finally:
         # DELETE - Clean up evaluation
         try:
-            await await_or_return(client.evaluations.delete(evaluation_id))
+            await await_or_return(client.evaluations.delete(project_id))
         except Exception:
             pass
 
@@ -176,13 +176,13 @@ async def test_iteration_crud_and_processing(
         )
     )
 
-    evaluation_id = evaluation.id
+    project_id = evaluation.id
 
     try:
         # Add a document to the evaluation
         document = await await_or_return(
             client.evaluations.documents.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document=booking_confirmation_file_path_1,
                 annotation=booking_confirmation_data_1,
             )
@@ -192,7 +192,7 @@ async def test_iteration_crud_and_processing(
         # CREATE - Create a new iteration
         iteration = await await_or_return(
             client.evaluations.iterations.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 model="gpt-4.1-mini",
                 temperature=0.1,
                 modality="native",
@@ -207,11 +207,11 @@ async def test_iteration_crud_and_processing(
         iteration_id = iteration.id
 
         # LIST - List iterations for the evaluation
-        iterations = await await_or_return(client.evaluations.iterations.list(evaluation_id))
+        iterations = await await_or_return(client.evaluations.iterations.list(project_id))
         assert any(i.id == iteration_id for i in iterations)
 
         # STATUS - Check document status
-        status_response = await await_or_return(client.evaluations.iterations.status(evaluation_id, iteration_id))
+        status_response = await await_or_return(client.evaluations.iterations.status(project_id, iteration_id))
         assert len(status_response.documents) > 0
 
         # All documents should need updates initially
@@ -222,7 +222,7 @@ async def test_iteration_crud_and_processing(
         # PROCESS - Process the iteration (run extractions)
         processed_iteration = await await_or_return(
             client.evaluations.iterations.process(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 iteration_id=iteration_id,
                 only_outdated=True,
             )
@@ -232,21 +232,21 @@ async def test_iteration_crud_and_processing(
         assert len(processed_iteration.predictions) > 0
 
         # Check status again after processing
-        status_after = await await_or_return(client.evaluations.iterations.status(evaluation_id, iteration_id))
+        status_after = await await_or_return(client.evaluations.iterations.status(project_id, iteration_id))
         for doc_status in status_after.documents:
             assert doc_status.has_prediction is True
             assert doc_status.needs_update is False  # Should not need updates anymore
 
         # DELETE - Clean up iteration
         try:
-            await await_or_return(client.evaluations.iterations.delete(evaluation_id, iteration_id))
+            await await_or_return(client.evaluations.iterations.delete(project_id, iteration_id))
         except Exception:
             pass
 
     finally:
         # DELETE - Clean up evaluation
         try:
-            await await_or_return(client.evaluations.delete(evaluation_id))
+            await await_or_return(client.evaluations.delete(project_id))
         except Exception:
             pass
 
@@ -273,13 +273,13 @@ async def test_process_document_method(
         )
     )
 
-    evaluation_id = evaluation.id
+    project_id = evaluation.id
 
     try:
         # Add a document to the evaluation
         document = await await_or_return(
             client.evaluations.documents.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document=booking_confirmation_file_path_1,
                 annotation=booking_confirmation_data_1,
             )
@@ -288,7 +288,7 @@ async def test_process_document_method(
         # Create an iteration
         iteration = await await_or_return(
             client.evaluations.iterations.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 model="gpt-4.1-mini",
                 temperature=0.0,
                 modality="native",
@@ -299,7 +299,7 @@ async def test_process_document_method(
         document_id = document.id
 
         # Check initial status - document should need update
-        initial_status = await await_or_return(client.evaluations.iterations.status(evaluation_id, iteration_id))
+        initial_status = await await_or_return(client.evaluations.iterations.status(project_id, iteration_id))
         doc_status = next(d for d in initial_status.documents if d.document_id == document_id)
         assert doc_status.needs_update is True
         assert doc_status.has_prediction is False
@@ -307,7 +307,7 @@ async def test_process_document_method(
         # PROCESS_DOCUMENT - Process a single document (frontend method)
         completion_response = await await_or_return(
             client.evaluations.iterations.process_document(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 iteration_id=iteration_id,
                 document_id=document_id,
             )
@@ -327,7 +327,7 @@ async def test_process_document_method(
             assert False, "Response content should be valid JSON"
 
         # Check status after processing - document should be updated
-        final_status = await await_or_return(client.evaluations.iterations.status(evaluation_id, iteration_id))
+        final_status = await await_or_return(client.evaluations.iterations.status(project_id, iteration_id))
         doc_status_after = next(d for d in final_status.documents if d.document_id == document_id)
         assert doc_status_after.has_prediction is True
         assert doc_status_after.needs_update is False
@@ -335,7 +335,7 @@ async def test_process_document_method(
     finally:
         # Clean up
         try:
-            await await_or_return(client.evaluations.delete(evaluation_id))
+            await await_or_return(client.evaluations.delete(project_id))
         except Exception:
             pass
 
@@ -364,13 +364,13 @@ async def test_complete_evaluation_workflow(
         )
     )
 
-    evaluation_id = evaluation.id
+    project_id = evaluation.id
 
     try:
         # Step 2: Add 2 documents
         doc1 = await await_or_return(
             client.evaluations.documents.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document=booking_confirmation_file_path_1,
                 annotation=booking_confirmation_data_1,
             )
@@ -379,20 +379,20 @@ async def test_complete_evaluation_workflow(
         # Change the first string value
         doc2 = await await_or_return(
             client.evaluations.documents.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document=booking_confirmation_file_path_2,
                 annotation=booking_confirmation_data_2,
             )
         )
 
         # Verify we have 2 documents
-        documents = await await_or_return(client.evaluations.documents.list(evaluation_id))
+        documents = await await_or_return(client.evaluations.documents.list(project_id))
         assert len(documents) == 2
 
         # Step 3: Create 2 iterations
         iteration1 = await await_or_return(
             client.evaluations.iterations.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 model="gpt-4.1-mini",
                 temperature=0.0,
                 modality="native",
@@ -401,7 +401,7 @@ async def test_complete_evaluation_workflow(
 
         iteration2 = await await_or_return(
             client.evaluations.iterations.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 model="gpt-4.1-mini",
                 temperature=0.5,
                 modality="native",
@@ -409,14 +409,14 @@ async def test_complete_evaluation_workflow(
         )
 
         # Verify we have 2 iterations
-        iterations = await await_or_return(client.evaluations.iterations.list(evaluation_id))
+        iterations = await await_or_return(client.evaluations.iterations.list(project_id))
         assert len(iterations) == 2
 
         # Step 4: Process using both process methods
         # 4a: Use process method (bulk processing)
         processed_iter1 = await await_or_return(
             client.evaluations.iterations.process(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 iteration_id=iteration1.id,
                 only_outdated=True,
             )
@@ -425,14 +425,14 @@ async def test_complete_evaluation_workflow(
         # 4b: Use process_document method (individual document processing)
         completion1 = await await_or_return(
             client.evaluations.iterations.process_document(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 iteration_id=iteration2.id,
                 document_id=doc1.id,
             )
         )
         completion2 = await await_or_return(
             client.evaluations.iterations.process_document(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 iteration_id=iteration2.id,
                 document_id=doc2.id,
             )
@@ -448,29 +448,29 @@ async def test_complete_evaluation_workflow(
         assert completion2.choices[0].message.content is not None
 
         # Step 5: Delete one iteration
-        await await_or_return(client.evaluations.iterations.delete(evaluation_id, iteration2.id))
+        await await_or_return(client.evaluations.iterations.delete(project_id, iteration2.id))
 
         # Verify we now have only 1 iteration
-        iterations_after_delete = await await_or_return(client.evaluations.iterations.list(evaluation_id))
+        iterations_after_delete = await await_or_return(client.evaluations.iterations.list(project_id))
         assert len(iterations_after_delete) == 1
         assert iterations_after_delete[0].id == iteration1.id
 
         # Step 6: Delete one document (should affect remaining iteration)
-        await await_or_return(client.evaluations.documents.delete(evaluation_id=evaluation_id, document_id=doc2.id))
+        await await_or_return(client.evaluations.documents.delete(project_id=project_id, document_id=doc2.id))
 
         # Verify we now have only 1 document
-        documents_after_delete = await await_or_return(client.evaluations.documents.list(evaluation_id))
+        documents_after_delete = await await_or_return(client.evaluations.documents.list(project_id))
         assert len(documents_after_delete) == 1
         assert documents_after_delete[0].id == doc1.id
 
         # Step 7: Check status of remaining iteration (should reflect document deletion)
-        final_status = await await_or_return(client.evaluations.iterations.status(evaluation_id, iteration1.id))
+        final_status = await await_or_return(client.evaluations.iterations.status(project_id, iteration1.id))
         assert len(final_status.documents) == 1  # Only one document should remain
 
     finally:
         # Cleanup - Delete evaluation (should cascade to remaining documents and iterations)
         try:
-            await await_or_return(client.evaluations.delete(evaluation_id))
+            await await_or_return(client.evaluations.delete(project_id))
         except Exception:
             pass
 
@@ -499,13 +499,13 @@ async def test_iteration_selective_processing(
         )
     )
 
-    evaluation_id = evaluation.id
+    project_id = evaluation.id
 
     try:
         # Add multiple documents
         doc1 = await await_or_return(
             client.evaluations.documents.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document=booking_confirmation_file_path_1,
                 annotation=booking_confirmation_data_1,
             )
@@ -514,7 +514,7 @@ async def test_iteration_selective_processing(
         # Change the first string value
         doc2 = await await_or_return(
             client.evaluations.documents.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 document=booking_confirmation_file_path_2,
                 annotation=booking_confirmation_data_2,
             )
@@ -523,7 +523,7 @@ async def test_iteration_selective_processing(
         # Create an iteration
         iteration = await await_or_return(
             client.evaluations.iterations.create(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 model="gpt-4.1-mini",
                 temperature=0.0,
                 modality="native",
@@ -535,7 +535,7 @@ async def test_iteration_selective_processing(
         # Process only the first document using process method
         await await_or_return(
             client.evaluations.iterations.process(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 iteration_id=iteration_id,
                 document_ids=[doc1.id],
                 only_outdated=False,
@@ -543,7 +543,7 @@ async def test_iteration_selective_processing(
         )
 
         # Check that only one document was processed via process method
-        status_response = await await_or_return(client.evaluations.iterations.status(evaluation_id, iteration_id))
+        status_response = await await_or_return(client.evaluations.iterations.status(project_id, iteration_id))
         doc1_status = next(d for d in status_response.documents if d.document_id == doc1.id)
         doc2_status = next(d for d in status_response.documents if d.document_id == doc2.id)
 
@@ -555,7 +555,7 @@ async def test_iteration_selective_processing(
         # Now process the second document using process_document method
         completion_response = await await_or_return(
             client.evaluations.iterations.process_document(
-                evaluation_id=evaluation_id,
+                project_id=project_id,
                 iteration_id=iteration_id,
                 document_id=doc2.id,
             )
@@ -566,7 +566,7 @@ async def test_iteration_selective_processing(
         assert completion_response.choices[0].message.content is not None
 
         # Check that both documents are now processed
-        final_status = await await_or_return(client.evaluations.iterations.status(evaluation_id, iteration_id))
+        final_status = await await_or_return(client.evaluations.iterations.status(project_id, iteration_id))
         doc1_final = next(d for d in final_status.documents if d.document_id == doc1.id)
         doc2_final = next(d for d in final_status.documents if d.document_id == doc2.id)
 
@@ -577,14 +577,14 @@ async def test_iteration_selective_processing(
 
         # DELETE - Clean up iteration
         try:
-            await await_or_return(client.evaluations.iterations.delete(evaluation_id, iteration_id))
+            await await_or_return(client.evaluations.iterations.delete(project_id, iteration_id))
         except Exception:
             pass
 
     finally:
         # DELETE - Clean up evaluation
         try:
-            await await_or_return(client.evaluations.delete(evaluation_id))
+            await await_or_return(client.evaluations.delete(project_id))
         except Exception:
             pass
 

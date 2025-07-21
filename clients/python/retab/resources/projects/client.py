@@ -26,12 +26,12 @@ class ProjectsMixin:
         eval_data = BaseProject(**eval_dict)
         return PreparedRequest(method="POST", url="/v1/projects", data=eval_data.model_dump(exclude_unset=True, mode="json"))
 
-    def prepare_get(self, evaluation_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/projects/{evaluation_id}")
+    def prepare_get(self, project_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/projects/{project_id}")
 
     def prepare_update(
         self,
-        evaluation_id: str,
+        project_id: str,
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
         default_inference_settings: InferenceSettings = FieldUnset,
@@ -52,7 +52,7 @@ class ProjectsMixin:
 
         data = PatchProjectRequest(**update_dict).model_dump(exclude_unset=True, mode="json")
 
-        return PreparedRequest(method="PATCH", url=f"/v1/projects/{evaluation_id}", data=data)
+        return PreparedRequest(method="PATCH", url=f"/v1/projects/{project_id}", data=data)
 
     def prepare_list(self) -> PreparedRequest:
         """
@@ -105,25 +105,25 @@ class Projects(SyncAPIResource, ProjectsMixin):
         response = self._client._prepared_request(request)
         return Project(**response)
 
-    def get(self, evaluation_id: str) -> Project:
+    def get(self, project_id: str) -> Project:
         """
         Get an evaluation by ID.
 
         Args:
-            evaluation_id: The ID of the evaluation to retrieve
+            project_id: The ID of the evaluation to retrieve
 
         Returns:
             Project: The evaluation
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_get(evaluation_id)
+        request = self.prepare_get(project_id)
         response = self._client._prepared_request(request)
         return Project(**response)
 
     def update(
         self,
-        evaluation_id: str,
+        project_id: str,
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
         default_inference_settings: InferenceSettings = FieldUnset,
@@ -132,7 +132,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
         Update an evaluation with partial updates.
 
         Args:
-            evaluation_id: The ID of the evaluation to update
+            project_id: The ID of the evaluation to update
             name: Optional new name for the evaluation
             json_schema: Optional new JSON schema
             documents: Optional list of documents to update
@@ -145,7 +145,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_update(
-            evaluation_id=evaluation_id,
+            project_id=project_id,
             name=name,
             json_schema=json_schema,
             default_inference_settings=default_inference_settings,
@@ -167,19 +167,19 @@ class Projects(SyncAPIResource, ProjectsMixin):
         response = self._client._prepared_request(request)
         return [Project(**item) for item in response.get("data", [])]
 
-    def delete(self, evaluation_id: str) -> DeleteResponse:
+    def delete(self, project_id: str) -> DeleteResponse:
         """
         Delete an evaluation.
 
         Args:
-            evaluation_id: The ID of the evaluation to delete
+            project_id: The ID of the evaluation to delete
 
         Returns:
             DeleteResponse: The response containing success status and ID
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_delete(evaluation_id)
+        request = self.prepare_delete(project_id)
         return self._client._prepared_request(request)
 
 
@@ -208,25 +208,25 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         response = await self._client._prepared_request(request)
         return Project(**response)
 
-    async def get(self, evaluation_id: str) -> Project:
+    async def get(self, project_id: str) -> Project:
         """
         Get an evaluation by ID.
 
         Args:
-            evaluation_id: The ID of the evaluation to retrieve
+            project_id: The ID of the evaluation to retrieve
 
         Returns:
             Project: The evaluation
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_get(evaluation_id)
+        request = self.prepare_get(project_id)
         response = await self._client._prepared_request(request)
         return Project(**response)
 
     async def update(
         self,
-        evaluation_id: str,
+        project_id: str,
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
         default_inference_settings: InferenceSettings = FieldUnset,
@@ -248,7 +248,7 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
             HTTPException if the request fails
         """
         request = self.prepare_update(
-            evaluation_id=evaluation_id,
+            project_id=project_id,
             name=name,
             json_schema=json_schema,
             default_inference_settings=default_inference_settings,
@@ -269,17 +269,17 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         response = await self._client._prepared_request(request)
         return [Project(**item) for item in response.get("data", [])]
 
-    async def delete(self, evaluation_id: str) -> DeleteResponse:
+    async def delete(self, project_id: str) -> DeleteResponse:
         """
         Delete an evaluation.
 
         Args:
-            evaluation_id: The ID of the evaluation to delete
+            project_id: The ID of the evaluation to delete
 
         Returns:
             DeleteResponse: The response containing success status and ID
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_delete(evaluation_id)
+        request = self.prepare_delete(project_id)
         return await self._client._prepared_request(request)

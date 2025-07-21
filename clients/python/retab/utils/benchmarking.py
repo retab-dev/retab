@@ -360,7 +360,7 @@ class SingleFileEval(BaseModel):
     A class for evaluating metrics between two dictionaries.
     """
 
-    evaluation_id: str
+    project_id: str
     file_id: str
     schema_id: str
     schema_data_id: str | None = None

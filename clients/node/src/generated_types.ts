@@ -450,7 +450,7 @@ export const ZRetabChatResponseCreateRequest = z.lazy(() => z.object({
     reasoning: ZReasoning.nullable().optional(),
     stream: z.boolean().nullable().optional().default(false),
     seed: z.number().nullable().optional(),
-    text: ZResponseTextConfigParam.default({"format": {"type": "text"}}),
+    text: ZResponseTextConfigParam.default({ "format": { "type": "text" } }),
     n_consensus: z.number().default(1),
 }));
 export type RetabChatResponseCreateRequest = z.infer<typeof ZRetabChatResponseCreateRequest>;
@@ -598,7 +598,7 @@ export const ZFinetunedModel = z.lazy(() => z.object({
     schema_id: z.string(),
     schema_data_id: z.string(),
     finetuning_props: ZInferenceSettings,
-    evaluation_id: z.string().nullable().optional(),
+    project_id: z.string().nullable().optional(),
     created_at: z.string(),
 }));
 export type FinetunedModel = z.infer<typeof ZFinetunedModel>;
@@ -1400,7 +1400,7 @@ export const ZLogExtractionRequest = z.lazy(() => z.object({
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZFunctionCallOutput, ZResponseReasoningItemParam, ZImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZLocalShellCall, ZLocalShellCallOutput, ZMcpListTools, ZMcpApprovalRequest, ZMcpApprovalResponse, ZMcpCall, ZItemReference])).nullable().optional(),
     anthropic_messages: z.array(ZMessageParam).nullable().optional(),
     anthropic_system_prompt: z.string().nullable().optional(),
-    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
+    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZMessage, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
