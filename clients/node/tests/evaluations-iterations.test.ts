@@ -612,7 +612,7 @@ describe('Projects Iterations Tests', () => {
     it('should define proper iteration response structure', () => {
       const mockIteration = {
         id: 'iter-123',
-        evaluation_id: 'eval-456',
+        project_id: 'eval-456',
         name: 'Test Iteration',
         description: 'A test iteration',
         status: 'completed',
@@ -624,7 +624,7 @@ describe('Projects Iterations Tests', () => {
       };
 
       expect(mockIteration.id).toBeDefined();
-      expect(mockIteration.evaluation_id).toBeDefined();
+      expect(mockIteration.project_id).toBeDefined();
       expect(typeof mockIteration.name).toBe('string');
       expect(typeof mockIteration.status).toBe('string');
       expect(typeof mockIteration.document_count).toBe('number');
