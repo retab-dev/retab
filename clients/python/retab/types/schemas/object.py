@@ -43,6 +43,7 @@ class PartialSchemaChunk(StreamingBaseModel):
     object: Literal["schema.chunk"] = "schema.chunk"
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     delta_json_schema_flat: dict[str, Any] = {}
+    delta_flat_deleted_keys: list[str] = []
 
 
 # class PartialSchemaStreaming(StreamingBaseModel, PartialSchema): pass
