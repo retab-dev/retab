@@ -64,7 +64,9 @@ _Join our stargazers! ⭐️_
 
 To use the API, you need to sign up on [Retab](https://www.retab.com/).
 
-<img src="./assets/API-key.png" alt="API Key" width="150">
+<p align="center">
+  <img src="./assets/API-key.png" alt="API Key" width="800">
+</p>
 
 ---
 
