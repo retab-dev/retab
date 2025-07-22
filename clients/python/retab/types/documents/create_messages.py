@@ -30,7 +30,7 @@ class TokenCount(BaseModel):
 
 class DocumentCreateMessageRequest(BaseModel):
     document: MIMEData = Field(description="The document to load.")
-    modality: Modality = Field(description="The modality of the document to load.")
+    modality: Modality = Field(default="native", description="The modality of the document to load.")
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
     browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
@@ -46,7 +46,7 @@ class DocumentMessage(BaseModel):
     object: Literal["document_message"] = Field(default="document_message", description="The type of object being loaded.")
     messages: List[ChatCompletionRetabMessage] = Field(description="A list of messages containing the document content and metadata.")
     created: int = Field(description="The Unix timestamp (in seconds) of when the document was loaded.")
-    modality: Modality = Field(description="The modality of the document to load.")
+    modality: Modality = Field(default="native", description="The modality of the document to load.")
 
     @computed_field
     def token_count(self) -> TokenCount:

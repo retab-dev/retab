@@ -28,7 +28,7 @@ class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     document: MIMEData = Field(default=None, description="Document to be analyzed", deprecated=True)  # type: ignore
     documents: list[MIMEData] = Field(..., description="Documents to be analyzed (preferred over document)")
-    modality: Modality
+    modality: Modality = Field(default="native", description="Modality of the document")
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
     browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
