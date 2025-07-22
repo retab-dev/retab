@@ -37,7 +37,7 @@ class BaseDocumentsMixin:
     def _prepare_create_messages(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        modality: Modality = "native",
+        modality: Modality = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
@@ -62,7 +62,7 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
-        modality: Modality = "native",
+        modality: Modality = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
@@ -115,6 +115,65 @@ class BaseDocumentsMixin:
         )
         return PreparedRequest(method="POST", url="/v1/documents/parse", data=parse_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key)
 
+    def _prepare_extract(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        model: str,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        n_consensus: int = FieldUnset,
+        store: bool = False,
+        idempotency_key: str | None = None,
+    ) -> PreparedRequest:
+        assert_valid_model_extraction(model)
+
+        loaded_schema = load_json_schema(json_schema)
+
+        # Handle both single document and multiple documents
+        if document is not None and documents is not None:
+            raise ValueError("Cannot provide both 'document' and 'documents' parameters. Use either one.")
+
+        # Convert single document to documents list for consistency
+        if document is not None:
+            processed_documents = [prepare_mime_document(document)]
+        elif documents is not None:
+            processed_documents = [prepare_mime_document(doc) for doc in documents]
+        else:
+            raise ValueError("Must provide either 'document' or 'documents' parameter.")
+
+        # Build request dictionary with only provided fields
+        request_dict = {
+            "json_schema": loaded_schema,
+            "documents": processed_documents,
+            "model": model,
+            "stream": False,
+            "store": store,
+        }
+        if temperature is not FieldUnset:
+            request_dict["temperature"] = temperature
+        if modality is not FieldUnset:
+            request_dict["modality"] = modality
+        if reasoning_effort is not FieldUnset:
+            request_dict["reasoning_effort"] = reasoning_effort
+        if n_consensus is not FieldUnset:
+            request_dict["n_consensus"] = n_consensus
+        if image_resolution_dpi is not FieldUnset:
+            request_dict["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas is not FieldUnset:
+            request_dict["browser_canvas"] = browser_canvas
+
+        # Validate DocumentAPIRequest data (raises exception if invalid)
+        extract_request = DocumentExtractRequest(**request_dict)
+
+        return PreparedRequest(
+            method="POST", url="/v1/documents/extract", data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
+        )
+
 
 class Documents(SyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper"""
@@ -152,7 +211,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def create_messages(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        modality: Modality = "native",
+        modality: Modality = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
@@ -182,7 +241,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
-        modality: Modality = "native",
+        modality: Modality = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
@@ -256,51 +315,21 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             ValueError: If neither document nor documents is provided, or if both are provided
             HTTPException: If the request fails
         """
-        assert_valid_model_extraction(model)
-
-        json_schema = load_json_schema(json_schema)
-
-        # Handle both single document and multiple documents
-        if document is not None and documents is not None:
-            raise ValueError("Cannot provide both 'document' and 'documents' parameters. Use either one.")
-
-        # Convert single document to documents list for consistency
-        if document is not None:
-            processed_documents = [prepare_mime_document(document)]
-        elif documents is not None:
-            processed_documents = [prepare_mime_document(doc) for doc in documents]
-        else:
-            raise ValueError("Must provide either 'document' or 'documents' parameter.")
-
-        # Build request dictionary with only provided fields
-        request_dict = {
-            "json_schema": json_schema,
-            "documents": processed_documents,
-            "model": model,
-            "stream": False,
-            "store": store,
-        }
-        if temperature is not FieldUnset:
-            request_dict["temperature"] = temperature
-        if modality is not FieldUnset:
-            request_dict["modality"] = modality
-        if reasoning_effort is not FieldUnset:
-            request_dict["reasoning_effort"] = reasoning_effort
-        if n_consensus is not FieldUnset:
-            request_dict["n_consensus"] = n_consensus
-        if image_resolution_dpi is not FieldUnset:
-            request_dict["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not FieldUnset:
-            request_dict["browser_canvas"] = browser_canvas
-
-        # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = DocumentExtractRequest(**request_dict)
-
-        prepared_request = PreparedRequest(
-            method="POST", url="/v1/documents/extract", data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
+        request = self._prepare_extract(
+            json_schema=json_schema,
+            model=model,
+            document=document,
+            documents=documents,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+            store=store,
+            idempotency_key=idempotency_key,
         )
-
-        response = self._client._prepared_request(prepared_request)
+        response = self._client._prepared_request(request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
         return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
@@ -356,7 +385,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     async def create_messages(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image,
-        modality: Modality = "native",
+        modality: Modality = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
@@ -388,7 +417,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
-        modality: Modality = "native",
+        modality: Modality = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
@@ -487,51 +516,21 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             ValueError: If neither document nor documents is provided, or if both are provided
             HTTPException: If the request fails
         """
-        assert_valid_model_extraction(model)
-
-        json_schema = load_json_schema(json_schema)
-
-        # Handle both single document and multiple documents
-        if document is not None and documents is not None:
-            raise ValueError("Cannot provide both 'document' and 'documents' parameters. Use either one.")
-
-        # Convert single document to documents list for consistency
-        if document is not None:
-            processed_documents = [prepare_mime_document(document)]
-        elif documents is not None:
-            processed_documents = [prepare_mime_document(doc) for doc in documents]
-        else:
-            raise ValueError("Must provide either 'document' or 'documents' parameter.")
-
-        # Build request dictionary with only provided fields
-        request_dict = {
-            "json_schema": json_schema,
-            "documents": processed_documents,
-            "model": model,
-            "stream": False,
-            "store": store,
-        }
-        if temperature is not FieldUnset:
-            request_dict["temperature"] = temperature
-        if modality is not FieldUnset:
-            request_dict["modality"] = modality
-        if reasoning_effort is not FieldUnset:
-            request_dict["reasoning_effort"] = reasoning_effort
-        if n_consensus is not FieldUnset:
-            request_dict["n_consensus"] = n_consensus
-        if image_resolution_dpi is not FieldUnset:
-            request_dict["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not FieldUnset:
-            request_dict["browser_canvas"] = browser_canvas
-
-        # Validate DocumentAPIRequest data (raises exception if invalid)
-        request = DocumentExtractRequest(**request_dict)
-
-        prepared_request = PreparedRequest(
-            method="POST", url="/v1/documents/extract", data=request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
+        request = self._prepare_extract(
+            json_schema=json_schema,
+            model=model,
+            document=document,
+            documents=documents,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            n_consensus=n_consensus,
+            store=store,
+            idempotency_key=idempotency_key,
         )
-
-        response = await self._client._prepared_request(prepared_request)
+        response = await self._client._prepared_request(request)
 
         schema = Schema(json_schema=load_json_schema(json_schema))
         return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
