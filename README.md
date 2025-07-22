@@ -73,12 +73,12 @@ To use the API, you need to sign up on [Retab](https://www.retab.com/).
 ## SDK
 
 1. Install the SDK
-```bash
+```python
 pip install retab
 ```
 
 2. Generate a Schema
-```bash
+```python
 from pathlib import Path
 from retab import Retab
 client = Retab(api_key="YOUR_RETAB_API_KEY")
@@ -92,7 +92,7 @@ response = client.schemas.generate(
 ```
 
 3. Exrtact Data
-```bash
+```python
 from pathlib import Path
 from retab import Retab
 
@@ -121,7 +121,7 @@ The project workflow for schema optimization:
 3. Compare accuracy improvements → iterate until satisfied
 4. Deploy optimized schema to production
 
-```bash
+```python
 from retab import Retab
 
 client = Retab()
