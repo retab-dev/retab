@@ -35,31 +35,6 @@ _Join our stargazers! ⭐️_
 
 ---
 
-## Useful Links
-
-* [x] **API**: [Documentation](https://docs.retab.com/api-reference/introduction)
-* [x] **SDKs**: [Python & JavaScript SDK](https://docs.retab.com/overview/quickstart)
-* [x] **Low-code Frameworks**: [Dify](https://marketplace.dify.ai/plugins/retab_team/retab)
-
-**Roadmap**
-* [ ] n8n plugin
-* [ ] Node.js SDK
-* [ ] Schema optimization autopilot
-* [ ] Sources API
-
----
-
-## Features
-
-1. **Universal Document Preprocessing**: Convert any file type (PDFs, Excel, emails, etc.) into LLM-ready format without writing custom parsers
-2. **Structured, Schema-driven Extraction**: Get consistent, reliable outputs using schema-based prompt engineering
-3. **Processors**: Publish a live, stable, shareable document processor.
-4. **Automations**: Create document processing workflows that can be triggered by events (mailbox, upload link, endpoint, outlook plugin).
-5. **Projects**: Evaluate the performance of models against annotated datasets
-6. **Optimizations**: Identify the most used processors and help you finetune models to reduce costs and improve performance
-
----
-
 ## API Key
 
 To use the API, you need to sign up on [Retab](https://www.retab.com/).
@@ -111,7 +86,7 @@ print(response)
 
 ---
 
-## Project Vision
+## Projects
 
 On the [Platform](https://www.retab.com/), *Projects* provide a systematic way to test and validate your extraction schemas against known ground truth data. Think of it as unit testing for document AI—you can measure accuracy, compare different models, and optimize your extraction pipelines with confidence.
 
@@ -142,11 +117,6 @@ Check our [documentation](https://docs.retab.com/core-concepts/Projects).
 
 ---
 
-## Code examples
-
-You can check our Github repository to see code examples: [python examples](https://github.com/Retab-dev/retab/tree/main/examples) and [jupyter notebooks](https://github.com/Retab-dev/retab-nodejs/tree/main/notebooks).
-
----
 
 ## Community
 
@@ -158,3 +128,30 @@ We can't wait to see how you'll use Retab.
 
 * [Discord](https://discord.com/invite/vc5tWRPqag)
 * [Twitter](https://x.com/retabdev)
+
+---
+
+## Useful Links
+
+* [x] **API**: [Documentation](https://docs.retab.com/api-reference/introduction)
+* [x] **SDKs**: [Python & JavaScript SDK](https://docs.retab.com/overview/quickstart)
+* [x] **Low-code Frameworks**: [Dify](https://marketplace.dify.ai/plugins/retab_team/retab)
+
+* [OpenAI](https://platform.openai.com/docs/guides/structured-outputs), [Google](https://ai.google.dev/gemini-api/docs/structured-output), [xAI](https://docs.x.ai/docs/guides/structured-outputs), [Outlines](https://dottxt-ai.github.io/outlines/latest/reference/generation/structured_generation_explanation/) on structured generation
+* [Structured generation Starter Pack](https://github.com/retab-dev/structured-generation-starter-pack)
+* [Quickstart](/get-started/quickstart)
+* [API Reference](/api-reference/introduction)
+* [Github Repository](https://github.com/retab-dev/retab)
+
+---
+## Roadmap
+
+We share our roadmap publicly. Please submit your feature requests on [Github](https://github.com/retab-dev/retab)
+
+Among the features we're working on:
+
+* [ ] Schema optimization autopilot
+* [ ] Sources API
+* [ ] Document Edit API
+* [ ] n8n plugin
+
