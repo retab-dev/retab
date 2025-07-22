@@ -88,7 +88,7 @@ MonthlyUsageResponse = MonthlyUsageResponseContent
 
 class Amount(BaseModel):
     value: float
-    currency: str
+    currency: str = "USD"
 
 
 class TokenPrice(BaseModel):
