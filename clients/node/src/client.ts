@@ -53,10 +53,17 @@ export class AbstractClient {
   protected _fetch(_: FetchParams): Promise<Response> {
     throw new Error("Method not implemented");
   }
-  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(bodyType: ZodSchema, params: FetchParams): Promise<z.output<ZodSchema>> {
+  protected async _fetchJson(params: FetchParams): Promise<void>;
+  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(bodyType: ZodSchema, params: FetchParams): Promise<z.output<ZodSchema>>;
+  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(_bodyType: ZodSchema | FetchParams, _params?: FetchParams): Promise<z.output<ZodSchema> | void> {
+    let params = _params || (_bodyType as FetchParams);
+    let bodyType = _params ? _bodyType as ZodSchema : undefined;
     let response = await this._fetch(params);
     if (!response.ok) {
       throw new APIError(response.status, await response.text());
+    }
+    if (!bodyType) {
+      return;
     }
     if (response.headers.get("Content-Type") !== "application/json") throw new APIError(response.status, "Response is not JSON");
     return bodyType.parseAsync(await response.json());

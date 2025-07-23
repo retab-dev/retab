@@ -109,3 +109,10 @@ export const ZGenerateSchemaRequest = z.object({
     documents: ZMIMEData.array(),
 });
 export type GenerateSchemaRequest = z.input<typeof ZGenerateSchemaRequest>;
+
+export const ZBaseProject = z.object({
+    ...generated.ZBaseProject.schema.shape,
+    json_schema: ZJSONSchema,
+});
+export type BaseProjectInput = z.input<typeof ZBaseProject>;
+export type BaseProject = z.output<typeof ZBaseProject>;
