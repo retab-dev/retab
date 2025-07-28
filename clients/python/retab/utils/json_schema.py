@@ -1957,6 +1957,12 @@ def json_schema_to_nlp_data_structure(schema: dict) -> str:
     """
     schema_title = schema.get("title", schema.get("name", "Schema"))
     md = f"## {schema_title} -- NLP Data Structure\n\n"
+
+    # Add the description of the schema
+    description = schema.get("description", None)
+    if description is not None:
+        md += f"<User Prompt>\n{description}\n</User Prompt>"
+
     # Assume the root schema is an object with properties.
     if schema.get("type") == "object" and "properties" in schema:
         for field_name, field_schema in schema["properties"].items():
