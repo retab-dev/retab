@@ -1,10 +1,16 @@
 import { CompositionClient } from "@/client";
-import { BaseProjectInput, Project, ZBaseProject, ZProject } from "@/types";
+import { BaseProjectInput, dataArray, Project, ZBaseProject, ZProject } from "@/types";
+import APIProjectsDocuments from "./documents/client";
+import APIProjectsIterations from "./iterations/client";
 
 export default class APIProjects extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
     }
+
+    documents = new APIProjectsDocuments(this);
+    iterations = new APIProjectsIterations(this);
+
     async create(body: BaseProjectInput): Promise<Project> {
         return this._fetchJson(ZProject, {
             url: "/v1/projects",
@@ -22,7 +28,7 @@ export default class APIProjects extends CompositionClient {
     }
 
     async list(): Promise<Project[]> {
-        return this._fetchJson(ZProject.array(), {
+        return this._fetchJson(dataArray(ZProject), {
             url: "/v1/projects",
             method: "GET",
         });
