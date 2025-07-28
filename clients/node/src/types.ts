@@ -7,6 +7,14 @@ import { inferFileInfo } from "./mime";
 import fs from "fs";
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
+export function dataArray<Schema extends z.ZodType<any, any, any>>(schema: Schema): z.ZodType<
+    z.output<Schema>[],
+    any,
+    {data: z.input<Schema>[]}
+> {
+    return z.object({data: z.array(schema)}).transform((input) => input.data);
+}
+
 export const ZColumn: z.ZodType<{
     type: "column";
     size: number;
@@ -116,3 +124,10 @@ export const ZBaseProject = z.object({
 });
 export type BaseProjectInput = z.input<typeof ZBaseProject>;
 export type BaseProject = z.output<typeof ZBaseProject>;
+
+export const ZDocumentItem = z.object({
+    ...generated.ZDocumentItem.schema.shape,
+    mime_data: ZMIMEData,
+});
+export type DocumentItemInput = z.input<typeof ZDocumentItem>;
+export type DocumentItem = z.output<typeof ZDocumentItem>;
