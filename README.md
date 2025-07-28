@@ -23,9 +23,10 @@ Made with love by the team at [Retab](https://retab.com) 🤍.
 We provide the best-in-class preprocessing, help you generate prompts & extraction schemas that fit your preferred model providers, iterate & evaluate the accuracy of your configuration, and **ship fast** your automation directly in your code or with your preferred platforms such as [n8n](https://n8n.io/) or [Dify](https://dify.ai/).
 
 **A new, lighter paradigm**
+
 Large Language Models collapse entire layers of legacy OCR pipelines into a single, elegant abstraction. When a model can read, reason, and structure text natively, we no longer need brittle heuristics, handcrafted parsers, or heavyweight ETL jobs. Instead, we can expose a small, principled API: "give me the document, tell me the schema, and get back structured truth." Complexity evaporates, reliability rises, speed follows, and costs fall—because every component you remove is one that can no longer break. LLM‑first design lets us focus less on plumbing and more on the questions we actually want answered.
 
-Many people haven't yet realized how powerful LLMs have become at document processing tasks - we're here to help **unlock these capabilities**.
+Many people haven't yet realized how powerful LLMs have become at document processing tasks—we're here to help **unlock these capabilities**.
 
 We are convinced that **Human-in-the-loop is dogsh*t**, therefore offering you all the software-defined primitives to build your own document processing solutions. We see it as **Stripe** for document processing.
 
