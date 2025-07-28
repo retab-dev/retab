@@ -127,7 +127,7 @@ export type TextBox = z.infer<typeof ZTextBox>;
 
 export const ZAmount = z.lazy(() => (z.object({
     value: z.number(),
-    currency: z.string(),
+    currency: z.string().default("USD"),
 })));
 export type Amount = z.infer<typeof ZAmount>;
 
@@ -347,7 +347,7 @@ export const ZRetabChatResponseCreateRequest = z.lazy(() => (z.object({
     reasoning: ZReasoning.nullable().optional(),
     stream: z.boolean().nullable().optional().default(false),
     seed: z.number().nullable().optional(),
-    text: ZResponseTextConfigParam.default({ "format": { "type": "text" } }),
+    text: ZResponseTextConfigParam.default({"format": {"type": "text"}}),
     n_consensus: z.number().default(1),
 })));
 export type RetabChatResponseCreateRequest = z.infer<typeof ZRetabChatResponseCreateRequest>;
@@ -849,6 +849,7 @@ export const ZPartialSchemaChunk = z.lazy(() => (ZStreamingBaseModel.schema).mer
     object: z.literal("schema.chunk").default("schema.chunk"),
     created_at: z.string(),
     delta_json_schema_flat: z.record(z.string(), z.any()).default({}),
+    delta_flat_deleted_keys: z.array(z.string()).default([]),
 })));
 export type PartialSchemaChunk = z.infer<typeof ZPartialSchemaChunk>;
 
@@ -1209,8 +1210,8 @@ export type ConsensusModel = z.infer<typeof ZConsensusModel>;
 
 export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    documents: z.array(ZMIMEData),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]),
+    documents: z.array(ZMIMEData).default([]),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
     model: z.string(),
@@ -1243,7 +1244,7 @@ export const ZLogExtractionRequest = z.lazy(() => (z.object({
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZResponseInputParamMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZFunctionCallOutput, ZResponseReasoningItemParam, ZImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZLocalShellCall, ZLocalShellCallOutput, ZMcpListTools, ZMcpApprovalRequest, ZMcpApprovalResponse, ZMcpCall, ZItemReference])).nullable().optional(),
     anthropic_messages: z.array(ZMessageParam).nullable().optional(),
     anthropic_system_prompt: z.string().nullable().optional(),
-    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
+    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZMessage, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
@@ -1368,7 +1369,7 @@ export const ZParseRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     model: z.union([z.literal("gpt-4o"), z.literal("gpt-4o-mini"), z.literal("chatgpt-4o-latest"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-realtime-preview-2024-12-17"), z.literal("gpt-4o-realtime-preview-2024-10-01"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-mini-realtime-preview-2024-12-17"), z.literal("claude-3-5-sonnet-latest"), z.literal("claude-3-5-sonnet-20241022"), z.literal("claude-3-opus-20240229"), z.literal("claude-3-sonnet-20240229"), z.literal("claude-3-haiku-20240307"), z.literal("grok-3"), z.literal("grok-3-mini"), z.literal("gemini-2.5-pro"), z.literal("gemini-2.5-flash"), z.literal("gemini-2.5-pro-preview-06-05"), z.literal("gemini-2.5-pro-preview-05-06"), z.literal("gemini-2.5-pro-preview-03-25"), z.literal("gemini-2.5-flash-preview-05-20"), z.literal("gemini-2.5-flash-preview-04-17"), z.literal("gemini-2.5-flash-lite-preview-06-17"), z.literal("gemini-2.5-pro-exp-03-25"), z.literal("gemini-2.0-flash-lite"), z.literal("gemini-2.0-flash"), z.literal("auto-large"), z.literal("auto-small"), z.literal("auto-micro"), z.literal("human")]).default("gemini-2.5-flash"),
     table_parsing_format: z.union([z.literal("markdown"), z.literal("yaml"), z.literal("html"), z.literal("json")]).default("html"),
-    image_resolution_dpi: z.number().default(72),
+    image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
 })));
 export type ParseRequest = z.infer<typeof ZParseRequest>;
@@ -1394,7 +1395,7 @@ export type DocumentCreateInputRequest = z.infer<typeof ZDocumentCreateInputRequ
 
 export const ZDocumentCreateMessageRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
 })));
@@ -1405,7 +1406,7 @@ export const ZDocumentMessage = z.lazy(() => (z.object({
     object: z.literal("document_message").default("document_message"),
     messages: z.array(ZChatCompletionRetabMessage),
     created: z.number(),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
 })));
 export type DocumentMessage = z.infer<typeof ZDocumentMessage>;
 
