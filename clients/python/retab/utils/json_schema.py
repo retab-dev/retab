@@ -1201,8 +1201,8 @@ def object_format_coercion(instance: dict[str, Any], schema: dict[str, Any]) -> 
 def flatten_dict(obj: Any, prefix: str = "", allow_empty_objects: bool = True) -> dict[str, Any]:
     items = []  # type: ignore
     if isinstance(obj, dict):
-        if len(obj) == 0 and allow_empty_objects:
-            # Keep empty dicts as dicts (so we can keep its structure)
+        if len(obj) == 0 and allow_empty_objects and prefix != "":
+            # Keep empty dicts as dicts (so we can keep its structure, but not if it's the root)
             items.append((prefix, {}))
         else:
             for k, v in obj.items():
@@ -1210,8 +1210,8 @@ def flatten_dict(obj: Any, prefix: str = "", allow_empty_objects: bool = True) -
                 items.extend(flatten_dict(v, new_key, allow_empty_objects=allow_empty_objects).items())
 
     elif isinstance(obj, list):
-        if len(obj) == 0 and allow_empty_objects:
-            # Keep empty lists as lists (so we can keep its structure)
+        if len(obj) == 0 and allow_empty_objects and prefix != "":
+            # Keep empty lists as lists (so we can keep its structure, but not if it's the root)
             items.append((prefix, []))
         else:
             for i, v in enumerate(obj):
