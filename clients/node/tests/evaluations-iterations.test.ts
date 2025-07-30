@@ -95,7 +95,7 @@ describe('Projects Iterations Tests', () => {
             confidence: { type: 'number' }
           }
         },
-        from_iteration_id: 'iter-previous-123'
+        parent_id: 'iter-previous-123'
       };
 
       const prepared = (syncClient.evaluations.iterations as any).mixin.prepareCreate(
@@ -573,7 +573,7 @@ describe('Projects Iterations Tests', () => {
       const parameterSets = [
         { inference_settings: { temperature: 0.5 } },
         { inference_settings: { temperature: 0.7, max_tokens: 1000 }, json_schema: { type: 'object' } },
-        { inference_settings: { temperature: 0.0 }, from_iteration_id: 'iter-123' },
+        { inference_settings: { temperature: 0.0 }, parent_id: 'iter-123' },
         { json_schema: { type: 'array', items: { type: 'string' } } },
         { inference_settings: { temperature: 1.0, top_p: 0.9 }, json_schema: null }
       ];

@@ -683,7 +683,7 @@ export type BaseIteration = z.infer<typeof ZBaseIteration>;
 export const ZIterationsCreateIterationRequest = z.lazy(() => (z.object({
     inference_settings: ZInferenceSettings,
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
-    from_iteration_id: z.string().nullable().optional(),
+    parent_id: z.string().nullable().optional(),
 })));
 export type IterationsCreateIterationRequest = z.infer<typeof ZIterationsCreateIterationRequest>;
 

@@ -10,6 +10,7 @@ from ..predictions import PredictionData
 
 class BaseIteration(BaseModel):
     id: str = Field(default_factory=lambda: "eval_iter_" + nanoid.generate())
+    parent_id: Optional[str] = Field(default=None, description="The ID of the parent iteration")
     inference_settings: InferenceSettings
     json_schema: dict[str, Any]
     updated_at: datetime.datetime = Field(
@@ -27,17 +28,17 @@ class CreateIterationRequest(BaseModel):
 
     inference_settings: InferenceSettings
     json_schema: Optional[dict[str, Any]] = None
-    from_iteration_id: Optional[str] = Field(
+    parent_id: Optional[str] = Field(
         default=None,
-        description="The ID of the iteration to copy the JSON Schema from.",
+        description="The ID of the parent iteration to copy the JSON Schema from.",
     )
 
-    # validate that exactly one of from_iteration_id or json_schema is provided
-    @model_validator(mode="after")
-    def validate_one_of_from_iteration_id_or_json_schema(self) -> Self:
-        if (self.from_iteration_id is None) ^ (self.json_schema is None):
-            return self
-        raise ValueError("Exactly one of from_iteration_id or json_schema must be provided")
+    # validate that exactly one of parent_id or json_schema is provided
+    #@model_validator(mode="after")
+    #def validate_one_of_parent_id_or_json_schema(self) -> Self:
+    #    if (self.parent_id is None) ^ (self.json_schema is None):
+    #        return self
+    #     raise ValueError("Exactly one of parent_id or json_schema must be provided")
 
 
 class PatchIterationRequest(BaseModel):
