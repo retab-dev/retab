@@ -1,16 +1,14 @@
 <div align="center" style="margin-bottom: 1em;">
 
-# Retab
-
 <img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/retab-logo.png" alt="Retab Logo" width="150">
 
+# Retab
 
-  *The AI Automation Platform*
+*The AI Automation Platform*
 
 Made with love by the team at [Retab](https://retab.com) 🩷.
 
 [Our Website](https://retab.com) | [Documentation](https://docs.retab.com/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabdev)
-
 
 </div>
 
@@ -20,19 +18,21 @@ Made with love by the team at [Retab](https://retab.com) 🩷.
 
 [Retab](https://retab.com) is the complete developer platform and SDK for shipping state-of-the-art document processing in the age of LLMs. 
 
-We provide the best-in-class preprocessing, help you generate prompts & extraction schemas that fit your preferred model providers, iterate & evaluate the accuracy of your configuration, and **ship fast** your automation directly in your code or with your preferred platforms such as [n8n](https://n8n.io/) or [Dify](https://dify.ai/).
+We want you to use Retab for a defined purpose: get **SHIP FAST** automations to get **STRUCTURED** & **QUALITY** data.
 
-**A new, lighter paradigm**
+For this mission, we provide the best-in-class preprocessing, help you generate prompts & extraction schemas that fit your preferred model providers, iterate & evaluate the accuracy of your configuration, and ship fast your automation directly in your code or with your preferred platforms such as [n8n](https://n8n.io/) or [Dify](https://dify.ai/) [WIP].
 
-Large Language Models collapse entire layers of legacy OCR pipelines into a single, elegant abstraction. When a model can read, reason, and structure text natively, we no longer need brittle heuristics, handcrafted parsers, or heavyweight ETL jobs. Instead, we can expose a small, principled API: "give me the document, tell me the schema, and get back structured truth." Complexity evaporates, reliability rises, speed follows, and costs fall—because every component you remove is one that can no longer break. LLM‑first design lets us focus less on plumbing and more on the questions we actually want answered.
+### Why did we build Retab?
 
-Many people haven't yet realized how powerful LLMs have become at document processing tasks—we're here to help **unlock these capabilities**.
+Because of **a new, lighter paradigm**
 
-We are convinced that **Human-in-the-loop is dogsh*t**, therefore offering you all the software-defined primitives to build your own document processing solutions. We see it as **Stripe** for document processing.
+Large Language Models collapse entire layers of legacy OCR pipelines into a single, elegant abstraction. When a model can read, reason, and structure text natively, we no longer need brittle heuristics, handcrafted parsers, or heavyweight ETL jobs. Instead, we can expose a small, principled API: "give me the document, tell me the schema, and get back structured truth." Complexity evaporates, reliability rises, speed follows, and costs fall—because every component you remove is one that can no longer break. 
+
+LLM‑first design lets us focus less on plumbing and more on the questions we actually want answered—Retab stands here. We help you **unlock these capabilities**, offering you all the software-defined primitives to build your own document processing solutions. We see it as **Stripe** for document processing.
 
 Check our [documentation](https://docs.retab.com/overview/introduction).
 
-_Join our stargazers! ⭐️_
+Join our [Discord](https://discord.com/invite/vc5tWRPqag) and share your feedback.
 
 ---
 
@@ -121,9 +121,9 @@ Check our [documentation](https://docs.retab.com/core-concepts/Projects).
 
 ## Community
 
-Let's create the future of document processing together!
+Let's create the future of document processing together.
 
-Join our [discord community](https://discord.com/invite/vc5tWRPqag) to share tips, discuss best practices, and showcase what you build. Or just [tweet](https://x.com/retabdev) at us.
+Join our [Discord](https://discord.com/invite/vc5tWRPqag) to share your journey, discuss best practices, and give your feedback. You can also follow us on [X (Twitter)](https://x.com/retabdev) at us.
 
 We can't wait to see how you'll use Retab.
 

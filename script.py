@@ -1,7 +1,7 @@
 from retab import Retab
 from dotenv import load_dotenv
 
-load_dotenv(".env.production")
+load_dotenv(".env")
 
 client = Retab()
 
