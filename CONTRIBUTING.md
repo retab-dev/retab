@@ -1,8 +1,8 @@
 # Contributing to Retab
 
-> "All roads lead to retab" ~ Random Roman Retaber, certainly recently
+> "You cannot use 1 model that drives everything, at least today" ~ not a Retab team member, but definitely a Retab enthusiast
 
-Ave RETABers! We're thrilled you want to contribute to Retab. Every contribution—whether fixing bugs, adding features, or improving documentation—makes Retab better for everyone.
+We're thrilled you want to contribute to Retab. Every contribution—whether fixing bugs, adding features, or improving documentation—makes Retab better for everyone.
 
 ## Getting Started
 
@@ -13,21 +13,19 @@ Ave RETABers! We're thrilled you want to contribute to Retab. Every contribution
 
 ## Contribution Opportunities
 
-### Documentation
+### Cookbook
 
-- Improve existing docs
-- Add examples or tutorials in our [cookbook folder](https://github.com/retab-dev/retab/tree/main/cookbook).
+- Add examples and tutorials in our [cookbook folder](https://github.com/retab-dev/retab/tree/main/cookbook).
+- Add community integrations
 - Fix typos
 
 ### Code Improvements
 
 - Implement new document processing strategies
-- Add community integrations
 - Improve test coverage
 
 ### Performance Enhancements
 
-- Profile and optimize code
 - Add benchmarks
 - Improve memory usage
 
@@ -47,7 +45,7 @@ cd retab
 
 - `feature/description` for new features
 - `fix/description` for bug fixes
-- `docs/description` for documentation changes
+- etc.
 
 ### 2. Commit Messages
 
@@ -69,7 +67,6 @@ feat: add batch preprocessing to Retab
 
 ### 4. Code Review
 
-- **Make sure your PR is for the `development` branch**
 - All PRs need at least one review
 - Maintainers will review for:
   - Code quality

@@ -1,16 +1,8 @@
 <div align="center" style="margin-bottom: 1em;">
 
-# Retab
-
-<img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/retab-logo.png" alt="Retab Logo" width="150">
-
-
-  *The AI Automation Platform*
-
 A collection of examples and use-cases using [Retab](https://retab.com) 🩷.
 
 [Our Website](https://retab.com) | [Documentation](https://docs.retab.com/get-started/introduction) | [Discord](https://discord.com/invite/vc5tWRPqag) | [Twitter](https://x.com/retabdev)
-
 
 </div>
 
@@ -18,10 +10,7 @@ A collection of examples and use-cases using [Retab](https://retab.com) 🩷.
 
 ## Community Integrations
 
-We're convinced that **human in the loop is dogsh*t**.
-
-To build the best document processing pipelines, we leverage the diverse ecosystem of projects and integrations across the AI and ML landscape. Retab processors are therefore a 
-gear of your codebase, made of the latest developer tools of the ecosystem.
+Building the best document processing pipelines requires complex orchestration under the hood—but for users, deployment should feel effortless. At Retab, **we aim to leverage the rich ecosystem of AI projects and integrations**, and show you how to avoid reinventing the wheel.
 
 Want to add your integration? Simply [raise an issue](https://github.com/retab-dev/retab/issues/new) and we'll help you get started! Once approved, your integration will be featured here.
 
