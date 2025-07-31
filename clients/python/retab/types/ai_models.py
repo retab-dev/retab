@@ -81,6 +81,7 @@ class FinetunedModel(BaseModel):
 # Monthly Usage
 class MonthlyUsageResponseContent(BaseModel):
     credits_count: float  # Changed to float to support decimal credits
+    credits_limit: float = -1  # -1 means no limit (default)
 
 
 MonthlyUsageResponse = MonthlyUsageResponseContent
