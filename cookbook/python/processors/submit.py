@@ -16,6 +16,6 @@ processor = reclient.processors.create(
     image_resolution_dpi=150,
 )
 
-completion = reclient.processors.submit(processor_id=processor.id, document="../../assets/code/invoice.jpeg")
+completion = reclient.processors.submit(processor_id=processor.id, document="../../assets/docs/invoice.jpeg")
 
 print(completion.model_dump_json(indent=2))

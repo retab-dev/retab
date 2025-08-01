@@ -22,7 +22,7 @@ async function main() {
   
   const completion = await reclient.processors.submit({ 
     processor_id: processor.id, 
-    document: "../../assets/code/invoice.jpeg" 
+    document: "../../assets/docs/invoice.jpeg" 
   });
   
   console.log(JSON.stringify(completion, null, 2));

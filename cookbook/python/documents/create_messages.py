@@ -20,7 +20,7 @@ assert retab_api_key, "Missing RETAB_API_KEY"
 # Retab Setup
 reclient = Retab(api_key=retab_api_key)
 doc_msg = reclient.documents.create_messages(
-    document="../../assets/code/booking_confirmation.jpg",
+    document="../../assets/docs/booking_confirmation.jpg",
     modality="native",
     image_resolution_dpi=96,
     browser_canvas="A4",

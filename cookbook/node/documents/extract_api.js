@@ -18,7 +18,7 @@ const reclient = new Retab({ api_key: retabApiKey });
 
 // Document Extraction via Retab API
 const response = await reclient.documents.extract({
-  document: '../../assets/code/invoice.jpeg',
+  document: '../../assets/docs/invoice.jpeg',
   model: 'gpt-4.1',
   json_schema: '../../assets/code/invoice_schema.json',
   modality: 'native',

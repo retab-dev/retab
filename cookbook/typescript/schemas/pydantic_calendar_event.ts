@@ -25,7 +25,7 @@ async function main() {
   }
   
   const reclient = new Retab({ apiKey: retabApiKey });
-  const docMsg = await reclient.documents.create_messages({ document: '../../assets/code/calendar_event.xlsx' });
+  const docMsg = await reclient.documents.create_messages({ document: '../../assets/docs/calendar_event.xlsx' });
   
   // Define schema using JSON Schema (equivalent to Pydantic BaseModel)
   const CalendarEventJsonSchema = {
