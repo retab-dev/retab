@@ -55,7 +55,7 @@ async function main() {
   // Retab Setup
   const reclient = new Retab({ apiKey: retabApiKey });
   const docMsg = await reclient.documents.create_messages({
-    document: '../../assets/code/calendar_event.xlsx',
+    document: '../../assets/docs/calendar_event.xlsx',
     // Note: Additional parameters like modality, image_resolution_dpi, browser_canvas 
     // would be supported by extending the create_messages implementation
   });

@@ -1,6 +1,6 @@
 <div align="center" style="margin-bottom: 1em;">
 
-<img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/retab-logo.png" alt="Retab Logo" width="150">
+<img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/visuals/retab-logo.png" alt="Retab Logo" width="150">
 
 # Retab
 
@@ -41,7 +41,7 @@ Join our [Discord](https://discord.com/invite/vc5tWRPqag) and share your feedbac
 To use the API, you need to sign up on [Retab](https://www.retab.com/).
 
 <p align="center">
-  <img src="./assets/API-key.png" alt="API Key" width="800">
+  <img src="./assets/visuals/API-key.png" alt="API Key" width="800">
 </p>
 
 ---

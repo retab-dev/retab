@@ -25,7 +25,7 @@ async function main() {
   // Get current directory for relative path resolution
   
   // Read the invoice image into a buffer
-  const imagePath = join(__dirname, '../../../assets/code/invoice.jpeg');
+  const imagePath = join(__dirname, '../../../assets/docs/invoice.jpeg');
   const imageBuffer = readFileSync(imagePath);
   
   // Read the JSON schema

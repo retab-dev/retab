@@ -19,7 +19,7 @@ reclient = Retab(api_key=retab_api_key)
 
 # Document Extraction via Retab API
 response = reclient.documents.extract(
-    document="../../assets/code/invoice.jpeg",
+    document="../../assets/docs/invoice.jpeg",
     model="gpt-4.1",
     json_schema="../../assets/code/invoice_schema.json",
     modality="native",

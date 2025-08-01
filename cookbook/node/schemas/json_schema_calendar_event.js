@@ -21,7 +21,7 @@ if (!retabApiKey) {
 }
 
 const reclient = new Retab({ api_key: retabApiKey });
-const docMsg = await reclient.documents.create_messages({ document: '../../assets/code/calendar_event.xlsx' });
+const docMsg = await reclient.documents.create_messages({ document: '../../assets/docs/calendar_event.xlsx' });
 
 console.log('Document message:', JSON.stringify(docMsg, null, 2));
 

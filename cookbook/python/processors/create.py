@@ -17,4 +17,4 @@ processor = reclient.processors.create(
 )
 
 print(processor.model_dump_json(indent=2))
-# completion = reclient.processors.submit(processor_id=processor.id, document="../../assets/code/invoice.jpeg")
+# completion = reclient.processors.submit(processor_id=processor.id, document="../../assets/docs/invoice.jpeg")

@@ -21,7 +21,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Read the invoice image into a buffer
-const imagePath = join(__dirname, '../../../assets/code/invoice.jpeg');
+const imagePath = join(__dirname, '../../../assets/docs/invoice.jpeg');
 const imageBuffer = readFileSync(imagePath);
 
 // Read the JSON schema

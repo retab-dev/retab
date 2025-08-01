@@ -17,4 +17,4 @@ const processor = await reclient.processors.create({
 });
 
 console.log(JSON.stringify(processor, null, 2));
-// completion = await reclient.processors.submit({ processor_id: processor.id, document: "../../assets/code/invoice.jpeg" });
+// completion = await reclient.processors.submit({ processor_id: processor.id, document: "../../assets/docs/invoice.jpeg" });

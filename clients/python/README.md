@@ -2,7 +2,7 @@
 
 <div align="center" style="margin-bottom: 1em;">
 
-<img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/retab-logo.png" alt="Retab Logo" width="150">
+<img src="https://raw.githubusercontent.com/Retab-dev/retab/refs/heads/main/assets/visuals/retab-logo.png" alt="Retab Logo" width="150">
 
 
   *The AI Automation Platform*
