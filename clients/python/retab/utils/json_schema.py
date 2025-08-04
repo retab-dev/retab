@@ -1674,7 +1674,7 @@ def filter_auxiliary_fields(data: dict[str, Any], prefixes: list[str] = ["reason
 
     filtered: dict[str, Any] = {}
     for key, value in data.items():
-        if not key.startswith(tuple(prefixes)):
+        if not str(key).startswith(tuple(prefixes)):
             if isinstance(value, dict):
                 filtered[key] = filter_auxiliary_fields(value, prefixes)
             elif isinstance(value, list):
