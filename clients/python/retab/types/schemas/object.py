@@ -216,7 +216,10 @@ class Schema(PartialSchema):
         Returns:
             str: A string containing the NLP data structure definition.
         """
-        return json_schema_to_nlp_data_structure(self._reasoning_object_schema)
+        from ...utils.json_schema import create_reasoning_schema_without_ref_expansion
+        reasoning_schema = create_reasoning_schema_without_ref_expansion(self.json_schema)
+        return json_schema_to_nlp_data_structure(reasoning_schema)
+
 
     @property
     def developer_system_prompt(self) -> str:

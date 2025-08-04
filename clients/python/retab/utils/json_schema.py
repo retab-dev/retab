@@ -988,8 +988,8 @@ def _rec_replace_description_with_llm_description(schema: dict[str, Any]) -> dic
         new_schema["description"] = new_schema.pop("X-FieldPrompt", new_schema.get("description"))
         if new_schema["description"] is None:
             new_schema.pop("description")
-        elif "default" in new_schema:
-            new_schema["description"] += f"\nUser Provided a Default Value: {json.dumps(new_schema['default'])}"
+        #elif "default" in new_schema:
+        #    new_schema["description"] += f"\nUser Provided a Default Value: {json.dumps(new_schema['default'])}"
 
     if "properties" in new_schema:
         new_schema["properties"] = {k: _rec_replace_description_with_llm_description(v) for k, v in new_schema["properties"].items()}
@@ -1001,6 +1001,35 @@ def _rec_replace_description_with_llm_description(schema: dict[str, Any]) -> dic
         new_schema["$defs"] = {k: _rec_replace_description_with_llm_description(v) for k, v in new_schema["$defs"].items()}
 
     return new_schema
+
+def create_reasoning_schema_without_ref_expansion(json_schema: dict[str, Any]) -> dict[str, Any]:
+    """
+    Create reasoning schema without expanding $refs, preserving the original reference structure.
+    """
+    # Work with the original schema, keeping $refs intact
+    expanded_schema = copy.deepcopy(json_schema)
+
+    # Insert reasoning fields.
+    # We'll handle the root reasoning similarly: if root has reasoning, we add reasoning___root
+    updated_schema, root_reasoning = _insert_reasoning_fields_inner(copy.deepcopy(expanded_schema))
+
+    if root_reasoning:
+        # Root is an object (assumed). Add reasoning___root at top-level properties
+        if "properties" not in updated_schema:
+            updated_schema["properties"] = {}
+        add_reasoning_sibling_inplace(updated_schema["properties"], "root", root_reasoning)
+        if "required" in updated_schema:
+            updated_schema["required"].append("reasoning___root")
+
+    # Insert quote fields for leaf nodes with X-ReferenceQuote: true
+    updated_schema = _insert_quote_fields_inner(updated_schema)
+
+    # Replace description with X-FieldPrompt if present
+    updated_schema = _rec_replace_description_with_llm_description(updated_schema)
+
+    # Clean the schema (remove defaults, etc)
+    updated_schema = clean_schema(updated_schema, remove_custom_fields=True)
+    return updated_schema
 
 
 def create_reasoning_schema(json_schema: dict[str, Any]) -> dict[str, Any]:
@@ -1881,9 +1910,11 @@ def convert_schema_to_layout(schema: dict[str, Any]) -> dict[str, Any]:
 def get_type_str(field_schema):
     """
     Recursively determine the type string for a given schema field.
-    Handles 'anyOf' unions, enums, arrays, and simple types.
+    Handles 'anyOf' unions, enums, arrays, $ref references, and simple types.
     """
-    if "anyOf" in field_schema:
+    if "$ref" in field_schema:
+        return "reference"
+    elif "anyOf" in field_schema:
         types = []
         for sub_schema in field_schema["anyOf"]:
             types.append(get_type_str(sub_schema))
@@ -1918,6 +1949,22 @@ def process_schema_field(field_name, field_schema, level, new_line_sep: str = "\
     md = ""
     field_name_complete = field_name_prefix + field_name
 
+    # Handle $ref fields
+    if "$ref" in field_schema:
+        ref_value = field_schema["$ref"]
+        header = "#" * level + f" {field_name_complete} (reference to {ref_value})"
+        md += header + new_line_sep
+        
+        # Extract description (or use a placeholder if not provided)
+        description = field_schema.get("description", None)
+        if description is not None:
+            md += f"<Description>\n{description}\n</Description>"
+        else:
+            md += f"<Description>Reference to {ref_value}</Description>"
+        
+        md += new_line_sep * 2
+        return md
+
     # Extract type information
     type_str = get_type_str(field_schema)
     # md += f"**Type**: {type_str}{new_line_sep}"
@@ -1942,7 +1989,12 @@ def process_schema_field(field_name, field_schema, level, new_line_sep: str = "\
     # If the field is an array and its items are objects with properties, process them.
     elif field_schema.get("type") == "array" and "items" in field_schema:
         items_schema = field_schema["items"]
-        if items_schema.get("type") == "object" and "properties" in items_schema:
+        # Handle $ref in array items
+        if "$ref" in items_schema:
+            ref_value = items_schema["$ref"]
+            md += "#" * (level + 1) + f" {field_name_complete}.* (reference to {ref_value})" + new_line_sep
+            md += f"<Description>Array items reference {ref_value}</Description>" + new_line_sep * 2
+        elif items_schema.get("type") == "object" and "properties" in items_schema:
             md += process_schema_field("*", items_schema, level + 1, field_name_prefix=field_name_complete + ".")
 
     return md
@@ -1950,10 +2002,11 @@ def process_schema_field(field_name, field_schema, level, new_line_sep: str = "\
 
 def json_schema_to_nlp_data_structure(schema: dict) -> str:
     """
-    Receives a JSON schema (without $defs or $ref) and returns a markdown string
-    that documents each field with its name, description, type (including unions and enums),
-    and default value (if defined). Root-level fields use 3 hashtags, and nested fields
-    add one hashtag per level.
+    Receives a JSON schema and returns a markdown string that documents each field 
+    with its name, description, type (including unions and enums), and default value 
+    (if defined). Root-level fields use 3 hashtags, and nested fields add one hashtag 
+    per level. $ref references are preserved and shown as-is without expansion.
+    Includes definitions from $defs section.
     """
     schema_title = schema.get("title", schema.get("name", "Schema"))
     md = f"## {schema_title} -- NLP Data Structure\n\n"
@@ -1969,6 +2022,30 @@ def json_schema_to_nlp_data_structure(schema: dict) -> str:
             md += process_schema_field(field_name, field_schema, 3)
     else:
         md += process_schema_field("root", schema, 3)
+
+    # Process definitions from $defs
+    defs = schema.get("$defs", {})
+    if defs:
+        md += "\n## Definitions\n\n"
+        for def_name, def_schema in defs.items():
+            md += f"### {def_name}\n\n"
+            
+            # Add definition description if available
+            def_description = def_schema.get("description", None)
+            if def_description is not None:
+                md += f"<Description>\n{def_description}\n</Description>\n\n"
+            else:
+                md += f"<Description>Definition for {def_name}</Description>\n\n"
+            
+            # Process definition properties if it's an object
+            if def_schema.get("type") == "object" and "properties" in def_schema:
+                for prop_name, prop_schema in def_schema["properties"].items():
+                    md += process_schema_field(prop_name, prop_schema, 4, field_name_prefix=f"{def_name}.")
+            else:
+                # If it's not an object, show its type and description
+                type_str = get_type_str(def_schema)
+                md += f"**Type**: {type_str}\n\n"
+
     return md
 
 
