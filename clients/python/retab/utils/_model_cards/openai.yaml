@@ -69,6 +69,80 @@
     show_in_paid_picker: false
 
 # Chat models
+
+# gpt-5 family
+- model: "gpt-5"
+  pricing:
+    text:
+      prompt: 1.25
+      cached_discount: 0.1
+      completion: 10.0
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
+  temperature_support: false
+  reasoning_effort_support: false
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
+
+- model: "gpt-5-2025-08-07"
+  inherits: "gpt-5"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
+
+- model: "gpt-5-mini"
+  pricing:
+    text:
+      prompt: 0.25
+      cached_discount: 0.025
+      completion: 2.0
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
+  temperature_support: false
+  reasoning_effort_support: false
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
+
+- model: "gpt-5-mini-2025-08-07"
+  inherits: "gpt-5-mini"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
+
+- model: "gpt-5-nano"
+  pricing:
+    text:
+      prompt: 0.05
+      cached_discount: 0.005
+      completion: 0.4
+    audio: null
+    ft_price_hike: 1.5
+  capabilities:
+    modalities: ["text", "image"]
+    endpoints: ["chat_completions", "responses", "assistants", "batch"]
+    features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
+  temperature_support: false
+  reasoning_effort_support: false
+  permissions:
+    show_in_free_picker: true
+    show_in_paid_picker: true
+
+- model: "gpt-5-nano-2025-08-07"
+  inherits: "gpt-5-nano"
+  permissions:
+    show_in_free_picker: false
+    show_in_paid_picker: false
+
 # gpt-4.1 family
 - model: "gpt-4.1"
   pricing:
