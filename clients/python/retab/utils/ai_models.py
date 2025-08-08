@@ -177,12 +177,14 @@ def get_model_credits(model: str) -> float:
         "gpt-4o-mini": 0.1,
         "gpt-3.5-turbo": 0.1,
         "gpt-4.1-nano": 0.1,  # Future model
+        "gpt-5-nano": 0.1,
         # 0.5 credit models - Small/Mini tier (balanced performance)
         "auto-small": 0.5,
         "gemini-flash": 0.5,
         "gpt-4o": 0.5,
         "gpt-4-turbo": 0.5,
         "gpt-4.1-mini": 0.5,  # Future model
+        "gpt-5-mini": 0.5,
         "claude-3-haiku": 0.5,
         "claude-3.5-haiku": 0.5,
         # 2.0 credit models - Large/Advanced tier (highest capability)
@@ -190,6 +192,7 @@ def get_model_credits(model: str) -> float:
         "gemini-pro": 2.0,
         "gpt-4": 2.0,
         "gpt-4.1": 2.0,  # Future model
+        "gpt-5": 2.0,
         "o1-mini": 2.0,
         "o1-preview": 2.0,
         "o3": 5.0,  # Future model
