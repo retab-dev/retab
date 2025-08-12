@@ -34,7 +34,7 @@ load_dotenv()
 SEC_RSS_FEED = "https://www.sec.gov/Archives/edgar/xbrlrss.all.xml"
 SEC_ROOT     = "https://www.sec.gov"
 HEADERS      = {
-    "User-Agent": "YourName/1.0 (your.email@example.com)",
+    "User-Agent": "YourName/1.0 (your.email@example.com)", # Replace with your own email
     "Accept-Encoding": "gzip, deflate"
 }
 
@@ -46,21 +46,26 @@ def get_latest_8k_entry():
             return entry
     raise RuntimeError("No 8-K entries found")
 
-# 2) Resolve the instance URL (Takes the index URL > Finds the filing directory > Downloads the MetaLinks.json > Locates the instance document > Ruturns the actual document URL)
+# 2) Resolve the instance URL (Takes the index URL > Finds the filing directory > Downloads the MetaLinks.json > Locates the instance document > Returns the actual document URL)
 def resolve_instance_url(entry):
-    # build the base directory URL for this filing
-    idx_url = entry["link"]  # e.g. ...-index.htm
+    idx_url  = entry["link"]
     base_dir = idx_url.rsplit("/", 1)[0] + "/"
-    # fetch MetaLinks.json to enumerate instance files
     meta_url = urljoin(SEC_ROOT, base_dir + "MetaLinks.json")
     r = requests.get(meta_url, headers=HEADERS, timeout=15)
     r.raise_for_status()
     meta = r.json()
-    instances = meta.get("instance", {})
-    # pick the first .htm instance that's not the viewer
+    instances = list(meta.get("instance", {}).keys())
+
+    # prefer likely primary docs
+    instances.sort(key=lambda f: (
+        0 if ("8-k" in f.lower() or "primary" in f.lower() or "document" in f.lower()) else 1,
+        len(f)
+    ))
+
     for fname in instances:
         if fname.lower().endswith(".htm") and not fname.lower().endswith("-index.htm"):
             return urljoin(SEC_ROOT, base_dir + fname)
+
     raise RuntimeError("No instance HTML file found in MetaLinks.json")
 
 def download_raw_instance(url):
@@ -70,39 +75,24 @@ def download_raw_instance(url):
 
 # 3) Parse the IXBRL document (Removes all ix:* tags and returns the narrative)
 def parse_ixbrl(raw_html):
-    soup = BeautifulSoup(raw_html, "xml")
-    # extract all XBRL facts (nonNumeric & nonFraction)
-    facts = []
-    for tag in soup.find_all(re.compile(r"^ix:(nonNumeric|nonFraction)$")):
-        facts.append({
-            "name":       tag.get("name"),
-            "contextRef": tag.get("contextRef"),
-            "unitRef":    tag.get("unitRef"),
-            "decimals":   tag.get("decimals"),
-            "value":      tag.text.strip()
-        })
-    # extract contexts
-    contexts = {}
-    for ctx in soup.find_all("xbrli:context"):
-        cid = ctx.get("id")
-        period = ctx.find("xbrli:period")
-        start = period.find("xbrli:startDate")
-        end   = period.find("xbrli:endDate")
-        instant = period.find("xbrli:instant")
-        contexts[cid] = {
-            "startDate":  start.text if start else None,
-            "endDate":    end.text   if end   else None,
-            "instant":    instant.text if instant else None
-        }
-    # extract narrative sections (plain HTML) under <body>
-    body_html = soup.find("body")
-    narrative = ""
-    if body_html:
-        # remove all ix:* tags
-        for tag in body_html.find_all(re.compile(r"^ix:")):
-            tag.decompose()
-        narrative = body_html.get_text("\n", strip=True)
-    return facts, contexts, narrative
+    # parse as HTML
+    soup = BeautifulSoup(raw_html, "html.parser")
+
+    # remove non-content tags
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+
+    # KEEP the text inside ix:* tags 
+    for tag in soup.find_all(re.compile(r"^ix:"), recursive=True):
+        tag.unwrap()
+
+    # grab body text if present, otherwise whole doc
+    node = soup.body or soup
+    text = node.get_text("\n", strip=True)
+
+    # normalize whitespace a bit
+    text = re.sub(r"\n{2,}", "\n", text)
+    return text
 
 
 # 4) Main function—Structure the data with retab 
@@ -111,7 +101,7 @@ def main():
     print("Latest 8-K:", entry["edgar_companyname"])
     inst_url = resolve_instance_url(entry)
     raw_html = download_raw_instance(inst_url)
-    facts, contexts, narrative = parse_ixbrl(raw_html)
+    narrative = parse_ixbrl(raw_html)
     
     # Save narrative for Retab processing
     with open("narrative.txt", "w", encoding="utf-8") as f:
