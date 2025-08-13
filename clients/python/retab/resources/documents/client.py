@@ -100,7 +100,7 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: LLMModel,
         table_parsing_format: TableParsingFormat = "html",
-        image_resolution_dpi: int = 72,
+        image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
@@ -339,7 +339,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: LLMModel,
         table_parsing_format: TableParsingFormat = "html",
-        image_resolution_dpi: int = 72,
+        image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
         idempotency_key: str | None = None,
     ) -> ParseResult:
@@ -540,7 +540,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: LLMModel,
         table_parsing_format: TableParsingFormat = "html",
-        image_resolution_dpi: int = 72,
+        image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
         idempotency_key: str | None = None,
     ) -> ParseResult:
@@ -554,7 +554,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document: The document to parse. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
-            image_resolution_dpi: DPI for image processing. Defaults to 72.
+            image_resolution_dpi: DPI for image processing. Defaults to 96.
             browser_canvas: Canvas size for document rendering. Defaults to "A4".
             idempotency_key: Optional idempotency key for the request.
 
