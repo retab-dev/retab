@@ -18,7 +18,7 @@ from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..modalities import Modality
 from ..browser_canvas import BrowserCanvas
-
+from ..ai_models import LLMModel
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 
@@ -35,7 +35,7 @@ class DocumentCreateMessageRequest(BaseModel):
     browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
     )
-
+    model: LLMModel = Field(default="gemini-2.5-flash", description="The model to use for the document.")
 
 class DocumentCreateInputRequest(DocumentCreateMessageRequest):
     json_schema: dict[str, Any] = Field(description="The json schema to use for the document.")

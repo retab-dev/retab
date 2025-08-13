@@ -865,7 +865,7 @@ export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     model: z.string().default("gpt-4o-mini"),
     temperature: z.number().default(0.0),
     reasoning_effort: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional().default("medium"),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text"), z.literal("native_fast")]).default("native_fast"),
     instructions: z.string().nullable().optional(),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),

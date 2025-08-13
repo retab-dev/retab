@@ -27,7 +27,7 @@ class SchemasMixin:
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
@@ -49,7 +49,7 @@ class SchemasMixin:
         ground_truths: list[dict[str, Any]] | None = None,
         model: str = "gpt-4o-mini",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
         image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
@@ -76,7 +76,7 @@ class SchemasMixin:
         instructions: str | None = None,
         model: str = "gpt-4o-mini",
         temperature: float = 0.0,
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
         flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None,
         tools_config: EnhanceSchemaConfig = EnhanceSchemaConfig(),
     ) -> PreparedRequest:
@@ -120,7 +120,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
     ) -> Schema:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -150,7 +150,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         ground_truths: list[dict[str, Any]] | None = None,
         model: str = "gpt-4o-mini",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
         image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
@@ -209,7 +209,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
         flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None,
         tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
@@ -266,7 +266,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0.0,
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
     ) -> Schema:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -302,7 +302,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         ground_truths: list[dict[str, Any]] | None = None,
         model: str = "gpt-4o-mini",
         reasoning_effort: ChatCompletionReasoningEffort = "medium",
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
         image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
@@ -361,7 +361,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         model: str = "gpt-4o-2024-11-20",
         temperature: float = 0,
-        modality: Modality = "native",
+        modality: Modality = "native_fast",
         flat_likelihoods: list[dict[str, float]] | dict[str, float] | None = None,
         tools_config: EnhanceSchemaConfigDict | None = None,
     ) -> Schema:
