@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.projects import Project, PatchProjectRequest, ListProjectParams, BaseProject
+from ...types.projects import Project, PatchProjectRequest, BaseProject
 from ...types.inference_settings import InferenceSettings
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 from .documents import Documents, AsyncDocuments
@@ -64,10 +64,7 @@ class ProjectsMixin:
         Returns:
             PreparedRequest: The prepared request
         """
-        params_dict = {}
-
-        params = ListProjectParams(**params_dict).model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
-        return PreparedRequest(method="GET", url="/v1/projects", params=params)
+        return PreparedRequest(method="GET", url="/v1/projects")
 
     def prepare_delete(self, id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/projects/{id}")

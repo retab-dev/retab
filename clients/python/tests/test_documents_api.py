@@ -9,7 +9,7 @@ import pytest
 from pydantic import BaseModel
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.extractions import RetabParsedChatCompletion
+from retab.types.documents.extract import RetabParsedChatCompletion
 
 # List of AI Providers to test
 AI_MODELS = Literal[

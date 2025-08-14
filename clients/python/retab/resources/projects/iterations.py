@@ -6,10 +6,10 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.browser_canvas import BrowserCanvas
 from ...types.projects import CreateIterationRequest, Iteration, ProcessIterationRequest, IterationDocumentStatusResponse, PatchIterationRequest
 from ...types.inference_settings import InferenceSettings
-from ...types.metrics import DistancesResult
+from ...types.projects.metrics import DistancesResult
 from ...types.modalities import Modality
 from ...types.standards import DeleteResponse, PreparedRequest, FieldUnset
-from ...types.documents.extractions import RetabParsedChatCompletion
+from ...types.documents.extract import RetabParsedChatCompletion
 
 
 class IterationsMixin:

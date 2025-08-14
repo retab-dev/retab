@@ -25,11 +25,3 @@ class GenerateSchemaRequest(BaseModel):
 
     stream: bool = False
     """Whether to stream the response."""
-
-
-class GenerateSystemPromptRequest(GenerateSchemaRequest):
-    """
-    The request body for generating a system prompt for a JSON Schema.
-    """
-
-    json_schema: dict[str, Any]

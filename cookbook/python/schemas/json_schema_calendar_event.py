@@ -47,12 +47,3 @@ completion = client.chat.completions.create(
     messages=schema_obj.openai_messages + doc_msg.openai_messages,
     response_format={"type": "json_schema", "json_schema": {"name": schema_obj.id, "schema": schema_obj.inference_json_schema, "strict": True}},
 )
-
-# Validate the response against the original schema if you want to remove the reasoning fields
-from retab.utils.json_schema import filter_auxiliary_fields_json
-
-assert completion.choices[0].message.content is not None
-extraction = schema_obj.pydantic_model.model_validate(filter_auxiliary_fields_json(completion.choices[0].message.content))
-
-print("\n✅ Extracted Calendar Event:")
-print(json.dumps(extraction.model_dump(), indent=2))

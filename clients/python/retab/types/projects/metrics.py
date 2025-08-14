@@ -1,7 +1,6 @@
 from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
-
 # Define the type alias for MetricType
 MetricType = Literal["levenshtein", "jaccard", "hamming"]
 

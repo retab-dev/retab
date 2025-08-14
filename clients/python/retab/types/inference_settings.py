@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 from .browser_canvas import BrowserCanvas
 from .modalities import Modality
 
-
 class InferenceSettings(BaseModel):
     model: str = "gpt-5-mini"
     temperature: float = 0.0

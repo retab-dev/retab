@@ -22,6 +22,8 @@ from ..mime import MIMEData
 from ..modalities import Modality
 from ..browser_canvas import BrowserCanvas
 from ..standards import ErrorDetail, StreamingBaseModel
+from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel
+
 
 
 class DocumentExtractRequest(BaseModel):
@@ -340,3 +342,19 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
             first_token_at=first_token_at,
             last_token_at=last_token_at,
         )
+
+
+def maybe_parse_to_pydantic(schema: dict[str, Any], response: RetabParsedChatCompletion, allow_partial: bool = False) -> RetabParsedChatCompletion:
+    if response.choices[0].message.content:
+        try:
+            full_pydantic_model = convert_json_schema_to_basemodel(schema)
+            if allow_partial:
+                partial_pydantic_model = convert_basemodel_to_partial_basemodel(full_pydantic_model)
+                response.choices[0].message.parsed = partial_pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
+            else:
+                response.choices[0].message.parsed = full_pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
+        except Exception:
+            pass
+    return response
+
+

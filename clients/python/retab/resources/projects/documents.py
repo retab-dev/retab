@@ -8,10 +8,10 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import prepare_mime_document
 from ...types.projects import DocumentItem, ProjectDocument, PatchProjectDocumentRequest
-from ...types.predictions import PredictionMetadata
+from ...types.projects.predictions import PredictionMetadata
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
-from ...types.documents.extractions import RetabParsedChatCompletion
+from ...types.documents.extract import RetabParsedChatCompletion
 
 
 class DocumentsMixin:
