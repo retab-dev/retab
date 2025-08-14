@@ -4,16 +4,9 @@ from typing import Any, List, Literal
 
 import PIL.Image
 import requests
-from anthropic.types.message_param import MessageParam
-from google.genai.types import ContentUnionDict  # type: ignore
-from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-from openai.types.responses.response_input_param import ResponseInputItemParam
 from pydantic import BaseModel, Field, computed_field
 
-from ...utils.chat import convert_to_anthropic_format, convert_to_google_genai_format, str_messages
-from ...utils.chat import convert_to_openai_format as convert_to_openai_completions_api_format
 from ...utils.display import count_image_tokens, count_text_tokens
-from ...utils.responses import convert_to_openai_format as convert_to_openai_responses_api_format
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..modalities import Modality
@@ -168,57 +161,3 @@ class DocumentMessage(BaseModel):
                         results.append(f"Unrecognized type: {item_type}")
 
         return results
-
-    @property
-    def openai_messages(self) -> list[ChatCompletionMessageParam]:
-        """Returns the messages formatted for OpenAI's API.
-
-        Converts the internal message format to OpenAI's expected format for
-        chat completions.
-
-        Returns:
-            list[ChatCompletionMessageParam]: Messages formatted for OpenAI's chat completion API.
-        """
-        return convert_to_openai_completions_api_format(self.messages)
-
-    @property
-    def openai_responses_input(self) -> list[ResponseInputItemParam]:
-        """Returns the messages formatted for OpenAI's Responses API.
-
-        Converts the internal message format to OpenAI's expected format for
-        responses.
-
-        Returns:
-            list[ResponseInputItemParam]: Messages formatted for OpenAI's responses API.
-        """
-        return convert_to_openai_responses_api_format(self.messages)
-
-    @property
-    def anthropic_messages(self) -> list[MessageParam]:
-        """Returns the messages formatted for Anthropic's Claude API.
-
-        Converts the internal message format to Claude's expected format,
-        handling text, images, and other content types appropriately.
-
-        Returns:
-            list[MessageParam]: Messages formatted for Claude's API.
-        """
-        return convert_to_anthropic_format(self.messages)[1]
-
-    @property
-    def gemini_messages(self) -> list[ContentUnionDict]:
-        """Returns the messages formatted for Google's Gemini API.
-
-        Converts the internal message format to Gemini's expected format,
-        handling various content types including text and images.
-
-        Returns:
-            list[PartDict]: Messages formatted for Gemini's API.
-        """
-        return convert_to_google_genai_format(self.messages)[1]
-
-    def __str__(self) -> str:
-        return f"DocumentMessage(id={self.id}, object={self.object}, created={self.created}, messages={str_messages(self.messages)}, modality={self.modality})"
-
-    def __repr__(self) -> str:
-        return f"DocumentMessage(id={self.id}, object={self.object}, created={self.created}, messages={str_messages(self.messages)}, modality={self.modality})"

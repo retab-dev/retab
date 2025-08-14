@@ -1,7 +1,7 @@
 import datetime
 from typing import Any, Optional
 from pydantic import BaseModel, Field
-from .ai_models import Amount
+from ..ai_models import Amount
 
 
 class PredictionMetadata(BaseModel):

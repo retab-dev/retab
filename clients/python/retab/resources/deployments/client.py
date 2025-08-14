@@ -7,7 +7,7 @@ import PIL.Image
 from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import MIMEData, prepare_mime_document
-from ...types.documents.extractions import RetabParsedChatCompletion
+from ...types.documents.extract import RetabParsedChatCompletion
 from ...types.standards import PreparedRequest
 
 

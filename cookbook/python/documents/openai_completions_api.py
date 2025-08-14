@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from retab import Schema, Retab
-from retab.utils.json_schema import filter_auxiliary_fields_json
+from main_server.libs.document_analysis.functions.json_schema  import filter_auxiliary_fields_json
 
 # Load environment variables
 load_dotenv()

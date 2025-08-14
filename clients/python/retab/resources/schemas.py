@@ -1,6 +1,6 @@
 from io import IOBase
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Any
 
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
@@ -11,7 +11,6 @@ from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.modalities import Modality
 from ..types.schemas.generate import GenerateSchemaRequest
-from ..types.schemas.object import Schema
 from ..types.standards import PreparedRequest
 
 
@@ -47,7 +46,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         model: str = "gpt-5-mini",
         temperature: float = 0,
         modality: Modality = "native_fast",
-    ) -> Schema:
+    ) -> dict[str, Any]:
         """
         Generate a complete JSON schema by analyzing the provided documents.
 
@@ -67,7 +66,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
 
         prepared_request = self.prepare_generate(documents, instructions, model, temperature, modality)
         response = self._client._prepared_request(prepared_request)
-        return Schema.model_validate(response)
+        return response
 
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     
@@ -78,7 +77,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         model: str = "gpt-5-mini",
         temperature: float = 0.0,
         modality: Modality = "native_fast",
-    ) -> Schema:
+    ) -> dict[str, Any]:
         """
         Generate a complete JSON schema by analyzing the provided documents.
 
@@ -104,5 +103,5 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             modality=modality,
         )
         response = await self._client._prepared_request(prepared_request)
-        return Schema.model_validate(response)
+        return response
 

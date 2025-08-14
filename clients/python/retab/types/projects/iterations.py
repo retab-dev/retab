@@ -5,7 +5,7 @@ import nanoid  # type: ignore
 from pydantic import BaseModel, Field, model_validator
 
 from ..inference_settings import InferenceSettings
-from ..predictions import PredictionData
+from .predictions import PredictionData
 
 
 class BaseIteration(BaseModel):

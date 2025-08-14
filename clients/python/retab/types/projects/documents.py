@@ -3,7 +3,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 from ..mime import MIMEData
-from ..predictions import PredictionMetadata
+from .predictions import PredictionMetadata
 
 
 class AnnotatedDocument(BaseModel):

@@ -2,9 +2,8 @@ import datetime
 from typing import Any, Optional
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field
 
-from ...utils.json_schema import generate_schema_data_id, generate_schema_id
 from ..inference_settings import InferenceSettings
 from .documents import ProjectDocument
 from .iterations import Iteration
@@ -22,33 +21,6 @@ class BaseProject(BaseModel):
 class Project(BaseProject):
     documents: list[ProjectDocument] = Field(default_factory=list)
     iterations: list[Iteration] = Field(default_factory=list)
-
-    @computed_field  # type: ignore
-    @property
-    def schema_data_id(self) -> str:
-        """Returns the SHA1 hash of the schema data, ignoring all prompt/description/default fields.
-
-        Returns:
-            str: A SHA1 hash string representing the schema data version.
-        """
-        return generate_schema_data_id(self.json_schema)
-
-    # This is a computed field, it is exposed when serializing the object
-    @computed_field  # type: ignore
-    @property
-    def schema_id(self) -> str:
-        """Returns the SHA1 hash of the complete schema.
-
-        Returns:
-            str: A SHA1 hash string representing the complete schema version.
-        """
-        return generate_schema_id(self.json_schema)
-
-
-class ListProjectParams(BaseModel):
-    schema_id: Optional[str] = Field(default=None, description="The ID of the schema")
-    schema_data_id: Optional[str] = Field(default=None, description="The ID of the schema data")
-
 
 class CreateProjectRequest(BaseModel):
     name: str

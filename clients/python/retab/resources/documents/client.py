@@ -1,37 +1,26 @@
+import json
 from io import IOBase
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, AsyncGenerator, Generator
 
 import PIL.Image
 from pydantic import HttpUrl
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...utils.json_schema import load_json_schema, filter_auxiliary_fields_json
 from ...utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
 from ...utils.ai_models import assert_valid_model_extraction
+from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
-from ...types.documents.extractions import DocumentExtractRequest, RetabParsedChatCompletion
+from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
 from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
 from ...types.ai_models import LLMModel
-from ...types.schemas.object import Schema
 from ...types.standards import PreparedRequest, FieldUnset
-
-
-def maybe_parse_to_pydantic(schema: Schema, response: RetabParsedChatCompletion, allow_partial: bool = False) -> RetabParsedChatCompletion:
-    if response.choices[0].message.content:
-        try:
-            if allow_partial:
-                response.choices[0].message.parsed = schema._partial_pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
-            else:
-                response.choices[0].message.parsed = schema.pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
-        except Exception:
-            pass
-    return response
-
+from ...utils.json_schema import load_json_schema, unflatten_dict
 
 class BaseDocumentsMixin:
     def _prepare_create_messages(
@@ -127,6 +116,7 @@ class BaseDocumentsMixin:
         modality: Modality = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
+        stream: bool = False,
         store: bool = False,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
@@ -151,7 +141,7 @@ class BaseDocumentsMixin:
             "json_schema": loaded_schema,
             "documents": processed_documents,
             "model": model,
-            "stream": False,
+            "stream": stream,
             "store": store,
         }
         if temperature is not FieldUnset:
@@ -170,8 +160,10 @@ class BaseDocumentsMixin:
         # Validate DocumentAPIRequest data (raises exception if invalid)
         extract_request = DocumentExtractRequest(**request_dict)
 
+        # Use the same URL as extractions.py for consistency when streaming
+        url = "/v1/documents/extractions" if stream else "/v1/documents/extract"
         return PreparedRequest(
-            method="POST", url="/v1/documents/extract", data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
+            method="POST", url=url, data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
         )
 
 
@@ -331,8 +323,114 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         )
         response = self._client._prepared_request(request)
 
-        schema = Schema(json_schema=load_json_schema(json_schema))
-        return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
+        return maybe_parse_to_pydantic(load_json_schema(json_schema), RetabParsedChatCompletion.model_validate(response))
+
+    @as_context_manager
+    def extract_stream(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        model: str,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        n_consensus: int = FieldUnset,
+        idempotency_key: str | None = None,
+        store: bool = False,
+    ) -> Generator[RetabParsedChatCompletion, None, None]:
+        """
+        Process one or more documents using the Retab API with streaming enabled.
+
+        Args:
+            json_schema: JSON schema defining the expected data structure
+            model: The AI model to use for processing
+            document: Single document to process (use either this or documents, not both)
+            documents: List of documents to process (use either this or document, not both)
+            image_resolution_dpi: Optional image resolution DPI.
+            browser_canvas: Optional browser canvas size.
+            temperature: Model temperature setting (0-1)
+            modality: Modality of the document (e.g., native)
+            reasoning_effort: The effort level for the model to reason about the input data.
+            n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
+            idempotency_key: Idempotency key for request
+            store: Whether to store the document in the Retab database
+
+        Returns:
+            Generator[RetabParsedChatCompletion]: Stream of parsed responses
+        Raises:
+            ValueError: If neither document nor documents is provided, or if both are provided
+            HTTPException: If the request fails
+        Usage:
+        ```python
+        # Single document
+        with retab.documents.extract_stream(json_schema, model, document=document) as stream:
+            for response in stream:
+                print(response)
+
+        # Multiple documents
+        with retab.documents.extract_stream(json_schema, model, documents=[doc1, doc2]) as stream:
+            for response in stream:
+                print(response)
+        ```
+        """
+        request = self._prepare_extract(
+            json_schema=json_schema,
+            document=document,
+            documents=documents,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            stream=True,
+            n_consensus=n_consensus,
+            store=store,
+            idempotency_key=idempotency_key,
+        )
+        schema = load_json_schema(json_schema)
+
+        # Request the stream and return a context manager
+        ui_parsed_chat_completion_cum_chunk: RetabParsedChatCompletionChunk | None = None
+        # Initialize the RetabParsedChatCompletion object
+        ui_parsed_completion: RetabParsedChatCompletion = RetabParsedChatCompletion(
+            id="",
+            created=0,
+            model="",
+            object="chat.completion",
+            likelihoods={},
+            choices=[
+                RetabParsedChoice(
+                    index=0,
+                    message=ParsedChatCompletionMessage(content="", role="assistant"),
+                    finish_reason=None,
+                    logprobs=None,
+                )
+            ],
+        )
+        for chunk_json in self._client._prepared_request_stream(request):
+            if not chunk_json:
+                continue
+            ui_parsed_chat_completion_cum_chunk = RetabParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
+            # Basic stuff
+            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
+            # Update the ui_parsed_completion object
+            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
+            likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
+            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
+            ui_parsed_completion.choices[0].message.parsed = parsed
+            ui_parsed_completion.likelihoods = likelihoods
+
+            yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
+
+        # change the finish_reason to stop
+        ui_parsed_completion.choices[0].finish_reason = "stop"
+        yield maybe_parse_to_pydantic(schema, ui_parsed_completion)
 
     def parse(
         self,
@@ -532,8 +630,113 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         )
         response = await self._client._prepared_request(request)
 
-        schema = Schema(json_schema=load_json_schema(json_schema))
-        return maybe_parse_to_pydantic(schema, RetabParsedChatCompletion.model_validate(response))
+        return maybe_parse_to_pydantic(load_json_schema(json_schema), RetabParsedChatCompletion.model_validate(response))
+
+    @as_async_context_manager
+    async def extract_stream(
+        self,
+        json_schema: dict[str, Any] | Path | str,
+        model: str,
+        document: Path | str | IOBase | HttpUrl | None = None,
+        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        temperature: float = FieldUnset,
+        modality: Modality = FieldUnset,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        n_consensus: int = FieldUnset,
+        idempotency_key: str | None = None,
+        store: bool = False,
+    ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
+        """
+        Extract structured data from one or more documents asynchronously with streaming.
+
+        Args:
+            json_schema: JSON schema defining the expected data structure.
+            model: The AI model to use.
+            document: Single document to process (use either this or documents, not both)
+            documents: List of documents to process (use either this or document, not both)
+            image_resolution_dpi: Optional image resolution DPI.
+            browser_canvas: Optional browser canvas size.
+            temperature: Model temperature setting (0-1).
+            modality: Modality of the document (e.g., native).
+            reasoning_effort: The effort level for the model to reason about the input data.
+            n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
+            idempotency_key: Idempotency key for request
+            store: Whether to store the document in the Retab database
+        Returns:
+            AsyncGenerator[RetabParsedChatCompletion, None]: Stream of parsed responses.
+        Raises:
+            ValueError: If neither document nor documents is provided, or if both are provided
+
+        Usage:
+        ```python
+        # Single document
+        async with retab.documents.extract_stream(json_schema, model, document=document) as stream:
+            async for response in stream:
+                print(response)
+
+        # Multiple documents
+        async with retab.documents.extract_stream(json_schema, model, documents=[doc1, doc2]) as stream:
+            async for response in stream:
+                print(response)
+        ```
+        """
+        request = self._prepare_extract(
+            json_schema=json_schema,
+            document=document,
+            documents=documents,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            stream=True,
+            n_consensus=n_consensus,
+            store=store,
+            idempotency_key=idempotency_key,
+        )
+        schema = load_json_schema(json_schema)
+        ui_parsed_chat_completion_cum_chunk: RetabParsedChatCompletionChunk | None = None
+        # Initialize the RetabParsedChatCompletion object
+        ui_parsed_completion: RetabParsedChatCompletion = RetabParsedChatCompletion(
+            id="",
+            created=0,
+            model="",
+            object="chat.completion",
+            likelihoods={},
+            choices=[
+                RetabParsedChoice(
+                    index=0,
+                    message=ParsedChatCompletionMessage(content="", role="assistant"),
+                    finish_reason=None,
+                    logprobs=None,
+                )
+            ],
+        )
+
+        async for chunk_json in self._client._prepared_request_stream(request):
+            if not chunk_json:
+                continue
+            ui_parsed_chat_completion_cum_chunk = RetabParsedChatCompletionChunk.model_validate(chunk_json).chunk_accumulator(ui_parsed_chat_completion_cum_chunk)
+            # Basic stuff
+            ui_parsed_completion.id = ui_parsed_chat_completion_cum_chunk.id
+            ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
+            ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
+
+            # Update the ui_parsed_completion object
+            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
+            likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
+            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
+            ui_parsed_completion.choices[0].message.parsed = parsed
+            ui_parsed_completion.likelihoods = likelihoods
+
+            yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
+
+        # change the finish_reason to stop
+        ui_parsed_completion.choices[0].finish_reason = "stop"
+        yield maybe_parse_to_pydantic(schema, ui_parsed_completion)
 
     async def parse(
         self,

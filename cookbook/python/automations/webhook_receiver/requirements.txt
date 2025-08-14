@@ -1,5 +1,0 @@
-fastapi
-pyngrok
-uvicorn
-git+https://github.com/Retab-dev/retab.git@main#subdirectory=clients/python
-google-genai

@@ -1,4 +1,4 @@
-from .model import Project, BaseProject, CreateProjectRequest, PatchProjectRequest, ListProjectParams
+from .model import Project, BaseProject, CreateProjectRequest, PatchProjectRequest
 from .documents import AnnotatedDocument, DocumentItem, ProjectDocument, CreateProjectDocumentRequest, PatchProjectDocumentRequest
 from .iterations import (
     BaseIteration,
@@ -17,7 +17,6 @@ __all__ = [
     "BaseProject",
     "CreateProjectRequest",
     "PatchProjectRequest",
-    "ListProjectParams",
     "AnnotatedDocument",
     "DocumentItem",
     "ProjectDocument",
