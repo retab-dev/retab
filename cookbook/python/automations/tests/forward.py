@@ -10,7 +10,7 @@ mailbox = client.processors.automations.mailboxes.create(
     name="Mailbox Automation",
     processor_id="proc_2BTqDkKOTO_Ddz1N7JwVZ",
     webhook_url="http://api.retab.com/webhook",
-    webhook_headers={"API-Key": os.getenv("RETAB_API_KEY")},
+    webhook_headers={"Api-Key": os.getenv("RETAB_API_KEY")},
     email="invoices-4@mailbox.retab.com",
 )
 

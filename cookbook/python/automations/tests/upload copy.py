@@ -10,7 +10,7 @@ link = client.processors.automations.links.create(
     name="Link Automation",
     processor_id="proc_o4dtLxizT0kDAjeKuyVLA",
     webhook_url="https://api.retab.com/webhook",
-    webhook_headers={"API-Key": os.getenv("RETAB_API_KEY")},
+    webhook_headers={"Api-Key": os.getenv("RETAB_API_KEY")},
 )
 
 

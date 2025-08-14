@@ -3,6 +3,10 @@ from typing import Any, BinaryIO, Literal, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
+# Add webp and heic to the list of supported mime types
+mimetypes.add_type("image/webp", ".webp")
+mimetypes.add_type("image/heic", ".heic")
+mimetypes.add_type("image/heif", ".heif")
 
 class DBFile(BaseModel):
     """Represents the core file object in your new spec."""

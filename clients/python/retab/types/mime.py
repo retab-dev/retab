@@ -8,6 +8,11 @@ from typing import Any, Optional, Self, Sequence
 from pydantic import BaseModel, Field, field_validator
 from ..utils.hashing import generate_blake2b_hash_from_base64
 
+# Add webp and heic to the list of supported mime types
+mimetypes.add_type("image/webp", ".webp")
+mimetypes.add_type("image/heic", ".heic")
+mimetypes.add_type("image/heif", ".heif")
+
 # **** OCR DATACLASSES (DocumentAI-compatible) ****
 class Point(BaseModel):
     x: int
