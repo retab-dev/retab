@@ -1,21 +1,18 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Sequence
 
 import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel
 
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..utils.ai_models import assert_valid_model_schema_generation
-from ..utils.json_schema import load_json_schema
 from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.modalities import Modality
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.schemas.object import Schema
 from ..types.standards import PreparedRequest
-from ..types.browser_canvas import BrowserCanvas
 
 
 class SchemasMixin:

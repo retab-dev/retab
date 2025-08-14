@@ -8,7 +8,7 @@ import backoff.types
 import httpx
 import truststore
 
-from .resources import consensus, deployments, documents, files, finetuning, models, processors, schemas, secrets, usage, projects
+from .resources import deployments, documents, models, schemas, projects
 from .types.standards import PreparedRequest, FieldUnset
 
 
@@ -177,16 +177,10 @@ class Retab(BaseRetab):
 
         self.client = httpx.Client(timeout=self.timeout)
         self.projects = projects.Projects(client=self)
-        self.files = files.Files(client=self)
-        self.fine_tuning = finetuning.FineTuning(client=self)
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
-        self.processors = processors.Processors(client=self)
         self.deployments = deployments.Deployments(client=self)
-        self.secrets = secrets.Secrets(client=self)
-        self.usage = usage.Usage(client=self)
-        self.consensus = consensus.Consensus(client=self)
 
     def _request(
         self,
@@ -442,16 +436,10 @@ class AsyncRetab(BaseRetab):
         self.client = httpx.AsyncClient(timeout=self.timeout)
 
         self.projects = projects.AsyncProjects(client=self)
-        self.files = files.AsyncFiles(client=self)
-        self.fine_tuning = finetuning.AsyncFineTuning(client=self)
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
-        self.processors = processors.AsyncProcessors(client=self)
         self.deployments = deployments.AsyncDeployments(client=self)
-        self.secrets = secrets.AsyncSecrets(client=self)
-        self.usage = usage.AsyncUsage(client=self)
-        self.consensus = consensus.AsyncConsensus(client=self)
 
     def _parse_response(self, response: httpx.Response) -> Any:
         """Parse response based on content-type.
