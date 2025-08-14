@@ -27,16 +27,11 @@ httpx
 pydantic
 pydantic_core
 requests
-tqdm
-types-tqdm
 backoff
-termplotlib
-Levenshtein
-pandas
 numpy
-motor
 rich
 puremagic
+fastapi
 
 ########################
 ## Validation dependencies
@@ -51,9 +46,6 @@ nanoid
 ## AI dependencies
 ########################
 openai
-google-genai
-google-generativeai
-anthropic
 tiktoken
 
 
@@ -65,4 +57,4 @@ truststore
 ########################
 ## Development dependencies
 ########################
-ruff
+# ruff - development tool, not runtime dependency

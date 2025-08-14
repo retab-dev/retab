@@ -2,8 +2,7 @@ import base64
 import datetime
 from typing import Any, Literal, Optional
 
-from anthropic.types.message import Message
-from anthropic.types.message_param import MessageParam
+
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
@@ -151,8 +150,7 @@ class LogExtractionRequest(BaseModel):
     messages: list[ChatCompletionRetabMessage] | None = None  # TODO: compatibility with Anthropic
     openai_messages: list[ChatCompletionMessageParam] | None = None
     openai_responses_input: list[ResponseInputItemParam] | None = None
-    anthropic_messages: list[MessageParam] | None = None
-    anthropic_system_prompt: str | None = None
+
     document: MIMEData = Field(
         default=MIMEData(
             filename="dummy.txt",
@@ -161,25 +159,21 @@ class LogExtractionRequest(BaseModel):
         ),
         description="Document analyzed, if not provided a dummy one will be created with the text 'No document provided'",
     )
-    completion: dict | RetabParsedChatCompletion | Message | ParsedChatCompletion | ChatCompletion | None = None
+    completion: dict | RetabParsedChatCompletion | ParsedChatCompletion | ChatCompletion | None = None
     openai_responses_output: Response | None = None
     json_schema: dict[str, Any]
     model: str
     temperature: float
 
-    # Validate that at least one of the messages, openai_messages, anthropic_messages is provided using model_validator
+    # Validate that at least one of the messages, openai_messages is provided using model_validator
     @model_validator(mode="before")
     def validation(cls, data: Any) -> Any:
         # Handle both dict and model instance cases
         if isinstance(data, dict):
-            messages_candidates = [data.get("messages"), data.get("openai_messages"), data.get("anthropic_messages"), data.get("openai_responses_input")]
+            messages_candidates = [data.get("messages"), data.get("openai_messages"), data.get("openai_responses_input")]
             messages_candidates = [candidate for candidate in messages_candidates if candidate is not None]
             if len(messages_candidates) != 1:
-                raise ValueError("Exactly one of the messages, openai_messages, anthropic_messages, openai_responses_input must be provided")
-
-            # Validate that if anthropic_messages is provided, anthropic_system_prompt is also provided
-            if data.get("anthropic_messages") is not None and data.get("anthropic_system_prompt") is None:
-                raise ValueError("anthropic_system_prompt must be provided if anthropic_messages is provided")
+                raise ValueError("Exactly one of the messages, openai_messages, openai_responses_input must be provided")
 
             completion_candidates = [data.get("completion"), data.get("openai_responses_output")]
             completion_candidates = [candidate for candidate in completion_candidates if candidate is not None]
@@ -190,18 +184,11 @@ class LogExtractionRequest(BaseModel):
             messages_candidates = [
                 getattr(data, "messages", None),
                 getattr(data, "openai_messages", None),
-                getattr(data, "anthropic_messages", None),
                 getattr(data, "openai_responses_input", None),
             ]
             messages_candidates = [candidate for candidate in messages_candidates if candidate is not None]
             if len(messages_candidates) != 1:
-                raise ValueError("Exactly one of the messages, openai_messages, anthropic_messages, openai_responses_input must be provided")
-
-            # Validate that if anthropic_messages is provided, anthropic_system_prompt is also provided
-            anthropic_messages = getattr(data, "anthropic_messages", None)
-            anthropic_system_prompt = getattr(data, "anthropic_system_prompt", None)
-            if anthropic_messages is not None and anthropic_system_prompt is None:
-                raise ValueError("anthropic_system_prompt must be provided if anthropic_messages is provided")
+                raise ValueError("Exactly one of the messages, openai_messages, openai_responses_input must be provided")
 
             completion_candidates = [getattr(data, "completion", None), getattr(data, "openai_responses_output", None)]
             completion_candidates = [candidate for candidate in completion_candidates if candidate is not None]
