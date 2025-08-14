@@ -34,7 +34,7 @@ class ProcessorConfig(BaseModel):
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])
     reasoning_effort: ChatCompletionReasoningEffort = Field(
-        default="medium", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
+        default="minimal", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
     )
     n_consensus: int = Field(default=1, description="Number of consensus required to validate the data")
 

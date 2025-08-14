@@ -6,10 +6,10 @@ from .modalities import Modality
 
 
 class InferenceSettings(BaseModel):
-    model: str = "gpt-4.1-mini"
+    model: str = "gpt-5-mini"
     temperature: float = 0.0
     modality: Modality = "native"
-    reasoning_effort: ChatCompletionReasoningEffort = "medium"
+    reasoning_effort: ChatCompletionReasoningEffort = "minimal"
     image_resolution_dpi: int = 96
     browser_canvas: BrowserCanvas = "A4"
     n_consensus: int = Field(default=1, description="Number of consensus rounds to perform")
