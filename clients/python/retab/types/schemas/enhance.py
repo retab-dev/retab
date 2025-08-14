@@ -49,9 +49,9 @@ class EnhanceSchemaRequest(BaseModel):
 
     documents: list[MIMEData]
     ground_truths: list[dict[str, Any]] | None = None
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-5-mini"
     temperature: float = 0.0
-    reasoning_effort: ChatCompletionReasoningEffort = "medium"
+    reasoning_effort: ChatCompletionReasoningEffort = "minimal"
     modality: Modality
     """The modality of the document to load."""
 

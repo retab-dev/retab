@@ -3,8 +3,6 @@ from typing import Any, Dict, List, Literal, Optional
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.consensus import ReconciliationResponse, ReconciliationRequest
 from ...types.standards import PreparedRequest
-from .completions import AsyncCompletions, Completions
-from .responses import AsyncResponses, Responses
 
 
 class BaseConsensusMixin:
@@ -29,8 +27,6 @@ class Consensus(SyncAPIResource, BaseConsensusMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.completions = Completions(client=client)
-        self.responses = Responses(client=client)
 
     def reconcile(
         self,
@@ -64,8 +60,6 @@ class AsyncConsensus(AsyncAPIResource, BaseConsensusMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        self.completions = AsyncCompletions(client=client)
-        self.responses = AsyncResponses(client=client)
 
     async def reconcile(
         self,

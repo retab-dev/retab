@@ -35,7 +35,7 @@
   reasoning_effort_support: true
   permissions:
     show_in_free_picker: false
-    show_in_paid_picker: true
+    show_in_paid_picker: false
 
 - model: "o3-2025-04-16"
   inherits: "o3"
@@ -60,7 +60,7 @@
   reasoning_effort_support: true
   permissions:
     show_in_free_picker: false
-    show_in_paid_picker: true
+    show_in_paid_picker: false
 
 - model: "o4-mini-2025-04-16"
   inherits: "o4-mini"
@@ -84,7 +84,7 @@
     endpoints: ["chat_completions", "responses", "assistants", "batch"]
     features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
   temperature_support: false
-  reasoning_effort_support: false
+  reasoning_effort_support: true
   permissions:
     show_in_free_picker: true
     show_in_paid_picker: true
@@ -108,7 +108,7 @@
     endpoints: ["chat_completions", "responses", "assistants", "batch"]
     features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
   temperature_support: false
-  reasoning_effort_support: false
+  reasoning_effort_support: true
   permissions:
     show_in_free_picker: true
     show_in_paid_picker: true
@@ -132,7 +132,7 @@
     endpoints: ["chat_completions", "responses", "assistants", "batch"]
     features: ["streaming", "function_calling", "structured_outputs", "schema_generation"]
   temperature_support: false
-  reasoning_effort_support: false
+  reasoning_effort_support: true
   permissions:
     show_in_free_picker: true
     show_in_paid_picker: true
@@ -159,8 +159,8 @@
   temperature_support: true
   reasoning_effort_support: false
   permissions:
-    show_in_free_picker: true
-    show_in_paid_picker: true
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gpt-4.1-2025-04-14"
   inherits: "gpt-4.1"
@@ -183,8 +183,8 @@
   temperature_support: true
   reasoning_effort_support: false
   permissions:
-    show_in_free_picker: true
-    show_in_paid_picker: true
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gpt-4.1-mini-2025-04-14"
   inherits: "gpt-4.1-mini"
@@ -207,8 +207,8 @@
   temperature_support: true
   reasoning_effort_support: false
   permissions:
-    show_in_free_picker: true
-    show_in_paid_picker: true
+    show_in_free_picker: false
+    show_in_paid_picker: false
 
 - model: "gpt-4.1-nano-2025-04-14"
   inherits: "gpt-4.1-nano"

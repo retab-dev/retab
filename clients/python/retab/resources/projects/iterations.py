@@ -337,7 +337,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         temperature: float = 0.0,
         modality: Modality = "native",
         json_schema: Optional[Dict[str, Any]] = None,
-        reasoning_effort: ChatCompletionReasoningEffort = "medium",
+        reasoning_effort: ChatCompletionReasoningEffort = "minimal",
         image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,

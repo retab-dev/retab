@@ -12,7 +12,7 @@ class GenerateSchemaRequest(BaseModel):
     documents: list[MIMEData]
     model: str = "gpt-4o-mini"
     temperature: float = 0.0
-    reasoning_effort: ChatCompletionReasoningEffort = "medium"
+    reasoning_effort: ChatCompletionReasoningEffort = "minimal"
     modality: Modality = "native_fast"
     instructions: str | None = None
     """The modality of the document to load."""

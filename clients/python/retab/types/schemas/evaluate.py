@@ -21,7 +21,7 @@ class EvaluateSchemaRequest(BaseModel):
     documents: list[MIMEData]
     ground_truths: list[dict[str, Any]] | None = None
     model: str = "gpt-4o-mini"
-    reasoning_effort: ChatCompletionReasoningEffort = "medium"
+    reasoning_effort: ChatCompletionReasoningEffort = "minimal"
     modality: Modality
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
     browser_canvas: BrowserCanvas = Field(
