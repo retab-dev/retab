@@ -1,5 +1,5 @@
-const APIV1 = require("./api/client").default;
-const { FetcherClient } = require("./client");
+import APIV1 from "./api/client.js";
+import { FetcherClient } from "./client.js";
 
 export * from "./types";
 export * from "./client";

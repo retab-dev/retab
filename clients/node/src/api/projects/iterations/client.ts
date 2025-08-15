@@ -1,6 +1,6 @@
 import { CompositionClient } from "@/client";
 import * as z from "zod";
-import { ZInferenceSettings, ZCreateIterationRequest, ZPatchIterationRequest, ZIterationDocumentStatusResponse, ZProcessIterationRequest, dataArray, Iteration, ZIteration } from "@/types";
+import { ZInferenceSettings, ZCreateIterationRequest, ZPatchIterationRequest, ZIterationDocumentStatusResponse, ZProcessIterationRequest, dataArray, Iteration, ZIteration, RetabParsedChatCompletion, ZRetabParsedChatCompletion } from "@/types";
 
 export default class APIProjectsIterations extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -63,19 +63,11 @@ export default class APIProjectsIterations extends CompositionClient {
         });
     }
 
-    async process_document(projectId: string, iterationId: string, documentId: string): Promise<any> {
-        // This endpoint might return empty response or non-JSON, so handle it gracefully
-        try {
-            return await this._fetchJson(z.any(), {
-                url: `/v1/projects/${projectId}/iterations/${iterationId}/documents/${documentId}/process`,
-                method: "POST",
-            });
-        } catch (error: any) {
-            // If it's a "Response is not JSON" error with status 200, return success
-            if (error.status === 200 && error.info === "Response is not JSON") {
-                return { success: true };
-            }
-            throw error;
-        }
+    async process_document(projectId: string, iterationId: string, documentId: string): Promise<RetabParsedChatCompletion> {
+        return this._fetchJson(ZRetabParsedChatCompletion, {
+            url: `/v1/projects/${projectId}/iterations/${iterationId}/documents/${documentId}/process`,
+            method: "POST",
+            body: { stream: false },
+        });
     }
 }
