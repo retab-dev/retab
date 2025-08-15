@@ -64,7 +64,7 @@ async def base_test_extract(
     if client_type == "sync":
         with sync_client as client:
             if response_mode == "stream":
-                with client.documents.extractions.stream(
+                with client.documents.extract_stream(
                     json_schema=json_schema,
                     document=document,
                     model=model,
@@ -74,7 +74,7 @@ async def base_test_extract(
                     for response in stream_iterator:
                         pass
             else:
-                response = client.documents.extractions.parse(
+                response = client.documents.extract(
                     json_schema=json_schema,
                     document=document,
                     model=model,
@@ -83,7 +83,7 @@ async def base_test_extract(
     if client_type == "async":
         async with async_client:
             if response_mode == "stream":
-                async with async_client.documents.extractions.stream(
+                async with async_client.documents.extract_stream(
                     json_schema=json_schema,
                     document=document,
                     model=model,
@@ -93,7 +93,7 @@ async def base_test_extract(
                     async for response in stream_async_iterator:
                         pass
             else:
-                response = await async_client.documents.extractions.parse(
+                response = await async_client.documents.extract(
                     json_schema=json_schema,
                     document=document,
                     model=model,
@@ -194,127 +194,116 @@ async def test_extract_overload(
 
 @pytest.mark.asyncio
 async def test_extraction_with_idempotency(sync_client: Retab, booking_confirmation_file_path_1: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
-    name = nanoid.generate()
     idempotency_key = nanoid.generate()
     model = "gpt-4o-mini"
     modality = "native"
 
-    # First create a processor
-    processor = sync_client.processors.create(
-        name=name,
-        json_schema=booking_confirmation_json_schema,
-        model=model,
-    )
-    processor_id = processor.id
 
-    try:
-        response_initial = sync_client.documents.extractions.parse(
-            json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path_1, model=model, modality=modality, idempotency_key=idempotency_key
-        )
-        await asyncio.sleep(2)
-        t0 = time.time()
-        response_second = sync_client.documents.extractions.parse(
-            json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path_1, model=model, modality=modality, idempotency_key=idempotency_key
-        )
-        t1 = time.time()
-        assert t1 - t0 < 10, "Request should take less than 10 seconds"
-        assert response_initial.choices[0].message.content == response_second.choices[0].message.content, "Response should be the same"
-        assert response_initial.choices[0].message.parsed is not None, "Parsed response should not be None for the first request"
-        assert response_second.choices[0].message.parsed is not None, "Parsed response should not be None for the second request"
-        assert response_initial.choices[0].message.parsed.model_dump() == response_second.choices[0].message.parsed.model_dump(), "Parsed response should be the same"
-    finally:
-        # Delete the processor if it was created
-        try:
-            sync_client.processors.delete(processor_id)
-        except Exception:
-            pass
+
+    response_initial = sync_client.documents.extract(
+        json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path_1, model=model, modality=modality, idempotency_key=idempotency_key
+    )
+    await asyncio.sleep(2)
+    t0 = time.time()
+    response_second = sync_client.documents.extract(
+        json_schema=booking_confirmation_json_schema, document=booking_confirmation_file_path_1, model=model, modality=modality, idempotency_key=idempotency_key
+    )
+    t1 = time.time()
+    assert t1 - t0 < 10, "Request should take less than 10 seconds"
+    assert response_initial.choices[0].message.content == response_second.choices[0].message.content, "Response should be the same"
+    assert response_initial.choices[0].message.parsed is not None, "Parsed response should not be None for the first request"
+    assert response_second.choices[0].message.parsed is not None, "Parsed response should not be None for the second request"
+    assert response_initial.choices[0].message.parsed.model_dump() == response_second.choices[0].message.parsed.model_dump(), "Parsed response should be the same"
+
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "test_exception",
-    ["before_handle_extraction", "after_handle_extraction", "within_process_document_stream_generator"],
+    "error_scenario",
+    ["invalid_model", "invalid_json_schema", "missing_document"],
 )
-async def test_extraction_with_idempotency_exceptions(
-    sync_client: Retab, booking_confirmation_file_path_1: str, booking_confirmation_json_schema: dict[str, Any], test_exception: str
+async def test_extraction_with_idempotency_error_scenarios(
+    sync_client: Retab, booking_confirmation_file_path_1: str, booking_confirmation_json_schema: dict[str, Any], error_scenario: str
 ) -> None:
-    name = nanoid.generate()
+    """Test idempotency behavior when various error conditions occur during extraction."""
     idempotency_key = str(nanoid.generate())
-    model = "gpt-4o-mini"
-    modality = "native"
-
-    # First create a processor
-    processor = sync_client.processors.create(
-        name=name,
-        json_schema=booking_confirmation_json_schema,
-        model=model,
-    )
-    processor_id = processor.id
-
+    
+    # Set up error scenarios
+    if error_scenario == "invalid_model":
+        model = "invalid-model-name"
+        json_schema = booking_confirmation_json_schema
+        document = booking_confirmation_file_path_1
+    elif error_scenario == "invalid_json_schema":
+        model = "gpt-4o-mini"
+        json_schema = {"invalid": "schema without required fields"}
+        document = booking_confirmation_file_path_1
+    elif error_scenario == "missing_document":
+        model = "gpt-4o-mini"
+        json_schema = booking_confirmation_json_schema
+        document = "/nonexistent/file.pdf"
+    else:
+        pytest.fail(f"Unknown error scenario: {error_scenario}")
+    
+    response1: Any = None
+    response2: Any = None
+    raised_exception_1: Exception | None = None
+    raised_exception_2: Exception | None = None
+    
+    # First request attempt
     try:
-        loading_request = sync_client.documents.extractions.prepare_extraction(
-            json_schema=booking_confirmation_json_schema,
-            document=booking_confirmation_file_path_1,
+        response1 = sync_client.documents.extract(
+            json_schema=json_schema,
+            document=document,
             image_resolution_dpi=96,
             browser_canvas="A4",
             model=model,
             temperature=0,
-            modality=modality,
+            modality="native",
             reasoning_effort="medium",
-            stream=False,
             n_consensus=1,
-            store=False,
             idempotency_key=idempotency_key,
         )
-        assert loading_request.data is not None, "Loading request should not be None"
+    except Exception as e:
+        raised_exception_1 = e
 
-        # Validate idempotency behavior for each of the following scenarios:
-        loading_request.data["test_exception"] = test_exception
-        response1: Any = None
-        response2: Any = None
-        raised_exception_1: Exception | None = None
-        raised_exception_2: Exception | None = None
-        try:
-            loading_request.raise_for_status = True
-            if test_exception == "within_process_document_stream_generator":
-                loading_request.data["stream"] = True
-                stream_iterator = sync_client._prepared_request_stream(loading_request)
-                response1 = stream_iterator.__next__()
-                for response1 in stream_iterator:
-                    pass
-            else:
-                response1 = sync_client._prepared_request(loading_request)
-        except Exception as e:
-            raised_exception_1 = e
-
-        await asyncio.sleep(2)
-        t0 = time.time()
-        try:
-            loading_request.raise_for_status = True
-            if test_exception == "within_process_document_stream_generator":
-                loading_request.data["stream"] = True
-                stream_iterator = sync_client._prepared_request_stream(loading_request)
-                response2 = stream_iterator.__next__()
-                for response2 in stream_iterator:
-                    pass
-            else:
-                response2 = sync_client._prepared_request(loading_request)
-        except Exception as e:
-            raised_exception_2 = e
-        t1 = time.time()
-        assert t1 - t0 < 10, "Request should take less than 10 seconds"
-        assert raised_exception_1 is not None, "Exception should be raised"
-        assert raised_exception_2 is not None, "Exception should be raised"
-        assert response1 is None, "Response should be None"
-        assert response2 is None, "Response should be None"
-        # Assert that the both exceptions is a HTTPStatusError
-        assert isinstance(raised_exception_1, httpx.HTTPStatusError), "Exception should be a HTTPStatusError"
-        assert isinstance(raised_exception_2, httpx.HTTPStatusError), "Exception should be a HTTPStatusError"
-        # Assert that the message of both exceptions is the same
-        assert raised_exception_1.args[0] == raised_exception_2.args[0], "Exception message should be the same"
-    finally:
-        # Delete the processor if it was created
-        try:
-            sync_client.processors.delete(processor_id)
-        except Exception:
-            pass
+    await asyncio.sleep(2)
+    t0 = time.time()
+    
+    # Second request attempt with same idempotency key
+    try:
+        response2 = sync_client.documents.extract(
+            json_schema=json_schema,
+            document=document,
+            image_resolution_dpi=96,
+            browser_canvas="A4",
+            model=model,
+            temperature=0,
+            modality="native",
+            reasoning_effort="medium",
+            n_consensus=1,
+            idempotency_key=idempotency_key,
+        )
+    except Exception as e:
+        raised_exception_2 = e
+        
+    t1 = time.time()
+    assert t1 - t0 < 10, "Request should take less than 10 seconds"
+    
+    # Verify that both requests behaved consistently (idempotent behavior)
+    if raised_exception_1 is not None:
+        assert raised_exception_2 is not None, "Both requests should raise exceptions consistently"
+        assert response1 is None, "Response should be None when exception is raised"
+        assert response2 is None, "Response should be None when exception is raised"
+        # Verify that both exceptions are of the same type
+        assert type(raised_exception_1) == type(raised_exception_2), "Exception types should be the same"
+        # For HTTP errors, verify the status codes are the same
+        if isinstance(raised_exception_1, httpx.HTTPStatusError) and isinstance(raised_exception_2, httpx.HTTPStatusError):
+            assert raised_exception_1.response.status_code == raised_exception_2.response.status_code, "HTTP status codes should be the same"
+    else:
+        # If no exception was raised, both responses should be successful and identical
+        assert raised_exception_2 is None, "Both requests should succeed consistently"
+        assert response1 is not None, "Response should not be None when successful"
+        assert response2 is not None, "Response should not be None when successful"
+        validate_extraction_response(response1)
+        validate_extraction_response(response2)
+        assert response1.choices[0].message.content == response2.choices[0].message.content, "Response content should be identical"

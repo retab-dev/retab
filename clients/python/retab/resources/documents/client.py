@@ -9,7 +9,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...utils.mime import convert_mime_data_to_pil_image, prepare_mime_document
+from ...utils.mime import prepare_mime_document
 from ...utils.ai_models import assert_valid_model_extraction
 from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
@@ -88,20 +88,25 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: LLMModel,
-        table_parsing_format: TableParsingFormat = "html",
-        image_resolution_dpi: int = 96,
-        browser_canvas: BrowserCanvas = "A4",
+        table_parsing_format: TableParsingFormat = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
 
-        parse_request = ParseRequest(
-            document=mime_document,
-            model=model,
-            table_parsing_format=table_parsing_format,
-            image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-        )
+        request_dict = {
+            "document": mime_document,
+            "model": model,
+        }
+        if table_parsing_format is not FieldUnset:
+            request_dict["table_parsing_format"] = table_parsing_format
+        if image_resolution_dpi is not FieldUnset:
+            request_dict["image_resolution_dpi"] = image_resolution_dpi
+        if browser_canvas is not FieldUnset:
+            request_dict["browser_canvas"] = browser_canvas
+
+        parse_request = ParseRequest(**request_dict)
         return PreparedRequest(method="POST", url="/v1/documents/parse", data=parse_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key)
 
     def _prepare_extract(
@@ -116,8 +121,8 @@ class BaseDocumentsMixin:
         modality: Modality = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
-        stream: bool = False,
-        store: bool = False,
+        stream: bool = FieldUnset,
+        store: bool = FieldUnset,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
         assert_valid_model_extraction(model)
@@ -141,9 +146,11 @@ class BaseDocumentsMixin:
             "json_schema": loaded_schema,
             "documents": processed_documents,
             "model": model,
-            "stream": stream,
-            "store": store,
         }
+        if stream is not FieldUnset:
+            request_dict["stream"] = stream
+        if store is not FieldUnset:
+            request_dict["store"] = store
         if temperature is not FieldUnset:
             request_dict["temperature"] = temperature
         if modality is not FieldUnset:
@@ -172,33 +179,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-        # self.extractions_api = Extractions(client=client)
-        # self.batch = Batch(client=client)
-
-    def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
-        """Corrects the orientation of an image using the Retab API.
-
-        This method takes an image in various formats and returns a PIL Image with corrected orientation.
-        Useful for handling images from mobile devices or cameras that may have incorrect EXIF orientation.
-
-        Args:
-            image: The input image to correct. Can be:
-                - A file path (Path or str)
-                - A file-like object (IOBase)
-                - A MIMEData object
-                - A PIL Image object
-
-        Returns:
-            PIL.Image.Image: The orientation-corrected image as a PIL Image object
-
-        Raises:
-            ValueError: If the input is not a valid image
-            RetabAPIError: If the API request fails
-        """
-        request = self._prepare_correct_image_orientation(document)
-        response = self._client._prepared_request(request)
-        mime_response = MIMEData.model_validate(response["document"])
-        return convert_mime_data_to_pil_image(mime_response)
 
     def create_messages(
         self,
@@ -278,7 +258,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         idempotency_key: str | None = None,
-        store: bool = False,
+        store: bool = FieldUnset,
     ) -> RetabParsedChatCompletion:
         """
         Process one or more documents using the Retab API for structured data extraction.
@@ -339,7 +319,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         idempotency_key: str | None = None,
-        store: bool = False,
+        store: bool = FieldUnset,
     ) -> Generator[RetabParsedChatCompletion, None, None]:
         """
         Process one or more documents using the Retab API with streaming enabled.
@@ -436,9 +416,9 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: LLMModel,
-        table_parsing_format: TableParsingFormat = "html",
-        image_resolution_dpi: int = 96,
-        browser_canvas: BrowserCanvas = "A4",
+        table_parsing_format: TableParsingFormat = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
     ) -> ParseResult:
         """
@@ -547,31 +527,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         response = await self._client._prepared_request(request)
         return DocumentMessage.model_validate(response)
 
-    async def correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PIL.Image.Image:
-        """Corrects the orientation of an image using the Retab API asynchronously.
-
-        This method takes an image in various formats and returns a PIL Image with corrected orientation.
-        Useful for handling images from mobile devices or cameras that may have incorrect EXIF orientation.
-
-        Args:
-            image: The input image to correct. Can be:
-                - A file path (Path or str)
-                - A file-like object (IOBase)
-                - A MIMEData object
-                - A PIL Image object
-
-        Returns:
-            PIL.Image.Image: The orientation-corrected image as a PIL Image object
-
-        Raises:
-            ValueError: If the input is not a valid image
-            RetabAPIError: If the API request fails
-        """
-        request = self._prepare_correct_image_orientation(document)
-        response = await self._client._prepared_request(request)
-        mime_response = MIMEData.model_validate(response["document"])
-        return convert_mime_data_to_pil_image(mime_response)
-
     async def extract(
         self,
         json_schema: dict[str, Any] | Path | str,
@@ -585,7 +540,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         idempotency_key: str | None = None,
-        store: bool = False,
+        store: bool = FieldUnset,
     ) -> RetabParsedChatCompletion:
         """
         Process one or more documents using the Retab API for structured data extraction asynchronously.
@@ -646,7 +601,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         idempotency_key: str | None = None,
-        store: bool = False,
+        store: bool = FieldUnset,
     ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
         """
         Extract structured data from one or more documents asynchronously with streaming.
@@ -742,9 +697,9 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: LLMModel,
-        table_parsing_format: TableParsingFormat = "html",
-        image_resolution_dpi: int = 96,
-        browser_canvas: BrowserCanvas = "A4",
+        table_parsing_format: TableParsingFormat = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
         idempotency_key: str | None = None,
     ) -> ParseResult:
         """

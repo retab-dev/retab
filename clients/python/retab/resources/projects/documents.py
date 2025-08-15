@@ -10,7 +10,7 @@ from ...utils.mime import prepare_mime_document
 from ...types.projects import DocumentItem, ProjectDocument, PatchProjectDocumentRequest
 from ...types.projects.predictions import PredictionMetadata
 from ...types.mime import MIMEData
-from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
+from ...types.standards import PreparedRequest, DeleteResponse
 from ...types.documents.extract import RetabParsedChatCompletion
 
 
