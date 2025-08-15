@@ -1,0 +1,9 @@
+[test]
+# Test configuration for Bun
+coverage = true
+preload = ["./setup.ts"]
+timeout = 30000
+
+# Test pattern matching
+include = ["**/*.test.ts"]
+exclude = ["node_modules/**/*"]

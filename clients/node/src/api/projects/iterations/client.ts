@@ -1,37 +1,41 @@
 import { CompositionClient } from "@/client";
 import * as z from "zod";
-import { ZInferenceSettings, ZPatchIterationRequest, dataArray, ZIterationsIteration, IterationsIteration } from "@/types";
+import { ZInferenceSettings, ZCreateIterationRequest, ZPatchIterationRequest, ZIterationDocumentStatusResponse, ZProcessIterationRequest, dataArray, Iteration, ZIteration } from "@/types";
 
 export default class APIProjectsIterations extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
     }
-    async create(projectId: string, body: z.input<typeof ZInferenceSettings>): Promise<IterationsIteration> {
-        return this._fetchJson(ZIterationsIteration, {
+    async create(projectId: string, body: z.input<typeof ZInferenceSettings>): Promise<Iteration> {
+        // Wrap the inference settings in the expected structure
+        const createRequest = {
+            inference_settings: body
+        };
+        return this._fetchJson(ZIteration, {
             url: `/v1/projects/${projectId}/iterations`,
             method: "POST",
-            body: await ZInferenceSettings.parseAsync(body),
+            body: await ZCreateIterationRequest.parseAsync(createRequest),
         });
     }
 
-    async update(projectId: string, iterationId: string, body: z.input<typeof ZPatchIterationRequest>): Promise<IterationsIteration> {
-        return this._fetchJson(ZIterationsIteration, {
+    async update(projectId: string, iterationId: string, body: z.input<typeof ZPatchIterationRequest>): Promise<Iteration> {
+        return this._fetchJson(ZIteration, {
             url: `/v1/projects/${projectId}/iterations/${iterationId}`,
             method: "PATCH",
             body: await ZPatchIterationRequest.parseAsync(body),
         });
     }
 
-    async list(projectId: string, params?: {model?: string}): Promise<IterationsIteration[]> {
-        return this._fetchJson(dataArray(ZIterationsIteration), {
+    async list(projectId: string, params?: { model?: string }): Promise<Iteration[]> {
+        return this._fetchJson(dataArray(ZIteration), {
             url: `/v1/projects/${projectId}/iterations`,
             method: "GET",
             params: params,
         });
     }
 
-    async get(projectId: string, iterationId: string): Promise<IterationsIteration> {
-        return this._fetchJson(ZIterationsIteration, {
+    async get(projectId: string, iterationId: string): Promise<Iteration> {
+        return this._fetchJson(ZIteration, {
             url: `/v1/projects/${projectId}/iterations/${iterationId}`,
             method: "GET",
         });
@@ -42,5 +46,36 @@ export default class APIProjectsIterations extends CompositionClient {
             url: `/v1/projects/${projectId}/iterations/${iterationId}`,
             method: "DELETE",
         });
+    }
+
+    async status(projectId: string, iterationId: string): Promise<z.infer<typeof ZIterationDocumentStatusResponse>> {
+        return this._fetchJson(ZIterationDocumentStatusResponse, {
+            url: `/v1/projects/${projectId}/iterations/${iterationId}/status`,
+            method: "GET",
+        });
+    }
+
+    async process(projectId: string, iterationId: string, body?: z.input<typeof ZProcessIterationRequest>): Promise<Iteration> {
+        return this._fetchJson(ZIteration, {
+            url: `/v1/projects/${projectId}/iterations/${iterationId}/process`,
+            method: "POST",
+            body: body ? await ZProcessIterationRequest.parseAsync(body) : {},
+        });
+    }
+
+    async process_document(projectId: string, iterationId: string, documentId: string): Promise<any> {
+        // This endpoint might return empty response or non-JSON, so handle it gracefully
+        try {
+            return await this._fetchJson(z.any(), {
+                url: `/v1/projects/${projectId}/iterations/${iterationId}/documents/${documentId}/process`,
+                method: "POST",
+            });
+        } catch (error: any) {
+            // If it's a "Response is not JSON" error with status 200, return success
+            if (error.status === 200 && error.info === "Response is not JSON") {
+                return { success: true };
+            }
+            throw error;
+        }
     }
 }

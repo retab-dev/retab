@@ -1,5 +1,5 @@
 import { CompositionClient } from "@/client";
-import { BaseProjectInput, dataArray, ModelProject, ZBaseProject, ZModelProject } from "@/types";
+import { BaseProjectInput, dataArray, Project, ZBaseProject, ZProject, ZCreateProjectRequest, CreateProjectRequest } from "@/types";
 import APIProjectsDocuments from "./documents/client";
 import APIProjectsIterations from "./iterations/client";
 
@@ -11,31 +11,31 @@ export default class APIProjects extends CompositionClient {
     documents = new APIProjectsDocuments(this);
     iterations = new APIProjectsIterations(this);
 
-    async create(body: BaseProjectInput): Promise<ModelProject> {
-        return this._fetchJson(ZModelProject, {
+    async create(body: CreateProjectRequest): Promise<Project> {
+        return this._fetchJson(ZProject, {
             url: "/v1/projects",
             method: "POST",
-            body: await ZBaseProject.parseAsync(body),
+            body: await ZCreateProjectRequest.parseAsync(body),
         });
     }
 
-    async update(projectId: string, body: Partial<BaseProjectInput>): Promise<ModelProject> {
-        return this._fetchJson(ZModelProject, {
+    async update(projectId: string, body: Partial<BaseProjectInput>): Promise<Project> {
+        return this._fetchJson(ZProject, {
             url: `/v1/projects/${projectId}`,
             method: "PATCH",
             body: await ZBaseProject.partial().parseAsync(body),
         });
     }
 
-    async list(): Promise<ModelProject[]> {
-        return this._fetchJson(dataArray(ZModelProject), {
+    async list(): Promise<Project[]> {
+        return this._fetchJson(dataArray(ZProject), {
             url: "/v1/projects",
             method: "GET",
         });
     }
 
-    async get(projectId: string): Promise<ModelProject> {
-        return this._fetchJson(ZModelProject, {
+    async get(projectId: string): Promise<Project> {
+        return this._fetchJson(ZProject, {
             url: `/v1/projects/${projectId}`,
             method: "GET",
         });

@@ -1,127 +1,60 @@
-import { z } from 'zod';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// Test data fixtures - mirror the Python test data
-export const bookingConfirmationSchema = {
-  type: 'object',
-  title: 'BookingConfirmation',
-  properties: {
-    booking_number: {
-      type: 'string',
-      description: 'The booking confirmation number'
-    },
-    shipper_name: {
-      type: 'string',
-      description: 'Name of the shipping company'
-    },
-    container_number: {
-      type: 'string',
-      description: 'Container identification number'
-    },
-    vessel_name: {
-      type: 'string',
-      description: 'Name of the vessel/ship'
-    },
-    port_of_loading: {
-      type: 'string',
-      description: 'Port where cargo is loaded'
-    },
-    port_of_discharge: {
-      type: 'string',
-      description: 'Port where cargo is discharged'
-    },
-    estimated_departure: {
-      type: 'string',
-      format: 'date',
-      description: 'Estimated departure date'
-    },
-    estimated_arrival: {
-      type: 'string',
-      format: 'date',
-      description: 'Estimated arrival date'
+export interface EnvConfig {
+    retabApiKey: string;
+    retabApiBaseUrl: string;
+}
+
+export function getEnvConfig(): EnvConfig {
+    const retabApiKey = process.env.RETAB_API_KEY;
+    const retabApiBaseUrl = process.env.RETAB_API_BASE_URL;
+
+    if (!retabApiKey) {
+        throw new Error('RETAB_API_KEY must be set in environment');
     }
-  },
-  required: [
-    'booking_number',
-    'shipper_name',
-    'container_number',
-    'vessel_name',
-    'port_of_loading',
-    'port_of_discharge'
-  ]
-};
-
-// Company schema fixture
-export const companySchema = {
-  type: 'object',
-  title: 'Company',
-  properties: {
-    name: {
-      type: 'string',
-      description: 'Name of the identified company',
-      'X-FieldPrompt': 'Look for the name of the company, or derive it from the logo'
-    },
-    type: {
-      type: 'string',
-      enum: ['school', 'investor', 'startup', 'corporate'],
-      description: 'Type of the identified company',
-      'X-FieldPrompt': 'Guess the type depending on slide context'
-    },
-    relationship: {
-      type: 'string',
-      enum: ['founderBackground', 'investor', 'competitor', 'client', 'partnership'],
-      description: 'Relationship of the identified company with the startup from the deck',
-      'X-FieldPrompt': 'Guess the relationship of the identified company with the startup from the deck'
+    if (!retabApiBaseUrl) {
+        throw new Error('RETAB_API_BASE_URL must be set in environment');
     }
-  },
-  required: ['name', 'type', 'relationship']
-};
 
-// Zod schema fixtures for testing
-export const PersonZodSchema = z.object({
-  name: z.string().describe('Full name of the person'),
-  age: z.number().min(0).max(150).describe('Age in years'),
-  email: z.string().email().describe('Email address'),
-  isActive: z.boolean().default(true).describe('Whether the person is active')
-});
-
-export const AddressZodSchema = z.object({
-  street: z.string().describe('Street address'),
-  city: z.string().describe('City name'),
-  zipCode: z.string().describe('ZIP/postal code'),
-  country: z.string().describe('Country name')
-});
-
-export const PersonWithAddressZodSchema = z.object({
-  person: PersonZodSchema,
-  address: AddressZodSchema.optional(),
-  tags: z.array(z.string()).default([]).describe('List of tags')
-});
-
-// Mock pydantic model structure for testing
-export const mockPydanticModel = {
-  model_json_schema: () => companySchema,
-  schema: companySchema
-};
-
-export const invalidPydanticModel = {
-  // Missing model_json_schema method and schema property
-  someOtherMethod: () => ({})
-};
-
-// Test constants
-export const TEST_API_KEY = 'test-api-key-12345';
-export const TEST_BASE_URL = 'https://api.test.retab.com';
-export const INVALID_API_KEY = 'invalid-key';
-
-// Helper functions for tests
-export function generateRandomId(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    return {
+        retabApiKey,
+        retabApiBaseUrl,
+    };
 }
 
-export function generateTestEmail(): string {
-  return `test-${generateRandomId()}@example.com`;
+export function getTestDataDir(): string {
+    return path.join(__dirname, 'data');
 }
 
-export async function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+export function getBookingConfirmationJsonSchema(): Record<string, any> {
+    const testDataDir = getTestDataDir();
+    const schemaPath = path.join(testDataDir, 'freight', 'booking_confirmation_schema_small.json');
+    return JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
 }
+
+export function getBookingConfirmationFilePath1(): string {
+    const testDataDir = getTestDataDir();
+    return path.join(testDataDir, 'freight', 'booking_confirmation_1.jpg');
+}
+
+export function getBookingConfirmationFilePath2(): string {
+    const testDataDir = getTestDataDir();
+    return path.join(testDataDir, 'freight', 'booking_confirmation_2.jpg');
+}
+
+export function getBookingConfirmationData1(): Record<string, any> {
+    const testDataDir = getTestDataDir();
+    const dataPath = path.join(testDataDir, 'freight', 'booking_confirmation_1_data.json');
+    return JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+}
+
+export function getBookingConfirmationData2(): Record<string, any> {
+    const testDataDir = getTestDataDir();
+    const dataPath = path.join(testDataDir, 'freight', 'booking_confirmation_2_data.json');
+    return JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+}
+
+// Global test constants
+export const TEST_MODEL = "gpt-4.1-nano";
+export const TEST_MODALITY = "native_fast";
