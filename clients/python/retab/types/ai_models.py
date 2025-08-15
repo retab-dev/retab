@@ -2,7 +2,6 @@ import datetime
 from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, computed_field
 from retab.types.inference_settings import InferenceSettings
-from openai.types.model import Model
 
 
 AIProvider = Literal["OpenAI", "Anthropic", "Gemini", "xAI", "Retab"]
@@ -28,6 +27,10 @@ AnthropicModel = Literal[
     "claude-3-opus-20240229",
     "claude-3-sonnet-20240229",
     "claude-3-haiku-20240307",
+    "claude-opus-4.1",
+    "claude-opus-4",
+    "claude-sonnet-4",
+    "claude-sonnet-4-20250514",
 ]
 OpenAIModel = Literal[
     "gpt-4o",
@@ -166,7 +169,8 @@ class ModelCard(BaseModel):
     Model card that includes pricing and capabilities.
     """
 
-    model: LLMModel | str  # Can be a random string for finetuned models
+    model: LLMModel | str  # Can be a random string for finetuned models\
+    display_name: str | None = None
     pricing: Pricing
     capabilities: ModelCapabilities
     temperature_support: bool = True

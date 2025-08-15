@@ -2,7 +2,7 @@ import os
 import yaml
 from typing import get_args
 
-from ..types.ai_models import AIProvider, GeminiModel, OpenAIModel, xAI_Model, RetabModel, PureLLMModel, ModelCard
+from ..types.ai_models import AIProvider, GeminiModel, OpenAIModel, xAI_Model, RetabModel, PureLLMModel, ModelCard, AnthropicModel
 
 MODEL_CARDS_DIR = os.path.join(os.path.dirname(__file__), "_model_cards")
 
@@ -101,10 +101,10 @@ def get_provider_for_model(model_id: str) -> AIProvider:
     Returns one of: "Anthropic", "xAI", "OpenAI", "Gemini", "Retab" or None if unknown.
     """
     model_name = get_model_from_model_id(model_id)
-    # if model_name in get_args(AnthropicModel):
-    #     return "Anthropic"
-    # if model_name in get_args(xAI_Model):
-    #     return "xAI"
+    if model_name in get_args(AnthropicModel):
+        return "Anthropic"
+    if model_name in get_args(xAI_Model):
+        return "xAI"
     if model_name in get_args(OpenAIModel):
         return "OpenAI"
     if model_name in get_args(GeminiModel):
@@ -202,6 +202,11 @@ def get_model_credits(model: str) -> float:
         "claude-3.5-sonnet": 2.0,
         "grok-beta": 2.0,
         "grok-2": 2.0,
+        "grok-3": 2.0,
+        "grok-4": 2.0,
+        "claude-sonnet-4": 2.0,
+        "claude-opus-4": 10.0,
+        "claude-opus-4.1": 10.0,
         # Special reasoning models - Higher tier
         "o1": 3.0,
         "o3-max": 3.0,  # Future model, highest tier
