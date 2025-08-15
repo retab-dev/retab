@@ -1,0 +1,9 @@
+[test]
+# Set timeout to 60 seconds for API tests  
+timeout = 60000
+
+# Set preload to load environment variables and setup
+preload = ["./tests/setup.ts"]
+
+# Run tests in parallel but limit concurrency for API rate limiting
+concurrent = 4

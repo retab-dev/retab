@@ -14,12 +14,12 @@ export default class APIDocuments extends CompositionClient {
             body: request,
         });
     }
-    async extractStream(params: DocumentExtractRequest): Promise<AsyncGenerator<RetabParsedChatCompletionChunk>> {
+    async extract_stream(params: DocumentExtractRequest): Promise<AsyncGenerator<RetabParsedChatCompletionChunk>> {
         let request = await ZDocumentExtractRequest.parseAsync(params);
         return this._fetchStream(ZRetabParsedChatCompletionChunk, {
             url: "/v1/documents/extract",
             method: "POST",
-            body: {...request, stream: true},
+            body: { ...request, stream: true },
         });
     }
     async parse(params: ParseRequest): Promise<ParseResult> {
@@ -29,14 +29,14 @@ export default class APIDocuments extends CompositionClient {
             body: await ZParseRequest.parseAsync(params),
         });
     }
-    async createMessages(params: DocumentCreateMessageRequest): Promise<DocumentMessage> {
+    async create_messages(params: DocumentCreateMessageRequest): Promise<DocumentMessage> {
         return this._fetchJson(ZDocumentMessage, {
             url: "/v1/documents/create_messages",
             method: "POST",
             body: await ZDocumentCreateMessageRequest.parseAsync(params),
         });
     }
-    async createInputs(params: DocumentCreateInputRequest): Promise<DocumentMessage> {
+    async create_inputs(params: DocumentCreateInputRequest): Promise<DocumentMessage> {
         return this._fetchJson(ZDocumentMessage, {
             url: "/v1/documents/create_inputs",
             method: "POST",
