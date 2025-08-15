@@ -5,10 +5,11 @@ import shutil
 from typing import IO, Any
 
 import pytest
+import pytest_asyncio
 
 os.environ["EMAIL_DOMAIN"] = "mailbox.retab.com"
 from enum import Enum
-from typing import Generator
+from typing import AsyncGenerator, Generator
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -81,21 +82,29 @@ def retab_api_key(api_keys: EnvConfig) -> str:
 
 
 @pytest.fixture(scope="function")
-def sync_client(api_keys: EnvConfig) -> Retab:
-    return Retab(
+def sync_client(api_keys: EnvConfig) -> Generator[Retab, None, None]:
+    client = Retab(
         api_key=api_keys.retab_api_key,
         base_url=api_keys.retab_api_base_url,
         max_retries=0,
     )
+    try:
+        yield client
+    finally:
+        client.close()
 
 
-@pytest.fixture(scope="function")
-def async_client(api_keys: EnvConfig) -> AsyncRetab:
-    return AsyncRetab(
+@pytest_asyncio.fixture(scope="function")
+async def async_client(api_keys: EnvConfig) -> AsyncGenerator[AsyncRetab, None]:
+    client = AsyncRetab(
         api_key=api_keys.retab_api_key,
         base_url=api_keys.retab_api_base_url,
         max_retries=0,
     )
+    try:
+        yield client
+    finally:
+        await client.close()
 
 
 @pytest.fixture(scope="session")

@@ -20,7 +20,8 @@ def merge_model_cards(base: dict, override: dict) -> dict:
 
 
 def load_model_cards(yaml_file: str) -> list[ModelCard]:
-    raw_cards = yaml.safe_load(open(yaml_file))
+    with open(yaml_file) as f:
+        raw_cards = yaml.safe_load(f)
     name_to_card = {c["model"]: c for c in raw_cards if "inherits" not in c}
 
     final_cards = []

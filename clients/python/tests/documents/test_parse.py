@@ -12,8 +12,8 @@ from retab.types.browser_canvas import BrowserCanvas
 
 # List of AI Models to test (focusing on models that support parsing)
 AI_MODELS = Literal[
-    "gemini-2.5-flash",
-    "gpt-4.1-mini",
+    "gemini-2.5-flash-lite",
+    "gpt-4.1-nano",
 ]
 
 ClientType = Literal[
@@ -102,7 +102,7 @@ async def test_parse_gemini(
 ) -> None:
     """Test document parsing with Gemini models."""
     await base_test_parse(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         client_type=client_type,
         response_mode=response_mode,
         sync_client=sync_client,
@@ -122,7 +122,7 @@ async def test_parse_table_formats(
     with sync_client as client:
         response = client.documents.parse(
             document=booking_confirmation_file_path_1,
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
             table_parsing_format=table_format,
         )
     
@@ -181,7 +181,7 @@ async def test_parse_overload(
     """Test multiple concurrent parse requests to verify system stability."""
     await asyncio.sleep(request_number * 0.1)
     await base_test_parse(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         client_type="async",
         response_mode="parse",
         sync_client=sync_client,

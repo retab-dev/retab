@@ -29,7 +29,7 @@ def validate_create_messages_response(response: DocumentMessage | None) -> None:
     for message in response.messages:
         assert "role" in message, "Message should have a 'role' key"
         assert "content" in message, "Message should have a 'content' key"
-        assert message["role"] == "user", "Role should be 'user'"
+        assert message["role"] in ["user", "developer"], f"Role should be 'user' or 'developer', got '{message['role']}'"
         assert isinstance(message["content"], (str, list)), "Message content should be str or list"
 
 

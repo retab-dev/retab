@@ -9,6 +9,10 @@ from retab.types.documents.extract import RetabParsedChatCompletion
 
 T = TypeVar("T")
 
+# Global test constants
+TEST_MODEL = "gpt-4.1-nano"
+TEST_MODALITY = "native_fast"
+
 
 async def await_or_return(obj: T | Awaitable[T]) -> T:
     """
@@ -193,13 +197,13 @@ async def test_iteration_crud_and_processing(
         iteration = await await_or_return(
             client.projects.iterations.create(
                 project_id=project_id,
-                model="gpt-4.1-mini",
+                model=TEST_MODEL,
                 temperature=0.1,
-                modality="native",
+                modality=TEST_MODALITY,
             )
         )
 
-        assert iteration.inference_settings.model == "gpt-4.1-mini"
+        assert iteration.inference_settings.model == TEST_MODEL
         assert iteration.inference_settings.temperature == 0.1
         assert len(iteration.predictions) == 1
         assert iteration.predictions[document.id].prediction == {}
@@ -289,9 +293,9 @@ async def test_process_document_method(
         iteration = await await_or_return(
             client.projects.iterations.create(
                 project_id=project_id,
-                model="gpt-4.1-mini",
+                model=TEST_MODEL,
                 temperature=0.0,
-                modality="native",
+                modality=TEST_MODALITY,
             )
         )
 
@@ -393,18 +397,18 @@ async def test_complete_evaluation_workflow(
         iteration1 = await await_or_return(
             client.projects.iterations.create(
                 project_id=project_id,
-                model="gpt-4.1-mini",
+                model=TEST_MODEL,
                 temperature=0.0,
-                modality="native",
+                modality=TEST_MODALITY,
             )
         )
 
         iteration2 = await await_or_return(
             client.projects.iterations.create(
                 project_id=project_id,
-                model="gpt-4.1-mini",
+                model=TEST_MODEL,
                 temperature=0.5,
-                modality="native",
+                modality=TEST_MODALITY,
             )
         )
 
@@ -524,9 +528,9 @@ async def test_iteration_selective_processing(
         iteration = await await_or_return(
             client.projects.iterations.create(
                 project_id=project_id,
-                model="gpt-4.1-mini",
+                model=TEST_MODEL,
                 temperature=0.0,
-                modality="native",
+                modality=TEST_MODALITY,
             )
         )
 
