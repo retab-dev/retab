@@ -11,9 +11,13 @@ from pydantic import BaseModel
 from retab import AsyncRetab, Retab
 from retab.types.documents.extract import RetabParsedChatCompletion
 
+# Global modality setting for all tests
+MODALITY = "native_fast"
+
 # List of AI Providers to test
 AI_MODELS = Literal[
-    "gpt-4o-mini",
+    "gpt-4.1-nano",
+    "gemini-2.5-flash-lite",
     # "grok-2-vision-1212",
     # "claude-3-5-sonnet-latest",
     # "gemini-1.5-flash-8b"
@@ -39,8 +43,11 @@ def validate_extraction_response(response: RetabParsedChatCompletion | None) -> 
         json.loads(response.choices[0].message.content)
     except json.JSONDecodeError:
         assert False, "Response content should be a valid JSON object"
-    # Assert that the response.choices[0].message.parsed is a valid pydantic BaseModel instance
-    assert isinstance(response.choices[0].message.parsed, BaseModel), "Response parsed should be a valid pydantic BaseModel instance"
+    # Assert that the response.choices[0].message.parsed is either a valid pydantic BaseModel instance or None
+    # (None can happen when an invalid schema is provided and parsing fails)
+    assert (
+        response.choices[0].message.parsed is None or isinstance(response.choices[0].message.parsed, BaseModel)
+    ), f"Response parsed should be a valid pydantic BaseModel instance or None, received {type(response.choices[0].message.parsed)}"
 
 
 # Test the extraction endpoint
@@ -55,7 +62,7 @@ async def base_test_extract(
 ) -> None:
     json_schema = booking_confirmation_json_schema
     document = booking_confirmation_file_path_1
-    modality: Literal["text"] = "text"
+    modality = MODALITY
     response: RetabParsedChatCompletion | None = None
 
     # First create a processor
@@ -115,7 +122,7 @@ async def test_extract_openai(
     booking_confirmation_json_schema: dict[str, Any],
 ) -> None:
     await base_test_extract(
-        model="gpt-4o-mini",
+        model="gpt-4.1-nano",
         client_type=client_type,
         response_mode=response_mode,
         sync_client=sync_client,
@@ -136,7 +143,7 @@ async def test_extract_overload(
 ) -> None:
     await asyncio.sleep(request_number * 0.1)
     await base_test_extract(
-        model="gpt-4o-mini",
+        model="gpt-4.1-nano",
         client_type="async",
         response_mode="parse",
         sync_client=sync_client,
@@ -196,7 +203,7 @@ async def test_extract_overload(
 async def test_extraction_with_idempotency(sync_client: Retab, booking_confirmation_file_path_1: str, booking_confirmation_json_schema: dict[str, Any]) -> None:
     idempotency_key = nanoid.generate()
     model = "gpt-4o-mini"
-    modality = "native"
+    modality = MODALITY
 
 
 
@@ -258,7 +265,7 @@ async def test_extraction_with_idempotency_error_scenarios(
             browser_canvas="A4",
             model=model,
             temperature=0,
-            modality="native",
+            modality=MODALITY,
             reasoning_effort="medium",
             n_consensus=1,
             idempotency_key=idempotency_key,
@@ -278,7 +285,7 @@ async def test_extraction_with_idempotency_error_scenarios(
             browser_canvas="A4",
             model=model,
             temperature=0,
-            modality="native",
+            modality=MODALITY,
             reasoning_effort="medium",
             n_consensus=1,
             idempotency_key=idempotency_key,
