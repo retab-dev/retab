@@ -2,7 +2,6 @@ from typing import Any, Dict, List
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.projects import Project, PatchProjectRequest, BaseProject
-from ...types.inference_settings import InferenceSettings
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 from .documents import Documents, AsyncDocuments
 from .iterations import Iterations, AsyncIterations
@@ -13,15 +12,12 @@ class ProjectsMixin:
         self,
         name: str,
         json_schema: dict[str, Any],
-        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> PreparedRequest:
         # Use BaseProject model
         eval_dict = {
             "name": name,
             "json_schema": json_schema,
         }
-        if default_inference_settings is not FieldUnset:
-            eval_dict["default_inference_settings"] = default_inference_settings
 
         eval_data = BaseProject(**eval_dict)
         return PreparedRequest(method="POST", url="/v1/projects", data=eval_data.model_dump(exclude_unset=True, mode="json"))
@@ -34,7 +30,6 @@ class ProjectsMixin:
         project_id: str,
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
-        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> PreparedRequest:
         """
         Prepare a request to update an evaluation with partial updates.
@@ -47,8 +42,6 @@ class ProjectsMixin:
             update_dict["name"] = name
         if json_schema is not FieldUnset:
             update_dict["json_schema"] = json_schema
-        if default_inference_settings is not FieldUnset:
-            update_dict["default_inference_settings"] = default_inference_settings
 
         data = PatchProjectRequest(**update_dict).model_dump(exclude_unset=True, mode="json")
 
@@ -82,7 +75,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
         self,
         name: str,
         json_schema: dict[str, Any],
-        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> Project:
         """
         Create a new evaluation.
@@ -91,14 +83,13 @@ class Projects(SyncAPIResource, ProjectsMixin):
             name: The name of the evaluation
             json_schema: The JSON schema for the evaluation
             documents: The documents to associate with the evaluation
-            default_inference_settings: The default inference settings to associate with the evaluation
 
         Returns:
             Project: The created evaluation
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(name, json_schema, default_inference_settings=default_inference_settings)
+        request = self.prepare_create(name, json_schema)
         response = self._client._prepared_request(request)
         return Project(**response)
 
@@ -123,7 +114,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
         project_id: str,
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
-        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> Project:
         """
         Update an evaluation with partial updates.
@@ -134,7 +124,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
             json_schema: Optional new JSON schema
             documents: Optional list of documents to update
             iterations: Optional list of iterations to update
-            default_inference_settings: Optional annotation properties
 
         Returns:
             Project: The updated evaluation
@@ -145,7 +134,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
             project_id=project_id,
             name=name,
             json_schema=json_schema,
-            default_inference_settings=default_inference_settings,
         )
         response = self._client._prepared_request(request)
         return Project(**response)
@@ -226,7 +214,6 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         project_id: str,
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
-        default_inference_settings: InferenceSettings = FieldUnset,
     ) -> Project:
         """
         Update an evaluation with partial updates.
@@ -237,7 +224,6 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
             json_schema: Optional new JSON schema
             documents: Optional list of documents to update
             iterations: Optional list of iterations to update
-            default_inference_settings: Optional annotation properties
 
         Returns:
             Project: The updated evaluation
@@ -248,7 +234,6 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
             project_id=project_id,
             name=name,
             json_schema=json_schema,
-            default_inference_settings=default_inference_settings,
         )
         response = await self._client._prepared_request(request)
         return Project(**response)
