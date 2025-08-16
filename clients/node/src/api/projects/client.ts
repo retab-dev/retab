@@ -1,5 +1,6 @@
 import { CompositionClient } from "@/client";
-import { BaseProjectInput, dataArray, Project, ZBaseProject, ZProject, ZCreateProjectRequest, CreateProjectRequest } from "@/types";
+import { mimeToBlob } from "@/mime";
+import { BaseProjectInput, dataArray, Project, ZBaseProject, ZProject, ZCreateProjectRequest, CreateProjectRequest, MIMEDataInput, ZMIMEData, ZSchema } from "@/types";
 import APIProjectsDocuments from "./documents/client";
 import APIProjectsIterations from "./iterations/client";
 
@@ -45,6 +46,38 @@ export default class APIProjects extends CompositionClient {
         return this._fetchJson({
             url: `/v1/projects/${projectId}`,
             method: "DELETE",
+        });
+    }
+
+    async extract({
+        project_id,
+        iteration_id,
+        document,
+        documents,
+        temperature,
+        seed,
+        store
+    }: {
+        project_id: string,
+        iteration_id: string,
+        document?: MIMEDataInput,
+        documents?: MIMEDataInput[],
+        temperature?: number,
+        seed?: number,
+        store?: boolean,
+    }) {
+        if (!document && (!documents || documents.length === 0)) {
+            throw new Error("Either 'document' or 'documents' must be provided.");
+        }
+        let url = `/v1/projects/extract/${project_id}/${iteration_id}`;
+        return this._fetchJson(ZSchema, {
+            url,
+            method: "POST",
+            body: {
+                temperature, seed, store,
+                documents: (await ZMIMEData.array().parseAsync([...document ? [document] : [], documents || []])).map(mimeToBlob)
+            },
+            bodyMime: "multipart/form-data",
         });
     }
 }
