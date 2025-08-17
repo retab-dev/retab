@@ -1,6 +1,6 @@
-import { CompositionClient } from "@/client";
+import { CompositionClient } from "../../../client.js";
 import * as z from "zod";
-import { ZInferenceSettings, ZCreateIterationRequest, ZPatchIterationRequest, ZIterationDocumentStatusResponse, ZProcessIterationRequest, dataArray, Iteration, ZIteration, RetabParsedChatCompletion, ZRetabParsedChatCompletion } from "@/types";
+import { ZInferenceSettings, ZCreateIterationRequest, ZPatchIterationRequest, ZIterationDocumentStatusResponse, ZProcessIterationRequest, dataArray, Iteration, ZIteration, RetabParsedChatCompletion, ZRetabParsedChatCompletion } from "../../../types.js";
 
 export default class APIProjectsIterations extends CompositionClient {
     constructor(client: CompositionClient) {

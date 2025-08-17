@@ -55,6 +55,11 @@ export function getBookingConfirmationData2(): Record<string, any> {
     return JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 }
 
+export function getPayslipFilePath(): string {
+    const testDataDir = getTestDataDir();
+    return path.join(testDataDir, 'payslip', 'payslip.pdf');
+}
+
 // Global test constants
 export const TEST_MODEL = "gpt-4.1-nano";
 export const TEST_MODALITY = "native_fast";

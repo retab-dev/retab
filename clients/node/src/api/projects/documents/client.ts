@@ -1,6 +1,6 @@
-import { CompositionClient } from "@/client";
+import { CompositionClient } from "../../../client.js";
 import * as z from "zod";
-import { DocumentItemInput, ZDocumentItem, ZProjectDocument, ProjectDocument, ZPatchProjectDocumentRequest, dataArray } from "@/types";
+import { DocumentItemInput, ZDocumentItem, ZProjectDocument, ProjectDocument, ZPatchProjectDocumentRequest, dataArray } from "../../../types.js";
 
 export default class APIProjectsDocuments extends CompositionClient {
     constructor(client: CompositionClient) {

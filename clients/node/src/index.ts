@@ -7,8 +7,6 @@ export * from "./client";
 export interface ClientOptions {
   baseUrl?: string;
   apiKey?: string;
-  bearer?: string;
-  masterKey?: string;
 }
 
 export class Retab extends APIV1 {

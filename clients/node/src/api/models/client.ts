@@ -1,11 +1,11 @@
-import { CompositionClient } from "@/client";
-import { ZModel } from "@/types";
+import { CompositionClient } from "../../client.js";
+import { ZModel } from "../../types.js";
 import * as z from "zod";
 export default class APIModels extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
     }
-    
+
     async list(params?: {
         supports_finetuning?: boolean,
         supports_image?: boolean,

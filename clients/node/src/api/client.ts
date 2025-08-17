@@ -1,4 +1,4 @@
-import { AbstractClient, CompositionClient } from "@/client";
+import { AbstractClient, CompositionClient } from "../client.js";
 import APIModels from "./models/client";
 import APIDocuments from "./documents/client";
 import APISchemas from "./schemas/client";
