@@ -21,7 +21,7 @@ async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(schem
   while (true) {
     let chunk = await reader.read();
     if (!chunk.value) break;
-    let string = new TextDecoder().decode(chunk.value, {stream: true});
+    let string = new TextDecoder().decode(chunk.value, { stream: true });
     let prevBodyLength = body.length;
     body += string;
     for (let i = 0; i < string.length; i++) {
@@ -106,7 +106,7 @@ export const DateOrISO = z.union([
   }).transform(val => new Date(val)),
 ]);
 
-type AuthTypes = { "bearer": string } | { "masterKey": string } | { "apiKey": string } | {};
+type AuthTypes = { apiKey: string } | {};
 export type ClientOptions = {
   baseUrl?: string,
 } & AuthTypes;
@@ -116,6 +116,16 @@ export class FetcherClient extends AbstractClient {
   constructor(options?: ClientOptions) {
     super();
     this.options = options || {};
+
+    // Validate that at least one authentication method is provided
+    const apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
+
+    if (!apiKey) {
+      throw new Error(
+        "Authentication required: Please provide an API key. " +
+        "You can pass it in the constructor options or set the RETAB_API_KEY environment variable."
+      );
+    }
   }
 
   async _fetch(params: {
@@ -140,7 +150,6 @@ export class FetcherClient extends AbstractClient {
       method: params.method,
     };
     if (params.method !== "GET") {
-      headers["Content-Type"] = params.bodyMime || "application/json";
       if (params.bodyMime === "multipart/form-data") {
         let formData: FormData = new FormData();
         for (const key of Object.keys(params.body || {})) {
@@ -154,21 +163,14 @@ export class FetcherClient extends AbstractClient {
           formData.append(key, value);
         }
         init.body = formData;
+        // Don't set Content-Type for multipart/form-data - let FormData set it with boundary
       } else {
+        headers["Content-Type"] = params.bodyMime || "application/json";
         init.body = JSON.stringify(params.body);
       }
     }
-    let bearerToken = "bearer" in this.options ? this.options.bearer : process.env["RETAB_BEARER_TOKEN"];
-    let masterKey = "masterKey" in this.options ? this.options.masterKey : process.env["RETAB_MASTER_KEY"];
-    let apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
-
-    if (bearerToken) {
-      headers["Authorization"] = `Bearer ${bearerToken}`;
-    } else if (masterKey) {
-      headers["Master-Key"] = masterKey;
-    } else if (apiKey) {
-      headers["Api-Key"] = apiKey;
-    }
+    const apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
+    headers["Api-Key"] = apiKey;
     init.headers = headers;
     let res = await fetch(url, init);
     if (!res.ok) {

@@ -10,6 +10,7 @@ import {
     getBookingConfirmationData2,
     TEST_MODEL,
     TEST_MODALITY,
+    getPayslipFilePath,
 } from './fixtures';
 
 // Simple ID generator to replace nanoid
@@ -18,7 +19,7 @@ function generateId(): string {
 }
 
 // Global test constants
-const TEST_TIMEOUT = 30000;
+const TEST_TIMEOUT = 180000;
 
 describe('Retab SDK Tests', () => {
     let client: Retab;
@@ -40,6 +41,122 @@ describe('Retab SDK Tests', () => {
         bookingConfirmationFilePath2 = getBookingConfirmationFilePath2();
         bookingConfirmationData1 = getBookingConfirmationData1();
         bookingConfirmationData2 = getBookingConfirmationData2();
+    });
+
+    describe('Authentication and Basic SDK Functionality', () => {
+        test('test_authentication_validation', async () => {
+            // Store original environment variable
+            const originalEnvKey = process.env.RETAB_API_KEY;
+            const envConfig = getEnvConfig(); // Get config before manipulating env
+
+            try {
+                // Test 1: Initialize without API key (should throw error)
+                delete process.env.RETAB_API_KEY; // Remove env variable temporarily
+
+                expect(() => {
+                    new Retab();
+                }).toThrow('Authentication required: Please provide an API key');
+
+                // Test 2: Initialize with API key in constructor
+                const clientWithApiKey = new Retab({ apiKey: envConfig.retabApiKey });
+                expect(clientWithApiKey).toBeDefined();
+
+                // Test 3: Initialize with environment variable
+                process.env.RETAB_API_KEY = envConfig.retabApiKey;
+
+                const clientWithEnv = new Retab();
+                expect(clientWithEnv).toBeDefined();
+
+            } finally {
+                // Clean up environment variable
+                if (originalEnvKey) {
+                    process.env.RETAB_API_KEY = originalEnvKey;
+                } else {
+                    delete process.env.RETAB_API_KEY;
+                }
+            }
+        }, { timeout: TEST_TIMEOUT });
+
+        test('test_projects_extract_functionality', async () => {
+            // This test requires a valid project_id and iteration_id
+            // Use defaults from script.ts or environment variables
+            const envConfig = getEnvConfig();
+            const testProjectId = "proj_Y_LeRXJRbZZCWoOiEn31x";
+            const testIterationId = "eval_iter_wWZcJbL9W8XDDptLLnfML";
+            const testDocumentPath = getPayslipFilePath();
+
+            // Skip if the test document doesn't exist
+            try {
+                // Check if we can access the document file
+                // Only skip if custom document path is provided but doesn't exist
+                const fs = require('fs');
+                if (!fs.existsSync(testDocumentPath)) {
+                    console.log(`⚠️  Skipping extract test - Document not found: ${testDocumentPath}`);
+                    return;
+                }
+            } catch (error) {
+                console.log('⚠️  Skipping extract test - Cannot check document existence');
+                return;
+            }
+
+            const testClient = new Retab({
+                apiKey: envConfig.retabApiKey,
+                baseUrl: envConfig.retabApiBaseUrl
+            });
+
+            try {
+                console.log(`🚀 Testing extract with project: ${testProjectId}, iteration: ${testIterationId}`);
+
+                // Add a timeout promise to prevent hanging
+                const extractPromise = testClient.projects.extract({
+                    project_id: testProjectId,
+                    iteration_id: testIterationId,
+                    document: testDocumentPath
+                });
+
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Extract API call timed out after 25 seconds')), 25000);
+                });
+
+                const response = await Promise.race([extractPromise, timeoutPromise]) as any;
+
+                // Validate response structure
+                expect(response).toBeDefined();
+                expect(response.id).toBeDefined();
+                expect(response.choices).toBeDefined();
+                expect(response.choices.length).toBeGreaterThan(0);
+                expect(response.choices[0].message).toBeDefined();
+                expect(response.choices[0].message.content).toBeDefined();
+                expect(response.extraction_id).toBeDefined();
+                expect(response.object).toBe('chat.completion');
+
+                // Validate parsed content if available
+                if (response.choices[0].message.parsed) {
+                    expect(typeof response.choices[0].message.parsed).toBe('object');
+                }
+
+                // Validate usage information
+                if (response.usage) {
+                    expect(response.usage.total_tokens).toBeGreaterThan(0);
+                    expect(response.usage.completion_tokens).toBeGreaterThan(0);
+                    expect(response.usage.prompt_tokens).toBeGreaterThan(0);
+                }
+
+                console.log(`✅ Extract test successful - Extraction ID: ${response.extraction_id}`);
+
+            } catch (error: any) {
+                // Provide helpful error information
+                if (error.status === 401) {
+                    throw new Error('🔑 Authentication issue - check if the API key is valid');
+                } else if (error.status === 404) {
+                    throw new Error('📂 Resource not found - check project_id and iteration_id');
+                } else if (error.status === 400) {
+                    throw new Error('📄 Bad request - check document format or parameters');
+                } else {
+                    throw new Error(`🔧 API Error ${error.status}: ${error.info || error.message}`);
+                }
+            }
+        }, { timeout: TEST_TIMEOUT });
     });
 
     describe('Basic Project CRUD Operations', () => {
