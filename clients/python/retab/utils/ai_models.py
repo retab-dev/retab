@@ -1,6 +1,6 @@
 import os
 import yaml
-from typing import get_args
+from typing import get_args, Literal
 
 from ..types.ai_models import AIProvider, GeminiModel, OpenAIModel, xAI_Model, RetabModel, PureLLMModel, ModelCard, AnthropicModel
 
@@ -260,3 +260,16 @@ def get_model_credits(model: str) -> float:
         return 1.0  # Default middle tier
     except:
         return 0.0  # No billing for completely unknown models
+
+
+def get_model_category(model: str) -> Literal["micro", "mini", "large"]:
+    """
+    Get the category of a model based on its capabilities and size.
+    """
+    model_credits = get_model_credits(model)
+    if model_credits <= 0.1:
+        return "micro"
+    elif model_credits <= 0.5:
+        return "mini"
+    else:
+        return "large"
