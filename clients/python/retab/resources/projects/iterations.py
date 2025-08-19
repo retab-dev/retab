@@ -124,7 +124,7 @@ class IterationsMixin:
 
 
 class Iterations(SyncAPIResource, IterationsMixin):
-    """Iterations API wrapper for evaluations"""
+    """Iterations API wrapper for projects"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -136,10 +136,10 @@ class Iterations(SyncAPIResource, IterationsMixin):
 
     def list(self, project_id: str, model: Optional[str] = None) -> List[Iteration]:
         """
-        List iterations for an evaluation.
+        List iterations for an project.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             model: Optional model to filter by
 
         Returns:
@@ -164,10 +164,10 @@ class Iterations(SyncAPIResource, IterationsMixin):
         n_consensus: int = FieldUnset,
     ) -> Iteration:
         """
-        Create a new iteration for an evaluation.
+        Create a new iteration for an project.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             json_schema: The JSON schema for the iteration (if not set, we use the one of the eval)
             model: The model to use for the iteration
             temperature: The temperature to use for the model
@@ -292,7 +292,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
 
 
 class AsyncIterations(AsyncAPIResource, IterationsMixin):
-    """Async Iterations API wrapper for evaluations"""
+    """Async Iterations API wrapper for projects"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -315,10 +315,10 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
 
     async def list(self, project_id: str, model: Optional[str] = None) -> List[Iteration]:
         """
-        List iterations for an evaluation.
+        List iterations for an project.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             model: Optional model to filter by
 
         Returns:
@@ -343,10 +343,10 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         n_consensus: int = 1,
     ) -> Iteration:
         """
-        Create a new iteration for an evaluation.
+        Create a new iteration for an project.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             json_schema: The JSON schema for the iteration
             model: The model to use for the iteration
             temperature: The temperature to use for the model

@@ -43,14 +43,14 @@ async def test_evaluation_crud_basic(
     client = sync_client if client_type == "sync" else async_client
 
     # CREATE - Create a new evaluation
-    evaluation = await await_or_return(client.projects.create(name=evaluation_name, json_schema=booking_confirmation_json_schema))
+    project = await await_or_return(client.projects.create(name=evaluation_name, json_schema=booking_confirmation_json_schema))
 
-    assert evaluation.name == evaluation_name
-    assert evaluation.json_schema == booking_confirmation_json_schema
-    assert len(evaluation.documents) == 0
-    assert len(evaluation.iterations) == 0
+    assert project.name == evaluation_name
+    assert project.json_schema == booking_confirmation_json_schema
+    assert len(project.documents) == 0
+    assert len(project.iterations) == 0
 
-    project_id = evaluation.id
+    project_id = project.id
 
     try:
         # READ - Get the evaluation by ID
@@ -96,14 +96,14 @@ async def test_evaluation_with_documents(
     client = sync_client if client_type == "sync" else async_client
 
     # Create an evaluation
-    evaluation = await await_or_return(
+    project = await await_or_return(
         client.projects.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
         )
     )
 
-    project_id = evaluation.id
+    project_id = project.id
 
     try:
         # CREATE - Add a document
@@ -173,14 +173,14 @@ async def test_iteration_crud_and_processing(
     client = sync_client if client_type == "sync" else async_client
 
     # First create an evaluation
-    evaluation = await await_or_return(
+    project = await await_or_return(
         client.projects.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
         )
     )
 
-    project_id = evaluation.id
+    project_id = project.id
 
     try:
         # Add a document to the evaluation
@@ -270,14 +270,14 @@ async def test_process_document_method(
     client = sync_client if client_type == "sync" else async_client
 
     # Create an evaluation
-    evaluation = await await_or_return(
+    project = await await_or_return(
         client.projects.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
         )
     )
 
-    project_id = evaluation.id
+    project_id = project.id
 
     try:
         # Add a document to the evaluation
@@ -361,14 +361,14 @@ async def test_complete_evaluation_workflow(
     client = sync_client if client_type == "sync" else async_client
 
     # Step 1: Create an evaluation
-    evaluation = await await_or_return(
+    project = await await_or_return(
         client.projects.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
         )
     )
 
-    project_id = evaluation.id
+    project_id = project.id
 
     try:
         # Step 2: Add 2 documents
@@ -496,14 +496,14 @@ async def test_iteration_selective_processing(
     client = sync_client if client_type == "sync" else async_client
 
     # Create an evaluation
-    evaluation = await await_or_return(
+    project = await await_or_return(
         client.projects.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
         )
     )
 
-    project_id = evaluation.id
+    project_id = project.id
 
     try:
         # Add multiple documents
