@@ -38,7 +38,7 @@ class DocumentsMixin:
 
 
 class Documents(SyncAPIResource, DocumentsMixin):
-    """Documents API wrapper for evaluations"""
+    """Documents API wrapper for projects"""
 
     def create(
         self,
@@ -48,10 +48,10 @@ class Documents(SyncAPIResource, DocumentsMixin):
         annotation_metadata: Dict[str, Any] | None = None,
     ) -> ProjectDocument:
         """
-        Create a document for an evaluation.
+        Create a document for an project.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             document: The document to process. Can be:
                 - A file path (Path or str)
                 - A file-like object (IOBase)
@@ -75,10 +75,10 @@ class Documents(SyncAPIResource, DocumentsMixin):
 
     def list(self, project_id: str) -> List[ProjectDocument]:
         """
-        List documents for an evaluation.
+        List documents for an project.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
 
         Returns:
             List[ProjectDocument]: List of documents
@@ -94,7 +94,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Get a document by ID.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             document_id: The ID of the document
 
         Returns:
@@ -111,7 +111,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Update a document.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             document_id: The ID of the document
             annotation: The ground truth for the document
         Returns:
@@ -128,7 +128,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Delete a document.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             document_id: The ID of the document
 
         Returns:
@@ -141,7 +141,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
 
     def llm_annotate(self, project_id: str, document_id: str) -> RetabParsedChatCompletion:
         """
-        Annotate a document with an LLM. This method updates the document (within the evaluation) with the latest extraction.
+        Annotate a document with an LLM. This method updates the document (within the project) with the latest extraction.
         """
         request = self.prepare_llm_annotate(project_id, document_id)
         response = self._client._prepared_request(request)
@@ -149,7 +149,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
 
 
 class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
-    """Async Documents API wrapper for evaluations"""
+    """Async Documents API wrapper for projects"""
 
     async def create(
         self,
@@ -159,10 +159,10 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         annotation_metadata: Dict[str, Any] | None = None,
     ) -> ProjectDocument:
         """
-        Create a document for an evaluation.
+        Create a document for an project.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             document: The document to process. Can be:
                 - A file path (Path or str)
                 - A file-like object (IOBase)
@@ -186,10 +186,10 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
 
     async def list(self, project_id: str) -> List[ProjectDocument]:
         """
-        List documents for an evaluation.
+        List documents for an project.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
 
         Returns:
             List[ProjectDocument]: List of documents
@@ -205,7 +205,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         Update a document.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             document_id: The ID of the document
             annotation: The ground truth for the document
 
@@ -223,7 +223,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         Delete a document.
 
         Args:
-            project_id: The ID of the evaluation
+            project_id: The ID of the project
             document_id: The ID of the document
 
         Returns:
@@ -237,7 +237,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
     async def llm_annotate(self, project_id: str, document_id: str) -> RetabParsedChatCompletion:
         """
         Annotate a document with an LLM.
-        This method updates the document (within the evaluation) with the latest extraction.
+        This method updates the document (within the project) with the latest extraction.
         """
         request = self.prepare_llm_annotate(project_id, document_id)
         response = await self._client._prepared_request(request)

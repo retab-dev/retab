@@ -39,7 +39,7 @@ class ProjectsMixin:
         json_schema: dict[str, Any] = FieldUnset,
     ) -> PreparedRequest:
         """
-        Prepare a request to update an evaluation with partial updates.
+        Prepare a request to update an project with partial updates.
 
         Only the provided fields will be updated. Fields set to None will be excluded from the update.
         """
@@ -56,10 +56,10 @@ class ProjectsMixin:
 
     def prepare_list(self) -> PreparedRequest:
         """
-        Prepare a request to list evaluations.
+        Prepare a request to list projects.
 
         Usage:
-        >>> client.evaluations.list()                          # List all evaluations
+        >>> client.projects.list()                          # List all projects
 
         Returns:
             PreparedRequest: The prepared request
@@ -149,15 +149,15 @@ class Projects(SyncAPIResource, ProjectsMixin):
         json_schema: dict[str, Any],
     ) -> Project:
         """
-        Create a new evaluation.
+        Create a new project.
 
         Args:
-            name: The name of the evaluation
-            json_schema: The JSON schema for the evaluation
-            documents: The documents to associate with the evaluation
+            name: The name of the project
+            json_schema: The JSON schema for the project
+            documents: The documents to associate with the project
 
         Returns:
-            Project: The created evaluation
+            Project: The created project
         Raises:
             HTTPException if the request fails
         """
@@ -167,13 +167,13 @@ class Projects(SyncAPIResource, ProjectsMixin):
 
     def get(self, project_id: str) -> Project:
         """
-        Get an evaluation by ID.
+        Get an project by ID.
 
         Args:
-            project_id: The ID of the evaluation to retrieve
+            project_id: The ID of the project to retrieve
 
         Returns:
-            Project: The evaluation
+            Project: The project
         Raises:
             HTTPException if the request fails
         """
@@ -188,17 +188,17 @@ class Projects(SyncAPIResource, ProjectsMixin):
         json_schema: dict[str, Any] = FieldUnset,
     ) -> Project:
         """
-        Update an evaluation with partial updates.
+        Update an project with partial updates.
 
         Args:
-            project_id: The ID of the evaluation to update
-            name: Optional new name for the evaluation
+            project_id: The ID of the project to update
+            name: Optional new name for the project
             json_schema: Optional new JSON schema
             documents: Optional list of documents to update
             iterations: Optional list of iterations to update
 
         Returns:
-            Project: The updated evaluation
+            Project: The updated project
         Raises:
             HTTPException if the request fails
         """
@@ -212,11 +212,11 @@ class Projects(SyncAPIResource, ProjectsMixin):
 
     def list(self) -> List[Project]:
         """
-        List evaluations for a project.
+        List projects for a project.
 
         Args:
         Returns:
-            List[Project]: List of evaluations
+            List[Project]: List of projects
         Raises:
             HTTPException if the request fails
         """
@@ -226,10 +226,10 @@ class Projects(SyncAPIResource, ProjectsMixin):
 
     def delete(self, project_id: str) -> DeleteResponse:
         """
-        Delete an evaluation.
+        Delete an project.
 
         Args:
-            project_id: The ID of the evaluation to delete
+            project_id: The ID of the project to delete
 
         Returns:
             DeleteResponse: The response containing success status and ID
@@ -278,14 +278,14 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
 
     async def create(self, name: str, json_schema: Dict[str, Any]) -> Project:
         """
-        Create a new evaluation.
+        Create a new project.
 
         Args:
-            name: The name of the evaluation
-            json_schema: The JSON schema for the evaluation
+            name: The name of the project
+            json_schema: The JSON schema for the project
 
         Returns:
-            Project: The created evaluation
+            Project: The created project
         Raises:
             HTTPException if the request fails
         """
@@ -295,13 +295,13 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
 
     async def get(self, project_id: str) -> Project:
         """
-        Get an evaluation by ID.
+        Get an project by ID.
 
         Args:
-            project_id: The ID of the evaluation to retrieve
+            project_id: The ID of the project to retrieve
 
         Returns:
-            Project: The evaluation
+            Project: The project
         Raises:
             HTTPException if the request fails
         """
@@ -316,17 +316,17 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         json_schema: dict[str, Any] = FieldUnset,
     ) -> Project:
         """
-        Update an evaluation with partial updates.
+        Update an project with partial updates.
 
         Args:
-            id: The ID of the evaluation to update
-            name: Optional new name for the evaluation
+            id: The ID of the project to update
+            name: Optional new name for the project
             json_schema: Optional new JSON schema
             documents: Optional list of documents to update
             iterations: Optional list of iterations to update
 
         Returns:
-            Project: The updated evaluation
+            Project: The updated project
         Raises:
             HTTPException if the request fails
         """
@@ -340,10 +340,10 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
 
     async def list(self) -> List[Project]:
         """
-        List evaluations for a project.
+        List projects for a project.
 
         Returns:
-            List[Project]: List of evaluations
+            List[Project]: List of projects
         Raises:
             HTTPException if the request fails
         """
@@ -353,10 +353,10 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
 
     async def delete(self, project_id: str) -> DeleteResponse:
         """
-        Delete an evaluation.
+        Delete an project.
 
         Args:
-            project_id: The ID of the evaluation to delete
+            project_id: The ID of the project to delete
 
         Returns:
             DeleteResponse: The response containing success status and ID
