@@ -1,5 +1,6 @@
 import base64
 import datetime
+import json
 from typing import Any, Literal, Optional
 
 
@@ -12,6 +13,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
 from ...utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
@@ -21,8 +23,7 @@ from ..mime import MIMEData
 from ..modalities import Modality
 from ..browser_canvas import BrowserCanvas
 from ..standards import ErrorDetail, StreamingBaseModel
-from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel
-
+from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel, unflatten_dict
 
 
 class DocumentExtractRequest(BaseModel):
@@ -330,6 +331,50 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
             last_token_at=last_token_at,
         )
 
+    def to_completion(
+        self,
+        override_final_flat_likelihoods: dict[str, Any] | None = None,
+        override_final_flat_parseds: list[dict[str, Any]] | None = None,
+    ) -> RetabParsedChatCompletion:
+        if override_final_flat_parseds is None:
+            override_final_flat_parseds = [self.choices[idx].delta.flat_parsed for idx in range(len(self.choices))]
+
+        final_parsed_list = [unflatten_dict(override_final_flat_parseds[idx]) for idx in range(len(self.choices))]
+        final_content_list = [json.dumps(final_parsed_list[idx]) for idx in range(len(self.choices))]
+
+        # The final likelihoods are only on the first choice.
+        if override_final_flat_likelihoods is None:
+            override_final_flat_likelihoods = self.choices[0].delta.flat_likelihoods
+
+        final_likelihoods = unflatten_dict(override_final_flat_likelihoods)
+
+        return RetabParsedChatCompletion(
+            extraction_id=self.extraction_id,
+            id=self.id,
+            created=self.created,
+            model=self.model,
+            object="chat.completion",
+            choices=[
+                RetabParsedChoice(
+                    index=idx,
+                    message=ParsedChatCompletionMessage(
+                        content=final_content_list[idx],
+                        role="assistant",
+                        parsed=final_parsed_list[idx],
+                    ),
+                    key_mapping=self.choices[idx].delta.key_mapping,
+                    finish_reason="stop",
+                    logprobs=None,
+                )
+                for idx in range(len(self.choices))
+            ],
+            likelihoods=final_likelihoods,
+            usage=self.usage,
+            request_at=self.request_at,
+            first_token_at=self.first_token_at,
+            last_token_at=self.last_token_at,
+        )
+
 
 def maybe_parse_to_pydantic(schema: dict[str, Any], response: RetabParsedChatCompletion, allow_partial: bool = False) -> RetabParsedChatCompletion:
     if response.choices[0].message.content:
@@ -345,5 +390,3 @@ def maybe_parse_to_pydantic(schema: dict[str, Any], response: RetabParsedChatCom
             # instead of leaving it as a raw dictionary
             response.choices[0].message.parsed = None
     return response
-
-
