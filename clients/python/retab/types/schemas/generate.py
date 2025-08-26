@@ -13,7 +13,7 @@ class GenerateSchemaRequest(BaseModel):
     model: str = "gpt-4o-mini"
     temperature: float = 0.0
     reasoning_effort: ChatCompletionReasoningEffort = "minimal"
-    modality: Modality = "native_fast"
+    modality: Modality = "native"
     instructions: str | None = None
     """The modality of the document to load."""
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")

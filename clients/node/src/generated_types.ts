@@ -172,7 +172,7 @@ export type FinetunedModel = z.infer<typeof ZFinetunedModel>;
 export const ZInferenceSettings = z.lazy(() => (z.object({
     model: z.string().default("gpt-5-mini"),
     temperature: z.number().default(0.0),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text"), z.literal("native_fast")]).default("native"),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     reasoning_effort: z.union([z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional().default("minimal"),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
@@ -396,7 +396,7 @@ export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     model: z.string().default("gpt-4o-mini"),
     temperature: z.number().default(0.0),
     reasoning_effort: z.union([z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional().default("minimal"),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text"), z.literal("native_fast")]).default("native_fast"),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     instructions: z.string().nullable().optional(),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
@@ -509,7 +509,7 @@ export type DocumentCreateInputRequest = z.infer<typeof ZDocumentCreateInputRequ
 
 export const ZDocumentCreateMessageRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text"), z.literal("native_fast")]).default("native"),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
     model: z.union([z.literal("gpt-4o"), z.literal("gpt-4o-mini"), z.literal("chatgpt-4o-latest"), z.literal("gpt-5"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-realtime-preview-2024-12-17"), z.literal("gpt-4o-realtime-preview-2024-10-01"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-mini-realtime-preview-2024-12-17"), z.literal("claude-3-5-sonnet-latest"), z.literal("claude-3-5-sonnet-20241022"), z.literal("claude-3-opus-20240229"), z.literal("claude-3-sonnet-20240229"), z.literal("claude-3-haiku-20240307"), z.literal("claude-opus-4.1"), z.literal("claude-opus-4"), z.literal("claude-sonnet-4"), z.literal("claude-sonnet-4-20250514"), z.literal("grok-3"), z.literal("grok-3-mini"), z.literal("gemini-2.5-pro"), z.literal("gemini-2.5-flash"), z.literal("gemini-2.5-pro-preview-06-05"), z.literal("gemini-2.5-pro-preview-05-06"), z.literal("gemini-2.5-pro-preview-03-25"), z.literal("gemini-2.5-flash-preview-05-20"), z.literal("gemini-2.5-flash-preview-04-17"), z.literal("gemini-2.5-flash-lite"), z.literal("gemini-2.5-pro-exp-03-25"), z.literal("gemini-2.0-flash-lite"), z.literal("gemini-2.0-flash"), z.literal("auto-large"), z.literal("auto-small"), z.literal("auto-micro"), z.literal("human")]).default("gemini-2.5-flash"),
@@ -521,7 +521,7 @@ export const ZDocumentMessage = z.lazy(() => (z.object({
     object: z.literal("document_message").default("document_message"),
     messages: z.array(ZChatCompletionRetabMessage),
     created: z.number(),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text"), z.literal("native_fast")]).default("native"),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
 })));
 export type DocumentMessage = z.infer<typeof ZDocumentMessage>;
 
@@ -598,7 +598,7 @@ export type CostBreakdown = z.infer<typeof ZCostBreakdown>;
 export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     documents: z.array(ZMIMEData).default([]),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text"), z.literal("native_fast")]).default("native"),
+    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
     model: z.string(),

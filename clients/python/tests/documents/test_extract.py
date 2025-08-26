@@ -12,7 +12,7 @@ from retab import AsyncRetab, Retab
 from retab.types.documents.extract import RetabParsedChatCompletion
 
 # Global modality setting for all tests
-MODALITY = "native_fast"
+MODALITY = "native"
 
 # List of AI Providers to test
 AI_MODELS = Literal[

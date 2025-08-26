@@ -62,4 +62,4 @@ export function getPayslipFilePath(): string {
 
 // Global test constants
 export const TEST_MODEL = "gpt-4.1-nano";
-export const TEST_MODALITY = "native_fast";
+export const TEST_MODALITY = "native";
