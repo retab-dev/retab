@@ -10,7 +10,6 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import prepare_mime_document
-from ...utils.ai_models import assert_valid_model_extraction
 from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
@@ -18,7 +17,6 @@ from ...types.documents.parse import ParseRequest, ParseResult, TableParsingForm
 from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.modalities import Modality
-from ...types.ai_models import LLMModel
 from ...types.standards import PreparedRequest, FieldUnset
 from ...utils.json_schema import load_json_schema, unflatten_dict
 
@@ -87,7 +85,7 @@ class BaseDocumentsMixin:
     def _prepare_parse(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: LLMModel,
+        model: str,
         table_parsing_format: TableParsingFormat = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
@@ -125,7 +123,6 @@ class BaseDocumentsMixin:
         store: bool = FieldUnset,
         idempotency_key: str | None = None,
     ) -> PreparedRequest:
-        assert_valid_model_extraction(model)
 
         loaded_schema = load_json_schema(json_schema)
 
@@ -415,7 +412,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def parse(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: LLMModel,
+        model: str,
         table_parsing_format: TableParsingFormat = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
@@ -696,7 +693,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     async def parse(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: LLMModel,
+        model: str,
         table_parsing_format: TableParsingFormat = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,

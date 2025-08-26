@@ -1,7 +1,6 @@
 import datetime
 from typing import Any, Optional
 from pydantic import BaseModel, Field
-from ..ai_models import Amount
 
 
 class PredictionMetadata(BaseModel):
@@ -10,7 +9,6 @@ class PredictionMetadata(BaseModel):
     field_locations: Optional[dict[str, Any]] = Field(default=None, description="The field locations of the extraction")
     agentic_field_locations: Optional[dict[str, Any]] = Field(default=None, description="The field locations of the extraction extracted by an llm")
     consensus_details: Optional[list[dict[str, Any]]] = Field(default=None, description="The consensus details of the extraction")
-    api_cost: Optional[Amount] = Field(default=None, description="The cost of the API call for this document (if any -- ground truth for example)")
 
 
 class PredictionData(BaseModel):
