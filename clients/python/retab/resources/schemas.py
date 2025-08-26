@@ -21,7 +21,7 @@ class SchemasMixin:
         instructions: str | None = None,
         model: str = "gpt-5-mini",
         temperature: float = 0,
-        modality: Modality = "native_fast",
+        modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "minimal",
     ) -> PreparedRequest:
         assert_valid_model_schema_generation(model)
@@ -45,7 +45,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         model: str = "gpt-5-mini",
         temperature: float = 0,
-        modality: Modality = "native_fast",
+        modality: Modality = "native",
     ) -> dict[str, Any]:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -76,7 +76,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         model: str = "gpt-5-mini",
         temperature: float = 0.0,
-        modality: Modality = "native_fast",
+        modality: Modality = "native",
     ) -> dict[str, Any]:
         """
         Generate a complete JSON schema by analyzing the provided documents.

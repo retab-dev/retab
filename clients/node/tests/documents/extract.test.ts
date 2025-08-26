@@ -17,14 +17,14 @@ function generateId(): string {
 const TEST_TIMEOUT = 60000;
 
 // Global modality setting for all tests
-const MODALITY = "native_fast";
+const MODALITY = "native";
 
 // List of AI Models to test
 type AIModels = "gpt-4.1-nano" | "gemini-2.5-flash-lite";
 
 type ClientType = "sync" | "async";
 type ResponseModeType = "stream" | "parse";
-type Modality = "text" | "image" | "native" | "image+text" | "native_fast";
+type Modality = "text" | "image" | "native" | "image+text";
 type BrowserCanvas = "A3" | "A4" | "A5";
 type ReasoningEffort = "minimal" | "low" | "medium" | "high";
 

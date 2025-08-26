@@ -11,7 +11,7 @@ T = TypeVar("T")
 
 # Global test constants
 TEST_MODEL = "gpt-4.1-nano"
-TEST_MODALITY = "native_fast"
+TEST_MODALITY = "native"
 
 
 async def await_or_return(obj: T | Awaitable[T]) -> T:
