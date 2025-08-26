@@ -111,11 +111,13 @@ def main():
     try:
         client = Retab()
 
-        completion = client.deployments.extract(
+        completion = client.projects.extract(
             project_id="proj_6Z821A5qH5P4zDNFd73zN", # Use the processor configured on retab's platform
             iteration_id="base-configuration",       # Use the iteration that gives you the best accuracy / inference speed / price
             document="narrative.txt"
         )
+
+        assert completion.choices[0].message.content is not None
         
         # Extract and print clean structured data
         parsed_data = json.loads(completion.choices[0].message.content)
