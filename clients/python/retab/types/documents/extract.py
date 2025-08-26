@@ -92,7 +92,7 @@ class FieldLocation(BaseModel):
     page: int | None = Field(default=None, description="The page number of the field (1-indexed)")
     bbox_normalized: tuple[float, float, float, float] | None = Field(default=None, description="The normalized bounding box of the field")
     score: float | None = Field(default=None, description="The score of the field")
-    match_level: Literal["token", "line", "block"] | None = Field(default=None, description="The level of the match (token, line, block)")
+    match_level: Literal["token", "line", "block", "token-windows"] | None = Field(default=None, description="The level of the match (token, line, block, token-windows)")
 
 
 class RetabParsedChoice(ParsedChoice):
