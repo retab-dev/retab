@@ -12,7 +12,7 @@ setup(
     description="Retab official python library",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/Retab-dev/retab",
+    url="https://github.com/retab-dev/retab",
     project_urls={"Team website": "https://retab.com"},
     classifiers=[
         "Programming Language :: Python :: 3",
