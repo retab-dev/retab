@@ -15,9 +15,6 @@ from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
-
-from ...utils.usage.usage import CostBreakdown, compute_cost_from_model, compute_cost_from_model_with_breakdown
-from ..ai_models import Amount
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..modalities import Modality
@@ -121,17 +118,7 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
-    @computed_field
-    @property
-    def api_cost(self) -> Optional[Amount]:
-        if self.usage:
-            try:
-                cost = compute_cost_from_model(self.model, self.usage)
-                return cost
-            except Exception as e:
-                print(f"Error computing cost: {e}")
-                return None
-        return None
+ 
 
 
 class UiResponse(Response):
@@ -239,29 +226,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
-    @computed_field
-    @property
-    def api_cost(self) -> Optional[Amount]:
-        if self.usage:
-            try:
-                cost = compute_cost_from_model(self.model, self.usage)
-                return cost
-            except Exception as e:
-                print(f"Error computing cost: {e}")
-                return None
-        return None
-
-    @computed_field  # type: ignore
-    @property
-    def cost_breakdown(self) -> Optional[CostBreakdown]:
-        if self.usage:
-            try:
-                cost = compute_cost_from_model_with_breakdown(self.model, self.usage)
-                return cost
-            except Exception as e:
-                print(f"Error computing cost: {e}")
-                return None
-        return None
+   
 
     def chunk_accumulator(self, previous_cumulated_chunk: "RetabParsedChatCompletionChunk | None" = None) -> "RetabParsedChatCompletionChunk":
         """

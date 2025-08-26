@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 
 from ..mime import MIMEData, BaseMIMEData
 from ..browser_canvas import BrowserCanvas
-from ..ai_models import LLMModel
 
 TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 
@@ -19,7 +18,7 @@ class ParseRequest(BaseModel):
     """Request model for document parsing."""
 
     document: MIMEData = Field(..., description="Document to parse")
-    model: LLMModel = Field(default="gemini-2.5-flash", description="Model to use for parsing")
+    model: str = Field(default="gemini-2.5-flash", description="Model to use for parsing")
     table_parsing_format: TableParsingFormat = Field(default="html", description="Format for parsing tables")
     image_resolution_dpi: int = Field(default=96, description="DPI for image processing")
     browser_canvas: BrowserCanvas = Field(default="A4", description="Canvas size for document rendering")

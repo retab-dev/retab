@@ -6,7 +6,6 @@ import PIL.Image
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 
 from .._resource import AsyncAPIResource, SyncAPIResource
-from ..utils.ai_models import assert_valid_model_schema_generation
 from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.modalities import Modality
@@ -24,7 +23,6 @@ class SchemasMixin:
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "minimal",
     ) -> PreparedRequest:
-        assert_valid_model_schema_generation(model)
         mime_documents = prepare_mime_document_list(documents)
         request = GenerateSchemaRequest(
             documents=mime_documents,
