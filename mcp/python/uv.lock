@@ -862,7 +862,7 @@ dependencies = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "mcp", specifier = ">=1.6.0" },
-    { name = "retab", git = "https://github.com/Retab-dev/retab.git?subdirectory=clients%2Fpython&rev=main" },
+    { name = "retab", git = "https://github.com/retab-dev/retab.git?subdirectory=clients%2Fpython&rev=main" },
 ]
 
 [[package]]
@@ -1168,7 +1168,7 @@ wheels = [
 [[package]]
 name = "retab"
 version = "0.0.25"
-source = { git = "https://github.com/Retab-dev/retab.git?subdirectory=clients%2Fpython&rev=main#89b97ed9a204e7f3a92cfda7facee2fdb14a9b2f" }
+source = { git = "https://github.com/retab-dev/retab.git?subdirectory=clients%2Fpython&rev=main#89b97ed9a204e7f3a92cfda7facee2fdb14a9b2f" }
 dependencies = [
     { name = "anthropic" },
     { name = "backoff" },
