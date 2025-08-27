@@ -48,8 +48,7 @@ class Schemas(SyncAPIResource, SchemasMixin):
         """
         Generate a complete JSON schema by analyzing the provided documents.
 
-        The generated schema includes X-Prompts for enhanced LLM interactions:
-        - X-SystemPrompt: Defines high-level instructions and context for consistent LLM behavior
+        The generated schema can include X-Prompts for enhanced LLM interactions:
         - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
 
         Args:
@@ -79,8 +78,7 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         """
         Generate a complete JSON schema by analyzing the provided documents.
 
-        The generated schema includes X-Prompts for enhanced LLM interactions:
-        - X-SystemPrompt: Defines high-level instructions and context for consistent LLM behavior
+        The generated schema can include X-Prompts for enhanced LLM interactions:
         - X-FieldPrompt: Enhances standard description fields with specific extraction guidance
         - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
 
