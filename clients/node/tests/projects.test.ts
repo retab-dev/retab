@@ -115,7 +115,7 @@ describe('Retab SDK Tests', () => {
                 });
 
                 const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Extract API call timed out after 25 seconds')), 25000);
+                    setTimeout(() => reject(new Error(`Extract API call timed out after ${TEST_TIMEOUT / 1000} seconds`)), TEST_TIMEOUT);
                 });
 
                 const response = await Promise.race([extractPromise, timeoutPromise]) as any;

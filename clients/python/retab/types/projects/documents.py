@@ -15,13 +15,13 @@ class AnnotatedDocument(BaseModel):
 
 class DocumentItem(AnnotatedDocument):
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
+    playground_extraction: dict[str, Any] = Field(default={}, description="The playground extraction of the document")
+    playground_extraction_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the playground extraction")
 
 
 class ProjectDocument(DocumentItem):
     id: str = Field(description="The ID of the document. Equal to mime_data.id but robust to the case where mime_data is a BaseMIMEData")
     ocr_file_id: Optional[str] = Field(default=None, description="The ID of the OCR file")
-    playground_extraction: dict[str, Any] = Field(default={}, description="The playground extraction of the document")
-
 
 class CreateProjectDocumentRequest(DocumentItem):
     pass
