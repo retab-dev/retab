@@ -400,20 +400,9 @@ def merge_descriptions(outer_schema: dict[str, Any], inner_schema: dict[str, Any
         # delete it
         merged.pop("X-ReasoningPrompt", None)
 
-    # Outer LLM Description preferred if present
-    if outer_schema.get("X-FieldPrompt", "").strip():
-        merged["X-FieldPrompt"] = outer_schema["X-FieldPrompt"]
-    elif inner_schema.get("X-FieldPrompt", "").strip():
-        merged["X-FieldPrompt"] = inner_schema["X-FieldPrompt"]
+    # Removed X-FieldPrompt support
 
-    if not merged.get("X-FieldPrompt", "").strip():
-        # delete it
-        merged.pop("X-FieldPrompt", None)
-
-    # System-Prompt
-    if not merged.get("X-SystemPrompt", "").strip():
-        # delete it
-        merged.pop("X-SystemPrompt", None)
+    # Removed X-SystemPrompt support
 
     return merged
 
@@ -984,10 +973,6 @@ def _rec_replace_description_with_llm_description(schema: dict[str, Any]) -> dic
         return schema
 
     new_schema = copy.deepcopy(schema)
-    if "description" in new_schema or "X-FieldPrompt" in new_schema:
-        new_schema["description"] = new_schema.pop("X-FieldPrompt", new_schema.get("description"))
-        if new_schema["description"] is None:
-            new_schema.pop("description")
         #elif "default" in new_schema:
         #    new_schema["description"] += f"\nUser Provided a Default Value: {json.dumps(new_schema['default'])}"
 
@@ -1024,8 +1009,7 @@ def create_reasoning_schema_without_ref_expansion(json_schema: dict[str, Any]) -
     # Insert quote fields for leaf nodes with X-ReferenceQuote: true
     updated_schema = _insert_quote_fields_inner(updated_schema)
 
-    # Replace description with X-FieldPrompt if present
-    updated_schema = _rec_replace_description_with_llm_description(updated_schema)
+    # Keep description as-is
 
     # Clean the schema (remove defaults, etc)
     updated_schema = clean_schema(updated_schema, remove_custom_fields=True)
@@ -1059,8 +1043,7 @@ def create_reasoning_schema(json_schema: dict[str, Any]) -> dict[str, Any]:
     # if "$defs" in updated_schema:
     #     updated_schema.pop("$defs", None)
 
-    # Replace description with X-FieldPrompt if present
-    updated_schema = _rec_replace_description_with_llm_description(updated_schema)
+    # Keep description as-is
 
     # Clean the schema (remove defaults, etc)
     updated_schema = clean_schema(updated_schema, remove_custom_fields=True)
