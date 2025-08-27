@@ -32,3 +32,4 @@ class PatchProjectDocumentRequest(BaseModel):
     annotation_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the annotation when the annotation is a prediction")
     ocr_file_id: Optional[str] = Field(default=None, description="The ID of the OCR file")
     playground_extraction: Optional[dict[str, Any]] = Field(default=None, description="The playground extraction of the document")
+    playground_extraction_metadata: Optional[PredictionMetadata] = Field(default=None, description="The metadata of the playground extraction")
