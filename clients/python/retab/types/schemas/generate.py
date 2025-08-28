@@ -22,6 +22,5 @@ class GenerateSchemaRequest(BaseModel):
     )
 
     """The image operations to apply to the document."""
-
     stream: bool = False
     """Whether to stream the response."""
