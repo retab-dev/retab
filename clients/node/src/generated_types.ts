@@ -344,6 +344,8 @@ export type CreateProjectDocumentRequest = z.infer<typeof ZCreateProjectDocument
 
 export const ZDocumentItem = z.lazy(() => (ZAnnotatedDocument.schema).merge(z.object({
     annotation_metadata: ZPredictionMetadata.nullable().optional(),
+    playground_extraction: z.record(z.string(), z.any()).default({}),
+    playground_extraction_metadata: ZPredictionMetadata.nullable().optional(),
 })));
 export type DocumentItem = z.infer<typeof ZDocumentItem>;
 
@@ -351,7 +353,10 @@ export const ZPatchProjectDocumentRequest = z.lazy(() => (z.object({
     annotation: z.record(z.string(), z.any()).nullable().optional(),
     annotation_metadata: ZPredictionMetadata.nullable().optional(),
     ocr_file_id: z.string().nullable().optional(),
+    playground_extraction: z.record(z.string(), z.any()).nullable().optional(),
+    playground_extraction_metadata: ZPredictionMetadata.nullable().optional(),
 })));
+
 export type PatchProjectDocumentRequest = z.infer<typeof ZPatchProjectDocumentRequest>;
 
 export const ZProjectDocument = z.lazy(() => (ZDocumentItem.schema).merge(z.object({
