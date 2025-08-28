@@ -10,6 +10,7 @@ from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.modalities import Modality
 from ..types.schemas.generate import GenerateSchemaRequest
+from ..types.browser_canvas import BrowserCanvas
 from ..types.standards import PreparedRequest
 
 
@@ -18,10 +19,12 @@ class SchemasMixin:
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = None,
-        model: str = "gpt-5-mini",
-        temperature: float = 0,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0.0,
         modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "minimal",
+        image_resolution_dpi: int = 96,
+        browser_canvas: BrowserCanvas = "A4",
     ) -> PreparedRequest:
         mime_documents = prepare_mime_document_list(documents)
         request = GenerateSchemaRequest(
@@ -31,6 +34,8 @@ class SchemasMixin:
             temperature=temperature,
             modality=modality,
             reasoning_effort=reasoning_effort,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
         )
         return PreparedRequest(method="POST", url="/v1/schemas/generate", data=request.model_dump())
 
@@ -41,9 +46,12 @@ class Schemas(SyncAPIResource, SchemasMixin):
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = None,
-        model: str = "gpt-5-mini",
-        temperature: float = 0,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0.0,
         modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "minimal",
+        image_resolution_dpi: int = 96,
+        browser_canvas: BrowserCanvas = "A4",
     ) -> dict[str, Any]:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -60,8 +68,16 @@ class Schemas(SyncAPIResource, SchemasMixin):
         Raises:
             HTTPException if the request fails
         """
-
-        prepared_request = self.prepare_generate(documents, instructions, model, temperature, modality)
+        prepared_request = self.prepare_generate(
+            documents=documents,
+            instructions=instructions,
+            model=model,
+            temperature=temperature,
+            modality=modality,
+            reasoning_effort=reasoning_effort,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
+        )
         response = self._client._prepared_request(prepared_request)
         return response
 
@@ -71,15 +87,17 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = None,
-        model: str = "gpt-5-mini",
+        model: str = "gpt-4o-mini",
         temperature: float = 0.0,
         modality: Modality = "native",
+        reasoning_effort: ChatCompletionReasoningEffort = "minimal",
+        image_resolution_dpi: int = 96,
+        browser_canvas: BrowserCanvas = "A4",
     ) -> dict[str, Any]:
         """
         Generate a complete JSON schema by analyzing the provided documents.
 
         The generated schema can include X-Prompts for enhanced LLM interactions:
-        - X-FieldPrompt: Enhances standard description fields with specific extraction guidance
         - X-ReasoningPrompt: Creates auxiliary reasoning fields for complex data processing
 
         Args:
@@ -97,6 +115,9 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             model=model,
             temperature=temperature,
             modality=modality,
+            reasoning_effort=reasoning_effort,
+            image_resolution_dpi=image_resolution_dpi,
+            browser_canvas=browser_canvas,
         )
         response = await self._client._prepared_request(prepared_request)
         return response

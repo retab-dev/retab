@@ -46,7 +46,7 @@ class BaseRetab:
         self,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        timeout: float = 240.0,
+        timeout: float = 800.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = FieldUnset,
         gemini_api_key: Optional[str] = FieldUnset,
