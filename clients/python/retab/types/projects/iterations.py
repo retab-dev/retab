@@ -17,9 +17,24 @@ class BaseIteration(BaseModel):
         default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc),
         description="The last update date of inference settings or json schema",
     )
+    
 
 class Iteration(BaseIteration):
     predictions: dict[str, PredictionData] = Field(default_factory=dict, description="The predictions of the iteration for all the documents")
+    draft: Optional[BaseIteration] = Field(default=None, description="The draft iteration of the iteration")
+
+    # if no draft is provided, set it to the current iteration
+    @model_validator(mode="after")
+    def set_draft_to_current_iteration(self) -> Self:
+        if self.draft is None:
+            self.draft = BaseIteration(
+                id="eval_iter_" + nanoid.generate(),
+                parent_id=self.id,
+                inference_settings=self.inference_settings,
+                json_schema=self.json_schema,
+                updated_at=self.updated_at,
+            )
+        return self
 
 class CreateIterationRequest(BaseModel):
     """
@@ -45,7 +60,6 @@ class PatchIterationRequest(BaseModel):
     inference_settings: Optional[InferenceSettings] = Field(default=None, description="The new inference settings of the iteration")
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The new json schema of the iteration")
     version: Optional[int] = Field(default=None, description="Current version for optimistic locking")
-
 
 class ProcessIterationRequest(BaseModel):
     """Request model for processing an iteration - running extractions on documents."""
