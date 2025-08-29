@@ -1,6 +1,6 @@
 {
   "name": "@retab/node",
-  "version": "0.0.56",
+  "version": "1.0.57",
   "description": "Retab official Node.js library",
   "main": "dist/index.js",
   "exports": {
