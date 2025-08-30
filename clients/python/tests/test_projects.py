@@ -481,6 +481,58 @@ async def test_complete_evaluation_workflow(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client_type", get_args(ClientType))
+async def test_extract_without_iteration_id(
+    sync_client: Retab,
+    async_client: AsyncRetab,
+    client_type: ClientType,
+    booking_confirmation_file_path_1: str,
+    booking_confirmation_json_schema: Dict[str, Any],
+) -> None:
+    """Ensure extract works when iteration_id is omitted (defaults to base configuration)."""
+    evaluation_name = f"test_extract_no_iter_{nanoid.generate()}"
+    client = sync_client if client_type == "sync" else async_client
+
+    # Create a project
+    project = await await_or_return(
+        client.projects.create(
+            name=evaluation_name,
+            json_schema=booking_confirmation_json_schema,
+        )
+    )
+
+    project_id = project.id
+
+    try:
+        # Call extract without providing iteration_id
+        completion_response = await await_or_return(
+            client.projects.extract(
+                project_id=project_id,
+                document=booking_confirmation_file_path_1,
+            )
+        )
+
+        # Validate the response
+        assert isinstance(completion_response, RetabParsedChatCompletion)
+        assert completion_response.choices is not None
+        assert len(completion_response.choices) > 0
+        assert completion_response.choices[0].message.content is not None
+
+        # The parsed content should be valid JSON
+        try:
+            parsed_content = json.loads(completion_response.choices[0].message.content)
+            assert isinstance(parsed_content, dict)
+        except json.JSONDecodeError:
+            assert False, "Response content should be valid JSON"
+
+    finally:
+        # Cleanup
+        try:
+            await await_or_return(client.projects.delete(project_id))
+        except Exception:
+            pass
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client_type", get_args(ClientType))
 async def test_iteration_selective_processing(
     sync_client: Retab,
     async_client: AsyncRetab,

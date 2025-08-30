@@ -59,7 +59,7 @@ export default class APIProjects extends CompositionClient {
         store
     }: {
         project_id: string,
-        iteration_id: string,
+        iteration_id?: string,
         document?: MIMEDataInput,
         documents?: MIMEDataInput[],
         temperature?: number,
@@ -69,7 +69,7 @@ export default class APIProjects extends CompositionClient {
         if (!document && (!documents || documents.length === 0)) {
             throw new Error("Either 'document' or 'documents' must be provided.");
         }
-        let url = `/v1/projects/extract/${project_id}/${iteration_id}`;
+        const url = iteration_id ? `/v1/projects/extract/${project_id}/${iteration_id}` : `/v1/projects/extract/${project_id}`;
 
         // Only include optional parameters if they are provided
         const bodyParams: any = {
