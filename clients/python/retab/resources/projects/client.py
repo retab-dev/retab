@@ -1,7 +1,7 @@
 import base64
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -72,7 +72,7 @@ class ProjectsMixin:
     def prepare_extract(
         self,
         project_id: str,
-        iteration_id: str,
+        iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: list[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         temperature: float | None = None,
@@ -83,7 +83,7 @@ class ProjectsMixin:
 
         Args:
             project_id: ID of the project
-            iteration_id: ID of the iteration
+            iteration_id: Optional ID of the iteration. If None, uses project base.
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override
@@ -130,7 +130,7 @@ class ProjectsMixin:
                 )
             files = files_list
 
-        url = f"/v1/projects/extract/{project_id}/{iteration_id}"
+        url = f"/v1/projects/extract/{project_id}" if iteration_id is None else f"/v1/projects/extract/{project_id}/{iteration_id}"
 
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 
@@ -242,7 +242,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
     def extract(
         self,
         project_id: str,
-        iteration_id: str,
+        iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         temperature: float | None = None,
@@ -253,7 +253,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
 
         Args:
             project_id: ID of the project
-            iteration_id: ID of the iteration
+            iteration_id: Optional ID of the iteration. If None, uses project base.
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override
@@ -369,7 +369,7 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
     async def extract(
         self,
         project_id: str,
-        iteration_id: str,
+        iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         temperature: float | None = None,
@@ -380,7 +380,7 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
 
         Args:
             project_id: ID of the project
-            iteration_id: ID of the iteration
+            iteration_id: Optional ID of the iteration. If None, uses project base.
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             temperature: Optional temperature override

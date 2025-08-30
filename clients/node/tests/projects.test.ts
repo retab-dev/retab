@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto';
+// @ts-ignore - bun test types may not be available in lint environment
 import { describe, test, beforeAll, expect } from 'bun:test';
 import { Retab } from '../src/index.js';
 import {
@@ -73,6 +74,52 @@ describe('Retab SDK Tests', () => {
                     process.env.RETAB_API_KEY = originalEnvKey;
                 } else {
                     delete process.env.RETAB_API_KEY;
+                }
+            }
+        }, { timeout: TEST_TIMEOUT });
+
+        test('test_projects_extract_without_iteration_id', async () => {
+            const evaluationName = `test_extract_no_iter_${generateId()}`;
+
+            // Create a project
+            const project = await client.projects.create({
+                name: evaluationName,
+                json_schema: bookingConfirmationJsonSchema,
+            });
+
+            const projectId = project.id;
+
+            try {
+                // Extract without providing iteration_id (should default to base configuration)
+                const response: any = await client.projects.extract({
+                    project_id: projectId,
+                    document: bookingConfirmationFilePath1,
+                });
+
+                // Validate response structure
+                expect(response).toBeDefined();
+                expect(response.id).toBeDefined();
+                expect(response.choices).toBeDefined();
+                expect(response.choices.length).toBeGreaterThan(0);
+                expect(response.choices[0].message).toBeDefined();
+                expect(response.choices[0].message.content).toBeDefined();
+
+                // Validate parsed content if available
+                if (response.choices[0].message.parsed) {
+                    expect(typeof response.choices[0].message.parsed).toBe('object');
+                }
+
+                // Validate usage information if present
+                if (response.usage) {
+                    expect(response.usage.total_tokens).toBeGreaterThan(0);
+                }
+
+            } finally {
+                // Cleanup created project
+                try {
+                    await client.projects.delete(projectId);
+                } catch (error) {
+                    // ignore cleanup errors
                 }
             }
         }, { timeout: TEST_TIMEOUT });
@@ -405,7 +452,7 @@ describe('Retab SDK Tests', () => {
                         const parsedContent = JSON.parse(completionResponse.choices[0].message.content);
                         expect(typeof parsedContent).toBe('object');
                     } catch (error) {
-                        fail('Response content should be valid JSON');
+                        throw new Error('Response content should be valid JSON');
                     }
                 }
 
