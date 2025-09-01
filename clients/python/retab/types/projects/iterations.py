@@ -7,22 +7,35 @@ from pydantic import BaseModel, Field, model_validator
 from ..inference_settings import InferenceSettings
 from .predictions import PredictionData
 
+class SchemaOverrides(BaseModel):
+    """Schema override for a field path. Only supports non-structural metadata.
+
+    - description: JSON Schema description string
+    - reasoning_prompt: value mapped to schema key "X-ReasoningPrompt"
+    """
+
+    descriptionsOverride: Optional[dict[str, str]] = None
+    reasoningPromptsOverride: Optional[dict[str, str]] = Field(default=None, description="Maps to X-ReasoningPrompt in schema")
 
 class BaseIteration(BaseModel):
     id: str = Field(default_factory=lambda: "eval_iter_" + nanoid.generate())
     parent_id: Optional[str] = Field(default=None, description="The ID of the parent iteration")
     inference_settings: InferenceSettings
-    json_schema: dict[str, Any]
+    # Store only overrides rather than the full schema. Keys are dot-paths like "address.street" or "items.*.price".
+    schema_overrides: SchemaOverrides = Field(
+        default_factory=SchemaOverrides, description="Map of field path -> non-structural schema overrides (description, reasoning_prompt)"
+    )
     updated_at: datetime.datetime = Field(
         default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc),
-        description="The last update date of inference settings or json schema",
+        description="The last update date of inference settings or schema overrides",
     )
     
 class DraftIteration(BaseModel):
-    json_schema: dict[str, Any]
+    # Store draft overrides only.
+    schema_overrides: SchemaOverrides = Field(default_factory=SchemaOverrides)
     updated_at: datetime.datetime = Field(
         default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc),
-        description="The last update date of inference settings or json schema",
+        description="The last update date of draft schema overrides",
     )
 
 class Iteration(BaseIteration):
@@ -34,18 +47,21 @@ class Iteration(BaseIteration):
     def set_draft_to_current_iteration(self) -> Self:
         if self.draft is None:
             self.draft = DraftIteration(
-                json_schema=self.json_schema,
+                schema_overrides=SchemaOverrides(),
                 updated_at=datetime.datetime.now(tz=datetime.timezone.utc),
             )
         return self
 
 class CreateIterationRequest(BaseModel):
     """
-    Request model for performing a new iteration with custom inference settings and optional JSON schema.
+    Request model for performing a new iteration with custom inference settings and optional schema overrides.
     """
 
     inference_settings: InferenceSettings
+    # Backward-compat: allow full json_schema, from which overrides will be computed and stored
     json_schema: Optional[dict[str, Any]] = None
+    # Preferred: provide only non-structural overrides to apply on top of the parent/base schema
+    schema_overrides: Optional[SchemaOverrides] = None
     parent_id: Optional[str] = Field(
         default=None,
         description="The ID of the parent iteration to copy the JSON Schema from.",
@@ -61,7 +77,8 @@ class CreateIterationRequest(BaseModel):
 
 class PatchIterationRequest(BaseModel):
     inference_settings: Optional[InferenceSettings] = Field(default=None, description="The new inference settings of the iteration")
-    json_schema: Optional[dict[str, Any]] = Field(default=None, description="The new json schema of the iteration")
+    # Replace full-schema editing with overrides editing. If provided, replaces the whole overrides map.
+    schema_overrides: Optional[SchemaOverrides] = Field(default=None, description="Override map for non-structural schema changes")
     version: Optional[int] = Field(default=None, description="Current version for optimistic locking")
 
 class ProcessIterationRequest(BaseModel):
