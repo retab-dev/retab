@@ -17,21 +17,16 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
-from ..modalities import Modality
 from ..browser_canvas import BrowserCanvas
 from ..standards import ErrorDetail, StreamingBaseModel
 from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel, unflatten_dict
 
 
 class DocumentExtractRequest(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
     document: MIMEData = Field(default=None, description="Document to be analyzed", deprecated=True)  # type: ignore
     documents: list[MIMEData] = Field(default=[], description="Documents to be analyzed (preferred over document)")
-    modality: Modality = Field(default="native", description="Modality of the document")
     image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
-    browser_canvas: BrowserCanvas = Field(
-        default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
-    )
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])

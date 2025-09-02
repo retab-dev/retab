@@ -8,7 +8,6 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from .._resource import AsyncAPIResource, SyncAPIResource
 from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
-from ..types.modalities import Modality
 from ..types.schemas.generate import GenerateSchemaRequest
 from ..types.browser_canvas import BrowserCanvas
 from ..types.standards import PreparedRequest
@@ -21,22 +20,26 @@ class SchemasMixin:
         instructions: str | None = None,
         model: str = "gpt-5-mini",
         temperature: float = 0.0,
-        modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "minimal",
         image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
+        **extra_body: Any,
     ) -> PreparedRequest:
         mime_documents = prepare_mime_document_list(documents)
-        request = GenerateSchemaRequest(
-            documents=mime_documents,
-            instructions=instructions if instructions else None,
-            model=model,
-            temperature=temperature,
-            modality=modality,
-            reasoning_effort=reasoning_effort,
-            image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-        )
+        # Build known body and merge in any extras
+        body: dict[str, Any] = {
+            "documents": mime_documents,
+            "instructions": instructions if instructions else None,
+            "model": model,
+            "temperature": temperature,
+            "reasoning_effort": reasoning_effort,
+            "image_resolution_dpi": image_resolution_dpi,
+            "browser_canvas": browser_canvas,
+        }
+        if extra_body:
+            body.update(extra_body)
+
+        request = GenerateSchemaRequest(**body)
         return PreparedRequest(method="POST", url="/v1/schemas/generate", data=request.model_dump())
 
 
@@ -48,10 +51,10 @@ class Schemas(SyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         model: str = "gpt-5-mini",
         temperature: float = 0.0,
-        modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "minimal",
         image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
+        **extra_body: Any,
     ) -> dict[str, Any]:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -73,10 +76,10 @@ class Schemas(SyncAPIResource, SchemasMixin):
             instructions=instructions,
             model=model,
             temperature=temperature,
-            modality=modality,
             reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
+            **extra_body,
         )
         response = self._client._prepared_request(prepared_request)
         return response
@@ -89,10 +92,10 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         instructions: str | None = None,
         model: str = "gpt-4o-mini",
         temperature: float = 0.0,
-        modality: Modality = "native",
         reasoning_effort: ChatCompletionReasoningEffort = "minimal",
         image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
+        **extra_body: Any,
     ) -> dict[str, Any]:
         """
         Generate a complete JSON schema by analyzing the provided documents.
@@ -114,10 +117,10 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             instructions=instructions,
             model=model,
             temperature=temperature,
-            modality=modality,
             reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
+            **extra_body,
         )
         response = await self._client._prepared_request(prepared_request)
         return response
