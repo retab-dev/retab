@@ -142,6 +142,12 @@ export type DocumentItemInput = z.input<typeof ZDocumentItem>;
 export type DocumentItem = z.output<typeof ZDocumentItem>;
 
 
+// Looser project schema to handle backends that omit arrays by default
+export const ZProjectLoose: z.ZodType<generated.Project> = z.lazy(() => (generated.ZBaseProject.schema).merge(z.object({
+    documents: z.array(generated.ZProjectDocument).default([]),
+    iterations: z.array(generated.ZIteration).default([]),
+})) as any);
+
 export const ZModel = z.lazy(() => (z.object({
     id: z.string(),
     created: z.number(),

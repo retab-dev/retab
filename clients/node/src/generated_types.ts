@@ -151,84 +151,21 @@ export const ZChatCompletionRetabMessage = z.lazy(() => (z.object({
 })));
 export type ChatCompletionRetabMessage = z.infer<typeof ZChatCompletionRetabMessage>;
 
-export const ZAmount = z.lazy(() => (z.object({
-    value: z.number(),
-    currency: z.string().default("USD"),
+export const ZListMetadata = z.lazy(() => (z.object({
+    before: z.string().nullable().optional(),
+    after: z.string().nullable().optional(),
 })));
-export type Amount = z.infer<typeof ZAmount>;
-
-export const ZFinetunedModel = z.lazy(() => (z.object({
-    object: z.literal("finetuned_model").default("finetuned_model"),
-    organization_id: z.string(),
-    model: z.string(),
-    schema_id: z.string(),
-    schema_data_id: z.string(),
-    finetuning_props: ZInferenceSettings,
-    project_id: z.string().nullable().optional(),
-    created_at: z.string(),
-})));
-export type FinetunedModel = z.infer<typeof ZFinetunedModel>;
+export type ListMetadata = z.infer<typeof ZListMetadata>;
 
 export const ZInferenceSettings = z.lazy(() => (z.object({
     model: z.string().default("gpt-5-mini"),
     temperature: z.number().default(0.0),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     reasoning_effort: z.union([z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional().default("minimal"),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
     n_consensus: z.number().default(1),
 })));
 export type InferenceSettings = z.infer<typeof ZInferenceSettings>;
-
-export const ZModelCapabilities = z.lazy(() => (z.object({
-    modalities: z.array(z.union([z.literal("text"), z.literal("audio"), z.literal("image")])),
-    endpoints: z.array(z.union([z.literal("chat_completions"), z.literal("responses"), z.literal("assistants"), z.literal("batch"), z.literal("fine_tuning"), z.literal("embeddings"), z.literal("speech_generation"), z.literal("translation"), z.literal("completions_legacy"), z.literal("image_generation"), z.literal("transcription"), z.literal("moderation"), z.literal("realtime")])),
-    features: z.array(z.union([z.literal("streaming"), z.literal("function_calling"), z.literal("structured_outputs"), z.literal("distillation"), z.literal("fine_tuning"), z.literal("predicted_outputs"), z.literal("schema_generation")])),
-})));
-export type ModelCapabilities = z.infer<typeof ZModelCapabilities>;
-
-export const ZModelCard = z.lazy(() => (z.object({
-    model: z.union([z.union([z.literal("gpt-4o"), z.literal("gpt-4o-mini"), z.literal("chatgpt-4o-latest"), z.literal("gpt-5"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-realtime-preview-2024-12-17"), z.literal("gpt-4o-realtime-preview-2024-10-01"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-mini-realtime-preview-2024-12-17"), z.literal("claude-3-5-sonnet-latest"), z.literal("claude-3-5-sonnet-20241022"), z.literal("claude-3-opus-20240229"), z.literal("claude-3-sonnet-20240229"), z.literal("claude-3-haiku-20240307"), z.literal("claude-opus-4.1"), z.literal("claude-opus-4"), z.literal("claude-sonnet-4"), z.literal("claude-sonnet-4-20250514"), z.literal("grok-3"), z.literal("grok-3-mini"), z.literal("gemini-2.5-pro"), z.literal("gemini-2.5-flash"), z.literal("gemini-2.5-pro-preview-06-05"), z.literal("gemini-2.5-pro-preview-05-06"), z.literal("gemini-2.5-pro-preview-03-25"), z.literal("gemini-2.5-flash-preview-05-20"), z.literal("gemini-2.5-flash-preview-04-17"), z.literal("gemini-2.5-flash-lite"), z.literal("gemini-2.5-pro-exp-03-25"), z.literal("gemini-2.0-flash-lite"), z.literal("gemini-2.0-flash"), z.literal("auto-large"), z.literal("auto-small"), z.literal("auto-micro"), z.literal("human")]), z.string()]),
-    display_name: z.string().nullable().optional(),
-    pricing: ZPricing,
-    capabilities: ZModelCapabilities,
-    temperature_support: z.boolean().default(true),
-    reasoning_effort_support: z.boolean().default(false),
-    permissions: ZModelCardPermissions.default({}),
-})));
-export type ModelCard = z.infer<typeof ZModelCard>;
-
-export const ZModelCardPermissions = z.lazy(() => (z.object({
-    show_in_free_picker: z.boolean().default(false),
-    show_in_paid_picker: z.boolean().default(false),
-})));
-export type ModelCardPermissions = z.infer<typeof ZModelCardPermissions>;
-
-export const ZMonthlyUsageResponseContent = z.lazy(() => (z.object({
-    credits_count: z.number(),
-    credits_limit: z.number().default(-1),
-})));
-export type MonthlyUsageResponseContent = z.infer<typeof ZMonthlyUsageResponseContent>;
-
-export const ZPricing = z.lazy(() => (z.object({
-    text: ZTokenPrice,
-    audio: ZTokenPrice.nullable().optional(),
-    ft_price_hike: z.number().default(1.0),
-})));
-export type Pricing = z.infer<typeof ZPricing>;
-
-export const ZTokenPrice = z.lazy(() => (z.object({
-    prompt: z.number(),
-    completion: z.number(),
-    cached_discount: z.number().default(1.0),
-})));
-export type TokenPrice = z.infer<typeof ZTokenPrice>;
-
-export const ZListMetadata = z.lazy(() => (z.object({
-    before: z.string().nullable().optional(),
-    after: z.string().nullable().optional(),
-})));
-export type ListMetadata = z.infer<typeof ZListMetadata>;
 
 export const ZDistancesResult = z.lazy(() => (z.object({
     distances: z.record(z.string(), z.any()),
@@ -270,7 +207,6 @@ export const ZPredictionMetadata = z.lazy(() => (z.object({
     field_locations: z.record(z.string(), z.any()).nullable().optional(),
     agentic_field_locations: z.record(z.string(), z.any()).nullable().optional(),
     consensus_details: z.array(z.record(z.string(), z.any())).nullable().optional(),
-    api_cost: ZAmount.nullable().optional(),
 })));
 export type PredictionMetadata = z.infer<typeof ZPredictionMetadata>;
 
@@ -283,7 +219,7 @@ export const ZBaseIteration = z.lazy(() => (z.object({
     id: z.string(),
     parent_id: z.string().nullable().optional(),
     inference_settings: ZInferenceSettings,
-    json_schema: z.record(z.string(), z.any()),
+    schema_overrides: ZSchemaOverrides,
     updated_at: z.string(),
 })));
 export type BaseIteration = z.infer<typeof ZBaseIteration>;
@@ -291,6 +227,7 @@ export type BaseIteration = z.infer<typeof ZBaseIteration>;
 export const ZCreateIterationRequest = z.lazy(() => (z.object({
     inference_settings: ZInferenceSettings,
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
+    schema_overrides: ZSchemaOverrides.nullable().optional(),
     parent_id: z.string().nullable().optional(),
 })));
 export type CreateIterationRequest = z.infer<typeof ZCreateIterationRequest>;
@@ -305,8 +242,15 @@ export const ZDocumentStatus = z.lazy(() => (z.object({
 })));
 export type DocumentStatus = z.infer<typeof ZDocumentStatus>;
 
+export const ZDraftIteration = z.lazy(() => (z.object({
+    schema_overrides: ZSchemaOverrides,
+    updated_at: z.string(),
+})));
+export type DraftIteration = z.infer<typeof ZDraftIteration>;
+
 export const ZIteration = z.lazy(() => (ZBaseIteration.schema).merge(z.object({
     predictions: z.record(z.string(), ZPredictionData),
+    draft: ZDraftIteration.nullable().optional(),
 })));
 export type Iteration = z.infer<typeof ZIteration>;
 
@@ -321,7 +265,7 @@ export type IterationDocumentStatusResponse = z.infer<typeof ZIterationDocumentS
 
 export const ZPatchIterationRequest = z.lazy(() => (z.object({
     inference_settings: ZInferenceSettings.nullable().optional(),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+    schema_overrides: ZSchemaOverrides.nullable().optional(),
     version: z.number().nullable().optional(),
 })));
 export type PatchIterationRequest = z.infer<typeof ZPatchIterationRequest>;
@@ -331,6 +275,12 @@ export const ZProcessIterationRequest = z.lazy(() => (z.object({
     only_outdated: z.boolean().default(true),
 })));
 export type ProcessIterationRequest = z.infer<typeof ZProcessIterationRequest>;
+
+export const ZSchemaOverrides = z.lazy(() => (z.object({
+    descriptionsOverride: z.record(z.string(), z.string()).nullable().optional(),
+    reasoningPromptsOverride: z.record(z.string(), z.string()).nullable().optional(),
+})));
+export type SchemaOverrides = z.infer<typeof ZSchemaOverrides>;
 
 export const ZAnnotatedDocument = z.lazy(() => (z.object({
     mime_data: ZMIMEData,
@@ -356,7 +306,6 @@ export const ZPatchProjectDocumentRequest = z.lazy(() => (z.object({
     playground_extraction: z.record(z.string(), z.any()).nullable().optional(),
     playground_extraction_metadata: ZPredictionMetadata.nullable().optional(),
 })));
-
 export type PatchProjectDocumentRequest = z.infer<typeof ZPatchProjectDocumentRequest>;
 
 export const ZProjectDocument = z.lazy(() => (ZDocumentItem.schema).merge(z.object({
@@ -386,8 +335,8 @@ export const ZPatchProjectRequest = z.lazy(() => (z.object({
 export type PatchProjectRequest = z.infer<typeof ZPatchProjectRequest>;
 
 export const ZProject = z.lazy(() => (ZBaseProject.schema).merge(z.object({
-    documents: z.array(ZProjectDocument).default([]),
-    iterations: z.array(ZIteration).default([]),
+    documents: z.array(ZProjectDocument),
+    iterations: z.array(ZIteration),
 })));
 export type Project = z.infer<typeof ZProject>;
 
@@ -401,7 +350,6 @@ export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     model: z.string().default("gpt-4o-mini"),
     temperature: z.number().default(0.0),
     reasoning_effort: z.union([z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional().default("minimal"),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     instructions: z.string().nullable().optional(),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
@@ -409,7 +357,7 @@ export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
 })));
 export type GenerateSchemaRequest = z.infer<typeof ZGenerateSchemaRequest>;
 
-export const ZColumn: any = z.lazy(() => (z.object({
+export const ZColumn = z.lazy(() => (z.object({
     type: z.literal("column"),
     size: z.number(),
     items: z.array(z.union([ZRow, ZFieldItem, ZRefObject, ZRowList])),
@@ -440,7 +388,7 @@ export const ZRefObject = z.lazy(() => (z.object({
 })));
 export type RefObject = z.infer<typeof ZRefObject>;
 
-export const ZRow: any = z.lazy(() => (z.object({
+export const ZRow = z.lazy(() => (z.object({
     type: z.literal("row"),
     name: z.string().nullable().optional(),
     items: z.array(z.union([ZColumn, ZFieldItem, ZRefObject])),
@@ -486,7 +434,7 @@ export type DocumentTransformResponse = z.infer<typeof ZDocumentTransformRespons
 
 export const ZParseRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    model: z.union([z.literal("gpt-4o"), z.literal("gpt-4o-mini"), z.literal("chatgpt-4o-latest"), z.literal("gpt-5"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-realtime-preview-2024-12-17"), z.literal("gpt-4o-realtime-preview-2024-10-01"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-mini-realtime-preview-2024-12-17"), z.literal("claude-3-5-sonnet-latest"), z.literal("claude-3-5-sonnet-20241022"), z.literal("claude-3-opus-20240229"), z.literal("claude-3-sonnet-20240229"), z.literal("claude-3-haiku-20240307"), z.literal("claude-opus-4.1"), z.literal("claude-opus-4"), z.literal("claude-sonnet-4"), z.literal("claude-sonnet-4-20250514"), z.literal("grok-3"), z.literal("grok-3-mini"), z.literal("gemini-2.5-pro"), z.literal("gemini-2.5-flash"), z.literal("gemini-2.5-pro-preview-06-05"), z.literal("gemini-2.5-pro-preview-05-06"), z.literal("gemini-2.5-pro-preview-03-25"), z.literal("gemini-2.5-flash-preview-05-20"), z.literal("gemini-2.5-flash-preview-04-17"), z.literal("gemini-2.5-flash-lite"), z.literal("gemini-2.5-pro-exp-03-25"), z.literal("gemini-2.0-flash-lite"), z.literal("gemini-2.0-flash"), z.literal("auto-large"), z.literal("auto-small"), z.literal("auto-micro"), z.literal("human")]).default("gemini-2.5-flash"),
+    model: z.string().default("gemini-2.5-flash"),
     table_parsing_format: z.union([z.literal("markdown"), z.literal("yaml"), z.literal("html"), z.literal("json")]).default("html"),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
@@ -514,10 +462,9 @@ export type DocumentCreateInputRequest = z.infer<typeof ZDocumentCreateInputRequ
 
 export const ZDocumentCreateMessageRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     image_resolution_dpi: z.number().default(96),
     browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
-    model: z.union([z.literal("gpt-4o"), z.literal("gpt-4o-mini"), z.literal("chatgpt-4o-latest"), z.literal("gpt-5"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-realtime-preview-2024-12-17"), z.literal("gpt-4o-realtime-preview-2024-10-01"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-mini-realtime-preview-2024-12-17"), z.literal("claude-3-5-sonnet-latest"), z.literal("claude-3-5-sonnet-20241022"), z.literal("claude-3-opus-20240229"), z.literal("claude-3-sonnet-20240229"), z.literal("claude-3-haiku-20240307"), z.literal("claude-opus-4.1"), z.literal("claude-opus-4"), z.literal("claude-sonnet-4"), z.literal("claude-sonnet-4-20250514"), z.literal("grok-3"), z.literal("grok-3-mini"), z.literal("gemini-2.5-pro"), z.literal("gemini-2.5-flash"), z.literal("gemini-2.5-pro-preview-06-05"), z.literal("gemini-2.5-pro-preview-05-06"), z.literal("gemini-2.5-pro-preview-03-25"), z.literal("gemini-2.5-flash-preview-05-20"), z.literal("gemini-2.5-flash-preview-04-17"), z.literal("gemini-2.5-flash-lite"), z.literal("gemini-2.5-pro-exp-03-25"), z.literal("gemini-2.0-flash-lite"), z.literal("gemini-2.0-flash"), z.literal("auto-large"), z.literal("auto-small"), z.literal("auto-micro"), z.literal("human")]).default("gemini-2.5-flash"),
+    model: z.string().default("gemini-2.5-flash"),
 })));
 export type DocumentCreateMessageRequest = z.infer<typeof ZDocumentCreateMessageRequest>;
 
@@ -526,7 +473,6 @@ export const ZDocumentMessage = z.lazy(() => (z.object({
     object: z.literal("document_message").default("document_message"),
     messages: z.array(ZChatCompletionRetabMessage),
     created: z.number(),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
 })));
 export type DocumentMessage = z.infer<typeof ZDocumentMessage>;
 
@@ -585,27 +531,10 @@ export const ZConsensusModel = z.lazy(() => (z.object({
 })));
 export type ConsensusModel = z.infer<typeof ZConsensusModel>;
 
-export const ZCostBreakdown = z.lazy(() => (z.object({
-    total: ZAmount,
-    text_prompt_cost: ZAmount,
-    text_cached_cost: ZAmount,
-    text_completion_cost: ZAmount,
-    text_total_cost: ZAmount,
-    audio_prompt_cost: ZAmount.nullable().optional(),
-    audio_completion_cost: ZAmount.nullable().optional(),
-    audio_total_cost: ZAmount.nullable().optional(),
-    token_counts: ZTokenCounts,
-    model: z.string(),
-    is_fine_tuned: z.boolean().default(false),
-})));
-export type CostBreakdown = z.infer<typeof ZCostBreakdown>;
-
 export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     documents: z.array(ZMIMEData).default([]),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native"), z.literal("image+text")]).default("native"),
     image_resolution_dpi: z.number().default(96),
-    browser_canvas: z.union([z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
     model: z.string(),
     json_schema: z.record(z.string(), z.any()),
     temperature: z.number().default(0.0),
@@ -626,7 +555,7 @@ export const ZFieldLocation = z.lazy(() => (z.object({
     page: z.number().nullable().optional(),
     bbox_normalized: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable().optional(),
     score: z.number().nullable().optional(),
-    match_level: z.union([z.literal("token"), z.literal("line"), z.literal("block")]).nullable().optional(),
+    match_level: z.union([z.literal("token"), z.literal("line"), z.literal("block"), z.literal("token-windows")]).nullable().optional(),
 })));
 export type FieldLocation = z.infer<typeof ZFieldLocation>;
 
@@ -655,6 +584,12 @@ export const ZParsedChatCompletion = z.lazy(() => (ZChatCompletion.schema).merge
 })));
 export type ParsedChatCompletion = z.infer<typeof ZParsedChatCompletion>;
 
+export const ZParsedChatCompletionMessage = z.lazy(() => (ZChatCompletionMessage.schema).merge(z.object({
+    tool_calls: z.array(ZParsedFunctionToolCall).nullable().optional(),
+    parsed: z.any().nullable().optional(),
+})));
+export type ParsedChatCompletionMessage = z.infer<typeof ZParsedChatCompletionMessage>;
+
 export const ZParsedChoice = z.lazy(() => (ZChatCompletionChoice.schema).merge(z.object({
     message: ZParsedChatCompletionMessage,
 })));
@@ -673,9 +608,10 @@ export const ZResponse = z.lazy(() => (z.object({
     parallel_tool_calls: z.boolean(),
     temperature: z.number().nullable().optional(),
     tool_choice: z.union([z.union([z.literal("none"), z.literal("auto"), z.literal("required")]), ZToolChoiceAllowed, ZToolChoiceTypes, ZToolChoiceFunction, ZToolChoiceMcp, ZToolChoiceCustom]),
-    tools: z.array(z.union([ZFunctionTool, ZFileSearchTool, ZWebSearchTool, ZComputerTool, ZMcp, ZCodeInterpreter, ZImageGeneration, ZLocalShell, ZCustomTool])),
+    tools: z.array(z.union([ZFunctionTool, ZFileSearchTool, ZComputerTool, ZWebSearchTool, ZMcp, ZCodeInterpreter, ZImageGeneration, ZLocalShell, ZCustomTool, ZWebSearchToolWebSearchTool])),
     top_p: z.number().nullable().optional(),
     background: z.boolean().nullable().optional(),
+    conversation: ZConversation.nullable().optional(),
     max_output_tokens: z.number().nullable().optional(),
     max_tool_calls: z.number().nullable().optional(),
     previous_response_id: z.string().nullable().optional(),
@@ -806,16 +742,6 @@ export const ZChoiceDeltaToolCall = z.lazy(() => (z.object({
     type: z.literal("function").nullable().optional(),
 })));
 export type ChoiceDeltaToolCall = z.infer<typeof ZChoiceDeltaToolCall>;
-
-export const ZTokenCounts = z.lazy(() => (z.object({
-    prompt_regular_text: z.number(),
-    prompt_cached_text: z.number(),
-    prompt_audio: z.number(),
-    completion_regular_text: z.number(),
-    completion_audio: z.number(),
-    total_tokens: z.number(),
-})));
-export type TokenCounts = z.infer<typeof ZTokenCounts>;
 
 export const ZChatCompletionDeveloperMessageParam = z.lazy(() => (z.object({
     content: z.union([z.string(), z.array(ZChatCompletionContentPartTextParam)]),
@@ -1049,11 +975,10 @@ export const ZItemReference = z.lazy(() => (z.object({
 })));
 export type ItemReference = z.infer<typeof ZItemReference>;
 
-export const ZParsedChatCompletionMessage = z.lazy(() => (ZChatCompletionMessage.schema).merge(z.object({
-    tool_calls: z.array(ZParsedFunctionToolCall).nullable().optional(),
-    parsed: z.any().nullable().optional(),
+export const ZParsedFunctionToolCall = z.lazy(() => (ZChatCompletionMessageFunctionToolCall.schema).merge(z.object({
+    function: ZParsedFunction,
 })));
-export type ParsedChatCompletionMessage = z.infer<typeof ZParsedChatCompletionMessage>;
+export type ParsedFunctionToolCall = z.infer<typeof ZParsedFunctionToolCall>;
 
 export const ZResponseError = z.lazy(() => (z.object({
     code: z.union([z.literal("server_error"), z.literal("rate_limit_exceeded"), z.literal("invalid_prompt"), z.literal("vector_store_timeout"), z.literal("invalid_image"), z.literal("invalid_image_format"), z.literal("invalid_base64_image"), z.literal("invalid_image_url"), z.literal("image_too_large"), z.literal("image_too_small"), z.literal("image_parse_error"), z.literal("image_content_policy_violation"), z.literal("invalid_image_mode"), z.literal("image_file_too_large"), z.literal("unsupported_image_media_type"), z.literal("empty_image_file"), z.literal("failed_to_download_image"), z.literal("image_file_not_found")]),
@@ -1347,13 +1272,6 @@ export const ZFileSearchTool = z.lazy(() => (z.object({
 })));
 export type FileSearchTool = z.infer<typeof ZFileSearchTool>;
 
-export const ZWebSearchTool = z.lazy(() => (z.object({
-    type: z.union([z.literal("web_search_preview"), z.literal("web_search_preview_2025_03_11")]),
-    search_context_size: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional(),
-    user_location: ZUserLocation.nullable().optional(),
-})));
-export type WebSearchTool = z.infer<typeof ZWebSearchTool>;
-
 export const ZComputerTool = z.lazy(() => (z.object({
     display_height: z.number(),
     display_width: z.number(),
@@ -1362,14 +1280,24 @@ export const ZComputerTool = z.lazy(() => (z.object({
 })));
 export type ComputerTool = z.infer<typeof ZComputerTool>;
 
+export const ZWebSearchTool = z.lazy(() => (z.object({
+    type: z.union([z.literal("web_search"), z.literal("web_search_2025_08_26")]),
+    filters: ZWebSearchToolFilters.nullable().optional(),
+    search_context_size: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional(),
+    user_location: ZWebSearchToolUserLocation.nullable().optional(),
+})));
+export type WebSearchTool = z.infer<typeof ZWebSearchTool>;
+
 export const ZMcp = z.lazy(() => (z.object({
     server_label: z.string(),
-    server_url: z.string(),
     type: z.literal("mcp"),
-    allowed_tools: z.union([z.array(z.string()), ZMcpAllowedToolsMcpAllowedToolsFilter]).nullable().optional(),
+    allowed_tools: z.union([z.array(z.string()), ZMcpAllowedToolsMcpToolFilter]).nullable().optional(),
+    authorization: z.string().nullable().optional(),
+    connector_id: z.union([z.literal("connector_dropbox"), z.literal("connector_gmail"), z.literal("connector_googlecalendar"), z.literal("connector_googledrive"), z.literal("connector_microsoftteams"), z.literal("connector_outlookcalendar"), z.literal("connector_outlookemail"), z.literal("connector_sharepoint")]).nullable().optional(),
     headers: z.record(z.string(), z.string()).nullable().optional(),
     require_approval: z.union([ZMcpRequireApprovalMcpToolApprovalFilter, z.union([z.literal("always"), z.literal("never")])]).nullable().optional(),
     server_description: z.string().nullable().optional(),
+    server_url: z.string().nullable().optional(),
 })));
 export type Mcp = z.infer<typeof ZMcp>;
 
@@ -1406,6 +1334,18 @@ export const ZCustomTool = z.lazy(() => (z.object({
     format: z.union([ZText, ZGrammar]).nullable().optional(),
 })));
 export type CustomTool = z.infer<typeof ZCustomTool>;
+
+export const ZWebSearchToolWebSearchTool = z.lazy(() => (z.object({
+    type: z.union([z.literal("web_search_preview"), z.literal("web_search_preview_2025_03_11")]),
+    search_context_size: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional(),
+    user_location: ZUserLocation.nullable().optional(),
+})));
+export type WebSearchToolWebSearchTool = z.infer<typeof ZWebSearchToolWebSearchTool>;
+
+export const ZConversation = z.lazy(() => (z.object({
+    id: z.string(),
+})));
+export type Conversation = z.infer<typeof ZConversation>;
 
 export const ZResponsePrompt = z.lazy(() => (z.object({
     id: z.string(),
@@ -1660,6 +1600,7 @@ export type ComputerCallOutputAcknowledgedSafetyCheck = z.infer<typeof ZComputer
 export const ZActionSearch = z.lazy(() => (z.object({
     query: z.string(),
     type: z.literal("search"),
+    sources: z.array(ZActionSearchSource),
 })));
 export type ActionSearch = z.infer<typeof ZActionSearch>;
 
@@ -1718,10 +1659,10 @@ export const ZMcpListToolsTool = z.lazy(() => (z.object({
 })));
 export type McpListToolsTool = z.infer<typeof ZMcpListToolsTool>;
 
-export const ZParsedFunctionToolCall = z.lazy(() => (ZChatCompletionMessageFunctionToolCall.schema).merge(z.object({
-    function: ZParsedFunction,
+export const ZParsedFunction = z.lazy(() => (ZChatCompletionMessageFunctionToolCallFunction.schema).merge(z.object({
+    parsed_arguments: z.object({}).passthrough().nullable().optional(),
 })));
-export type ParsedFunctionToolCall = z.infer<typeof ZParsedFunctionToolCall>;
+export type ParsedFunction = z.infer<typeof ZParsedFunction>;
 
 export const ZResponseInputText = z.lazy(() => (z.object({
     text: z.string(),
@@ -1852,6 +1793,7 @@ export type ResponseInputItemComputerCallOutputAcknowledgedSafetyCheck = z.infer
 export const ZResponseFunctionWebSearchActionSearch = z.lazy(() => (z.object({
     query: z.string(),
     type: z.literal("search"),
+    sources: z.array(ZResponseFunctionWebSearchActionSearchSource).nullable().optional(),
 })));
 export type ResponseFunctionWebSearchActionSearch = z.infer<typeof ZResponseFunctionWebSearchActionSearch>;
 
@@ -1947,19 +1889,25 @@ export const ZRankingOptions = z.lazy(() => (z.object({
 })));
 export type RankingOptions = z.infer<typeof ZRankingOptions>;
 
-export const ZUserLocation = z.lazy(() => (z.object({
-    type: z.literal("approximate"),
+export const ZWebSearchToolFilters = z.lazy(() => (z.object({
+    allowed_domains: z.array(z.string()).nullable().optional(),
+})));
+export type WebSearchToolFilters = z.infer<typeof ZWebSearchToolFilters>;
+
+export const ZWebSearchToolUserLocation = z.lazy(() => (z.object({
     city: z.string().nullable().optional(),
     country: z.string().nullable().optional(),
     region: z.string().nullable().optional(),
     timezone: z.string().nullable().optional(),
+    type: z.literal("approximate").nullable().optional(),
 })));
-export type UserLocation = z.infer<typeof ZUserLocation>;
+export type WebSearchToolUserLocation = z.infer<typeof ZWebSearchToolUserLocation>;
 
-export const ZMcpAllowedToolsMcpAllowedToolsFilter = z.lazy(() => (z.object({
+export const ZMcpAllowedToolsMcpToolFilter = z.lazy(() => (z.object({
+    read_only: z.boolean().nullable().optional(),
     tool_names: z.array(z.string()).nullable().optional(),
 })));
-export type McpAllowedToolsMcpAllowedToolsFilter = z.infer<typeof ZMcpAllowedToolsMcpAllowedToolsFilter>;
+export type McpAllowedToolsMcpToolFilter = z.infer<typeof ZMcpAllowedToolsMcpToolFilter>;
 
 export const ZMcpRequireApprovalMcpToolApprovalFilter = z.lazy(() => (z.object({
     always: ZMcpRequireApprovalMcpToolApprovalFilterAlways.nullable().optional(),
@@ -1990,6 +1938,15 @@ export const ZGrammar = z.lazy(() => (z.object({
     type: z.literal("grammar"),
 })));
 export type Grammar = z.infer<typeof ZGrammar>;
+
+export const ZUserLocation = z.lazy(() => (z.object({
+    type: z.literal("approximate"),
+    city: z.string().nullable().optional(),
+    country: z.string().nullable().optional(),
+    region: z.string().nullable().optional(),
+    timezone: z.string().nullable().optional(),
+})));
+export type UserLocation = z.infer<typeof ZUserLocation>;
 
 export const ZResponseFormatText = z.lazy(() => (z.object({
     type: z.literal("text"),
@@ -2121,10 +2078,11 @@ export const ZActionDragPath = z.lazy(() => (z.object({
 })));
 export type ActionDragPath = z.infer<typeof ZActionDragPath>;
 
-export const ZParsedFunction = z.lazy(() => (ZChatCompletionMessageFunctionToolCallFunction.schema).merge(z.object({
-    parsed_arguments: z.object({}).passthrough().nullable().optional(),
+export const ZActionSearchSource = z.lazy(() => (z.object({
+    type: z.literal("url"),
+    url: z.string(),
 })));
-export type ParsedFunction = z.infer<typeof ZParsedFunction>;
+export type ActionSearchSource = z.infer<typeof ZActionSearchSource>;
 
 export const ZResponseOutputTextAnnotationFileCitation = z.lazy(() => (z.object({
     file_id: z.string(),
@@ -2174,12 +2132,20 @@ export const ZResponseComputerToolCallActionDragPath = z.lazy(() => (z.object({
 })));
 export type ResponseComputerToolCallActionDragPath = z.infer<typeof ZResponseComputerToolCallActionDragPath>;
 
+export const ZResponseFunctionWebSearchActionSearchSource = z.lazy(() => (z.object({
+    type: z.literal("url"),
+    url: z.string(),
+})));
+export type ResponseFunctionWebSearchActionSearchSource = z.infer<typeof ZResponseFunctionWebSearchActionSearchSource>;
+
 export const ZMcpRequireApprovalMcpToolApprovalFilterAlways = z.lazy(() => (z.object({
+    read_only: z.boolean().nullable().optional(),
     tool_names: z.array(z.string()).nullable().optional(),
 })));
 export type McpRequireApprovalMcpToolApprovalFilterAlways = z.infer<typeof ZMcpRequireApprovalMcpToolApprovalFilterAlways>;
 
 export const ZMcpRequireApprovalMcpToolApprovalFilterNever = z.lazy(() => (z.object({
+    read_only: z.boolean().nullable().optional(),
     tool_names: z.array(z.string()).nullable().optional(),
 })));
 export type McpRequireApprovalMcpToolApprovalFilterNever = z.infer<typeof ZMcpRequireApprovalMcpToolApprovalFilterNever>;
