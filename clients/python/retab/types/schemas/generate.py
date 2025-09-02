@@ -1,5 +1,3 @@
-from typing import Any
-
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from pydantic import BaseModel, ConfigDict, Field
 

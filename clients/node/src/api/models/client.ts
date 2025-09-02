@@ -1,4 +1,4 @@
-import { CompositionClient } from "../../client.js";
+import { CompositionClient, RequestOptions } from "../../client.js";
 import { ZModel } from "../../types.js";
 import * as z from "zod";
 export default class APIModels extends CompositionClient {
@@ -10,11 +10,12 @@ export default class APIModels extends CompositionClient {
         supports_finetuning?: boolean,
         supports_image?: boolean,
         include_finetuned_models?: boolean,
-    }) {
+    }, options?: RequestOptions) {
         return this._fetchJson(z.object({ data: z.array(ZModel) }), {
             url: "/v1/models",
             method: "GET",
-            params: params,
+            params: { ...(params || {}), ...(options?.params || {}) },
+            headers: options?.headers,
         });
     }
 }

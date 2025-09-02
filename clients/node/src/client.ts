@@ -111,6 +111,12 @@ export type ClientOptions = {
   baseUrl?: string,
 } & AuthTypes;
 
+export type RequestOptions = {
+  params?: Record<string, any>,
+  headers?: Record<string, any>,
+  body?: Record<string, any>,
+};
+
 export class FetcherClient extends AbstractClient {
   options: ClientOptions;
   constructor(options?: ClientOptions) {
