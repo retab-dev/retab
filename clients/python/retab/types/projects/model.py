@@ -16,10 +16,15 @@ class BaseProject(BaseModel):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
 
 
+class SheetsIntegration(BaseModel):
+    sheet_id: str
+    spreadsheet_id: str
+
 # Actual Object stored in DB
 class Project(BaseProject):
     documents: list[ProjectDocument] = Field(default_factory=list)
     iterations: list[Iteration] = Field(default_factory=list)
+    sheets_integration: SheetsIntegration | None = None
 
 class CreateProjectRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -33,7 +38,7 @@ class PatchProjectRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     name: Optional[str] = Field(default=None, description="The name of the document")
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the project")
-
+    sheets_integration: SheetsIntegration | None = None
 
 class AddIterationFromJsonlRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
