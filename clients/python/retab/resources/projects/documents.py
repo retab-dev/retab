@@ -18,16 +18,27 @@ class DocumentsMixin:
     def prepare_get(self, project_id: str, document_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/projects/{project_id}/documents/{document_id}")
 
-    def prepare_create(self, project_id: str, document: MIMEData, annotation: dict[str, Any], annotation_metadata: dict[str, Any] | None = None) -> PreparedRequest:
+    def prepare_create(self, project_id: str, document: MIMEData, annotation: dict[str, Any], annotation_metadata: dict[str, Any] | None = None, **extra_body: Any) -> PreparedRequest:
         # Serialize the MIMEData
-        document_item = DocumentItem(mime_data=document, annotation=annotation, annotation_metadata=PredictionMetadata(**annotation_metadata) if annotation_metadata else None)
+        # Build known payload and merge extras
+        payload: dict[str, Any] = {
+            "mime_data": document,
+            "annotation": annotation,
+            "annotation_metadata": PredictionMetadata(**annotation_metadata) if annotation_metadata else None,
+        }
+        if extra_body:
+            payload.update(extra_body)
+        document_item = DocumentItem(**payload)
         return PreparedRequest(method="POST", url=f"/v1/projects/{project_id}/documents", data=document_item.model_dump(mode="json"))
 
     def prepare_list(self, project_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/projects/{project_id}/documents")
 
-    def prepare_update(self, project_id: str, document_id: str, annotation: dict[str, Any]) -> PreparedRequest:
-        update_request = PatchProjectDocumentRequest(annotation=annotation)
+    def prepare_update(self, project_id: str, document_id: str, annotation: dict[str, Any], **extra_body: Any) -> PreparedRequest:
+        body: dict[str, Any] = {"annotation": annotation}
+        if extra_body:
+            body.update(extra_body)
+        update_request = PatchProjectDocumentRequest(**body)
         return PreparedRequest(method="PATCH", url=f"/v1/projects/{project_id}/documents/{document_id}", data=update_request.model_dump(mode="json", exclude_unset=True))
 
     def prepare_delete(self, project_id: str, document_id: str) -> PreparedRequest:
@@ -46,6 +57,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl],
         annotation: Dict[str, Any],
         annotation_metadata: Dict[str, Any] | None = None,
+        **extra_body: Any,
     ) -> ProjectDocument:
         """
         Create a document for an project.
@@ -69,7 +81,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         mime_document: MIMEData = prepare_mime_document(document)
 
         # Let prepare_create handle the serialization
-        request = self.prepare_create(project_id, mime_document, annotation, annotation_metadata)
+        request = self.prepare_create(project_id, mime_document, annotation, annotation_metadata, **extra_body)
         response = self._client._prepared_request(request)
         return ProjectDocument(**response)
 
@@ -106,7 +118,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         response = self._client._prepared_request(request)
         return ProjectDocument(**response)
 
-    def update(self, project_id: str, document_id: str, annotation: dict[str, Any]) -> ProjectDocument:
+    def update(self, project_id: str, document_id: str, annotation: dict[str, Any], **extra_body: Any) -> ProjectDocument:
         """
         Update a document.
 
@@ -119,7 +131,7 @@ class Documents(SyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(project_id, document_id, annotation=annotation)
+        request = self.prepare_update(project_id, document_id, annotation=annotation, **extra_body)
         response = self._client._prepared_request(request)
         return ProjectDocument(**response)
 
@@ -157,6 +169,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         document: Union[Path, str, IOBase, MIMEData, PIL.Image.Image, HttpUrl],
         annotation: Dict[str, Any],
         annotation_metadata: Dict[str, Any] | None = None,
+        **extra_body: Any,
     ) -> ProjectDocument:
         """
         Create a document for an project.
@@ -180,7 +193,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         mime_document: MIMEData = prepare_mime_document(document)
 
         # Let prepare_create handle the serialization
-        request = self.prepare_create(project_id, mime_document, annotation, annotation_metadata)
+        request = self.prepare_create(project_id, mime_document, annotation, annotation_metadata, **extra_body)
         response = await self._client._prepared_request(request)
         return ProjectDocument(**response)
 
@@ -200,7 +213,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         response = await self._client._prepared_request(request)
         return [ProjectDocument(**item) for item in response.get("data", [])]
 
-    async def update(self, project_id: str, document_id: str, annotation: dict[str, Any]) -> ProjectDocument:
+    async def update(self, project_id: str, document_id: str, annotation: dict[str, Any], **extra_body: Any) -> ProjectDocument:
         """
         Update a document.
 
@@ -214,7 +227,7 @@ class AsyncDocuments(AsyncAPIResource, DocumentsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_update(project_id, document_id, annotation)
+        request = self.prepare_update(project_id, document_id, annotation, **extra_body)
         response = await self._client._prepared_request(request)
         return ProjectDocument(**response)
 

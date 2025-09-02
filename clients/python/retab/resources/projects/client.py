@@ -19,12 +19,15 @@ class ProjectsMixin:
         self,
         name: str,
         json_schema: dict[str, Any],
+        **extra_body: Any,
     ) -> PreparedRequest:
         # Use BaseProject model
-        eval_dict = {
+        eval_dict: dict[str, Any] = {
             "name": name,
             "json_schema": json_schema,
         }
+        if extra_body:
+            eval_dict.update(extra_body)
 
         eval_data = BaseProject(**eval_dict)
         return PreparedRequest(method="POST", url="/v1/projects", data=eval_data.model_dump(exclude_unset=True, mode="json"))
@@ -37,6 +40,7 @@ class ProjectsMixin:
         project_id: str,
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
+        **extra_body: Any,
     ) -> PreparedRequest:
         """
         Prepare a request to update an project with partial updates.
@@ -44,17 +48,19 @@ class ProjectsMixin:
         Only the provided fields will be updated. Fields set to None will be excluded from the update.
         """
         # Build a dictionary with only the provided fields
-        update_dict = {}
+        update_dict: dict[str, Any] = {}
         if name is not FieldUnset:
             update_dict["name"] = name
         if json_schema is not FieldUnset:
             update_dict["json_schema"] = json_schema
+        if extra_body:
+            update_dict.update(extra_body)
 
         data = PatchProjectRequest(**update_dict).model_dump(exclude_unset=True, mode="json")
 
         return PreparedRequest(method="PATCH", url=f"/v1/projects/{project_id}", data=data)
 
-    def prepare_list(self) -> PreparedRequest:
+    def prepare_list(self, **extra_params: Any) -> PreparedRequest:
         """
         Prepare a request to list projects.
 
@@ -64,7 +70,8 @@ class ProjectsMixin:
         Returns:
             PreparedRequest: The prepared request
         """
-        return PreparedRequest(method="GET", url="/v1/projects")
+        params = extra_params or None
+        return PreparedRequest(method="GET", url="/v1/projects", params=params)
 
     def prepare_delete(self, id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/projects/{id}")
@@ -78,6 +85,7 @@ class ProjectsMixin:
         temperature: float | None = None,
         seed: int | None = None,
         store: bool = True,
+        **extra_form: Any,
     ) -> PreparedRequest:
         """Prepare a request to extract documents from a project.
 
@@ -106,6 +114,8 @@ class ProjectsMixin:
             "seed": seed,
             "store": store,
         }
+        if extra_form:
+            form_data.update(extra_form)
         # Remove None values
         form_data = {k: v for k, v in form_data.items() if v is not None}
 
@@ -147,6 +157,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
         self,
         name: str,
         json_schema: dict[str, Any],
+        **extra_body: Any,
     ) -> Project:
         """
         Create a new project.
@@ -161,7 +172,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(name, json_schema)
+        request = self.prepare_create(name, json_schema, **extra_body)
         response = self._client._prepared_request(request)
         return Project(**response)
 
@@ -186,6 +197,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
         project_id: str,
         name: str = FieldUnset,
         json_schema: dict[str, Any] = FieldUnset,
+        **extra_body: Any,
     ) -> Project:
         """
         Update an project with partial updates.
@@ -206,11 +218,12 @@ class Projects(SyncAPIResource, ProjectsMixin):
             project_id=project_id,
             name=name,
             json_schema=json_schema,
+            **extra_body,
         )
         response = self._client._prepared_request(request)
         return Project(**response)
 
-    def list(self) -> List[Project]:
+    def list(self, **extra_params: Any) -> List[Project]:
         """
         List projects for a project.
 
@@ -220,7 +233,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list()
+        request = self.prepare_list(**extra_params)
         response = self._client._prepared_request(request)
         return [Project(**item) for item in response.get("data", [])]
 
@@ -248,6 +261,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
         temperature: float | None = None,
         seed: int | None = None,
         store: bool = True,
+        **extra_form: Any,
     ) -> RetabParsedChatCompletion:
         """Extract documents from a project.
 
@@ -263,7 +277,16 @@ class Projects(SyncAPIResource, ProjectsMixin):
         Returns:
             RetabParsedChatCompletion: The processing result
         """
-        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
+        request = self.prepare_extract(
+            project_id=project_id,
+            iteration_id=iteration_id,
+            document=document,
+            documents=documents,
+            temperature=temperature,
+            seed=seed,
+            store=store,
+            **extra_form,
+        )
         response = self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)
 

@@ -7,40 +7,40 @@ from ...types.browser_canvas import BrowserCanvas
 from ...types.projects import CreateIterationRequest, Iteration, ProcessIterationRequest, IterationDocumentStatusResponse, PatchIterationRequest
 from ...types.inference_settings import InferenceSettings
 from ...types.projects.metrics import DistancesResult
-from ...types.modalities import Modality
 from ...types.standards import DeleteResponse, PreparedRequest, FieldUnset
 from ...types.documents.extract import RetabParsedChatCompletion
+from ...types.projects.iterations import SchemaOverrides
 
 
 class IterationsMixin:
     def prepare_get(self, project_id: str, iteration_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/projects/{project_id}/iterations/{iteration_id}")
 
-    def prepare_list(self, project_id: str, model: Optional[str] = None) -> PreparedRequest:
-        params = {}
+    def prepare_list(self, project_id: str, model: Optional[str] = None, **extra_params: Any) -> PreparedRequest:
+        params: dict[str, Any] = {}
         if model:
             params["model"] = model
+        if extra_params:
+            params.update(extra_params)
         return PreparedRequest(method="GET", url=f"/v1/projects/{project_id}/iterations", params=params)
 
     def prepare_create(
         self,
         project_id: str,
         model: str = FieldUnset,
-        json_schema: Optional[Dict[str, Any]] = None,
+        schema_overrides: Optional[SchemaOverrides] = FieldUnset,
         temperature: float = FieldUnset,
-        modality: Modality = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
         n_consensus: int = FieldUnset,
+        **extra_body: Any,  
     ) -> PreparedRequest:
         inference_dict = {}
         if model is not FieldUnset:
             inference_dict["model"] = model
         if temperature is not FieldUnset:
             inference_dict["temperature"] = temperature
-        if modality is not FieldUnset:
-            inference_dict["modality"] = modality
         if reasoning_effort is not FieldUnset:
             inference_dict["reasoning_effort"] = reasoning_effort
         if image_resolution_dpi is not FieldUnset:
@@ -50,52 +50,13 @@ class IterationsMixin:
         if n_consensus is not FieldUnset:
             inference_dict["n_consensus"] = n_consensus
 
+        if extra_body:
+            inference_dict.update(extra_body)
         inference_settings = InferenceSettings(**inference_dict)
 
-        request = CreateIterationRequest(inference_settings=inference_settings, json_schema=json_schema)
+        request = CreateIterationRequest(inference_settings=inference_settings, schema_overrides=schema_overrides)
 
         return PreparedRequest(method="POST", url=f"/v1/projects/{project_id}/iterations", data=request.model_dump(exclude_unset=True, exclude_defaults=True, mode="json"))
-
-    def prepare_update(
-        self,
-        project_id: str,
-        iteration_id: str,
-        json_schema: Dict[str, Any] = FieldUnset,
-        model: str = FieldUnset,
-        temperature: float = FieldUnset,
-        modality: Modality = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
-        image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        n_consensus: int = FieldUnset,
-    ) -> PreparedRequest:
-        inference_dict = {}
-        if model is not FieldUnset:
-            inference_dict["model"] = model
-        if temperature is not FieldUnset:
-            inference_dict["temperature"] = temperature
-        if modality is not FieldUnset:
-            inference_dict["modality"] = modality
-        if reasoning_effort is not FieldUnset:
-            inference_dict["reasoning_effort"] = reasoning_effort
-        if image_resolution_dpi is not FieldUnset:
-            inference_dict["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not FieldUnset:
-            inference_dict["browser_canvas"] = browser_canvas
-        if n_consensus is not FieldUnset:
-            inference_dict["n_consensus"] = n_consensus
-
-        iteration_dict = {}
-        if json_schema is not FieldUnset:
-            iteration_dict["json_schema"] = json_schema
-        if inference_dict:  # Only add inference_settings if we have at least one field
-            iteration_dict["inference_settings"] = InferenceSettings(**inference_dict)
-
-        iteration_data = PatchIterationRequest(**iteration_dict)
-
-        return PreparedRequest(
-            method="PATCH", url=f"/v1/projects/{project_id}/iterations/{iteration_id}", data=iteration_data.model_dump(exclude_unset=True, exclude_defaults=True, mode="json")
-        )
 
     def prepare_delete(self, project_id: str, iteration_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/projects/{project_id}/iterations/{iteration_id}")
@@ -109,10 +70,12 @@ class IterationsMixin:
         iteration_id: str,
         document_ids: Optional[List[str]] = None,
         only_outdated: bool = True,
+        **extra_body: Any,
     ) -> PreparedRequest:
         request = ProcessIterationRequest(
             document_ids=document_ids,
             only_outdated=only_outdated,
+            **(extra_body or {}),
         )
         return PreparedRequest(method="POST", url=f"/v1/projects/{project_id}/iterations/{iteration_id}/process", data=request.model_dump(exclude_none=True, mode="json"))
 
@@ -134,7 +97,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         response = self._client._prepared_request(request)
         return Iteration(**response)
 
-    def list(self, project_id: str, model: Optional[str] = None) -> List[Iteration]:
+    def list(self, project_id: str, model: Optional[str] = None, **extra_params: Any) -> List[Iteration]:
         """
         List iterations for an project.
 
@@ -147,7 +110,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list(project_id, model)
+        request = self.prepare_list(project_id, model, **extra_params)
         response = self._client._prepared_request(request)
         return [Iteration(**item) for item in response.get("data", [])]
 
@@ -156,22 +119,21 @@ class Iterations(SyncAPIResource, IterationsMixin):
         project_id: str,
         model: str = FieldUnset,
         temperature: float = FieldUnset,
-        modality: Modality = FieldUnset,
-        json_schema: Optional[Dict[str, Any]] = FieldUnset,
+        schema_overrides: Optional[SchemaOverrides] = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         browser_canvas: BrowserCanvas = FieldUnset,
         n_consensus: int = FieldUnset,
+        **extra_body: Any,
     ) -> Iteration:
         """
         Create a new iteration for an project.
 
         Args:
             project_id: The ID of the project
-            json_schema: The JSON schema for the iteration (if not set, we use the one of the eval)
+            schema_overrides: The schema overrides for the iteration (if not set, we use the one of the eval)
             model: The model to use for the iteration
             temperature: The temperature to use for the model
-            modality: The modality to use (text, image, etc.)
             reasoning_effort: The reasoning effort setting for the model (auto, low, medium, high)
             image_resolution_dpi: The DPI of the image. Defaults to 96.
             browser_canvas: The canvas size of the browser. Must be one of:
@@ -188,14 +150,14 @@ class Iterations(SyncAPIResource, IterationsMixin):
         """
         request = self.prepare_create(
             project_id=project_id,
-            json_schema=json_schema,
+            schema_overrides=schema_overrides,
             model=model,
             temperature=temperature,
-            modality=modality,
             reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
             n_consensus=n_consensus,
+            **extra_body,
         )
         response = self._client._prepared_request(request)
         return Iteration(**response)
@@ -238,6 +200,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         iteration_id: str,
         document_ids: Optional[List[str]] = None,
         only_outdated: bool = True,
+        **extra_body: Any,
     ) -> Iteration:
         """
         Process an iteration by running extractions on documents.
@@ -252,7 +215,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_process(project_id, iteration_id, document_ids, only_outdated)
+        request = self.prepare_process(project_id, iteration_id, document_ids, only_outdated, **extra_body)
         response = self._client._prepared_request(request)
         return Iteration(**response)
 
@@ -313,7 +276,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 
-    async def list(self, project_id: str, model: Optional[str] = None) -> List[Iteration]:
+    async def list(self, project_id: str, model: Optional[str] = None, **extra_params: Any) -> List[Iteration]:
         """
         List iterations for an project.
 
@@ -326,7 +289,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_list(project_id, model)
+        request = self.prepare_list(project_id, model, **extra_params)
         response = await self._client._prepared_request(request)
         return [Iteration(**item) for item in response.get("data", [])]
 
@@ -335,22 +298,21 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         project_id: str,
         model: str,
         temperature: float = 0.0,
-        modality: Modality = "native",
-        json_schema: Optional[Dict[str, Any]] = None,
+        schema_overrides: Optional[SchemaOverrides] = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = "minimal",
         image_resolution_dpi: int = 96,
         browser_canvas: BrowserCanvas = "A4",
         n_consensus: int = 1,
+        **extra_body: Any,
     ) -> Iteration:
         """
         Create a new iteration for an project.
 
         Args:
             project_id: The ID of the project
-            json_schema: The JSON schema for the iteration
+            schema_overrides: The schema overrides for the iteration
             model: The model to use for the iteration
             temperature: The temperature to use for the model
-            modality: The modality to use (text, image, etc.)
             reasoning_effort: The reasoning effort setting for the model (auto, low, medium, high)
             image_resolution_dpi: The DPI of the image. Defaults to 96.
             browser_canvas: The canvas size of the browser. Must be one of:
@@ -367,14 +329,14 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         """
         request = self.prepare_create(
             project_id=project_id,
-            json_schema=json_schema,
+            schema_overrides=schema_overrides,
             model=model,
             temperature=temperature,
-            modality=modality,
             reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
             browser_canvas=browser_canvas,
             n_consensus=n_consensus,
+            **extra_body,
         )
         response = await self._client._prepared_request(request)
         return Iteration(**response)
@@ -417,6 +379,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         iteration_id: str,
         document_ids: Optional[List[str]] = None,
         only_outdated: bool = True,
+        **extra_body: Any,
     ) -> Iteration:
         """
         Process an iteration by running extractions on documents.
@@ -431,7 +394,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_process(project_id, iteration_id, document_ids, only_outdated)
+        request = self.prepare_process(project_id, iteration_id, document_ids, only_outdated, **extra_body)
         response = await self._client._prepared_request(request)
         return Iteration(**response)
 

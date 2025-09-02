@@ -2,13 +2,14 @@ import datetime
 from typing import Any, Optional
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from .documents import ProjectDocument
 from .iterations import Iteration
 
 
 class BaseProject(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: "proj_" + nanoid.generate())
     name: str = Field(default="", description="The name of the project")
     json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the project")
@@ -21,6 +22,7 @@ class Project(BaseProject):
     iterations: list[Iteration] = Field(default_factory=list)
 
 class CreateProjectRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     name: str
     json_schema: dict[str, Any]
 
@@ -28,9 +30,11 @@ class CreateProjectRequest(BaseModel):
 # This is basically the same as BaseProject, but everything is optional.
 # Could be achieved by convert_basemodel_to_partial_basemodel(BaseProject) but we prefer explicitness
 class PatchProjectRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     name: Optional[str] = Field(default=None, description="The name of the document")
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the project")
 
 
 class AddIterationFromJsonlRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     jsonl_gcs_path: str

@@ -1,5 +1,5 @@
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..mime import MIMEData, BaseMIMEData
 from ..browser_canvas import BrowserCanvas
@@ -16,6 +16,7 @@ class RetabUsage(BaseModel):
 
 class ParseRequest(BaseModel):
     """Request model for document parsing."""
+    model_config = ConfigDict(extra="ignore")
 
     document: MIMEData = Field(..., description="Document to parse")
     model: str = Field(default="gemini-2.5-flash", description="Model to use for parsing")

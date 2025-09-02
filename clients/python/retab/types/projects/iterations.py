@@ -2,12 +2,13 @@ import datetime
 from typing import Any, Optional, Self
 
 import nanoid  # type: ignore
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 from ..inference_settings import InferenceSettings
 from .predictions import PredictionData
 
 class SchemaOverrides(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     """Schema override for a field path. Only supports non-structural metadata.
 
     - description: JSON Schema description string
@@ -18,6 +19,7 @@ class SchemaOverrides(BaseModel):
     reasoningPromptsOverride: Optional[dict[str, str]] = Field(default=None, description="Maps to X-ReasoningPrompt in schema")
 
 class BaseIteration(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: "eval_iter_" + nanoid.generate())
     parent_id: Optional[str] = Field(default=None, description="The ID of the parent iteration")
     inference_settings: InferenceSettings
@@ -31,6 +33,7 @@ class BaseIteration(BaseModel):
     )
     
 class DraftIteration(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     # Store draft overrides only.
     schema_overrides: SchemaOverrides = Field(default_factory=SchemaOverrides)
     updated_at: datetime.datetime = Field(
@@ -39,6 +42,7 @@ class DraftIteration(BaseModel):
     )
 
 class Iteration(BaseIteration):
+    model_config = ConfigDict(extra="ignore")
     predictions: dict[str, PredictionData] = Field(default_factory=dict, description="The predictions of the iteration for all the documents")
     draft: Optional[DraftIteration] = Field(default=None, description="The draft iteration of the iteration")
 
@@ -53,6 +57,7 @@ class Iteration(BaseIteration):
         return self
 
 class CreateIterationRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     """
     Request model for performing a new iteration with custom inference settings and optional schema overrides.
     """
@@ -76,12 +81,14 @@ class CreateIterationRequest(BaseModel):
 
 
 class PatchIterationRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     inference_settings: Optional[InferenceSettings] = Field(default=None, description="The new inference settings of the iteration")
     # Replace full-schema editing with overrides editing. If provided, replaces the whole overrides map.
     schema_overrides: Optional[SchemaOverrides] = Field(default=None, description="Override map for non-structural schema changes")
     version: Optional[int] = Field(default=None, description="Current version for optimistic locking")
 
 class ProcessIterationRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     """Request model for processing an iteration - running extractions on documents."""
 
     document_ids: Optional[list[str]] = Field(default=None, description="Specific document IDs to process. If None, all documents will be processed.")
@@ -89,6 +96,7 @@ class ProcessIterationRequest(BaseModel):
 
 
 class DocumentStatus(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     """Status of a document within an iteration."""
 
     document_id: str
@@ -100,6 +108,7 @@ class DocumentStatus(BaseModel):
 
 
 class IterationDocumentStatusResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     """Response showing the status of all documents in an iteration."""
 
     iteration_id: str
@@ -110,4 +119,5 @@ class IterationDocumentStatusResponse(BaseModel):
 
 
 class AddIterationFromJsonlRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     jsonl_gcs_path: str
