@@ -26,7 +26,7 @@ class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
     document: MIMEData = Field(default=None, description="Document to be analyzed", deprecated=True)  # type: ignore
     documents: list[MIMEData] = Field(default=[], description="Documents to be analyzed (preferred over document)")
-    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM", ge=96, le=300)
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
     temperature: float = Field(default=0.0, description="Temperature for sampling. If not provided, the default temperature for the model will be used.", examples=[0.0])

@@ -297,12 +297,12 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
         self,
         project_id: str,
         model: str,
-        temperature: float = 0.0,
+        temperature: float = FieldUnset,
         schema_overrides: Optional[SchemaOverrides] = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = "minimal",
-        image_resolution_dpi: int = 96,
-        browser_canvas: BrowserCanvas = "A4",
-        n_consensus: int = 1,
+        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
+        image_resolution_dpi: int = FieldUnset,
+        browser_canvas: BrowserCanvas = FieldUnset,
+        n_consensus: int = FieldUnset,
         **extra_body: Any,
     ) -> Iteration:
         """
