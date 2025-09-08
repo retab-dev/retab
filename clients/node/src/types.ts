@@ -6,6 +6,7 @@ import * as z from "zod";
 import { inferFileInfo } from "./mime";
 import fs from "fs";
 import { zodToJsonSchema } from 'zod-to-json-schema';
+export * from "./schema_types";
 
 export function dataArray<Schema extends z.ZodType<any, any, any>>(schema: Schema): z.ZodType<
     z.output<Schema>[],
