@@ -14,10 +14,9 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, Parse
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
-from ..browser_canvas import BrowserCanvas
 from ..standards import ErrorDetail, StreamingBaseModel
 from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel, unflatten_dict
 
@@ -258,7 +257,6 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         acc_key_mapping = [safe_get_delta(previous_cumulated_chunk, i).key_mapping or safe_get_delta(self, i).key_mapping for i in range(max_choices)]
 
         acc_content = [(safe_get_delta(previous_cumulated_chunk, i).content or "") + (safe_get_delta(self, i).content or "") for i in range(max_choices)]
-        usage = self.usage
         first_token_at = self.first_token_at
         last_token_at = self.last_token_at
         request_at = self.request_at
@@ -269,7 +267,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
             created=self.created,
             model=self.model,
             object=self.object,
-            usage=usage,
+            usage=None,
             choices=[
                 RetabParsedChoiceChunk(
                     delta=RetabParsedChoiceDeltaChunk(
@@ -329,7 +327,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                 for idx in range(len(self.choices))
             ],
             likelihoods=final_likelihoods,
-            usage=self.usage,
+            usage=None,
             request_at=self.request_at,
             first_token_at=self.first_token_at,
             last_token_at=self.last_token_at,
