@@ -15,14 +15,14 @@ retab_api_key = os.getenv("RETAB_API_KEY")
 assert retab_api_key, "Missing RETAB_API_KEY"
 
 # Retab Setup
-reclient = Retab(api_key=retab_api_key)
+client = Retab(api_key=retab_api_key)
 
 # Document Extraction via Retab API
-response = reclient.documents.extract(
+response = client.documents.extract(
     document="../../assets/docs/invoice.jpeg",
     model="gpt-4.1",
     json_schema="../../assets/code/invoice_schema.json",
-    image_resolution_dpi=96,
+    image_resolution_dpi=192,
     browser_canvas="A4",
     temperature=0.0,
     n_consensus=1,

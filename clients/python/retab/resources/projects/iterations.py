@@ -135,7 +135,7 @@ class Iterations(SyncAPIResource, IterationsMixin):
             model: The model to use for the iteration
             temperature: The temperature to use for the model
             reasoning_effort: The reasoning effort setting for the model (auto, low, medium, high)
-            image_resolution_dpi: The DPI of the image. Defaults to 96.
+            image_resolution_dpi: The DPI of the image. Defaults to 192.
             browser_canvas: The canvas size of the browser. Must be one of:
                 - "A3" (11.7in x 16.54in)
                 - "A4" (8.27in x 11.7in)
@@ -314,7 +314,7 @@ class AsyncIterations(AsyncAPIResource, IterationsMixin):
             model: The model to use for the iteration
             temperature: The temperature to use for the model
             reasoning_effort: The reasoning effort setting for the model (auto, low, medium, high)
-            image_resolution_dpi: The DPI of the image. Defaults to 96.
+            image_resolution_dpi: The DPI of the image. Defaults to 192.
             browser_canvas: The canvas size of the browser. Must be one of:
                 - "A3" (11.7in x 16.54in)
                 - "A4" (8.27in x 11.7in)

@@ -215,7 +215,6 @@ describe('Retab SDK Parse Tests', () => {
                 table_parsing_format: "html",
                 image_resolution_dpi: 96,
                 browser_canvas: "A4",
-                idempotency_key: idempotencyKey,
             });
 
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -228,7 +227,6 @@ describe('Retab SDK Parse Tests', () => {
                 table_parsing_format: "html",
                 image_resolution_dpi: 96,
                 browser_canvas: "A4",
-                idempotency_key: idempotencyKey,
             });
 
             const t1 = Date.now();
@@ -284,7 +282,6 @@ describe('Retab SDK Parse Tests', () => {
                         table_parsing_format: tableParsingFormat,
                         image_resolution_dpi: imageResolutionDpi,
                         browser_canvas: browserCanvas,
-                        idempotency_key: idempotencyKey,
                     });
                 } catch (e) {
                     raisedException1 = e as Error;
@@ -301,7 +298,6 @@ describe('Retab SDK Parse Tests', () => {
                         table_parsing_format: tableParsingFormat,
                         image_resolution_dpi: imageResolutionDpi,
                         browser_canvas: browserCanvas,
-                        idempotency_key: idempotencyKey,
                     });
                 } catch (e) {
                     raisedException2 = e as Error;

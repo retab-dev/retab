@@ -132,7 +132,7 @@ async def test_parse_table_formats(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("dpi", [72, 96, 150, 300])
+@pytest.mark.parametrize("dpi", [96, 128, 196])
 async def test_parse_image_resolution(
     sync_client: Retab,
     booking_confirmation_file_path_1: str,

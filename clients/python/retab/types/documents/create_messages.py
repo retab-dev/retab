@@ -22,7 +22,7 @@ class TokenCount(BaseModel):
 class DocumentCreateMessageRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     document: MIMEData = Field(description="The document to load.")
-    image_resolution_dpi: int = Field(default=96, description="Resolution of the image sent to the LLM")
+    image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM")
     browser_canvas: BrowserCanvas = Field(
         default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
     )

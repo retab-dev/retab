@@ -68,7 +68,6 @@ async function baseTestExtract(
 ): Promise<void> {
     const jsonSchema = bookingConfirmationJsonSchema;
     const document = bookingConfirmationFilePath1;
-    const modality: Modality = MODALITY;
     let response: RetabParsedChatCompletion | null = null;
 
     if (clientType === "sync") {
@@ -78,7 +77,6 @@ async function baseTestExtract(
                 json_schema: jsonSchema,
                 documents: [document],
                 model: model,
-                modality: modality,
             });
 
             // Collect all streaming chunks
@@ -100,7 +98,6 @@ async function baseTestExtract(
                 json_schema: jsonSchema,
                 documents: [document],
                 model: model,
-                modality: modality,
             });
         }
     } else if (clientType === "async") {
@@ -111,7 +108,6 @@ async function baseTestExtract(
                 json_schema: jsonSchema,
                 documents: [document],
                 model: model,
-                modality: modality,
             });
 
             // Collect all streaming chunks
@@ -133,7 +129,6 @@ async function baseTestExtract(
                 json_schema: jsonSchema,
                 documents: [document],
                 model: model,
-                modality: modality,
             });
         }
     }
@@ -199,16 +194,12 @@ describe('Retab SDK Extract Tests', () => {
 
     describe('Extraction with Idempotency', () => {
         test('test_extraction_with_idempotency', async () => {
-            const idempotencyKey = generateId();
             const model: AIModels = "gpt-4.1-nano";
-            const modality: Modality = MODALITY;
 
             const responseInitial = await client.documents.extract({
                 json_schema: bookingConfirmationJsonSchema,
                 documents: [bookingConfirmationFilePath1],
                 model: model,
-                modality: modality,
-                idempotency_key: idempotencyKey,
             });
 
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -218,8 +209,6 @@ describe('Retab SDK Extract Tests', () => {
                 json_schema: bookingConfirmationJsonSchema,
                 documents: [bookingConfirmationFilePath1],
                 model: model,
-                modality: modality,
-                idempotency_key: idempotencyKey,
             });
 
             const t1 = Date.now();
@@ -245,7 +234,6 @@ describe('Retab SDK Extract Tests', () => {
 
         errorScenarios.forEach((errorScenario) => {
             test(`test_extraction_idempotency_error_${errorScenario}`, async () => {
-                const idempotencyKey = generateId();
 
                 let model: any = "gpt-4.1-nano";
                 let jsonSchema: any = bookingConfirmationJsonSchema;
@@ -270,14 +258,11 @@ describe('Retab SDK Extract Tests', () => {
                     response1 = await client.documents.extract({
                         json_schema: jsonSchema,
                         documents: [document],
-                        image_resolution_dpi: 96,
-                        browser_canvas: "A4",
+                        image_resolution_dpi: 128,
                         model: model,
                         temperature: 0,
-                        modality: MODALITY,
                         reasoning_effort: "medium",
                         n_consensus: 1,
-                        idempotency_key: idempotencyKey,
                     });
                 } catch (e) {
                     raisedException1 = e as Error;
@@ -291,14 +276,11 @@ describe('Retab SDK Extract Tests', () => {
                     response2 = await client.documents.extract({
                         json_schema: jsonSchema,
                         documents: [document],
-                        image_resolution_dpi: 96,
-                        browser_canvas: "A4",
+                        image_resolution_dpi: 128,
                         model: model,
                         temperature: 0,
-                        modality: MODALITY,
                         reasoning_effort: "medium",
                         n_consensus: 1,
-                        idempotency_key: idempotencyKey,
                     });
                 } catch (e) {
                     raisedException2 = e as Error;
@@ -333,7 +315,6 @@ describe('Retab SDK Extract Tests', () => {
                 json_schema: bookingConfirmationJsonSchema,
                 documents: [bookingConfirmationFilePath1],
                 model: "gpt-4.1-nano",
-                modality: MODALITY,
             });
 
             // Validate basic structure
@@ -363,10 +344,8 @@ describe('Retab SDK Extract Tests', () => {
                 json_schema: bookingConfirmationJsonSchema,
                 documents: [bookingConfirmationFilePath1],
                 model: "gpt-4.1-nano",
-                modality: MODALITY,
                 temperature: 0.5,
                 image_resolution_dpi: 150,
-                browser_canvas: "A4",
                 reasoning_effort: "medium",
                 n_consensus: 1,
             });
@@ -385,7 +364,6 @@ describe('Retab SDK Extract Tests', () => {
                     json_schema: bookingConfirmationJsonSchema,
                     documents: [bookingConfirmationFilePath1],
                     model: model,
-                    modality: MODALITY,
                 });
 
                 validateExtractionResponse(response);
@@ -403,8 +381,6 @@ describe('Retab SDK Extract Tests', () => {
                     json_schema: bookingConfirmationJsonSchema,
                     documents: [bookingConfirmationFilePath1],
                     model: "gpt-4.1-nano",
-                    modality: MODALITY,
-                    browser_canvas: canvas,
                 });
 
                 validateExtractionResponse(response);
@@ -422,7 +398,6 @@ describe('Retab SDK Extract Tests', () => {
                     json_schema: bookingConfirmationJsonSchema,
                     documents: [bookingConfirmationFilePath1],
                     model: "gpt-4.1-nano",
-                    modality: MODALITY,
                     reasoning_effort: effort,
                 });
 
