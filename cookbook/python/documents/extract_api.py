@@ -22,7 +22,6 @@ response = reclient.documents.extract(
     document="../../assets/docs/invoice.jpeg",
     model="gpt-4.1",
     json_schema="../../assets/code/invoice_schema.json",
-    modality="native",
     image_resolution_dpi=96,
     browser_canvas="A4",
     temperature=0.0,
