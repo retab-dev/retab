@@ -25,8 +25,15 @@ export function mimeToBlob(mime: MIMEData): Blob {
     for (let i = 0; i < byteString.length; i++)
         ia[i] = byteString.charCodeAt(i)
 
-    return new Blob([ia], { type: mimeString })
-  }
+    // Return a File to preserve the original filename in multipart uploads
+    try {
+        // File extends Blob and allows passing a filename that FastAPI will receive
+        return new File([ia], mime.filename, { type: mimeString })
+    } catch (_) {
+        // Fallback for environments without File constructor
+        return new Blob([ia], { type: mimeString })
+    }
+}
 
 export async function inferFileInfo(input: Buffer | string | Readable): Promise<MIMEData> {
     let buffer: Buffer;

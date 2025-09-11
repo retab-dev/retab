@@ -125,17 +125,12 @@ describe('Retab SDK Tests', () => {
         }, { timeout: TEST_TIMEOUT });
 
         test('test_projects_extract_functionality', async () => {
-            // This test requires a valid project_id and iteration_id
-            // Use defaults from script.ts or environment variables
+            // Create an isolated project + iteration, then call extract
             const envConfig = getEnvConfig();
-            const testProjectId = "proj_Y_LeRXJRbZZCWoOiEn31x";
-            const testIterationId = "eval_iter_wWZcJbL9W8XDDptLLnfML";
             const testDocumentPath = getPayslipFilePath();
 
             // Skip if the test document doesn't exist
             try {
-                // Check if we can access the document file
-                // Only skip if custom document path is provided but doesn't exist
                 const fs = require('fs');
                 if (!fs.existsSync(testDocumentPath)) {
                     console.log(`⚠️  Skipping extract test - Document not found: ${testDocumentPath}`);
@@ -148,17 +143,30 @@ describe('Retab SDK Tests', () => {
 
             const testClient = new Retab({
                 apiKey: envConfig.retabApiKey,
-                baseUrl: envConfig.retabApiBaseUrl
+                baseUrl: envConfig.retabApiBaseUrl,
+            });
+
+            // Create project and iteration scoped to this test
+            const projectName = `test_extract_${generateId()}`;
+            const project = await testClient.projects.create({
+                name: projectName,
+                json_schema: bookingConfirmationJsonSchema,
             });
 
             try {
-                console.log(`🚀 Testing extract with project: ${testProjectId}, iteration: ${testIterationId}`);
+                const iteration = await testClient.projects.iterations.create(project.id, {
+                    model: TEST_MODEL,
+                    temperature: 0.0,
+                    modality: TEST_MODALITY,
+                });
+
+                console.log(`🚀 Testing extract with project: ${project.id}, iteration: ${iteration.id}`);
 
                 // Add a timeout promise to prevent hanging
                 const extractPromise = testClient.projects.extract({
-                    project_id: testProjectId,
-                    iteration_id: testIterationId,
-                    document: testDocumentPath
+                    project_id: project.id,
+                    iteration_id: iteration.id,
+                    document: testDocumentPath,
                 });
 
                 const timeoutPromise = new Promise((_, reject) => {
@@ -190,17 +198,12 @@ describe('Retab SDK Tests', () => {
                 }
 
                 console.log(`✅ Extract test successful - Extraction ID: ${response.extraction_id}`);
-
-            } catch (error: any) {
-                // Provide helpful error information
-                if (error.status === 401) {
-                    throw new Error('🔑 Authentication issue - check if the API key is valid');
-                } else if (error.status === 404) {
-                    throw new Error('📂 Resource not found - check project_id and iteration_id');
-                } else if (error.status === 400) {
-                    throw new Error('📄 Bad request - check document format or parameters');
-                } else {
-                    throw new Error(`🔧 API Error ${error.status}: ${error.info || error.message}`);
+            } finally {
+                // Cleanup created project
+                try {
+                    await testClient.projects.delete(project.id);
+                } catch (_) {
+                    // ignore cleanup errors
                 }
             }
         }, { timeout: TEST_TIMEOUT });
