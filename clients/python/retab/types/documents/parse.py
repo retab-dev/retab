@@ -21,7 +21,7 @@ class ParseRequest(BaseModel):
     document: MIMEData = Field(..., description="Document to parse")
     model: str = Field(default="gemini-2.5-flash", description="Model to use for parsing")
     table_parsing_format: TableParsingFormat = Field(default="html", description="Format for parsing tables")
-    image_resolution_dpi: int = Field(default=96, description="DPI for image processing", ge=96, le=300)
+    image_resolution_dpi: int = Field(default=192, description="DPI for image processing", ge=96, le=300)
     browser_canvas: BrowserCanvas = Field(default="A4", description="Canvas size for document rendering")
 
 
