@@ -1,7 +1,7 @@
 import base64
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -81,7 +81,7 @@ class ProjectsMixin:
         project_id: str,
         iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        documents: list[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         temperature: float | None = None,
         seed: int | None = None,
         store: bool = True,
@@ -257,7 +257,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
         project_id: str,
         iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        documents: List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         temperature: float | None = None,
         seed: int | None = None,
         store: bool = True,
@@ -394,7 +394,7 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         project_id: str,
         iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        documents: List[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         temperature: float | None = None,
         seed: int | None = None,
         store: bool = True,
