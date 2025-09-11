@@ -10,9 +10,10 @@
     "example:schema": "bun run schemas/json_schema_calendar_event.ts"
   },
   "dependencies": {
-    "@retab/node": "file:../../clients/node",
+    "@retab/node": "^1.0.59",
     "dotenv": "^16.0.0",
-    "express": "^4.18.0"
+    "express": "^4.18.0",
+    "retab": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
