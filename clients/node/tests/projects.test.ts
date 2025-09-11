@@ -157,7 +157,6 @@ describe('Retab SDK Tests', () => {
                 const iteration = await testClient.projects.iterations.create(project.id, {
                     model: TEST_MODEL,
                     temperature: 0.0,
-                    modality: TEST_MODALITY,
                 });
 
                 console.log(`🚀 Testing extract with project: ${project.id}, iteration: ${iteration.id}`);
@@ -337,7 +336,6 @@ describe('Retab SDK Tests', () => {
                 const iteration = await client.projects.iterations.create(projectId, {
                     model: TEST_MODEL,
                     temperature: 0.1,
-                    modality: TEST_MODALITY,
                 });
 
                 expect(iteration.inference_settings.model).toBe(TEST_MODEL);
@@ -421,7 +419,6 @@ describe('Retab SDK Tests', () => {
                 const iteration = await client.projects.iterations.create(projectId, {
                     model: TEST_MODEL,
                     temperature: 0.0,
-                    modality: TEST_MODALITY,
                 });
 
                 const iterationId = iteration.id;
@@ -508,13 +505,11 @@ describe('Retab SDK Tests', () => {
                 const iteration1 = await client.projects.iterations.create(projectId, {
                     model: TEST_MODEL,
                     temperature: 0.0,
-                    modality: TEST_MODALITY,
                 });
 
                 const iteration2 = await client.projects.iterations.create(projectId, {
                     model: TEST_MODEL,
                     temperature: 0.5,
-                    modality: TEST_MODALITY,
                 });
 
                 // Verify we have 2 iterations
@@ -616,7 +611,6 @@ describe('Retab SDK Tests', () => {
                 const iteration = await client.projects.iterations.create(projectId, {
                     model: TEST_MODEL,
                     temperature: 0.0,
-                    modality: TEST_MODALITY,
                 });
 
                 const iterationId = iteration.id;
