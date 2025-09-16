@@ -89,7 +89,7 @@ print(response)
 
 ## Projects
 
-On the [Platform](https://www.retab.com/), *Projects* provide a systematic way to test and validate your extraction schemas against known ground truth data. Think of it as unit testing for document AI—you can measure accuracy, compare different models, and optimize your extraction pipelines with confidence.
+On the [Platform](https://www.retab.com/), *Projects* provide a systematic way to test and validate your extraction schemas against known ground truth data. Think of it as evals for document AI. You can measure accuracy, compare different models, and optimize your extraction pipelines with confidence.
 
 The project workflow for schema optimization:
 1. Run initial project → identify low-accuracy fields
