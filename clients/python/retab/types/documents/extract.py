@@ -19,7 +19,7 @@ from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..standards import ErrorDetail, StreamingBaseModel
 from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel, unflatten_dict
-
+from ..modality import Modality
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
@@ -38,6 +38,7 @@ class DocumentExtractRequest(BaseModel):
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=True, description="If true, the extraction will be stored in the database")
     need_validation: bool = Field(default=False, description="If true, the extraction will be validated against the schema")
+    modality: Modality = Field(default="native", description="The modality of the document to be analyzed")
 
     # Add a model validator that rejects n_consensus > 1 if temperature is 0
     @field_validator("n_consensus")
