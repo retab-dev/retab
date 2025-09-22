@@ -17,7 +17,7 @@ reclient = Retab()
 
 doc_msg = reclient.documents.create_messages(
     document="contract.pdf",
-    modality="text", # or "image", "image+text", "native"
+    modality="text", # or "image", "native"
 )
 ```
 
@@ -88,7 +88,7 @@ reclient = Retab()
 
 doc_msg = reclient.documents.create_messages(
     document="contract.pdf",
-    modality="image+text",
+    modality="native",
 )
 ```
 

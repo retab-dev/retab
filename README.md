@@ -20,7 +20,7 @@ Made with love by the team at [Retab](https://retab.com) 🩷.
 
 We want you to use Retab for a defined purpose: get **SHIP FAST** automations to get **STRUCTURED** & **QUALITY** data.
 
-For this mission, we provide the best-in-class preprocessing, help you generate prompts & extraction schemas that fit your preferred model providers, iterate & evaluate the accuracy of your configuration, and ship fast your automation directly in your code or with your preferred platforms such as [n8n](https://n8n.io/) or [Dify](https://dify.ai/) [WIP].
+For this mission, we provide the best-in-class preprocessing, help you generate prompts & extraction schemas that fit your preferred model providers, iterate & evaluate the accuracy of your configuration, and ship fast your automation directly in your code.
 
 ### Why did we build Retab?
 
@@ -136,7 +136,6 @@ We can't wait to see how you'll use Retab.
 
 * [x] **API**: [Documentation](https://docs.retab.com/api-reference/introduction)
 * [x] **SDKs**: [Python & JavaScript SDK](https://docs.retab.com/overview/quickstart)
-* [x] **Low-code Frameworks**: [Dify](https://marketplace.dify.ai/plugins/retab_team/retab)
 
 * [OpenAI](https://platform.openai.com/docs/guides/structured-outputs), [Google](https://ai.google.dev/gemini-api/docs/structured-output), [xAI](https://docs.x.ai/docs/guides/structured-outputs), [Outlines](https://dottxt-ai.github.io/outlines/latest/reference/generation/structured_generation_explanation/) on structured generation
 * [Structured generation Starter Pack](https://github.com/retab-dev/structured-generation-starter-pack)
@@ -154,5 +153,4 @@ Among the features we're working on:
 * [ ] Schema optimization autopilot
 * [ ] Sources API
 * [ ] Document Edit API
-* [ ] n8n plugin
 
