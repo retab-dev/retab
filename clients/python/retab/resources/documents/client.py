@@ -18,6 +18,8 @@ from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, FieldUnset
 from ...utils.json_schema import load_json_schema, unflatten_dict
+from ...types.mime import OCR
+
 
 class BaseDocumentsMixin:
     def _prepare_create_messages(
@@ -30,9 +32,7 @@ class BaseDocumentsMixin:
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
 
-        loading_request_dict: dict[str, Any] = {
-            "document": mime_document
-        }
+        loading_request_dict: dict[str, Any] = {"document": mime_document}
         if image_resolution_dpi is not FieldUnset:
             loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
         if browser_canvas is not FieldUnset:
@@ -46,6 +46,15 @@ class BaseDocumentsMixin:
         return PreparedRequest(
             method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key
         )
+
+    def _prepare_get_extraction(self, extraction_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}")
+
+    def _prepare_perform_ocr_only(self, file_id: str) -> PreparedRequest:
+        return PreparedRequest(method="POST", url="/v1/documents/perform_ocr_only", data={"file_id": file_id})
+
+    def _prepare_compute_field_locations(self, ocr_file_id: str, ocr_result: OCR | None = None, data: dict[str, Any] = {}) -> PreparedRequest:
+        return PreparedRequest(method="POST", url="/v1/documents/compute_field_locations", data={"ocr_file_id": ocr_file_id, "ocr_result": ocr_result, "data": data})
 
     def _prepare_create_inputs(
         self,
@@ -133,7 +142,6 @@ class BaseDocumentsMixin:
         idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> PreparedRequest:
-
         loaded_schema = load_json_schema(json_schema)
 
         # Handle both single document and multiple documents
@@ -178,9 +186,7 @@ class BaseDocumentsMixin:
 
         # Use the same URL as extractions.py for consistency when streaming
         url = "/v1/documents/extractions" if stream else "/v1/documents/extract"
-        return PreparedRequest(
-            method="POST", url=url, data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key
-        )
+        return PreparedRequest(method="POST", url=url, data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key)
 
 
 class Documents(SyncAPIResource, BaseDocumentsMixin):
@@ -314,6 +320,94 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(request)
 
         return maybe_parse_to_pydantic(load_json_schema(json_schema), RetabParsedChatCompletion.model_validate(response))
+        # returns a RetabParsedChatCompletion
+
+    def get_sources(
+        self,
+        extraction_id: str,
+        file: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
+        file_id: str | None = None,
+    ) -> dict[str, Any]:
+        # 1) Get extraction → pick structured data
+        request = self._prepare_get_extraction(extraction_id)
+        extraction_resp = self._client._prepared_request(request)
+
+        # Access completion safely whether dict-like or model-like
+        if isinstance(extraction_resp, dict):
+            completion = extraction_resp.get("completion", {})
+            choices = completion.get("choices", []) or []
+            message = (choices[0].get("message") if choices else {}) or {}
+            parsed = message.get("parsed")
+            if parsed is None:
+                content = message.get("content") or "{}"
+                try:
+                    data: dict[str, Any] = json.loads(content)
+                except Exception:
+                    data = {}
+            else:
+                data = parsed
+        else:
+            # Fallback for attribute-style objects
+            completion = getattr(extraction_resp, "completion", None)
+            choices = getattr(completion, "choices", []) if completion is not None else []
+            message = choices[0].message if choices else None  # type: ignore[attr-defined]
+            parsed = getattr(message, "parsed", None) if message is not None else None
+            if parsed is None and message is not None:
+                try:
+                    data = json.loads(getattr(message, "content", "{}"))
+                except Exception:
+                    data = {}
+            else:
+                data = parsed or {}
+
+        # 2) Determine file_id from provided file or from extraction metadata
+        if not file_id:
+            if file is not None:
+                try:
+                    mime = prepare_mime_document(file)
+                    file_id = mime.id
+                except Exception:
+                    file_id = None
+        if not file_id:
+            candidate_file_ids: list[str] = []
+            if isinstance(extraction_resp, dict):
+                candidate_file_ids = extraction_resp.get("file_ids") or []
+                if not candidate_file_ids:
+                    legacy = extraction_resp.get("file_id")
+                    if legacy:
+                        candidate_file_ids = [legacy]
+            else:
+                candidate_file_ids = getattr(extraction_resp, "file_ids", []) or []
+                if not candidate_file_ids:
+                    legacy = getattr(extraction_resp, "file_id", None)
+                    if legacy:
+                        candidate_file_ids = [legacy]
+            if len(candidate_file_ids) == 1:
+                file_id = candidate_file_ids[0]
+
+        if not isinstance(file_id, str) or not file_id:
+            raise ValueError("Unable to infer file_id. Provide a file path or explicit file_id, or use an extraction with a single file.")
+
+        # 3) OCR the file_id
+        request = self._prepare_perform_ocr_only(file_id)
+        ocr_resp = self._client._prepared_request(request)
+
+        # Support dict or model-like
+        if isinstance(ocr_resp, dict):
+            ocr_file_id = ocr_resp.get("ocr_file_id")
+            ocr_result = ocr_resp.get("ocr_result")
+        else:
+            ocr_file_id = getattr(ocr_resp, "ocr_file_id", None)
+            ocr_result = getattr(ocr_resp, "ocr_result", None)
+
+        # 4) Compute field locations (pass both ocr_file_id and ocr_result to avoid refetch)
+        if not isinstance(ocr_file_id, str) or not ocr_file_id:
+            raise ValueError("perform_ocr_only did not return a valid ocr_file_id")
+        request = self._prepare_compute_field_locations(ocr_file_id, ocr_result, data)
+        field_locations_resp = self._client._prepared_request(request)
+
+        # Caller will decide how to format the return
+        return field_locations_resp
 
     @as_context_manager
     def extract_stream(
