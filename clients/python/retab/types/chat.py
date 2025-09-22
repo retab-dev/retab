@@ -8,7 +8,7 @@ from openai.types.chat.chat_completion_message_function_tool_call_param import C
 class ChatCompletionRetabMessage(TypedDict, total=False):  # homemade replacement for ChatCompletionMessageParam because iterable messes the serialization with pydantic
     # Basic stuff
     role: Required[Literal["user", "system", "assistant", "developer", "tool"]]
-    content: Union[str, list[ChatCompletionContentPartParam]]
+    content: Union[str, list[ChatCompletionContentPartParam], None]
 
     # Tool stuff
     tool_call_id: Optional[str]
