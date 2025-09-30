@@ -18,6 +18,7 @@ class BaseProject(BaseModel):
     json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the project")
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
     sheets_integration: SheetsIntegration | None = None
+    validation_flags: dict[str, Any] | None = None
 
 
 # Actual Object stored in DB
@@ -38,6 +39,7 @@ class PatchProjectRequest(BaseModel):
     name: Optional[str] = Field(default=None, description="The name of the document")
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the project")
     sheets_integration: SheetsIntegration | None = None
+    validation_flags: Optional[dict[str, Any]] = Field(default=None, description="The validation flags of the project")
 
 class AddIterationFromJsonlRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
