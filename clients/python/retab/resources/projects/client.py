@@ -82,7 +82,10 @@ class ProjectsMixin:
         iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        model: str | None = None,
         temperature: float | None = None,
+        image_resolution_dpi: int | None = None,
+        n_consensus: int | None = None,
         seed: int | None = None,
         store: bool = True,
         **extra_form: Any,
@@ -94,7 +97,11 @@ class ProjectsMixin:
             iteration_id: Optional ID of the iteration. If None, uses project base.
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
+            model: Optional model override
             temperature: Optional temperature override
+            image_resolution_dpi: Optional image resolution DPI override
+            n_consensus: Optional number of consensus extractions
+            store: Whether to store the results
             seed: Optional seed for reproducibility
             store: Whether to store the results
 
@@ -110,7 +117,10 @@ class ProjectsMixin:
 
         # Prepare form data parameters
         form_data = {
+            "model": model,
             "temperature": temperature,
+            "image_resolution_dpi": image_resolution_dpi,
+            "n_consensus": n_consensus,
             "seed": seed,
             "store": store,
         }
@@ -258,7 +268,10 @@ class Projects(SyncAPIResource, ProjectsMixin):
         iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        model: str | None = None,
         temperature: float | None = None,
+        image_resolution_dpi: int | None = None,
+        n_consensus: int | None = None,
         seed: int | None = None,
         store: bool = True,
         **extra_form: Any,
@@ -270,7 +283,9 @@ class Projects(SyncAPIResource, ProjectsMixin):
             iteration_id: Optional ID of the iteration. If None, uses project base.
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
+            model: Optional model override
             temperature: Optional temperature override
+            image_resolution_dpi: Optional image resolution DPI override
             seed: Optional seed for reproducibility
             store: Whether to store the results
 
@@ -282,7 +297,10 @@ class Projects(SyncAPIResource, ProjectsMixin):
             iteration_id=iteration_id,
             document=document,
             documents=documents,
+            model=model,
             temperature=temperature,
+            image_resolution_dpi=image_resolution_dpi,
+            n_consensus=n_consensus,
             seed=seed,
             store=store,
             **extra_form,
@@ -395,7 +413,10 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         iteration_id: Optional[str] = None,
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
+        model: str | None = None,
         temperature: float | None = None,
+        image_resolution_dpi: int | None = None,
+        n_consensus: int | None = None,
         seed: int | None = None,
         store: bool = True,
     ) -> RetabParsedChatCompletion:
@@ -406,13 +427,16 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
             iteration_id: Optional ID of the iteration. If None, uses project base.
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
+            model: Optional model override
             temperature: Optional temperature override
+            image_resolution_dpi: Optional image resolution DPI override
+            n_consensus: Optional number of consensus extractions
             seed: Optional seed for reproducibility
             store: Whether to store the results
 
         Returns:
             RetabParsedChatCompletion: The processing result
         """
-        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, temperature=temperature, seed=seed, store=store)
+        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, model=model, temperature=temperature, image_resolution_dpi=image_resolution_dpi, n_consensus=n_consensus, seed=seed, store=store)
         response = await self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)

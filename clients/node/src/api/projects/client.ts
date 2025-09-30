@@ -64,6 +64,9 @@ export default class APIProjects extends CompositionClient {
         iteration_id,
         document,
         documents,
+        model,
+        image_resolution_dpi,
+        n_consensus,
         temperature,
         seed,
         store
@@ -72,6 +75,9 @@ export default class APIProjects extends CompositionClient {
         iteration_id?: string,
         document?: MIMEDataInput,
         documents?: MIMEDataInput[],
+        model?: string,
+        image_resolution_dpi?: number,
+        n_consensus?: number,
         temperature?: number,
         seed?: number,
         store?: boolean,
@@ -86,6 +92,9 @@ export default class APIProjects extends CompositionClient {
             documents: (await ZMIMEData.array().parseAsync([...document ? [document] : [], ...(documents || [])])).map(mimeToBlob)
         };
 
+        if (model !== undefined) bodyParams.model = model;
+        if (image_resolution_dpi !== undefined) bodyParams.image_resolution_dpi = image_resolution_dpi;
+        if (n_consensus !== undefined) bodyParams.n_consensus = n_consensus;
         if (temperature !== undefined) bodyParams.temperature = temperature;
         if (seed !== undefined) bodyParams.seed = seed;
         if (store !== undefined) bodyParams.store = store;
