@@ -6,6 +6,17 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from .documents import ProjectDocument
 from .iterations import Iteration
+from ..inference_settings import InferenceSettings
+
+default_inference_settings = InferenceSettings(
+    model="auto-small",
+    temperature=0.5,
+    reasoning_effort="minimal",
+    modality="native",
+    image_resolution_dpi=192,
+    browser_canvas="A4",
+    n_consensus=1,
+)
 
 class SheetsIntegration(BaseModel):
     sheet_id: str
@@ -19,7 +30,8 @@ class BaseProject(BaseModel):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
     sheets_integration: SheetsIntegration | None = None
     validation_flags: dict[str, Any] | None = None
-
+    hardcoded_keys: Optional[dict[str, str]] = Field(default=None, description="hardcoded keys to be used for the extraction of long lists of data", examples=[{"properties": "ID", "products": "identity.id"}])
+    inference_settings: InferenceSettings = default_inference_settings
 
 # Actual Object stored in DB
 class Project(BaseProject):
@@ -40,6 +52,8 @@ class PatchProjectRequest(BaseModel):
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the project")
     sheets_integration: SheetsIntegration | None = None
     validation_flags: Optional[dict[str, Any]] = Field(default=None, description="The validation flags of the project")
+    hardcoded_keys: Optional[dict[str, str]] = Field(default=None, description="hardcoded keys to be used for the extraction of long lists of data", examples=[{"properties": "ID", "products": "identity.id"}])
+    inference_settings: Optional[InferenceSettings] = Field(default=None, description="The inference settings of the project")
 
 class AddIterationFromJsonlRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
