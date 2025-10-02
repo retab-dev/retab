@@ -11,6 +11,7 @@ class InferenceSettings(BaseModel):
     browser_canvas: BrowserCanvas = "A4"
     n_consensus: int = Field(default=1, description="Number of consensus rounds to perform")
     modality: Modality = "native"
+    agentic_ocr: bool | None = None
 
     model_config = ConfigDict(extra="ignore")
 
