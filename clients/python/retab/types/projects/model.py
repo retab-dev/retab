@@ -30,7 +30,6 @@ class BaseProject(BaseModel):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
     sheets_integration: SheetsIntegration | None = None
     validation_flags: dict[str, Any] | None = None
-    hardcoded_keys: Optional[dict[str, str]] = Field(default=None, description="hardcoded keys to be used for the extraction of long lists of data", examples=[{"properties": "ID", "products": "identity.id"}])
     inference_settings: InferenceSettings = default_inference_settings
 
 # Actual Object stored in DB
@@ -52,7 +51,6 @@ class PatchProjectRequest(BaseModel):
     json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the project")
     sheets_integration: SheetsIntegration | None = None
     validation_flags: Optional[dict[str, Any]] = Field(default=None, description="The validation flags of the project")
-    hardcoded_keys: Optional[dict[str, str]] = Field(default=None, description="hardcoded keys to be used for the extraction of long lists of data", examples=[{"properties": "ID", "products": "identity.id"}])
     inference_settings: Optional[InferenceSettings] = Field(default=None, description="The inference settings of the project")
 
 class AddIterationFromJsonlRequest(BaseModel):

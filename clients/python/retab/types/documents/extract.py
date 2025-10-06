@@ -39,9 +39,7 @@ class DocumentExtractRequest(BaseModel):
     store: bool = Field(default=True, description="If true, the extraction will be stored in the database")
     need_validation: bool = Field(default=False, description="If true, the extraction will be validated against the schema")
     modality: Modality = Field(default="native", description="The modality of the document to be analyzed")
-    hardcoded_keys: Optional[dict[str, str]] = Field(default=None, description="hardcoded keys to be used for the extraction of long lists of data", examples=[{"properties": "ID", "products": "identity.id"}])
-    agentic_ocr: bool | None = Field(default=None, description="If true, the extraction will be performed using Agentic OCR")
-
+    agentic_ocr_keys: Optional[dict[str, str]] = Field(default=None, description="If set, keys to be used for the extraction of long lists of data using Agentic OCR", examples=[{"properties": "ID", "products": "identity.id"}])
 
     # Add a model validator that rejects n_consensus > 1 if temperature is 0
     @field_validator("n_consensus")
