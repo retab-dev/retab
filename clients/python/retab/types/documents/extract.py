@@ -329,7 +329,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                 for idx in range(len(self.choices))
             ],
             likelihoods=final_likelihoods,
-            usage=None,
+            usage=self.usage,
             request_at=self.request_at,
             first_token_at=self.first_token_at,
             last_token_at=self.last_token_at,
