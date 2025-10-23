@@ -11,7 +11,7 @@ class InferenceSettings(BaseModel):
     browser_canvas: BrowserCanvas = "A4"
     n_consensus: int = Field(default=1, description="Number of consensus rounds to perform")
     modality: Modality = "native"
-    agentic_ocr_keys: dict[str, str] | None = Field(default=None, description="If set, keys to be used for the extraction of long lists of data using Agentic OCR", examples=[{"properties": "ID", "products": "identity.id"}])
+    parallel_ocr_keys: dict[str, str] | None = Field(default=None, description="If set, keys to be used for the extraction of long lists of data using Parallel OCR", examples=[{"properties": "ID", "products": "identity.id"}])
 
     model_config = ConfigDict(extra="ignore")
 
