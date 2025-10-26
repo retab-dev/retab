@@ -102,6 +102,8 @@ LikelihoodsSource = Literal["consensus", "log_probs"]
 
 
 class RetabParsedChatCompletion(ParsedChatCompletion):
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
+    
     extraction_id: str | None = None
     choices: list[RetabParsedChoice]  # type: ignore
     # Additional metadata fields (UIForm)
