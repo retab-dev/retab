@@ -106,10 +106,12 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
     
     extraction_id: str | None = None
     choices: list[RetabParsedChoice]  # type: ignore
-    # Additional metadata fields (UIForm)
+    # Additional metadata fields
     likelihoods: Optional[dict[str, Any]] = Field(
         default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
     )
+
+    requires_human_review: bool = Field(default=False, description="If true, the extraction requires human review")
     schema_validation_error: ErrorDetail | None = None
     # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
