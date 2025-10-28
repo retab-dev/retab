@@ -46,6 +46,8 @@ nanoid
 ## AI dependencies
 ########################
 openai
+anthropic
+google-genai
 tiktoken
 
 

@@ -1,7 +1,7 @@
 import copy
 import json
 from typing import Any, Literal, Optional, Self, Union, Type, MutableMapping, Tuple, MutableSequence
-from retab.utils.hashing import generate_blake2b_hash_from_string
+from ...utils.hashing import generate_blake2b_hash_from_string
 
 import datetime
 from pathlib import Path
@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, PrivateAttr, computed_field, model_valida
 from .chat import convert_to_anthropic_format, convert_to_google_genai_format
 from .chat import convert_to_openai_completions_api_format
 
-from retab.utils.json_schema import convert_json_schema_to_basemodel, expand_refs, load_json_schema
+from ...utils.json_schema import convert_json_schema_to_basemodel, expand_refs, load_json_schema
 from .chat import convert_to_openai_responses_api_format
 from ..standards import StreamingBaseModel
 from ..chat import ChatCompletionRetabMessage

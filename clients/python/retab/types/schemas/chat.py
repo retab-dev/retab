@@ -25,8 +25,8 @@ from openai.types.responses.response_input_message_content_list_param import Res
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.responses.response_input_text_param import ResponseInputTextParam
 
-from retab.types.chat import ChatCompletionRetabMessage
-from retab.types.documents.extract import RetabParsedChatCompletion, RetabParsedChoice
+from ...types.chat import ChatCompletionRetabMessage
+from ...types.documents.extract import RetabParsedChatCompletion, RetabParsedChoice
 
 
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
