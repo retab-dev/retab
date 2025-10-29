@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import json
 import os
 from types import TracebackType
@@ -10,6 +12,11 @@ import truststore
 
 from .resources import documents, models, schemas, projects
 from .types.standards import PreparedRequest, FieldUnset
+
+
+class SignatureVerificationError(Exception):
+    """Raised when webhook signature verification fails."""
+    pass
 
 
 class MaxRetriesExceeded(Exception):
@@ -34,7 +41,7 @@ class BaseRetab:
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
         base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com
-        timeout (float): Request timeout in seconds. Defaults to 240.0
+        timeout (float): Request timeout in seconds. Defaults to 1800.0 (30 minutes)
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
         openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
 
@@ -46,7 +53,7 @@ class BaseRetab:
         self,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        timeout: float = 800.0,
+        timeout: float = 1800.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = FieldUnset,
         gemini_api_key: Optional[str] = FieldUnset,
@@ -140,7 +147,7 @@ class Retab(BaseRetab):
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
         base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com
-        timeout (float): Request timeout in seconds. Defaults to 240.0
+        timeout (float): Request timeout in seconds. Defaults to 1800.0 (30 minutes)
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
         openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
         gemini_api_key (str, optional): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
@@ -161,7 +168,7 @@ class Retab(BaseRetab):
         self,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        timeout: float = 240.0,
+        timeout: float = 1800.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = FieldUnset,
         gemini_api_key: Optional[str] = FieldUnset,
@@ -385,6 +392,44 @@ class Retab(BaseRetab):
         """
         self.close()
 
+    @staticmethod
+    def verify_event(event_body: bytes, event_signature: str, secret: str) -> Any:
+        """Verify the signature of a webhook event.
+
+        Args:
+            event_body: The raw request body as bytes
+            event_signature: The signature from the request header (x-retab-signature)
+            secret: The webhook secret key used for signing
+
+        Returns:
+            Any: The parsed event payload (JSON)
+
+        Raises:
+            SignatureVerificationError: If the signature verification fails
+
+        Example:
+            ```python
+            from retab import Retab
+
+            # In your webhook handler
+            secret = "your_webhook_secret"
+            body = request.body  # Raw bytes
+            signature = request.headers.get("x-retab-signature")
+
+            try:
+                event = Retab.verify_event(body, signature, secret)
+                print(f"Verified event: {event}")
+            except SignatureVerificationError:
+                print("Invalid signature!")
+            ```
+        """
+        expected_signature = hmac.new(secret.encode(), event_body, hashlib.sha256).hexdigest()
+
+        if not hmac.compare_digest(event_signature, expected_signature):
+            raise SignatureVerificationError("Invalid signature")
+
+        return json.loads(event_body.decode("utf-8"))
+
 
 class AsyncRetab(BaseRetab):
     """Asynchronous client for interacting with the Retab API.
@@ -395,7 +440,7 @@ class AsyncRetab(BaseRetab):
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
         base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com
-        timeout (float): Request timeout in seconds. Defaults to 240.0
+        timeout (float): Request timeout in seconds. Defaults to 1800.0 (30 minutes)
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
         openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
         claude_api_key (str, optional): Claude API key. Will look for CLAUDE_API_KEY env variable if not provided
@@ -418,7 +463,7 @@ class AsyncRetab(BaseRetab):
         self,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        timeout: float = 240.0,
+        timeout: float = 1800.0,
         max_retries: int = 3,
         openai_api_key: Optional[str] = FieldUnset,
         gemini_api_key: Optional[str] = FieldUnset,
@@ -661,3 +706,41 @@ class AsyncRetab(BaseRetab):
             traceback: The traceback of the exception that was raised, if any
         """
         await self.close()
+    @staticmethod
+    def verify_event(event_body: bytes, event_signature: str, secret: str) -> Any:
+        """Verify the signature of a webhook event.
+
+        Args:
+            event_body: The raw request body as bytes
+            event_signature: The signature from the request header (x-retab-signature)
+            secret: The webhook secret key used for signing
+
+        Returns:
+            Any: The parsed event payload (JSON)
+
+        Raises:
+            SignatureVerificationError: If the signature verification fails
+
+        Example:
+            ```python
+            from retab import AsyncRetab
+
+            # In your async webhook handler
+            secret = "your_webhook_secret"
+            body = await request.body()  # Raw bytes
+            signature = request.headers.get("x-retab-signature")
+
+            try:
+                event = AsyncRetab.verify_event(body, signature, secret)
+                print(f"Verified event: {event}")
+            except SignatureVerificationError:
+                print("Invalid signature!")
+            ```
+        """
+        expected_signature = hmac.new(secret.encode(), event_body, hashlib.sha256).hexdigest()
+
+        if not hmac.compare_digest(event_signature, expected_signature):
+            raise SignatureVerificationError("Invalid signature")
+
+        return json.loads(event_body.decode("utf-8"))
+

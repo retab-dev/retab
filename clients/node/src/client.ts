@@ -1,4 +1,5 @@
 import * as z from "zod";
+import * as crypto from "crypto";
 
 type FetchParams = {
   url: string,
@@ -99,6 +100,13 @@ export class APIError extends Error {
   }
 }
 
+export class SignatureVerificationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SignatureVerificationError";
+  }
+}
+
 export const DateOrISO = z.union([
   z.date(),
   z.string().refine(val => !isNaN(Date.parse(val)), {
@@ -109,6 +117,7 @@ export const DateOrISO = z.union([
 type AuthTypes = { apiKey: string } | {};
 export type ClientOptions = {
   baseUrl?: string,
+  timeout?: number,
 } & AuthTypes;
 
 export type RequestOptions = {
@@ -119,9 +128,11 @@ export type RequestOptions = {
 
 export class FetcherClient extends AbstractClient {
   options: ClientOptions;
+  timeout: number;
   constructor(options?: ClientOptions) {
     super();
     this.options = options || {};
+    this.timeout = this.options.timeout ?? 1800000; // Default 1800 seconds (in milliseconds)
 
     // Validate that at least one authentication method is provided
     const apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
@@ -178,10 +189,52 @@ export class FetcherClient extends AbstractClient {
     const apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
     headers["Api-Key"] = apiKey;
     init.headers = headers;
+    init.signal = AbortSignal.timeout(this.timeout);
     let res = await fetch(url, init);
     if (!res.ok) {
       throw new APIError(res.status, await res.text());
     }
     return res;
+  }
+
+  /**
+   * Verify the signature of a webhook event.
+   * 
+   * @param eventBody - The raw request body as a string or Buffer
+   * @param eventSignature - The signature from the request header (x-retab-signature)
+   * @param secret - The webhook secret key used for signing
+   * @returns The parsed event payload (JSON)
+   * @throws {SignatureVerificationError} If the signature verification fails
+   * 
+   * @example
+   * ```typescript
+   * import { FetcherClient } from './client';
+   * 
+   * // In your webhook handler
+   * const secret = "your_webhook_secret";
+   * const body = req.body; // Raw string or Buffer
+   * const signature = req.headers['x-retab-signature'];
+   * 
+   * try {
+   *   const event = FetcherClient.verifyEvent(body, signature, secret);
+   *   console.log(`Verified event: ${event}`);
+   * } catch (error) {
+   *   console.log("Invalid signature!");
+   * }
+   * ```
+   */
+  static verifyEvent(eventBody: string | Buffer, eventSignature: string, secret: string): any {
+    const bodyBuffer = typeof eventBody === 'string' ? Buffer.from(eventBody, 'utf-8') : eventBody;
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(bodyBuffer)
+      .digest('hex');
+
+    // Use constant-time comparison to prevent timing attacks
+    if (!crypto.timingSafeEqual(Buffer.from(eventSignature), Buffer.from(expectedSignature))) {
+      throw new SignatureVerificationError("Invalid signature");
+    }
+
+    return JSON.parse(bodyBuffer.toString('utf-8'));
   }
 }
