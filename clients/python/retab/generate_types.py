@@ -59,7 +59,7 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
             optional = True
         typename = make_union([type_to_zod(x) for x in args])
         ts_typename = make_ts_union([type_to_zod(x, ts=True) for x in args])
-    elif issubclass(origin, BaseModel) or is_typeddict(origin) or is_typeddict_ext(origin):
+    elif isinstance(origin, type) and (issubclass(origin, BaseModel) or is_typeddict(origin) or is_typeddict_ext(origin)):
         if put_names:
             name = get_class_name(origin)
             typename = "Z" + name
@@ -77,7 +77,7 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
 
             typename += "z.object({\n"
             ts_typename += "{\n"
-            props = [(n, f.annotation, f.default) for n, f in origin.model_fields.items() if not f.exclude] if issubclass(origin, BaseModel) else \
+            props = [(n, f.annotation, f.default) for n, f in origin.model_fields.items() if not f.exclude] if isinstance(origin, type) and issubclass(origin, BaseModel) else \
                     [(n, f, PydanticUndefined) for n, f in origin.__annotations__.items()]
 
             for field_name, field, default in props:

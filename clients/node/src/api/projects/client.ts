@@ -1,32 +1,17 @@
 import { CompositionClient, RequestOptions } from "../../client.js";
 import { mimeToBlob } from "../../mime.js";
-import { BaseProjectInput, dataArray, Project, ZBaseProject, ZProjectLoose as ZProject, ZCreateProjectRequest, CreateProjectRequest, MIMEDataInput, ZMIMEData, RetabParsedChatCompletion, ZRetabParsedChatCompletion } from "../../types.js";
-import APIProjectsDocuments from "./documents/client";
-import APIProjectsIterations from "./iterations/client";
+import { dataArray, Project, ZProject, ZCreateProjectRequest, CreateProjectRequest, MIMEDataInput, ZMIMEData, RetabParsedChatCompletion, ZRetabParsedChatCompletion } from "../../types.js";
 
 export default class APIProjects extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
     }
 
-    documents = new APIProjectsDocuments(this);
-    iterations = new APIProjectsIterations(this);
-
     async create(body: CreateProjectRequest, options?: RequestOptions): Promise<Project> {
         return this._fetchJson(ZProject, {
             url: "/v1/projects",
             method: "POST",
             body: { ...(await ZCreateProjectRequest.parseAsync(body)), ...(options?.body || {}) },
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    async update(projectId: string, body: Partial<BaseProjectInput>, options?: RequestOptions): Promise<Project> {
-        return this._fetchJson(ZProject, {
-            url: `/v1/projects/${projectId}`,
-            method: "PATCH",
-            body: { ...(await ZBaseProject.partial().parseAsync(body)), ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -54,6 +39,18 @@ export default class APIProjects extends CompositionClient {
         return this._fetchJson({
             url: `/v1/projects/${projectId}`,
             method: "DELETE",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    async publish(projectId: string, body?: Record<string, unknown>, options?: RequestOptions): Promise<Project> {
+        const mergedBody = body || options?.body ? { ...(body || {}), ...(options?.body || {}) } : undefined;
+
+        return this._fetchJson(ZProject, {
+            url: `/v1/projects/${projectId}/publish`,
+            method: "POST",
+            body: mergedBody,
             params: options?.params,
             headers: options?.headers,
         });
