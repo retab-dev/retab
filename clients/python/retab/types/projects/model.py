@@ -4,8 +4,6 @@ from typing import Any, Optional
 import nanoid  # type: ignore
 from pydantic import BaseModel, Field, ConfigDict
 
-from .documents import ProjectDocument
-from .iterations import Iteration
 from ..inference_settings import InferenceSettings
 
 default_inference_settings = InferenceSettings(
@@ -17,42 +15,68 @@ default_inference_settings = InferenceSettings(
     browser_canvas="A4",
     n_consensus=1,
 )
-
-class SheetsIntegration(BaseModel):
-    sheet_id: str
-    spreadsheet_id: str
-
-class BaseProject(BaseModel):
+class Function(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: "proj_" + nanoid.generate())
-    name: str = Field(default="", description="The name of the project")
-    json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the project")
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
-    sheets_integration: SheetsIntegration | None = None
-    validation_flags: dict[str, Any] | None = None
-    inference_settings: InferenceSettings = default_inference_settings
+    id: str = Field(default_factory=lambda: "function_" + nanoid.generate())
+    path: str
+    code: Optional[str] = Field(default=None, description="The code of the function")
+    function_registry_id: Optional[str] = Field(default=None, description="The function registry id of the function")
 
-# Actual Object stored in DB
-class Project(BaseProject):
-    documents: list[ProjectDocument] = Field(default_factory=list)
-    iterations: list[Iteration] = Field(default_factory=list)
+    # @model_validator(mode="before")
+    # @classmethod
+    # def validate_function(cls, data: Any):
+    #     if isinstance(data, dict):
+    #         code = data.get("code")
+    #         function_registry_id = data.get("function_registry_id")
+    #         if code is None and function_registry_id is None:
+    #             raise ValueError("Either code or function_registry_id must be provided")
+    #     return data
+
+class FunctionHilCriterion(BaseModel):
+    path: str
+    agentic_fix: bool = Field(default=False, description="Whether to use agentic fix for the criterion")
+
+class HumanInTheLoopParams(BaseModel):
+    enabled: bool = Field(default=False)
+    url: str = Field(default="", description="The URL of the human in the loop endpoint")
+    headers: dict[str, str] = Field(default_factory=dict, description="The headers to send to the human in the loop endpoint")
+    criteria: list[FunctionHilCriterion] = Field(default_factory=list, description="The criteria to use for the human in the loop")
+
+class PublishedConfig(BaseModel):
+    inference_settings: InferenceSettings = default_inference_settings
+    json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the project")
+    human_in_the_loop_params: HumanInTheLoopParams = Field(default_factory=HumanInTheLoopParams)
+    origin: str = Field(default="manual", description="The origin of the published config. Either 'Manual' or the iteration id that was used to generate the config")
+class DraftConfig(BaseModel):
+    inference_settings: InferenceSettings = default_inference_settings
+    json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the builder config")
+    human_in_the_loop_criteria: list[FunctionHilCriterion] = Field(default_factory=list)
+class Project(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: "project_" + nanoid.generate())
+    name: str = Field(default="", description="The name of the project")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
+    published_config: PublishedConfig
+    draft_config: DraftConfig
+    is_published: bool = False
+    #computation_spec: ComputationSpec = Field(default_factory=ComputationSpec, description="The computation spec of the project")
+    functions: list[Function] = Field(default_factory=list, description="The functions of the project")
+
+class StoredProject(Project):
+    """Project model with organization_id for database storage"""
+    organization_id: str
 
 class CreateProjectRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     name: str
-    json_schema: dict[str, Any]
+    json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the project")
 
-
-# This is basically the same as BaseProject, but everything is optional.
-# Could be achieved by convert_basemodel_to_partial_basemodel(BaseProject) but we prefer explicitness
+# This is basically the same as Project, but everything is optional.
 class PatchProjectRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     name: Optional[str] = Field(default=None, description="The name of the document")
-    json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the project")
-    sheets_integration: SheetsIntegration | None = None
-    validation_flags: Optional[dict[str, Any]] = Field(default=None, description="The validation flags of the project")
-    inference_settings: Optional[InferenceSettings] = Field(default=None, description="The inference settings of the project")
-
-class AddIterationFromJsonlRequest(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    jsonl_gcs_path: str
+    published_config: Optional[PublishedConfig] = Field(default=None, description="The published config of the project")
+    draft_config: Optional[DraftConfig] = Field(default=None, description="The draft config of the project")
+    is_published: Optional[bool] = Field(default=None, description="The published status of the project")
+    #computation_spec: Optional[ComputationSpec] = Field(default=None, description="The computation spec of the project")
+    functions: Optional[list[Function]] = Field(default=None, description="The functions of the project")

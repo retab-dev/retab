@@ -54,14 +54,12 @@ async function baseTestCreateMessages(
     if (clientType === "sync") {
         response = await client.documents.create_messages({
             document: document,
-            modality: modality,
         });
     } else if (clientType === "async") {
         // For TypeScript/Node.js, we don't have separate sync/async clients like Python
         // So we'll just use the same client for both cases
         response = await client.documents.create_messages({
             document: document,
-            modality: modality,
         });
     }
 
@@ -122,7 +120,6 @@ describe('Retab SDK Create Messages Tests', () => {
 
             const response = await client.documents.create_messages({
                 document: document,
-                modality: "native",
                 image_resolution_dpi: 96,
                 browser_canvas: "A4",
             });
@@ -140,8 +137,6 @@ describe('Retab SDK Create Messages Tests', () => {
             // First request
             const responseInitial = await client.documents.create_messages({
                 document: document,
-                modality: modality,
-                idempotency_key: idempotencyKey,
             });
 
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -150,8 +145,6 @@ describe('Retab SDK Create Messages Tests', () => {
             // Second request with same idempotency key
             const responseSecond = await client.documents.create_messages({
                 document: document,
-                modality: modality,
-                idempotency_key: idempotencyKey,
             });
 
             const t1 = Date.now();
@@ -183,8 +176,6 @@ describe('Retab SDK Create Messages Tests', () => {
             try {
                 response1 = await client.documents.create_messages({
                     document: document,
-                    modality: modality,
-                    idempotency_key: idempotencyKey,
                 });
             } catch (e) {
                 raisedException1 = e as Error;
@@ -197,8 +188,6 @@ describe('Retab SDK Create Messages Tests', () => {
             try {
                 response2 = await client.documents.create_messages({
                     document: document,
-                    modality: modality,
-                    idempotency_key: idempotencyKey,
                 });
             } catch (e) {
                 raisedException2 = e as Error;
@@ -233,14 +222,12 @@ describe('Retab SDK Create Messages Tests', () => {
             // Test with 'native' modality
             const responseNative = await client.documents.create_messages({
                 document: document,
-                modality: "native",
             });
             validateCreateMessagesResponse(responseNative);
 
             // Test with 'text' modality
             const responseText = await client.documents.create_messages({
                 document: document,
-                modality: "text",
             });
             validateCreateMessagesResponse(responseText);
 
@@ -260,13 +247,11 @@ describe('Retab SDK Create Messages Tests', () => {
             // Sync request (simulated since we use the same client)
             const syncResponse = await client.documents.create_messages({
                 document: document,
-                modality: modality,
             });
 
             // Async request
             const asyncResponse = await client.documents.create_messages({
                 document: document,
-                modality: modality,
             });
 
             // Validate both responses
@@ -286,7 +271,6 @@ describe('Retab SDK Create Messages Tests', () => {
         test('test_create_messages_response_structure', async () => {
             const response = await client.documents.create_messages({
                 document: bookingConfirmationFilePath1,
-                modality: "native",
             });
 
             // Validate basic structure
@@ -321,7 +305,6 @@ describe('Retab SDK Create Messages Tests', () => {
             test(`test_create_messages_canvas_${canvas}`, async () => {
                 const response = await client.documents.create_messages({
                     document: bookingConfirmationFilePath1,
-                    modality: "native",
                     browser_canvas: canvas,
                 });
 
@@ -338,7 +321,6 @@ describe('Retab SDK Create Messages Tests', () => {
             test(`test_create_messages_dpi_${dpi}`, async () => {
                 const response = await client.documents.create_messages({
                     document: bookingConfirmationFilePath1,
-                    modality: "native",
                     image_resolution_dpi: dpi,
                 });
 

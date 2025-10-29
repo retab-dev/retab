@@ -6,7 +6,7 @@ import * as z from "zod";
 import { inferFileInfo } from "./mime";
 import fs from "fs";
 import { zodToJsonSchema } from 'zod-to-json-schema';
-export * from "./schema_types";
+//export * from "./schema_types";
 
 export function dataArray<Schema extends z.ZodType<any, any, any>>(schema: Schema): z.ZodType<
     z.output<Schema>[],
@@ -132,32 +132,13 @@ export const ZGenerateSchemaRequest = z.object({
 });
 export type GenerateSchemaRequest = z.input<typeof ZGenerateSchemaRequest>;
 
-export const ZBaseProject = z.object({
-    ...generated.ZBaseProject.schema.shape,
-    json_schema: ZJSONSchema,
-});
-export type BaseProjectInput = z.input<typeof ZBaseProject>;
-export type BaseProject = z.output<typeof ZBaseProject>;
-
 export const ZCreateProjectRequest = z.object({
     ...generated.ZCreateProjectRequest.schema.shape,
     json_schema: ZJSONSchema,
 });
 export type CreateProjectRequest = z.input<typeof ZCreateProjectRequest>;
 
-export const ZDocumentItem = z.object({
-    ...generated.ZDocumentItem.schema.shape,
-    mime_data: ZMIMEData,
-});
-export type DocumentItemInput = z.input<typeof ZDocumentItem>;
-export type DocumentItem = z.output<typeof ZDocumentItem>;
 
-
-// Looser project schema to handle backends that omit arrays by default
-export const ZProjectLoose: z.ZodType<generated.Project> = z.lazy(() => (generated.ZBaseProject.schema).merge(z.object({
-    documents: z.array(generated.ZProjectDocument).default([]),
-    iterations: z.array(generated.ZIteration).default([]),
-})) as any);
 
 export const ZModel = z.lazy(() => (z.object({
     id: z.string(),

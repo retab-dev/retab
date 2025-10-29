@@ -142,7 +142,7 @@ async def test_parse_image_resolution(
     with sync_client as client:
         response = client.documents.parse(
             document=booking_confirmation_file_path_1,
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
             image_resolution_dpi=dpi,
         )
     
@@ -162,7 +162,7 @@ async def test_parse_browser_canvas(
     with sync_client as client:
         response = client.documents.parse(
             document=booking_confirmation_file_path_1,
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
             browser_canvas=canvas,
         )
     
@@ -197,7 +197,7 @@ async def test_parse_with_idempotency(
 ) -> None:
     """Test that parse requests with the same idempotency key return identical results."""
     idempotency_key = nanoid.generate()
-    model = "gemini-2.5-flash"
+    model = "gemini-2.5-flash-lite"
 
     # First request
     response_initial = sync_client.documents.parse(
@@ -253,19 +253,19 @@ async def test_parse_with_idempotency_error_scenarios(
         image_resolution_dpi = 96
         browser_canvas = "A4"
     elif error_scenario == "missing_document":
-        model = "gemini-2.5-flash"
+        model = "gemini-2.5-flash-lite"
         document = "/nonexistent/file.pdf"
         table_parsing_format = "html"
         image_resolution_dpi = 96
         browser_canvas = "A4"
     elif error_scenario == "invalid_dpi":
-        model = "gemini-2.5-flash"
+        model = "gemini-2.5-flash-lite"
         document = booking_confirmation_file_path_1
         table_parsing_format = "html"
         image_resolution_dpi = -1  # Invalid DPI
         browser_canvas = "A4"
     elif error_scenario == "invalid_canvas":
-        model = "gemini-2.5-flash"
+        model = "gemini-2.5-flash-lite"
         document = booking_confirmation_file_path_1
         table_parsing_format = "html"
         image_resolution_dpi = 96
@@ -340,7 +340,7 @@ async def test_parse_response_structure(
     with sync_client as client:
         response = client.documents.parse(
             document=booking_confirmation_file_path_1,
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
         )
     
     # Validate basic structure

@@ -108,7 +108,6 @@ describe('Retab SDK Create Inputs Tests', () => {
             const responseInitial = await client.documents.create_inputs({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                idempotency_key: idempotencyKey,
             });
 
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -117,7 +116,6 @@ describe('Retab SDK Create Inputs Tests', () => {
             const responseSecond = await client.documents.create_inputs({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                idempotency_key: idempotencyKey,
             });
 
             const t1 = Date.now();
@@ -157,7 +155,6 @@ describe('Retab SDK Create Inputs Tests', () => {
                     response1 = await client.documents.create_inputs({
                         json_schema: jsonSchema,
                         document: document,
-                        idempotency_key: idempotencyKey,
                     });
                 } catch (e) {
                     raisedException1 = e as Error;
@@ -171,7 +168,6 @@ describe('Retab SDK Create Inputs Tests', () => {
                     response2 = await client.documents.create_inputs({
                         json_schema: jsonSchema,
                         document: document,
-                        idempotency_key: idempotencyKey,
                     });
                 } catch (e) {
                     raisedException2 = e as Error;

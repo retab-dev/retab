@@ -8,23 +8,25 @@ from pydantic import HttpUrl
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import MIMEData, prepare_mime_document
 from ...types.documents.extract import RetabParsedChatCompletion
-from ...types.projects import Project, PatchProjectRequest, BaseProject
+from ...types.projects import Project, PatchProjectRequest, CreateProjectRequest
 from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
 
 class ProjectsMixin:
     def prepare_create(
         self,
         name: str,
+        json_schema: dict[str, Any],
         **extra_body: Any,
     ) -> PreparedRequest:
         # Use BaseProject model
         eval_dict: dict[str, Any] = {
             "name": name,
+            "json_schema": json_schema,
         }
         if extra_body:
             eval_dict.update(extra_body)
 
-        eval_data = BaseProject(**eval_dict)
+        eval_data = CreateProjectRequest(**eval_dict)
         return PreparedRequest(method="POST", url="/v1/projects", data=eval_data.model_dump(exclude_unset=True, mode="json"))
 
     def prepare_get(self, project_id: str) -> PreparedRequest:
@@ -70,6 +72,10 @@ class ProjectsMixin:
 
     def prepare_delete(self, id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/projects/{id}")
+
+    def prepare_publish(self, project_id: str, **extra_body: Any) -> PreparedRequest:
+        data = extra_body or None
+        return PreparedRequest(method="POST", url=f"/v1/projects/{project_id}/publish", data=data)
 
     def prepare_extract(
         self,
@@ -159,6 +165,7 @@ class Projects(SyncAPIResource, ProjectsMixin):
     def create(
         self,
         name: str,
+        json_schema: dict[str, Any],
         **extra_body: Any,
     ) -> Project:
         """
@@ -166,13 +173,13 @@ class Projects(SyncAPIResource, ProjectsMixin):
 
         Args:
             name: The name of the project
-
+            json_schema: The json schema of the project
         Returns:
             Project: The created project
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(name, **extra_body)
+        request = self.prepare_create(name, json_schema, **extra_body)
         response = self._client._prepared_request(request)
         return Project(**response)
 
@@ -220,6 +227,12 @@ class Projects(SyncAPIResource, ProjectsMixin):
         """
         request = self.prepare_delete(project_id)
         return self._client._prepared_request(request)
+
+    def publish(self, project_id: str, **extra_body: Any) -> Project:
+        """Publish a project's draft configuration."""
+        request = self.prepare_publish(project_id, **extra_body)
+        response = self._client._prepared_request(request)
+        return Project(**response)
 
     def extract(
         self,
@@ -274,19 +287,19 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    async def create(self, name: str, **extra_body: Any) -> Project:
+    async def create(self, name: str, json_schema: dict[str, Any], **extra_body: Any) -> Project:
         """
         Create a new project.
 
         Args:
             name: The name of the project
-
+            json_schema: The json schema of the project
         Returns:
             Project: The created project
         Raises:
             HTTPException if the request fails
         """
-        request = self.prepare_create(name, **extra_body)
+        request = self.prepare_create(name, json_schema, **extra_body)
         response = await self._client._prepared_request(request)
         return Project(**response)
 
@@ -333,6 +346,12 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         """
         request = self.prepare_delete(project_id)
         return await self._client._prepared_request(request)
+
+    async def publish(self, project_id: str, **extra_body: Any) -> Project:
+        """Publish a project's draft configuration."""
+        request = self.prepare_publish(project_id, **extra_body)
+        response = await self._client._prepared_request(request)
+        return Project(**response)
 
     async def extract(
         self,
