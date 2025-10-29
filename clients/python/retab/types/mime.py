@@ -8,6 +8,8 @@ from typing import Any, Optional, Self, Sequence
 from pydantic import BaseModel, Field, field_validator
 from ..utils.hashing import generate_blake2b_hash_from_base64
 
+import io
+
 # Add webp and heic to the list of supported mime types
 mimetypes.add_type("image/webp", ".webp")
 mimetypes.add_type("image/heic", ".heic")
@@ -85,8 +87,17 @@ class OCR(BaseModel):
 
 
 class MIMEData(BaseModel):
-    filename: str = Field(description="The filename of the file", examples=["file.pdf", "image.png", "data.txt"])
-    url: str = Field(description="The URL of the file in base64 format", examples=["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."])
+    filename: str = Field(
+        description="The filename of the file",
+        examples=["file.pdf", "image.png", "data.txt"]
+    )
+    url: str = Field(
+        description="The URL of the file in base64 format",
+        examples=["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."]
+    )
+
+    # Internal resource
+    _buffer: Optional[io.BytesIO] = None
 
     @property
     def id(self) -> str:
@@ -99,18 +110,14 @@ class MIMEData(BaseModel):
     @property
     def content(self) -> str:
         if self.url.startswith("data:"):
-            # Extract base64 content from data URL
-            base64_content = self.url.split(",")[1]
-            return base64_content
-        else:
-            raise ValueError("Content is not available for this file")
+            return self.url.split(",")[1]
+        raise ValueError("Content is not available for this file")
 
     @property
     def mime_type(self) -> str:
         if self.url.startswith("data:"):
             return self.url.split(";")[0].split(":")[1]
-        else:
-            return mimetypes.guess_type(self.filename)[0] or "application/octet-stream"
+        return mimetypes.guess_type(self.filename)[0] or "application/octet-stream"
 
     @property
     def unique_filename(self) -> str:
@@ -118,22 +125,57 @@ class MIMEData(BaseModel):
 
     @property
     def size(self) -> int:
-        # size in bytes
         return len(base64.b64decode(self.content))
+
+    # def to_bytesio(self) -> io.BytesIO:
+    #     """Decode base64 and return a BytesIO (without leaking references)."""
+    #     buf = io.BytesIO(base64.b64decode(self.content))
+    #     buf.seek(0)
+    #     return buf
+
+    # # -------- Context manager interface --------
+
+    # def __enter__(self) -> io.BytesIO:
+    #     """Opens the internal buffer so you can use it like a file."""
+    #     if self._buffer is None:
+    #         self._buffer = self.to_bytesio()
+    #     return self._buffer
+
+    # def __exit__(self, exc_type, exc_val, exc_tb):
+    #     """Close and cleanup the buffer."""
+    #     if self._buffer is not None:
+    #         self._buffer.close()
+    #         self._buffer = None
+
+    # # -------- Optional convenience methods --------
+
+    # def open(self) -> io.BytesIO:
+    #     """Manual open without `with`."""
+    #     return self.__enter__()
+
+    # def close(self):
+    #     """Manual close."""
+    #     self.__exit__(None, None, None)
 
     def __str__(self) -> str:
         truncated_url = self.url[:50] + "..." if len(self.url) > 50 else self.url
-        # truncated_content = self.content[:50] + '...' if len(self.content) > 50 else self.content
-        return f"MIMEData(filename='{self.filename}', url='{truncated_url}', mime_type='{self.mime_type}', size='{self.size}', extension='{self.extension}')"
+        return (
+            f"MIMEData(filename='{self.filename}', "
+            f"url='{truncated_url}', "
+            f"mime_type='{self.mime_type}', "
+            f"size='{self.size}', "
+            f"extension='{self.extension}')"
+        )
 
     def __repr__(self) -> str:
         return self.__str__()
 
 
+
 class BaseMIMEData(MIMEData):
     @classmethod
     def model_validate(
-        cls, obj: Any, *, strict: bool | None = None, from_attributes: bool | None = None, context: Any | None = None, by_alias: bool | None = None, by_name: bool | None = None
+        cls, obj: Any, *, strict: bool | None = None, extra: Any | None = None, from_attributes: bool | None = None, context: Any | None = None, by_alias: bool | None = None, by_name: bool | None = None
     ) -> Self:
         if isinstance(obj, MIMEData):
             # Convert MIMEData instance to dict
@@ -153,7 +195,7 @@ class BaseMIMEData(MIMEData):
                 else:
                     # If there's no comma (unexpected format), truncate to 996 chars (multiple of 4)
                     obj["url"] = obj["url"][:996]
-        return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name)
+        return super().model_validate(obj, strict=strict, extra=extra, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name)
 
     @property
     def id(self) -> str:
