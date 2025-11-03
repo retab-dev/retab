@@ -37,7 +37,10 @@ export const ZBaseEmailData = z.lazy(() => (z.object({
 })));
 export type BaseEmailData = z.infer<typeof ZBaseEmailData>;
 
-export const ZBaseMIMEData = z.lazy(() => (ZMIMEData.schema).merge(z.object({
+export const ZBaseMIMEData = z.lazy(() => (z.object({
+    id: z.string(),
+    filename: z.string(),
+    mime_type: z.string(),
 })));
 export type BaseMIMEData = z.infer<typeof ZBaseMIMEData>;
 
@@ -165,6 +168,11 @@ export const ZListMetadata = z.lazy(() => (z.object({
     after: z.string().nullable().optional(),
 })));
 export type ListMetadata = z.infer<typeof ZListMetadata>;
+
+export const ZExtractionSettings = z.lazy(() => (ZInferenceSettings.schema).merge(z.object({
+    json_schema: z.record(z.string(), z.any()),
+})));
+export type ExtractionSettings = z.infer<typeof ZExtractionSettings>;
 
 export const ZInferenceSettings = z.lazy(() => (z.object({
     model: z.string().default("gpt-5-mini"),
@@ -396,8 +404,8 @@ export const ZUpdateTemplateRequest = z.lazy(() => (z.object({
 export type UpdateTemplateRequest = z.infer<typeof ZUpdateTemplateRequest>;
 
 export const ZBlobDict = z.lazy(() => (z.object({
-    display_name: z.string().nullable().optional(),
     data: z.instanceof(Uint8Array).nullable().optional(),
+    display_name: z.string().nullable().optional(),
     mime_type: z.string().nullable().optional(),
 })));
 export type BlobDict = z.infer<typeof ZBlobDict>;
@@ -470,16 +478,16 @@ export const ZParsedChatCompletionMessage = z.lazy(() => (ZChatCompletionMessage
 export type ParsedChatCompletionMessage = z.infer<typeof ZParsedChatCompletionMessage>;
 
 export const ZPartDict = z.lazy(() => (z.object({
-    video_metadata: ZVideoMetadataDict.nullable().optional(),
-    thought: z.boolean().nullable().optional(),
-    inline_data: ZBlobDict.nullable().optional(),
-    file_data: ZFileDataDict.nullable().optional(),
-    thought_signature: z.instanceof(Uint8Array).nullable().optional(),
     function_call: ZFunctionCallDict.nullable().optional(),
     code_execution_result: ZCodeExecutionResultDict.nullable().optional(),
     executable_code: ZExecutableCodeDict.nullable().optional(),
+    file_data: ZFileDataDict.nullable().optional(),
     function_response: ZFunctionResponseDict.nullable().optional(),
+    inline_data: ZBlobDict.nullable().optional(),
     text: z.string().nullable().optional(),
+    thought: z.boolean().nullable().optional(),
+    thought_signature: z.instanceof(Uint8Array).nullable().optional(),
+    video_metadata: ZVideoMetadataDict.nullable().optional(),
 })));
 export type PartDict = z.infer<typeof ZPartDict>;
 
@@ -675,7 +683,6 @@ export type ConsensusModel = z.infer<typeof ZConsensusModel>;
 
 export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    documents: z.array(ZMIMEData).default([]),
     image_resolution_dpi: z.number().default(192),
     model: z.string(),
     json_schema: z.record(z.string(), z.any()),
@@ -685,7 +692,6 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     stream: z.boolean().default(false),
     seed: z.number().nullable().optional(),
     store: z.boolean().default(true),
-    need_validation: z.boolean().default(false),
     modality: z.union([z.literal("text"), z.literal("image"), z.literal("native")]).default("native"),
     parallel_ocr_keys: z.record(z.string(), z.string()).nullable().optional(),
 })));
@@ -936,20 +942,6 @@ export const ZParsedFunctionToolCall = z.lazy(() => (ZChatCompletionMessageFunct
 })));
 export type ParsedFunctionToolCall = z.infer<typeof ZParsedFunctionToolCall>;
 
-export const ZVideoMetadataDict = z.lazy(() => (z.object({
-    fps: z.number().nullable().optional(),
-    end_offset: z.string().nullable().optional(),
-    start_offset: z.string().nullable().optional(),
-})));
-export type VideoMetadataDict = z.infer<typeof ZVideoMetadataDict>;
-
-export const ZFileDataDict = z.lazy(() => (z.object({
-    display_name: z.string().nullable().optional(),
-    file_uri: z.string().nullable().optional(),
-    mime_type: z.string().nullable().optional(),
-})));
-export type FileDataDict = z.infer<typeof ZFileDataDict>;
-
 export const ZFunctionCallDict = z.lazy(() => (z.object({
     id: z.string().nullable().optional(),
     args: z.record(z.string(), z.any()).nullable().optional(),
@@ -969,6 +961,13 @@ export const ZExecutableCodeDict = z.lazy(() => (z.object({
 })));
 export type ExecutableCodeDict = z.infer<typeof ZExecutableCodeDict>;
 
+export const ZFileDataDict = z.lazy(() => (z.object({
+    display_name: z.string().nullable().optional(),
+    file_uri: z.string().nullable().optional(),
+    mime_type: z.string().nullable().optional(),
+})));
+export type FileDataDict = z.infer<typeof ZFileDataDict>;
+
 export const ZFunctionResponseDict = z.lazy(() => (z.object({
     will_continue: z.boolean().nullable().optional(),
     scheduling: z.any().nullable().optional(),
@@ -978,6 +977,13 @@ export const ZFunctionResponseDict = z.lazy(() => (z.object({
     response: z.record(z.string(), z.any()).nullable().optional(),
 })));
 export type FunctionResponseDict = z.infer<typeof ZFunctionResponseDict>;
+
+export const ZVideoMetadataDict = z.lazy(() => (z.object({
+    end_offset: z.string().nullable().optional(),
+    fps: z.number().nullable().optional(),
+    start_offset: z.string().nullable().optional(),
+})));
+export type VideoMetadataDict = z.infer<typeof ZVideoMetadataDict>;
 
 export const ZResponseError = z.lazy(() => (z.object({
     code: z.union([z.literal("server_error"), z.literal("rate_limit_exceeded"), z.literal("invalid_prompt"), z.literal("vector_store_timeout"), z.literal("invalid_image"), z.literal("invalid_image_format"), z.literal("invalid_base64_image"), z.literal("invalid_image_url"), z.literal("image_too_large"), z.literal("image_too_small"), z.literal("image_parse_error"), z.literal("image_content_policy_violation"), z.literal("invalid_image_mode"), z.literal("image_file_too_large"), z.literal("unsupported_image_media_type"), z.literal("empty_image_file"), z.literal("failed_to_download_image"), z.literal("image_file_not_found")]),
