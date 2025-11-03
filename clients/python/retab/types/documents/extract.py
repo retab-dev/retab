@@ -23,8 +23,7 @@ from ..modality import Modality
 
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
-    document: MIMEData = Field(default=None, description="Document to be analyzed", deprecated=True)  # type: ignore
-    documents: list[MIMEData] = Field(default=[], description="Documents to be analyzed (preferred over document)")
+    document: MIMEData = Field(..., description="Document to be analyzed")
     image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM", ge=96, le=300)
     model: str = Field(..., description="Model used for chat completion")
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
@@ -37,7 +36,6 @@ class DocumentExtractRequest(BaseModel):
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
     store: bool = Field(default=True, description="If true, the extraction will be stored in the database")
-    need_validation: bool = Field(default=False, description="If true, the extraction will be validated against the schema")
     modality: Modality = Field(default="native", description="The modality of the document to be analyzed")
     parallel_ocr_keys: Optional[dict[str, str]] = Field(default=None, description="If set, keys to be used for the extraction of long lists of data using Parallel OCR", examples=[{"properties": "ID", "products": "identity.id"}])
 
@@ -47,28 +45,6 @@ class DocumentExtractRequest(BaseModel):
         if v > 1 and info.data.get("temperature") == 0:
             raise ValueError("n_consensus greater than 1 but temperature is 0")
         return v
-
-    @model_validator(mode="before")
-    def validate_document_or_documents(cls, data: Any) -> Any:
-        # Handle both dict and model instance cases
-        if isinstance(data, dict):
-            if data.get("documents"):  # If documents is set, it has higher priority than document
-                data["document"] = data["documents"][0]
-            elif data.get("document"):
-                data["documents"] = [data["document"]]
-            else:
-                raise ValueError("document or documents must be provided")
-        else:
-            # Handle model instance case
-            document = getattr(data, "document", None)
-            documents = getattr(data, "documents", None)
-            if documents:
-                setattr(data, "document", documents[0])
-            elif document:
-                setattr(data, "documents", [document])
-            else:
-                raise ValueError("document or documents must be provided")
-        return data
 
 
 class ConsensusModel(BaseModel):

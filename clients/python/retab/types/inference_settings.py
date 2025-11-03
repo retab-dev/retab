@@ -2,6 +2,7 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel, Field, ConfigDict
 from .modality import Modality
 from .browser_canvas import BrowserCanvas
+from typing import Any
 
 class InferenceSettings(BaseModel):
     model: str = "gpt-5-mini"
@@ -15,3 +16,7 @@ class InferenceSettings(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+
+class ExtractionSettings(InferenceSettings):
+    json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
+    
