@@ -1,8 +1,7 @@
 import base64
-import datetime
 import json
 from typing import Any, Literal, Optional
-
+import datetime
 
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.chat.chat_completion import ChatCompletion
@@ -17,7 +16,7 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
-from ..standards import ErrorDetail, StreamingBaseModel
+from ..standards import StreamingBaseModel
 from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel, unflatten_dict
 from ..modality import Modality
 
@@ -55,31 +54,16 @@ class ConsensusModel(BaseModel):
     )
 
 
-# For location of fields in the document (OCR)
-class FieldLocation(BaseModel):
-    label: str = Field(..., description="The label of the field")
-    value: str = Field(..., description="The extracted value of the field")
-    quote: str = Field(..., description="The quote of the field (verbatim from the document)")
-    file_id: str | None = Field(default=None, description="The ID of the file")
-    page: int | None = Field(default=None, description="The page number of the field (1-indexed)")
-    bbox_normalized: tuple[float, float, float, float] | None = Field(default=None, description="The normalized bounding box of the field")
-    score: float | None = Field(default=None, description="The score of the field")
-    match_level: Literal["token", "line", "block", "token-windows"] | None = Field(default=None, description="The level of the match (token, line, block, token-windows)")
-
-
 class RetabParsedChoice(ParsedChoice):
     # Adaptable ParsedChoice that allows None for the finish_reason
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
-    field_locations: dict[str, FieldLocation] | None = Field(default=None, description="The locations of the fields in the document, if available")
     key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
 
 
 LikelihoodsSource = Literal["consensus", "log_probs"]
 
-
 class RetabParsedChatCompletion(ParsedChatCompletion):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
-    
     extraction_id: str | None = None
     choices: list[RetabParsedChoice]  # type: ignore
     # Additional metadata fields
@@ -87,24 +71,8 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
         default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
     )
 
-    requires_human_review: bool = Field(default=False, description="If true, the extraction requires human review")
-    schema_validation_error: ErrorDetail | None = None
-    # Timestamps
-    request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
-    first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
-    last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
+    requires_human_review: bool = Field(default=False, description="Flag indicating if the extraction requires human review")
 
- 
-
-
-class UiResponse(Response):
-    extraction_id: str | None = None
-    # Additional metadata fields (UIForm)
-    likelihoods: Optional[dict[str, Any]] = Field(
-        default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
-    )
-    schema_validation_error: ErrorDetail | None = None
-    # Timestamps
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
@@ -163,7 +131,6 @@ class LogExtractionRequest(BaseModel):
 
 
 class LogExtractionResponse(BaseModel):
-    extraction_id: str | None = None  # None only in case of error
     status: Literal["success", "error"]
     error_message: str | None = None
 
@@ -184,7 +151,6 @@ class RetabParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     flat_likelihoods: dict[str, float] = {}
     flat_parsed: dict[str, Any] = {}
     flat_deleted_keys: list[str] = []
-    field_locations: dict[str, list[FieldLocation]] | None = Field(default=None, description="The locations of the fields in the document, if available")
     is_valid_json: bool = False
     key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
 
@@ -194,15 +160,12 @@ class RetabParsedChoiceChunk(ChoiceChunk):
 
 
 class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
-    extraction_id: str | None = None
     choices: list[RetabParsedChoiceChunk]  # type: ignore
-    schema_validation_error: ErrorDetail | None = None
-    # Timestamps
+
+    extraction_id: str | None = None
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
-
-   
 
     def chunk_accumulator(self, previous_cumulated_chunk: "RetabParsedChatCompletionChunk | None" = None) -> "RetabParsedChatCompletionChunk":
         """
@@ -225,7 +188,6 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         # Get the current chunk missing content, flat_deleted_keys and is_valid_json
         acc_flat_deleted_keys = [safe_get_delta(self, i).flat_deleted_keys for i in range(max_choices)]
         acc_is_valid_json = [safe_get_delta(self, i).is_valid_json for i in range(max_choices)]
-        acc_field_locations = [safe_get_delta(self, i).field_locations for i in range(max_choices)]  # This is only present in the last chunk.
         # Delete from previous_cumulated_chunk.choices[i].delta.flat_parsed the keys that are in safe_get_delta(self, i).flat_deleted_keys
         for i in range(max_choices):
             previous_delta = safe_get_delta(previous_cumulated_chunk, i)
@@ -239,12 +201,8 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         acc_key_mapping = [safe_get_delta(previous_cumulated_chunk, i).key_mapping or safe_get_delta(self, i).key_mapping for i in range(max_choices)]
 
         acc_content = [(safe_get_delta(previous_cumulated_chunk, i).content or "") + (safe_get_delta(self, i).content or "") for i in range(max_choices)]
-        first_token_at = self.first_token_at
-        last_token_at = self.last_token_at
-        request_at = self.request_at
 
         return RetabParsedChatCompletionChunk(
-            extraction_id=self.extraction_id,
             id=self.id,
             created=self.created,
             model=self.model,
@@ -257,7 +215,6 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         flat_parsed=acc_flat_parsed[i],
                         flat_likelihoods=acc_flat_likelihoods[i],
                         flat_deleted_keys=acc_flat_deleted_keys[i],
-                        field_locations=acc_field_locations[i],
                         is_valid_json=acc_is_valid_json[i],
                         key_mapping=acc_key_mapping[i],
                     ),
@@ -265,10 +222,10 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                 )
                 for i in range(max_choices)
             ],
-            schema_validation_error=self.schema_validation_error,
-            request_at=request_at,
-            first_token_at=first_token_at,
-            last_token_at=last_token_at,
+            extraction_id=self.extraction_id,
+            request_at=self.request_at,
+            first_token_at=self.first_token_at,
+            last_token_at=self.last_token_at,
         )
 
     def to_completion(
@@ -289,8 +246,11 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         final_likelihoods = unflatten_dict(override_final_flat_likelihoods)
 
         return RetabParsedChatCompletion(
-            extraction_id=self.extraction_id,
             id=self.id,
+            extraction_id=self.extraction_id,
+            request_at=self.request_at,
+            first_token_at=self.first_token_at,
+            last_token_at=self.last_token_at,
             created=self.created,
             model=self.model,
             object="chat.completion",
@@ -310,9 +270,6 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
             ],
             likelihoods=final_likelihoods,
             usage=self.usage,
-            request_at=self.request_at,
-            first_token_at=self.first_token_at,
-            last_token_at=self.last_token_at,
         )
 
 
