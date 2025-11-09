@@ -61,6 +61,7 @@ class Project(BaseModel):
     is_published: bool = False
     #computation_spec: ComputationSpec = Field(default_factory=ComputationSpec, description="The computation spec of the project")
     functions: list[Function] = Field(default_factory=list, description="The functions of the project")
+    is_schema_generated: bool = Field(default=True, description="Whether the schema has been generated for the project")
 
 class StoredProject(Project):
     """Project model with organization_id for database storage"""
