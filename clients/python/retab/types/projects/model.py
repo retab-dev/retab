@@ -15,24 +15,8 @@ default_inference_settings = InferenceSettings(
     browser_canvas="A4",
     n_consensus=1,
 )
-class Function(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: "function_" + nanoid.generate())
-    path: str
-    code: Optional[str] = Field(default=None, description="The code of the function")
-    function_registry_id: Optional[str] = Field(default=None, description="The function registry id of the function")
 
-    # @model_validator(mode="before")
-    # @classmethod
-    # def validate_function(cls, data: Any):
-    #     if isinstance(data, dict):
-    #         code = data.get("code")
-    #         function_registry_id = data.get("function_registry_id")
-    #         if code is None and function_registry_id is None:
-    #             raise ValueError("Either code or function_registry_id must be provided")
-    #     return data
-
-class FunctionHilCriterion(BaseModel):
+class HilCriterion(BaseModel):
     path: str
     agentic_fix: bool = Field(default=False, description="Whether to use agentic fix for the criterion")
 
@@ -40,7 +24,7 @@ class HumanInTheLoopParams(BaseModel):
     enabled: bool = Field(default=False)
     url: str = Field(default="", description="The URL of the human in the loop endpoint")
     headers: dict[str, str] = Field(default_factory=dict, description="The headers to send to the human in the loop endpoint")
-    criteria: list[FunctionHilCriterion] = Field(default_factory=list, description="The criteria to use for the human in the loop")
+    criteria: list[HilCriterion] = Field(default_factory=list, description="The criteria to use for the human in the loop")
 
 class PublishedConfig(BaseModel):
     inference_settings: InferenceSettings = default_inference_settings
@@ -50,7 +34,7 @@ class PublishedConfig(BaseModel):
 class DraftConfig(BaseModel):
     inference_settings: InferenceSettings = default_inference_settings
     json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the builder config")
-    human_in_the_loop_criteria: list[FunctionHilCriterion] = Field(default_factory=list)
+    human_in_the_loop_criteria: list[HilCriterion] = Field(default_factory=list)
 class Project(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: "project_" + nanoid.generate())
@@ -60,7 +44,6 @@ class Project(BaseModel):
     draft_config: DraftConfig
     is_published: bool = False
     #computation_spec: ComputationSpec = Field(default_factory=ComputationSpec, description="The computation spec of the project")
-    functions: list[Function] = Field(default_factory=list, description="The functions of the project")
     is_schema_generated: bool = Field(default=True, description="Whether the schema has been generated for the project")
 
 class StoredProject(Project):
@@ -80,4 +63,3 @@ class PatchProjectRequest(BaseModel):
     draft_config: Optional[DraftConfig] = Field(default=None, description="The draft config of the project")
     is_published: Optional[bool] = Field(default=None, description="The published status of the project")
     #computation_spec: Optional[ComputationSpec] = Field(default=None, description="The computation spec of the project")
-    functions: Optional[list[Function]] = Field(default=None, description="The functions of the project")

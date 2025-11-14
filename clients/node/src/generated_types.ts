@@ -256,9 +256,9 @@ export const ZProject = z.lazy(() => (z.object({
 export type Project = z.infer<typeof ZProject>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({"model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "browser_canvas": "A4", "n_consensus": 1, "modality": "native"}),
+    inference_settings: ZInferenceSettings.default({ "model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "browser_canvas": "A4", "n_consensus": 1, "modality": "native" }),
     json_schema: z.record(z.string(), z.any()),
-    human_in_the_loop_criteria: z.array(ZFunctionHilCriterion),
+    human_in_the_loop_criteria: z.array(ZHilCriterion),
 })));
 export type DraftConfig = z.infer<typeof ZDraftConfig>;
 
@@ -270,22 +270,22 @@ export const ZFunction = z.lazy(() => (z.object({
 })));
 export type Function = z.infer<typeof ZFunction>;
 
-export const ZFunctionHilCriterion = z.lazy(() => (z.object({
+export const ZHilCriterion = z.lazy(() => (z.object({
     path: z.string(),
     agentic_fix: z.boolean().default(false),
 })));
-export type FunctionHilCriterion = z.infer<typeof ZFunctionHilCriterion>;
+export type HilCriterion = z.infer<typeof ZHilCriterion>;
 
 export const ZHumanInTheLoopParams = z.lazy(() => (z.object({
     enabled: z.boolean().default(false),
     url: z.string().default(""),
     headers: z.record(z.string(), z.string()),
-    criteria: z.array(ZFunctionHilCriterion),
+    criteria: z.array(ZHilCriterion),
 })));
 export type HumanInTheLoopParams = z.infer<typeof ZHumanInTheLoopParams>;
 
 export const ZPublishedConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({"model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "browser_canvas": "A4", "n_consensus": 1, "modality": "native"}),
+    inference_settings: ZInferenceSettings.default({ "model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "browser_canvas": "A4", "n_consensus": 1, "modality": "native" }),
     json_schema: z.record(z.string(), z.any()),
     human_in_the_loop_params: ZHumanInTheLoopParams,
     origin: z.string().default("manual"),
@@ -713,7 +713,7 @@ export const ZLogExtractionRequest = z.lazy(() => (z.object({
     messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
     openai_messages: z.array(z.union([ZChatCompletionDeveloperMessageParam, ZChatCompletionSystemMessageParam, ZChatCompletionUserMessageParam, ZChatCompletionAssistantMessageParam, ZChatCompletionToolMessageParam, ZChatCompletionFunctionMessageParam])).nullable().optional(),
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZResponseInputParamMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZResponseInputParamComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZResponseInputParamFunctionCallOutput, ZResponseReasoningItemParam, ZResponseInputParamImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZResponseInputParamLocalShellCall, ZResponseInputParamLocalShellCallOutput, ZResponseInputParamMcpListTools, ZResponseInputParamMcpApprovalRequest, ZResponseInputParamMcpApprovalResponse, ZResponseInputParamMcpCall, ZResponseCustomToolCallOutputParam, ZResponseCustomToolCallParam, ZResponseInputParamItemReference])).nullable().optional(),
-    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
+    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
