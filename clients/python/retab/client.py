@@ -10,7 +10,7 @@ import backoff.types
 import httpx
 import truststore
 
-from .resources import documents, models, schemas, projects
+from .resources import documents, models, schemas, projects, extractions
 from .types.standards import PreparedRequest, FieldUnset
 
 
@@ -184,6 +184,7 @@ class Retab(BaseRetab):
 
         self.client = httpx.Client(timeout=self.timeout)
         self.projects = projects.Projects(client=self)
+        self.extractions = extractions.Extractions(client=self)
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
@@ -480,6 +481,7 @@ class AsyncRetab(BaseRetab):
         self.client = httpx.AsyncClient(timeout=self.timeout)
 
         self.projects = projects.AsyncProjects(client=self)
+        self.extractions = extractions.AsyncExtractions(client=self)
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
