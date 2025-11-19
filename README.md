@@ -103,9 +103,8 @@ from retab import Retab
 client = Retab()
 
 # Submit a single document
-completion = client.deployments.extract(
+completion = client.projects.extract(
     project_id="eval_***",
-    iteration_id="base-configuration", # or the configuration that gave you the best precision score
     document="path/to/document.pdf"
 )
 
