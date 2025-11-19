@@ -37,6 +37,7 @@ class DocumentExtractRequest(BaseModel):
     store: bool = Field(default=True, description="If true, the extraction will be stored in the database")
     modality: Modality = Field(default="native", description="The modality of the document to be analyzed")
     parallel_ocr_keys: Optional[dict[str, str]] = Field(default=None, description="If set, keys to be used for the extraction of long lists of data using Parallel OCR", examples=[{"properties": "ID", "products": "identity.id"}])
+    collection_id: Optional[str] = Field(default=None, description="Collection ID to associate with this extraction")
 
     # Add a model validator that rejects n_consensus > 1 if temperature is 0
     @field_validator("n_consensus")
