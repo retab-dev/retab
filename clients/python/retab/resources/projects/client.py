@@ -89,6 +89,8 @@ class ProjectsMixin:
         n_consensus: int | None = None,
         seed: int | None = None,
         store: bool = True,
+        collection_id: str | None = None,
+        extraction_id: str | None = None,
         **extra_form: Any,
     ) -> PreparedRequest:
         """Prepare a request to extract documents from a project.
@@ -124,6 +126,8 @@ class ProjectsMixin:
             "n_consensus": n_consensus,
             "seed": seed,
             "store": store,
+            "collection_id": collection_id,
+            "extraction_id": extraction_id,
         }
         if extra_form:
             form_data.update(extra_form)
