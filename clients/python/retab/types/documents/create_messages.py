@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 from ...utils.display import count_image_tokens, count_text_tokens
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
-from ..browser_canvas import BrowserCanvas
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 
@@ -23,9 +22,6 @@ class DocumentCreateMessageRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     document: MIMEData = Field(description="The document to load.")
     image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM")
-    browser_canvas: BrowserCanvas = Field(
-        default="A4", description="Sets the size of the browser canvas for rendering documents in browser-based processing. Choose a size that matches the document type."
-    )
     model: str = Field(default="gemini-2.5-flash", description="The model to use for the document.")
 
 class DocumentCreateInputRequest(DocumentCreateMessageRequest):
@@ -55,11 +51,12 @@ class DocumentMessage(BaseModel):
         for msg in self.messages:
             role = msg.get("role", "user")
             msg_tokens = 0
+            content = msg.get("content")
 
-            if isinstance(msg["content"], str):
-                msg_tokens = count_text_tokens(msg["content"])
-            elif isinstance(msg["content"], list):
-                for content_item in msg["content"]:
+            if isinstance(content, str):
+                msg_tokens = count_text_tokens(content)
+            elif isinstance(content, list):
+                for content_item in content:
                     if isinstance(content_item, str):
                         msg_tokens += count_text_tokens(content_item)
                     elif isinstance(content_item, dict):
@@ -104,11 +101,12 @@ class DocumentMessage(BaseModel):
         results: list[str | PIL.Image.Image] = []
 
         for msg in self.messages:
-            if isinstance(msg["content"], str):
-                results.append(msg["content"])
+            content = msg.get("content")
+            if isinstance(content, str):
+                results.append(content)
                 continue
-            assert isinstance(msg["content"], list), "content must be a list or a string"
-            for content_item in msg["content"]:
+            assert isinstance(content, list), "content must be a list or a string"
+            for content_item in content:
                 if isinstance(content_item, str):
                     results.append(content_item)
                 else:

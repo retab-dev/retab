@@ -17,7 +17,6 @@ const TEST_TIMEOUT = 60000;
 
 type ClientType = "sync" | "async";
 type Modality = "text" | "native";
-type BrowserCanvas = "A3" | "A4" | "A5";
 
 function validateCreateMessagesResponse(response: DocumentMessage | null): void {
     // Assert the instance
@@ -121,99 +120,12 @@ describe('Retab SDK Create Messages Tests', () => {
             const response = await client.documents.create_messages({
                 document: document,
                 image_resolution_dpi: 96,
-                browser_canvas: "A4",
             });
 
             validateCreateMessagesResponse(response);
         }, { timeout: TEST_TIMEOUT });
     });
 
-    describe('Create Messages with Idempotency', () => {
-        test('test_create_messages_with_idempotency', async () => {
-            const idempotencyKey = generateId();
-            const document = bookingConfirmationFilePath1;
-            const modality: Modality = "native";
-
-            // First request
-            const responseInitial = await client.documents.create_messages({
-                document: document,
-            });
-
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const t0 = Date.now();
-
-            // Second request with same idempotency key
-            const responseSecond = await client.documents.create_messages({
-                document: document,
-            });
-
-            const t1 = Date.now();
-
-            // Verify both responses
-            validateCreateMessagesResponse(responseInitial);
-            validateCreateMessagesResponse(responseSecond);
-
-            // Should be fast due to idempotency
-            expect(t1 - t0).toBeLessThan(10000); // Should take less than 10 seconds
-
-            // Messages should be identical
-            expect(responseInitial.messages).toEqual(responseSecond.messages);
-        }, { timeout: TEST_TIMEOUT });
-    });
-
-    describe('Create Messages Error Scenarios', () => {
-        test('test_create_messages_error_missing_document', async () => {
-            const idempotencyKey = generateId();
-            const document = "/nonexistent/file.pdf";
-            const modality: Modality = "native";
-
-            let response1: any = null;
-            let response2: any = null;
-            let raisedException1: Error | null = null;
-            let raisedException2: Error | null = null;
-
-            // First request attempt
-            try {
-                response1 = await client.documents.create_messages({
-                    document: document,
-                });
-            } catch (e) {
-                raisedException1 = e as Error;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const t0 = Date.now();
-
-            // Second request attempt with same idempotency key
-            try {
-                response2 = await client.documents.create_messages({
-                    document: document,
-                });
-            } catch (e) {
-                raisedException2 = e as Error;
-            }
-
-            const t1 = Date.now();
-            expect(t1 - t0).toBeLessThan(10000); // Should take less than 10 seconds
-
-            // Verify that both requests behaved consistently (idempotent behavior)
-            if (raisedException1 !== null) {
-                expect(raisedException2).not.toBeNull();
-                expect(response1).toBeNull();
-                expect(response2).toBeNull();
-                // Verify that both exceptions are of the same type
-                expect(raisedException1.constructor.name).toBe(raisedException2!.constructor.name);
-            } else {
-                // If no exception was raised, both responses should be successful and identical
-                expect(raisedException2).toBeNull();
-                expect(response1).not.toBeNull();
-                expect(response2).not.toBeNull();
-                validateCreateMessagesResponse(response1);
-                validateCreateMessagesResponse(response2);
-                expect(response1.messages).toEqual(response2.messages);
-            }
-        }, { timeout: TEST_TIMEOUT });
-    });
 
     describe('Create Messages Different Modalities', () => {
         test('test_create_messages_different_modalities', async () => {
@@ -298,21 +210,6 @@ describe('Retab SDK Create Messages Tests', () => {
         }, { timeout: TEST_TIMEOUT });
     });
 
-    describe('Create Messages with Different Canvas Sizes', () => {
-        const canvasSizes: BrowserCanvas[] = ["A4", "A3", "A5"];
-
-        canvasSizes.forEach((canvas) => {
-            test(`test_create_messages_canvas_${canvas}`, async () => {
-                const response = await client.documents.create_messages({
-                    document: bookingConfirmationFilePath1,
-                    browser_canvas: canvas,
-                });
-
-                validateCreateMessagesResponse(response);
-                expect(response.messages.length).toBeGreaterThan(0);
-            }, { timeout: TEST_TIMEOUT });
-        });
-    });
 
     describe('Create Messages with Different DPI Settings', () => {
         const dpiValues = [72, 96, 150];

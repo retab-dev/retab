@@ -2,7 +2,6 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..mime import MIMEData, BaseMIMEData
-from ..browser_canvas import BrowserCanvas
 
 TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 
@@ -22,7 +21,6 @@ class ParseRequest(BaseModel):
     model: str = Field(default="gemini-2.5-flash", description="Model to use for parsing")
     table_parsing_format: TableParsingFormat = Field(default="html", description="Format for parsing tables")
     image_resolution_dpi: int = Field(default=192, description="DPI for image processing", ge=96, le=300)
-    browser_canvas: BrowserCanvas = Field(default="A4", description="Canvas size for document rendering")
 
 
 class ParseResult(BaseModel):

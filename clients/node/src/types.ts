@@ -91,19 +91,14 @@ export type JSONSchemaInput = z.input<typeof ZJSONSchema>;
 export type JSONSchema = z.output<(typeof ZJSONSchema)>;
 
 export const ZDocumentExtractRequest = z.object({
-    // Keep everything except stream; allow both document and documents on input
-    ...(({ stream, ...rest }) => rest)(generated.ZDocumentExtractRequest.schema.shape),
-    // Accept a single document and make documents optional with a default
-    document: ZMIMEData.optional(),
-    documents: z.array(ZMIMEData).default([]),
+    // Keep everything except stream and document from generated types
+    ...(({ stream, document, metadata, ...rest }) => rest)(generated.ZDocumentExtractRequest.schema.shape),
+    // Accept a single document (required)
+    document: ZMIMEData,
     // Normalize json_schema inputs (paths/zod instances)
     json_schema: ZJSONSchema,
-}).transform((input) => {
-    const { document, documents, ...rest } = input as any;
-    if (document && (!documents || documents.length === 0)) {
-        return { ...rest, documents: [document] };
-    }
-    return { ...rest, documents: documents || [] };
+    // Make metadata optional with empty object default
+    metadata: z.record(z.string(), z.string()).default({}),
 })
 export type DocumentExtractRequest = z.input<typeof ZDocumentExtractRequest>;
 

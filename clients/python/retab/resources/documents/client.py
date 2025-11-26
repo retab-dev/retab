@@ -14,7 +14,6 @@ from ...utils.stream_context_managers import as_async_context_manager, as_contex
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
-from ...types.browser_canvas import BrowserCanvas
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, FieldUnset
 from ...utils.json_schema import load_json_schema, unflatten_dict
@@ -26,8 +25,6 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -35,8 +32,6 @@ class BaseDocumentsMixin:
         loading_request_dict: dict[str, Any] = {"document": mime_document}
         if image_resolution_dpi is not FieldUnset:
             loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not FieldUnset:
-            loading_request_dict["browser_canvas"] = browser_canvas
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -44,7 +39,7 @@ class BaseDocumentsMixin:
 
         loading_request = DocumentCreateMessageRequest(**loading_request_dict)
         return PreparedRequest(
-            method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key
+            method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(mode="json", exclude_unset=True)
         )
 
     def _prepare_get_extraction(self, extraction_id: str) -> PreparedRequest:
@@ -61,8 +56,6 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -74,15 +67,13 @@ class BaseDocumentsMixin:
         }
         if image_resolution_dpi is not FieldUnset:
             loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not FieldUnset:
-            loading_request_dict["browser_canvas"] = browser_canvas
 
         # Merge any extra fields provided by the caller
         if extra_body:
             loading_request_dict.update(extra_body)
 
         loading_request = DocumentCreateInputRequest(**loading_request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/create_inputs", data=loading_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/documents/create_inputs", data=loading_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -102,8 +93,6 @@ class BaseDocumentsMixin:
         model: str,
         table_parsing_format: TableParsingFormat = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -116,50 +105,40 @@ class BaseDocumentsMixin:
             request_dict["table_parsing_format"] = table_parsing_format
         if image_resolution_dpi is not FieldUnset:
             request_dict["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not FieldUnset:
-            request_dict["browser_canvas"] = browser_canvas
 
         # Merge any extra fields provided by the caller
         if extra_body:
             request_dict.update(extra_body)
 
         parse_request = ParseRequest(**request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/parse", data=parse_request.model_dump(mode="json", exclude_unset=True), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url="/v1/documents/parse", data=parse_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_extract(
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None = None,
-        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        document: Path | str | IOBase | HttpUrl,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         stream: bool = FieldUnset,
         store: bool = FieldUnset,
-        idempotency_key: str | None = None,
+        metadata: dict[str, str] = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
         loaded_schema = load_json_schema(json_schema)
 
-        # Handle both single document and multiple documents
-        if document is not None and documents is not None:
-            raise ValueError("Cannot provide both 'document' and 'documents' parameters. Use either one.")
+        # Handle document parameter
+        if document is None:
+            raise ValueError("Must provide 'document' parameter.")
 
-        # Convert single document to documents list for consistency
-        if document is not None:
-            processed_documents = [prepare_mime_document(document)]
-        elif documents is not None:
-            processed_documents = [prepare_mime_document(doc) for doc in documents]
-        else:
-            raise ValueError("Must provide either 'document' or 'documents' parameter.")
+        processed_document = prepare_mime_document(document)
 
         # Build request dictionary with only provided fields
-        request_dict = {
+        request_dict: dict[str, Any] = {
             "json_schema": loaded_schema,
-            "documents": processed_documents,
+            "document": processed_document,
             "model": model,
         }
         if stream is not FieldUnset:
@@ -174,8 +153,8 @@ class BaseDocumentsMixin:
             request_dict["n_consensus"] = n_consensus
         if image_resolution_dpi is not FieldUnset:
             request_dict["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not FieldUnset:
-            request_dict["browser_canvas"] = browser_canvas
+        if metadata is not FieldUnset:
+            request_dict["metadata"] = metadata
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -186,7 +165,7 @@ class BaseDocumentsMixin:
 
         # Use the same URL as extractions.py for consistency when streaming
         url = "/v1/documents/extractions" if stream else "/v1/documents/extract"
-        return PreparedRequest(method="POST", url=url, data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True), idempotency_key=idempotency_key)
+        return PreparedRequest(method="POST", url=url, data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True))
 
 
 class Documents(SyncAPIResource, BaseDocumentsMixin):
@@ -199,8 +178,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> DocumentMessage:
         """
@@ -209,8 +186,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Args:
             document: The document to process. Can be a file path (Path or str) or a file-like object.
             image_resolution_dpi: Optional image resolution DPI.
-            browser_canvas: Optional browser canvas size.
-            idempotency_key: Optional idempotency key for the request
         Returns:
             DocumentMessage: The processed document message containing extracted content.
 
@@ -220,8 +195,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         request = self._prepare_create_messages(
             document=document,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            idempotency_key=idempotency_key,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -232,8 +205,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> DocumentMessage:
         """
@@ -243,8 +214,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document: The document to process. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             json_schema: The JSON schema to use for structuring the document content.
             image_resolution_dpi: Optional image resolution DPI.
-            browser_canvas: Optional browser canvas size.
-            idempotency_key: Optional idempotency key for the request
         Returns:
             DocumentMessage: The processed document message containing extracted content with schema context.
 
@@ -255,8 +224,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document=document,
             json_schema=json_schema,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            idempotency_key=idempotency_key,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -266,55 +233,48 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None = None,
-        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        document: Path | str | IOBase | HttpUrl,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
-        idempotency_key: str | None = None,
         store: bool = FieldUnset,
+        metadata: dict[str, str] = FieldUnset,
         **extra_body: Any,
     ) -> RetabParsedChatCompletion:
         """
-        Process one or more documents using the Retab API for structured data extraction.
+        Process a document using the Retab API for structured data extraction.
 
-        This method provides a direct interface to document extraction functionality,
-        intended to replace the current `.extractions.parse()` pattern.
+        This method provides a direct interface to document extraction functionality.
 
         Args:
             json_schema: JSON schema defining the expected data structure
             model: The AI model to use for processing
-            document: Single document to process (use either this or documents, not both)
-            documents: List of documents to process (use either this or document, not both)
+            document: Document to process (file path, URL, or file-like object)
             image_resolution_dpi: Optional image resolution DPI
-            browser_canvas: Optional browser canvas size
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data
             n_consensus: Number of consensus extractions to perform
-            idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
+            metadata: User-defined metadata to associate with this extraction
 
         Returns:
             RetabParsedChatCompletion: Parsed response from the API
 
         Raises:
-            ValueError: If neither document nor documents is provided, or if both are provided
+            ValueError: If document is not provided
             HTTPException: If the request fails
         """
         request = self._prepare_extract(
             json_schema=json_schema,
             model=model,
             document=document,
-            documents=documents,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             n_consensus=n_consensus,
             store=store,
-            idempotency_key=idempotency_key,
+            metadata=metadata,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -414,47 +374,37 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None = None,
-        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        document: Path | str | IOBase | HttpUrl,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
-        idempotency_key: str | None = None,
         store: bool = FieldUnset,
+        metadata: dict[str, str] = FieldUnset,
         **extra_body: Any,
     ) -> Generator[RetabParsedChatCompletion, None, None]:
         """
-        Process one or more documents using the Retab API with streaming enabled.
+        Process a document using the Retab API with streaming enabled.
 
         Args:
             json_schema: JSON schema defining the expected data structure
             model: The AI model to use for processing
-            document: Single document to process (use either this or documents, not both)
-            documents: List of documents to process (use either this or document, not both)
+            document: Document to process (file path, URL, or file-like object)
             image_resolution_dpi: Optional image resolution DPI.
-            browser_canvas: Optional browser canvas size.
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data.
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
-            idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
+            metadata: User-defined metadata to associate with this extraction
 
         Returns:
             Generator[RetabParsedChatCompletion]: Stream of parsed responses
         Raises:
-            ValueError: If neither document nor documents is provided, or if both are provided
+            ValueError: If document is not provided
             HTTPException: If the request fails
         Usage:
         ```python
-        # Single document
         with retab.documents.extract_stream(json_schema, model, document=document) as stream:
-            for response in stream:
-                print(response)
-
-        # Multiple documents
-        with retab.documents.extract_stream(json_schema, model, documents=[doc1, doc2]) as stream:
             for response in stream:
                 print(response)
         ```
@@ -462,16 +412,14 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         request = self._prepare_extract(
             json_schema=json_schema,
             document=document,
-            documents=documents,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
             model=model,
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             stream=True,
             n_consensus=n_consensus,
             store=store,
-            idempotency_key=idempotency_key,
+            metadata=metadata,
             **extra_body,
         )
         schema = load_json_schema(json_schema)
@@ -521,8 +469,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         model: str,
         table_parsing_format: TableParsingFormat = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> ParseResult:
         """
@@ -536,8 +482,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
             image_resolution_dpi: DPI for image processing. Defaults to 72.
-            browser_canvas: Canvas size for document rendering. Defaults to "A4".
-            idempotency_key: Optional idempotency key for the request.
 
         Returns:
             ParseResult: Parsed response containing document metadata, usage information, and page text content.
@@ -550,8 +494,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            idempotency_key=idempotency_key,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -569,8 +511,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> DocumentMessage:
         """
@@ -578,7 +518,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         Args:
             document: The document to process. Can be a file path (Path or str) or a file-like object.
-            idempotency_key: Idempotency key for request
         Returns:
             DocumentMessage: The processed document message containing extracted content.
 
@@ -588,8 +527,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         request = self._prepare_create_messages(
             document=document,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            idempotency_key=idempotency_key,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
@@ -600,8 +537,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> DocumentMessage:
         """
@@ -611,8 +546,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document: The document to process. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             json_schema: The JSON schema to use for structuring the document content.
             image_resolution_dpi: Optional image resolution DPI.
-            browser_canvas: Optional browser canvas size.
-            idempotency_key: Idempotency key for request
         Returns:
             DocumentMessage: The processed document message containing extracted content with schema context.
 
@@ -623,8 +556,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document=document,
             json_schema=json_schema,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            idempotency_key=idempotency_key,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
@@ -634,55 +565,48 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None = None,
-        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        document: Path | str | IOBase | HttpUrl,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
-        idempotency_key: str | None = None,
         store: bool = FieldUnset,
+        metadata: dict[str, str] = FieldUnset,
         **extra_body: Any,
     ) -> RetabParsedChatCompletion:
         """
-        Process one or more documents using the Retab API for structured data extraction asynchronously.
+        Process a document using the Retab API for structured data extraction asynchronously.
 
-        This method provides a direct interface to document extraction functionality,
-        intended to replace the current `.extractions.parse()` pattern.
+        This method provides a direct interface to document extraction functionality.
 
         Args:
             json_schema: JSON schema defining the expected data structure
             model: The AI model to use for processing
-            document: Single document to process (use either this or documents, not both)
-            documents: List of documents to process (use either this or document, not both)
+            document: Document to process (file path, URL, or file-like object)
             image_resolution_dpi: Optional image resolution DPI
-            browser_canvas: Optional browser canvas size
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data
             n_consensus: Number of consensus extractions to perform
-            idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
+            metadata: User-defined metadata to associate with this extraction
 
         Returns:
             RetabParsedChatCompletion: Parsed response from the API
 
         Raises:
-            ValueError: If neither document nor documents is provided, or if both are provided
+            ValueError: If document is not provided
             HTTPException: If the request fails
         """
         request = self._prepare_extract(
             json_schema=json_schema,
             model=model,
             document=document,
-            documents=documents,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             n_consensus=n_consensus,
             store=store,
-            idempotency_key=idempotency_key,
+            metadata=metadata,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
@@ -694,46 +618,36 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl | None = None,
-        documents: list[Path | str | IOBase | HttpUrl] | None = None,
+        document: Path | str | IOBase | HttpUrl,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
-        idempotency_key: str | None = None,
         store: bool = FieldUnset,
+        metadata: dict[str, str] = FieldUnset,
         **extra_body: Any,
     ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
         """
-        Extract structured data from one or more documents asynchronously with streaming.
+        Extract structured data from a document asynchronously with streaming.
 
         Args:
             json_schema: JSON schema defining the expected data structure.
             model: The AI model to use.
-            document: Single document to process (use either this or documents, not both)
-            documents: List of documents to process (use either this or document, not both)
+            document: Document to process (file path, URL, or file-like object)
             image_resolution_dpi: Optional image resolution DPI.
-            browser_canvas: Optional browser canvas size.
             temperature: Model temperature setting (0-1).
             reasoning_effort: The effort level for the model to reason about the input data.
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
-            idempotency_key: Idempotency key for request
             store: Whether to store the document in the Retab database
+            metadata: User-defined metadata to associate with this extraction
         Returns:
             AsyncGenerator[RetabParsedChatCompletion, None]: Stream of parsed responses.
         Raises:
-            ValueError: If neither document nor documents is provided, or if both are provided
+            ValueError: If document is not provided
 
         Usage:
         ```python
-        # Single document
         async with retab.documents.extract_stream(json_schema, model, document=document) as stream:
-            async for response in stream:
-                print(response)
-
-        # Multiple documents
-        async with retab.documents.extract_stream(json_schema, model, documents=[doc1, doc2]) as stream:
             async for response in stream:
                 print(response)
         ```
@@ -741,16 +655,14 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         request = self._prepare_extract(
             json_schema=json_schema,
             document=document,
-            documents=documents,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
             model=model,
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             stream=True,
             n_consensus=n_consensus,
             store=store,
-            idempotency_key=idempotency_key,
+            metadata=metadata,
             **extra_body,
         )
         schema = load_json_schema(json_schema)
@@ -800,8 +712,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         model: str,
         table_parsing_format: TableParsingFormat = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
-        idempotency_key: str | None = None,
         **extra_body: Any,
     ) -> ParseResult:
         """
@@ -815,8 +725,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
             image_resolution_dpi: DPI for image processing. Defaults to 96.
-            browser_canvas: Canvas size for document rendering. Defaults to "A4".
-            idempotency_key: Optional idempotency key for the request.
 
         Returns:
             ParseResult: Parsed response containing document metadata, usage information, and page text content.
@@ -829,8 +737,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
-            idempotency_key=idempotency_key,
             **extra_body,
         )
         response = await self._client._prepared_request(request)

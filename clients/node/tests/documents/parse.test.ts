@@ -26,7 +26,6 @@ type ResponseModeType = "parse";
 
 // Define the types based on the generated types
 type TableParsingFormat = "markdown" | "yaml" | "html" | "json";
-type BrowserCanvas = "A3" | "A4" | "A5";
 
 function validateParseResponse(response: ParseResult | null): void {
     // Assert the instance
@@ -66,7 +65,6 @@ async function baseTestParse(
     bookingConfirmationFilePath1: string,
     tableParsingFormat: TableParsingFormat = "html",
     imageResolutionDpi: number = 96,
-    browserCanvas: BrowserCanvas = "A4",
 ): Promise<void> {
     const document = bookingConfirmationFilePath1;
     let response: ParseResult | null = null;
@@ -77,7 +75,6 @@ async function baseTestParse(
             model: model,
             table_parsing_format: tableParsingFormat,
             image_resolution_dpi: imageResolutionDpi,
-            browser_canvas: browserCanvas,
         });
     } else if (clientType === "async") {
         // For TypeScript/Node.js, we don't have separate sync/async clients like Python
@@ -87,7 +84,6 @@ async function baseTestParse(
             model: model,
             table_parsing_format: tableParsingFormat,
             image_resolution_dpi: imageResolutionDpi,
-            browser_canvas: browserCanvas,
         });
     }
 
@@ -168,23 +164,6 @@ describe('Retab SDK Parse Tests', () => {
         });
     });
 
-    describe('Parse Browser Canvas', () => {
-        const canvasValues: BrowserCanvas[] = ["A4", "A3", "A5"];
-
-        canvasValues.forEach((canvas) => {
-            test(`test_parse_browser_canvas_${canvas}`, async () => {
-                const response = await client.documents.parse({
-                    document: bookingConfirmationFilePath1,
-                    model: "gemini-2.5-flash-lite",
-                    browser_canvas: canvas,
-                });
-
-                validateParseResponse(response);
-                expect(response!.text.length).toBeGreaterThan(0);
-            }, { timeout: TEST_TIMEOUT });
-        });
-    });
-
     describe('Parse Overload', () => {
         // Test multiple concurrent parse requests to verify system stability
         Array.from({ length: 5 }, (_, i) => i).forEach((requestNumber) => {
@@ -203,129 +182,6 @@ describe('Retab SDK Parse Tests', () => {
         });
     });
 
-    describe('Parse with Idempotency', () => {
-        test('test_parse_with_idempotency', async () => {
-            const idempotencyKey = generateId();
-            const model = "gemini-2.5-flash-lite";
-
-            // First request
-            const responseInitial = await client.documents.parse({
-                document: bookingConfirmationFilePath1,
-                model: model,
-                table_parsing_format: "html",
-                image_resolution_dpi: 96,
-                browser_canvas: "A4",
-            });
-
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const t0 = Date.now();
-
-            // Second request with same idempotency key
-            const responseSecond = await client.documents.parse({
-                document: bookingConfirmationFilePath1,
-                model: model,
-                table_parsing_format: "html",
-                image_resolution_dpi: 96,
-                browser_canvas: "A4",
-            });
-
-            const t1 = Date.now();
-            expect(t1 - t0).toBeLessThan(10000); // Should take less than 10 seconds
-
-            // Verify responses are identical
-            expect(responseInitial!.text).toBe(responseSecond!.text);
-            expect(responseInitial!.pages).toEqual(responseSecond!.pages);
-            expect(responseInitial!.usage.page_count).toBe(responseSecond!.usage.page_count);
-            expect(responseInitial!.usage.credits).toBe(responseSecond!.usage.credits);
-        }, { timeout: TEST_TIMEOUT });
-    });
-
-    describe('Parse Error Scenarios', () => {
-        const errorScenarios = [
-            "invalid_model",
-            "missing_document",
-            "invalid_dpi",
-            "invalid_canvas"
-        ];
-
-        errorScenarios.forEach((errorScenario) => {
-            test(`test_parse_idempotency_error_${errorScenario}`, async () => {
-                const idempotencyKey = generateId();
-
-                let model: any = "gemini-2.5-flash-lite";
-                let document = bookingConfirmationFilePath1;
-                let tableParsingFormat: TableParsingFormat = "html";
-                let imageResolutionDpi = 96;
-                let browserCanvas: any = "A4";
-
-                // Set up error scenarios
-                if (errorScenario === "invalid_model") {
-                    model = "invalid-model-name";
-                } else if (errorScenario === "missing_document") {
-                    document = "/nonexistent/file.pdf";
-                } else if (errorScenario === "invalid_dpi") {
-                    imageResolutionDpi = -1; // Invalid DPI
-                } else if (errorScenario === "invalid_canvas") {
-                    browserCanvas = "InvalidCanvas";
-                }
-
-                let response1: any = null;
-                let response2: any = null;
-                let raisedException1: Error | null = null;
-                let raisedException2: Error | null = null;
-
-                // First request attempt
-                try {
-                    response1 = await client.documents.parse({
-                        document: document,
-                        model: model,
-                        table_parsing_format: tableParsingFormat,
-                        image_resolution_dpi: imageResolutionDpi,
-                        browser_canvas: browserCanvas,
-                    });
-                } catch (e) {
-                    raisedException1 = e as Error;
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                const t0 = Date.now();
-
-                // Second request attempt with same idempotency key
-                try {
-                    response2 = await client.documents.parse({
-                        document: document,
-                        model: model,
-                        table_parsing_format: tableParsingFormat,
-                        image_resolution_dpi: imageResolutionDpi,
-                        browser_canvas: browserCanvas,
-                    });
-                } catch (e) {
-                    raisedException2 = e as Error;
-                }
-
-                const t1 = Date.now();
-                expect(t1 - t0).toBeLessThan(10000); // Should take less than 10 seconds
-
-                // Verify that both requests behaved consistently (idempotent behavior)
-                if (raisedException1 !== null) {
-                    expect(raisedException2).not.toBeNull();
-                    expect(response1).toBeNull();
-                    expect(response2).toBeNull();
-                    // Verify that both exceptions are of the same type
-                    expect(raisedException1.constructor.name).toBe(raisedException2!.constructor.name);
-                } else {
-                    // If no exception was raised, both responses should be successful and identical
-                    expect(raisedException2).toBeNull();
-                    expect(response1).not.toBeNull();
-                    expect(response2).not.toBeNull();
-                    validateParseResponse(response1);
-                    validateParseResponse(response2);
-                    expect(response1.text).toBe(response2.text);
-                    expect(response1.pages).toEqual(response2.pages);
-                }
-            }, { timeout: TEST_TIMEOUT });
-        });
-    });
 
     describe('Parse Response Structure', () => {
         test('test_parse_response_structure', async () => {
