@@ -66,7 +66,9 @@ export default class APIProjects extends CompositionClient {
         n_consensus,
         temperature,
         seed,
-        store
+        store,
+        metadata,
+        extraction_id
     }: {
         project_id: string,
         iteration_id?: string,
@@ -78,6 +80,8 @@ export default class APIProjects extends CompositionClient {
         temperature?: number,
         seed?: number,
         store?: boolean,
+        metadata?: Record<string, string>,
+        extraction_id?: string,
     }, options?: RequestOptions): Promise<RetabParsedChatCompletion> {
         if (!document && (!documents || documents.length === 0)) {
             throw new Error("Either 'document' or 'documents' must be provided.");
@@ -95,6 +99,9 @@ export default class APIProjects extends CompositionClient {
         if (temperature !== undefined) bodyParams.temperature = temperature;
         if (seed !== undefined) bodyParams.seed = seed;
         if (store !== undefined) bodyParams.store = store;
+        // Note: metadata must be JSON-serialized since multipart forms only accept primitive types
+        if (metadata !== undefined) bodyParams.metadata = JSON.stringify(metadata);
+        if (extraction_id !== undefined) bodyParams.extraction_id = extraction_id;
 
         return this._fetchJson(ZRetabParsedChatCompletion, {
             url,

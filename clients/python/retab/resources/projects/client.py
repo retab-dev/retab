@@ -1,4 +1,5 @@
 import base64
+import json
 from io import IOBase
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
@@ -89,7 +90,7 @@ class ProjectsMixin:
         n_consensus: int | None = None,
         seed: int | None = None,
         store: bool = True,
-        collection_id: str | None = None,
+        metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
         **extra_form: Any,
     ) -> PreparedRequest:
@@ -106,7 +107,7 @@ class ProjectsMixin:
             n_consensus: Optional number of consensus extractions
             store: Whether to store the results
             seed: Optional seed for reproducibility
-            store: Whether to store the results
+            metadata: User-defined metadata for the extraction
 
         Returns:
             PreparedRequest: The prepared request
@@ -119,6 +120,7 @@ class ProjectsMixin:
             raise ValueError("Provide either 'document' (single) or 'documents' (multiple), not both")
 
         # Prepare form data parameters
+        # Note: metadata must be JSON-serialized since httpx multipart forms only accept primitive types
         form_data = {
             "model": model,
             "temperature": temperature,
@@ -126,7 +128,7 @@ class ProjectsMixin:
             "n_consensus": n_consensus,
             "seed": seed,
             "store": store,
-            "collection_id": collection_id,
+            "metadata": json.dumps(metadata) if metadata else None,
             "extraction_id": extraction_id,
         }
         if extra_form:

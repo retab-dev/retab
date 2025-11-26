@@ -1,4 +1,5 @@
-from typing import Any, List, Literal
+import json
+from typing import Any, Dict, List, Literal
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.standards import PreparedRequest
@@ -16,6 +17,7 @@ class ExtractionsMixin:
         from_date: str | None = None,
         to_date: str | None = None,
         human_review_status: str | None = None,
+        metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Prepare a request to list extractions with pagination and filtering."""
@@ -29,6 +31,8 @@ class ExtractionsMixin:
             "from_date": from_date,
             "to_date": to_date,
             "human_review_status": human_review_status,
+            # Note: metadata must be JSON-serialized as the backend expects a JSON string
+            "metadata": json.dumps(metadata) if metadata else None,
         }
         if extra_params:
             params.update(extra_params)
@@ -41,6 +45,7 @@ class ExtractionsMixin:
         origin_dot_type: str | None = None,
         origin_dot_id: str | None = None,
         human_review_status: str | None = "review_required",
+        metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
         """Prepare a request to count extractions."""
@@ -48,6 +53,8 @@ class ExtractionsMixin:
             "origin_dot_type": origin_dot_type,
             "origin_dot_id": origin_dot_id,
             "human_review_status": human_review_status,
+            # Note: metadata must be JSON-serialized as the backend expects a JSON string
+            "metadata": json.dumps(metadata) if metadata else None,
         }
         if extra_params:
             params.update(extra_params)
@@ -61,6 +68,7 @@ class ExtractionsMixin:
         from_date: str | None = None,
         to_date: str | None = None,
         human_review_status: str | None = None,
+        metadata: Dict[str, str] | None = None,
         format: Literal["jsonl", "csv", "xlsx"] = "jsonl",
         **extra_params: Any,
     ) -> PreparedRequest:
@@ -71,6 +79,8 @@ class ExtractionsMixin:
             "from_date": from_date,
             "to_date": to_date,
             "human_review_status": human_review_status,
+            # Note: metadata must be JSON-serialized as the backend expects a JSON string
+            "metadata": json.dumps(metadata) if metadata else None,
             "format": format,
         }
         if extra_params:
@@ -156,6 +166,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         from_date: str | None = None,
         to_date: str | None = None,
         human_review_status: str | None = None,
+        metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PaginatedList:
         """List extractions with pagination and filtering."""
@@ -169,6 +180,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             from_date=from_date,
             to_date=to_date,
             human_review_status=human_review_status,
+            metadata=metadata,
             **extra_params,
         )
         response = self._client._prepared_request(request)
@@ -179,6 +191,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         origin_dot_type: str | None = None,
         origin_dot_id: str | None = None,
         human_review_status: str | None = "review_required",
+        metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> dict[str, int]:
         """Count extractions matching filters."""
@@ -186,6 +199,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             origin_dot_type=origin_dot_type,
             origin_dot_id=origin_dot_id,
             human_review_status=human_review_status,
+            metadata=metadata,
             **extra_params,
         )
         return self._client._prepared_request(request)
@@ -197,6 +211,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         from_date: str | None = None,
         to_date: str | None = None,
         human_review_status: str | None = None,
+        metadata: Dict[str, str] | None = None,
         format: Literal["jsonl", "csv", "xlsx"] = "jsonl",
         **extra_params: Any,
     ) -> dict[str, Any]:
@@ -207,6 +222,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             from_date=from_date,
             to_date=to_date,
             human_review_status=human_review_status,
+            metadata=metadata,
             format=format,
             **extra_params,
         )
@@ -288,6 +304,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         from_date: str | None = None,
         to_date: str | None = None,
         human_review_status: str | None = None,
+        metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PaginatedList:
         """List extractions with pagination and filtering."""
@@ -301,6 +318,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             from_date=from_date,
             to_date=to_date,
             human_review_status=human_review_status,
+            metadata=metadata,
             **extra_params,
         )
         response = await self._client._prepared_request(request)
@@ -311,6 +329,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         origin_dot_type: str | None = None,
         origin_dot_id: str | None = None,
         human_review_status: str | None = "review_required",
+        metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> dict[str, int]:
         """Count extractions matching filters."""
@@ -318,6 +337,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             origin_dot_type=origin_dot_type,
             origin_dot_id=origin_dot_id,
             human_review_status=human_review_status,
+            metadata=metadata,
             **extra_params,
         )
         return await self._client._prepared_request(request)
@@ -329,6 +349,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         from_date: str | None = None,
         to_date: str | None = None,
         human_review_status: str | None = None,
+        metadata: Dict[str, str] | None = None,
         format: Literal["jsonl", "csv", "xlsx"] = "jsonl",
         **extra_params: Any,
     ) -> dict[str, Any]:
@@ -339,6 +360,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             from_date=from_date,
             to_date=to_date,
             human_review_status=human_review_status,
+            metadata=metadata,
             format=format,
             **extra_params,
         )
