@@ -60,7 +60,6 @@ export default class APIProjects extends CompositionClient {
         project_id,
         iteration_id,
         document,
-        documents,
         model,
         image_resolution_dpi,
         n_consensus,
@@ -72,8 +71,7 @@ export default class APIProjects extends CompositionClient {
     }: {
         project_id: string,
         iteration_id?: string,
-        document?: MIMEDataInput,
-        documents?: MIMEDataInput[],
+        document: MIMEDataInput,
         model?: string,
         image_resolution_dpi?: number,
         n_consensus?: number,
@@ -83,14 +81,14 @@ export default class APIProjects extends CompositionClient {
         metadata?: Record<string, string>,
         extraction_id?: string,
     }, options?: RequestOptions): Promise<RetabParsedChatCompletion> {
-        if (!document && (!documents || documents.length === 0)) {
-            throw new Error("Either 'document' or 'documents' must be provided.");
-        }
         const url = iteration_id ? `/v1/projects/extract/${project_id}/${iteration_id}` : `/v1/projects/extract/${project_id}`;
+
+        // Parse and convert document to blob for multipart form upload
+        const parsedDocument = await ZMIMEData.parseAsync(document);
 
         // Only include optional parameters if they are provided
         const bodyParams: any = {
-            documents: (await ZMIMEData.array().parseAsync([...document ? [document] : [], ...(documents || [])])).map(mimeToBlob)
+            document: mimeToBlob(parsedDocument)
         };
 
         if (model !== undefined) bodyParams.model = model;

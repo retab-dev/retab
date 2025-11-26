@@ -185,7 +185,6 @@ export const ZInferenceSettings = z.lazy(() => (z.object({
     temperature: z.number().default(0.0),
     reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional().default("minimal"),
     image_resolution_dpi: z.number().default(192),
-    browser_canvas: z.union([z.literal("A1"), z.literal("A2"), z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
     n_consensus: z.number().default(1),
     modality: z.union([z.literal("text"), z.literal("image"), z.literal("native")]).default("native"),
     parallel_ocr_keys: z.record(z.string(), z.string()).nullable().optional(),
@@ -289,7 +288,7 @@ export const ZComputationSpec = z.lazy(() => (z.object({
 export type ComputationSpec = z.infer<typeof ZComputationSpec>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({"model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "browser_canvas": "A4", "n_consensus": 1, "modality": "native"}),
+    inference_settings: ZInferenceSettings.default({"model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1, "modality": "native"}),
     json_schema: z.record(z.string(), z.any()),
     human_in_the_loop_criteria: z.array(ZHilCriterion),
     computation_spec: ZComputationSpec,
@@ -330,7 +329,6 @@ export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional().default("minimal"),
     instructions: z.string().nullable().optional(),
     image_resolution_dpi: z.number().default(192),
-    browser_canvas: z.union([z.literal("A1"), z.literal("A2"), z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
     stream: z.boolean().default(false),
 })));
 export type GenerateSchemaRequest = z.infer<typeof ZGenerateSchemaRequest>;
@@ -613,7 +611,6 @@ export const ZParseRequest = z.lazy(() => (z.object({
     model: z.string().default("gemini-2.5-flash"),
     table_parsing_format: z.union([z.literal("markdown"), z.literal("yaml"), z.literal("html"), z.literal("json")]).default("html"),
     image_resolution_dpi: z.number().default(192),
-    browser_canvas: z.union([z.literal("A1"), z.literal("A2"), z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
 })));
 export type ParseRequest = z.infer<typeof ZParseRequest>;
 
@@ -639,7 +636,6 @@ export type DocumentCreateInputRequest = z.infer<typeof ZDocumentCreateInputRequ
 export const ZDocumentCreateMessageRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     image_resolution_dpi: z.number().default(192),
-    browser_canvas: z.union([z.literal("A1"), z.literal("A2"), z.literal("A3"), z.literal("A4"), z.literal("A5")]).default("A4"),
     model: z.string().default("gemini-2.5-flash"),
 })));
 export type DocumentCreateMessageRequest = z.infer<typeof ZDocumentCreateMessageRequest>;

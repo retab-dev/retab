@@ -14,7 +14,6 @@ default_inference_settings = InferenceSettings(
     reasoning_effort="minimal",
     modality="native",
     image_resolution_dpi=192,
-    browser_canvas="A4",
     n_consensus=1,
 )
 

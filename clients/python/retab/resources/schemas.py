@@ -9,7 +9,6 @@ from .._resource import AsyncAPIResource, SyncAPIResource
 from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.schemas.generate import GenerateSchemaRequest
-from ..types.browser_canvas import BrowserCanvas
 from ..types.standards import PreparedRequest, FieldUnset
 
 
@@ -22,7 +21,6 @@ class SchemasMixin:
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_documents = prepare_mime_document_list(documents)
@@ -40,8 +38,6 @@ class SchemasMixin:
             body["reasoning_effort"] = reasoning_effort
         if image_resolution_dpi is not FieldUnset:
             body["image_resolution_dpi"] = image_resolution_dpi
-        if browser_canvas is not FieldUnset:
-            body["browser_canvas"] = browser_canvas
         if extra_body:
             body.update(extra_body)
 
@@ -59,7 +55,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
         **extra_body: Any,
     ) -> dict[str, Any]:
         """
@@ -84,7 +79,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
             **extra_body,
         )
         response = self._client._prepared_request(prepared_request)
@@ -100,7 +94,6 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
-        browser_canvas: BrowserCanvas = FieldUnset,
         **extra_body: Any,
     ) -> dict[str, Any]:
         """
@@ -125,7 +118,6 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             temperature=temperature,
             reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
-            browser_canvas=browser_canvas,
             **extra_body,
         )
         response = await self._client._prepared_request(prepared_request)
