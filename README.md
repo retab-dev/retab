@@ -143,13 +143,3 @@ We can't wait to see how you'll use Retab.
 * [Github Repository](https://github.com/retab-dev/retab)
 
 ---
-## Roadmap
-
-We share our roadmap publicly. Please submit your feature requests on [Github](https://github.com/retab-dev/retab)
-
-Among the features we're working on:
-
-* [ ] Schema optimization autopilot
-* [ ] Sources API
-* [ ] Document Edit API
-
