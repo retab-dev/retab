@@ -2,11 +2,10 @@ import { CompositionClient, RequestOptions } from "../../client.js";
 import { ZPaginatedList, PaginatedList } from "../../types.js";
 import * as z from "zod";
 
+// Human review status type
+type HumanReviewStatus = "success" | "review_required" | "reviewed";
+
 // Response types for extractions API
-const ZExtractionCountResponse = z.object({
-    count: z.number(),
-});
-type ExtractionCountResponse = z.infer<typeof ZExtractionCountResponse>;
 
 const ZDownloadResponse = z.object({
     download_url: z.string(),
@@ -14,16 +13,6 @@ const ZDownloadResponse = z.object({
     expires_at: z.string(),
 });
 type DownloadResponse = z.infer<typeof ZDownloadResponse>;
-
-const ZExportToCsvResponse = z.object({
-    csv_data: z.string(),
-    rows: z.number(),
-    columns: z.number(),
-});
-type ExportToCsvResponse = z.infer<typeof ZExportToCsvResponse>;
-
-const ZDistinctFieldValues = z.record(z.array(z.string()));
-type DistinctFieldValues = z.infer<typeof ZDistinctFieldValues>;
 
 // Generic extraction object (flexible since schema varies)
 const ZExtraction = z.record(z.any());
@@ -56,9 +45,9 @@ export default class APIExtractions extends CompositionClient {
         order?: "asc" | "desc";
         origin_dot_type?: string;
         origin_dot_id?: string;
-        from_date?: string;
-        to_date?: string;
-        human_review_status?: string;
+        from_date?: Date;
+        to_date?: Date;
+        human_review_status?: HumanReviewStatus;
         metadata?: Record<string, string>;
         filename?: string;
     } = {}, options?: RequestOptions): Promise<PaginatedList> {
@@ -69,8 +58,8 @@ export default class APIExtractions extends CompositionClient {
             order,
             origin_dot_type,
             origin_dot_id,
-            from_date,
-            to_date,
+            from_date: from_date?.toISOString(),
+            to_date: to_date?.toISOString(),
             human_review_status,
             filename,
             // Note: metadata must be JSON-serialized as the backend expects a JSON string
@@ -90,40 +79,6 @@ export default class APIExtractions extends CompositionClient {
         });
     }
 
-    /**
-     * Count extractions matching filters.
-     */
-    async count({
-        origin_dot_type,
-        origin_dot_id,
-        human_review_status = "review_required",
-        metadata,
-    }: {
-        origin_dot_type?: string;
-        origin_dot_id?: string;
-        human_review_status?: string;
-        metadata?: Record<string, string>;
-    } = {}, options?: RequestOptions): Promise<ExtractionCountResponse> {
-        const params: Record<string, any> = {
-            origin_dot_type,
-            origin_dot_id,
-            human_review_status,
-            // Note: metadata must be JSON-serialized as the backend expects a JSON string
-            metadata: metadata ? JSON.stringify(metadata) : undefined,
-        };
-
-        // Remove undefined values
-        const cleanParams = Object.fromEntries(
-            Object.entries(params).filter(([_, v]) => v !== undefined)
-        );
-
-        return this._fetchJson(ZExtractionCountResponse, {
-            url: "/v1/extractions/count",
-            method: "GET",
-            params: { ...cleanParams, ...(options?.params || {}) },
-            headers: options?.headers,
-        });
-    }
 
     /**
      * Download extractions in various formats. Returns download_url, filename, and expires_at.
@@ -140,9 +95,9 @@ export default class APIExtractions extends CompositionClient {
     }: {
         order?: "asc" | "desc";
         origin_dot_id?: string;
-        from_date?: string;
-        to_date?: string;
-        human_review_status?: string;
+        from_date?: Date;
+        to_date?: Date;
+        human_review_status?: HumanReviewStatus;
         metadata?: Record<string, string>;
         filename?: string;
         format?: "jsonl" | "csv" | "xlsx";
@@ -150,8 +105,8 @@ export default class APIExtractions extends CompositionClient {
         const params: Record<string, any> = {
             order,
             origin_dot_id,
-            from_date,
-            to_date,
+            from_date: from_date?.toISOString(),
+            to_date: to_date?.toISOString(),
             human_review_status,
             filename,
             format,
@@ -173,43 +128,6 @@ export default class APIExtractions extends CompositionClient {
     }
 
     /**
-     * Export extractions as CSV. Returns csv_data, rows, and columns.
-     */
-    async getPayloadForExport({
-        project_id,
-        extraction_ids,
-        json_schema,
-        delimiter = ";",
-        line_delimiter = "\n",
-        quote = '"',
-    }: {
-        project_id: string;
-        extraction_ids: string[];
-        json_schema: Record<string, any>;
-        delimiter?: string;
-        line_delimiter?: string;
-        quote?: string;
-    }, options?: RequestOptions): Promise<ExportToCsvResponse> {
-        return this._fetchJson(ZExportToCsvResponse, {
-            url: "/v1/extractions/get_payload_for_export",
-            method: "POST",
-            body: {
-                project_id,
-                extraction_ids,
-                json_schema,
-                ...(options?.body || {}),
-            },
-            params: {
-                delimiter,
-                line_delimiter,
-                quote,
-                ...(options?.params || {}),
-            },
-            headers: options?.headers,
-        });
-    }
-
-    /**
      * Update an extraction.
      */
     async update(
@@ -224,7 +142,7 @@ export default class APIExtractions extends CompositionClient {
         }: {
             predictions?: Record<string, any>;
             predictions_draft?: Record<string, any>;
-            human_review_status?: string;
+            human_review_status?: HumanReviewStatus;
             json_schema?: Record<string, any>;
             inference_settings?: Record<string, any>;
             metadata?: Record<string, string>;
@@ -270,31 +188,6 @@ export default class APIExtractions extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
-    }
-
-    /**
-     * Get distinct values for filterable fields.
-     */
-    async getDistinctFieldValues(options?: RequestOptions): Promise<DistinctFieldValues> {
-        return this._fetchJson(ZDistinctFieldValues, {
-            url: "/v1/extractions/fields",
-            method: "GET",
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Download the sample document for an extraction.
-     */
-    async downloadSampleDocument(extraction_id: string, options?: RequestOptions): Promise<ArrayBuffer> {
-        const response = await this._fetch({
-            url: `/v1/extractions/${extraction_id}/sample-document`,
-            method: "GET",
-            params: options?.params,
-            headers: options?.headers,
-        });
-        return response.arrayBuffer();
     }
 }
 
