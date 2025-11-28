@@ -718,6 +718,7 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     parallel_ocr_keys: z.record(z.string(), z.string()).nullable().optional(),
     metadata: z.record(z.string(), z.string()),
     extraction_id: z.string().nullable().optional(),
+    additional_messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
 })));
 export type DocumentExtractRequest = z.infer<typeof ZDocumentExtractRequest>;
 
