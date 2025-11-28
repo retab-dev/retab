@@ -273,4 +273,115 @@ describe('Retab SDK Extract Tests', () => {
             }, { timeout: TEST_TIMEOUT });
         });
     });
+
+    describe('Extract with Additional Messages', () => {
+        test('test_extract_with_text_additional_message', async () => {
+            // Test extraction with a text-only additional message providing context
+            const additionalMessages = [
+                {
+                    role: "user" as const,
+                    content: "Important context: Please extract all booking details carefully, paying attention to dates and confirmation numbers."
+                }
+            ];
+
+            const response = await client.documents.extract({
+                json_schema: bookingConfirmationJsonSchema,
+                document: bookingConfirmationFilePath1,
+                model: "gpt-4.1-nano",
+                additional_messages: additionalMessages,
+            });
+
+            validateExtractionResponse(response);
+            expect(response.choices[0].message.content).toBeDefined();
+        }, { timeout: TEST_TIMEOUT });
+
+        test('test_extract_with_multipart_additional_message', async () => {
+            // Test extraction with additional messages containing both text and image URL
+            // Similar to the Python example with Carmoola logo
+            const additionalMessages = [
+                {
+                    role: "user" as const,
+                    content: "Context for extraction: This is a booking confirmation document. Please extract all relevant fields."
+                },
+                {
+                    role: "user" as const,
+                    content: [
+                        {
+                            type: "text" as const,
+                            text: "Reference image for brand identification:"
+                        },
+                        {
+                            type: "image_url" as const,
+                            image_url: {
+                                url: "https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png",
+                                detail: "auto" as const
+                            }
+                        }
+                    ]
+                }
+            ];
+
+            const response = await client.documents.extract({
+                json_schema: bookingConfirmationJsonSchema,
+                document: bookingConfirmationFilePath1,
+                model: "gpt-4.1-nano",
+                additional_messages: additionalMessages,
+            });
+
+            validateExtractionResponse(response);
+            expect(response.choices[0].message.content).toBeDefined();
+        }, { timeout: TEST_TIMEOUT });
+
+        test('test_extract_with_system_additional_message', async () => {
+            // Test extraction with a system message to set behavior
+            const additionalMessages = [
+                {
+                    role: "system" as const,
+                    content: "You are a precise document extraction assistant. Extract information exactly as it appears in the document without making assumptions."
+                },
+                {
+                    role: "user" as const,
+                    content: "Please be thorough in extracting all booking confirmation details."
+                }
+            ];
+
+            const response = await client.documents.extract({
+                json_schema: bookingConfirmationJsonSchema,
+                document: bookingConfirmationFilePath1,
+                model: "gpt-4.1-nano",
+                additional_messages: additionalMessages,
+            });
+
+            validateExtractionResponse(response);
+            expect(response.choices[0].message.content).toBeDefined();
+        }, { timeout: TEST_TIMEOUT });
+
+        test('test_extract_with_multiple_additional_messages', async () => {
+            // Test extraction with multiple additional messages of different types
+            const additionalMessages = [
+                {
+                    role: "developer" as const,
+                    content: "Extract data with high precision. When uncertain, prefer leaving fields empty rather than guessing."
+                },
+                {
+                    role: "user" as const,
+                    content: "This booking confirmation is from a travel agency. Look for: confirmation number, dates, guest names, and total amount."
+                },
+                {
+                    role: "user" as const,
+                    content: "If any field is unclear or ambiguous, please indicate that in your extraction."
+                }
+            ];
+
+            const response = await client.documents.extract({
+                json_schema: bookingConfirmationJsonSchema,
+                document: bookingConfirmationFilePath1,
+                model: "gpt-4.1-nano",
+                additional_messages: additionalMessages,
+            });
+
+            validateExtractionResponse(response);
+            expect(response.choices[0].message.content).toBeDefined();
+        }, { timeout: TEST_TIMEOUT });
+    });
 });

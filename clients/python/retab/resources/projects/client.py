@@ -74,9 +74,9 @@ class ProjectsMixin:
     def prepare_delete(self, id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/v1/projects/{id}")
 
-    def prepare_publish(self, project_id: str, **extra_body: Any) -> PreparedRequest:
-        data = extra_body or None
-        return PreparedRequest(method="POST", url=f"/v1/projects/{project_id}/publish", data=data)
+    def prepare_publish(self, project_id: str, origin: Optional[str] = None) -> PreparedRequest:
+        params = {"origin": origin} if origin else None
+        return PreparedRequest(method="POST", url=f"/v1/projects/{project_id}/publish", params=params)
 
     def prepare_extract(
         self,
@@ -234,9 +234,15 @@ class Projects(SyncAPIResource, ProjectsMixin):
         request = self.prepare_delete(project_id)
         return self._client._prepared_request(request)
 
-    def publish(self, project_id: str, **extra_body: Any) -> Project:
-        """Publish a project's draft configuration."""
-        request = self.prepare_publish(project_id, **extra_body)
+    def publish(self, project_id: str, origin: Optional[str] = None) -> Project:
+        """Publish a project's draft configuration.
+        
+        Args:
+            project_id: The ID of the project to publish
+            origin: Optional origin identifier (e.g., iteration ID). If an iteration ID 
+                    is provided, the project will be published using that iteration's config.
+        """
+        request = self.prepare_publish(project_id, origin=origin)
         response = self._client._prepared_request(request)
         return Project(**response)
 
@@ -353,9 +359,15 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         request = self.prepare_delete(project_id)
         return await self._client._prepared_request(request)
 
-    async def publish(self, project_id: str, **extra_body: Any) -> Project:
-        """Publish a project's draft configuration."""
-        request = self.prepare_publish(project_id, **extra_body)
+    async def publish(self, project_id: str, origin: Optional[str] = None) -> Project:
+        """Publish a project's draft configuration.
+        
+        Args:
+            project_id: The ID of the project to publish
+            origin: Optional origin identifier (e.g., iteration ID). If an iteration ID 
+                    is provided, the project will be published using that iteration's config.
+        """
+        request = self.prepare_publish(project_id, origin=origin)
         response = await self._client._prepared_request(request)
         return Project(**response)
 

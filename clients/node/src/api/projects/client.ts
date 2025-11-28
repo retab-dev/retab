@@ -44,14 +44,13 @@ export default class APIProjects extends CompositionClient {
         });
     }
 
-    async publish(projectId: string, body?: Record<string, unknown>, options?: RequestOptions): Promise<Project> {
-        const mergedBody = body || options?.body ? { ...(body || {}), ...(options?.body || {}) } : undefined;
+    async publish(projectId: string, origin?: string, options?: RequestOptions): Promise<Project> {
+        const params = origin ? { origin, ...(options?.params || {}) } : options?.params;
 
         return this._fetchJson(ZProject, {
             url: `/v1/projects/${projectId}/publish`,
             method: "POST",
-            body: mergedBody,
-            params: options?.params,
+            params,
             headers: options?.headers,
         });
     }

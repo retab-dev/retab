@@ -183,7 +183,8 @@ export class FetcherClient extends AbstractClient {
         // Don't set Content-Type for multipart/form-data - let FormData set it with boundary
       } else {
         headers["Content-Type"] = params.bodyMime || "application/json";
-        init.body = JSON.stringify(params.body);
+        // Default to empty object if body is undefined to ensure valid JSON is sent
+        init.body = JSON.stringify(params.body ?? {});
       }
     }
     const apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
