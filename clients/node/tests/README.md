@@ -106,3 +106,8 @@ The tests use the same test data as the Python test suite:
 - Tests clean up created resources automatically
 - Each test uses unique names with nanoid to avoid conflicts
 - Tests are designed to run independently and can be run in parallel
+
+# Example of running a specific test:
+```bash
+cd /workspaces/retab/open-source/sdk/clients/node && bun test tests/documents/extract.test.ts -t "test_extract_with_multipart" 2>&1
+```

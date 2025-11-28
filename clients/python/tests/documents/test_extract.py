@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from retab import AsyncRetab, Retab
 from retab.types.documents.extract import RetabParsedChatCompletion
-
+from retab.types.chat import ChatCompletionRetabMessage
 # List of AI Providers to test
 AI_MODELS = Literal[
     "gpt-4.1-nano",
@@ -140,4 +140,133 @@ async def test_extract_overload(
         booking_confirmation_file_path_1=booking_confirmation_file_path_1,
         booking_confirmation_json_schema=booking_confirmation_json_schema,
     )
+
+
+# Tests for additional_messages feature
+@pytest.mark.asyncio
+async def test_extract_with_text_additional_message(
+    async_client: AsyncRetab,
+    booking_confirmation_file_path_1: str,
+    booking_confirmation_json_schema: dict[str, Any],
+) -> None:
+    """Test extraction with a text-only additional message providing context."""
+    additional_messages: list[ChatCompletionRetabMessage] = [
+        {
+            "role": "user",
+            "content": "Important context: Please extract all booking details carefully, paying attention to dates and confirmation numbers."
+        }
+    ]
+
+    async with async_client:
+        response = await async_client.documents.extract(
+            json_schema=booking_confirmation_json_schema,
+            document=booking_confirmation_file_path_1,
+            model="gpt-4.1-nano",
+            additional_messages=additional_messages,
+        )
+
+    validate_extraction_response(response)
+
+
+@pytest.mark.asyncio
+async def test_extract_with_multipart_additional_message(
+    async_client: AsyncRetab,
+    booking_confirmation_file_path_1: str,
+    booking_confirmation_json_schema: dict[str, Any],
+) -> None:
+    """Test extraction with additional messages containing both text and image URL."""
+    additional_messages = [
+        {
+            "role": "user",
+            "content": "Context for extraction: This is a booking confirmation document. Please extract all relevant fields."
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Reference image for brand identification:"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png",
+                        "detail": "auto"
+                    }
+                }
+            ]
+        }
+    ]
+
+    async with async_client:
+        response = await async_client.documents.extract(
+            json_schema=booking_confirmation_json_schema,
+            document=booking_confirmation_file_path_1,
+            model="gpt-4.1-nano",
+            additional_messages=additional_messages,
+        )
+
+    validate_extraction_response(response)
+
+
+@pytest.mark.asyncio
+async def test_extract_with_system_additional_message(
+    async_client: AsyncRetab,
+    booking_confirmation_file_path_1: str,
+    booking_confirmation_json_schema: dict[str, Any],
+) -> None:
+    """Test extraction with a system message to set behavior."""
+    additional_messages: list[ChatCompletionRetabMessage] = [
+        {
+            "role": "system",
+            "content": "You are a precise document extraction assistant. Extract information exactly as it appears in the document without making assumptions."
+        },
+        {
+            "role": "user",
+            "content": "Please be thorough in extracting all booking confirmation details."
+        }
+    ]
+
+    async with async_client:
+        response = await async_client.documents.extract(
+            json_schema=booking_confirmation_json_schema,
+            document=booking_confirmation_file_path_1,
+            model="gpt-4.1-nano",
+            additional_messages=additional_messages,
+        )
+
+    validate_extraction_response(response)
+
+
+@pytest.mark.asyncio
+async def test_extract_with_multiple_additional_messages(
+    async_client: AsyncRetab,
+    booking_confirmation_file_path_1: str,
+    booking_confirmation_json_schema: dict[str, Any],
+) -> None:
+    """Test extraction with multiple additional messages of different types."""
+    additional_messages: list[ChatCompletionRetabMessage] = [
+        {
+            "role": "developer",
+            "content": "Extract data with high precision. When uncertain, prefer leaving fields empty rather than guessing."
+        },
+        {
+            "role": "user",
+            "content": "This booking confirmation is from a travel agency. Look for: confirmation number, dates, guest names, and total amount."
+        },
+        {
+            "role": "user",
+            "content": "If any field is unclear or ambiguous, please indicate that in your extraction."
+        }
+    ]
+
+    async with async_client:
+        response = await async_client.documents.extract(
+            json_schema=booking_confirmation_json_schema,
+            document=booking_confirmation_file_path_1,
+            model="gpt-4.1-nano",
+            additional_messages=additional_messages,
+        )
+
+    validate_extraction_response(response)
 

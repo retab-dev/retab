@@ -115,37 +115,6 @@ async def test_create_messages_with_optional_params(
     validate_create_messages_response(response)
 
 
-
-@pytest.mark.asyncio
-async def test_create_messages_different_modalities(
-    sync_client: Retab,
-    booking_confirmation_file_path_1: str,
-) -> None:
-    """Test create_messages with different modalities."""
-    document = booking_confirmation_file_path_1
-    
-    with sync_client as client:
-        # Test with 'native' modality
-        response_native = client.documents.create_messages(
-            document=document,
-            modality="native",
-        )
-        validate_create_messages_response(response_native)
-        
-        # Test with 'text' modality
-        response_text = client.documents.create_messages(
-            document=document,
-            modality="text",
-        )
-        validate_create_messages_response(response_text)
-        
-        # Both should be valid responses with messages
-        assert len(response_native.messages) > 0
-        assert len(response_text.messages) > 0
-        assert all("content" in msg for msg in response_native.messages)
-        assert all("content" in msg for msg in response_text.messages)
-
-
 @pytest.mark.asyncio
 async def test_create_messages_async_vs_sync(
     sync_client: Retab,
@@ -154,20 +123,17 @@ async def test_create_messages_async_vs_sync(
 ) -> None:
     """Test that sync and async clients produce consistent results."""
     document = booking_confirmation_file_path_1
-    modality = "native"
     
     # Sync request
     with sync_client as client:
         sync_response = client.documents.create_messages(
             document=document,
-            modality=modality,
         )
     
     # Async request
     async with async_client as client:
         async_response = await client.documents.create_messages(
             document=document,
-            modality=modality,
         )
     
     # Validate both responses

@@ -126,31 +126,6 @@ describe('Retab SDK Create Messages Tests', () => {
         }, { timeout: TEST_TIMEOUT });
     });
 
-
-    describe('Create Messages Different Modalities', () => {
-        test('test_create_messages_different_modalities', async () => {
-            const document = bookingConfirmationFilePath1;
-
-            // Test with 'native' modality
-            const responseNative = await client.documents.create_messages({
-                document: document,
-            });
-            validateCreateMessagesResponse(responseNative);
-
-            // Test with 'text' modality
-            const responseText = await client.documents.create_messages({
-                document: document,
-            });
-            validateCreateMessagesResponse(responseText);
-
-            // Both should be valid responses with messages
-            expect(responseNative.messages.length).toBeGreaterThan(0);
-            expect(responseText.messages.length).toBeGreaterThan(0);
-            expect(responseNative.messages.every(msg => 'content' in msg)).toBe(true);
-            expect(responseText.messages.every(msg => 'content' in msg)).toBe(true);
-        }, { timeout: TEST_TIMEOUT });
-    });
-
     describe('Create Messages Async vs Sync Consistency', () => {
         test('test_create_messages_async_vs_sync', async () => {
             const document = bookingConfirmationFilePath1;
