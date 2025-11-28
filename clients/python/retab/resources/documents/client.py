@@ -12,6 +12,7 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import prepare_mime_document
 from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
+from ...types.chat import ChatCompletionRetabMessage
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
 from ...types.mime import MIMEData
@@ -125,6 +126,7 @@ class BaseDocumentsMixin:
         stream: bool = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
+        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
         loaded_schema = load_json_schema(json_schema)
@@ -155,6 +157,8 @@ class BaseDocumentsMixin:
             request_dict["image_resolution_dpi"] = image_resolution_dpi
         if metadata is not FieldUnset:
             request_dict["metadata"] = metadata
+        if additional_messages is not FieldUnset:
+            request_dict["additional_messages"] = additional_messages
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -240,6 +244,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         n_consensus: int = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
+        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
     ) -> RetabParsedChatCompletion:
         """
@@ -257,6 +262,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform
             store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
+            additional_messages: Additional chat messages to append after the document content messages
 
         Returns:
             RetabParsedChatCompletion: Parsed response from the API
@@ -275,6 +281,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus=n_consensus,
             store=store,
             metadata=metadata,
+            additional_messages=additional_messages,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -381,6 +388,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         n_consensus: int = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
+        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
     ) -> Generator[RetabParsedChatCompletion, None, None]:
         """
@@ -396,6 +404,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
+            additional_messages: Additional chat messages to append after the document content messages
 
         Returns:
             Generator[RetabParsedChatCompletion]: Stream of parsed responses
@@ -420,6 +429,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus=n_consensus,
             store=store,
             metadata=metadata,
+            additional_messages=additional_messages,
             **extra_body,
         )
         schema = load_json_schema(json_schema)
@@ -572,6 +582,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         n_consensus: int = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
+        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
     ) -> RetabParsedChatCompletion:
         """
@@ -589,6 +600,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform
             store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
+            additional_messages: Additional chat messages to append after the document content messages
 
         Returns:
             RetabParsedChatCompletion: Parsed response from the API
@@ -607,6 +619,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus=n_consensus,
             store=store,
             metadata=metadata,
+            additional_messages=additional_messages,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
@@ -625,6 +638,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         n_consensus: int = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
+        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
     ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
         """
@@ -640,6 +654,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
+            additional_messages: Additional chat messages to append after the document content messages
         Returns:
             AsyncGenerator[RetabParsedChatCompletion, None]: Stream of parsed responses.
         Raises:
@@ -663,6 +678,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus=n_consensus,
             store=store,
             metadata=metadata,
+            additional_messages=additional_messages,
             **extra_body,
         )
         schema = load_json_schema(json_schema)
