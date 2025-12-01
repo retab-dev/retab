@@ -287,7 +287,7 @@ export const ZComputationSpec = z.lazy(() => (z.object({
 export type ComputationSpec = z.infer<typeof ZComputationSpec>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({ "model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1, "modality": "native" }),
+    inference_settings: ZInferenceSettings.default({ "model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1 }),
     json_schema: z.record(z.string(), z.any()),
     human_in_the_loop_criteria: z.array(ZHilCriterion),
     computation_spec: ZComputationSpec,
@@ -713,7 +713,6 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     stream: z.boolean().default(false),
     seed: z.number().nullable().optional(),
     store: z.boolean().default(true),
-    modality: z.union([z.literal("text"), z.literal("image"), z.literal("native")]).default("native"),
     parallel_ocr_keys: z.record(z.string(), z.string()).nullable().optional(),
     metadata: z.record(z.string(), z.string()),
     extraction_id: z.string().nullable().optional(),
