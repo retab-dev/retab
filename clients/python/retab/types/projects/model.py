@@ -12,7 +12,6 @@ default_inference_settings = InferenceSettings(
     model="auto-small",
     temperature=0.5,
     reasoning_effort="minimal",
-    modality="native",
     image_resolution_dpi=192,
     n_consensus=1,
 )
