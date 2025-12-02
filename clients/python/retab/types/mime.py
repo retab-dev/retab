@@ -74,12 +74,12 @@ class Page(BaseModel):
     tokens: list[TextBox]
     transforms: list[Matrix] = Field(default=[], description="Transformation matrices applied to the original document image")
 
-    @field_validator("width", "height")
-    @classmethod
-    def check_positive_dimensions(cls, v: int) -> int:
-        if not isinstance(v, int) or v <= 0:
-            raise ValueError(f"Page dimension must be a positive integer, got {v}")
-        return v
+    # @field_validator("width", "height")
+    # @classmethod
+    # def check_positive_dimensions(cls, v: int) -> int:
+    #     if not isinstance(v, int) or v <= 0:
+    #         raise ValueError(f"Page dimension must be a positive integer, got {v}")
+    #     return v
 
 
 class OCR(BaseModel):
