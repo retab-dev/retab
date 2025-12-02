@@ -56,12 +56,12 @@ class TextBox(BaseModel):
     vertices: tuple[Point, Point, Point, Point] = Field(description="(top-left, top-right, bottom-right, bottom-left)")
     text: str
 
-    @field_validator("width", "height")
-    @classmethod
-    def check_positive_dimensions(cls, v: int) -> int:
-        if not isinstance(v, int) or v <= 0:
-            raise ValueError(f"Dimension must be a positive integer, got {v}")
-        return v
+    # @field_validator("width", "height")
+    # @classmethod
+    # def check_positive_dimensions(cls, v: int) -> int:
+    #     if not isinstance(v, int) or v <= 0:
+    #         raise ValueError(f"Dimension must be a positive integer, got {v}")
+    #     return v
 
 
 class Page(BaseModel):
