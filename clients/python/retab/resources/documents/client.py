@@ -13,6 +13,7 @@ from ...utils.mime import prepare_mime_document
 from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
 from ...types.chat import ChatCompletionRetabMessage
+from ...types.documents.edit import EditRequest, EditResponse
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
 from ...types.mime import MIMEData
@@ -113,6 +114,30 @@ class BaseDocumentsMixin:
 
         parse_request = ParseRequest(**request_dict)
         return PreparedRequest(method="POST", url="/v1/documents/parse", data=parse_request.model_dump(mode="json", exclude_unset=True))
+
+    def _prepare_edit(
+        self,
+        pdf_base64: str,
+        filling_instructions: str,
+        model: str = FieldUnset,
+        annotation_level: str = FieldUnset,
+        **extra_body: Any,
+    ) -> PreparedRequest:
+        request_dict: dict[str, Any] = {
+            "pdf_base64": pdf_base64,
+            "filling_instructions": filling_instructions,
+        }
+        if model is not FieldUnset:
+            request_dict["model"] = model
+        if annotation_level is not FieldUnset:
+            request_dict["annotation_level"] = annotation_level
+
+        # Merge any extra fields provided by the caller
+        if extra_body:
+            request_dict.update(extra_body)
+
+        edit_request = EditRequest(**request_dict)
+        return PreparedRequest(method="POST", url="/v1/documents/edit", data=edit_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_extract(
         self,
@@ -509,6 +534,51 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(request)
         return ParseResult.model_validate(response)
 
+    def edit(
+        self,
+        pdf_base64: str,
+        filling_instructions: str,
+        model: str = FieldUnset,
+        annotation_level: str = FieldUnset,
+        **extra_body: Any,
+    ) -> EditResponse:
+        """
+        Edit a PDF document by inferring form fields and filling them with provided instructions.
+
+        This method performs:
+        1. OCR on the PDF to extract text elements with bounding boxes
+        2. LLM inference to identify fillable form fields
+        3. LLM-based form filling using the provided instructions
+        4. Returns the filled PDF with form field values populated
+
+        Args:
+            pdf_base64: Base64-encoded PDF file to edit.
+            filling_instructions: Instructions describing how to fill the form fields.
+            model: The LLM model to use for inference. Defaults to "gemini-2.5-pro".
+            annotation_level: OCR annotation level: 'block', 'line', or 'token'. Defaults to "line".
+
+        Returns:
+            EditResponse: Response containing:
+                - form_schema: The inferred form schema with field positions
+                - filled_form_schema: The form schema with filled values
+                - ocr_result: OCR results used for inference
+                - ocr_annotated_pdf_base64: PDF with OCR bounding boxes
+                - form_fields_pdf_base64: PDF with form field bounding boxes
+                - filled_pdf_base64: PDF with filled form values
+
+        Raises:
+            HTTPException: If the request fails.
+        """
+        request = self._prepare_edit(
+            pdf_base64=pdf_base64,
+            filling_instructions=filling_instructions,
+            model=model,
+            annotation_level=annotation_level,
+            **extra_body,
+        )
+        response = self._client._prepared_request(request)
+        return EditResponse.model_validate(response)
+
 
 class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper for asynchronous usage."""
@@ -757,3 +827,48 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         )
         response = await self._client._prepared_request(request)
         return ParseResult.model_validate(response)
+
+    async def edit(
+        self,
+        pdf_base64: str,
+        filling_instructions: str,
+        model: str = FieldUnset,
+        annotation_level: str = FieldUnset,
+        **extra_body: Any,
+    ) -> EditResponse:
+        """
+        Edit a PDF document by inferring form fields and filling them asynchronously.
+
+        This method performs:
+        1. OCR on the PDF to extract text elements with bounding boxes
+        2. LLM inference to identify fillable form fields
+        3. LLM-based form filling using the provided instructions
+        4. Returns the filled PDF with form field values populated
+
+        Args:
+            pdf_base64: Base64-encoded PDF file to edit.
+            filling_instructions: Instructions describing how to fill the form fields.
+            model: The LLM model to use for inference. Defaults to "gemini-2.5-pro".
+            annotation_level: OCR annotation level: 'block', 'line', or 'token'. Defaults to "line".
+
+        Returns:
+            EditResponse: Response containing:
+                - form_schema: The inferred form schema with field positions
+                - filled_form_schema: The form schema with filled values
+                - ocr_result: OCR results used for inference
+                - ocr_annotated_pdf_base64: PDF with OCR bounding boxes
+                - form_fields_pdf_base64: PDF with form field bounding boxes
+                - filled_pdf_base64: PDF with filled form values
+
+        Raises:
+            HTTPException: If the request fails.
+        """
+        request = self._prepare_edit(
+            pdf_base64=pdf_base64,
+            filling_instructions=filling_instructions,
+            model=model,
+            annotation_level=annotation_level,
+            **extra_body,
+        )
+        response = await self._client._prepared_request(request)
+        return EditResponse.model_validate(response)
