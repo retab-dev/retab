@@ -18,20 +18,11 @@ function validateEditResponse(response: EditResponse | null): void {
 
     if (!response) return;
 
-    // Assert the response has required fields
-    expect(response.ocr_result).not.toBeNull();
-    expect(response.ocr_result).toBeDefined();
     expect(response.form_data).not.toBeNull();
     expect(response.form_data).toBeDefined();
 
-    // Validate OCR result
-    const ocrResult = response.ocr_result as OCRResult;
-    expect(ocrResult.elements).toBeDefined();
-    expect(ocrResult.formatted_text).toBeDefined();
-    expect(ocrResult.annotated_pdf).toBeDefined();
-
     // Validate annotated_pdf is MIMEData with data URI
-    const annotatedPdf = ocrResult.annotated_pdf as MIMEData;
+    const annotatedPdf = response.filled_pdf as MIMEData;
     expect(annotatedPdf.url).toBeDefined();
     expect(annotatedPdf.url.startsWith('data:')).toBe(true);
 
@@ -144,14 +135,9 @@ describe('Retab SDK Edit Tests', () => {
             validateEditResponse(response);
 
             // Additional specific validations
-            expect(response).toHaveProperty('ocr_result');
             expect(response).toHaveProperty('form_data');
             expect(response).toHaveProperty('filled_pdf');
 
-            // Validate OCR result structure
-            expect(response.ocr_result).toHaveProperty('elements');
-            expect(response.ocr_result).toHaveProperty('formatted_text');
-            expect(response.ocr_result).toHaveProperty('annotated_pdf');
 
             // Validate form_data has fields with proper structure
             response.form_data.forEach((field: FilledFormField) => {

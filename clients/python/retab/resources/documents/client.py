@@ -556,7 +556,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
         Returns:
             EditResponse: Response containing:
-                - ocr_result: OCR results used for inference
                 - form_data: List of form fields with filled values
                 - filled_pdf: PDF with filled form values (MIMEData)
 
@@ -844,7 +843,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         Returns:
             EditResponse: Response containing:
-                - ocr_result: OCR results used for inference
                 - form_data: List of form fields with filled values
                 - filled_pdf: PDF with filled form values (MIMEData)
 
