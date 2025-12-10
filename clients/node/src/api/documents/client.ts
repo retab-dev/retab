@@ -61,12 +61,11 @@ export default class APIDocuments extends CompositionClient {
      * describing the values to fill in.
      * 
      * @param params - EditRequest containing:
-     *   - pdf_base64: Base64-encoded PDF file to process
+     *   - document: MIMEData object with filename and url (data URI with base64 content)
      *   - filling_instructions: Natural language instructions for filling
      *   - model: LLM model for inference (default: "gemini-2.5-pro")
-     *   - annotation_level: OCR granularity - "block", "line", or "token" (default: "line")
      * @param options - Optional request options
-     * @returns EditResponse containing form schema, filled values, and output PDFs
+     * @returns EditResponse containing ocr_result, form_data (filled fields), and filled_pdf (MIMEData)
      */
     async edit(params: EditRequest, options?: RequestOptions): Promise<EditResponse> {
         return this._fetchJson(ZEditResponse, {

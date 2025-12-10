@@ -117,20 +117,19 @@ class BaseDocumentsMixin:
 
     def _prepare_edit(
         self,
-        pdf_base64: str,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         filling_instructions: str,
         model: str = FieldUnset,
-        annotation_level: str = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
+        mime_document = prepare_mime_document(document)
+        
         request_dict: dict[str, Any] = {
-            "pdf_base64": pdf_base64,
+            "document": mime_document,
             "filling_instructions": filling_instructions,
         }
         if model is not FieldUnset:
             request_dict["model"] = model
-        if annotation_level is not FieldUnset:
-            request_dict["annotation_level"] = annotation_level
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -536,10 +535,9 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
     def edit(
         self,
-        pdf_base64: str,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         filling_instructions: str,
         model: str = FieldUnset,
-        annotation_level: str = FieldUnset,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -552,28 +550,23 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         4. Returns the filled PDF with form field values populated
 
         Args:
-            pdf_base64: Base64-encoded PDF file to edit.
+            document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             filling_instructions: Instructions describing how to fill the form fields.
             model: The LLM model to use for inference. Defaults to "gemini-2.5-pro".
-            annotation_level: OCR annotation level: 'block', 'line', or 'token'. Defaults to "line".
 
         Returns:
             EditResponse: Response containing:
-                - form_schema: The inferred form schema with field positions
-                - filled_form_schema: The form schema with filled values
                 - ocr_result: OCR results used for inference
-                - ocr_annotated_pdf_base64: PDF with OCR bounding boxes
-                - form_fields_pdf_base64: PDF with form field bounding boxes
-                - filled_pdf_base64: PDF with filled form values
+                - form_data: List of form fields with filled values
+                - filled_pdf: PDF with filled form values (MIMEData)
 
         Raises:
             HTTPException: If the request fails.
         """
         request = self._prepare_edit(
-            pdf_base64=pdf_base64,
+            document=document,
             filling_instructions=filling_instructions,
             model=model,
-            annotation_level=annotation_level,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -830,10 +823,9 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
     async def edit(
         self,
-        pdf_base64: str,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         filling_instructions: str,
         model: str = FieldUnset,
-        annotation_level: str = FieldUnset,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -846,28 +838,23 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         4. Returns the filled PDF with form field values populated
 
         Args:
-            pdf_base64: Base64-encoded PDF file to edit.
+            document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             filling_instructions: Instructions describing how to fill the form fields.
             model: The LLM model to use for inference. Defaults to "gemini-2.5-pro".
-            annotation_level: OCR annotation level: 'block', 'line', or 'token'. Defaults to "line".
 
         Returns:
             EditResponse: Response containing:
-                - form_schema: The inferred form schema with field positions
-                - filled_form_schema: The form schema with filled values
                 - ocr_result: OCR results used for inference
-                - ocr_annotated_pdf_base64: PDF with OCR bounding boxes
-                - form_fields_pdf_base64: PDF with form field bounding boxes
-                - filled_pdf_base64: PDF with filled form values
+                - form_data: List of form fields with filled values
+                - filled_pdf: PDF with filled form values (MIMEData)
 
         Raises:
             HTTPException: If the request fails.
         """
         request = self._prepare_edit(
-            pdf_base64=pdf_base64,
+            document=document,
             filling_instructions=filling_instructions,
             model=model,
-            annotation_level=annotation_level,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
