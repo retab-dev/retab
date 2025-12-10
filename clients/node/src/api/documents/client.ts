@@ -1,5 +1,5 @@
 import { CompositionClient, RequestOptions } from "../../client.js";
-import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk } from "../../types.js";
+import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse } from "../../types.js";
 
 
 export default class APIDocuments extends CompositionClient {
@@ -49,6 +49,30 @@ export default class APIDocuments extends CompositionClient {
             url: "/v1/documents/create_inputs",
             method: "POST",
             body: { ...(await ZDocumentCreateInputRequest.parseAsync(params)), ...(options?.body || {}) },
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+    /**
+     * Edit a PDF document by automatically detecting and filling form fields.
+     * 
+     * This method combines OCR text detection with LLM-based form field inference
+     * and filling. It accepts any PDF document and natural language instructions
+     * describing the values to fill in.
+     * 
+     * @param params - EditRequest containing:
+     *   - pdf_base64: Base64-encoded PDF file to process
+     *   - filling_instructions: Natural language instructions for filling
+     *   - model: LLM model for inference (default: "gemini-2.5-pro")
+     *   - annotation_level: OCR granularity - "block", "line", or "token" (default: "line")
+     * @param options - Optional request options
+     * @returns EditResponse containing form schema, filled values, and output PDFs
+     */
+    async edit(params: EditRequest, options?: RequestOptions): Promise<EditResponse> {
+        return this._fetchJson(ZEditResponse, {
+            url: "/v1/documents/edit",
+            method: "POST",
+            body: { ...(await ZEditRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });
