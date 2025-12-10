@@ -135,7 +135,6 @@ class EditRequest(InferFormSchemaRequest):
 class EditResponse(BaseModel):
     """Response from the fill_form endpoint.
     """
-    ocr_result: OCRResult = Field(..., description="The OCR results used for inference")
     form_data: list[FilledFormField] = Field(
         ...,
         description=(

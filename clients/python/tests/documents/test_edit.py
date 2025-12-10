@@ -43,16 +43,7 @@ def validate_edit_response(response: EditResponse | None) -> None:
     assert isinstance(response, EditResponse), f"Response should be of type EditResponse, received {type(response)}"
     
     # Assert the response has required fields
-    assert response.ocr_result is not None, "Response ocr_result should not be None"
     assert response.form_data is not None, "Response form_data should not be None"
-    
-    # Validate OCR result
-    assert isinstance(response.ocr_result, OCRResult), "ocr_result should be of type OCRResult"
-    assert response.ocr_result.elements is not None, "OCR elements should not be None"
-    assert response.ocr_result.formatted_text is not None, "OCR formatted_text should not be None"
-    assert response.ocr_result.annotated_pdf is not None, "OCR annotated_pdf should not be None"
-    assert isinstance(response.ocr_result.annotated_pdf, MIMEData), "annotated_pdf should be MIMEData"
-    assert response.ocr_result.annotated_pdf.url.startswith("data:"), "annotated_pdf url should be a data URI"
     
     # Validate form_data
     assert isinstance(response.form_data, list), "form_data should be a list"
@@ -173,14 +164,8 @@ async def test_edit_response_structure(
     validate_edit_response(response)
     
     # Additional specific validations
-    assert hasattr(response, 'ocr_result'), "Response should have ocr_result attribute"
     assert hasattr(response, 'form_data'), "Response should have form_data attribute"
     assert hasattr(response, 'filled_pdf'), "Response should have filled_pdf attribute"
-    
-    # Validate OCR result structure
-    assert hasattr(response.ocr_result, 'elements'), "OCR result should have elements"
-    assert hasattr(response.ocr_result, 'formatted_text'), "OCR result should have formatted_text"
-    assert hasattr(response.ocr_result, 'annotated_pdf'), "OCR result should have annotated_pdf"
     
     # Validate form_data has fields with proper structure
     for field in response.form_data:
