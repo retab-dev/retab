@@ -109,7 +109,7 @@ async def base_test_edit(
     document_path: str,
     filling_instructions: str,
 ) -> EditResponse:
-    response: EditResponse | None = None
+    response: EditResponse 
 
     if client_type == "sync":
         with sync_client as client:
