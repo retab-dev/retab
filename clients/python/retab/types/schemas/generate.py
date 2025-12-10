@@ -7,7 +7,7 @@ from ..mime import MIMEData
 class GenerateSchemaRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     documents: list[MIMEData]
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-5-mini"
     temperature: float = 0.0
     reasoning_effort: ChatCompletionReasoningEffort = "minimal"
     instructions: str | None = None
