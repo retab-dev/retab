@@ -1,0 +1,43 @@
+{
+  "account_owners": [
+    "Sarah Michelle Johnson",
+    "Michael Robert Johnson"
+  ],
+  "fidelity_accounts": [
+    "732556123",
+    "908456125",
+    "221456124"
+  ],
+  "wire_instructions": {
+    "bank_name": "DBS Bank Ltd",
+    "routing_or_aba_number": "N/A",
+    "account_number": "001-234567-890",
+    "account_owner_names": "Sarah Michelle Johnson & Michael Robert Johnson",
+    "recipient_address": {
+      "street": "12 Marina Boulevard, Level 3",
+      "city": "Singapore",
+      "state_or_province": "N/A",
+      "postal_code": "018982",
+      "country": "Singapore"
+    },
+    "for_further_credit": "Further Credit to Michael Johnson, Fidelity Acc #789456123",
+    "account_outside_united_states": true
+  },
+  "correspondent_bank": {
+    "routing_or_aba_number": "021000021",
+    "bank_name": "JPMorgan Chase Bank, N.A.",
+    "swift_code": "DBSSSGSG",
+    "country": "Singapore"
+  },
+  "w8_reason": "Standing instructions requested for transfer to Singapore financial institut",
+  "signatures": [
+    {
+      "printed_name": "MICHAEL ROBERT JOHNSON",
+      "date": "07/15/2025"
+    },
+    {
+      "printed_name": "SARAH MICHELLE JOHNSON",
+      "date": "07/15/2025"
+    }
+  ]
+}

@@ -649,9 +649,10 @@ export const ZEditRequest = z.lazy(() => (ZInferFormSchemaRequest.schema).merge(
 })));
 export type EditRequest = z.infer<typeof ZEditRequest>;
 
-export const ZEditResponse = z.lazy(() => (ZInferFormSchemaResponse.schema).merge(z.object({
-    filled_form_schema: ZFilledFormSchema.nullable().optional(),
-    filled_pdf_base64: z.string().nullable().optional(),
+export const ZEditResponse = z.lazy(() => (z.object({
+    ocr_result: ZOCRResult,
+    form_data: z.array(ZFilledFormField),
+    filled_pdf: ZMIMEData.nullable().optional(),
 })));
 export type EditResponse = z.infer<typeof ZEditResponse>;
 
@@ -666,11 +667,6 @@ export const ZFilledFormField = z.lazy(() => (ZBaseFormField.schema).merge(z.obj
 })));
 export type FilledFormField = z.infer<typeof ZFilledFormField>;
 
-export const ZFilledFormSchema = z.lazy(() => (z.object({
-    form_schema: z.array(ZFilledFormField),
-})));
-export type FilledFormSchema = z.infer<typeof ZFilledFormSchema>;
-
 export const ZFormField = z.lazy(() => (ZBaseFormField.schema).merge(z.object({
     value: z.string().nullable().optional(),
 })));
@@ -682,24 +678,22 @@ export const ZFormSchema = z.lazy(() => (z.object({
 export type FormSchema = z.infer<typeof ZFormSchema>;
 
 export const ZInferFormSchemaRequest = z.lazy(() => (z.object({
-    pdf_base64: z.string(),
+    document: ZMIMEData,
     model: z.string().default("gemini-2.5-pro"),
-    annotation_level: z.string().default("line"),
 })));
 export type InferFormSchemaRequest = z.infer<typeof ZInferFormSchemaRequest>;
 
 export const ZInferFormSchemaResponse = z.lazy(() => (z.object({
     form_schema: ZFormSchema,
     ocr_result: ZOCRResult,
-    ocr_annotated_pdf_base64: z.string(),
-    form_fields_pdf_base64: z.string(),
+    form_fields_pdf: ZMIMEData,
 })));
 export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 
 export const ZOCRResult = z.lazy(() => (z.object({
     elements: z.array(ZOCRTextElement),
     formatted_text: z.string(),
-    annotated_pdf_base64: z.string(),
+    annotated_pdf: ZMIMEData,
 })));
 export type OCRResult = z.infer<typeof ZOCRResult>;
 
@@ -709,6 +703,11 @@ export const ZOCRTextElement = z.lazy(() => (z.object({
     element_type: z.string(),
 })));
 export type OCRTextElement = z.infer<typeof ZOCRTextElement>;
+
+export const ZProcessOCRRequest = z.lazy(() => (z.object({
+    document: ZMIMEData,
+})));
+export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
 
 export const ZDocumentCreateInputRequest = z.lazy(() => (ZDocumentCreateMessageRequest.schema).merge(z.object({
     json_schema: z.record(z.string(), z.any()),

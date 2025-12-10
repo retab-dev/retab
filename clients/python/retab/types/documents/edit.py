@@ -1,8 +1,8 @@
-from pydantic import BaseModel, Field
-
 from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel, Field
+
+from ..mime import MIMEData
 
 
 class BBox(BaseModel):
@@ -95,16 +95,6 @@ class FilledFormField(BaseFormField):
         ),
     )
 
-class FilledFormSchema(BaseModel):
-    """Top-level object holding the list of fields for a given form template."""
-
-    form_schema: List[FilledFormField] = Field(
-        ...,
-        description=(
-            "List of form fields (with positions, descriptions, and metadata) "
-            "that define the structure of the form."
-        ),
-    )
 
 class OCRTextElement(BaseModel):
     """A single OCR-detected text element with its bounding box."""
@@ -119,16 +109,14 @@ class OCRResult(BaseModel):
     
     elements: list[OCRTextElement] = Field(default_factory=list, description="All detected text elements")
     formatted_text: str = Field(..., description="Human-readable formatted string of all elements")
-    annotated_pdf_base64: str = Field(..., description="Base64-encoded PDF with bbox annotations")
-
+    annotated_pdf: MIMEData = Field(..., description="PDF with bbox annotations")
 
 
 class InferFormSchemaRequest(BaseModel):
     """Request to infer form schema from a PDF."""
     
-    pdf_base64: str = Field(..., description="Base64-encoded PDF file")
+    document: MIMEData = Field(..., description="Input document (PDF)")
     model: str = Field(default="gemini-2.5-pro", description="LLM model to use for inference")
-    annotation_level: str = Field(default="line", description="OCR annotation level: 'block', 'line', or 'token'")
 
 
 class InferFormSchemaResponse(BaseModel):
@@ -136,8 +124,7 @@ class InferFormSchemaResponse(BaseModel):
     
     form_schema: FormSchema = Field(..., description="The inferred form schema")
     ocr_result: OCRResult = Field(..., description="The OCR results used for inference")
-    ocr_annotated_pdf_base64: str = Field(..., description="Base64-encoded PDF with OCR text bounding boxes")
-    form_fields_pdf_base64: str = Field(..., description="Base64-encoded PDF with form field bounding boxes")
+    form_fields_pdf: MIMEData = Field(..., description="PDF with form field bounding boxes")
 
 
 class EditRequest(InferFormSchemaRequest):
@@ -145,8 +132,22 @@ class EditRequest(InferFormSchemaRequest):
     
     filling_instructions: str = Field(..., description="Instructions to fill the form")
 
-class EditResponse(InferFormSchemaResponse):
+class EditResponse(BaseModel):
     """Response from the fill_form endpoint.
     """
-    filled_form_schema: FilledFormSchema | None = Field(None, description="Filled form schema (step 2)")
-    filled_pdf_base64: str | None = Field(None, description="Base64-encoded PDF with filled form values")
+    ocr_result: OCRResult = Field(..., description="The OCR results used for inference")
+    form_data: list[FilledFormField] = Field(
+        ...,
+        description=(
+            "List of form fields (with positions, descriptions, and metadata) "
+            "that define the structure of the form."
+        ),
+    )
+    filled_pdf: MIMEData | None = Field(None, description="PDF with filled form values")
+
+
+class ProcessOCRRequest(BaseModel):
+    """Request to process a PDF with OCR only (step 1)."""
+    
+    document: MIMEData = Field(..., description="Input document (PDF)")
+

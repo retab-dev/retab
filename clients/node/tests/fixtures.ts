@@ -60,6 +60,21 @@ export function getPayslipFilePath(): string {
     return path.join(testDataDir, 'payslip', 'payslip.pdf');
 }
 
+export function getFidelityFormPath(): string {
+    const testDataDir = getTestDataDir();
+    return path.join(testDataDir, 'edit', 'fidelity_original.pdf');
+}
+
+export function getFidelityInstructions(): string {
+    const testDataDir = getTestDataDir();
+    const instructionsPath = path.join(testDataDir, 'edit', 'instructions.txt');
+    return fs.readFileSync(instructionsPath, 'utf-8');
+}
+
+export function getFidelityInstructionsJson(): Record<string, any> {
+    return JSON.parse(getFidelityInstructions());
+}
+
 // Global test constants
 export const TEST_MODEL = "gpt-4.1-nano";
 export const TEST_MODALITY = "native";
