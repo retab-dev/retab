@@ -651,7 +651,7 @@ export type EditRequest = z.infer<typeof ZEditRequest>;
 
 export const ZEditResponse = z.lazy(() => (z.object({
     form_data: z.array(ZFilledFormField),
-    filled_pdf: ZMIMEData.nullable().optional(),
+    filled_document: ZMIMEData.nullable().optional(),
 })));
 export type EditResponse = z.infer<typeof ZEditResponse>;
 

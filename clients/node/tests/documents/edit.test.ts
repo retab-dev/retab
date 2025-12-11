@@ -22,7 +22,7 @@ function validateEditResponse(response: EditResponse | null): void {
     expect(response.form_data).toBeDefined();
 
     // Validate annotated_pdf is MIMEData with data URI
-    const annotatedPdf = response.filled_pdf as MIMEData;
+    const annotatedPdf = response.filled_document as MIMEData;
     expect(annotatedPdf.url).toBeDefined();
     expect(annotatedPdf.url.startsWith('data:')).toBe(true);
 
@@ -47,9 +47,9 @@ function validateEditResponse(response: EditResponse | null): void {
         expect(field.bbox.page).toBeGreaterThanOrEqual(1);
     });
 
-    // Validate filled_pdf if present
-    if (response.filled_pdf) {
-        const filledPdf = response.filled_pdf as MIMEData;
+    // Validate filled_document if present
+    if (response.filled_document) {
+        const filledPdf = response.filled_document as MIMEData;
         expect(filledPdf.filename).toBeDefined();
         expect(filledPdf.url).toBeDefined();
         expect(filledPdf.url.startsWith('data:application/pdf;base64,')).toBe(true);
@@ -136,7 +136,7 @@ describe('Retab SDK Edit Tests', () => {
 
             // Additional specific validations
             expect(response).toHaveProperty('form_data');
-            expect(response).toHaveProperty('filled_pdf');
+            expect(response).toHaveProperty('filled_document');
 
 
             // Validate form_data has fields with proper structure
@@ -150,7 +150,7 @@ describe('Retab SDK Edit Tests', () => {
     });
 
     describe('Edit Filled PDF Validation', () => {
-        test('test_edit_filled_pdf_is_valid', async () => {
+        test('test_edit_filled_document_is_valid', async () => {
             const response = await client.documents.edit({
                 document: {
                     filename: 'fidelity_original.pdf',
@@ -165,12 +165,12 @@ describe('Retab SDK Edit Tests', () => {
             validateEditResponse(response);
 
             // Extract and validate PDF content
-            expect(response.filled_pdf).not.toBeNull();
-            expect(response.filled_pdf).toBeDefined();
+            expect(response.filled_document).not.toBeNull();
+            expect(response.filled_document).toBeDefined();
 
-            if (response.filled_pdf) {
+            if (response.filled_document) {
                 // Extract base64 content from data URI
-                const base64Content = response.filled_pdf.url.split(',')[1];
+                const base64Content = response.filled_document.url.split(',')[1];
                 const pdfBuffer = Buffer.from(base64Content, 'base64');
 
                 // Check PDF magic bytes (PDF files start with %PDF-)

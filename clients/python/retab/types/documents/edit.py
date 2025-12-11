@@ -142,7 +142,7 @@ class EditResponse(BaseModel):
             "that define the structure of the form."
         ),
     )
-    filled_pdf: MIMEData = Field(..., description="PDF with filled form values")
+    filled_document: MIMEData = Field(..., description="PDF with filled form values")
 
 
 class ProcessOCRRequest(BaseModel):

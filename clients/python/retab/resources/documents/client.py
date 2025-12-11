@@ -557,7 +557,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Returns:
             EditResponse: Response containing:
                 - form_data: List of form fields with filled values
-                - filled_pdf: PDF with filled form values (MIMEData)
+                - filled_document: PDF with filled form values (MIMEData)
 
         Raises:
             HTTPException: If the request fails.
@@ -844,7 +844,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Returns:
             EditResponse: Response containing:
                 - form_data: List of form fields with filled values
-                - filled_pdf: PDF with filled form values (MIMEData)
+                - filled_document: PDF with filled form values (MIMEData)
 
         Raises:
             HTTPException: If the request fails.
