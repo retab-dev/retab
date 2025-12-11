@@ -65,7 +65,7 @@ export default class APIDocuments extends CompositionClient {
      *   - filling_instructions: Natural language instructions for filling
      *   - model: LLM model for inference (default: "gemini-2.5-pro")
      * @param options - Optional request options
-     * @returns EditResponse containing ocr_result, form_data (filled fields), and filled_pdf (MIMEData)
+     * @returns EditResponse containing ocr_result, form_data (filled fields), and filled_document (MIMEData)
      */
     async edit(params: EditRequest, options?: RequestOptions): Promise<EditResponse> {
         return this._fetchJson(ZEditResponse, {

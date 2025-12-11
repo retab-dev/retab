@@ -63,11 +63,11 @@ def validate_edit_response(response: EditResponse | None) -> None:
         assert 0 <= field.bbox.height <= 1, "bbox height should be normalized (0-1)"
         assert field.bbox.page >= 1, "bbox page should be >= 1"
     
-    # Validate filled_pdf
-    if response.filled_pdf is not None:
-        assert isinstance(response.filled_pdf, MIMEData), "filled_pdf should be MIMEData"
-        assert response.filled_pdf.filename is not None, "filled_pdf filename should not be None"
-        assert response.filled_pdf.url.startswith("data:application/pdf;base64,"), "filled_pdf url should be a PDF data URI"
+    # Validate filled_document
+    if response.filled_document is not None:
+        assert isinstance(response.filled_document, MIMEData), "filled_document should be MIMEData"
+        assert response.filled_document.filename is not None, "filled_document filename should not be None"
+        assert response.filled_document.url.startswith("data:application/pdf;base64,"), "filled_document url should be a PDF data URI"
 
 
 def validate_fidelity_form_fields(response: EditResponse, instructions: dict) -> None:
@@ -165,7 +165,7 @@ async def test_edit_response_structure(
     
     # Additional specific validations
     assert hasattr(response, 'form_data'), "Response should have form_data attribute"
-    assert hasattr(response, 'filled_pdf'), "Response should have filled_pdf attribute"
+    assert hasattr(response, 'filled_document'), "Response should have filled_document attribute"
     
     # Validate form_data has fields with proper structure
     for field in response.form_data:
@@ -177,7 +177,7 @@ async def test_edit_response_structure(
 
 
 @pytest.mark.asyncio
-async def test_edit_filled_pdf_is_valid(
+async def test_edit_filled_document_is_valid(
     sync_client: Retab,
     fidelity_form_path: str,
     fidelity_instructions: str,
@@ -195,10 +195,10 @@ async def test_edit_filled_pdf_is_valid(
     validate_edit_response(response)
     
     # Extract and validate PDF content
-    assert response.filled_pdf is not None, "Should have a filled PDF"
+    assert response.filled_document is not None, "Should have a filled PDF"
     
     # Extract base64 content from data URI
-    base64_content = response.filled_pdf.url.split(",")[1]
+    base64_content = response.filled_document.url.split(",")[1]
     pdf_bytes = base64.b64decode(base64_content)
     
     # Check PDF magic bytes (PDF files start with %PDF-)
