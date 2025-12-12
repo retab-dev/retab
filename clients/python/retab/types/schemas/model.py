@@ -103,7 +103,57 @@ def _insert_reasoning_fields_inner(schema: dict[str, Any]) -> tuple[dict[str, An
     return schema, reasoning_desc
 
 
-def filter_auxiliary_fields(data: dict[str, Any], prefixes: list[str] = ["reasoning___"]) -> dict[str, Any]:
+def _insert_quote_fields_inner(schema: dict[str, Any]) -> dict[str, Any]:
+    """
+    Inner function that processes a schema and adds source___ fields for leaf nodes with X-SourceQuote: true.
+    Only applies to leaf fields, never to the root.
+    """
+    if not isinstance(schema, dict):
+        return schema
+
+    # Create a copy to avoid modifying the original
+    new_schema = copy.deepcopy(schema)
+
+    # Process children recursively
+    if "properties" in new_schema and isinstance(new_schema["properties"], dict):
+        new_props = {}
+        for property_key, property_value in new_schema["properties"].items():
+            updated_prop_schema_value = _insert_quote_fields_inner(property_value)
+            has_quote_field = updated_prop_schema_value.get("X-SourceQuote") is True
+
+            # Check if this property is a leaf with X-SourceQuote: true
+            if has_quote_field:
+                # Add the quote field
+                quote_key = f"source___{property_key}"
+                new_props[quote_key] = {"type": "string", "description": f"The exact quote from the source document that supports the extracted value for '{property_key}'."}
+
+                # Add the quote field to required if the property is required
+                if "required" in new_schema and property_key in new_schema["required"]:
+                    # add the quote field to required just before the property_key
+                    new_schema["required"].insert(new_schema["required"].index(property_key), quote_key)
+
+                # Remove the X-SourceQuote field
+                updated_prop_schema_value.pop("X-SourceQuote", None)
+
+            new_props[property_key] = updated_prop_schema_value
+        new_schema["properties"] = new_props
+
+    elif "items" in new_schema:
+        # Recurse into items if present
+        updated_items = _insert_quote_fields_inner(new_schema["items"])
+        new_schema["items"] = updated_items
+
+    # Process $defs as well
+    if "$defs" in new_schema and isinstance(new_schema["$defs"], dict):
+        new_defs = {}
+        for dk, dv in new_schema["$defs"].items():
+            new_defs[dk] = _insert_quote_fields_inner(dv)
+        new_schema["$defs"] = new_defs
+
+    return new_schema
+
+
+def filter_auxiliary_fields(data: dict[str, Any], prefixes: list[str] = ["reasoning___", "source___"]) -> dict[str, Any]:
     """
     Recursively filters out fields that start with any of the prefixes in `prefixes` from the input data.
     """
@@ -142,6 +192,9 @@ def create_reasoning_schema_without_ref_expansion(json_schema: dict[str, Any]) -
         if "required" in updated_schema:
             updated_schema["required"].append("reasoning___root")
 
+    # Insert quote fields for leaf nodes with X-SourceQuote: true
+    updated_schema = _insert_quote_fields_inner(updated_schema)
+
     # Clean the schema (remove defaults, etc)
     updated_schema = clean_schema(updated_schema, remove_custom_fields=True)
     return updated_schema
@@ -166,6 +219,9 @@ def create_reasoning_schema(json_schema: dict[str, Any]) -> dict[str, Any]:
         add_reasoning_sibling_inplace(updated_schema["properties"], "root", root_reasoning)
         if "required" in updated_schema:
             updated_schema["required"].append("reasoning___root")
+
+    # Insert quote fields for leaf nodes with X-SourceQuote: true
+    updated_schema = _insert_quote_fields_inner(updated_schema)
 
     # Clean the schema (remove defaults, etc)
     updated_schema = clean_schema(updated_schema, remove_custom_fields=True)
@@ -1115,6 +1171,30 @@ No ambiguities."
 
 ### Array Item Example
 "Line 12: 'Office Supplies x5 $4.99ea $24.95'. Qty * price = total verified. Consistent format; high confidence."
+
+---
+
+## Source Quote Fields
+
+The schema may include source quote fields (`source___*`) for capturing exact quotes from the document that support extracted values. These fields appear as siblings to the fields they document.
+
+Naming:
+- `source___[fieldname]` for each field marked with X-SourceQuote in the schema
+
+Guidelines:
+- Extract the exact verbatim text from the document that supports the extracted value.
+- Include surrounding context when helpful for verification.
+- For missing data, use an empty string `""`.
+- These fields are internal and omitted from final outputs.
+
+### Example
+If extracting a company name with source quote:
+```json
+{
+  "source___company_name": "Registered Office: ACME Corporation Ltd",
+  "company_name": "ACME Corporation Ltd"
+}
+```
 
 ---
 

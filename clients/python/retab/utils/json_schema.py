@@ -368,7 +368,7 @@ def convert_basemodel_to_partial_basemodel(base_model: Type[BaseModel]) -> Type[
 
 
 
-def filter_auxiliary_fields(data: dict[str, Any], prefixes: list[str] = ["reasoning___", "quote___"]) -> dict[str, Any]:
+def filter_auxiliary_fields(data: dict[str, Any], prefixes: list[str] = ["reasoning___", "source___"]) -> dict[str, Any]:
     """
     Recursively filters out fields that start with any of the prefixes in `prefixes` from the input data.
     """
@@ -388,7 +388,7 @@ def filter_auxiliary_fields(data: dict[str, Any], prefixes: list[str] = ["reason
     return filtered
 
 
-def filter_auxiliary_fields_json(data: str, prefixes: list[str] = ["reasoning___", "quote___"]) -> dict[str, Any]:
+def filter_auxiliary_fields_json(data: str, prefixes: list[str] = ["reasoning___", "source___"]) -> dict[str, Any]:
     """
     Recursively filters out fields that start with any of the prefixes in `prefixes` from the input JSON data.
     """
