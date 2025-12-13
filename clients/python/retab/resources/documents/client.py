@@ -142,7 +142,7 @@ class BaseDocumentsMixin:
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
@@ -261,7 +261,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
@@ -279,7 +279,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Args:
             json_schema: JSON schema defining the expected data structure
             model: The AI model to use for processing
-            document: Document to process (file path, URL, or file-like object)
+            document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data
@@ -405,7 +405,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
@@ -637,7 +637,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
@@ -655,7 +655,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Args:
             json_schema: JSON schema defining the expected data structure
             model: The AI model to use for processing
-            document: Document to process (file path, URL, or file-like object)
+            document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI
             temperature: Model temperature setting (0-1)
             reasoning_effort: The effort level for the model to reason about the input data
@@ -693,7 +693,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         json_schema: dict[str, Any] | Path | str,
         model: str,
-        document: Path | str | IOBase | HttpUrl,
+        document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
@@ -709,7 +709,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Args:
             json_schema: JSON schema defining the expected data structure.
             model: The AI model to use.
-            document: Document to process (file path, URL, or file-like object)
+            document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI.
             temperature: Model temperature setting (0-1).
             reasoning_effort: The effort level for the model to reason about the input data.
