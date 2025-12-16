@@ -133,7 +133,17 @@ export const ZCreateProjectRequest = z.object({
 });
 export type CreateProjectRequest = z.input<typeof ZCreateProjectRequest>;
 
+export const ZEditRequest = z.object({
+    ...generated.ZEditRequest.schema.shape,
+    document: ZMIMEData,
+});
+export type EditRequest = z.input<typeof ZEditRequest>;
 
+export const ZSplitRequest = z.object({
+    ...generated.ZSplitRequest.schema.shape,
+    document: ZMIMEData,
+});
+export type SplitRequest = z.input<typeof ZSplitRequest>;
 
 export const ZModel = z.lazy(() => (z.object({
     id: z.string(),
