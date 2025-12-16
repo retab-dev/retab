@@ -288,7 +288,7 @@ export const ZComputationSpec = z.lazy(() => (z.object({
 export type ComputationSpec = z.infer<typeof ZComputationSpec>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({ "model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1 }),
+    inference_settings: ZInferenceSettings.default({"model": "auto-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
     json_schema: z.record(z.string(), z.any()),
     human_in_the_loop_criteria: z.array(ZHilCriterion),
     computation_spec: ZComputationSpec,
@@ -324,7 +324,7 @@ export type StoredProject = z.infer<typeof ZStoredProject>;
 
 export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     documents: z.array(ZMIMEData),
-    model: z.string().default("gpt-4o-mini"),
+    model: z.string().default("gpt-5-mini"),
     temperature: z.number().default(0.0),
     reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
     instructions: z.string().nullable().optional(),
@@ -529,7 +529,7 @@ export const ZResponse = z.lazy(() => (z.object({
     incomplete_details: ZIncompleteDetails.nullable().optional(),
     instructions: z.union([z.string(), z.array(z.union([ZEasyInputMessage, ZMessage, ZResponseOutputMessage, ZResponseFileSearchToolCall, ZResponseComputerToolCall, ZComputerCallOutput, ZResponseFunctionWebSearch, ZResponseFunctionToolCall, ZFunctionCallOutput, ZResponseReasoningItem, ZResponseCompactionItemParam, ZImageGenerationCall, ZResponseCodeInterpreterToolCall, ZLocalShellCall, ZLocalShellCallOutput, ZShellCall, ZShellCallOutput, ZApplyPatchCall, ZApplyPatchCallOutput, ZMcpListTools, ZMcpApprovalRequest, ZMcpApprovalResponse, ZMcpCall, ZResponseCustomToolCallOutput, ZResponseCustomToolCall, ZItemReference]))]).nullable().optional(),
     metadata: z.record(z.string(), z.string()).nullable().optional(),
-    model: z.union([z.string(), z.union([z.literal("gpt-5.1"), z.literal("gpt-5.1-2025-11-13"), z.literal("gpt-5.1-codex"), z.literal("gpt-5.1-mini"), z.literal("gpt-5.1-chat-latest"), z.literal("gpt-5"), z.literal("gpt-5-mini"), z.literal("gpt-5-nano"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-5-chat-latest"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o3-mini"), z.literal("o3-mini-2025-01-31"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o1-preview"), z.literal("o1-preview-2024-09-12"), z.literal("o1-mini"), z.literal("o1-mini-2024-09-12"), z.literal("gpt-4o"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-audio-preview"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2025-06-03"), z.literal("gpt-4o-mini-audio-preview"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-search-preview"), z.literal("gpt-4o-mini-search-preview"), z.literal("gpt-4o-search-preview-2025-03-11"), z.literal("gpt-4o-mini-search-preview-2025-03-11"), z.literal("chatgpt-4o-latest"), z.literal("codex-mini-latest"), z.literal("gpt-4o-mini"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("gpt-4-turbo"), z.literal("gpt-4-turbo-2024-04-09"), z.literal("gpt-4-0125-preview"), z.literal("gpt-4-turbo-preview"), z.literal("gpt-4-1106-preview"), z.literal("gpt-4-vision-preview"), z.literal("gpt-4"), z.literal("gpt-4-0314"), z.literal("gpt-4-0613"), z.literal("gpt-4-32k"), z.literal("gpt-4-32k-0314"), z.literal("gpt-4-32k-0613"), z.literal("gpt-3.5-turbo"), z.literal("gpt-3.5-turbo-16k"), z.literal("gpt-3.5-turbo-0301"), z.literal("gpt-3.5-turbo-0613"), z.literal("gpt-3.5-turbo-1106"), z.literal("gpt-3.5-turbo-0125"), z.literal("gpt-3.5-turbo-16k-0613")]), z.union([z.literal("o1-pro"), z.literal("o1-pro-2025-03-19"), z.literal("o3-pro"), z.literal("o3-pro-2025-06-10"), z.literal("o3-deep-research"), z.literal("o3-deep-research-2025-06-26"), z.literal("o4-mini-deep-research"), z.literal("o4-mini-deep-research-2025-06-26"), z.literal("computer-use-preview"), z.literal("computer-use-preview-2025-03-11"), z.literal("gpt-5-codex"), z.literal("gpt-5-pro"), z.literal("gpt-5-pro-2025-10-06"), z.literal("gpt-5.1-codex-max")])]),
+    model: z.union([z.string(), z.union([z.literal("gpt-5.2"), z.literal("gpt-5.2-2025-12-11"), z.literal("gpt-5.2-chat-latest"), z.literal("gpt-5.2-pro"), z.literal("gpt-5.2-pro-2025-12-11"), z.literal("gpt-5.1"), z.literal("gpt-5.1-2025-11-13"), z.literal("gpt-5.1-codex"), z.literal("gpt-5.1-mini"), z.literal("gpt-5.1-chat-latest"), z.literal("gpt-5"), z.literal("gpt-5-mini"), z.literal("gpt-5-nano"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-5-chat-latest"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o3-mini"), z.literal("o3-mini-2025-01-31"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o1-preview"), z.literal("o1-preview-2024-09-12"), z.literal("o1-mini"), z.literal("o1-mini-2024-09-12"), z.literal("gpt-4o"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-audio-preview"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2025-06-03"), z.literal("gpt-4o-mini-audio-preview"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-search-preview"), z.literal("gpt-4o-mini-search-preview"), z.literal("gpt-4o-search-preview-2025-03-11"), z.literal("gpt-4o-mini-search-preview-2025-03-11"), z.literal("chatgpt-4o-latest"), z.literal("codex-mini-latest"), z.literal("gpt-4o-mini"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("gpt-4-turbo"), z.literal("gpt-4-turbo-2024-04-09"), z.literal("gpt-4-0125-preview"), z.literal("gpt-4-turbo-preview"), z.literal("gpt-4-1106-preview"), z.literal("gpt-4-vision-preview"), z.literal("gpt-4"), z.literal("gpt-4-0314"), z.literal("gpt-4-0613"), z.literal("gpt-4-32k"), z.literal("gpt-4-32k-0314"), z.literal("gpt-4-32k-0613"), z.literal("gpt-3.5-turbo"), z.literal("gpt-3.5-turbo-16k"), z.literal("gpt-3.5-turbo-0301"), z.literal("gpt-3.5-turbo-0613"), z.literal("gpt-3.5-turbo-1106"), z.literal("gpt-3.5-turbo-0125"), z.literal("gpt-3.5-turbo-16k-0613")]), z.union([z.literal("o1-pro"), z.literal("o1-pro-2025-03-19"), z.literal("o3-pro"), z.literal("o3-pro-2025-06-10"), z.literal("o3-deep-research"), z.literal("o3-deep-research-2025-06-26"), z.literal("o4-mini-deep-research"), z.literal("o4-mini-deep-research-2025-06-26"), z.literal("computer-use-preview"), z.literal("computer-use-preview-2025-03-11"), z.literal("gpt-5-codex"), z.literal("gpt-5-pro"), z.literal("gpt-5-pro-2025-10-06"), z.literal("gpt-5.1-codex-max")])]),
     object: z.literal("response"),
     output: z.array(z.union([ZResponseOutputMessage, ZResponseFileSearchToolCall, ZResponseFunctionToolCall, ZResponseFunctionWebSearch, ZResponseComputerToolCall, ZResponseReasoningItem, ZResponseCompactionItem, ZResponseOutputItemImageGenerationCall, ZResponseCodeInterpreterToolCall, ZResponseOutputItemLocalShellCall, ZResponseFunctionShellToolCall, ZResponseFunctionShellToolCallOutput, ZResponseApplyPatchToolCall, ZResponseApplyPatchToolCallOutput, ZResponseOutputItemMcpCall, ZResponseOutputItemMcpListTools, ZResponseOutputItemMcpApprovalRequest, ZResponseCustomToolCall])),
     parallel_tool_calls: z.boolean(),
@@ -651,7 +651,7 @@ export type EditRequest = z.infer<typeof ZEditRequest>;
 
 export const ZEditResponse = z.lazy(() => (z.object({
     form_data: z.array(ZFilledFormField),
-    filled_document: ZMIMEData.nullable().optional(),
+    filled_document: ZMIMEData,
 })));
 export type EditResponse = z.infer<typeof ZEditResponse>;
 
@@ -707,6 +707,36 @@ export const ZProcessOCRRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
 })));
 export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
+
+export const ZCategory = z.lazy(() => (z.object({
+    name: z.string(),
+    description: z.string(),
+})));
+export type Category = z.infer<typeof ZCategory>;
+
+export const ZSplitOutputSchema = z.lazy(() => (z.object({
+    splits: z.array(ZSplitResult),
+})));
+export type SplitOutputSchema = z.infer<typeof ZSplitOutputSchema>;
+
+export const ZSplitRequest = z.lazy(() => (z.object({
+    document: ZMIMEData,
+    categories: z.array(ZCategory),
+    model: z.string(),
+})));
+export type SplitRequest = z.infer<typeof ZSplitRequest>;
+
+export const ZSplitResponse = z.lazy(() => (z.object({
+    splits: z.array(ZSplitResult),
+})));
+export type SplitResponse = z.infer<typeof ZSplitResponse>;
+
+export const ZSplitResult = z.lazy(() => (z.object({
+    name: z.string(),
+    start_page: z.number(),
+    end_page: z.number(),
+})));
+export type SplitResult = z.infer<typeof ZSplitResult>;
 
 export const ZDocumentCreateInputRequest = z.lazy(() => (ZDocumentCreateMessageRequest.schema).merge(z.object({
     json_schema: z.record(z.string(), z.any()),
@@ -806,7 +836,7 @@ export const ZLogExtractionRequest = z.lazy(() => (z.object({
     messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
     openai_messages: z.array(z.union([ZChatCompletionDeveloperMessageParam, ZChatCompletionSystemMessageParam, ZChatCompletionUserMessageParam, ZChatCompletionAssistantMessageParam, ZChatCompletionToolMessageParam, ZChatCompletionFunctionMessageParam])).nullable().optional(),
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZResponseInputParamMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZResponseInputParamComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZResponseInputParamFunctionCallOutput, ZResponseReasoningItemParam, ZResponseCompactionItemParamParam, ZResponseInputParamImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZResponseInputParamLocalShellCall, ZResponseInputParamLocalShellCallOutput, ZResponseInputParamShellCall, ZResponseInputParamShellCallOutput, ZResponseInputParamApplyPatchCall, ZResponseInputParamApplyPatchCallOutput, ZResponseInputParamMcpListTools, ZResponseInputParamMcpApprovalRequest, ZResponseInputParamMcpApprovalResponse, ZResponseInputParamMcpCall, ZResponseCustomToolCallOutputParam, ZResponseCustomToolCallParam, ZResponseInputParamItemReference])).nullable().optional(),
-    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
+    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
