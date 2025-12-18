@@ -9,7 +9,7 @@ from ..inference_settings import InferenceSettings
 from .predictions import PredictionData
 
 default_inference_settings = InferenceSettings(
-    model="auto-small",
+    model="retab-small",
     temperature=0.5,
     reasoning_effort="minimal",
     image_resolution_dpi=192,
