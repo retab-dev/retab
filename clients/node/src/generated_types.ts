@@ -186,7 +186,7 @@ export const ZInferenceSettings = z.lazy(() => (z.object({
     reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
     image_resolution_dpi: z.number().default(192),
     n_consensus: z.number().default(1),
-    parallel_ocr_keys: z.record(z.string(), z.string()).nullable().optional(),
+    chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
     web_search: z.boolean().default(false),
 })));
 export type InferenceSettings = z.infer<typeof ZInferenceSettings>;
@@ -824,7 +824,7 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     stream: z.boolean().default(false),
     seed: z.number().nullable().optional(),
     store: z.boolean().default(true),
-    parallel_ocr_keys: z.record(z.string(), z.string()).nullable().optional(),
+    chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
     web_search: z.boolean().default(false),
     metadata: z.record(z.string(), z.string()),
     extraction_id: z.string().nullable().optional(),
