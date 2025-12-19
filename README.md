@@ -61,9 +61,8 @@ client = Retab(api_key="YOUR_RETAB_API_KEY")
 
 response = client.schemas.generate(
     documents=["Invoice.pdf"],
-    model="gpt-4.1",          # or any model your plan supports
+    model="retab-small",
     temperature=0.0,          # keep the generation deterministic
-    modality="native",        # "native" = let the API decide best modality
 )
 ```
 
@@ -78,7 +77,7 @@ client = Retab()
 response = client.documents.extract(
     json_schema = "Invoice_schema.json",
     document = "Invoice.pdf",
-    model="gpt-4.1-nano",
+    model="retab-small",
     temperature=0
 )
 
