@@ -22,7 +22,7 @@ class DocumentCreateMessageRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     document: MIMEData = Field(description="The document to load.")
     image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM")
-    model: str = Field(default="gemini-2.5-flash", description="The model to use for the document.")
+    model: str = Field(default="retab-small", description="The model to use for the document.")
 
 class DocumentCreateInputRequest(DocumentCreateMessageRequest):
     json_schema: dict[str, Any] = Field(description="The json schema to use for the document.")

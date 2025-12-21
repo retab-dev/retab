@@ -133,11 +133,6 @@ export const ZCreateProjectRequest = z.object({
 });
 export type CreateProjectRequest = z.input<typeof ZCreateProjectRequest>;
 
-export const ZEditRequest = z.object({
-    ...generated.ZEditRequest.schema.shape,
-    document: ZMIMEData,
-});
-export type EditRequest = z.input<typeof ZEditRequest>;
 
 export const ZSplitRequest = z.object({
     ...generated.ZSplitRequest.schema.shape,

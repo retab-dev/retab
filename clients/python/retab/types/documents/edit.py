@@ -60,6 +60,10 @@ class BaseFormField(BaseModel):
         ...,
         description="Type of field. Currently supported values: 'text' and 'checkbox'.",
     )
+    key: str = Field(
+        ...,
+        description="Key of the field. This is used to identify the field in the form data.",
+    )
     
 
 class FormField(BaseFormField):
@@ -113,10 +117,11 @@ class OCRResult(BaseModel):
 
 
 class InferFormSchemaRequest(BaseModel):
-    """Request to infer form schema from a PDF."""
+    """Request to infer form schema from a PDF or DOCX document."""
     
-    document: MIMEData = Field(..., description="Input document (PDF)")
-    model: str = Field(default="gemini-2.5-pro", description="LLM model to use for inference")
+    document: MIMEData = Field(..., description="Input document (PDF or DOCX). DOCX files will be converted to PDF.")
+    model: str = Field(default="retab-small", description="LLM model to use for inference")
+    instructions: Optional[str] = Field(default=None, description="Optional instructions to guide form field detection (e.g., which fields to focus on, specific areas to look for)")
 
 
 class InferFormSchemaResponse(BaseModel):
@@ -127,10 +132,17 @@ class InferFormSchemaResponse(BaseModel):
     form_fields_pdf: MIMEData = Field(..., description="PDF with form field bounding boxes")
 
 
-class EditRequest(InferFormSchemaRequest):
-    """Request for the infer_and_fill_schema endpoint."""
+class EditRequest(BaseModel):
+    """Request for the infer_and_fill_schema endpoint.
     
+    Either `document` OR `template_id` must be provided, but not both.
+    - When `document` is provided: OCR + LLM inference to detect and fill form fields
+    - When `template_id` is provided: Uses pre-defined form fields from the template (PDF only)
+    """
+    document: Optional[MIMEData] = Field(default=None, description="Input document (PDF or DOCX). DOCX files will be converted to PDF. Mutually exclusive with template_id.")
+    model: str = Field(default="retab-small", description="LLM model to use for inference")
     filling_instructions: str = Field(..., description="Instructions to fill the form")
+    template_id: Optional[str] = Field(default=None, description="Template ID to use for filling. When provided, uses the template's pre-defined form fields and empty PDF. Only works for PDF documents. Mutually exclusive with document.")
 
 class EditResponse(BaseModel):
     """Response from the fill_form endpoint.
