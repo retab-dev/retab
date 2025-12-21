@@ -118,19 +118,24 @@ class BaseDocumentsMixin:
 
     def _prepare_edit(
         self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         filling_instructions: str,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
+        template_id: str | None = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
-        mime_document = prepare_mime_document(document)
-        
         request_dict: dict[str, Any] = {
-            "document": mime_document,
             "filling_instructions": filling_instructions,
         }
+        
+        if document is not None:
+            mime_document = prepare_mime_document(document)
+            request_dict["document"] = mime_document
+        
         if model is not FieldUnset:
             request_dict["model"] = model
+        if template_id is not FieldUnset:
+            request_dict["template_id"] = template_id
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -564,9 +569,10 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
     def edit(
         self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         filling_instructions: str,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
+        template_id: str | None = FieldUnset,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -578,10 +584,15 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         3. LLM-based form filling using the provided instructions
         4. Returns the filled PDF with form field values populated
 
+        Either `document` OR `template_id` must be provided, but not both.
+
         Args:
-            document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             filling_instructions: Instructions describing how to fill the form fields.
-            model: The LLM model to use for inference. Defaults to "gemini-2.5-pro".
+            document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
+                Mutually exclusive with template_id.
+            model: The LLM model to use for inference. Defaults to "retab-small".
+            template_id: Template ID to use for filling. When provided, uses the template's pre-defined form fields
+                and empty PDF. Only works for PDF documents. Mutually exclusive with document.
 
         Returns:
             EditResponse: Response containing:
@@ -592,9 +603,10 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             HTTPException: If the request fails.
         """
         request = self._prepare_edit(
-            document=document,
             filling_instructions=filling_instructions,
+            document=document,
             model=model,
+            template_id=template_id,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -901,9 +913,10 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
     async def edit(
         self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         filling_instructions: str,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
+        template_id: str | None = FieldUnset,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -915,10 +928,15 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         3. LLM-based form filling using the provided instructions
         4. Returns the filled PDF with form field values populated
 
+        Either `document` OR `template_id` must be provided, but not both.
+
         Args:
-            document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             filling_instructions: Instructions describing how to fill the form fields.
+            document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
+                Mutually exclusive with template_id.
             model: The LLM model to use for inference. Defaults to "gemini-2.5-pro".
+            template_id: Template ID to use for filling. When provided, uses the template's pre-defined form fields
+                and empty PDF. Only works for PDF documents. Mutually exclusive with document.
 
         Returns:
             EditResponse: Response containing:
@@ -929,9 +947,10 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             HTTPException: If the request fails.
         """
         request = self._prepare_edit(
-            document=document,
             filling_instructions=filling_instructions,
+            document=document,
             model=model,
+            template_id=template_id,
             **extra_body,
         )
         response = await self._client._prepared_request(request)

@@ -288,7 +288,7 @@ export const ZComputationSpec = z.lazy(() => (z.object({
 export type ComputationSpec = z.infer<typeof ZComputationSpec>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({ "model": "retab-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1 }),
+    inference_settings: ZInferenceSettings.default({"model": "retab-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
     json_schema: z.record(z.string(), z.any()),
     human_in_the_loop_criteria: z.array(ZHilCriterion),
     computation_spec: ZComputationSpec,
@@ -606,9 +606,15 @@ export const ZDocumentTransformResponse = z.lazy(() => (z.object({
 })));
 export type DocumentTransformResponse = z.infer<typeof ZDocumentTransformResponse>;
 
+export const ZCategory = z.lazy(() => (z.object({
+    name: z.string(),
+    description: z.string(),
+})));
+export type Category = z.infer<typeof ZCategory>;
+
 export const ZParseRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    model: z.string().default("gemini-2.5-flash"),
+    model: z.string().default("retab-small"),
     table_parsing_format: z.union([z.literal("markdown"), z.literal("yaml"), z.literal("html"), z.literal("json")]).default("html"),
     image_resolution_dpi: z.number().default(192),
 })));
@@ -628,6 +634,25 @@ export const ZRetabUsage = z.lazy(() => (z.object({
 })));
 export type RetabUsage = z.infer<typeof ZRetabUsage>;
 
+export const ZSplitRequest = z.lazy(() => (z.object({
+    document: ZMIMEData,
+    categories: z.array(ZCategory),
+    model: z.string().default("retab-small"),
+})));
+export type SplitRequest = z.infer<typeof ZSplitRequest>;
+
+export const ZSplitResponse = z.lazy(() => (z.object({
+    splits: z.array(ZSplitResult),
+})));
+export type SplitResponse = z.infer<typeof ZSplitResponse>;
+
+export const ZSplitResult = z.lazy(() => (z.object({
+    name: z.string(),
+    start_page: z.number(),
+    end_page: z.number(),
+})));
+export type SplitResult = z.infer<typeof ZSplitResult>;
+
 export const ZBBox = z.lazy(() => (z.object({
     left: z.number(),
     top: z.number(),
@@ -641,11 +666,15 @@ export const ZBaseFormField = z.lazy(() => (z.object({
     bbox: ZBBox,
     description: z.string(),
     type: z.any(),
+    key: z.string(),
 })));
 export type BaseFormField = z.infer<typeof ZBaseFormField>;
 
-export const ZEditRequest = z.lazy(() => (ZInferFormSchemaRequest.schema).merge(z.object({
+export const ZEditRequest = z.lazy(() => (z.object({
+    document: ZMIMEData.nullable().optional(),
+    model: z.string().default("retab-small"),
     filling_instructions: z.string(),
+    template_id: z.string().nullable().optional(),
 })));
 export type EditRequest = z.infer<typeof ZEditRequest>;
 
@@ -678,7 +707,8 @@ export type FormSchema = z.infer<typeof ZFormSchema>;
 
 export const ZInferFormSchemaRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    model: z.string().default("gemini-2.5-pro"),
+    model: z.string().default("retab-small"),
+    instructions: z.string().nullable().optional(),
 })));
 export type InferFormSchemaRequest = z.infer<typeof ZInferFormSchemaRequest>;
 
@@ -708,35 +738,10 @@ export const ZProcessOCRRequest = z.lazy(() => (z.object({
 })));
 export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
 
-export const ZCategory = z.lazy(() => (z.object({
-    name: z.string(),
-    description: z.string(),
-})));
-export type Category = z.infer<typeof ZCategory>;
-
 export const ZSplitOutputSchema = z.lazy(() => (z.object({
     splits: z.array(ZSplitResult),
 })));
 export type SplitOutputSchema = z.infer<typeof ZSplitOutputSchema>;
-
-export const ZSplitRequest = z.lazy(() => (z.object({
-    document: ZMIMEData,
-    categories: z.array(ZCategory),
-    model: z.string(),
-})));
-export type SplitRequest = z.infer<typeof ZSplitRequest>;
-
-export const ZSplitResponse = z.lazy(() => (z.object({
-    splits: z.array(ZSplitResult),
-})));
-export type SplitResponse = z.infer<typeof ZSplitResponse>;
-
-export const ZSplitResult = z.lazy(() => (z.object({
-    name: z.string(),
-    start_page: z.number(),
-    end_page: z.number(),
-})));
-export type SplitResult = z.infer<typeof ZSplitResult>;
 
 export const ZDocumentCreateInputRequest = z.lazy(() => (ZDocumentCreateMessageRequest.schema).merge(z.object({
     json_schema: z.record(z.string(), z.any()),
@@ -746,7 +751,7 @@ export type DocumentCreateInputRequest = z.infer<typeof ZDocumentCreateInputRequ
 export const ZDocumentCreateMessageRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     image_resolution_dpi: z.number().default(192),
-    model: z.string().default("gemini-2.5-flash"),
+    model: z.string().default("retab-small"),
 })));
 export type DocumentCreateMessageRequest = z.infer<typeof ZDocumentCreateMessageRequest>;
 
@@ -836,7 +841,7 @@ export const ZLogExtractionRequest = z.lazy(() => (z.object({
     messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
     openai_messages: z.array(z.union([ZChatCompletionDeveloperMessageParam, ZChatCompletionSystemMessageParam, ZChatCompletionUserMessageParam, ZChatCompletionAssistantMessageParam, ZChatCompletionToolMessageParam, ZChatCompletionFunctionMessageParam])).nullable().optional(),
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZResponseInputParamMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZResponseInputParamComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZResponseInputParamFunctionCallOutput, ZResponseReasoningItemParam, ZResponseCompactionItemParamParam, ZResponseInputParamImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZResponseInputParamLocalShellCall, ZResponseInputParamLocalShellCallOutput, ZResponseInputParamShellCall, ZResponseInputParamShellCallOutput, ZResponseInputParamApplyPatchCall, ZResponseInputParamApplyPatchCallOutput, ZResponseInputParamMcpListTools, ZResponseInputParamMcpApprovalRequest, ZResponseInputParamMcpApprovalResponse, ZResponseInputParamMcpCall, ZResponseCustomToolCallOutputParam, ZResponseCustomToolCallParam, ZResponseInputParamItemReference])).nullable().optional(),
-    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
+    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
@@ -1534,7 +1539,7 @@ export const ZImageGeneration = z.lazy(() => (z.object({
     background: z.union([z.literal("transparent"), z.literal("opaque"), z.literal("auto")]).nullable().optional(),
     input_fidelity: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
     input_image_mask: ZImageGenerationInputImageMask.nullable().optional(),
-    model: z.union([z.literal("gpt-image-1"), z.literal("gpt-image-1-mini")]).nullable().optional(),
+    model: z.union([z.string(), z.union([z.literal("gpt-image-1"), z.literal("gpt-image-1-mini")])]).nullable().optional(),
     moderation: z.union([z.literal("auto"), z.literal("low")]).nullable().optional(),
     output_compression: z.number().nullable().optional(),
     output_format: z.union([z.literal("png"), z.literal("webp"), z.literal("jpeg")]).nullable().optional(),

@@ -10,7 +10,7 @@ class Category(BaseModel):
 class SplitRequest(BaseModel):
     document: MIMEData = Field(..., description="The document to split")
     categories: list[Category] = Field(..., description="The categories to split the document into")
-    model: str = Field(..., description="The model to use to split the document")
+    model: str = Field(default="retab-small", description="The model to use to split the document")
 
 
 class SplitResult(BaseModel):

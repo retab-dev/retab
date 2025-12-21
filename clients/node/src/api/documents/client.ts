@@ -61,12 +61,17 @@ export default class APIDocuments extends CompositionClient {
      * and filling. It accepts any PDF document and natural language instructions
      * describing the values to fill in.
      * 
+     * Either `document` OR `template_id` must be provided, but not both.
+     * - When `document` is provided: OCR + LLM inference to detect and fill form fields
+     * - When `template_id` is provided: Uses pre-defined form fields from the template (PDF only)
+     * 
      * @param params - EditRequest containing:
-     *   - document: MIMEData object with filename and url (data URI with base64 content)
-     *   - filling_instructions: Natural language instructions for filling
-     *   - model: LLM model for inference (default: "gemini-2.5-pro")
+     *   - filling_instructions: Natural language instructions for filling (required)
+     *   - document: MIMEData object, file path, Buffer, or Readable stream (optional, mutually exclusive with template_id)
+     *   - model: LLM model for inference (default: "retab-small")
+     *   - template_id: Template ID to use for filling with pre-defined form fields (optional, mutually exclusive with document)
      * @param options - Optional request options
-     * @returns EditResponse containing ocr_result, form_data (filled fields), and filled_document (MIMEData)
+     * @returns EditResponse containing form_data (filled fields) and filled_document (MIMEData)
      */
     async edit(params: EditRequest, options?: RequestOptions): Promise<EditResponse> {
         return this._fetchJson(ZEditResponse, {
@@ -86,7 +91,7 @@ export default class APIDocuments extends CompositionClient {
      * @param params - SplitRequest containing:
      *   - document: MIMEData object, file path, Buffer, or Readable stream
      *   - categories: Array of categories with 'name' and 'description'
-     *   - model: LLM model for inference (e.g., "gemini-2.5-flash")
+     *   - model: LLM model for inference (e.g., "retab-small")
      * @param options - Optional request options
      * @returns SplitResponse containing splits array with name, start_page, and end_page for each section
      * 
@@ -94,7 +99,7 @@ export default class APIDocuments extends CompositionClient {
      * ```typescript
      * const response = await retab.documents.split({
      *     document: "invoice_batch.pdf",
-     *     model: "gemini-2.5-flash",
+     *     model: "retab-small",
      *     categories: [
      *         { name: "invoice", description: "Invoice documents with billing information" },
      *         { name: "receipt", description: "Receipt documents for payments" },
