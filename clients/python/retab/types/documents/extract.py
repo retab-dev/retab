@@ -155,6 +155,9 @@ class RetabParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     flat_deleted_keys: list[str] = []
     is_valid_json: bool = False
     key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
+    # Full parsed object from the LLM (when available). Used to avoid data corruption 
+    # from unflatten_dict when null values are not transmitted in streaming deltas.
+    full_parsed: dict[str, Any] | None = Field(default=None, description="Complete parsed object from LLM, used instead of unflatten_dict when available")
 
 
 class RetabParsedChoiceChunk(ChoiceChunk):
@@ -183,6 +186,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                     flat_parsed={},
                     flat_likelihoods={},
                     is_valid_json=False,
+                    full_parsed=None,
                 )
 
         max_choices = max(len(self.choices), len(previous_cumulated_chunk.choices)) if previous_cumulated_chunk is not None else len(self.choices)
@@ -201,6 +205,8 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         acc_flat_parsed = [safe_get_delta(previous_cumulated_chunk, i).flat_parsed | safe_get_delta(self, i).flat_parsed for i in range(max_choices)]
         acc_flat_likelihoods = [safe_get_delta(previous_cumulated_chunk, i).flat_likelihoods | safe_get_delta(self, i).flat_likelihoods for i in range(max_choices)]
         acc_key_mapping = [safe_get_delta(previous_cumulated_chunk, i).key_mapping or safe_get_delta(self, i).key_mapping for i in range(max_choices)]
+        # Preserve full_parsed: use the current chunk's full_parsed if available, otherwise keep the previous one
+        acc_full_parsed = [safe_get_delta(self, i).full_parsed or safe_get_delta(previous_cumulated_chunk, i).full_parsed for i in range(max_choices)]
 
         acc_content = [(safe_get_delta(previous_cumulated_chunk, i).content or "") + (safe_get_delta(self, i).content or "") for i in range(max_choices)]
 
@@ -219,6 +225,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         flat_deleted_keys=acc_flat_deleted_keys[i],
                         is_valid_json=acc_is_valid_json[i],
                         key_mapping=acc_key_mapping[i],
+                        full_parsed=acc_full_parsed[i],
                     ),
                     index=i,
                 )
@@ -238,7 +245,18 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
         if override_final_flat_parseds is None:
             override_final_flat_parseds = [self.choices[idx].delta.flat_parsed for idx in range(len(self.choices))]
 
-        final_parsed_list = [unflatten_dict(override_final_flat_parseds[idx]) for idx in range(len(self.choices))]
+        # Build final_parsed_list using full_parsed when available (correct data from LLM),
+        # falling back to unflatten_dict for backward compatibility
+        final_parsed_list = []
+        for idx in range(len(self.choices)):
+            full_parsed = self.choices[idx].delta.full_parsed
+            if full_parsed is not None:
+                # Use the complete parsed object from the LLM (avoids data corruption from unflatten_dict)
+                final_parsed_list.append(full_parsed)
+            else:
+                # Fallback: reconstruct from flat_parsed (may lose null values in sparse arrays)
+                final_parsed_list.append(unflatten_dict(override_final_flat_parseds[idx]))
+        
         final_content_list = [json.dumps(final_parsed_list[idx]) for idx in range(len(self.choices))]
 
         # The final likelihoods are only on the first choice.
@@ -264,7 +282,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         role="assistant",
                         parsed=final_parsed_list[idx],
                     ),
-                    key_mapping=self.choices[idx].delta.key_mapping,
+                    key_mapping=self.choices[idx].delta.key_mapping, # type: ignore[call-arg]
                     finish_reason="stop",
                     logprobs=None,
                 )
