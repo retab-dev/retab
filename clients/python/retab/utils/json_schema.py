@@ -158,23 +158,43 @@ def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] |
         print("Cyclic refs found, keeping it as is")
         return schema
 
+    # Support both $defs (draft 2019-09+) and definitions (draft-07)
     if definitions is None:
-        definitions = schema.pop("$defs", {})
+        definitions = schema.pop("$defs", None) or schema.pop("definitions", {})
 
     assert isinstance(definitions, dict)
 
-    if "allOf" in schema:
-        # Some schemas (notably the one converted from a pydantic model) have allOf. We only accept one element in allOf
-        if len(schema["allOf"]) != 1:
-            raise ValueError(f"Property schema must have a single element in 'allOf'. Found: {schema['allOf']}")
-        schema.update(schema.pop("allOf", [{}])[0])
+    # Handle allOf - merge all elements
+    if "allOf" in schema and isinstance(schema["allOf"], list) and len(schema["allOf"]) > 0:
+        all_of_elements = schema.pop("allOf")
+        for element in all_of_elements:
+            if isinstance(element, dict):
+                # Recursively expand refs in each allOf element first
+                expanded = expand_refs(element, definitions)
+                # Deep merge properties if both have them
+                if "properties" in expanded and "properties" in schema:
+                    schema["properties"] = {**schema["properties"], **expanded["properties"]}
+                    del expanded["properties"]
+                # Merge required arrays if both have them
+                if "required" in expanded and "required" in schema:
+                    schema["required"] = list(set(schema["required"] + expanded["required"]))
+                    del expanded["required"]
+                schema.update(expanded)
 
     if "$ref" in schema:
         ref: str = schema["$ref"]
+        def_name: str | None = None
+
+        # Support both #/$defs/ and #/definitions/ formats
         if ref.startswith("#/$defs/"):
             def_name = ref.removeprefix("#/$defs/")
+        elif ref.startswith("#/definitions/"):
+            def_name = ref.removeprefix("#/definitions/")
+
+        if def_name is not None:
             if def_name not in definitions:
-                raise ValueError(f"Reference {ref} not found in definitions.")
+                # Return schema as-is if reference not found (might be external)
+                return schema
             target = definitions[def_name]
             merged = merge_descriptions(schema, target)
             merged.pop("$ref", None)
@@ -184,7 +204,8 @@ def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] |
 
     result: dict[str, Any] = {}
     for annotation, subschema in schema.items():
-        if annotation in ["properties", "$defs"]:
+        # Handle properties, $defs, and definitions (draft-07) keys
+        if annotation in ["properties", "$defs", "definitions"]:
             if isinstance(subschema, dict):
                 new_dict = {}
                 for pk, pv in subschema.items():
