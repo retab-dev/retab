@@ -12,7 +12,6 @@ class ClassifyRequest(BaseModel):
 class ClassifyResult(BaseModel):
     reasoning: str = Field(..., description="The reasoning for the classification decision")
     classification: str = Field(..., description="The category name that the document belongs to")
-    confidence: float | None = Field(default=None, description="Optional confidence score between 0 and 1")
 
 
 class ClassifyResponse(BaseModel):
