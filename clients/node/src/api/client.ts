@@ -4,6 +4,7 @@ import APIDocuments from "./documents/client";
 import APISchemas from "./schemas/client";
 import APIProjects from "./projects/client";
 import APIExtractions from "./extractions/client";
+import APIWorkflows from "./workflows/client";
 
 export default class APIV1 extends CompositionClient {
     constructor(client: AbstractClient) {
@@ -14,4 +15,5 @@ export default class APIV1 extends CompositionClient {
     schemas = new APISchemas(this);
     projects = new APIProjects(this);
     extractions = new APIExtractions(this);
+    workflows = new APIWorkflows(this);
 }
