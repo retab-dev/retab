@@ -322,6 +322,62 @@ export const ZStoredProject = z.lazy(() => (ZProject.schema).merge(z.object({
 })));
 export type StoredProject = z.infer<typeof ZStoredProject>;
 
+export const ZHandlePayload = z.lazy(() => (z.object({
+    type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
+    document: ZStepIOReference.nullable().optional(),
+    data: z.record(z.any()).nullable().optional(),
+    text: z.string().nullable().optional(),
+})));
+export type HandlePayload = z.infer<typeof ZHandlePayload>;
+
+export const ZStepIOReference = z.lazy(() => (z.object({
+    file_id: z.string().nullable().optional(),
+    gcs_path: z.string().nullable().optional(),
+    filename: z.string().nullable().optional(),
+    mime_type: z.string().nullable().optional(),
+})));
+export type StepIOReference = z.infer<typeof ZStepIOReference>;
+
+export const ZStepStatus = z.lazy(() => (z.object({
+    node_id: z.string(),
+    node_type: z.union([z.literal("start"), z.literal("extract"), z.literal("split"), z.literal("end"), z.literal("hil")]),
+    node_label: z.string(),
+    status: z.union([z.literal("pending"), z.literal("running"), z.literal("completed"), z.literal("error"), z.literal("waiting_for_human")]),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    error: z.string().nullable().optional(),
+    output: z.record(z.any()).nullable().optional(),
+    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
+    input_document: ZStepIOReference.nullable().optional(),
+    output_document: ZStepIOReference.nullable().optional(),
+    split_documents: z.record(z.string(), ZStepIOReference).nullable().optional(),
+    requires_human_review: z.boolean().nullable().optional(),
+    human_reviewed_at: z.string().nullable().optional(),
+    human_review_approved: z.boolean().nullable().optional(),
+})));
+export type StepStatus = z.infer<typeof ZStepStatus>;
+
+export const ZWorkflowRun = z.lazy(() => (z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    workflow_name: z.string(),
+    organization_id: z.string(),
+    status: z.union([z.literal("pending"), z.literal("running"), z.literal("completed"), z.literal("error"), z.literal("waiting_for_human")]).default("pending"),
+    started_at: z.string(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    steps: z.array(ZStepStatus),
+    input_documents: z.record(z.string(), ZStepIOReference).nullable().optional(),
+    final_outputs: z.record(z.any()).nullable().optional(),
+    error: z.string().nullable().optional(),
+    created_at: z.string(),
+    updated_at: z.string(),
+    waiting_for_node_ids: z.array(z.string()),
+    pending_node_outputs: z.record(z.any()).nullable().optional(),
+})));
+export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
+
 export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     documents: z.array(ZMIMEData),
     model: z.string().default("gpt-5-mini"),
@@ -886,6 +942,7 @@ export const ZRetabParsedChoiceDeltaChunk = z.lazy(() => (ZChoiceDelta.schema).m
     flat_deleted_keys: z.array(z.string()).default([]),
     is_valid_json: z.boolean().default(false),
     key_mapping: z.record(z.string(), z.string().nullable().optional()).nullable().optional(),
+    full_parsed: z.record(z.string(), z.any()).nullable().optional(),
 })));
 export type RetabParsedChoiceDeltaChunk = z.infer<typeof ZRetabParsedChoiceDeltaChunk>;
 
