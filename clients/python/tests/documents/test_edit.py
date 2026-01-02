@@ -5,7 +5,7 @@ from typing import Literal, get_args
 import pytest
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.edit import EditResponse, FilledFormField, OCRResult
+from retab.types.documents.edit import EditResponse, FormField, OCRResult
 from retab.types.mime import MIMEData
 
 # Get the directory containing the tests
@@ -50,7 +50,7 @@ def validate_edit_response(response: EditResponse | None) -> None:
     assert len(response.form_data) > 0, "Should have at least one form field"
     
     for field in response.form_data:
-        assert isinstance(field, FilledFormField), f"Each field should be FilledFormField, got {type(field)}"
+        assert isinstance(field, FormField), f"Each field should be FormField, got {type(field)}"
         assert field.bbox is not None, "Field bbox should not be None"
         assert field.description is not None, "Field description should not be None"
         assert field.type is not None, "Field type should not be None"
@@ -98,7 +98,7 @@ async def base_test_edit(
     sync_client: Retab,
     async_client: AsyncRetab,
     document_path: str,
-    filling_instructions: str,
+    instructions: str,
 ) -> EditResponse:
     response: EditResponse 
 
@@ -106,14 +106,14 @@ async def base_test_edit(
         with sync_client as client:
             response = client.documents.edit(
                 document=document_path,
-                filling_instructions=filling_instructions,
+                instructions=instructions,
                 model=model,
             )
     elif client_type == "async":
         async with async_client:
             response = await async_client.documents.edit(
                 document=document_path,
-                filling_instructions=filling_instructions,
+                instructions=instructions,
                 model=model,
             )
     
@@ -138,7 +138,7 @@ async def test_edit_fidelity_form(
         sync_client=sync_client,
         async_client=async_client,
         document_path=fidelity_form_path,
-        filling_instructions=fidelity_instructions,
+        instructions=fidelity_instructions,
     )
     
     # Validate specific form fields from the instructions
@@ -156,7 +156,7 @@ async def test_edit_response_structure(
     with sync_client as client:
         response = client.documents.edit(
             document=fidelity_form_path,
-            filling_instructions=fidelity_instructions,
+            instructions=fidelity_instructions,
             model="gemini-2.5-flash",
         )
     
@@ -188,7 +188,7 @@ async def test_edit_filled_document_is_valid(
     with sync_client as client:
         response = client.documents.edit(
             document=fidelity_form_path,
-            filling_instructions=fidelity_instructions,
+            instructions=fidelity_instructions,
             model="gemini-2.5-flash",
         )
     
@@ -216,7 +216,7 @@ async def test_edit_form_data_has_filled_values(
     with sync_client as client:
         response = client.documents.edit(
             document=fidelity_form_path,
-            filling_instructions=fidelity_instructions,
+            instructions=fidelity_instructions,
             model="gemini-2.5-flash",
         )
     

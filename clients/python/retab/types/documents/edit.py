@@ -64,7 +64,7 @@ class BaseFormField(BaseModel):
         ...,
         description="Key of the field. This is used to identify the field in the form data.",
     )
-    
+
 
 class FormField(BaseFormField):
     """Single field in the form schema (text input, checkbox, etc.)."""
@@ -72,8 +72,8 @@ class FormField(BaseFormField):
     value: Optional[str] = Field(
         None,
         description=(
-            "Current or default value of the field as text. "
-            "May be null/None if no value is set."
+            "Filled value of the field as text. "
+            "May be null/None if no filled value is set."
         ),
     )
 
@@ -87,18 +87,6 @@ class FormSchema(BaseModel):
             "that define the structure of the form."
         ),
     )
-
-class FilledFormField(BaseFormField):
-    """Single field in the form schema (text input, checkbox, etc.)."""
-
-    value: Optional[str] = Field(
-        None,
-        description=(
-            "Filled value of the field as text. "
-            "May be null/None if no filled value is set."
-        ),
-    )
-
 
 class OCRTextElement(BaseModel):
     """A single OCR-detected text element with its bounding box."""
@@ -124,14 +112,6 @@ class InferFormSchemaRequest(BaseModel):
     instructions: Optional[str] = Field(default=None, description="Optional instructions to guide form field detection (e.g., which fields to focus on, specific areas to look for)")
 
 
-class InferFormSchemaResponse(BaseModel):
-    """Response containing the inferred form schema."""
-    
-    form_schema: FormSchema = Field(..., description="The inferred form schema")
-    ocr_result: OCRResult = Field(..., description="The OCR results used for inference")
-    form_fields_pdf: MIMEData = Field(..., description="PDF with form field bounding boxes")
-
-
 class EditRequest(BaseModel):
     """Request for the infer_and_fill_schema endpoint.
     
@@ -141,13 +121,13 @@ class EditRequest(BaseModel):
     """
     document: Optional[MIMEData] = Field(default=None, description="Input document (PDF or DOCX). DOCX files will be converted to PDF. Mutually exclusive with template_id.")
     model: str = Field(default="retab-small", description="LLM model to use for inference")
-    filling_instructions: str = Field(..., description="Instructions to fill the form")
+    instructions: str = Field(..., description="Instructions to fill the form")
     template_id: Optional[str] = Field(default=None, description="Template ID to use for filling. When provided, uses the template's pre-defined form fields and empty PDF. Only works for PDF documents. Mutually exclusive with document.")
 
 class EditResponse(BaseModel):
     """Response from the fill_form endpoint.
     """
-    form_data: list[FilledFormField] = Field(
+    form_data: list[FormField] = Field(
         ...,
         description=(
             "List of form fields (with positions, descriptions, and metadata) "
@@ -161,4 +141,12 @@ class ProcessOCRRequest(BaseModel):
     """Request to process a PDF with OCR only (step 1)."""
     
     document: MIMEData = Field(..., description="Input document (PDF)")
+
+
+class InferFormSchemaResponse(BaseModel):
+    """Response from form schema inference."""
+    
+    form_schema: FormSchema = Field(..., description="Form schema with detected bounding boxes and field names")
+    annotated_pdf: MIMEData = Field(..., description="PDF with form field bounding boxes")
+    field_count: int = Field(..., description="Number of fields detected")
 

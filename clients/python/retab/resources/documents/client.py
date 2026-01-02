@@ -119,14 +119,14 @@ class BaseDocumentsMixin:
 
     def _prepare_edit(
         self,
-        filling_instructions: str,
+        instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
         template_id: str | None = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
-            "filling_instructions": filling_instructions,
+            "instructions": instructions,
         }
         
         if document is not None:
@@ -598,7 +598,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
     def edit(
         self,
-        filling_instructions: str,
+        instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
         template_id: str | None = FieldUnset,
@@ -616,7 +616,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         Either `document` OR `template_id` must be provided, but not both.
 
         Args:
-            filling_instructions: Instructions describing how to fill the form fields.
+            instructions: Instructions describing how to fill the form fields.
             document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
                 Mutually exclusive with template_id.
             model: The LLM model to use for inference. Defaults to "retab-small".
@@ -632,7 +632,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             HTTPException: If the request fails.
         """
         request = self._prepare_edit(
-            filling_instructions=filling_instructions,
+            instructions=instructions,
             document=document,
             model=model,
             template_id=template_id,
@@ -993,7 +993,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
     async def edit(
         self,
-        filling_instructions: str,
+        instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
         template_id: str | None = FieldUnset,
@@ -1011,7 +1011,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         Either `document` OR `template_id` must be provided, but not both.
 
         Args:
-            filling_instructions: Instructions describing how to fill the form fields.
+            instructions: Instructions describing how to fill the form fields.
             document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
                 Mutually exclusive with template_id.
             model: The LLM model to use for inference. Defaults to "gemini-2.5-pro".
@@ -1027,7 +1027,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             HTTPException: If the request fails.
         """
         request = self._prepare_edit(
-            filling_instructions=filling_instructions,
+            instructions=instructions,
             document=document,
             model=model,
             template_id=template_id,

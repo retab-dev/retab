@@ -132,7 +132,7 @@ export class FetcherClient extends AbstractClient {
   constructor(options?: ClientOptions) {
     super();
     this.options = options || {};
-    this.timeout = this.options.timeout ?? 1800000; // Default 1800 seconds (in milliseconds)
+    this.timeout = this.options.timeout ?? 1800000; // Default 1800 seconds (30 minutes) (in milliseconds)
 
     // Validate that at least one authentication method is provided
     const apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
