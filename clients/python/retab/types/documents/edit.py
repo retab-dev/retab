@@ -107,7 +107,7 @@ class OCRResult(BaseModel):
 class InferFormSchemaRequest(BaseModel):
     """Request to infer form schema from a PDF or DOCX document."""
     
-    document: MIMEData = Field(..., description="Input document (PDF or DOCX). DOCX files will be converted to PDF.")
+    document: MIMEData = Field(..., description="Input document (PDF, DOCX, XLSX or PPTX).")
     model: str = Field(default="retab-small", description="LLM model to use for inference")
 
 
@@ -118,7 +118,7 @@ class EditRequest(BaseModel):
     - When `document` is provided: OCR + LLM inference to detect and fill form fields
     - When `template_id` is provided: Uses pre-defined form fields from the template (PDF only)
     """
-    document: Optional[MIMEData] = Field(default=None, description="Input document (PDF or DOCX). DOCX files will be converted to PDF. Mutually exclusive with template_id.")
+    document: Optional[MIMEData] = Field(default=None, description="Input document (PDF, DOCX, XLSX or PPTX). Mutually exclusive with template_id.")
     model: str = Field(default="retab-small", description="LLM model to use for inference")
     instructions: str = Field(..., description="Instructions to fill the form")
     template_id: Optional[str] = Field(default=None, description="Template ID to use for filling. When provided, uses the template's pre-defined form fields and empty PDF. Only works for PDF documents. Mutually exclusive with document.")
