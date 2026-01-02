@@ -109,7 +109,6 @@ class InferFormSchemaRequest(BaseModel):
     
     document: MIMEData = Field(..., description="Input document (PDF or DOCX). DOCX files will be converted to PDF.")
     model: str = Field(default="retab-small", description="LLM model to use for inference")
-    instructions: Optional[str] = Field(default=None, description="Optional instructions to guide form field detection (e.g., which fields to focus on, specific areas to look for)")
 
 
 class EditRequest(BaseModel):
