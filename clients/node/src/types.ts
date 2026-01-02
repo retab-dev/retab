@@ -140,6 +140,12 @@ export const ZSplitRequest = z.object({
 });
 export type SplitRequest = z.input<typeof ZSplitRequest>;
 
+export const ZClassifyRequest = z.object({
+    ...generated.ZClassifyRequest.schema.shape,
+    document: ZMIMEData,
+});
+export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
+
 export const ZModel = z.lazy(() => (z.object({
     id: z.string(),
     created: z.number(),
