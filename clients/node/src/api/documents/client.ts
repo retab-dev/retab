@@ -66,7 +66,7 @@ export default class APIDocuments extends CompositionClient {
      * - When `template_id` is provided: Uses pre-defined form fields from the template (PDF only)
      * 
      * @param params - EditRequest containing:
-     *   - filling_instructions: Natural language instructions for filling (required)
+     *   - instructions: Natural language instructions for filling (required)
      *   - document: MIMEData object, file path, Buffer, or Readable stream (optional, mutually exclusive with template_id)
      *   - model: LLM model for inference (default: "retab-small")
      *   - template_id: Template ID to use for filling with pre-defined form fields (optional, mutually exclusive with document)

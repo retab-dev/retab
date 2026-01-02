@@ -6,7 +6,7 @@ import {
     getFidelityInstructions,
     getFidelityInstructionsJson,
 } from '../fixtures';
-import { EditResponse, FilledFormField, OCRResult, MIMEData } from '../../src/types';
+import { EditResponse, FormField, OCRResult, MIMEData } from '../../src/types';
 
 // Global test constants
 const TEST_TIMEOUT = 300000; // 5 minutes for edit operations (OCR + LLM)
@@ -30,7 +30,7 @@ function validateEditResponse(response: EditResponse | null): void {
     expect(Array.isArray(response.form_data)).toBe(true);
     expect(response.form_data.length).toBeGreaterThan(0);
 
-    response.form_data.forEach((field: FilledFormField) => {
+    response.form_data.forEach((field: FormField) => {
         expect(field.bbox).toBeDefined();
         expect(field.description).toBeDefined();
         expect(field.type).toBeDefined();
@@ -57,14 +57,14 @@ function validateEditResponse(response: EditResponse | null): void {
 }
 
 function validateFidelityFormFields(response: EditResponse, instructions: Record<string, any>): void {
-    const filledFields = response.form_data.filter((field: FilledFormField) => field.value);
+    const filledFields = response.form_data.filter((field: FormField) => field.value);
 
     // Check that some expected values from the instructions are present
     const accountOwners: string[] = instructions.account_owners || [];
 
     for (const owner of accountOwners) {
         const ownerParts = owner.toUpperCase().split(' ');
-        const foundOwner = filledFields.some((field: FilledFormField) => {
+        const foundOwner = filledFields.some((field: FormField) => {
             const value = (field.value || '').toUpperCase();
             return ownerParts.some(part => value.includes(part));
         });
@@ -74,7 +74,7 @@ function validateFidelityFormFields(response: EditResponse, instructions: Record
     // Check for at least one account number
     const accountNumbers: string[] = instructions.fidelity_accounts || [];
     if (accountNumbers.length > 0) {
-        const foundAccount = filledFields.some((field: FilledFormField) => {
+        const foundAccount = filledFields.some((field: FormField) => {
             const value = field.value || '';
             return accountNumbers.some(acc => value.includes(acc));
         });
@@ -109,7 +109,7 @@ describe('Retab SDK Edit Tests', () => {
                         require('fs').readFileSync(fidelityFormPath)
                     ).toString('base64')}`,
                 },
-                filling_instructions: fidelityInstructions,
+                instructions: fidelityInstructions,
                 model: 'gemini-2.5-flash',
             });
 
@@ -127,7 +127,7 @@ describe('Retab SDK Edit Tests', () => {
                         require('fs').readFileSync(fidelityFormPath)
                     ).toString('base64')}`,
                 },
-                filling_instructions: fidelityInstructions,
+                instructions: fidelityInstructions,
                 model: 'gemini-2.5-flash',
             });
 
@@ -140,7 +140,7 @@ describe('Retab SDK Edit Tests', () => {
 
 
             // Validate form_data has fields with proper structure
-            response.form_data.forEach((field: FilledFormField) => {
+            response.form_data.forEach((field: FormField) => {
                 expect(field).toHaveProperty('bbox');
                 expect(field).toHaveProperty('description');
                 expect(field).toHaveProperty('type');
@@ -158,7 +158,7 @@ describe('Retab SDK Edit Tests', () => {
                         require('fs').readFileSync(fidelityFormPath)
                     ).toString('base64')}`,
                 },
-                filling_instructions: fidelityInstructions,
+                instructions: fidelityInstructions,
                 model: 'gemini-2.5-flash',
             });
 
@@ -190,14 +190,14 @@ describe('Retab SDK Edit Tests', () => {
                         require('fs').readFileSync(fidelityFormPath)
                     ).toString('base64')}`,
                 },
-                filling_instructions: fidelityInstructions,
+                instructions: fidelityInstructions,
                 model: 'gemini-2.5-flash',
             });
 
             validateEditResponse(response);
 
             // Count fields with values
-            const filledFields = response.form_data.filter((field: FilledFormField) => field.value);
+            const filledFields = response.form_data.filter((field: FormField) => field.value);
 
             expect(filledFields.length).toBeGreaterThan(0);
 

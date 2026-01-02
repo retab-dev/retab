@@ -288,7 +288,7 @@ export const ZComputationSpec = z.lazy(() => (z.object({
 export type ComputationSpec = z.infer<typeof ZComputationSpec>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({"model": "retab-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
+    inference_settings: ZInferenceSettings.default({ "model": "retab-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1 }),
     json_schema: z.record(z.string(), z.any()),
     human_in_the_loop_criteria: z.array(ZHilCriterion),
     computation_spec: ZComputationSpec,
@@ -652,6 +652,40 @@ export const ZTextBlockParam = z.lazy(() => (z.object({
 })));
 export type TextBlockParam = z.infer<typeof ZTextBlockParam>;
 
+export const ZCreateEditTemplateRequest = z.lazy(() => (z.object({
+    name: z.string(),
+    document: ZMIMEData,
+    form_fields: z.array(ZFormField),
+})));
+export type CreateEditTemplateRequest = z.infer<typeof ZCreateEditTemplateRequest>;
+
+export const ZDuplicateEditTemplateRequest = z.lazy(() => (z.object({
+    name: z.string().nullable().optional(),
+})));
+export type DuplicateEditTemplateRequest = z.infer<typeof ZDuplicateEditTemplateRequest>;
+
+export const ZEditTemplate = z.lazy(() => (z.object({
+    id: z.string(),
+    name: z.string(),
+    file: ZBaseMIMEData,
+    form_fields: z.array(ZFormField),
+    organization_id: z.string().nullable().optional(),
+    created_at: z.string(),
+    updated_at: z.string(),
+})));
+export type EditTemplate = z.infer<typeof ZEditTemplate>;
+
+export const ZUpdateEditTemplateRequest = z.lazy(() => (z.object({
+    name: z.string().nullable().optional(),
+    form_fields: z.array(ZFormField).nullable().optional(),
+})));
+export type UpdateEditTemplateRequest = z.infer<typeof ZUpdateEditTemplateRequest>;
+
+export const ZFormField = z.lazy(() => (ZBaseFormField.schema).merge(z.object({
+    value: z.string().nullable().optional(),
+})));
+export type FormField = z.infer<typeof ZFormField>;
+
 export const ZDocumentTransformRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
 })));
@@ -753,13 +787,13 @@ export type BaseFormField = z.infer<typeof ZBaseFormField>;
 export const ZEditRequest = z.lazy(() => (z.object({
     document: ZMIMEData.nullable().optional(),
     model: z.string().default("retab-small"),
-    filling_instructions: z.string(),
+    instructions: z.string(),
     template_id: z.string().nullable().optional(),
 })));
 export type EditRequest = z.infer<typeof ZEditRequest>;
 
 export const ZEditResponse = z.lazy(() => (z.object({
-    form_data: z.array(ZFilledFormField),
+    form_data: z.array(ZFormField),
     filled_document: ZMIMEData,
 })));
 export type EditResponse = z.infer<typeof ZEditResponse>;
@@ -769,16 +803,6 @@ export type Enum = z.infer<typeof ZEnum>;
 
 export const ZFieldType = z.lazy(() => z.any());
 export type FieldType = z.infer<typeof ZFieldType>;
-
-export const ZFilledFormField = z.lazy(() => (ZBaseFormField.schema).merge(z.object({
-    value: z.string().nullable().optional(),
-})));
-export type FilledFormField = z.infer<typeof ZFilledFormField>;
-
-export const ZFormField = z.lazy(() => (ZBaseFormField.schema).merge(z.object({
-    value: z.string().nullable().optional(),
-})));
-export type FormField = z.infer<typeof ZFormField>;
 
 export const ZFormSchema = z.lazy(() => (z.object({
     form_fields: z.array(ZFormField),
@@ -794,8 +818,8 @@ export type InferFormSchemaRequest = z.infer<typeof ZInferFormSchemaRequest>;
 
 export const ZInferFormSchemaResponse = z.lazy(() => (z.object({
     form_schema: ZFormSchema,
-    ocr_result: ZOCRResult,
-    form_fields_pdf: ZMIMEData,
+    annotated_pdf: ZMIMEData,
+    field_count: z.number(),
 })));
 export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 
@@ -921,7 +945,7 @@ export const ZLogExtractionRequest = z.lazy(() => (z.object({
     messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
     openai_messages: z.array(z.union([ZChatCompletionDeveloperMessageParam, ZChatCompletionSystemMessageParam, ZChatCompletionUserMessageParam, ZChatCompletionAssistantMessageParam, ZChatCompletionToolMessageParam, ZChatCompletionFunctionMessageParam])).nullable().optional(),
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZResponseInputParamMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZResponseInputParamComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZResponseInputParamFunctionCallOutput, ZResponseReasoningItemParam, ZResponseCompactionItemParamParam, ZResponseInputParamImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZResponseInputParamLocalShellCall, ZResponseInputParamLocalShellCallOutput, ZResponseInputParamShellCall, ZResponseInputParamShellCallOutput, ZResponseInputParamApplyPatchCall, ZResponseInputParamApplyPatchCallOutput, ZResponseInputParamMcpListTools, ZResponseInputParamMcpApprovalRequest, ZResponseInputParamMcpApprovalResponse, ZResponseInputParamMcpCall, ZResponseCustomToolCallOutputParam, ZResponseCustomToolCallParam, ZResponseInputParamItemReference])).nullable().optional(),
-    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
+    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),

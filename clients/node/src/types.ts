@@ -146,6 +146,24 @@ export const ZClassifyRequest = z.object({
 });
 export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
 
+export const ZEditRequest = z.object({
+    ...generated.ZEditRequest.schema.shape,
+    document: ZMIMEData.nullable().optional(),
+});
+export type EditRequest = z.input<typeof ZEditRequest>;
+
+export const ZEditResponse = generated.ZEditResponse;
+export type EditResponse = z.infer<typeof ZEditResponse>;
+
+export const ZInferFormSchemaRequest = z.object({
+    ...generated.ZInferFormSchemaRequest.schema.shape,
+    document: ZMIMEData,
+});
+export type InferFormSchemaRequest = z.input<typeof ZInferFormSchemaRequest>;
+
+export const ZInferFormSchemaResponse = generated.ZInferFormSchemaResponse;
+export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
+
 export const ZModel = z.lazy(() => (z.object({
     id: z.string(),
     created: z.number(),
