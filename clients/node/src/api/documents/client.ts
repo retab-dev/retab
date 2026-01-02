@@ -1,6 +1,6 @@
 import { CompositionClient, RequestOptions } from "../../client.js";
-import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse, SplitRequest, ZSplitRequest, ZSplitResponse } from "../../types.js";
-import type { SplitResponse } from "../../generated_types.js";
+import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse, SplitRequest, ZSplitRequest, ZSplitResponse, ClassifyRequest, ZClassifyRequest, ZClassifyResponse } from "../../types.js";
+import type { SplitResponse, ClassifyResponse } from "../../generated_types.js";
 
 
 export default class APIDocuments extends CompositionClient {
@@ -116,6 +116,44 @@ export default class APIDocuments extends CompositionClient {
             url: "/v1/documents/split",
             method: "POST",
             body: { ...(await ZSplitRequest.parseAsync(params)), ...(options?.body || {}) },
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+    /**
+     * Classify a document into one of the provided categories.
+     * 
+     * This method analyzes a document and classifies it into exactly one
+     * of the user-defined categories, returning the classification with
+     * chain-of-thought reasoning explaining the decision.
+     * 
+     * @param params - ClassifyRequest containing:
+     *   - document: MIMEData object, file path, Buffer, or Readable stream
+     *   - categories: Array of categories with 'name' and 'description'
+     *   - model: LLM model for inference (e.g., "retab-small")
+     * @param options - Optional request options
+     * @returns ClassifyResponse containing result with reasoning and classification
+     * 
+     * @example
+     * ```typescript
+     * const response = await retab.documents.classify({
+     *     document: "invoice.pdf",
+     *     model: "retab-small",
+     *     categories: [
+     *         { name: "invoice", description: "Invoice documents with billing information" },
+     *         { name: "receipt", description: "Receipt documents for payments" },
+     *         { name: "contract", description: "Legal contract documents" },
+     *     ]
+     * });
+     * console.log(`Classification: ${response.result.classification}`);
+     * console.log(`Reasoning: ${response.result.reasoning}`);
+     * ```
+     */
+    async classify(params: ClassifyRequest, options?: RequestOptions): Promise<ClassifyResponse> {
+        return this._fetchJson(ZClassifyResponse, {
+            url: "/v1/documents/classify",
+            method: "POST",
+            body: { ...(await ZClassifyRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });

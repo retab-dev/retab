@@ -668,6 +668,30 @@ export const ZCategory = z.lazy(() => (z.object({
 })));
 export type Category = z.infer<typeof ZCategory>;
 
+export const ZClassifyOutputSchema = z.lazy(() => (z.object({
+    reasoning: z.string(),
+    classification: z.string(),
+})));
+export type ClassifyOutputSchema = z.infer<typeof ZClassifyOutputSchema>;
+
+export const ZClassifyRequest = z.lazy(() => (z.object({
+    document: ZMIMEData,
+    categories: z.array(ZCategory),
+    model: z.string().default("retab-small"),
+})));
+export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
+
+export const ZClassifyResponse = z.lazy(() => (z.object({
+    result: ZClassifyResult,
+})));
+export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
+
+export const ZClassifyResult = z.lazy(() => (z.object({
+    reasoning: z.string(),
+    classification: z.string(),
+})));
+export type ClassifyResult = z.infer<typeof ZClassifyResult>;
+
 export const ZParseRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     model: z.string().default("retab-small"),

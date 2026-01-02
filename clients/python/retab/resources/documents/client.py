@@ -17,6 +17,7 @@ from ...types.documents.edit import EditRequest, EditResponse
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
 from ...types.documents.split import Category, SplitRequest, SplitResponse
+from ...types.documents.classify import ClassifyRequest, ClassifyResponse
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, FieldUnset
 from ...utils.json_schema import load_json_schema, unflatten_dict
@@ -171,6 +172,34 @@ class BaseDocumentsMixin:
 
         split_request = SplitRequest(**request_dict)
         return PreparedRequest(method="POST", url="/v1/documents/split", data=split_request.model_dump(mode="json", exclude_unset=True))
+
+    def _prepare_classify(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        categories: list[Category] | list[dict[str, str]],
+        model: str,
+        **extra_body: Any,
+    ) -> PreparedRequest:
+        mime_document = prepare_mime_document(document)
+        
+        # Convert dict categories to Category objects if needed
+        category_objects = [
+            Category(**cat) if isinstance(cat, dict) else cat
+            for cat in categories
+        ]
+        
+        request_dict: dict[str, Any] = {
+            "document": mime_document,
+            "categories": category_objects,
+            "model": model,
+        }
+
+        # Merge any extra fields provided by the caller
+        if extra_body:
+            request_dict.update(extra_body)
+
+        classify_request = ClassifyRequest(**request_dict)
+        return PreparedRequest(method="POST", url="/v1/documents/classify", data=classify_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_extract(
         self,
@@ -662,6 +691,57 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(request)
         return SplitResponse.model_validate(response)
 
+    def classify(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        categories: list[Category] | list[dict[str, str]],
+        model: str,
+        **extra_body: Any,
+    ) -> ClassifyResponse:
+        """
+        Classify a document into one of the provided categories.
+
+        This method analyzes a document and classifies it into exactly one
+        of the user-defined categories, returning the classification with
+        chain-of-thought reasoning explaining the decision.
+
+        Args:
+            document: The document to classify. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
+            categories: List of categories to classify the document into. Each category should have a 'name' and 'description'.
+                Can be Category objects or dicts with 'name' and 'description' keys.
+            model: The AI model to use for document classification (e.g., "gemini-2.5-flash").
+
+        Returns:
+            ClassifyResponse: Response containing:
+                - result: ClassifyResult with reasoning and classification.
+
+        Raises:
+            HTTPException: If the request fails.
+
+        Example:
+            ```python
+            response = retab.documents.classify(
+                document="invoice.pdf",
+                model="gemini-2.5-flash",
+                categories=[
+                    {"name": "invoice", "description": "Invoice documents with billing information"},
+                    {"name": "receipt", "description": "Receipt documents for payments"},
+                    {"name": "contract", "description": "Legal contract documents"},
+                ]
+            )
+            print(f"Classification: {response.result.classification}")
+            print(f"Reasoning: {response.result.reasoning}")
+            ```
+        """
+        request = self._prepare_classify(
+            document=document,
+            categories=categories,
+            model=model,
+            **extra_body,
+        )
+        response = self._client._prepared_request(request)
+        return ClassifyResponse.model_validate(response)
+
 
 class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     """Documents API wrapper for asynchronous usage."""
@@ -1005,3 +1085,54 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         )
         response = await self._client._prepared_request(request)
         return SplitResponse.model_validate(response)
+
+    async def classify(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        categories: list[Category] | list[dict[str, str]],
+        model: str,
+        **extra_body: Any,
+    ) -> ClassifyResponse:
+        """
+        Classify a document into one of the provided categories asynchronously.
+
+        This method analyzes a document and classifies it into exactly one
+        of the user-defined categories, returning the classification with
+        chain-of-thought reasoning explaining the decision.
+
+        Args:
+            document: The document to classify. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
+            categories: List of categories to classify the document into. Each category should have a 'name' and 'description'.
+                Can be Category objects or dicts with 'name' and 'description' keys.
+            model: The AI model to use for document classification (e.g., "gemini-2.5-flash").
+
+        Returns:
+            ClassifyResponse: Response containing:
+                - result: ClassifyResult with reasoning and classification.
+
+        Raises:
+            HTTPException: If the request fails.
+
+        Example:
+            ```python
+            response = await retab.documents.classify(
+                document="invoice.pdf",
+                model="gemini-2.5-flash",
+                categories=[
+                    {"name": "invoice", "description": "Invoice documents with billing information"},
+                    {"name": "receipt", "description": "Receipt documents for payments"},
+                    {"name": "contract", "description": "Legal contract documents"},
+                ]
+            )
+            print(f"Classification: {response.result.classification}")
+            print(f"Reasoning: {response.result.reasoning}")
+            ```
+        """
+        request = self._prepare_classify(
+            document=document,
+            categories=categories,
+            model=model,
+            **extra_body,
+        )
+        response = await self._client._prepared_request(request)
+        return ClassifyResponse.model_validate(response)
