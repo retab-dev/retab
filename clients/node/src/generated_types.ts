@@ -288,7 +288,7 @@ export const ZComputationSpec = z.lazy(() => (z.object({
 export type ComputationSpec = z.infer<typeof ZComputationSpec>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({ "model": "retab-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1 }),
+    inference_settings: ZInferenceSettings.default({"model": "retab-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
     json_schema: z.record(z.string(), z.any()),
     human_in_the_loop_criteria: z.array(ZHilCriterion),
     computation_spec: ZComputationSpec,
@@ -675,6 +675,13 @@ export const ZEditTemplate = z.lazy(() => (z.object({
 })));
 export type EditTemplate = z.infer<typeof ZEditTemplate>;
 
+export const ZFillTemplateRequest = z.lazy(() => (z.object({
+    model: z.string().default("retab-small"),
+    instructions: z.string(),
+    template_id: z.string(),
+})));
+export type FillTemplateRequest = z.infer<typeof ZFillTemplateRequest>;
+
 export const ZUpdateEditTemplateRequest = z.lazy(() => (z.object({
     name: z.string().nullable().optional(),
     form_fields: z.array(ZFormField).nullable().optional(),
@@ -812,7 +819,6 @@ export type FormSchema = z.infer<typeof ZFormSchema>;
 export const ZInferFormSchemaRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     model: z.string().default("retab-small"),
-    instructions: z.string().nullable().optional(),
 })));
 export type InferFormSchemaRequest = z.infer<typeof ZInferFormSchemaRequest>;
 
@@ -945,7 +951,7 @@ export const ZLogExtractionRequest = z.lazy(() => (z.object({
     messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
     openai_messages: z.array(z.union([ZChatCompletionDeveloperMessageParam, ZChatCompletionSystemMessageParam, ZChatCompletionUserMessageParam, ZChatCompletionAssistantMessageParam, ZChatCompletionToolMessageParam, ZChatCompletionFunctionMessageParam])).nullable().optional(),
     openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZResponseInputParamMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZResponseInputParamComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZResponseInputParamFunctionCallOutput, ZResponseReasoningItemParam, ZResponseCompactionItemParamParam, ZResponseInputParamImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZResponseInputParamLocalShellCall, ZResponseInputParamLocalShellCallOutput, ZResponseInputParamShellCall, ZResponseInputParamShellCallOutput, ZResponseInputParamApplyPatchCall, ZResponseInputParamApplyPatchCallOutput, ZResponseInputParamMcpListTools, ZResponseInputParamMcpApprovalRequest, ZResponseInputParamMcpApprovalResponse, ZResponseInputParamMcpCall, ZResponseCustomToolCallOutputParam, ZResponseCustomToolCallParam, ZResponseInputParamItemReference])).nullable().optional(),
-    document: ZMIMEData.default({ "filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=" }),
+    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
     completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
