@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 import datetime
 
 from ..mime import BaseMIMEData, MIMEData
-from ..documents.edit import FormField
+from ..documents.edit import FormField, EditConfig
 
 
 class EditTemplate(BaseModel):
@@ -48,3 +48,4 @@ class FillTemplateRequest(BaseModel):
     model: str = Field(default="retab-small", description="LLM model to use for inference")
     instructions: str = Field(..., description="Instructions to fill the form")
     template_id: str = Field(..., description="Template ID to use for filling. When provided, uses the template's pre-defined form fields and empty PDF. Only works for PDF documents. Mutually exclusive with document.")
+    config: EditConfig = Field(default_factory=EditConfig, description="Configuration for the fill request")

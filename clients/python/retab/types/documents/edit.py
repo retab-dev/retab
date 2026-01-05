@@ -111,6 +111,11 @@ class InferFormSchemaRequest(BaseModel):
     model: str = Field(default="retab-small", description="LLM model to use for inference")
 
 
+class EditConfig(BaseModel):
+    """Configuration for edit requests."""
+    color: str = Field(default="#000080", description="Hex code of the color to use for the filled text")
+
+
 class EditRequest(BaseModel):
     """Request for the infer_and_fill_schema endpoint.
     
@@ -122,6 +127,7 @@ class EditRequest(BaseModel):
     model: str = Field(default="retab-small", description="LLM model to use for inference")
     instructions: str = Field(..., description="Instructions to fill the form")
     template_id: Optional[str] = Field(default=None, description="Template ID to use for filling. When provided, uses the template's pre-defined form fields and empty PDF. Only works for PDF documents. Mutually exclusive with document.")
+    config: EditConfig = Field(default_factory=EditConfig, description="Configuration for the edit request")
 
 class EditResponse(BaseModel):
     """Response from the fill_form endpoint.

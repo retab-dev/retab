@@ -251,6 +251,7 @@ export default class APIEditTemplates extends CompositionClient {
      *   - template_id: The template ID to use for filling
      *   - instructions: Instructions describing how to fill the form fields
      *   - model: LLM model for inference (default: "retab-small")
+     *   - color: Hex color code for filled text (default: "#000080")
      * @param options - Optional request options
      * @returns EditResponse containing:
      *   - form_data: List of form fields with filled values
@@ -261,20 +262,29 @@ export default class APIEditTemplates extends CompositionClient {
             template_id,
             instructions,
             model = "retab-small",
+            color,
         }: {
             template_id: string;
             instructions: string;
             model?: string;
+            color?: string;
         },
         options?: RequestOptions
     ): Promise<EditResponse> {
+        const body: Record<string, any> = {
+            template_id,
+            instructions,
+            model,
+        };
+        if (color !== undefined) {
+            body.config = { color };
+        }
+
         return this._fetchJson(ZEditResponse, {
             url: "/v1/edit/templates/fill",
             method: "POST",
             body: {
-                template_id,
-                instructions,
-                model,
+                ...body,
                 ...(options?.body || {}),
             },
             params: options?.params,

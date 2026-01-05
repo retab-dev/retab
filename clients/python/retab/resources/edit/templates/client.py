@@ -12,6 +12,7 @@ from pydantic import HttpUrl
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....utils.mime import prepare_mime_document
 from ....types.documents.edit import (
+    EditConfig,
     FormField,
     InferFormSchemaRequest,
     InferFormSchemaResponse,
@@ -163,6 +164,7 @@ class BaseTemplatesMixin:
         template_id: str,
         instructions: str,
         model: str = FieldUnset,
+        color: str = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
@@ -172,6 +174,8 @@ class BaseTemplatesMixin:
 
         if model is not FieldUnset:
             request_dict["model"] = model
+        if color is not FieldUnset:
+            request_dict["config"] = EditConfig(color=color)
         if extra_body:
             request_dict.update(extra_body)
 
@@ -368,6 +372,7 @@ class Templates(SyncAPIResource, BaseTemplatesMixin):
         template_id: str,
         instructions: str,
         model: str = FieldUnset,
+        color: str = FieldUnset,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -380,6 +385,7 @@ class Templates(SyncAPIResource, BaseTemplatesMixin):
             template_id: The template ID to use for filling
             instructions: Instructions describing how to fill the form fields
             model: The LLM model to use for inference (default: "retab-small")
+            color: Hex color code for filled text (e.g. "#000080"). Defaults to dark blue.
 
         Returns:
             EditResponse: Response containing:
@@ -395,6 +401,7 @@ class Templates(SyncAPIResource, BaseTemplatesMixin):
             template_id=template_id,
             instructions=instructions,
             model=model,
+            color=color,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -586,6 +593,7 @@ class AsyncTemplates(AsyncAPIResource, BaseTemplatesMixin):
         template_id: str,
         instructions: str,
         model: str = FieldUnset,
+        color: str = FieldUnset,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -598,6 +606,7 @@ class AsyncTemplates(AsyncAPIResource, BaseTemplatesMixin):
             template_id: The template ID to use for filling
             instructions: Instructions describing how to fill the form fields
             model: The LLM model to use for inference (default: "retab-small")
+            color: Hex color code for filled text (e.g. "#000080"). Defaults to dark blue.
 
         Returns:
             EditResponse: Response containing:
@@ -613,6 +622,7 @@ class AsyncTemplates(AsyncAPIResource, BaseTemplatesMixin):
             template_id=template_id,
             instructions=instructions,
             model=model,
+            color=color,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
