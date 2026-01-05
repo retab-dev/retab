@@ -679,6 +679,7 @@ export const ZFillTemplateRequest = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     instructions: z.string(),
     template_id: z.string(),
+    config: ZEditConfig,
 })));
 export type FillTemplateRequest = z.infer<typeof ZFillTemplateRequest>;
 
@@ -687,6 +688,11 @@ export const ZUpdateEditTemplateRequest = z.lazy(() => (z.object({
     form_fields: z.array(ZFormField).nullable().optional(),
 })));
 export type UpdateEditTemplateRequest = z.infer<typeof ZUpdateEditTemplateRequest>;
+
+export const ZEditConfig = z.lazy(() => (z.object({
+    color: z.string().default("#000080"),
+})));
+export type EditConfig = z.infer<typeof ZEditConfig>;
 
 export const ZFormField = z.lazy(() => (ZBaseFormField.schema).merge(z.object({
     value: z.string().nullable().optional(),
@@ -796,6 +802,7 @@ export const ZEditRequest = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     instructions: z.string(),
     template_id: z.string().nullable().optional(),
+    config: ZEditConfig,
 })));
 export type EditRequest = z.infer<typeof ZEditRequest>;
 

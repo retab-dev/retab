@@ -12,6 +12,7 @@ from pydantic import HttpUrl
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....utils.mime import prepare_mime_document
 from ....types.documents.edit import (
+    EditConfig,
     EditRequest,
     EditResponse,
 )
@@ -27,6 +28,7 @@ class BaseAgentMixin:
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
+        color: str = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
@@ -39,6 +41,9 @@ class BaseAgentMixin:
 
         if model is not FieldUnset:
             request_dict["model"] = model
+
+        if color is not FieldUnset:
+            request_dict["config"] = EditConfig(color=color)
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -63,6 +68,7 @@ class Agent(SyncAPIResource, BaseAgentMixin):
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
+        color: str = FieldUnset,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -79,6 +85,7 @@ class Agent(SyncAPIResource, BaseAgentMixin):
             document: The document to edit. Can be a file path (Path or str), file-like object,
                 MIMEData, PIL Image, or URL.
             model: The LLM model to use for inference. Defaults to "retab-small".
+            color: Hex color code for filled text (e.g. "#000080"). Defaults to dark blue.
 
         Returns:
             EditResponse: Response containing:
@@ -98,6 +105,7 @@ class Agent(SyncAPIResource, BaseAgentMixin):
             instructions=instructions,
             document=document,
             model=model,
+            color=color,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -115,6 +123,7 @@ class AsyncAgent(AsyncAPIResource, BaseAgentMixin):
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str = FieldUnset,
+        color: str = FieldUnset,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -131,6 +140,7 @@ class AsyncAgent(AsyncAPIResource, BaseAgentMixin):
             document: The document to edit. Can be a file path (Path or str), file-like object,
                 MIMEData, PIL Image, or URL.
             model: The LLM model to use for inference. Defaults to "retab-small".
+            color: Hex color code for filled text (e.g. "#000080"). Defaults to dark blue.
 
         Returns:
             EditResponse: Response containing:
@@ -150,6 +160,7 @@ class AsyncAgent(AsyncAPIResource, BaseAgentMixin):
             instructions=instructions,
             document=document,
             model=model,
+            color=color,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
