@@ -594,6 +594,7 @@ export const ZResponse = z.lazy(() => (z.object({
     tools: z.array(z.union([ZFunctionTool, ZFileSearchTool, ZComputerTool, ZWebSearchTool, ZMcp, ZCodeInterpreter, ZImageGeneration, ZLocalShell, ZFunctionShellTool, ZCustomTool, ZWebSearchPreviewTool, ZApplyPatchTool])),
     top_p: z.number().nullable().optional(),
     background: z.boolean().nullable().optional(),
+    completed_at: z.number().nullable().optional(),
     conversation: ZConversation.nullable().optional(),
     max_output_tokens: z.number().nullable().optional(),
     max_tool_calls: z.number().nullable().optional(),
@@ -679,7 +680,7 @@ export const ZFillTemplateRequest = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     instructions: z.string(),
     template_id: z.string(),
-    config: ZEditConfig.optional().default({}),
+    config: ZEditConfig,
 })));
 export type FillTemplateRequest = z.infer<typeof ZFillTemplateRequest>;
 
@@ -725,6 +726,7 @@ export const ZClassifyRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     categories: z.array(ZCategory),
     model: z.string().default("retab-small"),
+    first_n_pages: z.number().nullable().optional(),
 })));
 export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
 
@@ -802,7 +804,7 @@ export const ZEditRequest = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     instructions: z.string(),
     template_id: z.string().nullable().optional(),
-    config: ZEditConfig.optional().default({}),
+    config: ZEditConfig,
 })));
 export type EditRequest = z.infer<typeof ZEditRequest>;
 
@@ -2350,6 +2352,7 @@ export type ComputerCallOutputAcknowledgedSafetyCheck = z.infer<typeof ZComputer
 export const ZActionSearch = z.lazy(() => (z.object({
     query: z.string(),
     type: z.literal("search"),
+    queries: z.array(z.string()).nullable().optional(),
     sources: z.array(ZActionSearchSource).nullable().optional(),
 })));
 export type ActionSearch = z.infer<typeof ZActionSearch>;
@@ -2789,6 +2792,7 @@ export type ResponseInputParamComputerCallOutputAcknowledgedSafetyCheck = z.infe
 export const ZResponseFunctionWebSearchParamActionSearch = z.lazy(() => (z.object({
     query: z.string(),
     type: z.literal("search"),
+    queries: z.array(z.string()),
     sources: z.array(ZResponseFunctionWebSearchParamActionSearchSource),
 })));
 export type ResponseFunctionWebSearchParamActionSearch = z.infer<typeof ZResponseFunctionWebSearchParamActionSearch>;

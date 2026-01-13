@@ -122,18 +122,19 @@ export default class APIDocuments extends CompositionClient {
     }
     /**
      * Classify a document into one of the provided categories.
-     * 
+     *
      * This method analyzes a document and classifies it into exactly one
      * of the user-defined categories, returning the classification with
      * chain-of-thought reasoning explaining the decision.
-     * 
+     *
      * @param params - ClassifyRequest containing:
      *   - document: MIMEData object, file path, Buffer, or Readable stream
      *   - categories: Array of categories with 'name' and 'description'
      *   - model: LLM model for inference (e.g., "retab-small")
+     *   - first_n_pages: (optional) Only use the first N pages for classification. Useful for large documents.
      * @param options - Optional request options
      * @returns ClassifyResponse containing result with reasoning and classification
-     * 
+     *
      * @example
      * ```typescript
      * const response = await retab.documents.classify({
@@ -143,7 +144,8 @@ export default class APIDocuments extends CompositionClient {
      *         { name: "invoice", description: "Invoice documents with billing information" },
      *         { name: "receipt", description: "Receipt documents for payments" },
      *         { name: "contract", description: "Legal contract documents" },
-     *     ]
+     *     ],
+     *     first_n_pages: 3  // Optional: only use first 3 pages
      * });
      * console.log(`Classification: ${response.result.classification}`);
      * console.log(`Reasoning: ${response.result.reasoning}`);
