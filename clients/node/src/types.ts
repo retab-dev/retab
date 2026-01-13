@@ -149,6 +149,7 @@ export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
 export const ZEditRequest = z.object({
     ...generated.ZEditRequest.schema.shape,
     document: ZMIMEData.nullable().optional(),
+    config: generated.ZEditConfig.optional().default({ color: "#000080" }),
 });
 export type EditRequest = z.input<typeof ZEditRequest>;
 
