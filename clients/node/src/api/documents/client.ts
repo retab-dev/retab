@@ -93,7 +93,7 @@ export default class APIDocuments extends CompositionClient {
      *   - categories: Array of categories with 'name' and 'description'
      *   - model: LLM model for inference (e.g., "retab-small")
      * @param options - Optional request options
-     * @returns SplitResponse containing splits array with name, start_page, and end_page for each section
+     * @returns SplitResponse containing splits array with name and pages for each section
      * 
      * @example
      * ```typescript
@@ -107,7 +107,7 @@ export default class APIDocuments extends CompositionClient {
      *     ]
      * });
      * for (const split of response.splits) {
-     *     console.log(`${split.name}: pages ${split.start_page}-${split.end_page}`);
+     *     console.log(`${split.name}: pages ${split.pages.join(', ')}`);
      * }
      * ```
      */

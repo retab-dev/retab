@@ -36,15 +36,17 @@ function validateSplitResponse(response: SplitResponse | null, categories: Categ
 
     response.splits.forEach((split: SplitResult) => {
         expect(split.name).toBeDefined();
-        expect(split.start_page).toBeDefined();
-        expect(split.end_page).toBeDefined();
+        expect(split.pages).toBeDefined();
+        expect(Array.isArray(split.pages)).toBe(true);
+        expect(split.pages.length).toBeGreaterThan(0);
 
         // Validate category name is from provided categories
         expect(validCategoryNames.has(split.name)).toBe(true);
 
         // Validate page numbers
-        expect(split.start_page).toBeGreaterThanOrEqual(1);
-        expect(split.end_page).toBeGreaterThanOrEqual(split.start_page);
+        split.pages.forEach((page: number) => {
+            expect(page).toBeGreaterThanOrEqual(1);
+        });
     });
 }
 
@@ -52,24 +54,26 @@ function validateSplitsAreOrdered(response: SplitResponse): void {
     if (response.splits.length <= 1) return;
 
     for (let i = 1; i < response.splits.length; i++) {
-        expect(response.splits[i].start_page).toBeGreaterThanOrEqual(
-            response.splits[i - 1].start_page
-        );
+        const prevFirstPage = response.splits[i - 1].pages[0] ?? 0;
+        const currFirstPage = response.splits[i].pages[0] ?? 0;
+        expect(currFirstPage).toBeGreaterThanOrEqual(prevFirstPage);
     }
 }
 
 function validateSplitsNonOverlapping(response: SplitResponse): void {
     if (response.splits.length <= 1) return;
 
-    // Sort splits by start_page for easier validation
-    const sortedSplits = [...response.splits].sort((a, b) => a.start_page - b.start_page);
+    // Sort splits by first page for easier validation
+    const sortedSplits = [...response.splits].sort((a, b) => (a.pages[0] ?? 0) - (b.pages[0] ?? 0));
 
     for (let i = 1; i < sortedSplits.length; i++) {
         const prevSplit = sortedSplits[i - 1];
         const currSplit = sortedSplits[i];
 
         // Current split should start after previous split ends
-        expect(currSplit.start_page).toBeGreaterThan(prevSplit.end_page);
+        const prevLastPage = prevSplit.pages[prevSplit.pages.length - 1] ?? 0;
+        const currFirstPage = currSplit.pages[0] ?? 0;
+        expect(currFirstPage).toBeGreaterThan(prevLastPage);
     }
 }
 
@@ -135,13 +139,14 @@ describe('Retab SDK Split Tests', () => {
             // Validate splits have proper structure
             response.splits.forEach((split: SplitResult) => {
                 expect(split).toHaveProperty('name');
-                expect(split).toHaveProperty('start_page');
-                expect(split).toHaveProperty('end_page');
+                expect(split).toHaveProperty('pages');
 
                 // Validate types
                 expect(typeof split.name).toBe('string');
-                expect(typeof split.start_page).toBe('number');
-                expect(typeof split.end_page).toBe('number');
+                expect(Array.isArray(split.pages)).toBe(true);
+                split.pages.forEach((page: number) => {
+                    expect(typeof page).toBe('number');
+                });
             });
         }, { timeout: TEST_TIMEOUT });
     });
@@ -158,12 +163,10 @@ describe('Retab SDK Split Tests', () => {
 
             // Validate that all page numbers are positive
             response.splits.forEach((split: SplitResult) => {
-                expect(split.start_page).toBeGreaterThanOrEqual(1);
-                expect(split.end_page).toBeGreaterThanOrEqual(1);
-
-                // Calculate number of pages in this split
-                const pageCount = split.end_page - split.start_page + 1;
-                expect(pageCount).toBeGreaterThanOrEqual(1);
+                expect(split.pages.length).toBeGreaterThanOrEqual(1);
+                split.pages.forEach((page: number) => {
+                    expect(page).toBeGreaterThanOrEqual(1);
+                });
             });
         }, { timeout: TEST_TIMEOUT });
     });

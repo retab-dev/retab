@@ -777,8 +777,8 @@ export type SplitResponse = z.infer<typeof ZSplitResponse>;
 
 export const ZSplitResult = z.lazy(() => (z.object({
     name: z.string(),
-    start_page: z.number(),
-    end_page: z.number(),
+    pages: z.array(z.number()),
+    partitions: z.array(ZPartition),
 })));
 export type SplitResult = z.infer<typeof ZSplitResult>;
 
@@ -856,6 +856,13 @@ export const ZProcessOCRRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
 })));
 export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
+
+export const ZPartition = z.lazy(() => (z.object({
+    pages: z.array(z.number()),
+    first_page_y_start: z.number(),
+    last_page_y_end: z.number(),
+})));
+export type Partition = z.infer<typeof ZPartition>;
 
 export const ZSplitOutputSchema = z.lazy(() => (z.object({
     splits: z.array(ZSplitResult),
