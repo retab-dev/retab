@@ -713,6 +713,7 @@ export type DocumentTransformResponse = z.infer<typeof ZDocumentTransformRespons
 export const ZCategory = z.lazy(() => (z.object({
     name: z.string(),
     description: z.string(),
+    partition_key: z.string().nullable().optional(),
 })));
 export type Category = z.infer<typeof ZCategory>;
 
@@ -858,14 +859,22 @@ export const ZProcessOCRRequest = z.lazy(() => (z.object({
 export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
 
 export const ZPartition = z.lazy(() => (z.object({
+    key: z.string(),
     pages: z.array(z.number()),
-    first_page_y_start: z.number(),
-    last_page_y_end: z.number(),
+    first_page_y_start: z.number().default(0.0),
+    last_page_y_end: z.number().default(1.0),
 })));
 export type Partition = z.infer<typeof ZPartition>;
 
+export const ZSplitOutputItem = z.lazy(() => (z.object({
+    name: z.string(),
+    start_page: z.number(),
+    end_page: z.number(),
+})));
+export type SplitOutputItem = z.infer<typeof ZSplitOutputItem>;
+
 export const ZSplitOutputSchema = z.lazy(() => (z.object({
-    splits: z.array(ZSplitResult),
+    splits: z.array(ZSplitOutputItem),
 })));
 export type SplitOutputSchema = z.infer<typeof ZSplitOutputSchema>;
 

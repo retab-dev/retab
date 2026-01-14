@@ -40,56 +40,59 @@ def validate_split_response(response: SplitResponse | None, categories: list[Cat
     """Validate that the split response has the expected structure and content."""
     # Assert the instance
     assert isinstance(response, SplitResponse), f"Response should be of type SplitResponse, received {type(response)}"
-    
+
     # Assert the response has required fields
     assert response.splits is not None, "Response splits should not be None"
-    
+
     # Validate splits
     assert isinstance(response.splits, list), "splits should be a list"
     assert len(response.splits) > 0, "Should have at least one split"
-    
+
     # Get valid category names
     valid_category_names = {cat.name for cat in categories}
-    
+
     for split in response.splits:
         assert isinstance(split, SplitResult), f"Each split should be SplitResult, got {type(split)}"
         assert split.name is not None, "Split name should not be None"
-        assert split.start_page is not None, "Split start_page should not be None"
-        assert split.end_page is not None, "Split end_page should not be None"
-        
+        assert split.pages is not None, "Split pages should not be None"
+        assert isinstance(split.pages, list), "Split pages should be a list"
+        assert len(split.pages) > 0, "Split pages should not be empty"
+
         # Validate category name is from provided categories
         assert split.name in valid_category_names, f"Split name '{split.name}' should be one of {valid_category_names}"
-        
+
         # Validate page numbers
-        assert split.start_page >= 1, "start_page should be >= 1 (1-indexed)"
-        assert split.end_page >= split.start_page, "end_page should be >= start_page"
+        for page in split.pages:
+            assert page >= 1, "All pages should be >= 1 (1-indexed)"
 
 
 def validate_splits_are_ordered(response: SplitResponse) -> None:
-    """Validate that splits are ordered by start_page."""
+    """Validate that splits are ordered by first page."""
     if len(response.splits) <= 1:
         return
-    
+
     for i in range(1, len(response.splits)):
-        assert response.splits[i].start_page >= response.splits[i-1].start_page, \
-            f"Splits should be ordered by start_page: {response.splits[i-1]} should come before {response.splits[i]}"
+        prev_first_page = response.splits[i-1].pages[0] if response.splits[i-1].pages else 0
+        curr_first_page = response.splits[i].pages[0] if response.splits[i].pages else 0
+        assert curr_first_page >= prev_first_page, \
+            f"Splits should be ordered by first page: {response.splits[i-1]} should come before {response.splits[i]}"
 
 
 def validate_splits_non_overlapping(response: SplitResponse) -> None:
     """Validate that splits do not overlap (each page belongs to exactly one section)."""
     if len(response.splits) <= 1:
         return
-    
-    # Sort splits by start_page for easier validation
-    sorted_splits = sorted(response.splits, key=lambda x: x.start_page)
-    
-    for i in range(1, len(sorted_splits)):
-        prev_split = sorted_splits[i-1]
-        curr_split = sorted_splits[i]
-        
-        # Current split should start after previous split ends
-        assert curr_split.start_page > prev_split.end_page, \
-            f"Splits should not overlap: {prev_split} overlaps with {curr_split}"
+
+    # Collect all pages across all splits
+    all_pages: list[int] = []
+    for split in response.splits:
+        all_pages.extend(split.pages)
+
+    # Check for duplicates - each page should only appear once
+    seen_pages = set()
+    for page in all_pages:
+        assert page not in seen_pages, f"Page {page} appears in multiple splits"
+        seen_pages.add(page)
 
 
 # Base test function for split endpoint
@@ -169,13 +172,14 @@ async def test_split_response_structure(
     # Validate splits have proper structure
     for split in response.splits:
         assert hasattr(split, 'name'), "Split should have name"
-        assert hasattr(split, 'start_page'), "Split should have start_page"
-        assert hasattr(split, 'end_page'), "Split should have end_page"
-        
+        assert hasattr(split, 'pages'), "Split should have pages"
+        assert hasattr(split, 'partitions'), "Split should have partitions"
+
         # Validate types
         assert isinstance(split.name, str), "name should be a string"
-        assert isinstance(split.start_page, int), "start_page should be an integer"
-        assert isinstance(split.end_page, int), "end_page should be an integer"
+        assert isinstance(split.pages, list), "pages should be a list"
+        assert all(isinstance(p, int) for p in split.pages), "all pages should be integers"
+        assert isinstance(split.partitions, list), "partitions should be a list"
 
 
 @pytest.mark.asyncio
@@ -221,15 +225,12 @@ async def test_split_page_coverage(
         )
     
     validate_split_response(response, split_categories)
-    
+
     # Validate that all page numbers are positive
     for split in response.splits:
-        assert split.start_page >= 1, "start_page should be >= 1"
-        assert split.end_page >= 1, "end_page should be >= 1"
-        
-        # Calculate number of pages in this split
-        page_count = split.end_page - split.start_page + 1
-        assert page_count >= 1, "Each split should have at least 1 page"
+        assert len(split.pages) >= 1, "Each split should have at least 1 page"
+        for page in split.pages:
+            assert page >= 1, f"All pages should be >= 1, got {page}"
 
 
 @pytest.mark.asyncio
