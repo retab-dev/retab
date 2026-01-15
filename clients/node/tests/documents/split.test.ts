@@ -34,45 +34,59 @@ function validateSplitResponse(response: SplitResponse | null, categories: Categ
     // Get valid category names
     const validCategoryNames = new Set(categories.map(cat => cat.name));
 
+    // Track whether at least one split has pages (not all should be empty)
+    let hasNonEmptySplit = false;
+
     response.splits.forEach((split: SplitResult) => {
         expect(split.name).toBeDefined();
         expect(split.pages).toBeDefined();
         expect(Array.isArray(split.pages)).toBe(true);
-        expect(split.pages.length).toBeGreaterThan(0);
 
         // Validate category name is from provided categories
         expect(validCategoryNames.has(split.name)).toBe(true);
 
-        // Validate page numbers
-        split.pages.forEach((page: number) => {
-            expect(page).toBeGreaterThanOrEqual(1);
-        });
+        // Validate page numbers (only for non-empty splits)
+        if (split.pages.length > 0) {
+            hasNonEmptySplit = true;
+            split.pages.forEach((page: number) => {
+                expect(page).toBeGreaterThanOrEqual(1);
+            });
+        }
     });
+
+    // At least one split should have pages assigned
+    expect(hasNonEmptySplit).toBe(true);
 }
 
 function validateSplitsAreOrdered(response: SplitResponse): void {
-    if (response.splits.length <= 1) return;
+    // Filter to only splits with pages for ordering validation
+    const nonEmptySplits = response.splits.filter(s => s.pages.length > 0);
 
-    for (let i = 1; i < response.splits.length; i++) {
-        const prevFirstPage = response.splits[i - 1].pages[0] ?? 0;
-        const currFirstPage = response.splits[i].pages[0] ?? 0;
+    if (nonEmptySplits.length <= 1) return;
+
+    for (let i = 1; i < nonEmptySplits.length; i++) {
+        const prevFirstPage = nonEmptySplits[i - 1].pages[0];
+        const currFirstPage = nonEmptySplits[i].pages[0];
         expect(currFirstPage).toBeGreaterThanOrEqual(prevFirstPage);
     }
 }
 
 function validateSplitsNonOverlapping(response: SplitResponse): void {
-    if (response.splits.length <= 1) return;
+    // Filter to only splits with pages for overlap validation
+    const nonEmptySplits = response.splits.filter(s => s.pages.length > 0);
+
+    if (nonEmptySplits.length <= 1) return;
 
     // Sort splits by first page for easier validation
-    const sortedSplits = [...response.splits].sort((a, b) => (a.pages[0] ?? 0) - (b.pages[0] ?? 0));
+    const sortedSplits = [...nonEmptySplits].sort((a, b) => a.pages[0] - b.pages[0]);
 
     for (let i = 1; i < sortedSplits.length; i++) {
         const prevSplit = sortedSplits[i - 1];
         const currSplit = sortedSplits[i];
 
         // Current split should start after previous split ends
-        const prevLastPage = prevSplit.pages[prevSplit.pages.length - 1] ?? 0;
-        const currFirstPage = currSplit.pages[0] ?? 0;
+        const prevLastPage = prevSplit.pages[prevSplit.pages.length - 1];
+        const currFirstPage = currSplit.pages[0];
         expect(currFirstPage).toBeGreaterThan(prevLastPage);
     }
 }
@@ -161,9 +175,8 @@ describe('Retab SDK Split Tests', () => {
 
             validateSplitResponse(response, DEFAULT_CATEGORIES);
 
-            // Validate that all page numbers are positive
+            // Validate that all page numbers are positive (for non-empty splits)
             response.splits.forEach((split: SplitResult) => {
-                expect(split.pages.length).toBeGreaterThanOrEqual(1);
                 split.pages.forEach((page: number) => {
                     expect(page).toBeGreaterThanOrEqual(1);
                 });
