@@ -1,6 +1,6 @@
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -21,15 +21,19 @@ class WorkflowRunsMixin:
     def prepare_create(
         self,
         workflow_id: str,
-        documents: Dict[str, DocumentInput],
+        documents: Optional[Dict[str, DocumentInput]] = None,
+        json_inputs: Optional[Dict[str, Dict[str, Any]]] = None,
+        text_inputs: Optional[Dict[str, str]] = None,
     ) -> PreparedRequest:
-        """Prepare a request to run a workflow with input documents.
+        """Prepare a request to run a workflow with input documents, JSON data, and/or text data.
 
         Args:
             workflow_id: The ID of the workflow to run
             documents: Mapping of start node IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
+            json_inputs: Mapping of start_json node IDs to their input JSON data.
+            text_inputs: Mapping of start_text node IDs to their input text.
 
         Returns:
             PreparedRequest: The prepared request
@@ -40,20 +44,37 @@ class WorkflowRunsMixin:
             ...     documents={
             ...         "start-node-1": Path("invoice.pdf"),
             ...         "start-node-2": Path("receipt.pdf"),
+            ...     },
+            ...     json_inputs={
+            ...         "json-node-1": {"key": "value"},
+            ...     },
+            ...     text_inputs={
+            ...         "text-node-1": "Hello, world!",
             ...     }
             ... )
         """
-        # Convert each document to MIMEData and then to the format expected by the backend
-        documents_payload: Dict[str, Dict[str, Any]] = {}
-        for node_id, document in documents.items():
-            mime_data = prepare_mime_document(document)
-            documents_payload[node_id] = {
-                "filename": mime_data.filename,
-                "content": mime_data.content,
-                "mime_type": mime_data.mime_type,
-            }
+        data: Dict[str, Any] = {}
 
-        data = {"documents": documents_payload}
+        # Convert each document to MIMEData and then to the format expected by the backend
+        if documents:
+            documents_payload: Dict[str, Dict[str, Any]] = {}
+            for node_id, document in documents.items():
+                mime_data = prepare_mime_document(document)
+                documents_payload[node_id] = {
+                    "filename": mime_data.filename,
+                    "content": mime_data.content,
+                    "mime_type": mime_data.mime_type,
+                }
+            data["documents"] = documents_payload
+
+        # Add JSON inputs directly
+        if json_inputs:
+            data["json_inputs"] = json_inputs
+
+        # Add text inputs directly
+        if text_inputs:
+            data["text_inputs"] = text_inputs
+
         return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/run", data=data)
 
     def prepare_get(self, run_id: str) -> PreparedRequest:
@@ -77,9 +98,11 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def create(
         self,
         workflow_id: str,
-        documents: Dict[str, DocumentInput],
+        documents: Optional[Dict[str, DocumentInput]] = None,
+        json_inputs: Optional[Dict[str, Dict[str, Any]]] = None,
+        text_inputs: Optional[Dict[str, str]] = None,
     ) -> WorkflowRun:
-        """Run a workflow with the provided input documents.
+        """Run a workflow with the provided inputs.
 
         This creates a workflow run and starts execution in the background.
         The returned WorkflowRun will have status "running" - use get()
@@ -90,25 +113,37 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             documents: Mapping of start node IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
+            json_inputs: Mapping of start_json node IDs to their input JSON data.
+            text_inputs: Mapping of start_text node IDs to their input text.
 
         Returns:
             WorkflowRun: The created workflow run with status "running"
 
         Raises:
             HTTPException: If the request fails (e.g., workflow not found,
-                          missing input documents for start nodes)
+                          missing inputs for start nodes)
 
         Example:
             >>> run = client.workflows.runs.create(
             ...     workflow_id="wf_abc123",
             ...     documents={
             ...         "start-node-1": Path("invoice.pdf"),
-            ...         "start-node-2": Path("receipt.pdf"),
+            ...     },
+            ...     json_inputs={
+            ...         "json-node-1": {"key": "value"},
+            ...     },
+            ...     text_inputs={
+            ...         "text-node-1": "Hello, world!",
             ...     }
             ... )
             >>> print(f"Run started: {run.id}, status: {run.status}")
         """
-        request = self.prepare_create(workflow_id=workflow_id, documents=documents)
+        request = self.prepare_create(
+            workflow_id=workflow_id,
+            documents=documents,
+            json_inputs=json_inputs,
+            text_inputs=text_inputs,
+        )
         response = self._client._prepared_request(request)
         return WorkflowRun.model_validate(response)
 
@@ -138,9 +173,11 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     async def create(
         self,
         workflow_id: str,
-        documents: Dict[str, DocumentInput],
+        documents: Optional[Dict[str, DocumentInput]] = None,
+        json_inputs: Optional[Dict[str, Dict[str, Any]]] = None,
+        text_inputs: Optional[Dict[str, str]] = None,
     ) -> WorkflowRun:
-        """Run a workflow with the provided input documents.
+        """Run a workflow with the provided inputs.
 
         This creates a workflow run and starts execution in the background.
         The returned WorkflowRun will have status "running" - use get()
@@ -151,25 +188,37 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             documents: Mapping of start node IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
+            json_inputs: Mapping of start_json node IDs to their input JSON data.
+            text_inputs: Mapping of start_text node IDs to their input text.
 
         Returns:
             WorkflowRun: The created workflow run with status "running"
 
         Raises:
             HTTPException: If the request fails (e.g., workflow not found,
-                          missing input documents for start nodes)
+                          missing inputs for start nodes)
 
         Example:
             >>> run = await client.workflows.runs.create(
             ...     workflow_id="wf_abc123",
             ...     documents={
             ...         "start-node-1": Path("invoice.pdf"),
-            ...         "start-node-2": Path("receipt.pdf"),
+            ...     },
+            ...     json_inputs={
+            ...         "json-node-1": {"key": "value"},
+            ...     },
+            ...     text_inputs={
+            ...         "text-node-1": "Hello, world!",
             ...     }
             ... )
             >>> print(f"Run started: {run.id}, status: {run.status}")
         """
-        request = self.prepare_create(workflow_id=workflow_id, documents=documents)
+        request = self.prepare_create(
+            workflow_id=workflow_id,
+            documents=documents,
+            json_inputs=json_inputs,
+            text_inputs=text_inputs,
+        )
         response = await self._client._prepared_request(request)
         return WorkflowRun.model_validate(response)
 
