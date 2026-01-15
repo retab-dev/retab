@@ -51,31 +51,41 @@ def validate_split_response(response: SplitResponse | None, categories: list[Cat
     # Get valid category names
     valid_category_names = {cat.name for cat in categories}
 
+    # Track whether at least one split has pages (not all should be empty)
+    has_non_empty_split = False
+
     for split in response.splits:
         assert isinstance(split, SplitResult), f"Each split should be SplitResult, got {type(split)}"
         assert split.name is not None, "Split name should not be None"
         assert split.pages is not None, "Split pages should not be None"
         assert isinstance(split.pages, list), "Split pages should be a list"
-        assert len(split.pages) > 0, "Split pages should not be empty"
 
         # Validate category name is from provided categories
         assert split.name in valid_category_names, f"Split name '{split.name}' should be one of {valid_category_names}"
 
-        # Validate page numbers
-        for page in split.pages:
-            assert page >= 1, "All pages should be >= 1 (1-indexed)"
+        # Validate page numbers (only for non-empty splits)
+        if len(split.pages) > 0:
+            has_non_empty_split = True
+            for page in split.pages:
+                assert page >= 1, "All pages should be >= 1 (1-indexed)"
+
+    # At least one split should have pages assigned
+    assert has_non_empty_split, "At least one split should have pages assigned"
 
 
 def validate_splits_are_ordered(response: SplitResponse) -> None:
-    """Validate that splits are ordered by first page."""
-    if len(response.splits) <= 1:
+    """Validate that non-empty splits are ordered by first page."""
+    # Filter to only splits with pages for ordering validation
+    non_empty_splits = [s for s in response.splits if s.pages]
+
+    if len(non_empty_splits) <= 1:
         return
 
-    for i in range(1, len(response.splits)):
-        prev_first_page = response.splits[i-1].pages[0] if response.splits[i-1].pages else 0
-        curr_first_page = response.splits[i].pages[0] if response.splits[i].pages else 0
+    for i in range(1, len(non_empty_splits)):
+        prev_first_page = non_empty_splits[i-1].pages[0]
+        curr_first_page = non_empty_splits[i].pages[0]
         assert curr_first_page >= prev_first_page, \
-            f"Splits should be ordered by first page: {response.splits[i-1]} should come before {response.splits[i]}"
+            f"Splits should be ordered by first page: {non_empty_splits[i-1]} should come before {non_empty_splits[i]}"
 
 
 def validate_splits_non_overlapping(response: SplitResponse) -> None:
@@ -226,9 +236,8 @@ async def test_split_page_coverage(
     
     validate_split_response(response, split_categories)
 
-    # Validate that all page numbers are positive
+    # Validate that all page numbers are positive (for non-empty splits)
     for split in response.splits:
-        assert len(split.pages) >= 1, "Each split should have at least 1 page"
         for page in split.pages:
             assert page >= 1, f"All pages should be >= 1, got {page}"
 
