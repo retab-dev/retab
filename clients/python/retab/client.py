@@ -10,7 +10,7 @@ import backoff.types
 import httpx
 import truststore
 
-from .resources import documents, models, schemas, projects, extractions, edit, workflows
+from .resources import documents, models, schemas, projects, extractions, edit, workflows, jobs
 from .types.standards import PreparedRequest, FieldUnset
 
 
@@ -190,6 +190,7 @@ class Retab(BaseRetab):
         self.schemas = schemas.Schemas(client=self)
         self.edit = edit.Edit(client=self)
         self.workflows = workflows.Workflows(client=self)
+        self.jobs = jobs.Jobs(client=self)
     def _request(
         self,
         method: str,
@@ -488,6 +489,7 @@ class AsyncRetab(BaseRetab):
         self.schemas = schemas.AsyncSchemas(client=self)
         self.edit = edit.AsyncEdit(client=self)
         self.workflows = workflows.AsyncWorkflows(client=self)
+        self.jobs = jobs.AsyncJobs(client=self)
         
     def _parse_response(self, response: httpx.Response) -> Any:
         """Parse response based on content-type.
