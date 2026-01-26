@@ -148,6 +148,52 @@ export const ZStreamingBaseModel = z.lazy(() => (z.object({
 })));
 export type StreamingBaseModel = z.infer<typeof ZStreamingBaseModel>;
 
+export const ZCreateJobRequest = z.lazy(() => (z.object({
+    endpoint: z.union([z.literal("/v1/documents/extract"), z.literal("/v1/documents/parse"), z.literal("/v1/documents/split"), z.literal("/v1/documents/classify"), z.literal("/v1/schemas/generate"), z.literal("/v1/edit/agent/fill"), z.literal("/v1/edit/templates/fill"), z.literal("/v1/edit/templates/generate"), z.literal("/v1/projects/extract")]),
+    request: z.record(z.string(), z.any()),
+    metadata: z.record(z.string(), z.string()).nullable().optional(),
+})));
+export type CreateJobRequest = z.infer<typeof ZCreateJobRequest>;
+
+export const ZJob = z.lazy(() => (z.object({
+    id: z.string(),
+    object: z.literal("job").default("job"),
+    status: z.union([z.literal("validating"), z.literal("queued"), z.literal("in_progress"), z.literal("completed"), z.literal("failed"), z.literal("cancelled"), z.literal("expired")]),
+    endpoint: z.union([z.literal("/v1/documents/extract"), z.literal("/v1/documents/parse"), z.literal("/v1/documents/split"), z.literal("/v1/documents/classify"), z.literal("/v1/schemas/generate"), z.literal("/v1/edit/agent/fill"), z.literal("/v1/edit/templates/fill"), z.literal("/v1/edit/templates/generate"), z.literal("/v1/projects/extract")]),
+    request: z.record(z.string(), z.any()),
+    response: ZJobResponse.nullable().optional(),
+    error: ZJobError.nullable().optional(),
+    created_at: z.number(),
+    started_at: z.number().nullable().optional(),
+    completed_at: z.number().nullable().optional(),
+    expires_at: z.number(),
+    organization_id: z.string(),
+    metadata: z.record(z.string(), z.string()).nullable().optional(),
+})));
+export type Job = z.infer<typeof ZJob>;
+
+export const ZJobError = z.lazy(() => (z.object({
+    code: z.string(),
+    message: z.string(),
+    details: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type JobError = z.infer<typeof ZJobError>;
+
+export const ZJobListResponse = z.lazy(() => (z.object({
+    object: z.literal("list").default("list"),
+    data: z.array(ZJob),
+    first_id: z.string().nullable().optional(),
+    last_id: z.string().nullable().optional(),
+    has_more: z.boolean().default(false),
+})));
+export type JobListResponse = z.infer<typeof ZJobListResponse>;
+
+export const ZJobResponse = z.lazy(() => (z.object({
+    status_code: z.number(),
+    body: z.record(z.string(), z.any()),
+})));
+export type JobResponse = z.infer<typeof ZJobResponse>;
+
 export const ZChatCompletionMessageFunctionToolCallParam = z.lazy(() => (z.object({
     id: z.string(),
     function: ZFunction,
@@ -728,6 +774,7 @@ export const ZClassifyRequest = z.lazy(() => (z.object({
     categories: z.array(ZCategory),
     model: z.string().default("retab-small"),
     first_n_pages: z.number().nullable().optional(),
+    context: z.string().nullable().optional(),
 })));
 export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
 
@@ -768,6 +815,7 @@ export const ZSplitRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     categories: z.array(ZCategory),
     model: z.string().default("retab-small"),
+    context: z.string().nullable().optional(),
 })));
 export type SplitRequest = z.infer<typeof ZSplitRequest>;
 

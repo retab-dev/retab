@@ -8,6 +8,7 @@ class ClassifyRequest(BaseModel):
     categories: list[Category] = Field(..., description="The categories to classify the document into")
     model: str = Field(default="retab-small", description="The model to use for classification")
     first_n_pages: int | None = Field(default=None, description="Only use the first N pages of the document for classification. Useful for large documents where classification can be determined from early pages.")
+    context: str | None = Field(default=None, description="Additional context for classification (e.g., iteration context from a loop)")
 
 
 class ClassifyResult(BaseModel):
