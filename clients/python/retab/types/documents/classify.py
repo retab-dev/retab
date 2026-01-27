@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
 from ..mime import MIMEData
-from .split import Category
 
+class Category(BaseModel):
+    name: str = Field(..., description="The name of the category")
+    description: str = Field(..., description="The description of the category")
 
 class ClassifyRequest(BaseModel):
     document: MIMEData = Field(..., description="The document to classify")

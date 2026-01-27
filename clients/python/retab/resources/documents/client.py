@@ -16,7 +16,8 @@ from ...types.chat import ChatCompletionRetabMessage
 from ...types.documents.edit import EditRequest, EditResponse
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
-from ...types.documents.split import Category, SplitRequest, SplitResponse
+from ...types.documents.split import Subdocument, SplitRequest, SplitResponse
+from ...types.documents.classify import Category
 from ...types.documents.classify import ClassifyRequest, ClassifyResponse
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest, FieldUnset
@@ -148,21 +149,21 @@ class BaseDocumentsMixin:
     def _prepare_split(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        categories: list[Category] | list[dict[str, str]],
+        subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
         
-        # Convert dict categories to Category objects if needed
-        category_objects = [
-            Category(**cat) if isinstance(cat, dict) else cat
-            for cat in categories
+        # Convert dict subdocuments to Subdocument objects if needed
+        subdocument_objects = [
+            Subdocument(**subdoc) if isinstance(subdoc, dict) else subdoc
+            for subdoc in subdocuments
         ]
         
         request_dict: dict[str, Any] = {
             "document": mime_document,
-            "categories": category_objects,
+            "subdocuments": subdocument_objects,
             "model": model,
         }
 
@@ -644,20 +645,20 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def split(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        categories: list[Category] | list[dict[str, str]],
+        subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
         **extra_body: Any,
     ) -> SplitResponse:
         """
-        Split a document into sections based on provided categories.
+        Split a document into sections based on provided subdocuments.
 
         This method analyzes a multi-page document and classifies pages into 
-        user-defined categories, returning the page ranges for each section.
+        user-defined subdocuments, returning the page ranges for each section.
 
         Args:
             document: The document to split. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
-            categories: List of categories to split the document into. Each category should have a 'name' and 'description'.
-                Can be Category objects or dicts with 'name' and 'description' keys.
+            subdocuments: List of subdocuments to split the document into. Each subdocument should have a 'name' and 'description'.
+                Can be Subdocument objects or dicts with 'name' and 'description' keys.
             model: The AI model to use for document splitting (e.g., "gemini-2.5-flash").
 
         Returns:
@@ -672,7 +673,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             response = retab.documents.split(
                 document="invoice_batch.pdf",
                 model="gemini-2.5-flash",
-                categories=[
+                subdocuments=[
                     {"name": "invoice", "description": "Invoice documents with billing information"},
                     {"name": "receipt", "description": "Receipt documents for payments"},
                     {"name": "contract", "description": "Legal contract documents"},
@@ -684,7 +685,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         """
         request = self._prepare_split(
             document=document,
-            categories=categories,
+            subdocuments=subdocuments,
             model=model,
             **extra_body,
         )
@@ -1039,20 +1040,20 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     async def split(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        categories: list[Category] | list[dict[str, str]],
+        subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
         **extra_body: Any,
     ) -> SplitResponse:
         """
-        Split a document into sections based on provided categories asynchronously.
+        Split a document into sections based on provided subdocuments asynchronously.
 
         This method analyzes a multi-page document and classifies pages into 
-        user-defined categories, returning the page ranges for each section.
+        user-defined subdocuments, returning the page ranges for each section.
 
         Args:
             document: The document to split. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
-            categories: List of categories to split the document into. Each category should have a 'name' and 'description'.
-                Can be Category objects or dicts with 'name' and 'description' keys.
+            subdocuments: List of subdocuments to split the document into. Each subdocument should have a 'name' and 'description'.
+                Can be Subdocument objects or dicts with 'name' and 'description' keys.
             model: The AI model to use for document splitting (e.g., "gemini-2.5-flash").
 
         Returns:
@@ -1067,7 +1068,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             response = await retab.documents.split(
                 document="invoice_batch.pdf",
                 model="gemini-2.5-flash",
-                categories=[
+                subdocuments=[
                     {"name": "invoice", "description": "Invoice documents with billing information"},
                     {"name": "receipt", "description": "Receipt documents for payments"},
                     {"name": "contract", "description": "Legal contract documents"},
@@ -1079,7 +1080,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         """
         request = self._prepare_split(
             document=document,
-            categories=categories,
+            subdocuments=subdocuments,
             model=model,
             **extra_body,
         )
