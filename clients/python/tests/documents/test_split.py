@@ -4,7 +4,7 @@ from typing import Literal, get_args
 import pytest
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.split import Category, SplitResponse, SplitResult
+from retab.types.documents.split import Subdocument, SplitResponse, SplitResult
 
 # Get the directory containing the tests
 TEST_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,16 +27,16 @@ def multi_page_pdf_path() -> str:
 
 
 @pytest.fixture(scope="session")
-def split_categories() -> list[Category]:
-    """Return categories for document splitting."""
+def split_subdocuments() -> list[Subdocument]:
+    """Return subdocuments for document splitting."""
     return [
-        Category(name="form_section", description="Form sections with input fields, checkboxes, or signature areas"),
-        Category(name="instructions", description="Instructions, terms and conditions, or explanatory text"),
-        Category(name="header", description="Header sections with logos, titles, or document identifiers"),
+        Subdocument(name="form_section", description="Form sections with input fields, checkboxes, or signature areas"),
+        Subdocument(name="instructions", description="Instructions, terms and conditions, or explanatory text"),
+        Subdocument(name="header", description="Header sections with logos, titles, or document identifiers"),
     ]
 
 
-def validate_split_response(response: SplitResponse | None, categories: list[Category]) -> None:
+def validate_split_response(response: SplitResponse | None, subdocuments: list[Subdocument]) -> None:
     """Validate that the split response has the expected structure and content."""
     # Assert the instance
     assert isinstance(response, SplitResponse), f"Response should be of type SplitResponse, received {type(response)}"
@@ -48,8 +48,8 @@ def validate_split_response(response: SplitResponse | None, categories: list[Cat
     assert isinstance(response.splits, list), "splits should be a list"
     assert len(response.splits) > 0, "Should have at least one split"
 
-    # Get valid category names
-    valid_category_names = {cat.name for cat in categories}
+    # Get valid subdocument names
+    valid_subdocument_names = {subdoc.name for subdoc in subdocuments}
 
     # Track whether at least one split has pages (not all should be empty)
     has_non_empty_split = False
@@ -60,8 +60,8 @@ def validate_split_response(response: SplitResponse | None, categories: list[Cat
         assert split.pages is not None, "Split pages should not be None"
         assert isinstance(split.pages, list), "Split pages should be a list"
 
-        # Validate category name is from provided categories
-        assert split.name in valid_category_names, f"Split name '{split.name}' should be one of {valid_category_names}"
+        # Validate subdocument name is from provided subdocuments
+        assert split.name in valid_subdocument_names, f"Split name '{split.name}' should be one of {valid_subdocument_names}"
 
         # Validate page numbers (only for non-empty splits)
         if len(split.pages) > 0:
@@ -112,7 +112,7 @@ async def base_test_split(
     sync_client: Retab,
     async_client: AsyncRetab,
     document_path: str,
-    categories: list[Category],
+    subdocuments: list[Subdocument],
 ) -> SplitResponse:
     response: SplitResponse
 
@@ -121,17 +121,17 @@ async def base_test_split(
             response = client.documents.split(
                 document=document_path,
                 model=model,
-                categories=categories,
+                subdocuments=subdocuments,
             )
     elif client_type == "async":
         async with async_client:
             response = await async_client.documents.split(
                 document=document_path,
                 model=model,
-                categories=categories,
+                subdocuments=subdocuments,
             )
     
-    validate_split_response(response, categories)
+    validate_split_response(response, subdocuments)
     return response
 
 
@@ -143,7 +143,7 @@ async def test_split_document(
     sync_client: Retab,
     async_client: AsyncRetab,
     multi_page_pdf_path: str,
-    split_categories: list[Category],
+    split_subdocuments: list[Subdocument],
 ) -> None:
     """Test document splitting with Gemini models."""
     response = await base_test_split(
@@ -152,7 +152,7 @@ async def test_split_document(
         sync_client=sync_client,
         async_client=async_client,
         document_path=multi_page_pdf_path,
-        categories=split_categories,
+        subdocuments=split_subdocuments,
     )
     
     # Additional validations
@@ -163,18 +163,18 @@ async def test_split_document(
 async def test_split_response_structure(
     sync_client: Retab,
     multi_page_pdf_path: str,
-    split_categories: list[Category],
+    split_subdocuments: list[Subdocument],
 ) -> None:
     """Test that split response has the expected structure and data types."""
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
             model="gemini-2.5-flash",
-            categories=split_categories,
+            subdocuments=split_subdocuments,
         )
     
     # Validate basic structure
-    validate_split_response(response, split_categories)
+    validate_split_response(response, split_subdocuments)
     
     # Additional specific validations
     assert hasattr(response, 'splits'), "Response should have splits attribute"
@@ -198,7 +198,7 @@ async def test_split_with_dict_categories(
     multi_page_pdf_path: str,
 ) -> None:
     """Test splitting with categories provided as dictionaries."""
-    dict_categories = [
+    dict_subdocuments = [
         {"name": "content", "description": "Main content sections"},
         {"name": "footer", "description": "Footer sections with legal text or page numbers"},
     ]
@@ -207,14 +207,14 @@ async def test_split_with_dict_categories(
         response = client.documents.split(
             document=multi_page_pdf_path,
             model="gemini-2.5-flash",
-            categories=dict_categories,
+            subdocuments=dict_subdocuments,
         )
     
     # Validate response
     assert isinstance(response, SplitResponse), "Response should be SplitResponse"
     assert len(response.splits) > 0, "Should have at least one split"
     
-    # Validate category names
+    # Validate category names match what we provided
     valid_names = {"content", "footer"}
     for split in response.splits:
         assert split.name in valid_names, f"Split name '{split.name}' should be one of {valid_names}"
@@ -224,17 +224,17 @@ async def test_split_with_dict_categories(
 async def test_split_page_coverage(
     sync_client: Retab,
     multi_page_pdf_path: str,
-    split_categories: list[Category],
+    split_subdocuments: list[Subdocument],
 ) -> None:
     """Test that splits cover the document pages appropriately."""
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
             model="gemini-2.5-flash",
-            categories=split_categories,
+            subdocuments=split_subdocuments,
         )
     
-    validate_split_response(response, split_categories)
+    validate_split_response(response, split_subdocuments)
 
     # Validate that all page numbers are positive (for non-empty splits)
     for split in response.splits:
@@ -248,15 +248,15 @@ async def test_split_with_minimal_categories(
     multi_page_pdf_path: str,
 ) -> None:
     """Test splitting with minimal category definitions."""
-    minimal_categories = [
-        Category(name="document", description="Document content"),
+    minimal_subdocuments = [
+        Subdocument(name="document", description="Document content"),
     ]
     
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
             model="gemini-2.5-flash",
-            categories=minimal_categories,
+            subdocuments=minimal_subdocuments,
         )
     
     # With only one category, all pages should be classified as that category
@@ -264,7 +264,7 @@ async def test_split_with_minimal_categories(
     assert len(response.splits) >= 1, "Should have at least one split"
     
     for split in response.splits:
-        assert split.name == "document", "All splits should be 'document' category"
+        assert split.name == "document", "All splits should be 'document' subdocument"
 
 
 @pytest.mark.asyncio
@@ -272,27 +272,27 @@ async def test_split_discontinuous_categories(
     sync_client: Retab,
     multi_page_pdf_path: str,
 ) -> None:
-    """Test that the same category can appear multiple times for non-contiguous sections."""
-    categories = [
-        Category(name="form_fields", description="Sections with form input fields"),
-        Category(name="text_content", description="Sections with explanatory text or instructions"),
+    """Test that the same subdocument can appear multiple times for non-contiguous sections."""
+    discontinuous_subdocuments = [
+        Subdocument(name="form_fields", description="Sections with form input fields"),
+        Subdocument(name="text_content", description="Sections with explanatory text or instructions"),
     ]
     
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
             model="gemini-2.5-flash",
-            categories=categories,
+            subdocuments=discontinuous_subdocuments,
         )
     
-    validate_split_response(response, categories)
+    validate_split_response(response, discontinuous_subdocuments)
     
-    # Count occurrences of each category
-    category_counts: dict[str, int] = {}
+    # Count occurrences of each subdocument
+    subdocument_counts: dict[str, int] = {}
     for split in response.splits:
-        category_counts[split.name] = category_counts.get(split.name, 0) + 1
+        subdocument_counts[split.name] = subdocument_counts.get(split.name, 0) + 1
     
-    # It's valid for a category to appear multiple times (discontinuous sections)
+    # It's valid for a subdocument to appear multiple times (discontinuous sections)
     # This test just verifies the response structure is correct
-    total_splits = sum(category_counts.values())
+    total_splits = sum(subdocument_counts.values())
     assert total_splits == len(response.splits), "All splits should be counted"

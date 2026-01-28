@@ -4,19 +4,19 @@ import {
     getEnvConfig,
     getFidelityFormPath,
 } from '../fixtures';
-import { SplitResponse, SplitResult, Category } from '../../src/generated_types.js';
+import { SplitResponse, SplitResult, Subdocument } from '../../src/generated_types.js';
 
 // Global test constants
 const TEST_TIMEOUT = 180000; // 3 minutes for split operations
 
 // Categories for testing
-const DEFAULT_CATEGORIES: Category[] = [
+const DEFAULT_SUBDOCUMENTS: Subdocument[] = [
     { name: 'form_section', description: 'Form sections with input fields, checkboxes, or signature areas' },
     { name: 'instructions', description: 'Instructions, terms and conditions, or explanatory text' },
     { name: 'header', description: 'Header sections with logos, titles, or document identifiers' },
 ];
 
-function validateSplitResponse(response: SplitResponse | null, categories: Category[]): void {
+function validateSplitResponse(response: SplitResponse | null, subdocuments: Subdocument[]): void {
     // Assert the instance
     expect(response).not.toBeNull();
     expect(response).toBeDefined();
@@ -31,8 +31,8 @@ function validateSplitResponse(response: SplitResponse | null, categories: Categ
     expect(Array.isArray(response.splits)).toBe(true);
     expect(response.splits.length).toBeGreaterThan(0);
 
-    // Get valid category names
-    const validCategoryNames = new Set(categories.map(cat => cat.name));
+    // Get valid subdocument names
+    const validSubdocumentNames = new Set(subdocuments.map(subdoc => subdoc.name));
 
     // Track whether at least one split has pages (not all should be empty)
     let hasNonEmptySplit = false;
@@ -42,8 +42,8 @@ function validateSplitResponse(response: SplitResponse | null, categories: Categ
         expect(split.pages).toBeDefined();
         expect(Array.isArray(split.pages)).toBe(true);
 
-        // Validate category name is from provided categories
-        expect(validCategoryNames.has(split.name)).toBe(true);
+        // Validate subdocument name is from provided subdocuments
+        expect(validSubdocumentNames.has(split.name)).toBe(true);
 
         // Validate page numbers (only for non-empty splits)
         if (split.pages.length > 0) {
@@ -107,18 +107,18 @@ describe('Retab SDK Split Tests', () => {
     });
 
     describe('Split Document', () => {
-        test('test_split_document_with_file_path', async () => {
+        test('test_split_subdocuments_with_file_path', async () => {
             const response = await client.documents.split({
                 document: multiPagePdfPath,
                 model: 'gemini-2.5-flash',
-                categories: DEFAULT_CATEGORIES,
+                subdocuments: DEFAULT_SUBDOCUMENTS,
             });
 
-            validateSplitResponse(response, DEFAULT_CATEGORIES);
+            validateSplitResponse(response, DEFAULT_SUBDOCUMENTS);
             validateSplitsAreOrdered(response);
         }, { timeout: TEST_TIMEOUT });
 
-        test('test_split_document_with_buffer', async () => {
+        test('test_split_subdocuments_with_buffer', async () => {
             const fs = require('fs');
             const fileBuffer = fs.readFileSync(multiPagePdfPath);
 
@@ -128,24 +128,24 @@ describe('Retab SDK Split Tests', () => {
                     url: `data:application/pdf;base64,${fileBuffer.toString('base64')}`,
                 },
                 model: 'gemini-2.5-flash',
-                categories: DEFAULT_CATEGORIES,
+                subdocuments: DEFAULT_SUBDOCUMENTS,
             });
 
-            validateSplitResponse(response, DEFAULT_CATEGORIES);
+            validateSplitResponse(response, DEFAULT_SUBDOCUMENTS);
             validateSplitsAreOrdered(response);
         }, { timeout: TEST_TIMEOUT });
     });
 
-    describe('Split Response Structure', () => {
-        test('test_split_response_structure', async () => {
+    describe('Split Subdocument Response Structure', () => {
+        test('test_split_subdocuments_response_structure', async () => {
             const response = await client.documents.split({
                 document: multiPagePdfPath,
                 model: 'gemini-2.5-flash',
-                categories: DEFAULT_CATEGORIES,
+                subdocuments: DEFAULT_SUBDOCUMENTS,
             });
 
             // Validate basic structure
-            validateSplitResponse(response, DEFAULT_CATEGORIES);
+            validateSplitResponse(response, DEFAULT_SUBDOCUMENTS);
 
             // Additional specific validations
             expect(response).toHaveProperty('splits');
@@ -165,15 +165,15 @@ describe('Retab SDK Split Tests', () => {
         }, { timeout: TEST_TIMEOUT });
     });
 
-    describe('Split Page Coverage', () => {
-        test('test_split_page_coverage', async () => {
+    describe('Split Subdocument Coverage', () => {
+        test('test_split_subdocuments_page_coverage', async () => {
             const response = await client.documents.split({
                 document: multiPagePdfPath,
                 model: 'gemini-2.5-flash',
-                categories: DEFAULT_CATEGORIES,
+                subdocuments: DEFAULT_SUBDOCUMENTS,
             });
 
-            validateSplitResponse(response, DEFAULT_CATEGORIES);
+            validateSplitResponse(response, DEFAULT_SUBDOCUMENTS);
 
             // Validate that all page numbers are positive (for non-empty splits)
             response.splits.forEach((split: SplitResult) => {
@@ -184,20 +184,20 @@ describe('Retab SDK Split Tests', () => {
         }, { timeout: TEST_TIMEOUT });
     });
 
-    describe('Split with Minimal Categories', () => {
-        test('test_split_with_minimal_categories', async () => {
-            const minimalCategories: Category[] = [
+    describe('Split with Minimal Subdocuments', () => {
+        test('test_split_with_minimal_subdocuments', async () => {
+            const minimalSubdocuments: Subdocument[] = [
                 { name: 'document', description: 'Document content' },
             ];
 
             const response = await client.documents.split({
                 document: multiPagePdfPath,
                 model: 'gemini-2.5-flash',
-                categories: minimalCategories,
+                subdocuments: minimalSubdocuments,
             });
 
             // With only one category, all pages should be classified as that category
-            validateSplitResponse(response, minimalCategories);
+            validateSplitResponse(response, minimalSubdocuments);
             expect(response.splits.length).toBeGreaterThanOrEqual(1);
 
             response.splits.forEach((split: SplitResult) => {
@@ -206,9 +206,9 @@ describe('Retab SDK Split Tests', () => {
         }, { timeout: TEST_TIMEOUT });
     });
 
-    describe('Split Discontinuous Categories', () => {
-        test('test_split_discontinuous_categories', async () => {
-            const categories: Category[] = [
+    describe('Split Discontinuous Subdocuments', () => {
+        test('test_split_discontinuous_subdocuments', async () => {
+            const discontinuousSubdocuments: Subdocument[] = [
                 { name: 'form_fields', description: 'Sections with form input fields' },
                 { name: 'text_content', description: 'Sections with explanatory text or instructions' },
             ];
@@ -216,27 +216,27 @@ describe('Retab SDK Split Tests', () => {
             const response = await client.documents.split({
                 document: multiPagePdfPath,
                 model: 'gemini-2.5-flash',
-                categories: categories,
+                subdocuments: discontinuousSubdocuments,
             });
 
-            validateSplitResponse(response, categories);
+            validateSplitResponse(response, discontinuousSubdocuments);
 
-            // Count occurrences of each category
-            const categoryCounts: Record<string, number> = {};
+            // Count occurrences of each subdocument
+            const subdocumentCounts: Record<string, number> = {};
             response.splits.forEach((split: SplitResult) => {
-                categoryCounts[split.name] = (categoryCounts[split.name] || 0) + 1;
+                subdocumentCounts[split.name] = (subdocumentCounts[split.name] || 0) + 1;
             });
 
-            // It's valid for a category to appear multiple times (discontinuous sections)
+            // It's valid for a subdocument to appear multiple times (discontinuous sections)
             // This test just verifies the response structure is correct
-            const totalSplits = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
+            const totalSplits = Object.values(subdocumentCounts).reduce((a, b) => a + b, 0);
             expect(totalSplits).toBe(response.splits.length);
         }, { timeout: TEST_TIMEOUT });
     });
 
-    describe('Split with Different Category Types', () => {
-        test('test_split_with_detailed_categories', async () => {
-            const detailedCategories: Category[] = [
+    describe('Split with Different Subdocument Types', () => {
+        test('test_split_subdocuments_with_detailed_subdocuments', async () => {
+            const detailedSubdocuments: Subdocument[] = [
                 { name: 'personal_info', description: 'Sections containing personal information fields like name, address, SSN' },
                 { name: 'financial_info', description: 'Sections containing financial information like account numbers, amounts' },
                 { name: 'legal_text', description: 'Legal disclaimers, terms, conditions, and fine print' },
@@ -246,13 +246,13 @@ describe('Retab SDK Split Tests', () => {
             const response = await client.documents.split({
                 document: multiPagePdfPath,
                 model: 'gemini-2.5-flash',
-                categories: detailedCategories,
+                subdocuments: detailedSubdocuments,
             });
 
-            validateSplitResponse(response, detailedCategories);
+            validateSplitResponse(response, detailedSubdocuments);
 
-            // Verify all returned categories are from our list
-            const validNames = new Set(detailedCategories.map(c => c.name));
+            // Verify all returned subdocuments are from our list
+            const validNames = new Set(detailedSubdocuments.map(subdoc => subdoc.name));
             response.splits.forEach((split: SplitResult) => {
                 expect(validNames.has(split.name)).toBe(true);
             });

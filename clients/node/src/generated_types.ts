@@ -759,7 +759,6 @@ export type DocumentTransformResponse = z.infer<typeof ZDocumentTransformRespons
 export const ZCategory = z.lazy(() => (z.object({
     name: z.string(),
     description: z.string(),
-    partition_key: z.string().nullable().optional(),
 })));
 export type Category = z.infer<typeof ZCategory>;
 
@@ -813,7 +812,7 @@ export type RetabUsage = z.infer<typeof ZRetabUsage>;
 
 export const ZSplitRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    categories: z.array(ZCategory),
+    subdocuments: z.array(ZSubdocument),
     model: z.string().default("retab-small"),
     context: z.string().nullable().optional(),
 })));
@@ -830,6 +829,13 @@ export const ZSplitResult = z.lazy(() => (z.object({
     partitions: z.array(ZPartition),
 })));
 export type SplitResult = z.infer<typeof ZSplitResult>;
+
+export const ZSubdocument = z.lazy(() => (z.object({
+    name: z.string(),
+    description: z.string(),
+    partition_key: z.string().nullable().optional(),
+})));
+export type Subdocument = z.infer<typeof ZSubdocument>;
 
 export const ZBBox = z.lazy(() => (z.object({
     left: z.number(),
@@ -1568,6 +1574,7 @@ export const ZResponseFunctionShellToolCallOutput = z.lazy(() => (z.object({
     call_id: z.string(),
     max_output_length: z.number().nullable().optional(),
     output: z.array(ZOutput),
+    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
     type: z.literal("shell_call_output"),
     created_by: z.string().nullable().optional(),
 })));
