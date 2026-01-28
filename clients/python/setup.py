@@ -6,7 +6,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="retab",
-    version="0.0.90",
+    version="0.0.91",
     author="Retab",
     author_email="contact@retab.com",
     description="Retab official python library",
