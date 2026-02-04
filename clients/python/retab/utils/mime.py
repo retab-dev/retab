@@ -18,7 +18,7 @@ EXCEL_TYPES = Literal[".xls", ".xlsx", ".ods"]
 WORD_TYPES = Literal[".doc", ".docx", ".odt"]
 PPT_TYPES = Literal[".ppt", ".pptx", ".odp"]
 PDF_TYPES = Literal[".pdf"]
-IMAGE_TYPES = Literal[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"]
+IMAGE_TYPES = Literal[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp", ".heic", ".heif"]
 TEXT_TYPES = Literal[
     ".txt",
     ".csv",

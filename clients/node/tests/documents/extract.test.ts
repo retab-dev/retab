@@ -70,6 +70,27 @@ async function baseTestExtract(
     const document = bookingConfirmationFilePath1;
     let response: RetabParsedChatCompletion | null = null;
 
+    // Helper to convert streaming chunk to completion format
+    const convertStreamToCompletion = (chunk: any): RetabParsedChatCompletion | null => {
+        if (!chunk || !chunk.choices || chunk.choices.length === 0) {
+            return null;
+        }
+        const delta = chunk.choices[0].delta;
+        // Convert delta to message format
+        const content = delta.full_parsed ? JSON.stringify(delta.full_parsed) : (delta.content || "");
+        return {
+            ...chunk,
+            choices: [{
+                ...chunk.choices[0],
+                message: {
+                    role: "assistant",
+                    content: content,
+                    parsed: delta.full_parsed || null,
+                },
+            }],
+        } as RetabParsedChatCompletion;
+    };
+
     if (clientType === "sync") {
         if (responseMode === "stream") {
             // For Node.js streaming, we need to collect all chunks and build the final response
@@ -85,14 +106,7 @@ async function baseTestExtract(
                 lastChunk = chunk;
             }
 
-            // Convert the final chunk to a RetabParsedChatCompletion-like structure
-            if (lastChunk && lastChunk.choices && lastChunk.choices.length > 0) {
-                response = {
-                    choices: lastChunk.choices,
-                    // Add other properties that might be expected
-                    ...lastChunk
-                } as RetabParsedChatCompletion;
-            }
+            response = convertStreamToCompletion(lastChunk);
         } else {
             response = await client.documents.extract({
                 json_schema: jsonSchema,
@@ -116,14 +130,7 @@ async function baseTestExtract(
                 lastChunk = chunk;
             }
 
-            // Convert the final chunk to a RetabParsedChatCompletion-like structure
-            if (lastChunk && lastChunk.choices && lastChunk.choices.length > 0) {
-                response = {
-                    choices: lastChunk.choices,
-                    // Add other properties that might be expected
-                    ...lastChunk
-                } as RetabParsedChatCompletion;
-            }
+            response = convertStreamToCompletion(lastChunk);
         } else {
             response = await client.documents.extract({
                 json_schema: jsonSchema,
@@ -154,8 +161,7 @@ describe('Retab SDK Extract Tests', () => {
 
     describe('Extract OpenAI Tests', () => {
         const clientTypes: ClientType[] = ["sync", "async"];
-        // Skip streaming tests for now - they need more investigation
-        const responseModes: ResponseModeType[] = ["parse"];
+        const responseModes: ResponseModeType[] = ["parse", "stream"];
 
         clientTypes.forEach((clientType) => {
             responseModes.forEach((responseMode) => {
@@ -382,6 +388,91 @@ describe('Retab SDK Extract Tests', () => {
 
             validateExtractionResponse(response);
             expect(response.choices[0].message.content).toBeDefined();
+        }, { timeout: TEST_TIMEOUT });
+    });
+
+    describe('Extract Streaming Tests', () => {
+        test('test_extract_stream_returns_multiple_chunks', async () => {
+            // Verify streaming returns AsyncGenerator and multiple chunks
+            const streamIterator = await client.documents.extract_stream({
+                json_schema: bookingConfirmationJsonSchema,
+                document: bookingConfirmationFilePath1,
+                model: "gpt-4.1-nano",
+            });
+
+            const chunks: any[] = [];
+            for await (const chunk of streamIterator) {
+                chunks.push(chunk);
+            }
+
+            // Should receive multiple chunks
+            expect(chunks.length).toBeGreaterThan(0);
+
+            // Verify chunk structure
+            for (const chunk of chunks) {
+                expect(chunk).toHaveProperty('choices');
+                expect(Array.isArray(chunk.choices)).toBe(true);
+                expect(chunk.choices.length).toBeGreaterThan(0);
+                expect(chunk.choices[0]).toHaveProperty('delta');
+            }
+        }, { timeout: TEST_TIMEOUT });
+
+        test('test_extract_stream_final_chunk_valid_json', async () => {
+            // Verify the final chunk has valid JSON
+            const streamIterator = await client.documents.extract_stream({
+                json_schema: bookingConfirmationJsonSchema,
+                document: bookingConfirmationFilePath1,
+                model: "gpt-4.1-nano",
+            });
+
+            let lastChunk: any = null;
+            for await (const chunk of streamIterator) {
+                lastChunk = chunk;
+            }
+
+            expect(lastChunk).not.toBeNull();
+            expect(lastChunk.choices[0].delta).toHaveProperty('is_valid_json');
+            expect(lastChunk.choices[0].delta.is_valid_json).toBe(true);
+        }, { timeout: TEST_TIMEOUT });
+
+        test('test_extract_stream_delta_flat_parsed', async () => {
+            // Verify chunks have flat_parsed data
+            const streamIterator = await client.documents.extract_stream({
+                json_schema: bookingConfirmationJsonSchema,
+                document: bookingConfirmationFilePath1,
+                model: "gpt-4.1-nano",
+            });
+
+            let lastChunk: any = null;
+            for await (const chunk of streamIterator) {
+                lastChunk = chunk;
+            }
+
+            expect(lastChunk).not.toBeNull();
+            expect(lastChunk.choices[0].delta).toHaveProperty('flat_parsed');
+            // flat_parsed should be an object
+            expect(typeof lastChunk.choices[0].delta.flat_parsed).toBe('object');
+        }, { timeout: TEST_TIMEOUT });
+
+        test('test_extract_stream_with_parameters', async () => {
+            // Test streaming with additional parameters
+            const streamIterator = await client.documents.extract_stream({
+                json_schema: bookingConfirmationJsonSchema,
+                document: bookingConfirmationFilePath1,
+                model: "gpt-4.1-nano",
+                temperature: 0,
+                reasoning_effort: "minimal",
+            });
+
+            const chunks: any[] = [];
+            for await (const chunk of streamIterator) {
+                chunks.push(chunk);
+            }
+
+            expect(chunks.length).toBeGreaterThan(0);
+
+            const lastChunk = chunks[chunks.length - 1];
+            expect(lastChunk.choices[0].delta.is_valid_json).toBe(true);
         }, { timeout: TEST_TIMEOUT });
     });
 });
