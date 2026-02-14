@@ -336,16 +336,9 @@ export type ComputationSpec = z.infer<typeof ZComputationSpec>;
 export const ZDraftConfig = z.lazy(() => (z.object({
     inference_settings: ZInferenceSettings.default({"model": "retab-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
     json_schema: z.record(z.string(), z.any()),
-    human_in_the_loop_criteria: z.array(ZHilCriterion),
     computation_spec: ZComputationSpec,
 })));
 export type DraftConfig = z.infer<typeof ZDraftConfig>;
-
-export const ZHilCriterion = z.lazy(() => (z.object({
-    path: z.string(),
-    agentic_fix: z.boolean().default(false),
-})));
-export type HilCriterion = z.infer<typeof ZHilCriterion>;
 
 export const ZPatchBuilderDocumentRequest = z.lazy(() => (z.object({
     extraction_id: z.string().nullable().optional(),
@@ -678,7 +671,6 @@ export const ZRetabParsedChatCompletion = z.lazy(() => (ZParsedChatCompletion.sc
     choices: z.array(ZRetabParsedChoice),
     extraction_id: z.string().nullable().optional(),
     likelihoods: z.record(z.string(), z.any()).nullable().optional(),
-    requires_human_review: z.boolean().default(false),
     request_at: z.string().nullable().optional(),
     first_token_at: z.string().nullable().optional(),
     last_token_at: z.string().nullable().optional(),
@@ -3233,4 +3225,3 @@ export const ZResponseOutputTextParamLogprobTopLogprob = z.lazy(() => (z.object(
     logprob: z.number(),
 })));
 export type ResponseOutputTextParamLogprobTopLogprob = z.infer<typeof ZResponseOutputTextParamLogprobTopLogprob>;
-
