@@ -22,14 +22,9 @@ class Computation(BaseModel):
 class ComputationSpec(BaseModel):
     computations: dict[str, Computation] = Field(default_factory=dict, description="The computations to use for the project")
 
-class HilCriterion(BaseModel):
-    path: str
-    agentic_fix: bool = Field(default=False, description="Whether to use agentic fix for the criterion")
-
 class DraftConfig(BaseModel):
     inference_settings: InferenceSettings = Field(default=default_inference_settings, description="The inference settings of the project")
     json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the builder config")
-    human_in_the_loop_criteria: list[HilCriterion] = Field(default_factory=list)
     computation_spec: ComputationSpec = Field(default_factory=ComputationSpec, description="The computation spec of the project")
 
 class PublishedConfig(DraftConfig):

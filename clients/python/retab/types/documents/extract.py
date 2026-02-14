@@ -73,8 +73,6 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
         default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
     )
 
-    requires_human_review: bool = Field(default=False, description="Flag indicating if the extraction requires human review")
-
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
