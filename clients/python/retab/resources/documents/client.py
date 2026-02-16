@@ -151,6 +151,7 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
+        n_consensus: int = FieldUnset,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -166,6 +167,8 @@ class BaseDocumentsMixin:
             "subdocuments": subdocument_objects,
             "model": model,
         }
+        if n_consensus is not FieldUnset:
+            request_dict["n_consensus"] = n_consensus
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -647,6 +650,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
+        n_consensus: int = FieldUnset,
         **extra_body: Any,
     ) -> SplitResponse:
         """
@@ -660,6 +664,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             subdocuments: List of subdocuments to split the document into. Each subdocument should have a 'name' and 'description'.
                 Can be Subdocument objects or dicts with 'name' and 'description' keys.
             model: The AI model to use for document splitting (e.g., "gemini-2.5-flash").
+            n_consensus: Number of consensus split runs to perform.
 
         Returns:
             SplitResponse: Response containing:
@@ -687,6 +692,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document=document,
             subdocuments=subdocuments,
             model=model,
+            n_consensus=n_consensus,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -1042,6 +1048,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
+        n_consensus: int = FieldUnset,
         **extra_body: Any,
     ) -> SplitResponse:
         """
@@ -1055,6 +1062,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             subdocuments: List of subdocuments to split the document into. Each subdocument should have a 'name' and 'description'.
                 Can be Subdocument objects or dicts with 'name' and 'description' keys.
             model: The AI model to use for document splitting (e.g., "gemini-2.5-flash").
+            n_consensus: Number of consensus split runs to perform.
 
         Returns:
             SplitResponse: Response containing:
@@ -1082,6 +1090,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document=document,
             subdocuments=subdocuments,
             model=model,
+            n_consensus=n_consensus,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
