@@ -21,9 +21,16 @@ class Partition(BaseModel):
     first_page_y_start: float = Field(default=0.0, description="The y coordinate of the first page of the partition")
     last_page_y_end: float = Field(default=1.0, description="The y coordinate of the last page of the partition")
 
+class SplitVote(BaseModel):
+    """A single LLM vote from a consensus run."""
+    pages: list[int] = Field(..., description="The pages assigned to this subdocument by this vote (1-indexed)")
+
+
 class SplitResult(BaseModel):
     name: str = Field(..., description="The name of the subdocument")
     pages: list[int] = Field(..., description="The pages of the subdocument (1-indexed)")
+    confidence: float | None = Field(default=None, description="Consensus confidence score (mean IoU between each vote and the consensus, 0.0-1.0). Only set when n_consensus > 1.")
+    votes: list[SplitVote] = Field(default_factory=list, description="Individual LLM votes used to build the consensus. Empty when n_consensus <= 1.")
     partitions: list[Partition] = Field(default_factory=list, description="The partitions of the subdocument")
 
 
