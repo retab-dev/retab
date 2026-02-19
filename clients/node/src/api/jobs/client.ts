@@ -47,7 +47,7 @@ const ZJob = z.object({
         "/v1/edit/templates/generate",
         "/v1/projects/extract",
     ]),
-    request: z.record(z.any()),
+    request: z.record(z.any()).nullable().optional(),
     response: ZJobResponse.nullable().optional(),
     error: ZJobError.nullable().optional(),
     created_at: z.number(),
@@ -68,6 +68,11 @@ const ZJobListResponse = z.object({
     has_more: z.boolean(),
 });
 type JobListResponse = z.infer<typeof ZJobListResponse>;
+
+type JobRetrieveOptions = RequestOptions & {
+    include_request?: boolean;
+    include_response?: boolean;
+};
 
 export default class APIJobs extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -108,11 +113,17 @@ export default class APIJobs extends CompositionClient {
     /**
      * Retrieve a job by ID.
      */
-    async retrieve(job_id: string, options?: RequestOptions): Promise<Job> {
+    async retrieve(job_id: string, options?: JobRetrieveOptions): Promise<Job> {
+        const params: Record<string, any> = {
+            ...(options?.params || {}),
+        };
+        if (options?.include_request !== undefined) params.include_request = options.include_request;
+        if (options?.include_response !== undefined) params.include_response = options.include_response;
+
         return this._fetchJson(ZJob, {
             url: `/v1/jobs/${job_id}`,
             method: "GET",
-            params: options?.params,
+            params,
             headers: options?.headers,
         });
     }
@@ -136,15 +147,21 @@ export default class APIJobs extends CompositionClient {
         after,
         limit = 20,
         status,
+        include_request,
+        include_response,
     }: {
         after?: string;
         limit?: number;
         status?: JobStatus;
+        include_request?: boolean;
+        include_response?: boolean;
     } = {}, options?: RequestOptions): Promise<JobListResponse> {
         const params: Record<string, any> = {
             after,
             limit,
             status,
+            include_request,
+            include_response,
         };
 
         // Remove undefined values

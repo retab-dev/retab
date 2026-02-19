@@ -31,6 +31,19 @@ class BaseJobsMixin:
     def _prepare_retrieve(self, job_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/v1/jobs/{job_id}")
 
+    def _prepare_retrieve_with_options(
+        self,
+        job_id: str,
+        include_request: bool | None = None,
+        include_response: bool | None = None,
+    ) -> PreparedRequest:
+        params: dict[str, Any] = {}
+        if include_request is not None:
+            params["include_request"] = include_request
+        if include_response is not None:
+            params["include_response"] = include_response
+        return PreparedRequest(method="GET", url=f"/v1/jobs/{job_id}", params=params or None)
+
     def _prepare_cancel(self, job_id: str) -> PreparedRequest:
         return PreparedRequest(method="POST", url=f"/v1/jobs/{job_id}/cancel")
 
@@ -39,12 +52,18 @@ class BaseJobsMixin:
         after: str | None = None,
         limit: int = 20,
         status: JobStatus | None = None,
+        include_request: bool | None = None,
+        include_response: bool | None = None,
     ) -> PreparedRequest:
         params: dict[str, Any] = {"limit": limit}
         if after is not None:
             params["after"] = after
         if status is not None:
             params["status"] = status
+        if include_request is not None:
+            params["include_request"] = include_request
+        if include_response is not None:
+            params["include_response"] = include_response
         return PreparedRequest(method="GET", url="/v1/jobs", params=params)
 
 
@@ -100,17 +119,24 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         response = self._client._prepared_request(prepared)
         return Job.model_validate(response)
 
-    def retrieve(self, job_id: str) -> Job:
+    def retrieve(
+        self,
+        job_id: str,
+        include_request: bool | None = None,
+        include_response: bool | None = None,
+    ) -> Job:
         """
         Retrieve a job by ID.
 
         Args:
             job_id: The job ID to retrieve
+            include_request: Whether to include the original request payload
+            include_response: Whether to include response payload/documents
 
         Returns:
             Job: The job with current status and result (if completed)
         """
-        prepared = self._prepare_retrieve(job_id)
+        prepared = self._prepare_retrieve_with_options(job_id, include_request, include_response)
         response = self._client._prepared_request(prepared)
         return Job.model_validate(response)
 
@@ -133,6 +159,8 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         after: str | None = None,
         limit: int = 20,
         status: JobStatus | None = None,
+        include_request: bool | None = None,
+        include_response: bool | None = None,
     ) -> JobListResponse:
         """
         List jobs with pagination and optional status filtering.
@@ -141,11 +169,13 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
             after: Pagination cursor (last ID from previous page)
             limit: Number of jobs to return (1-100, default 20)
             status: Filter by job status
+            include_request: Whether to include full request payloads
+            include_response: Whether to include full response payloads
 
         Returns:
             JobListResponse: List of jobs with pagination info
         """
-        prepared = self._prepare_list(after, limit, status)
+        prepared = self._prepare_list(after, limit, status, include_request, include_response)
         response = self._client._prepared_request(prepared)
         return JobListResponse.model_validate(response)
 
@@ -202,17 +232,24 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         response = await self._client._prepared_request(prepared)
         return Job.model_validate(response)
 
-    async def retrieve(self, job_id: str) -> Job:
+    async def retrieve(
+        self,
+        job_id: str,
+        include_request: bool | None = None,
+        include_response: bool | None = None,
+    ) -> Job:
         """
         Retrieve a job by ID.
 
         Args:
             job_id: The job ID to retrieve
+            include_request: Whether to include the original request payload
+            include_response: Whether to include response payload/documents
 
         Returns:
             Job: The job with current status and result (if completed)
         """
-        prepared = self._prepare_retrieve(job_id)
+        prepared = self._prepare_retrieve_with_options(job_id, include_request, include_response)
         response = await self._client._prepared_request(prepared)
         return Job.model_validate(response)
 
@@ -235,6 +272,8 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         after: str | None = None,
         limit: int = 20,
         status: JobStatus | None = None,
+        include_request: bool | None = None,
+        include_response: bool | None = None,
     ) -> JobListResponse:
         """
         List jobs with pagination and optional status filtering.
@@ -243,10 +282,12 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
             after: Pagination cursor (last ID from previous page)
             limit: Number of jobs to return (1-100, default 20)
             status: Filter by job status
+            include_request: Whether to include full request payloads
+            include_response: Whether to include full response payloads
 
         Returns:
             JobListResponse: List of jobs with pagination info
         """
-        prepared = self._prepare_list(after, limit, status)
+        prepared = self._prepare_list(after, limit, status, include_request, include_response)
         response = await self._client._prepared_request(prepared)
         return JobListResponse.model_validate(response)
