@@ -26,7 +26,6 @@ type ClientType = "sync" | "async";
 type ResponseModeType = "stream" | "parse";
 type Modality = "text" | "image" | "native";
 type BrowserCanvas = "A3" | "A4" | "A5";
-type ReasoningEffort = "minimal" | "low" | "medium" | "high";
 
 function validateExtractionResponse(response: RetabParsedChatCompletion | null): void {
     // Assert the instance
@@ -235,7 +234,6 @@ describe('Retab SDK Extract Tests', () => {
                 model: "gpt-4.1-nano",
                 temperature: 0.5,
                 image_resolution_dpi: 150,
-                reasoning_effort: "medium",
                 n_consensus: 1,
             });
 
@@ -253,25 +251,6 @@ describe('Retab SDK Extract Tests', () => {
                     json_schema: bookingConfirmationJsonSchema,
                     document: bookingConfirmationFilePath1,
                     model: model,
-                });
-
-                validateExtractionResponse(response);
-                expect(response.choices[0].message.content).toBeDefined();
-            }, { timeout: TEST_TIMEOUT });
-        });
-    });
-
-
-    describe('Extract with Different Reasoning Efforts', () => {
-        const reasoningEfforts: ReasoningEffort[] = ["minimal", "low", "medium"];
-
-        reasoningEfforts.forEach((effort) => {
-            test(`test_extract_reasoning_${effort}`, async () => {
-                const response = await client.documents.extract({
-                    json_schema: bookingConfirmationJsonSchema,
-                    document: bookingConfirmationFilePath1,
-                    model: "gpt-4.1-nano",
-                    reasoning_effort: effort,
                 });
 
                 validateExtractionResponse(response);
@@ -461,7 +440,6 @@ describe('Retab SDK Extract Tests', () => {
                 document: bookingConfirmationFilePath1,
                 model: "gpt-4.1-nano",
                 temperature: 0,
-                reasoning_effort: "minimal",
             });
 
             const chunks: any[] = [];

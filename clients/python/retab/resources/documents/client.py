@@ -5,7 +5,6 @@ from typing import Any, AsyncGenerator, Generator
 
 import PIL.Image
 from pydantic import HttpUrl
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
@@ -212,7 +211,6 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         stream: bool = FieldUnset,
         store: bool = FieldUnset,
@@ -240,8 +238,6 @@ class BaseDocumentsMixin:
             request_dict["store"] = store
         if temperature is not FieldUnset:
             request_dict["temperature"] = temperature
-        if reasoning_effort is not FieldUnset:
-            request_dict["reasoning_effort"] = reasoning_effort
         if n_consensus is not FieldUnset:
             request_dict["n_consensus"] = n_consensus
         if image_resolution_dpi is not FieldUnset:
@@ -331,7 +327,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
@@ -349,7 +344,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI
             temperature: Model temperature setting (0-1)
-            reasoning_effort: The effort level for the model to reason about the input data
             n_consensus: Number of consensus extractions to perform
             store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
@@ -368,7 +362,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document=document,
             image_resolution_dpi=image_resolution_dpi,
             temperature=temperature,
-            reasoning_effort=reasoning_effort,
             n_consensus=n_consensus,
             store=store,
             metadata=metadata,
@@ -475,7 +468,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
@@ -491,7 +483,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document: Document to process (file path, URL, or file-like object)
             image_resolution_dpi: Optional image resolution DPI.
             temperature: Model temperature setting (0-1)
-            reasoning_effort: The effort level for the model to reason about the input data.
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
@@ -515,7 +506,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi=image_resolution_dpi,
             model=model,
             temperature=temperature,
-            reasoning_effort=reasoning_effort,
             stream=True,
             n_consensus=n_consensus,
             store=store,
@@ -818,7 +808,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
@@ -836,7 +825,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI
             temperature: Model temperature setting (0-1)
-            reasoning_effort: The effort level for the model to reason about the input data
             n_consensus: Number of consensus extractions to perform
             store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
@@ -855,7 +843,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document=document,
             image_resolution_dpi=image_resolution_dpi,
             temperature=temperature,
-            reasoning_effort=reasoning_effort,
             n_consensus=n_consensus,
             store=store,
             metadata=metadata,
@@ -874,7 +861,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         n_consensus: int = FieldUnset,
         store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
@@ -890,7 +876,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI.
             temperature: Model temperature setting (0-1).
-            reasoning_effort: The effort level for the model to reason about the input data.
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
@@ -913,7 +898,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi=image_resolution_dpi,
             model=model,
             temperature=temperature,
-            reasoning_effort=reasoning_effort,
             stream=True,
             n_consensus=n_consensus,
             store=store,

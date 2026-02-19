@@ -1,5 +1,5 @@
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Any
 
 class InferenceSettings(BaseModel):
@@ -11,6 +11,11 @@ class InferenceSettings(BaseModel):
     chunking_keys: dict[str, str] | None = Field(default=None, description="If set, keys to be used for the extraction of long lists of data using Parallel OCR", examples=[{"properties": "ID", "products": "identity.id"}])
     web_search: bool = Field(default=False, description="Enable web search enrichment with Parallel AI to add external context during extraction")
     model_config = ConfigDict(extra="ignore")
+
+    @field_validator("reasoning_effort", mode="before")
+    @classmethod
+    def force_minimal_reasoning_effort(cls, _: Any) -> ChatCompletionReasoningEffort:
+        return "minimal"
 
 
 class ExtractionSettings(InferenceSettings):
