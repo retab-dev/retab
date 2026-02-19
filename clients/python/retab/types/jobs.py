@@ -56,7 +56,7 @@ class Job(BaseModel):
     object: Literal["job"] = "job"
     status: JobStatus
     endpoint: SupportedEndpoint
-    request: dict[str, Any]
+    request: dict[str, Any] | None = None
     response: JobResponse | None = None
     error: JobError | None = None
 
