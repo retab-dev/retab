@@ -1005,7 +1005,6 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     model: z.string(),
     json_schema: z.record(z.string(), z.any()),
     temperature: z.number().default(0.0),
-    reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
     n_consensus: z.number().default(1),
     stream: z.boolean().default(false),
     seed: z.number().nullable().optional(),

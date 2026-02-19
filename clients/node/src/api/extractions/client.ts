@@ -2,16 +2,12 @@ import { CompositionClient, RequestOptions } from "../../client.js";
 import { ZPaginatedList, PaginatedList } from "../../types.js";
 import * as z from "zod";
 
-// Human review status type
-type HumanReviewStatus = "success" | "review_required" | "reviewed";
-
-// Response types for extractions API
-
 const ZDownloadResponse = z.object({
     download_url: z.string(),
     filename: z.string(),
     expires_at: z.string(),
 });
+
 type DownloadResponse = z.infer<typeof ZDownloadResponse>;
 
 // Generic extraction object (flexible since schema varies)
@@ -26,31 +22,32 @@ export default class APIExtractions extends CompositionClient {
     /**
      * List extractions with pagination and filtering.
      */
-    async list({
-        before,
-        after,
-        limit = 10,
-        order = "desc",
-        origin_dot_type,
-        origin_dot_id,
-        from_date,
-        to_date,
-        human_review_status,
-        metadata,
-        filename,
-    }: {
-        before?: string;
-        after?: string;
-        limit?: number;
-        order?: "asc" | "desc";
-        origin_dot_type?: string;
-        origin_dot_id?: string;
-        from_date?: Date;
-        to_date?: Date;
-        human_review_status?: HumanReviewStatus;
-        metadata?: Record<string, string>;
-        filename?: string;
-    } = {}, options?: RequestOptions): Promise<PaginatedList> {
+    async list(
+        {
+            before,
+            after,
+            limit = 10,
+            order = "desc",
+            origin_dot_type,
+            origin_dot_id,
+            from_date,
+            to_date,
+            metadata,
+            filename,
+        }: {
+            before?: string;
+            after?: string;
+            limit?: number;
+            order?: "asc" | "desc";
+            origin_dot_type?: string;
+            origin_dot_id?: string;
+            from_date?: Date;
+            to_date?: Date;
+            metadata?: Record<string, string>;
+            filename?: string;
+        } = {},
+        options?: RequestOptions,
+    ): Promise<PaginatedList> {
         const params: Record<string, any> = {
             before,
             after,
@@ -60,16 +57,12 @@ export default class APIExtractions extends CompositionClient {
             origin_dot_id,
             from_date: from_date?.toISOString(),
             to_date: to_date?.toISOString(),
-            human_review_status,
             filename,
             // Note: metadata must be JSON-serialized as the backend expects a JSON string
             metadata: metadata ? JSON.stringify(metadata) : undefined,
         };
 
-        // Remove undefined values
-        const cleanParams = Object.fromEntries(
-            Object.entries(params).filter(([_, v]) => v !== undefined)
-        );
+        const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined));
 
         return this._fetchJson(ZPaginatedList, {
             url: "/v1/extractions",
@@ -79,45 +72,41 @@ export default class APIExtractions extends CompositionClient {
         });
     }
 
-
     /**
-     * Download extractions in various formats. Returns download_url, filename, and expires_at.
+     * Download extractions in various formats.
      */
-    async download({
-        order = "desc",
-        origin_dot_id,
-        from_date,
-        to_date,
-        human_review_status,
-        metadata,
-        filename,
-        format = "jsonl",
-    }: {
-        order?: "asc" | "desc";
-        origin_dot_id?: string;
-        from_date?: Date;
-        to_date?: Date;
-        human_review_status?: HumanReviewStatus;
-        metadata?: Record<string, string>;
-        filename?: string;
-        format?: "jsonl" | "csv" | "xlsx";
-    } = {}, options?: RequestOptions): Promise<DownloadResponse> {
+    async download(
+        {
+            order = "desc",
+            origin_dot_id,
+            from_date,
+            to_date,
+            metadata,
+            filename,
+            format = "jsonl",
+        }: {
+            order?: "asc" | "desc";
+            origin_dot_id?: string;
+            from_date?: Date;
+            to_date?: Date;
+            metadata?: Record<string, string>;
+            filename?: string;
+            format?: "jsonl" | "csv" | "xlsx";
+        } = {},
+        options?: RequestOptions,
+    ): Promise<DownloadResponse> {
         const params: Record<string, any> = {
             order,
             origin_dot_id,
             from_date: from_date?.toISOString(),
             to_date: to_date?.toISOString(),
-            human_review_status,
             filename,
             format,
             // Note: metadata must be JSON-serialized as the backend expects a JSON string
             metadata: metadata ? JSON.stringify(metadata) : undefined,
         };
 
-        // Remove undefined values
-        const cleanParams = Object.fromEntries(
-            Object.entries(params).filter(([_, v]) => v !== undefined)
-        );
+        const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined));
 
         return this._fetchJson(ZDownloadResponse, {
             url: "/v1/extractions/download",
@@ -135,24 +124,21 @@ export default class APIExtractions extends CompositionClient {
         {
             predictions,
             predictions_draft,
-            human_review_status,
             json_schema,
             inference_settings,
             metadata,
         }: {
             predictions?: Record<string, any>;
             predictions_draft?: Record<string, any>;
-            human_review_status?: HumanReviewStatus;
             json_schema?: Record<string, any>;
             inference_settings?: Record<string, any>;
             metadata?: Record<string, string>;
         },
-        options?: RequestOptions
+        options?: RequestOptions,
     ): Promise<Extraction> {
         const body: Record<string, any> = {};
         if (predictions !== undefined) body.predictions = predictions;
         if (predictions_draft !== undefined) body.predictions_draft = predictions_draft;
-        if (human_review_status !== undefined) body.human_review_status = human_review_status;
         if (json_schema !== undefined) body.json_schema = json_schema;
         if (inference_settings !== undefined) body.inference_settings = inference_settings;
         if (metadata !== undefined) body.metadata = metadata;
@@ -190,4 +176,3 @@ export default class APIExtractions extends CompositionClient {
         });
     }
 }
-
