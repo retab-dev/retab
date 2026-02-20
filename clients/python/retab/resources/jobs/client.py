@@ -84,7 +84,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         ...     request={
         ...         "document": {"content": "...", "mime_type": "application/pdf"},
         ...         "json_schema": {"type": "object", ...},
-        ...         "model": "gpt-4o",
+        ...         "model": "gpt-5.2",
         ...     }
         ... )
         >>>
@@ -197,7 +197,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         ...     request={
         ...         "document": {"content": "...", "mime_type": "application/pdf"},
         ...         "json_schema": {"type": "object", ...},
-        ...         "model": "gpt-4o",
+        ...         "model": "gpt-5.2",
         ...     }
         ... )
         >>>

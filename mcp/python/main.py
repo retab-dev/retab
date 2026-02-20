@@ -15,7 +15,7 @@ USER_AGENT = "retab-app/1.0"
 
 
 @mcp.tool()
-async def generate_schema(list_file_download_urls: list[str], model: str = "gpt-4o") -> str:
+async def generate_schema(list_file_download_urls: list[str], model: str = "gpt-5.2") -> str:
     """Generates an Retab promptified JSON Schema from input files.
 
     This function takes a list of file URLs, downloads their contents, and generates
@@ -24,7 +24,7 @@ async def generate_schema(list_file_download_urls: list[str], model: str = "gpt-
 
     Args:
         list_file_download_urls: A list of URLs pointing to files that need to be processed.
-        model: The model identifier to use for processing. Defaults to "gpt-4o".
+        model: The model identifier to use for processing. Defaults to "gpt-5.2".
                 Use get_retab_available_models() to see available options.
 
     Returns:

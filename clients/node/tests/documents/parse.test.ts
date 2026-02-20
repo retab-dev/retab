@@ -17,7 +17,7 @@ function generateId(): string {
 const TEST_TIMEOUT = 180000;
 
 // List of AI Models to test (focusing on models that support parsing)
-type AIModels = "gemini-2.5-flash-lite" | "gpt-4.1-nano";
+type AIModels = "gemini-2.5-flash-lite" | "gpt-5-nano";
 
 type ClientType = "sync" | "async";
 

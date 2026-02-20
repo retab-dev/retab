@@ -24,7 +24,7 @@ async function main() {
   // Document Extraction via Retab API
   const response = await client.documents.extract({
     documents: ['../../assets/docs/invoice.jpeg'],
-    model: 'gpt-4.1',
+    model: 'gpt-5',
     json_schema: JSON.parse(fs.readFileSync('../../assets/code/invoice_schema.json', 'utf-8')),
     temperature: 0.0,
     n_consensus: 1,
