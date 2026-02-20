@@ -12,7 +12,7 @@ from retab.types.documents.parse import ParseResult, TableParsingFormat
 # List of AI Models to test (focusing on models that support parsing)
 AI_MODELS = Literal[
     "gemini-2.5-flash-lite",
-    "gpt-4.1-nano",
+    "gpt-5-nano",
 ]
 
 ClientType = Literal[

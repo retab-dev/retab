@@ -71,7 +71,7 @@ const result = await retab.documents.extract({
 const result = await retab.documents.extract({
   document: 'document.pdf',
   schema: mySchema,
-  model: 'gpt-4.1'
+  model: 'gpt-5'
 ```
 
 ## Key Features
