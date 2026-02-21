@@ -30,7 +30,6 @@ class DocumentExtractRequest(BaseModel):
     # Regular fields
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
     chunking_keys: Optional[dict[str, str]] = Field(default=None, description="If set, keys to be used for the extraction of long lists of data using Parallel OCR", examples=[{"properties": "ID", "products": "identity.id"}])
-    web_search: bool = Field(default=False, description="Enable web search enrichment with Parallel AI to add external context during extraction")
     metadata: dict[str, str] = Field(default_factory=dict, description="User-defined metadata to associate with this extraction")
     extraction_id: Optional[str] = Field(default=None, description="Extraction ID to use for this extraction. If not provided, a new ID will be generated.")
     additional_messages: Optional[list[ChatCompletionRetabMessage]] = Field(default=None, description="Additional chat messages to append after the document content messages. Useful for providing extra context or instructions.")

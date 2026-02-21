@@ -233,7 +233,6 @@ export const ZInferenceSettings = z.lazy(() => (z.object({
     image_resolution_dpi: z.number().default(192),
     n_consensus: z.number().default(1),
     chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
-    web_search: z.boolean().default(false),
 })));
 export type InferenceSettings = z.infer<typeof ZInferenceSettings>;
 
@@ -1016,7 +1015,6 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     n_consensus: z.number().default(1),
     stream: z.boolean().default(false),
     chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
-    web_search: z.boolean().default(false),
     metadata: z.record(z.string(), z.string()),
     extraction_id: z.string().nullable().optional(),
     additional_messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
