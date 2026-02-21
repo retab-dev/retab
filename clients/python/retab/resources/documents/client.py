@@ -213,7 +213,6 @@ class BaseDocumentsMixin:
         temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
         stream: bool = FieldUnset,
-        store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
@@ -234,8 +233,6 @@ class BaseDocumentsMixin:
         }
         if stream is not FieldUnset:
             request_dict["stream"] = stream
-        if store is not FieldUnset:
-            request_dict["store"] = store
         if temperature is not FieldUnset:
             request_dict["temperature"] = temperature
         if n_consensus is not FieldUnset:
@@ -328,7 +325,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
-        store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
@@ -345,7 +341,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi: Optional image resolution DPI
             temperature: Model temperature setting (0-1)
             n_consensus: Number of consensus extractions to perform
-            store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
 
@@ -363,7 +358,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi=image_resolution_dpi,
             temperature=temperature,
             n_consensus=n_consensus,
-            store=store,
             metadata=metadata,
             additional_messages=additional_messages,
             **extra_body,
@@ -469,7 +463,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
-        store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
@@ -484,7 +477,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi: Optional image resolution DPI.
             temperature: Model temperature setting (0-1)
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
-            store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
 
@@ -508,7 +500,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             temperature=temperature,
             stream=True,
             n_consensus=n_consensus,
-            store=store,
             metadata=metadata,
             additional_messages=additional_messages,
             **extra_body,
@@ -809,7 +800,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
-        store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
@@ -826,7 +816,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi: Optional image resolution DPI
             temperature: Model temperature setting (0-1)
             n_consensus: Number of consensus extractions to perform
-            store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
 
@@ -844,7 +833,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi=image_resolution_dpi,
             temperature=temperature,
             n_consensus=n_consensus,
-            store=store,
             metadata=metadata,
             additional_messages=additional_messages,
             **extra_body,
@@ -862,7 +850,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         image_resolution_dpi: int = FieldUnset,
         temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
-        store: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
         **extra_body: Any,
@@ -877,7 +864,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi: Optional image resolution DPI.
             temperature: Model temperature setting (0-1).
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
-            store: Whether to store the document in the Retab database
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
         Returns:
@@ -900,7 +886,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             temperature=temperature,
             stream=True,
             n_consensus=n_consensus,
-            store=store,
             metadata=metadata,
             additional_messages=additional_messages,
             **extra_body,

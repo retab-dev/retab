@@ -3,6 +3,8 @@ import * as z from "zod";
 
 // Job status type
 type JobStatus = "validating" | "queued" | "in_progress" | "completed" | "failed" | "cancelled" | "expired";
+type JobListSource = "api" | "project" | "workflow";
+type JobListOrder = "asc" | "desc";
 
 // Supported endpoints
 type SupportedEndpoint =
@@ -74,6 +76,13 @@ type JobRetrieveOptions = RequestOptions & {
     include_response?: boolean;
 };
 
+type JobWaitForCompletionOptions = RequestOptions & {
+    poll_interval_ms?: number;
+    timeout_ms?: number;
+    include_request?: boolean;
+    include_response?: boolean;
+};
+
 export default class APIJobs extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
@@ -114,11 +123,13 @@ export default class APIJobs extends CompositionClient {
      * Retrieve a job by ID.
      */
     async retrieve(job_id: string, options?: JobRetrieveOptions): Promise<Job> {
+        const include_request = options?.include_request ?? false;
+        const include_response = options?.include_response ?? false;
         const params: Record<string, any> = {
             ...(options?.params || {}),
+            include_request,
+            include_response,
         };
-        if (options?.include_request !== undefined) params.include_request = options.include_request;
-        if (options?.include_response !== undefined) params.include_response = options.include_response;
 
         return this._fetchJson(ZJob, {
             url: `/v1/jobs/${job_id}`,
@@ -126,6 +137,61 @@ export default class APIJobs extends CompositionClient {
             params,
             headers: options?.headers,
         });
+    }
+
+    /**
+     * Retrieve a job by ID including full request and response payloads.
+     */
+    async retrieveFull(job_id: string, options?: RequestOptions): Promise<Job> {
+        return this.retrieve(job_id, {
+            ...options,
+            include_request: true,
+            include_response: true,
+        });
+    }
+
+    /**
+     * Poll a job until terminal status, then fetch final payload once.
+     */
+    async waitForCompletion(
+        job_id: string,
+        options: JobWaitForCompletionOptions = {},
+    ): Promise<Job> {
+        const poll_interval_ms = options.poll_interval_ms ?? 2000;
+        const timeout_ms = options.timeout_ms ?? 600000;
+        const include_request = options.include_request ?? false;
+        const include_response = options.include_response ?? true;
+        if (poll_interval_ms <= 0) throw new Error("poll_interval_ms must be > 0");
+        if (timeout_ms <= 0) throw new Error("timeout_ms must be > 0");
+
+        const terminal_statuses = new Set<JobStatus>(["completed", "failed", "cancelled", "expired"]);
+        const started_at_ms = Date.now();
+        const deadline_ms = started_at_ms + timeout_ms;
+        while (true) {
+            const job = await this.retrieve(job_id, {
+                ...options,
+                include_request: false,
+                include_response: false,
+            });
+            if (terminal_statuses.has(job.status)) {
+                if (include_request || include_response) {
+                    return this.retrieve(job_id, {
+                        ...options,
+                        include_request,
+                        include_response,
+                    });
+                }
+                return job;
+            }
+
+            const now_ms = Date.now();
+            if (now_ms >= deadline_ms) {
+                throw new Error(`Timed out waiting for job ${job_id} completion after ${timeout_ms}ms`);
+            }
+
+            const sleep_for_ms = Math.min(poll_interval_ms, Math.max(deadline_ms - now_ms, 0));
+            await new Promise((resolve) => setTimeout(resolve, sleep_for_ms));
+        }
     }
 
     /**
@@ -153,25 +219,70 @@ export default class APIJobs extends CompositionClient {
     }
 
     /**
-     * List jobs with pagination and optional status filtering.
+     * List jobs with pagination and optional filtering.
      */
     async list({
+        before,
         after,
         limit = 20,
+        order = "desc",
+        id,
         status,
+        endpoint,
+        source,
+        project_id,
+        workflow_id,
+        workflow_node_id,
+        model,
+        filename_regex,
+        filename_contains,
+        document_type,
+        from_date,
+        to_date,
+        metadata,
         include_request,
         include_response,
     }: {
+        before?: string;
         after?: string;
         limit?: number;
+        order?: JobListOrder;
+        id?: string;
         status?: JobStatus;
+        endpoint?: SupportedEndpoint;
+        source?: JobListSource;
+        project_id?: string;
+        workflow_id?: string;
+        workflow_node_id?: string;
+        model?: string;
+        filename_regex?: string;
+        filename_contains?: string;
+        document_type?: string[];
+        from_date?: string;
+        to_date?: string;
+        metadata?: Record<string, string>;
         include_request?: boolean;
         include_response?: boolean;
     } = {}, options?: RequestOptions): Promise<JobListResponse> {
         const params: Record<string, any> = {
+            before,
             after,
             limit,
+            order,
+            id,
             status,
+            endpoint,
+            source,
+            project_id,
+            workflow_id,
+            workflow_node_id,
+            model,
+            filename_regex,
+            filename_contains,
+            document_type,
+            from_date,
+            to_date,
+            metadata: metadata ? JSON.stringify(metadata) : undefined,
             include_request,
             include_response,
         };
@@ -190,4 +301,5 @@ export default class APIJobs extends CompositionClient {
     }
 }
 
-export { Job, JobListResponse, JobStatus, SupportedEndpoint, JobResponse, JobError };
+export { Job, JobListOrder, JobListResponse, JobListSource, JobStatus, SupportedEndpoint, JobResponse, JobError };
+export { JobRetrieveOptions, JobWaitForCompletionOptions };

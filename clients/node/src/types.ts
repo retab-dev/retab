@@ -172,5 +172,3 @@ export const ZModel = z.lazy(() => (z.object({
     owned_by: z.string(),
 })));
 export type Model = z.infer<typeof ZModel>;
-
-

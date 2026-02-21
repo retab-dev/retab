@@ -19,6 +19,17 @@ JobStatus = Literal[
     "expired",
 ]
 
+JobListSource = Literal[
+    "api",
+    "project",
+    "workflow",
+]
+
+JobListOrder = Literal[
+    "asc",
+    "desc",
+]
+
 SupportedEndpoint = Literal[
     "/v1/documents/extract",
     "/v1/documents/parse",
