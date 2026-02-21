@@ -69,22 +69,46 @@ async function baseTestExtract(
     const document = bookingConfirmationFilePath1;
     let response: RetabParsedChatCompletion | null = null;
 
-    // Helper to convert streaming chunk to completion format
-    const convertStreamToCompletion = (chunk: any): RetabParsedChatCompletion | null => {
-        if (!chunk || !chunk.choices || chunk.choices.length === 0) {
+    // Helper to convert streaming chunks to completion format.
+    // The final stream event can be a bookkeeping chunk with empty delta payload,
+    // so we build the response from the last meaningful parsed/content payload.
+    const convertStreamToCompletion = (chunks: any[]): RetabParsedChatCompletion | null => {
+        if (!chunks || chunks.length === 0) {
             return null;
         }
-        const delta = chunk.choices[0].delta;
-        // Convert delta to message format
-        const content = delta.full_parsed ? JSON.stringify(delta.full_parsed) : (delta.content || "");
+
+        let lastChunkWithChoice: any = null;
+        let lastFullParsed: Record<string, any> | null = null;
+        let combinedContent = "";
+
+        for (const chunk of chunks) {
+            if (!chunk?.choices || chunk.choices.length === 0) {
+                continue;
+            }
+            lastChunkWithChoice = chunk;
+
+            const delta = chunk.choices[0].delta;
+            if (typeof delta?.content === "string" && delta.content.length > 0) {
+                combinedContent += delta.content;
+            }
+            if (delta?.full_parsed && typeof delta.full_parsed === "object") {
+                lastFullParsed = delta.full_parsed;
+            }
+        }
+
+        if (!lastChunkWithChoice) {
+            return null;
+        }
+
+        const content = lastFullParsed ? JSON.stringify(lastFullParsed) : combinedContent;
         return {
-            ...chunk,
+            ...lastChunkWithChoice,
             choices: [{
-                ...chunk.choices[0],
+                ...lastChunkWithChoice.choices[0],
                 message: {
                     role: "assistant",
                     content: content,
-                    parsed: delta.full_parsed || null,
+                    parsed: lastFullParsed,
                 },
             }],
         } as RetabParsedChatCompletion;
@@ -100,12 +124,12 @@ async function baseTestExtract(
             });
 
             // Collect all streaming chunks
-            let lastChunk: any = null;
+            const chunks: any[] = [];
             for await (const chunk of streamIterator) {
-                lastChunk = chunk;
+                chunks.push(chunk);
             }
 
-            response = convertStreamToCompletion(lastChunk);
+            response = convertStreamToCompletion(chunks);
         } else {
             response = await client.documents.extract({
                 json_schema: jsonSchema,
@@ -124,12 +148,12 @@ async function baseTestExtract(
             });
 
             // Collect all streaming chunks
-            let lastChunk: any = null;
+            const chunks: any[] = [];
             for await (const chunk of streamIterator) {
-                lastChunk = chunk;
+                chunks.push(chunk);
             }
 
-            response = convertStreamToCompletion(lastChunk);
+            response = convertStreamToCompletion(chunks);
         } else {
             response = await client.documents.extract({
                 json_schema: jsonSchema,
