@@ -47,6 +47,9 @@ class BaseJobsMixin:
     def _prepare_cancel(self, job_id: str) -> PreparedRequest:
         return PreparedRequest(method="POST", url=f"/v1/jobs/{job_id}/cancel")
 
+    def _prepare_retry(self, job_id: str) -> PreparedRequest:
+        return PreparedRequest(method="POST", url=f"/v1/jobs/{job_id}/retry")
+
     def _prepare_list(
         self,
         after: str | None = None,
@@ -151,6 +154,20 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
             Job: The updated job with status "cancelled"
         """
         prepared = self._prepare_cancel(job_id)
+        response = self._client._prepared_request(prepared)
+        return Job.model_validate(response)
+
+    def retry(self, job_id: str) -> Job:
+        """
+        Retry a failed, cancelled, or expired job.
+
+        Args:
+            job_id: The job ID to retry
+
+        Returns:
+            Job: The updated job with status "queued"
+        """
+        prepared = self._prepare_retry(job_id)
         response = self._client._prepared_request(prepared)
         return Job.model_validate(response)
 
@@ -264,6 +281,20 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
             Job: The updated job with status "cancelled"
         """
         prepared = self._prepare_cancel(job_id)
+        response = await self._client._prepared_request(prepared)
+        return Job.model_validate(response)
+
+    async def retry(self, job_id: str) -> Job:
+        """
+        Retry a failed, cancelled, or expired job.
+
+        Args:
+            job_id: The job ID to retry
+
+        Returns:
+            Job: The updated job with status "queued"
+        """
+        prepared = self._prepare_retry(job_id)
         response = await self._client._prepared_request(prepared)
         return Job.model_validate(response)
 

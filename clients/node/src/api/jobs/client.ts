@@ -141,6 +141,18 @@ export default class APIJobs extends CompositionClient {
     }
 
     /**
+     * Retry a failed, cancelled, or expired job.
+     */
+    async retry(job_id: string, options?: RequestOptions): Promise<Job> {
+        return this._fetchJson(ZJob, {
+            url: `/v1/jobs/${job_id}/retry`,
+            method: "POST",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
      * List jobs with pagination and optional status filtering.
      */
     async list({
