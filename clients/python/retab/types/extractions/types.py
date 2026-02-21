@@ -1,1 +1,0 @@
-"""Extraction-specific shared types."""

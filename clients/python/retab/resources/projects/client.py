@@ -88,8 +88,6 @@ class ProjectsMixin:
         temperature: float | None = None,
         image_resolution_dpi: int | None = None,
         n_consensus: int | None = None,
-        seed: int | None = None,
-        store: bool = True,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
         **extra_form: Any,
@@ -105,8 +103,6 @@ class ProjectsMixin:
             temperature: Optional temperature override
             image_resolution_dpi: Optional image resolution DPI override
             n_consensus: Optional number of consensus extractions
-            store: Whether to store the results
-            seed: Optional seed for reproducibility
             metadata: User-defined metadata for the extraction
 
         Returns:
@@ -126,8 +122,6 @@ class ProjectsMixin:
             "temperature": temperature,
             "image_resolution_dpi": image_resolution_dpi,
             "n_consensus": n_consensus,
-            "seed": seed,
-            "store": store,
             "metadata": json.dumps(metadata) if metadata else None,
             "extraction_id": extraction_id,
         }
@@ -256,8 +250,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
         temperature: float | None = None,
         image_resolution_dpi: int | None = None,
         n_consensus: int | None = None,
-        seed: int | None = None,
-        store: bool = True,
         **extra_form: Any,
     ) -> RetabParsedChatCompletion:
         """Extract documents from a project.
@@ -270,8 +262,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
             model: Optional model override
             temperature: Optional temperature override
             image_resolution_dpi: Optional image resolution DPI override
-            seed: Optional seed for reproducibility
-            store: Whether to store the results
 
         Returns:
             RetabParsedChatCompletion: The processing result
@@ -285,8 +275,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
             temperature=temperature,
             image_resolution_dpi=image_resolution_dpi,
             n_consensus=n_consensus,
-            seed=seed,
-            store=store,
             **extra_form,
         )
         response = self._client._prepared_request(request)
@@ -381,8 +369,6 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         temperature: float | None = None,
         image_resolution_dpi: int | None = None,
         n_consensus: int | None = None,
-        seed: int | None = None,
-        store: bool = True,
         **extra_form: Any,
     ) -> RetabParsedChatCompletion:
         """Extract documents from a project.
@@ -396,12 +382,10 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
             temperature: Optional temperature override
             image_resolution_dpi: Optional image resolution DPI override
             n_consensus: Optional number of consensus extractions
-            seed: Optional seed for reproducibility
-            store: Whether to store the results
 
         Returns:
             RetabParsedChatCompletion: The processing result
         """
-        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, model=model, temperature=temperature, image_resolution_dpi=image_resolution_dpi, n_consensus=n_consensus, seed=seed, store=store)
+        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, model=model, temperature=temperature, image_resolution_dpi=image_resolution_dpi, n_consensus=n_consensus)
         response = await self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)

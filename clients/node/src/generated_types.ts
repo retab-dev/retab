@@ -1015,8 +1015,6 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     temperature: z.number().default(0.0),
     n_consensus: z.number().default(1),
     stream: z.boolean().default(false),
-    seed: z.number().nullable().optional(),
-    store: z.boolean().default(true),
     chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
     web_search: z.boolean().default(false),
     metadata: z.record(z.string(), z.string()),
@@ -3730,4 +3728,3 @@ export const ZResponseOutputTextParamLogprobTopLogprob = z.lazy(() => (z.object(
     logprob: z.number(),
 })));
 export type ResponseOutputTextParamLogprobTopLogprob = z.infer<typeof ZResponseOutputTextParamLogprobTopLogprob>;
-

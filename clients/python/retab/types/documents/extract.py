@@ -29,8 +29,6 @@ class DocumentExtractRequest(BaseModel):
     n_consensus: int = Field(default=1, description="Number of consensus models to use for extraction. If greater than 1 the temperature cannot be 0.")
     # Regular fields
     stream: bool = Field(default=False, description="If true, the extraction will be streamed to the user using the active WebSocket connection")
-    seed: int | None = Field(default=None, description="Seed for the random number generator. If not provided, a random seed will be generated.", examples=[None])
-    store: bool = Field(default=True, description="If true, the extraction will be stored in the database")
     chunking_keys: Optional[dict[str, str]] = Field(default=None, description="If set, keys to be used for the extraction of long lists of data using Parallel OCR", examples=[{"properties": "ID", "products": "identity.id"}])
     web_search: bool = Field(default=False, description="Enable web search enrichment with Parallel AI to add external context during extraction")
     metadata: dict[str, str] = Field(default_factory=dict, description="User-defined metadata to associate with this extraction")
