@@ -85,7 +85,6 @@ class ProjectsMixin:
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         model: str | None = None,
-        temperature: float | None = None,
         image_resolution_dpi: int | None = None,
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
@@ -100,7 +99,6 @@ class ProjectsMixin:
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             model: Optional model override
-            temperature: Optional temperature override
             image_resolution_dpi: Optional image resolution DPI override
             n_consensus: Optional number of consensus extractions
             metadata: User-defined metadata for the extraction
@@ -119,7 +117,6 @@ class ProjectsMixin:
         # Note: metadata must be JSON-serialized since httpx multipart forms only accept primitive types
         form_data = {
             "model": model,
-            "temperature": temperature,
             "image_resolution_dpi": image_resolution_dpi,
             "n_consensus": n_consensus,
             "metadata": json.dumps(metadata) if metadata else None,
@@ -247,7 +244,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         model: str | None = None,
-        temperature: float | None = None,
         image_resolution_dpi: int | None = None,
         n_consensus: int | None = None,
         **extra_form: Any,
@@ -260,7 +256,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             model: Optional model override
-            temperature: Optional temperature override
             image_resolution_dpi: Optional image resolution DPI override
 
         Returns:
@@ -272,7 +267,6 @@ class Projects(SyncAPIResource, ProjectsMixin):
             document=document,
             documents=documents,
             model=model,
-            temperature=temperature,
             image_resolution_dpi=image_resolution_dpi,
             n_consensus=n_consensus,
             **extra_form,
@@ -366,7 +360,6 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         documents: Sequence[Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl] | None = None,
         model: str | None = None,
-        temperature: float | None = None,
         image_resolution_dpi: int | None = None,
         n_consensus: int | None = None,
         **extra_form: Any,
@@ -379,13 +372,12 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
             document: Single document to process (mutually exclusive with documents)
             documents: List of documents to process (mutually exclusive with document)
             model: Optional model override
-            temperature: Optional temperature override
             image_resolution_dpi: Optional image resolution DPI override
             n_consensus: Optional number of consensus extractions
 
         Returns:
             RetabParsedChatCompletion: The processing result
         """
-        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, model=model, temperature=temperature, image_resolution_dpi=image_resolution_dpi, n_consensus=n_consensus)
+        request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, model=model, image_resolution_dpi=image_resolution_dpi, n_consensus=n_consensus)
         response = await self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)

@@ -228,7 +228,6 @@ export type ExtractionSettings = z.infer<typeof ZExtractionSettings>;
 
 export const ZInferenceSettings = z.lazy(() => (z.object({
     model: z.string().default("gpt-5-mini"),
-    temperature: z.number().default(0.0),
     reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
     image_resolution_dpi: z.number().default(192),
     n_consensus: z.number().default(1),
@@ -333,7 +332,7 @@ export const ZComputationSpec = z.lazy(() => (z.object({
 export type ComputationSpec = z.infer<typeof ZComputationSpec>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({"model": "retab-small", "temperature": 0.5, "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
+    inference_settings: ZInferenceSettings.default({"model": "retab-small", "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
     json_schema: z.record(z.string(), z.any()),
     computation_spec: ZComputationSpec,
 })));
@@ -360,36 +359,58 @@ export const ZStoredProject = z.lazy(() => (ZProject.schema).merge(z.object({
 })));
 export type StoredProject = z.infer<typeof ZStoredProject>;
 
+export const ZCancelWorkflowResponse = z.lazy(() => (z.object({
+    run: ZWorkflowRun,
+    cancellation_status: z.union([z.literal("cancelled"), z.literal("cancellation_requested"), z.literal("cancellation_failed")]).default("cancellation_requested"),
+})));
+export type CancelWorkflowResponse = z.infer<typeof ZCancelWorkflowResponse>;
+
 export const ZHandlePayload = z.lazy(() => (z.object({
     type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
-    document: ZStepIOReference.nullable().optional(),
+    document: ZBaseMIMEData.nullable().optional(),
     data: z.record(z.any()).nullable().optional(),
     text: z.string().nullable().optional(),
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
-export const ZStepIOReference = z.lazy(() => (z.object({
-    file_id: z.string().nullable().optional(),
-    gcs_path: z.string().nullable().optional(),
-    filename: z.string().nullable().optional(),
-    mime_type: z.string().nullable().optional(),
+export const ZResumeWorkflowResponse = z.lazy(() => (z.object({
+    run: ZWorkflowRun,
+    resume_status: z.union([z.literal("processing"), z.literal("queued"), z.literal("already_processed")]),
+    queue_position: z.number().nullable().optional(),
+    queue_item_id: z.string(),
 })));
-export type StepIOReference = z.infer<typeof ZStepIOReference>;
+export type ResumeWorkflowResponse = z.infer<typeof ZResumeWorkflowResponse>;
+
+export const ZStepOutputResponse = z.lazy(() => (z.object({
+    node_id: z.string(),
+    node_type: z.string(),
+    node_label: z.string(),
+    status: z.string(),
+    output: z.record(z.any()).nullable().optional(),
+    handle_outputs: z.record(z.string(), z.any()).nullable().optional(),
+    handle_inputs: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type StepOutputResponse = z.infer<typeof ZStepOutputResponse>;
+
+export const ZStepOutputsBatchResponse = z.lazy(() => (z.object({
+    outputs: z.record(z.string(), ZStepOutputResponse),
+})));
+export type StepOutputsBatchResponse = z.infer<typeof ZStepOutputsBatchResponse>;
 
 export const ZStepStatus = z.lazy(() => (z.object({
     node_id: z.string(),
     node_type: z.union([z.literal("start"), z.literal("extract"), z.literal("split"), z.literal("end"), z.literal("hil")]),
     node_label: z.string(),
-    status: z.union([z.literal("pending"), z.literal("running"), z.literal("completed"), z.literal("error"), z.literal("waiting_for_human")]),
+    status: z.union([z.literal("pending"), z.literal("running"), z.literal("completed"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
     output: z.record(z.any()).nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    input_document: ZStepIOReference.nullable().optional(),
-    output_document: ZStepIOReference.nullable().optional(),
-    split_documents: z.record(z.string(), ZStepIOReference).nullable().optional(),
+    input_document: ZBaseMIMEData.nullable().optional(),
+    output_document: ZBaseMIMEData.nullable().optional(),
+    split_documents: z.record(z.string(), ZBaseMIMEData).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
     human_review_approved: z.boolean().nullable().optional(),
@@ -401,12 +422,12 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     workflow_id: z.string(),
     workflow_name: z.string(),
     organization_id: z.string(),
-    status: z.union([z.literal("pending"), z.literal("running"), z.literal("completed"), z.literal("error"), z.literal("waiting_for_human")]).default("pending"),
+    status: z.union([z.literal("pending"), z.literal("running"), z.literal("completed"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]).default("pending"),
     started_at: z.string(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     steps: z.array(ZStepStatus),
-    input_documents: z.record(z.string(), ZStepIOReference).nullable().optional(),
+    input_documents: z.record(z.string(), ZBaseMIMEData).nullable().optional(),
     final_outputs: z.record(z.any()).nullable().optional(),
     error: z.string().nullable().optional(),
     created_at: z.string(),
@@ -419,7 +440,6 @@ export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
 export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     documents: z.array(ZMIMEData),
     model: z.string().default("gpt-5-mini"),
-    temperature: z.number().default(0.0),
     reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
     instructions: z.string().nullable().optional(),
     image_resolution_dpi: z.number().default(192),
@@ -706,8 +726,8 @@ export const ZEditTemplate = z.lazy(() => (z.object({
     id: z.string(),
     name: z.string(),
     file: ZBaseMIMEData,
-    form_fields: z.array(ZFormField).optional().default([]),
-    field_count: z.number().optional().default(0),
+    form_fields: z.array(ZFormField),
+    field_count: z.number().default(0),
     organization_id: z.string().nullable().optional(),
     created_at: z.string(),
     updated_at: z.string(),
@@ -1012,7 +1032,6 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     image_resolution_dpi: z.number().default(192),
     model: z.string(),
     json_schema: z.record(z.string(), z.any()),
-    temperature: z.number().default(0.0),
     n_consensus: z.number().default(1),
     stream: z.boolean().default(false),
     chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
@@ -3727,3 +3746,4 @@ export const ZResponseOutputTextParamLogprobTopLogprob = z.lazy(() => (z.object(
     logprob: z.number(),
 })));
 export type ResponseOutputTextParamLogprobTopLogprob = z.infer<typeof ZResponseOutputTextParamLogprobTopLogprob>;
+

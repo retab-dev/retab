@@ -1,11 +1,29 @@
-from .model import WorkflowRun, StepStatus, StepIOReference, HandlePayload, NodeType
+from retab.types.mime import BaseMIMEData
+
+from .model import (
+    WorkflowRun,
+    StepStatus,
+    HandlePayload,
+    NodeType,
+    WorkflowRunStatus,
+    TERMINAL_WORKFLOW_RUN_STATUSES,
+    StepOutputResponse,
+    StepOutputsBatchResponse,
+    CancelWorkflowResponse,
+    ResumeWorkflowResponse,
+)
 
 
 __all__ = [
+    "BaseMIMEData",
     "WorkflowRun",
-    "StepStatus", 
-    "StepIOReference",
+    "StepStatus",
     "HandlePayload",
     "NodeType",
+    "WorkflowRunStatus",
+    "TERMINAL_WORKFLOW_RUN_STATUSES",
+    "StepOutputResponse",
+    "StepOutputsBatchResponse",
+    "CancelWorkflowResponse",
+    "ResumeWorkflowResponse",
 ]
-

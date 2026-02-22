@@ -10,7 +10,6 @@ from .predictions import PredictionData
 
 default_inference_settings = InferenceSettings(
     model="retab-small",
-    temperature=0.5,
     reasoning_effort="minimal",
     image_resolution_dpi=192,
     n_consensus=1,

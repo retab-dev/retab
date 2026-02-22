@@ -18,7 +18,6 @@ class SchemasMixin:
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = FieldUnset,
         model: str = FieldUnset,
-        temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         **extra_body: Any,
@@ -32,8 +31,6 @@ class SchemasMixin:
             body["instructions"] = instructions
         if model is not FieldUnset:
             body["model"] = model
-        if temperature is not FieldUnset:
-            body["temperature"] = temperature
         if reasoning_effort is not FieldUnset:
             body["reasoning_effort"] = reasoning_effort
         if image_resolution_dpi is not FieldUnset:
@@ -46,13 +43,12 @@ class SchemasMixin:
 
 
 class Schemas(SyncAPIResource, SchemasMixin):
-    
+
     def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = FieldUnset,
         model: str = FieldUnset,
-        temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         **extra_body: Any,
@@ -76,7 +72,6 @@ class Schemas(SyncAPIResource, SchemasMixin):
             documents=documents,
             instructions=instructions,
             model=model,
-            temperature=temperature,
             reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
             **extra_body,
@@ -85,13 +80,12 @@ class Schemas(SyncAPIResource, SchemasMixin):
         return response
 
 class AsyncSchemas(AsyncAPIResource, SchemasMixin):
-    
+
     async def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
         instructions: str | None = FieldUnset,
         model: str = FieldUnset,
-        temperature: float = FieldUnset,
         reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
         image_resolution_dpi: int = FieldUnset,
         **extra_body: Any,
@@ -115,11 +109,9 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
             documents=documents,
             instructions=instructions,
             model=model,
-            temperature=temperature,
             reasoning_effort=reasoning_effort,
             image_resolution_dpi=image_resolution_dpi,
             **extra_body,
         )
         response = await self._client._prepared_request(prepared_request)
         return response
-

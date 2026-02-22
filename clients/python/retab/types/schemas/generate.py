@@ -8,7 +8,6 @@ class GenerateSchemaRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     documents: list[MIMEData]
     model: str = "gpt-5-mini"
-    temperature: float = 0.0
     reasoning_effort: ChatCompletionReasoningEffort = "minimal"
     instructions: str | None = None
     """The modality of the document to load."""
