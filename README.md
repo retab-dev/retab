@@ -62,7 +62,6 @@ client = Retab(api_key="YOUR_RETAB_API_KEY")
 response = client.schemas.generate(
     documents=["Invoice.pdf"],
     model="retab-small",
-    temperature=0.0,          # keep the generation deterministic
 )
 ```
 
@@ -78,7 +77,6 @@ response = client.documents.extract(
     json_schema = "Invoice_schema.json",
     document = "Invoice.pdf",
     model="retab-small",
-    temperature=0
 )
 
 print(response)

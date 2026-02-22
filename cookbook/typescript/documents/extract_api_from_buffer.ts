@@ -40,7 +40,6 @@ async function main() {
     documents: [imageBuffer],
     model: 'gpt-5',
     json_schema: jsonSchema,
-    temperature: 0.0,
     n_consensus: 1,
   });
 
