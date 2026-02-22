@@ -62,7 +62,6 @@ export default class APIProjects extends CompositionClient {
         model,
         image_resolution_dpi,
         n_consensus,
-        temperature,
         metadata,
         extraction_id
     }: {
@@ -72,7 +71,6 @@ export default class APIProjects extends CompositionClient {
         model?: string,
         image_resolution_dpi?: number,
         n_consensus?: number,
-        temperature?: number,
         metadata?: Record<string, string>,
         extraction_id?: string,
     }, options?: RequestOptions): Promise<RetabParsedChatCompletion> {
@@ -89,7 +87,6 @@ export default class APIProjects extends CompositionClient {
         if (model !== undefined) bodyParams.model = model;
         if (image_resolution_dpi !== undefined) bodyParams.image_resolution_dpi = image_resolution_dpi;
         if (n_consensus !== undefined) bodyParams.n_consensus = n_consensus;
-        if (temperature !== undefined) bodyParams.temperature = temperature;
         // Note: metadata must be JSON-serialized since multipart forms only accept primitive types
         if (metadata !== undefined) bodyParams.metadata = JSON.stringify(metadata);
         if (extraction_id !== undefined) bodyParams.extraction_id = extraction_id;

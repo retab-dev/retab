@@ -2,9 +2,14 @@ from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionRea
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Any
 
+
+def compute_temperature(n_consensus: int) -> float:
+    """Compute temperature from n_consensus. 0.0 for single extraction, 1.0 for consensus."""
+    return 1.0 if n_consensus > 1 else 0.0
+
+
 class InferenceSettings(BaseModel):
     model: str = "gpt-5-mini"
-    temperature: float = 0.0
     reasoning_effort: ChatCompletionReasoningEffort = "minimal"
     image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM", ge=96, le=300)
     n_consensus: int = Field(default=1, ge=1, le=8, description="Number of consensus rounds to perform")

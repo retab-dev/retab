@@ -256,7 +256,6 @@ describe('Retab SDK Extract Tests', () => {
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
                 model: "gpt-5-nano",
-                temperature: 0.5,
                 image_resolution_dpi: 150,
                 n_consensus: 1,
             });
@@ -463,7 +462,6 @@ describe('Retab SDK Extract Tests', () => {
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
                 model: "gpt-5-nano",
-                temperature: 0,
             });
 
             const chunks: any[] = [];

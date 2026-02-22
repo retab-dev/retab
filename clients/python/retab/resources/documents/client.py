@@ -210,7 +210,6 @@ class BaseDocumentsMixin:
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
-        temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
         stream: bool = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
@@ -233,8 +232,6 @@ class BaseDocumentsMixin:
         }
         if stream is not FieldUnset:
             request_dict["stream"] = stream
-        if temperature is not FieldUnset:
-            request_dict["temperature"] = temperature
         if n_consensus is not FieldUnset:
             request_dict["n_consensus"] = n_consensus
         if image_resolution_dpi is not FieldUnset:
@@ -323,7 +320,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
-        temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
@@ -339,7 +335,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             model: The AI model to use for processing
             document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI
-            temperature: Model temperature setting (0-1)
             n_consensus: Number of consensus extractions to perform
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
@@ -356,7 +351,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             model=model,
             document=document,
             image_resolution_dpi=image_resolution_dpi,
-            temperature=temperature,
             n_consensus=n_consensus,
             metadata=metadata,
             additional_messages=additional_messages,
@@ -461,7 +455,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
-        temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
@@ -475,7 +468,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             model: The AI model to use for processing
             document: Document to process (file path, URL, or file-like object)
             image_resolution_dpi: Optional image resolution DPI.
-            temperature: Model temperature setting (0-1)
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
@@ -497,7 +489,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document=document,
             image_resolution_dpi=image_resolution_dpi,
             model=model,
-            temperature=temperature,
             stream=True,
             n_consensus=n_consensus,
             metadata=metadata,
@@ -798,7 +789,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
-        temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
@@ -814,7 +804,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             model: The AI model to use for processing
             document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI
-            temperature: Model temperature setting (0-1)
             n_consensus: Number of consensus extractions to perform
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
@@ -831,7 +820,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             model=model,
             document=document,
             image_resolution_dpi=image_resolution_dpi,
-            temperature=temperature,
             n_consensus=n_consensus,
             metadata=metadata,
             additional_messages=additional_messages,
@@ -848,7 +836,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
         image_resolution_dpi: int = FieldUnset,
-        temperature: float = FieldUnset,
         n_consensus: int = FieldUnset,
         metadata: dict[str, str] = FieldUnset,
         additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
@@ -862,7 +849,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             model: The AI model to use.
             document: Document to process (file path, URL, file-like object, or MIMEData)
             image_resolution_dpi: Optional image resolution DPI.
-            temperature: Model temperature setting (0-1).
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
@@ -883,7 +869,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document=document,
             image_resolution_dpi=image_resolution_dpi,
             model=model,
-            temperature=temperature,
             stream=True,
             n_consensus=n_consensus,
             metadata=metadata,
