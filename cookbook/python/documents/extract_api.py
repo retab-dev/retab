@@ -24,7 +24,6 @@ response = client.documents.extract(
     json_schema="../../assets/code/invoice_schema.json",
     image_resolution_dpi=192,
     browser_canvas="A4",
-    temperature=0.0,
     n_consensus=1,
 )
 

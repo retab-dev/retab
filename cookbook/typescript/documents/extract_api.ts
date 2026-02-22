@@ -26,7 +26,6 @@ async function main() {
     documents: ['../../assets/docs/invoice.jpeg'],
     model: 'gpt-5',
     json_schema: JSON.parse(fs.readFileSync('../../assets/code/invoice_schema.json', 'utf-8')),
-    temperature: 0.0,
     n_consensus: 1,
   });
 
