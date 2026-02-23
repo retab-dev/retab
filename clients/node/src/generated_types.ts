@@ -836,17 +836,6 @@ export const ZSplitResponse = z.lazy(() => (z.object({
 })));
 export type SplitResponse = z.infer<typeof ZSplitResponse>;
 
-export const ZGenerateSplitConfigRequest = z.lazy(() => (z.object({
-    document: ZMIMEData,
-    model: z.string().default("retab-small"),
-})));
-export type GenerateSplitConfigRequest = z.infer<typeof ZGenerateSplitConfigRequest>;
-
-export const ZGenerateSplitConfigResponse = z.lazy(() => (z.object({
-    subdocuments: z.array(ZSubdocument),
-})));
-export type GenerateSplitConfigResponse = z.infer<typeof ZGenerateSplitConfigResponse>;
-
 export const ZSplitResult = z.lazy(() => (z.object({
     name: z.string(),
     pages: z.array(z.number()),
@@ -937,6 +926,17 @@ export const ZProcessOCRRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
 })));
 export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
+
+export const ZGenerateSplitConfigRequest = z.lazy(() => (z.object({
+    document: ZMIMEData,
+    model: z.string().default("retab-small"),
+})));
+export type GenerateSplitConfigRequest = z.infer<typeof ZGenerateSplitConfigRequest>;
+
+export const ZGenerateSplitConfigResponse = z.lazy(() => (z.object({
+    subdocuments: z.array(ZSubdocument),
+})));
+export type GenerateSplitConfigResponse = z.infer<typeof ZGenerateSplitConfigResponse>;
 
 export const ZPartition = z.lazy(() => (z.object({
     key: z.string(),
