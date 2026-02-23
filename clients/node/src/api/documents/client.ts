@@ -1,6 +1,7 @@
 import { CompositionClient, RequestOptions } from "../../client.js";
-import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse, SplitRequest, ZSplitRequest, ZSplitResponse, ClassifyRequest, ZClassifyRequest, ZClassifyResponse } from "../../types.js";
-import type { SplitResponse, ClassifyResponse } from "../../generated_types.js";
+import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse, SplitRequest, ZSplitRequest, ZSplitResponse, ClassifyRequest, ZClassifyRequest, ZClassifyResponse, GenerateSplitConfigRequest, ZGenerateSplitConfigRequest } from "../../types.js";
+import type { SplitResponse, ClassifyResponse, GenerateSplitConfigResponse } from "../../generated_types.js";
+import { ZGenerateSplitConfigResponse } from "../../generated_types.js";
 
 
 export default class APIDocuments extends CompositionClient {
@@ -156,6 +157,15 @@ export default class APIDocuments extends CompositionClient {
             url: "/v1/documents/classify",
             method: "POST",
             body: { ...(await ZClassifyRequest.parseAsync(params)), ...(options?.body || {}) },
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+    async generate_split_config(params: GenerateSplitConfigRequest, options?: RequestOptions): Promise<GenerateSplitConfigResponse> {
+        return this._fetchJson(ZGenerateSplitConfigResponse, {
+            url: "/v1/documents/split/generate_config",
+            method: "POST",
+            body: { ...(await ZGenerateSplitConfigRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });
