@@ -15,7 +15,7 @@ from ...types.chat import ChatCompletionRetabMessage
 from ...types.documents.edit import EditRequest, EditResponse
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
-from ...types.documents.split import Subdocument, SplitRequest, SplitResponse
+from ...types.documents.split import Subdocument, SplitRequest, SplitResponse, GenerateSplitConfigRequest, GenerateSplitConfigResponse
 from ...types.documents.classify import Category
 from ...types.documents.classify import ClassifyRequest, ClassifyResponse
 from ...types.mime import MIMEData
@@ -175,6 +175,25 @@ class BaseDocumentsMixin:
 
         split_request = SplitRequest(**request_dict)
         return PreparedRequest(method="POST", url="/v1/documents/split", data=split_request.model_dump(mode="json", exclude_unset=True))
+
+    def _prepare_generate_split_config(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        model: str,
+        **extra_body: Any,
+    ) -> PreparedRequest:
+        mime_document = prepare_mime_document(document)
+
+        request_dict: dict[str, Any] = {
+            "document": mime_document,
+            "model": model,
+        }
+
+        if extra_body:
+            request_dict.update(extra_body)
+
+        request = GenerateSplitConfigRequest(**request_dict)
+        return PreparedRequest(method="POST", url="/v1/documents/split/generate_config", data=request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_classify(
         self,
@@ -670,6 +689,44 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(request)
         return SplitResponse.model_validate(response)
 
+    def generate_split_config(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        model: str,
+        **extra_body: Any,
+    ) -> GenerateSplitConfigResponse:
+        """
+        Analyze a document and automatically generate a splitting configuration.
+
+        This method sends a document to an LLM which identifies the distinct types
+        of content (subdocuments) and detects repeated patterns that require partition keys.
+
+        Args:
+            document: The document to analyze. Can be a file path, file-like object, MIMEData, PIL Image, or URL.
+            model: The AI model to use for analysis (e.g., "retab-small").
+
+        Returns:
+            GenerateSplitConfigResponse: Response containing a list of suggested subdocuments
+                with names, descriptions, and optional partition keys.
+
+        Example:
+            ```python
+            response = retab.documents.generate_split_config(
+                document="property_portfolio.pdf",
+                model="retab-small",
+            )
+            for subdoc in response.subdocuments:
+                print(f"{subdoc.name}: {subdoc.description} (partition_key={subdoc.partition_key})")
+            ```
+        """
+        request = self._prepare_generate_split_config(
+            document=document,
+            model=model,
+            **extra_body,
+        )
+        response = self._client._prepared_request(request)
+        return GenerateSplitConfigResponse.model_validate(response)
+
     def classify(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
@@ -1049,6 +1106,44 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         )
         response = await self._client._prepared_request(request)
         return SplitResponse.model_validate(response)
+
+    async def generate_split_config(
+        self,
+        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        model: str,
+        **extra_body: Any,
+    ) -> GenerateSplitConfigResponse:
+        """
+        Analyze a document and automatically generate a splitting configuration asynchronously.
+
+        This method sends a document to an LLM which identifies the distinct types
+        of content (subdocuments) and detects repeated patterns that require partition keys.
+
+        Args:
+            document: The document to analyze. Can be a file path, file-like object, MIMEData, PIL Image, or URL.
+            model: The AI model to use for analysis (e.g., "retab-small").
+
+        Returns:
+            GenerateSplitConfigResponse: Response containing a list of suggested subdocuments
+                with names, descriptions, and optional partition keys.
+
+        Example:
+            ```python
+            response = await retab.documents.generate_split_config(
+                document="property_portfolio.pdf",
+                model="retab-small",
+            )
+            for subdoc in response.subdocuments:
+                print(f"{subdoc.name}: {subdoc.description} (partition_key={subdoc.partition_key})")
+            ```
+        """
+        request = self._prepare_generate_split_config(
+            document=document,
+            model=model,
+            **extra_body,
+        )
+        response = await self._client._prepared_request(request)
+        return GenerateSplitConfigResponse.model_validate(response)
 
     async def classify(
         self,

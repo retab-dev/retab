@@ -146,6 +146,12 @@ export const ZClassifyRequest = z.object({
 });
 export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
 
+export const ZGenerateSplitConfigRequest = z.object({
+    ...generated.ZGenerateSplitConfigRequest.schema.shape,
+    document: ZMIMEData,
+});
+export type GenerateSplitConfigRequest = z.input<typeof ZGenerateSplitConfigRequest>;
+
 export const ZEditRequest = z.object({
     ...generated.ZEditRequest.schema.shape,
     document: ZMIMEData.nullable().optional(),

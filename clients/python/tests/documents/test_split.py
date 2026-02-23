@@ -4,7 +4,7 @@ from typing import Literal, get_args
 import pytest
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.split import Subdocument, SplitResponse, SplitResult
+from retab.types.documents.split import Subdocument, SplitResponse, SplitResult, GenerateSplitConfigResponse
 
 # Get the directory containing the tests
 TEST_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -296,3 +296,70 @@ async def test_split_discontinuous_categories(
     # This test just verifies the response structure is correct
     total_splits = sum(subdocument_counts.values())
     assert total_splits == len(response.splits), "All splits should be counted"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generate Split Config tests
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client_type", get_args(ClientType))
+async def test_generate_split_config_fidelity(
+    client_type: ClientType,
+    sync_client: Retab,
+    async_client: AsyncRetab,
+    multi_page_pdf_path: str,
+) -> None:
+    """Test generate_split_config with the fidelity PDF."""
+    response: GenerateSplitConfigResponse
+
+    if client_type == "sync":
+        with sync_client as client:
+            response = client.documents.generate_split_config(
+                document=multi_page_pdf_path,
+                model="retab-small",
+            )
+    elif client_type == "async":
+        async with async_client:
+            response = await async_client.documents.generate_split_config(
+                document=multi_page_pdf_path,
+                model="retab-small",
+            )
+
+    assert isinstance(response, GenerateSplitConfigResponse)
+    assert len(response.subdocuments) > 0, "Should detect at least one subdocument type"
+    for subdoc in response.subdocuments:
+        assert subdoc.name, "Subdocument should have a name"
+        assert subdoc.description, "Subdocument should have a description"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pdf_path", [
+    "/workspaces/monorepo/ilovepdf_merged.pdf",
+    "/workspaces/monorepo/Use Case 1_Res Vendor KVFREF24774193-GA.pdf",
+])
+async def test_generate_split_config_test_pdfs(
+    sync_client: Retab,
+    pdf_path: str,
+) -> None:
+    """Test generate_split_config with the two test PDFs."""
+    if not os.path.exists(pdf_path):
+        pytest.skip(f"Test PDF not found: {pdf_path}")
+
+    with sync_client as client:
+        response = client.documents.generate_split_config(
+            document=pdf_path,
+            model="retab-small",
+        )
+
+    assert isinstance(response, GenerateSplitConfigResponse)
+    assert len(response.subdocuments) > 0, f"Should detect subdocuments in {os.path.basename(pdf_path)}"
+
+    print(f"\n{'=' * 60}")
+    print(f"PDF: {os.path.basename(pdf_path)}")
+    print(f"Subdocuments detected: {len(response.subdocuments)}")
+    for subdoc in response.subdocuments:
+        pk = f" (partition_key: {subdoc.partition_key})" if subdoc.partition_key else ""
+        print(f"  - {subdoc.name}: {subdoc.description}{pk}")
+    print(f"{'=' * 60}")
