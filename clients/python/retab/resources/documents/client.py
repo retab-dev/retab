@@ -654,7 +654,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document: The document to split. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             subdocuments: List of subdocuments to split the document into. Each subdocument should have a 'name' and 'description'.
                 Can be Subdocument objects or dicts with 'name' and 'description' keys.
-            model: The AI model to use for document splitting (e.g., "gemini-2.5-flash").
+            model: The AI model to use for document splitting (e.g., "retab-small").
             n_consensus: Number of consensus split runs to perform.
 
         Returns:
@@ -668,7 +668,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             ```python
             response = retab.documents.split(
                 document="invoice_batch.pdf",
-                model="gemini-2.5-flash",
+                model="retab-small",
                 subdocuments=[
                     {"name": "invoice", "description": "Invoice documents with billing information"},
                     {"name": "receipt", "description": "Receipt documents for payments"},
@@ -745,7 +745,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document: The document to classify. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             categories: List of categories to classify the document into. Each category should have a 'name' and 'description'.
                 Can be Category objects or dicts with 'name' and 'description' keys.
-            model: The AI model to use for document classification (e.g., "gemini-2.5-flash").
+            model: The AI model to use for document classification (e.g., "retab-small").
 
         Returns:
             ClassifyResponse: Response containing:
@@ -758,7 +758,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             ```python
             response = retab.documents.classify(
                 document="invoice.pdf",
-                model="gemini-2.5-flash",
+                model="retab-small",
                 categories=[
                     {"name": "invoice", "description": "Invoice documents with billing information"},
                     {"name": "receipt", "description": "Receipt documents for payments"},
@@ -1032,7 +1032,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             instructions: Instructions describing how to fill the form fields.
             document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
                 Mutually exclusive with template_id.
-            model: The LLM model to use for inference. Defaults to "gemini-2.5-pro".
+            model: The LLM model to use for inference. Defaults to "retab-large".
             template_id: Template ID to use for filling. When provided, uses the template's pre-defined form fields
                 and empty PDF. Only works for PDF documents. Mutually exclusive with document.
 
@@ -1072,7 +1072,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document: The document to split. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             subdocuments: List of subdocuments to split the document into. Each subdocument should have a 'name' and 'description'.
                 Can be Subdocument objects or dicts with 'name' and 'description' keys.
-            model: The AI model to use for document splitting (e.g., "gemini-2.5-flash").
+            model: The AI model to use for document splitting (e.g., "retab-small").
             n_consensus: Number of consensus split runs to perform.
 
         Returns:
@@ -1086,7 +1086,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             ```python
             response = await retab.documents.split(
                 document="invoice_batch.pdf",
-                model="gemini-2.5-flash",
+                model="retab-small",
                 subdocuments=[
                     {"name": "invoice", "description": "Invoice documents with billing information"},
                     {"name": "receipt", "description": "Receipt documents for payments"},
@@ -1163,7 +1163,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document: The document to classify. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             categories: List of categories to classify the document into. Each category should have a 'name' and 'description'.
                 Can be Category objects or dicts with 'name' and 'description' keys.
-            model: The AI model to use for document classification (e.g., "gemini-2.5-flash").
+            model: The AI model to use for document classification (e.g., "retab-small").
 
         Returns:
             ClassifyResponse: Response containing:
@@ -1176,7 +1176,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             ```python
             response = await retab.documents.classify(
                 document="invoice.pdf",
-                model="gemini-2.5-flash",
+                model="retab-small",
                 categories=[
                     {"name": "invoice", "description": "Invoice documents with billing information"},
                     {"name": "receipt", "description": "Receipt documents for payments"},

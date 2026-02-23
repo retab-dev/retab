@@ -110,7 +110,7 @@ describe('Retab SDK Edit Tests', () => {
                     ).toString('base64')}`,
                 },
                 instructions: fidelityInstructions,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
             });
 
             validateEditResponse(response);
@@ -128,7 +128,7 @@ describe('Retab SDK Edit Tests', () => {
                     ).toString('base64')}`,
                 },
                 instructions: fidelityInstructions,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
             });
 
             // Validate basic structure
@@ -159,7 +159,7 @@ describe('Retab SDK Edit Tests', () => {
                     ).toString('base64')}`,
                 },
                 instructions: fidelityInstructions,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
             });
 
             validateEditResponse(response);
@@ -191,7 +191,7 @@ describe('Retab SDK Edit Tests', () => {
                     ).toString('base64')}`,
                 },
                 instructions: fidelityInstructions,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
             });
 
             validateEditResponse(response);

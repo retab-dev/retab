@@ -110,7 +110,7 @@ describe('Retab SDK Split Tests', () => {
         test('test_split_subdocuments_with_file_path', async () => {
             const response = await client.documents.split({
                 document: multiPagePdfPath,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
                 subdocuments: DEFAULT_SUBDOCUMENTS,
             });
 
@@ -127,7 +127,7 @@ describe('Retab SDK Split Tests', () => {
                     filename: 'fidelity_original.pdf',
                     url: `data:application/pdf;base64,${fileBuffer.toString('base64')}`,
                 },
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
                 subdocuments: DEFAULT_SUBDOCUMENTS,
             });
 
@@ -140,7 +140,7 @@ describe('Retab SDK Split Tests', () => {
         test('test_split_subdocuments_response_structure', async () => {
             const response = await client.documents.split({
                 document: multiPagePdfPath,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
                 subdocuments: DEFAULT_SUBDOCUMENTS,
             });
 
@@ -169,7 +169,7 @@ describe('Retab SDK Split Tests', () => {
         test('test_split_subdocuments_page_coverage', async () => {
             const response = await client.documents.split({
                 document: multiPagePdfPath,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
                 subdocuments: DEFAULT_SUBDOCUMENTS,
             });
 
@@ -192,7 +192,7 @@ describe('Retab SDK Split Tests', () => {
 
             const response = await client.documents.split({
                 document: multiPagePdfPath,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
                 subdocuments: minimalSubdocuments,
             });
 
@@ -215,7 +215,7 @@ describe('Retab SDK Split Tests', () => {
 
             const response = await client.documents.split({
                 document: multiPagePdfPath,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
                 subdocuments: discontinuousSubdocuments,
             });
 
@@ -245,7 +245,7 @@ describe('Retab SDK Split Tests', () => {
 
             const response = await client.documents.split({
                 document: multiPagePdfPath,
-                model: 'gemini-2.5-flash',
+                model: 'retab-small',
                 subdocuments: detailedSubdocuments,
             });
 

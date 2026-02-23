@@ -9,7 +9,7 @@ def compute_temperature(n_consensus: int) -> float:
 
 
 class InferenceSettings(BaseModel):
-    model: str = "gpt-5-mini"
+    model: str = "retab-small"
     reasoning_effort: ChatCompletionReasoningEffort = "minimal"
     image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM", ge=96, le=300)
     n_consensus: int = Field(default=1, ge=1, le=8, description="Number of consensus rounds to perform")

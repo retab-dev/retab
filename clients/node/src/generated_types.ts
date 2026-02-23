@@ -227,7 +227,7 @@ export const ZExtractionSettings = z.lazy(() => (ZInferenceSettings.schema).merg
 export type ExtractionSettings = z.infer<typeof ZExtractionSettings>;
 
 export const ZInferenceSettings = z.lazy(() => (z.object({
-    model: z.string().default("gpt-5-mini"),
+    model: z.string().default("retab-small"),
     reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
     image_resolution_dpi: z.number().default(192),
     n_consensus: z.number().default(1),
@@ -439,7 +439,7 @@ export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
 
 export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     documents: z.array(ZMIMEData),
-    model: z.string().default("gpt-5-mini"),
+    model: z.string().default("retab-small"),
     reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
     instructions: z.string().nullable().optional(),
     image_resolution_dpi: z.number().default(192),

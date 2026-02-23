@@ -10,7 +10,7 @@ from retab.types.documents.extract import RetabParsedChatCompletion
 T = TypeVar("T")
 
 # Global test constants
-TEST_MODEL = "gpt-5-nano"
+TEST_MODEL = "retab-micro"
 TEST_MODALITY = "native"
 
 
