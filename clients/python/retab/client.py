@@ -55,9 +55,6 @@ class BaseRetab:
         base_url: Optional[str] = None,
         timeout: float = 1800.0,
         max_retries: int = 3,
-        openai_api_key: Optional[str] = FieldUnset,
-        gemini_api_key: Optional[str] = FieldUnset,
-        xai_api_key: Optional[str] = FieldUnset,
     ) -> None:
         if api_key is None:
             api_key = os.environ.get("RETAB_API_KEY")
@@ -81,22 +78,6 @@ class BaseRetab:
             "Content-Type": "application/json",
         }
 
-        # Only check environment variables if the value is FieldUnset
-        if openai_api_key is FieldUnset:
-            openai_api_key = os.environ.get("OPENAI_API_KEY")
-
-        if gemini_api_key is FieldUnset:
-            gemini_api_key = os.environ.get("GEMINI_API_KEY")
-
-        # Only add headers if the values are actual strings (not None or FieldUnset)
-        if openai_api_key and openai_api_key is not FieldUnset:
-            self.headers["OpenAI-Api-Key"] = openai_api_key
-
-        if xai_api_key and xai_api_key is not FieldUnset:
-            self.headers["XAI-Api-Key"] = xai_api_key
-
-        if gemini_api_key and gemini_api_key is not FieldUnset:
-            self.headers["Gemini-Api-Key"] = gemini_api_key
 
     def _prepare_url(self, endpoint: str) -> str:
         return f"{self.base_url}/{endpoint.lstrip('/')}"
@@ -149,8 +130,6 @@ class Retab(BaseRetab):
         base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com
         timeout (float): Request timeout in seconds. Defaults to 1800.0 (30 minutes)
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
-        openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
-        gemini_api_key (str, optional): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
 
     Attributes:
         files: Access to file operations
@@ -170,16 +149,12 @@ class Retab(BaseRetab):
         base_url: Optional[str] = None,
         timeout: float = 1800.0,
         max_retries: int = 3,
-        openai_api_key: Optional[str] = FieldUnset,
-        gemini_api_key: Optional[str] = FieldUnset,
     ) -> None:
         super().__init__(
             api_key=api_key,
             base_url=base_url,
             timeout=timeout,
             max_retries=max_retries,
-            openai_api_key=openai_api_key,
-            gemini_api_key=gemini_api_key,
         )
 
         self.client = httpx.Client(timeout=self.timeout)
@@ -445,10 +420,6 @@ class AsyncRetab(BaseRetab):
         base_url (str, optional): Base URL for API requests. Defaults to https://api.retab.com
         timeout (float): Request timeout in seconds. Defaults to 1800.0 (30 minutes)
         max_retries (int): Maximum number of retries for failed requests. Defaults to 3
-        openai_api_key (str, optional): OpenAI API key. Will look for OPENAI_API_KEY env variable if not provided
-        claude_api_key (str, optional): Claude API key. Will look for CLAUDE_API_KEY env variable if not provided
-        xai_api_key (str, optional): XAI API key. Will look for XAI_API_KEY env variable if not provided
-        gemini_api_key (str, optional): Gemini API key. Will look for GEMINI_API_KEY env variable if not provided
 
     Attributes:
         files: Access to asynchronous file operations
@@ -468,16 +439,12 @@ class AsyncRetab(BaseRetab):
         base_url: Optional[str] = None,
         timeout: float = 1800.0,
         max_retries: int = 3,
-        openai_api_key: Optional[str] = FieldUnset,
-        gemini_api_key: Optional[str] = FieldUnset,
     ) -> None:
         super().__init__(
             api_key=api_key,
             base_url=base_url,
             timeout=timeout,
             max_retries=max_retries,
-            openai_api_key=openai_api_key,
-            gemini_api_key=gemini_api_key,
         )
 
         self.client = httpx.AsyncClient(timeout=self.timeout)

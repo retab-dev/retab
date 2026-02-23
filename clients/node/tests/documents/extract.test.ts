@@ -20,7 +20,7 @@ const TEST_TIMEOUT = 60000;
 const MODALITY = "native";
 
 // List of AI Models to test
-type AIModels = "gpt-5-nano" | "gemini-2.5-flash-lite";
+type AIModels = "retab-micro";
 
 type ClientType = "sync" | "async";
 type ResponseModeType = "stream" | "parse";
@@ -190,7 +190,7 @@ describe('Retab SDK Extract Tests', () => {
             responseModes.forEach((responseMode) => {
                 test(`test_extract_openai_${clientType}_${responseMode}`, async () => {
                     await baseTestExtract(
-                        "gpt-5-nano",
+                        "retab-micro",
                         clientType,
                         responseMode,
                         client,
@@ -210,7 +210,7 @@ describe('Retab SDK Extract Tests', () => {
                 await new Promise(resolve => setTimeout(resolve, requestNumber * 100));
 
                 await baseTestExtract(
-                    "gpt-5-nano",
+                    "retab-micro",
                     "async",
                     "parse",
                     client,
@@ -226,7 +226,7 @@ describe('Retab SDK Extract Tests', () => {
             const response = await client.documents.extract({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
             });
 
             // Validate basic structure
@@ -255,7 +255,7 @@ describe('Retab SDK Extract Tests', () => {
             const response = await client.documents.extract({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
                 image_resolution_dpi: 150,
                 n_consensus: 1,
             });
@@ -266,7 +266,7 @@ describe('Retab SDK Extract Tests', () => {
     });
 
     describe('Extract with Different Models', () => {
-        const models: AIModels[] = ["gpt-5-nano", "gemini-2.5-flash-lite"];
+        const models: AIModels[] = ["retab-micro"];
 
         models.forEach((model) => {
             test(`test_extract_model_${model.replace(/[^a-zA-Z0-9]/g, '_')}`, async () => {
@@ -295,7 +295,7 @@ describe('Retab SDK Extract Tests', () => {
             const response = await client.documents.extract({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
                 additional_messages: additionalMessages,
             });
 
@@ -332,7 +332,7 @@ describe('Retab SDK Extract Tests', () => {
             const response = await client.documents.extract({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
                 additional_messages: additionalMessages,
             });
 
@@ -356,7 +356,7 @@ describe('Retab SDK Extract Tests', () => {
             const response = await client.documents.extract({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
                 additional_messages: additionalMessages,
             });
 
@@ -384,7 +384,7 @@ describe('Retab SDK Extract Tests', () => {
             const response = await client.documents.extract({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
                 additional_messages: additionalMessages,
             });
 
@@ -399,7 +399,7 @@ describe('Retab SDK Extract Tests', () => {
             const streamIterator = await client.documents.extract_stream({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
             });
 
             const chunks: any[] = [];
@@ -424,7 +424,7 @@ describe('Retab SDK Extract Tests', () => {
             const streamIterator = await client.documents.extract_stream({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
             });
 
             let lastChunk: any = null;
@@ -442,7 +442,7 @@ describe('Retab SDK Extract Tests', () => {
             const streamIterator = await client.documents.extract_stream({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
             });
 
             let lastChunk: any = null;
@@ -461,7 +461,7 @@ describe('Retab SDK Extract Tests', () => {
             const streamIterator = await client.documents.extract_stream({
                 json_schema: bookingConfirmationJsonSchema,
                 document: bookingConfirmationFilePath1,
-                model: "gpt-5-nano",
+                model: "retab-micro",
             });
 
             const chunks: any[] = [];

@@ -11,7 +11,7 @@ TEST_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # List of AI Models to test for split (models that support vision/document analysis)
 AI_MODELS = Literal[
-    "gemini-2.5-flash",
+    "retab-small",
 ]
 
 ClientType = Literal[
@@ -135,29 +135,6 @@ async def base_test_split(
     return response
 
 
-@pytest.mark.asyncio
-@pytest.mark.xdist_group(name="gemini")
-@pytest.mark.parametrize("client_type", get_args(ClientType))
-async def test_split_document(
-    client_type: ClientType,
-    sync_client: Retab,
-    async_client: AsyncRetab,
-    multi_page_pdf_path: str,
-    split_subdocuments: list[Subdocument],
-) -> None:
-    """Test document splitting with Gemini models."""
-    response = await base_test_split(
-        model="gemini-2.5-flash",
-        client_type=client_type,
-        sync_client=sync_client,
-        async_client=async_client,
-        document_path=multi_page_pdf_path,
-        subdocuments=split_subdocuments,
-    )
-    
-    # Additional validations
-    validate_splits_are_ordered(response)
-
 
 @pytest.mark.asyncio
 async def test_split_response_structure(
@@ -169,7 +146,7 @@ async def test_split_response_structure(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="gemini-2.5-flash",
+            model="retab-small",
             subdocuments=split_subdocuments,
         )
     
@@ -206,7 +183,7 @@ async def test_split_with_dict_categories(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="gemini-2.5-flash",
+            model="retab-small",
             subdocuments=dict_subdocuments,
         )
     
@@ -230,7 +207,7 @@ async def test_split_page_coverage(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="gemini-2.5-flash",
+            model="retab-small",
             subdocuments=split_subdocuments,
         )
     
@@ -255,7 +232,7 @@ async def test_split_with_minimal_categories(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="gemini-2.5-flash",
+            model="retab-small",
             subdocuments=minimal_subdocuments,
         )
     
@@ -281,7 +258,7 @@ async def test_split_discontinuous_categories(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="gemini-2.5-flash",
+            model="retab-small",
             subdocuments=discontinuous_subdocuments,
         )
     

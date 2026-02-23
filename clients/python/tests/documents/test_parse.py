@@ -11,8 +11,8 @@ from retab.types.documents.parse import ParseResult, TableParsingFormat
 
 # List of AI Models to test (focusing on models that support parsing)
 AI_MODELS = Literal[
-    "gemini-2.5-flash-lite",
-    "gpt-5-nano",
+    "retab-micro",
+    "retab-micro",
 ]
 
 ClientType = Literal[
@@ -86,28 +86,6 @@ async def base_test_parse(
 
 
 @pytest.mark.asyncio
-@pytest.mark.xdist_group(name="gemini")
-@pytest.mark.parametrize("client_type", get_args(ClientType))
-@pytest.mark.parametrize("response_mode", get_args(ResponseModeType))
-async def test_parse_gemini(
-    client_type: ClientType,
-    response_mode: ResponseModeType,
-    sync_client: Retab,
-    async_client: AsyncRetab,
-    booking_confirmation_file_path_1: str,
-) -> None:
-    """Test document parsing with Gemini models."""
-    await base_test_parse(
-        model="gemini-2.5-flash-lite",
-        client_type=client_type,
-        response_mode=response_mode,
-        sync_client=sync_client,
-        async_client=async_client,
-        booking_confirmation_file_path_1=booking_confirmation_file_path_1,
-    )
-
-
-@pytest.mark.asyncio
 @pytest.mark.parametrize("table_format", get_args(TableParsingFormat))
 async def test_parse_table_formats(
     sync_client: Retab,
@@ -118,7 +96,7 @@ async def test_parse_table_formats(
     with sync_client as client:
         response = client.documents.parse(
             document=booking_confirmation_file_path_1,
-            model="gemini-2.5-flash-lite",
+            model="retab-micro",
             table_parsing_format=table_format,
         )
     
@@ -138,7 +116,7 @@ async def test_parse_image_resolution(
     with sync_client as client:
         response = client.documents.parse(
             document=booking_confirmation_file_path_1,
-            model="gemini-2.5-flash-lite",
+            model="retab-micro",
             image_resolution_dpi=dpi,
         )
     
@@ -159,7 +137,7 @@ async def test_parse_overload(
     """Test multiple concurrent parse requests to verify system stability."""
     await asyncio.sleep(request_number * 0.1)
     await base_test_parse(
-        model="gemini-2.5-flash-lite",
+        model="retab-micro",
         client_type="async",
         response_mode="parse",
         sync_client=sync_client,
@@ -177,7 +155,7 @@ async def test_parse_response_structure(
     with sync_client as client:
         response = client.documents.parse(
             document=booking_confirmation_file_path_1,
-            model="gemini-2.5-flash-lite",
+            model="retab-micro",
         )
     
     # Validate basic structure

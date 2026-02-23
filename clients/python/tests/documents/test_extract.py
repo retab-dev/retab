@@ -13,11 +13,8 @@ from retab.types.documents.extract import RetabParsedChatCompletion
 from retab.types.chat import ChatCompletionRetabMessage
 # List of AI Providers to test
 AI_MODELS = Literal[
-    "gpt-5-nano",
-    "gemini-2.5-flash-lite",
-    # "grok-2-vision-1212",
-    # "claude-3-5-sonnet-latest",
-    # "gemini-1.5-flash-8b"
+    "retab-micro",
+    "retab-micro",
 ]
 ClientType = Literal[
     "sync",
@@ -111,7 +108,7 @@ async def test_extract_openai(
     booking_confirmation_json_schema: dict[str, Any],
 ) -> None:
     await base_test_extract(
-        model="gpt-5-nano",
+        model="retab-micro",
         client_type=client_type,
         response_mode=response_mode,
         sync_client=sync_client,
@@ -132,7 +129,7 @@ async def test_extract_overload(
 ) -> None:
     await asyncio.sleep(request_number * 0.1)
     await base_test_extract(
-        model="gpt-5-nano",
+        model="retab-micro",
         client_type="async",
         response_mode="parse",
         sync_client=sync_client,
@@ -161,7 +158,7 @@ async def test_extract_with_text_additional_message(
         response = await async_client.documents.extract(
             json_schema=booking_confirmation_json_schema,
             document=booking_confirmation_file_path_1,
-            model="gpt-5-nano",
+            model="retab-micro",
             additional_messages=additional_messages,
         )
 
@@ -202,7 +199,7 @@ async def test_extract_with_multipart_additional_message(
         response = await async_client.documents.extract(
             json_schema=booking_confirmation_json_schema,
             document=booking_confirmation_file_path_1,
-            model="gpt-5-nano",
+            model="retab-micro",
             additional_messages=additional_messages,
         )
 
@@ -231,7 +228,7 @@ async def test_extract_with_system_additional_message(
         response = await async_client.documents.extract(
             json_schema=booking_confirmation_json_schema,
             document=booking_confirmation_file_path_1,
-            model="gpt-5-nano",
+            model="retab-micro",
             additional_messages=additional_messages,
         )
 
@@ -264,7 +261,7 @@ async def test_extract_with_multiple_additional_messages(
         response = await async_client.documents.extract(
             json_schema=booking_confirmation_json_schema,
             document=booking_confirmation_file_path_1,
-            model="gpt-5-nano",
+            model="retab-micro",
             additional_messages=additional_messages,
         )
 

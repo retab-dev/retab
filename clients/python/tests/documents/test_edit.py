@@ -13,8 +13,8 @@ TEST_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # List of AI Models to test for edit (models that support form filling)
 AI_MODELS = Literal[
-    "gemini-2.5-pro",
-    "gemini-2.5-flash",
+    "retab-large",
+    "retab-small",
 ]
 
 ClientType = Literal[
@@ -121,30 +121,6 @@ async def base_test_edit(
     return response
 
 
-@pytest.mark.asyncio
-@pytest.mark.xdist_group(name="gemini")
-@pytest.mark.parametrize("client_type", get_args(ClientType))
-async def test_edit_fidelity_form(
-    client_type: ClientType,
-    sync_client: Retab,
-    async_client: AsyncRetab,
-    fidelity_form_path: str,
-    fidelity_instructions: str,
-) -> None:
-    """Test document editing with the Fidelity wire transfer form."""
-    response = await base_test_edit(
-        model="gemini-2.5-flash",
-        client_type=client_type,
-        sync_client=sync_client,
-        async_client=async_client,
-        document_path=fidelity_form_path,
-        instructions=fidelity_instructions,
-    )
-    
-    # Validate specific form fields from the instructions
-    instructions_dict = json.loads(fidelity_instructions)
-    validate_fidelity_form_fields(response, instructions_dict)
-
 
 @pytest.mark.asyncio
 async def test_edit_response_structure(
@@ -157,7 +133,7 @@ async def test_edit_response_structure(
         response = client.documents.edit(
             document=fidelity_form_path,
             instructions=fidelity_instructions,
-            model="gemini-2.5-flash",
+            model="retab-small",
         )
     
     # Validate basic structure
@@ -189,7 +165,7 @@ async def test_edit_filled_document_is_valid(
         response = client.documents.edit(
             document=fidelity_form_path,
             instructions=fidelity_instructions,
-            model="gemini-2.5-flash",
+            model="retab-small",
         )
     
     validate_edit_response(response)
@@ -217,7 +193,7 @@ async def test_edit_form_data_has_filled_values(
         response = client.documents.edit(
             document=fidelity_form_path,
             instructions=fidelity_instructions,
-            model="gemini-2.5-flash",
+            model="retab-small",
         )
     
     validate_edit_response(response)

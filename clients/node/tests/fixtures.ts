@@ -76,5 +76,5 @@ export function getFidelityInstructionsJson(): Record<string, any> {
 }
 
 // Global test constants
-export const TEST_MODEL = "gpt-5-nano";
+export const TEST_MODEL = "retab-micro";
 export const TEST_MODALITY = "native";

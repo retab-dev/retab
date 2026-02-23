@@ -17,7 +17,7 @@ function generateId(): string {
 const TEST_TIMEOUT = 180000;
 
 // List of AI Models to test (focusing on models that support parsing)
-type AIModels = "gemini-2.5-flash-lite" | "gpt-5-nano";
+type AIModels = "retab-micro";
 
 type ClientType = "sync" | "async";
 
@@ -104,28 +104,6 @@ describe('Retab SDK Parse Tests', () => {
         bookingConfirmationFilePath1 = getBookingConfirmationFilePath1();
     });
 
-    describe('Parse with Gemini', () => {
-        test('test_parse_gemini_sync', async () => {
-            await baseTestParse(
-                "gemini-2.5-flash-lite",
-                "sync",
-                "parse",
-                client,
-                bookingConfirmationFilePath1,
-            );
-        }, { timeout: TEST_TIMEOUT });
-
-        test('test_parse_gemini_async', async () => {
-            await baseTestParse(
-                "gemini-2.5-flash-lite",
-                "async",
-                "parse",
-                client,
-                bookingConfirmationFilePath1,
-            );
-        }, { timeout: TEST_TIMEOUT });
-    });
-
     describe('Parse Table Formats', () => {
         // Reduced to avoid timeouts - only test html and markdown 
         const tableFormats: TableParsingFormat[] = ["html", "markdown"];
@@ -134,7 +112,7 @@ describe('Retab SDK Parse Tests', () => {
             test(`test_parse_table_format_${tableFormat}`, async () => {
                 const response = await client.documents.parse({
                     document: bookingConfirmationFilePath1,
-                    model: "gemini-2.5-flash-lite",
+                    model: "retab-micro",
                     table_parsing_format: tableFormat,
                 });
 
@@ -153,7 +131,7 @@ describe('Retab SDK Parse Tests', () => {
             test(`test_parse_image_resolution_${dpi}`, async () => {
                 const response = await client.documents.parse({
                     document: bookingConfirmationFilePath1,
-                    model: "gemini-2.5-flash-lite",
+                    model: "retab-micro",
                     image_resolution_dpi: dpi,
                 });
 
@@ -172,7 +150,7 @@ describe('Retab SDK Parse Tests', () => {
                 await new Promise(resolve => setTimeout(resolve, requestNumber * 100));
 
                 await baseTestParse(
-                    "gemini-2.5-flash-lite",
+                    "retab-micro",
                     "async",
                     "parse",
                     client,
@@ -187,7 +165,7 @@ describe('Retab SDK Parse Tests', () => {
         test('test_parse_response_structure', async () => {
             const response = await client.documents.parse({
                 document: bookingConfirmationFilePath1,
-                model: "gemini-2.5-flash-lite",
+                model: "retab-micro",
             });
 
             // Validate basic structure
