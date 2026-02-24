@@ -84,14 +84,14 @@ export default class APIDocuments extends CompositionClient {
         });
     }
     /**
-     * Split a document into sections based on provided categories.
+     * Split a document into sections based on provided subdocuments.
      * 
      * This method analyzes a multi-page document and classifies pages into 
-     * user-defined categories, returning the page ranges for each section.
+     * user-defined subdocuments, returning the page ranges for each section.
      * 
      * @param params - SplitRequest containing:
      *   - document: MIMEData object, file path, Buffer, or Readable stream
-     *   - categories: Array of categories with 'name' and 'description'
+     *   - subdocuments: Array of subdocuments with 'name' and 'description'
      *   - model: LLM model for inference (e.g., "retab-small")
      * @param options - Optional request options
      * @returns SplitResponse containing splits array with name and pages for each section
@@ -101,7 +101,7 @@ export default class APIDocuments extends CompositionClient {
      * const response = await retab.documents.split({
      *     document: "invoice_batch.pdf",
      *     model: "retab-small",
-     *     categories: [
+     *     subdocuments: [
      *         { name: "invoice", description: "Invoice documents with billing information" },
      *         { name: "receipt", description: "Receipt documents for payments" },
      *         { name: "contract", description: "Legal contract documents" },
