@@ -41,7 +41,7 @@ class StepStatus(BaseModel):
     )
     input_document: Optional[BaseMIMEData] = Field(default=None, description="Reference to input document")
     output_document: Optional[BaseMIMEData] = Field(default=None, description="Reference to output document")
-    split_documents: Optional[Dict[str, BaseMIMEData]] = Field(default=None, description="For split nodes: category -> document reference")
+    split_documents: Optional[Dict[str, BaseMIMEData]] = Field(default=None, description="For split nodes: subdocument -> document reference")
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review was completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
@@ -122,4 +122,3 @@ class ResumeWorkflowResponse(BaseModel):
     )
     queue_position: Optional[int] = Field(default=None, description="Position in queue if queued")
     queue_item_id: str = Field(..., description="ID of the queue item for tracking")
-

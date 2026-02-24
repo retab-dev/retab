@@ -170,11 +170,11 @@ async def test_split_response_structure(
 
 
 @pytest.mark.asyncio
-async def test_split_with_dict_categories(
+async def test_split_with_dict_subdocuments(
     sync_client: Retab,
     multi_page_pdf_path: str,
 ) -> None:
-    """Test splitting with categories provided as dictionaries."""
+    """Test splitting with subdocuments provided as dictionaries."""
     dict_subdocuments = [
         {"name": "content", "description": "Main content sections"},
         {"name": "footer", "description": "Footer sections with legal text or page numbers"},
@@ -191,7 +191,7 @@ async def test_split_with_dict_categories(
     assert isinstance(response, SplitResponse), "Response should be SplitResponse"
     assert len(response.splits) > 0, "Should have at least one split"
     
-    # Validate category names match what we provided
+    # Validate subdocument names match what we provided
     valid_names = {"content", "footer"}
     for split in response.splits:
         assert split.name in valid_names, f"Split name '{split.name}' should be one of {valid_names}"
@@ -220,11 +220,11 @@ async def test_split_page_coverage(
 
 
 @pytest.mark.asyncio
-async def test_split_with_minimal_categories(
+async def test_split_with_minimal_subdocuments(
     sync_client: Retab,
     multi_page_pdf_path: str,
 ) -> None:
-    """Test splitting with minimal category definitions."""
+    """Test splitting with minimal subdocument definitions."""
     minimal_subdocuments = [
         Subdocument(name="document", description="Document content"),
     ]
@@ -236,7 +236,7 @@ async def test_split_with_minimal_categories(
             subdocuments=minimal_subdocuments,
         )
     
-    # With only one category, all pages should be classified as that category
+    # With only one subdocument, all pages should be classified as that subdocument
     assert isinstance(response, SplitResponse), "Response should be SplitResponse"
     assert len(response.splits) >= 1, "Should have at least one split"
     
@@ -245,7 +245,7 @@ async def test_split_with_minimal_categories(
 
 
 @pytest.mark.asyncio
-async def test_split_discontinuous_categories(
+async def test_split_discontinuous_subdocuments(
     sync_client: Retab,
     multi_page_pdf_path: str,
 ) -> None:
