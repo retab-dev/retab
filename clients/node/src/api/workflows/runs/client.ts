@@ -176,7 +176,7 @@ export default class APIWorkflowRuns extends CompositionClient {
             status?: "pending" | "running" | "completed" | "error" | "waiting_for_human" | "cancelled";
             statuses?: string;
             excludeStatus?: "pending" | "running" | "completed" | "error" | "waiting_for_human" | "cancelled";
-            triggerType?: "manual" | "api" | "schedule" | "webhook" | "restart";
+            triggerType?: "manual" | "api" | "schedule" | "webhook" | "email" | "restart";
             triggerTypes?: string;
             fromDate?: string;
             toDate?: string;
