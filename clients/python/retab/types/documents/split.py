@@ -29,7 +29,7 @@ class SplitVote(BaseModel):
 class SplitResult(BaseModel):
     name: str = Field(..., description="The name of the subdocument")
     pages: list[int] = Field(..., description="The pages of the subdocument (1-indexed)")
-    confidence: float | None = Field(default=None, description="Consensus confidence score (mean IoU between each vote and the consensus, 0.0-1.0). Only set when n_consensus > 1.")
+    likelihood: float | None = Field(default=None, description="Likelihood score (0.0-1.0) of the split result. Only set when n_consensus > 1.")
     votes: list[SplitVote] = Field(default_factory=list, description="Individual LLM votes used to build the consensus. Empty when n_consensus <= 1.")
     partitions: list[Partition] = Field(default_factory=list, description="The partitions of the subdocument")
 
