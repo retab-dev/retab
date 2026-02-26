@@ -592,6 +592,7 @@ export type ContentDict = z.infer<typeof ZContentDict>;
 export const ZEasyInputMessageParam = z.lazy(() => (z.object({
     content: z.union([z.string(), z.array(z.union([ZResponseInputTextParam, ZResponseInputImageParam, ZResponseInputFileParam]))]),
     role: z.union([z.literal("user"), z.literal("assistant"), z.literal("system"), z.literal("developer")]),
+    phase: z.union([z.literal("commentary"), z.literal("final_answer")]).nullable().optional(),
     type: z.literal("message"),
 })));
 export type EasyInputMessageParam = z.infer<typeof ZEasyInputMessageParam>;
@@ -839,7 +840,7 @@ export type SplitResponse = z.infer<typeof ZSplitResponse>;
 export const ZSplitResult = z.lazy(() => (z.object({
     name: z.string(),
     pages: z.array(z.number()),
-    confidence: z.number().nullable().optional(),
+    likelihood: z.number().nullable().optional(),
     votes: z.array(ZSplitVote),
     partitions: z.array(ZPartition),
 })));
@@ -1428,6 +1429,7 @@ export type IncompleteDetails = z.infer<typeof ZIncompleteDetails>;
 export const ZEasyInputMessage = z.lazy(() => (z.object({
     content: z.union([z.string(), z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile]))]),
     role: z.union([z.literal("user"), z.literal("assistant"), z.literal("system"), z.literal("developer")]),
+    phase: z.union([z.literal("commentary"), z.literal("final_answer")]).nullable().optional(),
     type: z.literal("message").nullable().optional(),
 })));
 export type EasyInputMessage = z.infer<typeof ZEasyInputMessage>;
@@ -1446,6 +1448,7 @@ export const ZResponseOutputMessage = z.lazy(() => (z.object({
     role: z.literal("assistant"),
     status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
     type: z.literal("message"),
+    phase: z.union([z.literal("commentary"), z.literal("final_answer")]).nullable().optional(),
 })));
 export type ResponseOutputMessage = z.infer<typeof ZResponseOutputMessage>;
 
@@ -2069,6 +2072,7 @@ export const ZResponseOutputMessageParam = z.lazy(() => (z.object({
     role: z.literal("assistant"),
     status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
     type: z.literal("message"),
+    phase: z.union([z.literal("commentary"), z.literal("final_answer")]).nullable().optional(),
 })));
 export type ResponseOutputMessageParam = z.infer<typeof ZResponseOutputMessageParam>;
 
