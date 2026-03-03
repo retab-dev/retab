@@ -43,7 +43,6 @@ export default class APIWorkflowRuns extends CompositionClient {
      * @param workflowId - The ID of the workflow to run
      * @param documents - Mapping of start node IDs to their input documents
      * @param jsonInputs - Mapping of start_json node IDs to their input JSON data
-     * @param textInputs - Mapping of start_text node IDs to their input text
      * @param options - Optional request options
      * @returns The created workflow run with status "running"
      *
@@ -57,9 +56,6 @@ export default class APIWorkflowRuns extends CompositionClient {
      *     jsonInputs: {
      *         "json-node-1": { key: "value" },
      *     },
-     *     textInputs: {
-     *         "text-node-1": "Hello, world!",
-     *     }
      * });
      * console.log(`Run started: ${run.id}, status: ${run.status}`);
      * ```
@@ -69,12 +65,10 @@ export default class APIWorkflowRuns extends CompositionClient {
             workflowId,
             documents,
             jsonInputs,
-            textInputs,
         }: {
             workflowId: string;
             documents?: Record<string, MIMEDataInput>;
             jsonInputs?: Record<string, Record<string, unknown>>;
-            textInputs?: Record<string, string>;
         },
         options?: RequestOptions
     ): Promise<WorkflowRun> {
@@ -100,10 +94,6 @@ export default class APIWorkflowRuns extends CompositionClient {
 
         if (jsonInputs) {
             body.json_inputs = jsonInputs;
-        }
-
-        if (textInputs) {
-            body.text_inputs = textInputs;
         }
 
         return this._fetchJson(ZWorkflowRun, {
@@ -426,7 +416,6 @@ export default class APIWorkflowRuns extends CompositionClient {
      * @param workflowId - The ID of the workflow to run
      * @param documents - Mapping of start node IDs to their input documents
      * @param jsonInputs - Mapping of start_json node IDs to their input JSON data
-     * @param textInputs - Mapping of start_text node IDs to their input text
      * @param pollIntervalMs - Milliseconds between polls (default: 2000)
      * @param timeoutMs - Maximum time to wait in milliseconds (default: 600000)
      * @param options - Optional request options
@@ -449,21 +438,19 @@ export default class APIWorkflowRuns extends CompositionClient {
             workflowId,
             documents,
             jsonInputs,
-            textInputs,
             pollIntervalMs = 2000,
             timeoutMs = 600000,
         }: {
             workflowId: string;
             documents?: Record<string, MIMEDataInput>;
             jsonInputs?: Record<string, Record<string, unknown>>;
-            textInputs?: Record<string, string>;
             pollIntervalMs?: number;
             timeoutMs?: number;
         },
         options?: RequestOptions
     ): Promise<WorkflowRun> {
         const run = await this.create(
-            { workflowId, documents, jsonInputs, textInputs },
+            { workflowId, documents, jsonInputs },
             options
         );
         return this.waitForCompletion(run.id, { pollIntervalMs, timeoutMs });

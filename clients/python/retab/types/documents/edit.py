@@ -43,7 +43,7 @@ class FieldType(str, Enum):
 
 
 class BaseFormField(BaseModel):
-    """Single field in the form schema (text input, checkbox, etc.)."""
+    """Single field in the form schema (string input, checkbox, etc.)."""
 
     bbox: BBox = Field(
         ...,
@@ -67,7 +67,7 @@ class BaseFormField(BaseModel):
 
 
 class FormField(BaseFormField):
-    """Single field in the form schema (text input, checkbox, etc.)."""
+    """Single field in the form schema (string input, checkbox, etc.)."""
 
     value: Optional[str] = Field(
         None,
