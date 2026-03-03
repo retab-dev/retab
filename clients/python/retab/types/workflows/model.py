@@ -18,7 +18,7 @@ class HandlePayload(BaseModel):
     type: Literal["file", "json", "text"] = Field(..., description="Type of payload")
     document: Optional[BaseMIMEData] = Field(default=None, description="For file handles: document reference")
     data: Optional[dict] = Field(default=None, description="For JSON handles: structured data")
-    text: Optional[str] = Field(default=None, description="For text handles: text content")
+    text: Optional[str] = Field(default=None, description="For text payloads: text content")
 
 
 NodeType = Literal["start", "extract", "split", "end", "hil"]
