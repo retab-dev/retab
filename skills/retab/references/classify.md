@@ -28,6 +28,27 @@ print(result.result.classification)
 print(result.result.reasoning)
 ```
 
+## Minimal Node
+
+```ts
+import { Retab } from "@retab/node";
+
+const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
+
+const result = await client.documents.classify({
+  document: "document.pdf",
+  model: "retab-small",
+  categories: [
+    { name: "invoice", description: "Invoice documents" },
+    { name: "receipt", description: "Receipt documents" },
+    { name: "contract", description: "Contract documents" },
+  ],
+});
+
+console.log(result.result.classification);
+console.log(result.result.reasoning);
+```
+
 ## Minimal REST
 
 ```bash
@@ -62,4 +83,5 @@ curl -X POST "https://api.retab.com/v1/documents/classify" \
 ## Guidance
 
 - Keep categories mutually exclusive when possible.
+- Use `first_n_pages` when the label can be determined early and latency matters.
 - Use `classify` for routing. Use `extract` when you need structured values.

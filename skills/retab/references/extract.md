@@ -31,6 +31,29 @@ parsed = response.choices[0].message.parsed
 print(parsed)
 ```
 
+## Minimal Node
+
+```ts
+import { Retab } from "@retab/node";
+
+const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
+
+const response = await client.documents.extract({
+  document: "invoice.pdf",
+  model: "retab-small",
+  json_schema: {
+    type: "object",
+    properties: {
+      invoice_number: { type: "string" },
+      total_amount: { type: "number" },
+    },
+    required: ["invoice_number", "total_amount"],
+  },
+});
+
+console.log(response.choices[0].message.parsed);
+```
+
 ## Minimal REST
 
 ```bash
@@ -116,5 +139,6 @@ If a field keeps getting low likelihoods, first improve the schema before just i
 
 ## Guidance
 
+- If no schema exists yet, draft one before implementing `extract`.
 - Keep schemas small and explicit. Overly broad schemas reduce reliability.
 - Use `extract` only when the output must be structured. Otherwise use `parse`.

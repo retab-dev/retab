@@ -1,4 +1,4 @@
 interface:
   display_name: "Retab"
-  short_description: "Build with Retab document APIs"
+  short_description: "Build with Retab document and workflow APIs"
   default_prompt: "Use $retab to add Retab parse, extract, split, edit, classify, or workflow run calls to this codebase."

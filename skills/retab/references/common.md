@@ -28,7 +28,8 @@ const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 ## Shared request conventions
 
 - Default to `model="retab-small"` unless the user asks for a different tradeoff.
-- For REST, send JSON with `document: { "filename": "...", "url": "data:...base64,..." }`.
+- For direct document REST routes, send JSON with `document: { "filename": "...", "url": "data:...base64,..." }`.
+- For workflow-run REST routes, send `documents` keyed by start node ID, and each document uses `{ "filename", "content", "mime_type" }`.
 - For SDKs, prefer a local path string when the file is already on disk.
 - Keep uploads focused. Trim or split overly large documents before sending them.
 - Use generous timeouts for slow or multi-page documents.
@@ -40,6 +41,15 @@ const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 - `split`: assign page ranges to named subdocuments
 - `edit`: fill or update a form-like document from natural-language instructions
 - `classify`: choose one category from a fixed list
+- `workflows`: run an existing multi-step workflow and poll its outputs
+
+## Before you extract
+
+If the user wants structured extraction but does not yet have a schema:
+
+- Write a small schema manually when the output is obvious
+- Otherwise, generate or draft a schema before implementing `extract`
+- Do not pretend `extract` can infer arbitrary output structure without a schema
 
 ## REST skeleton
 
@@ -55,3 +65,5 @@ curl -X POST "https://api.retab.com/v1/documents/ROUTE" \
     "model": "retab-small"
   }'
 ```
+
+Workflow runs are the main exception to this skeleton. See `references/workflows.md`.
