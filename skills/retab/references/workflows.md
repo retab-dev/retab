@@ -11,6 +11,15 @@ Use this reference when the user already has a Retab workflow and needs to run i
 
 This file does not cover visual workflow authoring in the dashboard.
 
+## Input shape note
+
+Workflow runs are the main REST exception in this skill:
+
+- Direct document routes use `document: { filename, url }`
+- Workflow run routes use `documents: { node_id: { filename, content, mime_type } }`
+
+Do not reuse the direct-document payload shape when calling workflow runs over REST.
+
 ## Python
 
 ```python
@@ -110,3 +119,4 @@ curl -X GET "https://api.retab.com/v1/workflows/runs/run_abc123" \
 - Use workflows when the same multi-step pipeline should run repeatedly.
 - If the user only needs one operation, prefer the direct document routes instead.
 - If the API reports missing input documents, the keys usually do not match the workflow's start node IDs.
+- If the run fails after starting, inspect `steps`, `error`, and `final_outputs` before changing the input payload.

@@ -23,6 +23,22 @@ print(result.pages)
 print(result.text)
 ```
 
+## Minimal Node
+
+```ts
+import { Retab } from "@retab/node";
+
+const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
+
+const result = await client.documents.parse({
+  document: "document.pdf",
+  model: "retab-small",
+});
+
+console.log(result.pages);
+console.log(result.text);
+```
+
 ## Minimal REST
 
 ```bash
@@ -53,4 +69,5 @@ curl -X POST "https://api.retab.com/v1/documents/parse" \
 ## Guidance
 
 - Use `parse` before `extract` when the task only needs free text.
+- Use `table_parsing_format` when downstream code needs predictable table output.
 - Use a lower DPI only when speed matters more than OCR detail.

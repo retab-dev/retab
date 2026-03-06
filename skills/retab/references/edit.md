@@ -24,6 +24,23 @@ print(result.form_data)
 print(result.filled_document)
 ```
 
+## Minimal Node
+
+```ts
+import { Retab } from "@retab/node";
+
+const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
+
+const result = await client.documents.edit({
+  document: "form.pdf",
+  model: "retab-small",
+  instructions: "Fill full name as John Doe and date of birth as 1990-01-15.",
+});
+
+console.log(result.form_data);
+console.log(result.filled_document);
+```
+
 ## Minimal REST
 
 ```bash
@@ -54,4 +71,5 @@ curl -X POST "https://api.retab.com/v1/documents/edit" \
 ## Guidance
 
 - Write explicit instructions with exact values.
+- Use `form_fields` when field locations are already known and you want to skip inference.
 - Save the returned `filled_document` if the user needs a file on disk.
