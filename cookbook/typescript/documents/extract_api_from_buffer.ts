@@ -38,7 +38,7 @@ async function main() {
   // Document Extraction via Retab API using buffer
   const response = await client.documents.extract({
     documents: [imageBuffer],
-    model: 'gpt-5',
+    model: 'gpt-5.4',
     json_schema: jsonSchema,
     n_consensus: 1,
   });
