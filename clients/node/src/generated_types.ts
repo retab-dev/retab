@@ -101,6 +101,30 @@ export const ZTextBox = z.lazy(() => (z.object({
 })));
 export type TextBox = z.infer<typeof ZTextBox>;
 
+export const ZFile = z.lazy(() => (z.object({
+    object: z.literal("file").default("file"),
+    id: z.string(),
+    filename: z.string(),
+    organization_id: z.string(),
+    created_at: z.string(),
+    updated_at: z.string(),
+    page_count: z.number().nullable().optional(),
+})));
+export type File = z.infer<typeof ZFile>;
+
+export const ZFileLink = z.lazy(() => (z.object({
+    download_url: z.string(),
+    expires_in: z.string(),
+    filename: z.string(),
+})));
+export type FileLink = z.infer<typeof ZFileLink>;
+
+export const ZUploadFileResponse = z.lazy(() => (z.object({
+    file_id: z.string(),
+    filename: z.string(),
+})));
+export type UploadFileResponse = z.infer<typeof ZUploadFileResponse>;
+
 export const ZDeleteResponse = z.lazy(() => (z.object({
     success: z.boolean(),
     id: z.string(),
@@ -203,7 +227,7 @@ export type ChatCompletionMessageFunctionToolCallParam = z.infer<typeof ZChatCom
 
 export const ZChatCompletionRetabMessage = z.lazy(() => (z.object({
     role: z.union([z.literal("user"), z.literal("system"), z.literal("assistant"), z.literal("developer"), z.literal("tool")]),
-    content: z.union([z.string(), z.array(z.union([ZChatCompletionContentPartTextParam, ZChatCompletionContentPartImageParam, ZChatCompletionContentPartInputAudioParam, ZFile]))]).nullable().optional(),
+    content: z.union([z.string(), z.array(z.union([ZChatCompletionContentPartTextParam, ZChatCompletionContentPartImageParam, ZChatCompletionContentPartInputAudioParam, ZChatCompletionContentPartParamFile]))]).nullable().optional(),
     tool_call_id: z.string().nullable().optional(),
     tool_calls: z.array(ZChatCompletionMessageFunctionToolCallParam).nullable().optional(),
 })));
@@ -1112,11 +1136,11 @@ export const ZFunction = z.lazy(() => (z.object({
 })));
 export type Function = z.infer<typeof ZFunction>;
 
-export const ZFile = z.lazy(() => (z.object({
+export const ZChatCompletionContentPartParamFile = z.lazy(() => (z.object({
     file: ZFileFile,
     type: z.literal("file"),
 })));
-export type File = z.infer<typeof ZFile>;
+export type ChatCompletionContentPartParamFile = z.infer<typeof ZChatCompletionContentPartParamFile>;
 
 export const ZDocumentBlockParam = z.lazy(() => (z.object({
     source: z.union([ZBase64PDFSourceParam, ZPlainTextSourceParam, ZContentBlockSourceParam, ZURLPDFSourceParam]),
@@ -2098,7 +2122,7 @@ export const ZChatCompletionSystemMessageParam = z.lazy(() => (z.object({
 export type ChatCompletionSystemMessageParam = z.infer<typeof ZChatCompletionSystemMessageParam>;
 
 export const ZChatCompletionUserMessageParam = z.lazy(() => (z.object({
-    content: z.union([z.string(), z.array(z.union([ZChatCompletionContentPartTextParam, ZChatCompletionContentPartImageParam, ZChatCompletionContentPartInputAudioParam, ZFile]))]),
+    content: z.union([z.string(), z.array(z.union([ZChatCompletionContentPartTextParam, ZChatCompletionContentPartImageParam, ZChatCompletionContentPartInputAudioParam, ZChatCompletionContentPartParamFile]))]),
     role: z.literal("user"),
     name: z.string(),
 })));
