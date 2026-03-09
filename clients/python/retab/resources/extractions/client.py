@@ -88,6 +88,10 @@ class ExtractionsMixin:
         """Prepare a request to get an extraction by ID."""
         return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}")
 
+    def prepare_sources(self, extraction_id: str) -> PreparedRequest:
+        """Prepare a request to get sourced extraction with per-leaf provenance."""
+        return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}/sources")
+
     def prepare_delete(self, extraction_id: str) -> PreparedRequest:
         """Prepare a request to delete an extraction by ID."""
         return PreparedRequest(method="DELETE", url=f"/v1/extractions/{extraction_id}")
@@ -172,6 +176,19 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
     def get(self, extraction_id: str) -> dict[str, Any]:
         """Get an extraction by ID."""
         request = self.prepare_get(extraction_id)
+        return self._client._prepared_request(request)
+
+    def sources(self, extraction_id: str) -> dict[str, Any]:
+        """Get extraction result enriched with per-leaf source provenance.
+
+        Args:
+            extraction_id: ID of the extraction to source.
+
+        Returns:
+            GetSourcesResponse dict with `extraction` (original) and
+            `sourced_extraction` (leaves wrapped as {value, source}).
+        """
+        request = self.prepare_sources(extraction_id)
         return self._client._prepared_request(request)
 
     def delete(self, extraction_id: str) -> None:
@@ -259,6 +276,19 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
     async def get(self, extraction_id: str) -> dict[str, Any]:
         """Get an extraction by ID."""
         request = self.prepare_get(extraction_id)
+        return await self._client._prepared_request(request)
+
+    async def sources(self, extraction_id: str) -> dict[str, Any]:
+        """Get extraction result enriched with per-leaf source provenance.
+
+        Args:
+            extraction_id: ID of the extraction to source.
+
+        Returns:
+            GetSourcesResponse dict with `extraction` (original) and
+            `sourced_extraction` (leaves wrapped as {value, source}).
+        """
+        request = self.prepare_sources(extraction_id)
         return await self._client._prepared_request(request)
 
     async def delete(self, extraction_id: str) -> None:

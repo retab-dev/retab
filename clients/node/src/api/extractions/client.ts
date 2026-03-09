@@ -165,6 +165,26 @@ export default class APIExtractions extends CompositionClient {
     }
 
     /**
+     * Get extraction result enriched with per-leaf source provenance.
+     *
+     * Each extracted leaf value is wrapped as {value, source} where source
+     * contains citation content, surrounding context, and a format-specific anchor.
+     *
+     * @param extraction_id - ID of the extraction to source
+     */
+    async sources(
+        extraction_id: string,
+        options?: RequestOptions,
+    ): Promise<Record<string, any>> {
+        return this._fetchJson(z.record(z.any()), {
+            url: `/v1/extractions/${extraction_id}/sources`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
      * Delete an extraction by ID.
      */
     async delete(extraction_id: string, options?: RequestOptions): Promise<void> {
