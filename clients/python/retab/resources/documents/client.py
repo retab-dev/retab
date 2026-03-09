@@ -380,7 +380,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         return maybe_parse_to_pydantic(load_json_schema(json_schema), RetabParsedChatCompletion.model_validate(response))
         # returns a RetabParsedChatCompletion
 
-    def get_sources(
+    def sources(
         self,
         extraction_id: str,
         file: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
