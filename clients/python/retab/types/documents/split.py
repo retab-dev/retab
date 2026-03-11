@@ -3,7 +3,7 @@ from ..mime import MIMEData
 
 class Subdocument(BaseModel):
     name: str = Field(..., description="The name of the subdocument")
-    description: str = Field(..., description="The description of the subdocument")
+    description: str = Field(default="", description="The description of the subdocument")
     partition_key: str | None = Field(default=None, description="The key to partition the subdocument")
 
 
