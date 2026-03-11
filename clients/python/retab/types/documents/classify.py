@@ -3,7 +3,7 @@ from ..mime import MIMEData
 
 class Category(BaseModel):
     name: str = Field(..., description="The name of the category")
-    description: str = Field(..., description="The description of the category")
+    description: str = Field(default="", description="The description of the category")
 
 class ClassifyRequest(BaseModel):
     document: MIMEData = Field(..., description="The document to classify")
