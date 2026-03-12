@@ -37,7 +37,7 @@ class ExtractionsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        return PreparedRequest(method="GET", url="/v1/extractions", params=params)
+        return PreparedRequest(method="GET", url="/extractions", params=params)
 
     def prepare_download(
         self,
@@ -62,7 +62,7 @@ class ExtractionsMixin:
         if extra_params:
             params.update(extra_params)
         params = {k: v for k, v in params.items() if v is not None}
-        return PreparedRequest(method="GET", url="/v1/extractions/download", params=params)
+        return PreparedRequest(method="GET", url="/extractions/download", params=params)
 
     def prepare_update(
         self,
@@ -82,19 +82,19 @@ class ExtractionsMixin:
             data["inference_settings"] = inference_settings
         if extra_body:
             data.update(extra_body)
-        return PreparedRequest(method="PATCH", url=f"/v1/extractions/{extraction_id}", data=data)
+        return PreparedRequest(method="PATCH", url=f"/extractions/{extraction_id}", data=data)
 
     def prepare_get(self, extraction_id: str) -> PreparedRequest:
         """Prepare a request to get an extraction by ID."""
-        return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}")
+        return PreparedRequest(method="GET", url=f"/extractions/{extraction_id}")
 
     def prepare_sources(self, extraction_id: str) -> PreparedRequest:
         """Prepare a request to get sourced extraction with per-leaf provenance."""
-        return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}/sources")
+        return PreparedRequest(method="GET", url=f"/extractions/{extraction_id}/sources")
 
     def prepare_delete(self, extraction_id: str) -> PreparedRequest:
         """Prepare a request to delete an extraction by ID."""
-        return PreparedRequest(method="DELETE", url=f"/v1/extractions/{extraction_id}")
+        return PreparedRequest(method="DELETE", url=f"/extractions/{extraction_id}")
 
 
 class Extractions(SyncAPIResource, ExtractionsMixin):

@@ -31,10 +31,10 @@ class BaseJobsMixin:
         }
         if metadata is not None:
             data["metadata"] = metadata
-        return PreparedRequest(method="POST", url="/v1/jobs", data=data)
+        return PreparedRequest(method="POST", url="/jobs", data=data)
 
     def _prepare_retrieve(self, job_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/jobs/{job_id}")
+        return PreparedRequest(method="GET", url=f"/jobs/{job_id}")
 
     def _prepare_retrieve_with_options(
         self,
@@ -47,13 +47,13 @@ class BaseJobsMixin:
             params["include_request"] = include_request
         if include_response is not None:
             params["include_response"] = include_response
-        return PreparedRequest(method="GET", url=f"/v1/jobs/{job_id}", params=params or None)
+        return PreparedRequest(method="GET", url=f"/jobs/{job_id}", params=params or None)
 
     def _prepare_cancel(self, job_id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/v1/jobs/{job_id}/cancel")
+        return PreparedRequest(method="POST", url=f"/jobs/{job_id}/cancel")
 
     def _prepare_retry(self, job_id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url=f"/v1/jobs/{job_id}/retry")
+        return PreparedRequest(method="POST", url=f"/jobs/{job_id}/retry")
 
     def _prepare_list(
         self,
@@ -117,7 +117,7 @@ class BaseJobsMixin:
             params["include_request"] = include_request
         if include_response is not None:
             params["include_response"] = include_response
-        return PreparedRequest(method="GET", url="/v1/jobs", params=params)
+        return PreparedRequest(method="GET", url="/jobs", params=params)
 
 
 class Jobs(SyncAPIResource, BaseJobsMixin):
@@ -133,7 +133,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         >>>
         >>> # Create an async extraction job
         >>> job = client.jobs.create(
-        ...     endpoint="/v1/documents/extract",
+        ...     endpoint="/documents/extract",
         ...     request={
         ...         "document": {"content": "...", "mime_type": "application/pdf"},
         ...         "json_schema": {"type": "object", ...},
@@ -157,7 +157,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         Create a new asynchronous job.
 
         Args:
-            endpoint: The API endpoint to call ("/v1/documents/extract" or "/v1/documents/parse")
+            endpoint: The API endpoint to call ("/documents/extract" or "/documents/parse")
             request: The full request body for the target endpoint
             metadata: Optional metadata (max 16 pairs; keys ≤64 chars, values ≤512 chars)
 
@@ -358,7 +358,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         >>>
         >>> # Create an async extraction job
         >>> job = await client.jobs.create(
-        ...     endpoint="/v1/documents/extract",
+        ...     endpoint="/documents/extract",
         ...     request={
         ...         "document": {"content": "...", "mime_type": "application/pdf"},
         ...         "json_schema": {"type": "object", ...},
@@ -382,7 +382,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         Create a new asynchronous job.
 
         Args:
-            endpoint: The API endpoint to call ("/v1/documents/extract" or "/v1/documents/parse")
+            endpoint: The API endpoint to call ("/documents/extract" or "/documents/parse")
             request: The full request body for the target endpoint
             metadata: Optional metadata (max 16 pairs; keys ≤64 chars, values ≤512 chars)
 

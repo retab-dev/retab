@@ -200,6 +200,22 @@ export const ZWorkflowRunStep = z.object({
 }).passthrough();
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
 
+export const ZWorkflow = z.object({
+    id: z.string(),
+    name: z.string().default("Untitled Workflow"),
+    description: z.string().default(""),
+    is_published: z.boolean().default(false),
+    published_snapshot_id: z.string().nullable().optional(),
+    published_at: z.string().nullable().optional(),
+    draft_version: z.string().nullable().optional(),
+    organization_id: z.string().nullable().optional(),
+    email_senders_whitelist: z.array(z.string()).default([]),
+    email_domains_whitelist: z.array(z.string()).default([]),
+    created_at: z.string(),
+    updated_at: z.string(),
+}).passthrough();
+export type Workflow = z.infer<typeof ZWorkflow>;
+
 export const ZModel = z.lazy(() => (z.object({
     id: z.string(),
     created: z.number(),
