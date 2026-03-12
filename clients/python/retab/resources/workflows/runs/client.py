@@ -73,11 +73,11 @@ class WorkflowRunsMixin:
         # Add JSON inputs directly
         if json_inputs:
             data["json_inputs"] = json_inputs
-        return PreparedRequest(method="POST", url=f"/v1/workflows/{workflow_id}/run", data=data)
+        return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/run", data=data)
 
     def prepare_get(self, run_id: str) -> PreparedRequest:
         """Prepare a request to get a workflow run by ID."""
-        return PreparedRequest(method="GET", url=f"/v1/workflows/runs/{run_id}")
+        return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}")
 
     def prepare_list(
         self,
@@ -135,25 +135,25 @@ class WorkflowRunsMixin:
             params["before"] = before
         if after is not None:
             params["after"] = after
-        return PreparedRequest(method="GET", url="/v1/workflows/runs/", params=params)
+        return PreparedRequest(method="GET", url="/workflows/runs/", params=params)
 
     def prepare_delete(self, run_id: str) -> PreparedRequest:
         """Prepare a request to delete a workflow run."""
-        return PreparedRequest(method="DELETE", url=f"/v1/workflows/runs/{run_id}")
+        return PreparedRequest(method="DELETE", url=f"/workflows/runs/{run_id}")
 
     def prepare_cancel(self, run_id: str, command_id: str | None = None) -> PreparedRequest:
         """Prepare a request to cancel a workflow run."""
         data = None
         if command_id is not None:
             data = {"command_id": command_id}
-        return PreparedRequest(method="POST", url=f"/v1/workflows/runs/{run_id}/cancel", data=data)
+        return PreparedRequest(method="POST", url=f"/workflows/runs/{run_id}/cancel", data=data)
 
     def prepare_restart(self, run_id: str, command_id: str | None = None) -> PreparedRequest:
         """Prepare a request to restart a workflow run."""
         data = None
         if command_id is not None:
             data = {"command_id": command_id}
-        return PreparedRequest(method="POST", url=f"/v1/workflows/runs/{run_id}/restart", data=data)
+        return PreparedRequest(method="POST", url=f"/workflows/runs/{run_id}/restart", data=data)
 
     def prepare_resume(
         self,
@@ -169,7 +169,7 @@ class WorkflowRunsMixin:
             data["modified_data"] = modified_data
         if command_id is not None:
             data["command_id"] = command_id
-        return PreparedRequest(method="POST", url=f"/v1/workflows/runs/{run_id}/resume", data=data)
+        return PreparedRequest(method="POST", url=f"/workflows/runs/{run_id}/resume", data=data)
 
 class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     """Workflow Runs API wrapper for synchronous operations.

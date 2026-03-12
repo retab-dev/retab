@@ -54,14 +54,14 @@ class BaseTemplatesMixin:
 
         return PreparedRequest(
             method="GET",
-            url="/v1/edit/templates",
+            url="/edit/templates",
             params=params,
         )
 
     def _prepare_get(self, template_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/v1/edit/templates/{template_id}",
+            url=f"/edit/templates/{template_id}",
         )
 
     def _prepare_create(
@@ -83,7 +83,7 @@ class BaseTemplatesMixin:
 
         return PreparedRequest(
             method="POST",
-            url="/v1/edit/templates",
+            url="/edit/templates",
             data=request_dict,
         )
 
@@ -104,14 +104,14 @@ class BaseTemplatesMixin:
 
         return PreparedRequest(
             method="PATCH",
-            url=f"/v1/edit/templates/{template_id}",
+            url=f"/edit/templates/{template_id}",
             data=request_dict,
         )
 
     def _prepare_delete(self, template_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="DELETE",
-            url=f"/v1/edit/templates/{template_id}",
+            url=f"/edit/templates/{template_id}",
         )
 
     def _prepare_duplicate(
@@ -128,7 +128,7 @@ class BaseTemplatesMixin:
 
         return PreparedRequest(
             method="POST",
-            url=f"/v1/edit/templates/{template_id}/duplicate",
+            url=f"/edit/templates/{template_id}/duplicate",
             data=request_dict,
         )
 
@@ -155,7 +155,7 @@ class BaseTemplatesMixin:
         infer_request = InferFormSchemaRequest(**request_dict)
         return PreparedRequest(
             method="POST",
-            url="/v1/edit/templates/generate",
+            url="/edit/templates/generate",
             data=infer_request.model_dump(mode="json", exclude_unset=True),
         )
 
@@ -182,7 +182,7 @@ class BaseTemplatesMixin:
         fill_request = FillTemplateRequest(**request_dict)
         return PreparedRequest(
             method="POST",
-            url="/v1/edit/templates/fill",
+            url="/edit/templates/fill",
             data=fill_request.model_dump(mode="json", exclude_unset=True),
         )
 

@@ -52,7 +52,7 @@ class BaseAgentMixin:
         edit_request = EditRequest(**request_dict)
         return PreparedRequest(
             method="POST",
-            url="/v1/edit/agent/fill",
+            url="/edit/agent/fill",
             data=edit_request.model_dump(mode="json", exclude_unset=True),
         )
 

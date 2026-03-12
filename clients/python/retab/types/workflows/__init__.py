@@ -1,6 +1,7 @@
 from retab.types.mime import BaseMIMEData
 
 from .model import (
+    Workflow,
     WorkflowRun,
     StepStatus,
     HandlePayload,
@@ -17,6 +18,7 @@ from .model import (
 
 __all__ = [
     "BaseMIMEData",
+    "Workflow",
     "WorkflowRun",
     "StepStatus",
     "HandlePayload",

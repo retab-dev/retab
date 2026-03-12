@@ -10,7 +10,7 @@ class FilesMixin:
     def prepare_upload(self, mime_data: MIMEData) -> PreparedRequest:
         return PreparedRequest(
             method="POST",
-            url="/v1/files/upload",
+            url="/files/upload",
             data={"mimeData": mime_data.model_dump(mode="json")},
         )
 
@@ -33,13 +33,13 @@ class FilesMixin:
             params["filename"] = filename
         if mime_type is not None:
             params["mime_type"] = mime_type
-        return PreparedRequest(method="GET", url="/v1/files", params=params)
+        return PreparedRequest(method="GET", url="/files", params=params)
 
     def prepare_get(self, file_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/files/{file_id}")
+        return PreparedRequest(method="GET", url=f"/files/{file_id}")
 
     def prepare_get_download_link(self, file_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/files/{file_id}/download-link")
+        return PreparedRequest(method="GET", url=f"/files/{file_id}/download-link")
 
 
 

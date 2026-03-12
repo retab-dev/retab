@@ -28,10 +28,10 @@ class ProjectsMixin:
             eval_dict.update(extra_body)
 
         eval_data = CreateProjectRequest(**eval_dict)
-        return PreparedRequest(method="POST", url="/v1/projects", data=eval_data.model_dump(exclude_unset=True, mode="json"))
+        return PreparedRequest(method="POST", url="/projects", data=eval_data.model_dump(exclude_unset=True, mode="json"))
 
     def prepare_get(self, project_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/projects/{project_id}")
+        return PreparedRequest(method="GET", url=f"/projects/{project_id}")
 
     def prepare_update(
         self,
@@ -56,7 +56,7 @@ class ProjectsMixin:
 
         data = PatchProjectRequest(**update_dict).model_dump(exclude_unset=True, mode="json")
 
-        return PreparedRequest(method="PATCH", url=f"/v1/projects/{project_id}", data=data)
+        return PreparedRequest(method="PATCH", url=f"/projects/{project_id}", data=data)
 
     def prepare_list(self, **extra_params: Any) -> PreparedRequest:
         """
@@ -69,14 +69,14 @@ class ProjectsMixin:
             PreparedRequest: The prepared request
         """
         params = extra_params or None
-        return PreparedRequest(method="GET", url="/v1/projects", params=params)
+        return PreparedRequest(method="GET", url="/projects", params=params)
 
     def prepare_delete(self, id: str) -> PreparedRequest:
-        return PreparedRequest(method="DELETE", url=f"/v1/projects/{id}")
+        return PreparedRequest(method="DELETE", url=f"/projects/{id}")
 
     def prepare_publish(self, project_id: str, origin: Optional[str] = None) -> PreparedRequest:
         params = {"origin": origin} if origin else None
-        return PreparedRequest(method="POST", url=f"/v1/projects/{project_id}/publish", params=params)
+        return PreparedRequest(method="POST", url=f"/projects/{project_id}/publish", params=params)
 
     def prepare_extract(
         self,
@@ -148,7 +148,7 @@ class ProjectsMixin:
                 )
             files = files_list
 
-        url = f"/v1/projects/extract/{project_id}" if iteration_id is None else f"/v1/projects/extract/{project_id}/{iteration_id}"
+        url = f"/projects/extract/{project_id}" if iteration_id is None else f"/projects/extract/{project_id}/{iteration_id}"
 
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 

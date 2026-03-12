@@ -69,6 +69,24 @@ class WorkflowRun(BaseModel):
     pending_node_outputs: Optional[dict] = Field(default=None, description="Serialized node outputs to resume from")
 
 
+class Workflow(BaseModel):
+    """A stored workflow record."""
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(..., description="Unique ID for this workflow")
+    name: str = Field(default="Untitled Workflow", description="Workflow name")
+    description: str = Field(default="", description="Workflow description")
+    is_published: bool = Field(default=False, description="Whether the workflow has a published snapshot")
+    published_snapshot_id: Optional[str] = Field(default=None, description="Published snapshot ID")
+    published_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow was last published")
+    draft_version: Optional[str] = Field(default=None, description="Current draft version")
+    organization_id: Optional[str] = Field(default=None, description="Organization that owns this workflow")
+    email_senders_whitelist: List[str] = Field(default_factory=list, description="Allowed sender email addresses")
+    email_domains_whitelist: List[str] = Field(default_factory=list, description="Allowed sender email domains")
+    created_at: datetime.datetime = Field(..., description="When the workflow was created")
+    updated_at: datetime.datetime = Field(..., description="When the workflow was last updated")
+
+
 # ---------------------------------------------------------------------------
 # Type aliases
 # ---------------------------------------------------------------------------

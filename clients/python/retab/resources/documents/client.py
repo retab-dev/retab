@@ -43,17 +43,17 @@ class BaseDocumentsMixin:
 
         loading_request = DocumentCreateMessageRequest(**loading_request_dict)
         return PreparedRequest(
-            method="POST", url="/v1/documents/create_messages", data=loading_request.model_dump(mode="json", exclude_unset=True)
+            method="POST", url="/documents/create_messages", data=loading_request.model_dump(mode="json", exclude_unset=True)
         )
 
     def _prepare_get_extraction(self, extraction_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/v1/extractions/{extraction_id}")
+        return PreparedRequest(method="GET", url=f"/extractions/{extraction_id}")
 
     def _prepare_perform_ocr_only(self, file_id: str) -> PreparedRequest:
-        return PreparedRequest(method="POST", url="/v1/documents/perform_ocr_only", data={"file_id": file_id})
+        return PreparedRequest(method="POST", url="/documents/perform_ocr_only", data={"file_id": file_id})
 
     def _prepare_compute_field_locations(self, ocr_file_id: str, ocr_result: OCR | None = None, data: dict[str, Any] = {}) -> PreparedRequest:
-        return PreparedRequest(method="POST", url="/v1/documents/compute_field_locations", data={"ocr_file_id": ocr_file_id, "ocr_result": ocr_result, "data": data})
+        return PreparedRequest(method="POST", url="/documents/compute_field_locations", data={"ocr_file_id": ocr_file_id, "ocr_result": ocr_result, "data": data})
 
     def _prepare_create_inputs(
         self,
@@ -77,7 +77,7 @@ class BaseDocumentsMixin:
             loading_request_dict.update(extra_body)
 
         loading_request = DocumentCreateInputRequest(**loading_request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/create_inputs", data=loading_request.model_dump(mode="json", exclude_unset=True))
+        return PreparedRequest(method="POST", url="/documents/create_inputs", data=loading_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -87,7 +87,7 @@ class BaseDocumentsMixin:
 
         return PreparedRequest(
             method="POST",
-            url="/v1/documents/correct_image_orientation",
+            url="/documents/correct_image_orientation",
             data={"document": mime_document.model_dump()},
         )
 
@@ -115,7 +115,7 @@ class BaseDocumentsMixin:
             request_dict.update(extra_body)
 
         parse_request = ParseRequest(**request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/parse", data=parse_request.model_dump(mode="json", exclude_unset=True))
+        return PreparedRequest(method="POST", url="/documents/parse", data=parse_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_edit(
         self,
@@ -143,7 +143,7 @@ class BaseDocumentsMixin:
             request_dict.update(extra_body)
 
         edit_request = EditRequest(**request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/edit", data=edit_request.model_dump(mode="json", exclude_unset=True))
+        return PreparedRequest(method="POST", url="/documents/edit", data=edit_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_split(
         self,
@@ -174,7 +174,7 @@ class BaseDocumentsMixin:
             request_dict.update(extra_body)
 
         split_request = SplitRequest(**request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/split", data=split_request.model_dump(mode="json", exclude_unset=True))
+        return PreparedRequest(method="POST", url="/documents/split", data=split_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_generate_split_config(
         self,
@@ -193,7 +193,7 @@ class BaseDocumentsMixin:
             request_dict.update(extra_body)
 
         request = GenerateSplitConfigRequest(**request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/split/generate_config", data=request.model_dump(mode="json", exclude_unset=True))
+        return PreparedRequest(method="POST", url="/documents/split/generate_config", data=request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_classify(
         self,
@@ -221,7 +221,7 @@ class BaseDocumentsMixin:
             request_dict.update(extra_body)
 
         classify_request = ClassifyRequest(**request_dict)
-        return PreparedRequest(method="POST", url="/v1/documents/classify", data=classify_request.model_dump(mode="json", exclude_unset=True))
+        return PreparedRequest(method="POST", url="/documents/classify", data=classify_request.model_dump(mode="json", exclude_unset=True))
 
     def _prepare_extract(
         self,
@@ -268,7 +268,7 @@ class BaseDocumentsMixin:
         extract_request = DocumentExtractRequest(**request_dict)
 
         # Use the same URL as extractions.py for consistency when streaming
-        url = "/v1/documents/extractions" if stream else "/v1/documents/extract"
+        url = "/documents/extractions" if stream else "/documents/extract"
         return PreparedRequest(method="POST", url=url, data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True))
 
 

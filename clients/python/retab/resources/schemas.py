@@ -39,7 +39,7 @@ class SchemasMixin:
             body.update(extra_body)
 
         request = GenerateSchemaRequest(**body)
-        return PreparedRequest(method="POST", url="/v1/schemas/generate", data=request.model_dump(mode="json", exclude_unset=True))
+        return PreparedRequest(method="POST", url="/schemas/generate", data=request.model_dump(mode="json", exclude_unset=True))
 
 
 class Schemas(SyncAPIResource, SchemasMixin):
