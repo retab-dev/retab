@@ -93,6 +93,37 @@ class StepOutputResponse(BaseModel):
     handle_inputs: Optional[Dict[str, Any]] = Field(default=None, description="Handle inputs keyed by handle ID (what this node received)")
 
 
+class WorkflowRunStep(BaseModel):
+    """Full persisted step document returned by list workflow run steps."""
+    model_config = ConfigDict(extra="ignore")
+
+    run_id: str = Field(..., description="Parent workflow run ID")
+    organization_id: str = Field(..., description="Organization that owns this run")
+    node_id: str = Field(..., description="Logical ID of the node")
+    step_id: str = Field(..., description="Stored step ID")
+    node_type: str = Field(..., description="Type of the node")
+    node_label: str = Field(..., description="Label of the node")
+    status: str = Field(..., description="Step status")
+    started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
+    completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
+    duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
+    error: Optional[str] = Field(default=None, description="Error message if failed")
+    output: Optional[dict] = Field(default=None, description="Step output data")
+    handle_outputs: Optional[Dict[str, Any]] = Field(default=None, description="Handle outputs keyed by handle ID")
+    handle_inputs: Optional[Dict[str, Any]] = Field(default=None, description="Handle inputs keyed by handle ID")
+    input_document: Optional[BaseMIMEData] = Field(default=None, description="Reference to input document")
+    output_document: Optional[BaseMIMEData] = Field(default=None, description="Reference to output document")
+    split_documents: Optional[Dict[str, BaseMIMEData]] = Field(default=None, description="Split node document outputs")
+    requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
+    human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review completed")
+    human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
+    retry_count: Optional[int] = Field(default=None, description="Retry count for this step")
+    loop_id: Optional[str] = Field(default=None, description="Containing while_loop ID")
+    iteration: Optional[int] = Field(default=None, description="Loop iteration number")
+    created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
+    updated_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was last updated")
+
+
 class StepOutputsBatchResponse(BaseModel):
     """Response for batch step output retrieval, keyed by node ID."""
     outputs: Dict[str, StepOutputResponse] = Field(
