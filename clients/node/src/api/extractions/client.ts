@@ -65,7 +65,7 @@ export default class APIExtractions extends CompositionClient {
         const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined));
 
         return this._fetchJson(ZPaginatedList, {
-            url: "/v1/extractions",
+            url: "/extractions",
             method: "GET",
             params: { ...cleanParams, ...(options?.params || {}) },
             headers: options?.headers,
@@ -109,7 +109,7 @@ export default class APIExtractions extends CompositionClient {
         const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined));
 
         return this._fetchJson(ZDownloadResponse, {
-            url: "/v1/extractions/download",
+            url: "/extractions/download",
             method: "GET",
             params: { ...cleanParams, ...(options?.params || {}) },
             headers: options?.headers,
@@ -144,7 +144,7 @@ export default class APIExtractions extends CompositionClient {
         if (metadata !== undefined) body.metadata = metadata;
 
         return this._fetchJson(ZExtraction, {
-            url: `/v1/extractions/${extraction_id}`,
+            url: `/extractions/${extraction_id}`,
             method: "PATCH",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -157,7 +157,7 @@ export default class APIExtractions extends CompositionClient {
      */
     async get(extraction_id: string, options?: RequestOptions): Promise<Extraction> {
         return this._fetchJson(ZExtraction, {
-            url: `/v1/extractions/${extraction_id}`,
+            url: `/extractions/${extraction_id}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -177,7 +177,7 @@ export default class APIExtractions extends CompositionClient {
         options?: RequestOptions,
     ): Promise<Record<string, any>> {
         return this._fetchJson(z.record(z.any()), {
-            url: `/v1/extractions/${extraction_id}/sources`,
+            url: `/extractions/${extraction_id}/sources`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -189,7 +189,7 @@ export default class APIExtractions extends CompositionClient {
      */
     async delete(extraction_id: string, options?: RequestOptions): Promise<void> {
         return this._fetchJson({
-            url: `/v1/extractions/${extraction_id}`,
+            url: `/extractions/${extraction_id}`,
             method: "DELETE",
             params: options?.params,
             headers: options?.headers,

@@ -23,7 +23,7 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/v1/workflows/runs/run_123/steps"
+    assert request.url == "/workflows/runs/run_123/steps"
     assert len(steps) == 1
     assert steps[0].node_id == "extract-1"
 
@@ -47,6 +47,6 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/v1/workflows/runs/run_123/steps"
+    assert request.url == "/workflows/runs/run_123/steps"
     assert len(steps) == 1
     assert steps[0].node_id == "extract-1"

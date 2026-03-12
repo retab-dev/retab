@@ -43,7 +43,7 @@ describe("workflows client", () => {
         const workflow = await workflowsClient.get("workflow_123");
 
         expect(mockClient.lastFetchParams).toEqual({
-            url: "/v1/workflows/workflow_123",
+            url: "/workflows/workflow_123",
             method: "GET",
             params: undefined,
             headers: undefined,
@@ -67,7 +67,7 @@ describe("workflows client", () => {
         });
 
         expect(mockClient.lastFetchParams).toEqual({
-            url: "/v1/workflows",
+            url: "/workflows",
             method: "GET",
             params: {
                 limit: 5,

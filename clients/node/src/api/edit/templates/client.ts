@@ -68,7 +68,7 @@ export default class APIEditTemplates extends CompositionClient {
         );
 
         return this._fetchJson(ZPaginatedList, {
-            url: "/v1/edit/templates",
+            url: "/edit/templates",
             method: "GET",
             params: { ...cleanParams, ...(options?.params || {}) },
             headers: options?.headers,
@@ -84,7 +84,7 @@ export default class APIEditTemplates extends CompositionClient {
      */
     async get(template_id: string, options?: RequestOptions): Promise<EditTemplate> {
         return this._fetchJson(ZEditTemplate, {
-            url: `/v1/edit/templates/${template_id}`,
+            url: `/edit/templates/${template_id}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -116,7 +116,7 @@ export default class APIEditTemplates extends CompositionClient {
         const parsedDocument = await ZMIMEData.parseAsync(document);
 
         return this._fetchJson(ZEditTemplate, {
-            url: "/v1/edit/templates",
+            url: "/edit/templates",
             method: "POST",
             body: {
                 name,
@@ -155,7 +155,7 @@ export default class APIEditTemplates extends CompositionClient {
         if (form_fields !== undefined) body.form_fields = form_fields;
 
         return this._fetchJson(ZEditTemplate, {
-            url: `/v1/edit/templates/${template_id}`,
+            url: `/edit/templates/${template_id}`,
             method: "PATCH",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -171,7 +171,7 @@ export default class APIEditTemplates extends CompositionClient {
      */
     async delete(template_id: string, options?: RequestOptions): Promise<void> {
         return this._fetchJson({
-            url: `/v1/edit/templates/${template_id}`,
+            url: `/edit/templates/${template_id}`,
             method: "DELETE",
             params: options?.params,
             headers: options?.headers,
@@ -196,7 +196,7 @@ export default class APIEditTemplates extends CompositionClient {
         if (name !== undefined) body.name = name;
 
         return this._fetchJson(ZEditTemplate, {
-            url: `/v1/edit/templates/${template_id}/duplicate`,
+            url: `/edit/templates/${template_id}/duplicate`,
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -228,7 +228,7 @@ export default class APIEditTemplates extends CompositionClient {
         options?: RequestOptions
     ): Promise<InferFormSchemaResponse> {
         return this._fetchJson(ZInferFormSchemaResponse, {
-            url: "/v1/edit/templates/generate",
+            url: "/edit/templates/generate",
             method: "POST",
             body: { ...(await ZInferFormSchemaRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
@@ -281,7 +281,7 @@ export default class APIEditTemplates extends CompositionClient {
         }
 
         return this._fetchJson(ZEditResponse, {
-            url: "/v1/edit/templates/fill",
+            url: "/edit/templates/fill",
             method: "POST",
             body: {
                 ...body,

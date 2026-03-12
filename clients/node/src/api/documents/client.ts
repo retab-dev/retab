@@ -11,7 +11,7 @@ export default class APIDocuments extends CompositionClient {
     async extract(params: DocumentExtractRequest, options?: RequestOptions): Promise<RetabParsedChatCompletion> {
         let request = await ZDocumentExtractRequest.parseAsync(params);
         return this._fetchJson(ZRetabParsedChatCompletion, {
-            url: "/v1/documents/extract",
+            url: "/documents/extract",
             method: "POST",
             body: { ...request, ...(options?.body || {}) },
             params: options?.params,
@@ -21,7 +21,7 @@ export default class APIDocuments extends CompositionClient {
     async extract_stream(params: DocumentExtractRequest, options?: RequestOptions): Promise<AsyncGenerator<RetabParsedChatCompletionChunk>> {
         let request = await ZDocumentExtractRequest.parseAsync(params);
         return this._fetchStream(ZRetabParsedChatCompletionChunk, {
-            url: "/v1/documents/extract",
+            url: "/documents/extract",
             method: "POST",
             body: { ...request, stream: true, ...(options?.body || {}) },
             params: options?.params,
@@ -30,7 +30,7 @@ export default class APIDocuments extends CompositionClient {
     }
     async parse(params: ParseRequest, options?: RequestOptions): Promise<ParseResult> {
         return this._fetchJson(ZParseResult, {
-            url: "/v1/documents/parse",
+            url: "/documents/parse",
             method: "POST",
             body: { ...(await ZParseRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
@@ -39,7 +39,7 @@ export default class APIDocuments extends CompositionClient {
     }
     async create_messages(params: DocumentCreateMessageRequest, options?: RequestOptions): Promise<DocumentMessage> {
         return this._fetchJson(ZDocumentMessage, {
-            url: "/v1/documents/create_messages",
+            url: "/documents/create_messages",
             method: "POST",
             body: { ...(await ZDocumentCreateMessageRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
@@ -48,7 +48,7 @@ export default class APIDocuments extends CompositionClient {
     }
     async create_inputs(params: DocumentCreateInputRequest, options?: RequestOptions): Promise<DocumentMessage> {
         return this._fetchJson(ZDocumentMessage, {
-            url: "/v1/documents/create_inputs",
+            url: "/documents/create_inputs",
             method: "POST",
             body: { ...(await ZDocumentCreateInputRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
@@ -76,7 +76,7 @@ export default class APIDocuments extends CompositionClient {
      */
     async edit(params: EditRequest, options?: RequestOptions): Promise<EditResponse> {
         return this._fetchJson(ZEditResponse, {
-            url: "/v1/documents/edit",
+            url: "/documents/edit",
             method: "POST",
             body: { ...(await ZEditRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
@@ -114,7 +114,7 @@ export default class APIDocuments extends CompositionClient {
      */
     async split(params: SplitRequest, options?: RequestOptions): Promise<SplitResponse> {
         return this._fetchJson(ZSplitResponse, {
-            url: "/v1/documents/split",
+            url: "/documents/split",
             method: "POST",
             body: { ...(await ZSplitRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
@@ -154,7 +154,7 @@ export default class APIDocuments extends CompositionClient {
      */
     async classify(params: ClassifyRequest, options?: RequestOptions): Promise<ClassifyResponse> {
         return this._fetchJson(ZClassifyResponse, {
-            url: "/v1/documents/classify",
+            url: "/documents/classify",
             method: "POST",
             body: { ...(await ZClassifyRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,
@@ -163,7 +163,7 @@ export default class APIDocuments extends CompositionClient {
     }
     async generate_split_config(params: GenerateSplitConfigRequest, options?: RequestOptions): Promise<GenerateSplitConfigResponse> {
         return this._fetchJson(ZGenerateSplitConfigResponse, {
-            url: "/v1/documents/split/generate_config",
+            url: "/documents/split/generate_config",
             method: "POST",
             body: { ...(await ZGenerateSplitConfigRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,

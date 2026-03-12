@@ -34,7 +34,7 @@ export default class APIFiles extends CompositionClient {
     async upload(mimeData: MIMEDataInput, options?: RequestOptions): Promise<UploadFileResponse> {
         const parsed = await ZMIMEData.parseAsync(mimeData);
         return this._fetchJson(ZUploadFileResponse, {
-            url: "/v1/files/upload",
+            url: "/files/upload",
             method: "POST",
             body: { mimeData: parsed, ...(options?.body || {}) },
             params: options?.params,
@@ -75,7 +75,7 @@ export default class APIFiles extends CompositionClient {
         const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined));
 
         return this._fetchJson(ZPaginatedList, {
-            url: "/v1/files",
+            url: "/files",
             method: "GET",
             params: { ...cleanParams, ...(options?.params || {}) },
             headers: options?.headers,
@@ -84,7 +84,7 @@ export default class APIFiles extends CompositionClient {
 
     async get(fileId: string, options?: RequestOptions): Promise<File> {
         return this._fetchJson(ZFile, {
-            url: `/v1/files/${fileId}`,
+            url: `/files/${fileId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -93,7 +93,7 @@ export default class APIFiles extends CompositionClient {
 
     async getDownloadLink(fileId: string, options?: RequestOptions): Promise<FileLink> {
         return this._fetchJson(ZFileLink, {
-            url: `/v1/files/${fileId}/download-link`,
+            url: `/files/${fileId}/download-link`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,

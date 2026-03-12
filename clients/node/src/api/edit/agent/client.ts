@@ -35,7 +35,7 @@ export default class APIEditAgent extends CompositionClient {
      */
     async fill(params: EditRequest, options?: RequestOptions): Promise<EditResponse> {
         return this._fetchJson(ZEditResponse, {
-            url: "/v1/edit/agent/fill",
+            url: "/edit/agent/fill",
             method: "POST",
             body: { ...(await ZEditRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,

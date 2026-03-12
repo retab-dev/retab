@@ -39,7 +39,7 @@ describe("workflow run steps client", () => {
         const steps = await stepsClient.list("run_123");
 
         expect(mockClient.lastFetchParams).toEqual({
-            url: "/v1/workflows/runs/run_123/steps",
+            url: "/workflows/runs/run_123/steps",
             method: "GET",
             params: undefined,
             headers: undefined,
