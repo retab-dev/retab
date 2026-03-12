@@ -21,7 +21,7 @@ export default class APIWorkflows extends CompositionClient {
      */
     async get(workflowId: string, options?: RequestOptions): Promise<Workflow> {
         return this._fetchJson(ZWorkflow, {
-            url: `/v1/workflows/${workflowId}`,
+            url: `/workflows/${workflowId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -62,7 +62,7 @@ export default class APIWorkflows extends CompositionClient {
         );
 
         return this._fetchJson(ZPaginatedList, {
-            url: "/v1/workflows",
+            url: "/workflows",
             method: "GET",
             params,
             headers: options?.headers,

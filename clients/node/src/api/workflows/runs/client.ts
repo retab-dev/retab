@@ -97,7 +97,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         }
 
         return this._fetchJson(ZWorkflowRun, {
-            url: `/v1/workflows/${workflowId}/run`,
+            url: `/workflows/${workflowId}/run`,
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -120,7 +120,7 @@ export default class APIWorkflowRuns extends CompositionClient {
      */
     async get(runId: string, options?: RequestOptions): Promise<WorkflowRun> {
         return this._fetchJson(ZWorkflowRun, {
-            url: `/v1/workflows/runs/${runId}`,
+            url: `/workflows/runs/${runId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -212,7 +212,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         );
 
         return this._fetchJson(ZPaginatedList, {
-            url: "/v1/workflows/runs",
+            url: "/workflows/runs",
             method: "GET",
             params: { ...cleanParams, ...(options?.params || {}) },
             headers: options?.headers,
@@ -232,7 +232,7 @@ export default class APIWorkflowRuns extends CompositionClient {
      */
     async delete(runId: string, options?: RequestOptions): Promise<void> {
         return this._fetchJson({
-            url: `/v1/workflows/runs/${runId}`,
+            url: `/workflows/runs/${runId}`,
             method: "DELETE",
             params: options?.params,
             headers: options?.headers,
@@ -263,7 +263,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         if (commandId !== undefined) body.command_id = commandId;
 
         return this._fetchJson(ZCancelWorkflowResponse, {
-            url: `/v1/workflows/runs/${runId}/cancel`,
+            url: `/workflows/runs/${runId}/cancel`,
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -295,7 +295,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         if (commandId !== undefined) body.command_id = commandId;
 
         return this._fetchJson(ZWorkflowRun, {
-            url: `/v1/workflows/runs/${runId}/restart`,
+            url: `/workflows/runs/${runId}/restart`,
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -348,7 +348,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         if (commandId !== undefined) body.command_id = commandId;
 
         return this._fetchJson(ZResumeWorkflowResponse, {
-            url: `/v1/workflows/runs/${runId}/resume`,
+            url: `/workflows/runs/${runId}/resume`,
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,

@@ -8,7 +8,7 @@ export default class APISchemas extends CompositionClient {
 
     async generate(params: GenerateSchemaRequest, options?: RequestOptions) {
         return this._fetchJson(ZSchema, {
-            url: "/v1/schemas/generate",
+            url: "/schemas/generate",
             method: "POST",
             body: { ...(await ZGenerateSchemaRequest.parseAsync(params)), ...(options?.body || {}) },
             params: options?.params,

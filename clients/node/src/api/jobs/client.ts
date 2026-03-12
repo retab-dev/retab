@@ -8,15 +8,15 @@ type JobListOrder = "asc" | "desc";
 
 // Supported endpoints
 type SupportedEndpoint =
-    | "/v1/documents/extract"
-    | "/v1/documents/parse"
-    | "/v1/documents/split"
-    | "/v1/documents/classify"
-    | "/v1/schemas/generate"
-    | "/v1/edit/agent/fill"
-    | "/v1/edit/templates/fill"
-    | "/v1/edit/templates/generate"
-    | "/v1/projects/extract";  // Requires "project_id" in request body
+    | "/documents/extract"
+    | "/documents/parse"
+    | "/documents/split"
+    | "/documents/classify"
+    | "/schemas/generate"
+    | "/edit/agent/fill"
+    | "/edit/templates/fill"
+    | "/edit/templates/generate"
+    | "/projects/extract";  // Requires "project_id" in request body
 
 // Job response schema
 const ZJobResponse = z.object({
@@ -39,15 +39,15 @@ const ZJob = z.object({
     object: z.literal("job"),
     status: z.enum(["validating", "queued", "in_progress", "completed", "failed", "cancelled", "expired"]),
     endpoint: z.enum([
-        "/v1/documents/extract",
-        "/v1/documents/parse",
-        "/v1/documents/split",
-        "/v1/documents/classify",
-        "/v1/schemas/generate",
-        "/v1/edit/agent/fill",
-        "/v1/edit/templates/fill",
-        "/v1/edit/templates/generate",
-        "/v1/projects/extract",
+        "/documents/extract",
+        "/documents/parse",
+        "/documents/split",
+        "/documents/classify",
+        "/schemas/generate",
+        "/edit/agent/fill",
+        "/edit/templates/fill",
+        "/edit/templates/generate",
+        "/projects/extract",
     ]),
     request: z.record(z.any()).nullable().optional(),
     response: ZJobResponse.nullable().optional(),
@@ -91,7 +91,7 @@ export default class APIJobs extends CompositionClient {
     /**
      * Create a new asynchronous job.
      *
-     * @param endpoint - The API endpoint to call ("/v1/documents/extract" or "/v1/documents/parse")
+     * @param endpoint - The API endpoint to call ("/documents/extract" or "/documents/parse")
      * @param request - The full request body for the target endpoint
      * @param metadata - Optional metadata (max 16 pairs; keys ≤64 chars, values ≤512 chars)
      */
@@ -111,7 +111,7 @@ export default class APIJobs extends CompositionClient {
         if (metadata !== undefined) body.metadata = metadata;
 
         return this._fetchJson(ZJob, {
-            url: "/v1/jobs",
+            url: "/jobs",
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -132,7 +132,7 @@ export default class APIJobs extends CompositionClient {
         };
 
         return this._fetchJson(ZJob, {
-            url: `/v1/jobs/${job_id}`,
+            url: `/jobs/${job_id}`,
             method: "GET",
             params,
             headers: options?.headers,
@@ -199,7 +199,7 @@ export default class APIJobs extends CompositionClient {
      */
     async cancel(job_id: string, options?: RequestOptions): Promise<Job> {
         return this._fetchJson(ZJob, {
-            url: `/v1/jobs/${job_id}/cancel`,
+            url: `/jobs/${job_id}/cancel`,
             method: "POST",
             params: options?.params,
             headers: options?.headers,
@@ -211,7 +211,7 @@ export default class APIJobs extends CompositionClient {
      */
     async retry(job_id: string, options?: RequestOptions): Promise<Job> {
         return this._fetchJson(ZJob, {
-            url: `/v1/jobs/${job_id}/retry`,
+            url: `/jobs/${job_id}/retry`,
             method: "POST",
             params: options?.params,
             headers: options?.headers,
@@ -293,7 +293,7 @@ export default class APIJobs extends CompositionClient {
         );
 
         return this._fetchJson(ZJobListResponse, {
-            url: "/v1/jobs",
+            url: "/jobs",
             method: "GET",
             params: { ...cleanParams, ...(options?.params || {}) },
             headers: options?.headers,

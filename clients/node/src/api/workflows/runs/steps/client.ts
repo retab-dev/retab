@@ -37,7 +37,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
         options?: RequestOptions
     ): Promise<StepOutputResponse> {
         return this._fetchJson(ZStepOutputResponse, {
-            url: `/v1/workflows/runs/${runId}/steps/${nodeId}`,
+            url: `/workflows/runs/${runId}/steps/${nodeId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -64,7 +64,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
         options?: RequestOptions
     ): Promise<WorkflowRunStep[]> {
         return this._fetchJson(z.array(ZWorkflowRunStep), {
-            url: `/v1/workflows/runs/${runId}/steps`,
+            url: `/workflows/runs/${runId}/steps`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,

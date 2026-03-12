@@ -9,7 +9,7 @@ export default class APIProjects extends CompositionClient {
 
     async create(body: CreateProjectRequest, options?: RequestOptions): Promise<Project> {
         return this._fetchJson(ZProject, {
-            url: "/v1/projects",
+            url: "/projects",
             method: "POST",
             body: { ...(await ZCreateProjectRequest.parseAsync(body)), ...(options?.body || {}) },
             params: options?.params,
@@ -19,7 +19,7 @@ export default class APIProjects extends CompositionClient {
 
     async list(options?: RequestOptions): Promise<Project[]> {
         return this._fetchJson(dataArray(ZProject), {
-            url: "/v1/projects",
+            url: "/projects",
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -28,7 +28,7 @@ export default class APIProjects extends CompositionClient {
 
     async get(projectId: string, options?: RequestOptions): Promise<Project> {
         return this._fetchJson(ZProject, {
-            url: `/v1/projects/${projectId}`,
+            url: `/projects/${projectId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -37,7 +37,7 @@ export default class APIProjects extends CompositionClient {
 
     async delete(projectId: string, options?: RequestOptions): Promise<void> {
         return this._fetchJson({
-            url: `/v1/projects/${projectId}`,
+            url: `/projects/${projectId}`,
             method: "DELETE",
             params: options?.params,
             headers: options?.headers,
@@ -48,7 +48,7 @@ export default class APIProjects extends CompositionClient {
         const params = origin ? { origin, ...(options?.params || {}) } : options?.params;
 
         return this._fetchJson(ZProject, {
-            url: `/v1/projects/${projectId}/publish`,
+            url: `/projects/${projectId}/publish`,
             method: "POST",
             params,
             headers: options?.headers,
@@ -74,7 +74,7 @@ export default class APIProjects extends CompositionClient {
         metadata?: Record<string, string>,
         extraction_id?: string,
     }, options?: RequestOptions): Promise<RetabParsedChatCompletion> {
-        const url = iteration_id ? `/v1/projects/extract/${project_id}/${iteration_id}` : `/v1/projects/extract/${project_id}`;
+        const url = iteration_id ? `/projects/extract/${project_id}/${iteration_id}` : `/projects/extract/${project_id}`;
 
         // Parse and convert document to blob for multipart form upload
         const parsedDocument = await ZMIMEData.parseAsync(document);

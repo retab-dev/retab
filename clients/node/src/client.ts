@@ -161,7 +161,7 @@ export class FetcherClient extends AbstractClient {
         )
       ).toString();
     }
-    let url = (this.options.baseUrl || "https://api.retab.com") + params.url + query;
+    let url = (this.options.baseUrl || "https://api.retab.com/v1") + params.url + query;
     let headers = params.headers || {};
     let init: RequestInit = {
       method: params.method,
