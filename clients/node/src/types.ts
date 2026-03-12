@@ -171,6 +171,35 @@ export type InferFormSchemaRequest = z.input<typeof ZInferFormSchemaRequest>;
 export const ZInferFormSchemaResponse = generated.ZInferFormSchemaResponse;
 export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 
+export const ZWorkflowRunStep = z.object({
+    run_id: z.string(),
+    organization_id: z.string(),
+    node_id: z.string(),
+    step_id: z.string(),
+    node_type: z.string(),
+    node_label: z.string(),
+    status: z.string(),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    error: z.string().nullable().optional(),
+    output: z.record(z.any()).nullable().optional(),
+    handle_outputs: z.record(z.string(), z.any()).nullable().optional(),
+    handle_inputs: z.record(z.string(), z.any()).nullable().optional(),
+    input_document: generated.ZBaseMIMEData.nullable().optional(),
+    output_document: generated.ZBaseMIMEData.nullable().optional(),
+    split_documents: z.record(z.string(), generated.ZBaseMIMEData).nullable().optional(),
+    requires_human_review: z.boolean().nullable().optional(),
+    human_reviewed_at: z.string().nullable().optional(),
+    human_review_approved: z.boolean().nullable().optional(),
+    retry_count: z.number().nullable().optional(),
+    loop_id: z.string().nullable().optional(),
+    iteration: z.number().nullable().optional(),
+    created_at: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+}).passthrough();
+export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
+
 export const ZModel = z.lazy(() => (z.object({
     id: z.string(),
     created: z.number(),

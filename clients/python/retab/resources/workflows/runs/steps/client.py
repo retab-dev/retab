@@ -4,7 +4,7 @@ from ....._resource import AsyncAPIResource, SyncAPIResource
 from .....types.standards import PreparedRequest
 from .....types.workflows import (
     StepOutputResponse,
-    StepOutputsBatchResponse,
+    WorkflowRunStep,
 )
 
 
@@ -15,13 +15,9 @@ class WorkflowStepsMixin:
         """Prepare a request to get the output of a specific step."""
         return PreparedRequest(method="GET", url=f"/v1/workflows/runs/{run_id}/steps/{node_id}")
 
-    def prepare_get_batch(self, run_id: str, node_ids: List[str]) -> PreparedRequest:
-        """Prepare a request to get outputs for multiple steps."""
-        return PreparedRequest(
-            method="POST",
-            url=f"/v1/workflows/runs/{run_id}/steps/batch",
-            data={"node_ids": node_ids},
-        )
+    def prepare_list(self, run_id: str) -> PreparedRequest:
+        """Prepare a request to list all step documents for a workflow run."""
+        return PreparedRequest(method="GET", url=f"/v1/workflows/runs/{run_id}/steps")
 
 
 class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
@@ -59,19 +55,18 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
         response = self._client._prepared_request(request)
         return StepOutputResponse.model_validate(response)
 
-    def get_batch(self, run_id: str, node_ids: List[str]) -> StepOutputsBatchResponse:
-        """Get outputs for multiple steps in a single request.
+    def list(self, run_id: str) -> List[WorkflowRunStep]:
+        """List all persisted step documents for a workflow run.
 
         Args:
             run_id: The ID of the workflow run
-            node_ids: List of node IDs to fetch outputs for (max 1000)
 
         Returns:
-            StepOutputsBatchResponse: Step outputs keyed by node ID
+            List[WorkflowRunStep]: The stored step documents for the run
         """
-        request = self.prepare_get_batch(run_id, node_ids)
+        request = self.prepare_list(run_id)
         response = self._client._prepared_request(request)
-        return StepOutputsBatchResponse.model_validate(response)
+        return [WorkflowRunStep.model_validate(item) for item in response]
 
 
 class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
@@ -109,16 +104,15 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
         response = await self._client._prepared_request(request)
         return StepOutputResponse.model_validate(response)
 
-    async def get_batch(self, run_id: str, node_ids: List[str]) -> StepOutputsBatchResponse:
-        """Get outputs for multiple steps in a single request.
+    async def list(self, run_id: str) -> List[WorkflowRunStep]:
+        """List all persisted step documents for a workflow run.
 
         Args:
             run_id: The ID of the workflow run
-            node_ids: List of node IDs to fetch outputs for (max 1000)
 
         Returns:
-            StepOutputsBatchResponse: Step outputs keyed by node ID
+            List[WorkflowRunStep]: The stored step documents for the run
         """
-        request = self.prepare_get_batch(run_id, node_ids)
+        request = self.prepare_list(run_id)
         response = await self._client._prepared_request(request)
-        return StepOutputsBatchResponse.model_validate(response)
+        return [WorkflowRunStep.model_validate(item) for item in response]

@@ -2,14 +2,15 @@ import { CompositionClient, RequestOptions } from "../../../../client.js";
 import {
     StepOutputResponse,
     ZStepOutputResponse,
-    StepOutputsBatchResponse,
-    ZStepOutputsBatchResponse,
+    WorkflowRunStep,
+    ZWorkflowRunStep,
 } from "../../../../types.js";
+import * as z from "zod";
 
 /**
  * Workflow Run Steps API client for accessing step-level outputs.
  *
- * Usage: `client.workflows.runs.steps.get(runId, nodeId)`
+ * Usage: `client.workflows.runs.steps.get(runId, nodeId)` or `client.workflows.runs.steps.list(runId)`
  */
 export default class APIWorkflowRunSteps extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -44,33 +45,27 @@ export default class APIWorkflowRunSteps extends CompositionClient {
     }
 
     /**
-     * Get outputs for multiple steps in a single request.
+     * List all persisted step documents for a workflow run.
      *
      * @param runId - The ID of the workflow run
-     * @param nodeIds - List of node IDs to fetch outputs for (max 1000)
      * @param options - Optional request options
-     * @returns Step outputs keyed by node ID
+     * @returns All step documents for the run
      *
      * @example
      * ```typescript
-     * const batch = await client.workflows.runs.steps.getBatch(
-     *     "run_abc123",
-     *     ["extract-1", "extract-2", "split-1"]
-     * );
-     * for (const [nodeId, step] of Object.entries(batch.outputs)) {
-     *     console.log(`${nodeId}: ${step.status}`);
+     * const steps = await client.workflows.runs.steps.list("run_abc123");
+     * for (const step of steps) {
+     *     console.log(`${step.node_id}: ${step.status}`);
      * }
      * ```
      */
-    async getBatch(
+    async list(
         runId: string,
-        nodeIds: string[],
         options?: RequestOptions
-    ): Promise<StepOutputsBatchResponse> {
-        return this._fetchJson(ZStepOutputsBatchResponse, {
-            url: `/v1/workflows/runs/${runId}/steps/batch`,
-            method: "POST",
-            body: { node_ids: nodeIds, ...(options?.body || {}) },
+    ): Promise<WorkflowRunStep[]> {
+        return this._fetchJson(z.array(ZWorkflowRunStep), {
+            url: `/v1/workflows/runs/${runId}/steps`,
+            method: "GET",
             params: options?.params,
             headers: options?.headers,
         });
