@@ -423,9 +423,9 @@ export type StepOutputsBatchResponse = z.infer<typeof ZStepOutputsBatchResponse>
 
 export const ZStepStatus = z.lazy(() => (z.object({
     node_id: z.string(),
-    node_type: z.union([z.literal("start"), z.literal("extract"), z.literal("split"), z.literal("end"), z.literal("hil")]),
+    node_type: z.string(),
     node_label: z.string(),
-    status: z.union([z.literal("pending"), z.literal("running"), z.literal("completed"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
+    status: z.union([z.literal("pending"), z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("skipped"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
@@ -4304,4 +4304,3 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
-
