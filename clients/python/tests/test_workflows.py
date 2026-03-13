@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from retab.resources.workflows.client import AsyncWorkflows, Workflows
+from retab.types.workflows.model import WorkflowRun
 
 
 def test_workflows_get_uses_detail_route() -> None:
@@ -103,3 +104,59 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
         "after": "cursor_0",
     }
     assert result.list_metadata.after == "cursor_1"
+
+
+def test_workflow_run_accepts_newer_step_node_types() -> None:
+    run = WorkflowRun.model_validate(
+        {
+            "id": "run_123",
+            "workflow_id": "workflow_123",
+            "workflow_name": "Classifier Workflow",
+            "organization_id": "org_123",
+            "status": "running",
+            "started_at": "2026-03-13T10:00:00Z",
+            "steps": [
+                {
+                    "node_id": "classifier-1",
+                    "node_type": "classifier",
+                    "node_label": "Classifier",
+                    "status": "completed",
+                }
+            ],
+            "created_at": "2026-03-13T10:00:00Z",
+            "updated_at": "2026-03-13T10:00:00Z",
+        }
+    )
+
+    assert run.steps[0].node_type == "classifier"
+
+
+def test_workflow_run_accepts_skipped_step_statuses() -> None:
+    run = WorkflowRun.model_validate(
+        {
+            "id": "run_456",
+            "workflow_id": "workflow_123",
+            "workflow_name": "Branching Workflow",
+            "organization_id": "org_123",
+            "status": "running",
+            "started_at": "2026-03-13T10:00:00Z",
+            "steps": [
+                {
+                    "node_id": "extract-1",
+                    "node_type": "extract",
+                    "node_label": "Extract",
+                    "status": "completed",
+                },
+                {
+                    "node_id": "extract-2",
+                    "node_type": "extract",
+                    "node_label": "Skipped branch",
+                    "status": "skipped",
+                },
+            ],
+            "created_at": "2026-03-13T10:00:00Z",
+            "updated_at": "2026-03-13T10:00:00Z",
+        }
+    )
+
+    assert [step.status for step in run.steps] == ["completed", "skipped"]

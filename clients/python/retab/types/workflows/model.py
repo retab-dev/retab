@@ -21,7 +21,20 @@ class HandlePayload(BaseModel):
     text: Optional[str] = Field(default=None, description="For text payloads: text content")
 
 
-NodeType = Literal["start", "extract", "split", "end", "hil"]
+# Workflow run payloads can contain newer backend node types before the SDK is
+# regenerated. Keep runtime validation permissive so informational step metadata
+# does not break run parsing.
+NodeType = str
+StepExecutionStatus = Literal[
+    "pending",
+    "queued",
+    "running",
+    "completed",
+    "skipped",
+    "error",
+    "waiting_for_human",
+    "cancelled",
+]
 
 
 class StepStatus(BaseModel):
@@ -29,7 +42,7 @@ class StepStatus(BaseModel):
     node_id: str = Field(..., description="ID of the node")
     node_type: NodeType = Field(..., description="Type of the node")
     node_label: str = Field(..., description="Label of the node")
-    status: Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"] = Field(..., description="Current status")
+    status: StepExecutionStatus = Field(..., description="Current status")
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
     duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")

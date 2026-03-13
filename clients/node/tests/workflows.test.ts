@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { AbstractClient } from "../src/client";
 import APIWorkflows from "../src/api/workflows/client";
+import APIWorkflowRuns from "../src/api/workflows/runs/client";
 
 class MockClient extends AbstractClient {
     public lastFetchParams: Record<string, unknown> | null = null;
@@ -79,5 +80,45 @@ describe("workflows client", () => {
             headers: undefined,
         });
         expect(result.list_metadata.after).toBe("cursor_1");
+    });
+
+    test("runs.get() accepts newer step node types and skipped statuses", async () => {
+        const mockClient = new MockClient({
+            id: "run_123",
+            workflow_id: "workflow_123",
+            workflow_name: "Classifier Workflow",
+            organization_id: "org_123",
+            status: "running",
+            started_at: "2026-03-13T10:00:00Z",
+            steps: [
+                {
+                    node_id: "classifier-1",
+                    node_type: "classifier",
+                    node_label: "Classifier",
+                    status: "completed",
+                },
+                {
+                    node_id: "extract-2",
+                    node_type: "extract",
+                    node_label: "Skipped branch",
+                    status: "skipped",
+                },
+            ],
+            created_at: "2026-03-13T10:00:00Z",
+            updated_at: "2026-03-13T10:00:00Z",
+            waiting_for_node_ids: [],
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        const run = await runsClient.get("run_123");
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/runs/run_123",
+            method: "GET",
+            params: undefined,
+            headers: undefined,
+        });
+        expect(run.steps[0]?.node_type).toBe("classifier");
+        expect(run.steps[1]?.status).toBe("skipped");
     });
 });
