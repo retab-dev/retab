@@ -133,6 +133,54 @@ async def test_extract_without_iteration_id(
             pass
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client_type", get_args(ClientType))
+async def test_split_project_via_projects_resource(
+    sync_client: Retab,
+    async_client: AsyncRetab,
+    client_type: ClientType,
+    test_data_dir: str,
+) -> None:
+    client = sync_client if client_type == "sync" else async_client
+    split_project_name = f"test_split_project_{nanoid.generate()}"
+    split_document_path = f"{test_data_dir}/edit/fidelity_original.pdf"
+
+    split_project = await await_or_return(
+        client._request(  # type: ignore[attr-defined]
+            "POST",
+            "/split-projects",
+            data={
+                "name": split_project_name,
+                "split_config": [
+                    {"name": "Document", "description": "The full document"},
+                ],
+            },
+        )
+    )
+    project_id = split_project["id"]
+
+    try:
+        response = await await_or_return(
+            client.projects.split(
+                project_id=project_id,
+                document=split_document_path,
+            )
+        )
+
+        assert isinstance(response, RetabParsedChatCompletion)
+        assert response.choices is not None
+        assert len(response.choices) > 0
+        assert response.choices[0].message.content is not None
+        parsed_content = json.loads(response.choices[0].message.content)
+        assert isinstance(parsed_content, dict)
+        assert "splits" in parsed_content
+    finally:
+        try:
+            await await_or_return(client._request("DELETE", f"/split-projects/{project_id}"))  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+
 
 # FAILED test_evaluations.py::test_complete_evaluation_workflow[sync] - RuntimeError: Request failed (409): {"detail":{"code":"HTTP_EXCEPTION","message":"An HTTP exception occurred.","details":{"error":"Document with this ID already exists in the e...
 # FAILED test_evaluations.py::test_evaluation_with_documents[sync] - Exception: Max tries exceeded after 1 tries.

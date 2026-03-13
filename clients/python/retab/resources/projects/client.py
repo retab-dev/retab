@@ -152,6 +152,35 @@ class ProjectsMixin:
 
         return PreparedRequest(method="POST", url=url, form_data=form_data, files=files)
 
+    def prepare_split(
+        self,
+        project_id: str,
+        document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        model: str | None = None,
+        image_resolution_dpi: int | None = None,
+        n_consensus: int | None = None,
+        metadata: Dict[str, str] | None = None,
+        extraction_id: str | None = None,
+        **extra_form: Any,
+    ) -> PreparedRequest:
+        form_data = {
+            "model": model,
+            "image_resolution_dpi": image_resolution_dpi,
+            "n_consensus": n_consensus,
+            "metadata": json.dumps(metadata) if metadata else None,
+            "extraction_id": extraction_id,
+        }
+        if extra_form:
+            form_data.update(extra_form)
+        form_data = {k: v for k, v in form_data.items() if v is not None}
+
+        mime_document = prepare_mime_document(document)
+        files = {
+            "document": (mime_document.filename, base64.b64decode(mime_document.content), mime_document.mime_type)
+        }
+
+        return PreparedRequest(method="POST", url=f"/projects/split/{project_id}", form_data=form_data, files=files)
+
 
 class Projects(SyncAPIResource, ProjectsMixin):
     """Projects API wrapper"""
@@ -274,6 +303,30 @@ class Projects(SyncAPIResource, ProjectsMixin):
         response = self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)
 
+    def split(
+        self,
+        project_id: str,
+        document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        model: str | None = None,
+        image_resolution_dpi: int | None = None,
+        n_consensus: int | None = None,
+        metadata: Dict[str, str] | None = None,
+        extraction_id: str | None = None,
+        **extra_form: Any,
+    ) -> RetabParsedChatCompletion:
+        request = self.prepare_split(
+            project_id=project_id,
+            document=document,
+            model=model,
+            image_resolution_dpi=image_resolution_dpi,
+            n_consensus=n_consensus,
+            metadata=metadata,
+            extraction_id=extraction_id,
+            **extra_form,
+        )
+        response = self._client._prepared_request(request)
+        return RetabParsedChatCompletion.model_validate(response)
+
 
 class AsyncProjects(AsyncAPIResource, ProjectsMixin):
     """Async Projects API wrapper"""
@@ -379,5 +432,29 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
             RetabParsedChatCompletion: The processing result
         """
         request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, model=model, image_resolution_dpi=image_resolution_dpi, n_consensus=n_consensus)
+        response = await self._client._prepared_request(request)
+        return RetabParsedChatCompletion.model_validate(response)
+
+    async def split(
+        self,
+        project_id: str,
+        document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
+        model: str | None = None,
+        image_resolution_dpi: int | None = None,
+        n_consensus: int | None = None,
+        metadata: Dict[str, str] | None = None,
+        extraction_id: str | None = None,
+        **extra_form: Any,
+    ) -> RetabParsedChatCompletion:
+        request = self.prepare_split(
+            project_id=project_id,
+            document=document,
+            model=model,
+            image_resolution_dpi=image_resolution_dpi,
+            n_consensus=n_consensus,
+            metadata=metadata,
+            extraction_id=extraction_id,
+            **extra_form,
+        )
         response = await self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)
