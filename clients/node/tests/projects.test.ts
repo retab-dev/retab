@@ -128,6 +128,53 @@ describe('Retab SDK Tests', () => {
             }
         }, { timeout: TEST_TIMEOUT });
 
+        test('test_projects_split_uses_split_project_config', async () => {
+            const envConfig = getEnvConfig();
+            const splitProjectName = `test_split_project_${generateId()}`;
+            const splitDocumentPath = getFidelityFormPath();
+
+            const createResponse = await fetch(`${envConfig.retabApiBaseUrl}/split-projects`, {
+                method: 'POST',
+                headers: {
+                    'Api-Key': envConfig.retabApiKey,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: splitProjectName,
+                    split_config: [
+                        { name: 'Document', description: 'The full document' },
+                    ],
+                }),
+            });
+
+            expect(createResponse.ok).toBe(true);
+            const splitProject: any = await createResponse.json();
+            const projectId = splitProject.id;
+
+            try {
+                const response: any = await client.projects.split({
+                    project_id: projectId,
+                    document: splitDocumentPath,
+                });
+
+                expect(response).toBeDefined();
+                expect(response.choices).toBeDefined();
+                expect(response.choices.length).toBeGreaterThan(0);
+                expect(response.choices[0].message.content).toBeDefined();
+
+                const parsed = JSON.parse(response.choices[0].message.content);
+                expect(parsed).toBeDefined();
+                expect(parsed.splits).toBeDefined();
+            } finally {
+                await fetch(`${envConfig.retabApiBaseUrl}/split-projects/${projectId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Api-Key': envConfig.retabApiKey,
+                    },
+                });
+            }
+        }, { timeout: TEST_TIMEOUT });
+
         test('test_projects_extract_functionality', async () => {
             // Create an isolated project + iteration, then call extract
             const envConfig = getEnvConfig();

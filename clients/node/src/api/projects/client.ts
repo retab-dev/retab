@@ -100,4 +100,43 @@ export default class APIProjects extends CompositionClient {
             headers: options?.headers,
         });
     }
+
+    async split({
+        project_id,
+        document,
+        model,
+        image_resolution_dpi,
+        n_consensus,
+        metadata,
+        extraction_id,
+    }: {
+        project_id: string,
+        document: MIMEDataInput,
+        model?: string,
+        image_resolution_dpi?: number,
+        n_consensus?: number,
+        metadata?: Record<string, string>,
+        extraction_id?: string,
+    }, options?: RequestOptions): Promise<RetabParsedChatCompletion> {
+        const parsedDocument = await ZMIMEData.parseAsync(document);
+
+        const bodyParams: Record<string, any> = {
+            document: mimeToBlob(parsedDocument),
+        };
+
+        if (model !== undefined) bodyParams.model = model;
+        if (image_resolution_dpi !== undefined) bodyParams.image_resolution_dpi = image_resolution_dpi;
+        if (n_consensus !== undefined) bodyParams.n_consensus = n_consensus;
+        if (metadata !== undefined) bodyParams.metadata = JSON.stringify(metadata);
+        if (extraction_id !== undefined) bodyParams.extraction_id = extraction_id;
+
+        return this._fetchJson(ZRetabParsedChatCompletion, {
+            url: `/projects/split/${project_id}`,
+            method: "POST",
+            body: { ...bodyParams, ...(options?.body || {}) },
+            bodyMime: "multipart/form-data",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
 }
