@@ -7,16 +7,7 @@ type JobListSource = "api" | "project" | "workflow";
 type JobListOrder = "asc" | "desc";
 
 // Supported endpoints
-type SupportedEndpoint =
-    | "/documents/extract"
-    | "/documents/parse"
-    | "/documents/split"
-    | "/documents/classify"
-    | "/schemas/generate"
-    | "/edit/agent/fill"
-    | "/edit/templates/fill"
-    | "/edit/templates/generate"
-    | "/projects/extract";  // Requires "project_id" in request body
+type SupportedEndpoint = string;
 
 // Job response schema
 const ZJobResponse = z.object({
@@ -38,17 +29,7 @@ const ZJob = z.object({
     id: z.string(),
     object: z.literal("job"),
     status: z.enum(["validating", "queued", "in_progress", "completed", "failed", "cancelled", "expired"]),
-    endpoint: z.enum([
-        "/documents/extract",
-        "/documents/parse",
-        "/documents/split",
-        "/documents/classify",
-        "/schemas/generate",
-        "/edit/agent/fill",
-        "/edit/templates/fill",
-        "/edit/templates/generate",
-        "/projects/extract",
-    ]),
+    endpoint: z.string(),
     request: z.record(z.any()).nullable().optional(),
     response: ZJobResponse.nullable().optional(),
     error: ZJobError.nullable().optional(),

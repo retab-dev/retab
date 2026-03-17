@@ -1,14 +1,23 @@
+from enum import Enum
 from typing import Any, List, Literal, Optional, Tuple, TypeVar, TypedDict
 
 from pydantic import BaseModel, Field
-from pydantic_core import PydanticUndefined
 
 # API Standards
 
 # Define a type variable to represent the content type
 T = TypeVar("T")
 
-FieldUnset: Any = PydanticUndefined
+
+class _Unset(Enum):
+    """Sentinel for parameters that were not provided by the caller."""
+    UNSET = "UNSET"
+
+
+UNSET = _Unset.UNSET
+
+# Deprecated alias — kept for backward compatibility
+FieldUnset: Any = UNSET
 
 
 # Define the ErrorDetail model

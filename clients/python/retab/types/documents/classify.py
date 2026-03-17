@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from ..mime import MIMEData
+from .usage import RetabUsage
 
 class Category(BaseModel):
     name: str = Field(..., description="The name of the category")
@@ -20,6 +21,7 @@ class ClassifyResult(BaseModel):
 
 class ClassifyResponse(BaseModel):
     result: ClassifyResult = Field(..., description="The classification result with reasoning")
+    usage: RetabUsage = Field(..., description="Usage information for the classification")
 
 
 class ClassifyOutputSchema(BaseModel):

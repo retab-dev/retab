@@ -13,6 +13,13 @@ from .model import (
     StepOutputsBatchResponse,
     CancelWorkflowResponse,
     ResumeWorkflowResponse,
+    FinalNodeOutput,
+    ExportResponse,
+    WorkflowBlock,
+    WorkflowEdge,
+    WorkflowSubflow,
+    WorkflowWithEntities,
+    WorkflowRunError,
 )
 
 
@@ -30,4 +37,11 @@ __all__ = [
     "StepOutputsBatchResponse",
     "CancelWorkflowResponse",
     "ResumeWorkflowResponse",
+    "FinalNodeOutput",
+    "ExportResponse",
+    "WorkflowBlock",
+    "WorkflowEdge",
+    "WorkflowSubflow",
+    "WorkflowWithEntities",
+    "WorkflowRunError",
 ]

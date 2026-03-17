@@ -2,7 +2,7 @@ import asyncio
 import time
 from io import IOBase
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Callable, Dict, List, Literal, Optional
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -16,6 +16,7 @@ from ....types.workflows import (
     TERMINAL_WORKFLOW_RUN_STATUSES,
     CancelWorkflowResponse,
     ResumeWorkflowResponse,
+    ExportResponse,
 )
 from .steps import WorkflowSteps, AsyncWorkflowSteps
 
@@ -318,7 +319,9 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             order=order,
         )
         response = self._client._prepared_request(request)
-        return PaginatedList(**response)
+        result = PaginatedList(**response)
+        result.data = [WorkflowRun.model_validate(item) if isinstance(item, dict) else item for item in result.data]
+        return result
 
     def delete(self, run_id: str) -> None:
         """Delete a workflow run and its associated step data.
@@ -329,7 +332,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         request = self.prepare_delete(run_id)
         self._client._prepared_request(request)
 
-    def cancel(self, run_id: str, *, command_id: str | None = None) -> CancelWorkflowResponse:
+    def cancel(self, run_id: str, command_id: str | None = None) -> CancelWorkflowResponse:
         """Cancel a running or pending workflow run.
 
         Args:
@@ -343,7 +346,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         response = self._client._prepared_request(request)
         return CancelWorkflowResponse.model_validate(response)
 
-    def restart(self, run_id: str, *, command_id: str | None = None) -> WorkflowRun:
+    def restart(self, run_id: str, command_id: str | None = None) -> WorkflowRun:
         """Restart a completed or failed workflow run with the same inputs.
 
         Args:
@@ -360,7 +363,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def resume(
         self,
         run_id: str,
-        *,
+
         node_id: str,
         approved: bool,
         modified_data: dict | None = None,
@@ -388,9 +391,10 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def wait_for_completion(
         self,
         run_id: str,
-        *,
+
         poll_interval_seconds: float = 2.0,
         timeout_seconds: float = 600.0,
+        on_status: Callable[[WorkflowRun], None] | None = None,
     ) -> WorkflowRun:
         """Poll a workflow run until it reaches a terminal state.
 
@@ -400,6 +404,8 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             run_id: The ID of the workflow run to wait for
             poll_interval_seconds: Seconds between polls (default 2.0)
             timeout_seconds: Maximum time to wait (default 600.0)
+            on_status: Optional callback invoked with the ``WorkflowRun`` on each poll.
+                Useful for logging progress or updating a progress bar.
 
         Returns:
             WorkflowRun: The completed workflow run
@@ -417,6 +423,8 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         deadline = started_at + timeout_seconds
         while True:
             run = self.get(run_id)
+            if on_status is not None:
+                on_status(run)
             if run.status in TERMINAL_WORKFLOW_RUN_STATUSES:
                 return run
 
@@ -428,50 +436,58 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             sleep_for = min(poll_interval_seconds, max(deadline - now, 0.0))
             time.sleep(sleep_for)
 
-    def create_and_wait(
+    def export(
         self,
         workflow_id: str,
-        documents: Optional[Dict[str, DocumentInput]] = None,
-        json_inputs: Optional[Dict[str, Dict[str, Any]]] = None,
-        *,
-        poll_interval_seconds: float = 2.0,
-        timeout_seconds: float = 600.0,
-    ) -> WorkflowRun:
-        """Create a workflow run and wait for it to complete.
+        node_id: str,
+        export_source: Literal["outputs", "inputs"] = "outputs",
 
-        This is a convenience method combining create() and wait_for_completion().
+        selected_run_ids: List[str] | None = None,
+        status: str | None = None,
+        exclude_status: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        trigger_types: List[str] | None = None,
+        preferred_columns: List[str] | None = None,
+    ) -> ExportResponse:
+        """Export run results as structured CSV data.
 
         Args:
-            workflow_id: The ID of the workflow to run
-            documents: Mapping of start node IDs to their input documents
-            json_inputs: Mapping of start_json node IDs to their input JSON data
-            poll_interval_seconds: Seconds between polls (default 2.0)
-            timeout_seconds: Maximum time to wait (default 600.0)
+            workflow_id: The workflow ID
+            node_id: The node ID to export outputs from
+            export_source: Whether to export "outputs" or "inputs" (default "outputs")
+            selected_run_ids: Limit export to specific run IDs (optional)
+            status: Filter by status (optional)
+            exclude_status: Exclude specific status (optional)
+            from_date: Filter from date (YYYY-MM-DD, optional)
+            to_date: Filter to date (YYYY-MM-DD, optional)
+            trigger_types: Filter by trigger types (optional)
+            preferred_columns: Column ordering (optional)
 
         Returns:
-            WorkflowRun: The completed workflow run
-
-        Raises:
-            TimeoutError: If the run doesn't complete within timeout_seconds
-
-        Example:
-            >>> run = client.workflows.runs.create_and_wait(
-            ...     workflow_id="wf_abc123",
-            ...     documents={"start-node-1": Path("invoice.pdf")},
-            ... )
-            >>> print(f"Run completed: {run.status}")
-            >>> print(f"Outputs: {run.final_outputs}")
+            Dict with csv_data (str), rows (int), columns (int)
         """
-        run = self.create(
-            workflow_id=workflow_id,
-            documents=documents,
-            json_inputs=json_inputs,
-        )
-        return self.wait_for_completion(
-            run.id,
-            poll_interval_seconds=poll_interval_seconds,
-            timeout_seconds=timeout_seconds,
-        )
+        data: Dict[str, Any] = {
+            "workflow_id": workflow_id,
+            "node_id": node_id,
+            "export_source": export_source,
+            "preferred_columns": preferred_columns or [],
+        }
+        if selected_run_ids is not None:
+            data["selected_run_ids"] = selected_run_ids
+        if status is not None:
+            data["status"] = status
+        if exclude_status is not None:
+            data["exclude_status"] = exclude_status
+        if from_date is not None:
+            data["from_date"] = from_date
+        if to_date is not None:
+            data["to_date"] = to_date
+        if trigger_types is not None:
+            data["trigger_types"] = trigger_types
+        request = PreparedRequest(method="POST", url="/workflows/runs/export_payload", data=data)
+        response = self._client._prepared_request(request)
+        return ExportResponse.model_validate(response)
 
 
 class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
@@ -619,7 +635,9 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             order=order,
         )
         response = await self._client._prepared_request(request)
-        return PaginatedList(**response)
+        result = PaginatedList(**response)
+        result.data = [WorkflowRun.model_validate(item) if isinstance(item, dict) else item for item in result.data]
+        return result
 
     async def delete(self, run_id: str) -> None:
         """Delete a workflow run and its associated step data.
@@ -630,7 +648,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         request = self.prepare_delete(run_id)
         await self._client._prepared_request(request)
 
-    async def cancel(self, run_id: str, *, command_id: str | None = None) -> CancelWorkflowResponse:
+    async def cancel(self, run_id: str, command_id: str | None = None) -> CancelWorkflowResponse:
         """Cancel a running or pending workflow run.
 
         Args:
@@ -644,7 +662,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         response = await self._client._prepared_request(request)
         return CancelWorkflowResponse.model_validate(response)
 
-    async def restart(self, run_id: str, *, command_id: str | None = None) -> WorkflowRun:
+    async def restart(self, run_id: str, command_id: str | None = None) -> WorkflowRun:
         """Restart a completed or failed workflow run with the same inputs.
 
         Args:
@@ -661,7 +679,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     async def resume(
         self,
         run_id: str,
-        *,
+
         node_id: str,
         approved: bool,
         modified_data: dict | None = None,
@@ -689,9 +707,10 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     async def wait_for_completion(
         self,
         run_id: str,
-        *,
+
         poll_interval_seconds: float = 2.0,
         timeout_seconds: float = 600.0,
+        on_status: Callable[[WorkflowRun], None] | None = None,
     ) -> WorkflowRun:
         """Poll a workflow run until it reaches a terminal state.
 
@@ -701,6 +720,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             run_id: The ID of the workflow run to wait for
             poll_interval_seconds: Seconds between polls (default 2.0)
             timeout_seconds: Maximum time to wait (default 600.0)
+            on_status: Optional callback invoked with the ``WorkflowRun`` on each poll.
 
         Returns:
             WorkflowRun: The completed workflow run
@@ -718,6 +738,8 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         deadline = started_at + timeout_seconds
         while True:
             run = await self.get(run_id)
+            if on_status is not None:
+                on_status(run)
             if run.status in TERMINAL_WORKFLOW_RUN_STATUSES:
                 return run
 
@@ -729,47 +751,39 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             sleep_for = min(poll_interval_seconds, max(deadline - now, 0.0))
             await asyncio.sleep(sleep_for)
 
-    async def create_and_wait(
+    async def export(
         self,
         workflow_id: str,
-        documents: Optional[Dict[str, DocumentInput]] = None,
-        json_inputs: Optional[Dict[str, Dict[str, Any]]] = None,
-        *,
-        poll_interval_seconds: float = 2.0,
-        timeout_seconds: float = 600.0,
-    ) -> WorkflowRun:
-        """Create a workflow run and wait for it to complete.
+        node_id: str,
+        export_source: Literal["outputs", "inputs"] = "outputs",
 
-        This is a convenience method combining create() and wait_for_completion().
-
-        Args:
-            workflow_id: The ID of the workflow to run
-            documents: Mapping of start node IDs to their input documents
-            json_inputs: Mapping of start_json node IDs to their input JSON data
-            poll_interval_seconds: Seconds between polls (default 2.0)
-            timeout_seconds: Maximum time to wait (default 600.0)
-
-        Returns:
-            WorkflowRun: The completed workflow run
-
-        Raises:
-            TimeoutError: If the run doesn't complete within timeout_seconds
-
-        Example:
-            >>> run = await client.workflows.runs.create_and_wait(
-            ...     workflow_id="wf_abc123",
-            ...     documents={"start-node-1": Path("invoice.pdf")},
-            ... )
-            >>> print(f"Run completed: {run.status}")
-            >>> print(f"Outputs: {run.final_outputs}")
-        """
-        run = await self.create(
-            workflow_id=workflow_id,
-            documents=documents,
-            json_inputs=json_inputs,
-        )
-        return await self.wait_for_completion(
-            run.id,
-            poll_interval_seconds=poll_interval_seconds,
-            timeout_seconds=timeout_seconds,
-        )
+        selected_run_ids: List[str] | None = None,
+        status: str | None = None,
+        exclude_status: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        trigger_types: List[str] | None = None,
+        preferred_columns: List[str] | None = None,
+    ) -> ExportResponse:
+        """Export run results as structured CSV data."""
+        data: Dict[str, Any] = {
+            "workflow_id": workflow_id,
+            "node_id": node_id,
+            "export_source": export_source,
+            "preferred_columns": preferred_columns or [],
+        }
+        if selected_run_ids is not None:
+            data["selected_run_ids"] = selected_run_ids
+        if status is not None:
+            data["status"] = status
+        if exclude_status is not None:
+            data["exclude_status"] = exclude_status
+        if from_date is not None:
+            data["from_date"] = from_date
+        if to_date is not None:
+            data["to_date"] = to_date
+        if trigger_types is not None:
+            data["trigger_types"] = trigger_types
+        request = PreparedRequest(method="POST", url="/workflows/runs/export_payload", data=data)
+        response = await self._client._prepared_request(request)
+        return ExportResponse.model_validate(response)

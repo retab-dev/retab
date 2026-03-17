@@ -10,7 +10,8 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import MIMEData, prepare_mime_document
 from ...types.documents.extract import RetabParsedChatCompletion
 from ...types.projects import Project, PatchProjectRequest, CreateProjectRequest
-from ...types.standards import PreparedRequest, DeleteResponse, FieldUnset
+from ...types.standards import PreparedRequest, DeleteResponse, UNSET, _Unset, FieldUnset
+from .datasets import Datasets, AsyncDatasets
 
 class ProjectsMixin:
     def prepare_create(
@@ -36,8 +37,8 @@ class ProjectsMixin:
     def prepare_update(
         self,
         project_id: str,
-        name: str = FieldUnset,
-        json_schema: dict[str, Any] = FieldUnset,
+        name: str | _Unset = UNSET,
+        json_schema: dict[str, Any] | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         """
@@ -47,9 +48,9 @@ class ProjectsMixin:
         """
         # Build a dictionary with only the provided fields
         update_dict: dict[str, Any] = {}
-        if name is not FieldUnset:
+        if name is not UNSET:
             update_dict["name"] = name
-        if json_schema is not FieldUnset:
+        if json_schema is not UNSET:
             update_dict["json_schema"] = json_schema
         if extra_body:
             update_dict.update(extra_body)
@@ -185,8 +186,9 @@ class ProjectsMixin:
 class Projects(SyncAPIResource, ProjectsMixin):
     """Projects API wrapper"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, client: Any, **kwargs: Any) -> None:
+        super().__init__(client=client, **kwargs)
+        self.datasets = Datasets(client=client)
 
     def create(
         self,
@@ -331,8 +333,9 @@ class Projects(SyncAPIResource, ProjectsMixin):
 class AsyncProjects(AsyncAPIResource, ProjectsMixin):
     """Async Projects API wrapper"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, client: Any, **kwargs: Any) -> None:
+        super().__init__(client=client, **kwargs)
+        self.datasets = AsyncDatasets(client=client)
 
     async def create(self, name: str, json_schema: dict[str, Any], **extra_body: Any) -> Project:
         """

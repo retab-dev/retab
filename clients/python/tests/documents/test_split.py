@@ -11,7 +11,7 @@ TEST_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # List of AI Models to test for split (models that support vision/document analysis)
 AI_MODELS = Literal[
-    "retab-small",
+    "retab-micro",
 ]
 
 ClientType = Literal[
@@ -146,7 +146,7 @@ async def test_split_response_structure(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="retab-small",
+            model="retab-micro",
             subdocuments=split_subdocuments,
         )
     
@@ -183,7 +183,7 @@ async def test_split_with_dict_subdocuments(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="retab-small",
+            model="retab-micro",
             subdocuments=dict_subdocuments,
         )
     
@@ -207,7 +207,7 @@ async def test_split_page_coverage(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="retab-small",
+            model="retab-micro",
             subdocuments=split_subdocuments,
         )
     
@@ -232,7 +232,7 @@ async def test_split_with_minimal_subdocuments(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="retab-small",
+            model="retab-micro",
             subdocuments=minimal_subdocuments,
         )
     
@@ -258,7 +258,7 @@ async def test_split_discontinuous_subdocuments(
     with sync_client as client:
         response = client.documents.split(
             document=multi_page_pdf_path,
-            model="retab-small",
+            model="retab-micro",
             subdocuments=discontinuous_subdocuments,
         )
     
@@ -295,13 +295,13 @@ async def test_generate_split_config_fidelity(
         with sync_client as client:
             response = client.documents.generate_split_config(
                 document=multi_page_pdf_path,
-                model="retab-small",
+                model="retab-micro",
             )
     elif client_type == "async":
         async with async_client:
             response = await async_client.documents.generate_split_config(
                 document=multi_page_pdf_path,
-                model="retab-small",
+                model="retab-micro",
             )
 
     assert isinstance(response, GenerateSplitConfigResponse)
@@ -327,7 +327,7 @@ async def test_generate_split_config_test_pdfs(
     with sync_client as client:
         response = client.documents.generate_split_config(
             document=pdf_path,
-            model="retab-small",
+            model="retab-micro",
         )
 
     assert isinstance(response, GenerateSplitConfigResponse)

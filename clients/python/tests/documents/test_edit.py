@@ -13,8 +13,8 @@ TEST_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # List of AI Models to test for edit (models that support form filling)
 AI_MODELS = Literal[
-    "retab-large",
-    "retab-small",
+    "retab-micro",
+    "retab-micro",
 ]
 
 ClientType = Literal[
@@ -133,7 +133,7 @@ async def test_edit_response_structure(
         response = client.documents.edit(
             document=fidelity_form_path,
             instructions=fidelity_instructions,
-            model="retab-small",
+            model="retab-micro",
         )
     
     # Validate basic structure
@@ -165,7 +165,7 @@ async def test_edit_filled_document_is_valid(
         response = client.documents.edit(
             document=fidelity_form_path,
             instructions=fidelity_instructions,
-            model="retab-small",
+            model="retab-micro",
         )
     
     validate_edit_response(response)
@@ -193,7 +193,7 @@ async def test_edit_form_data_has_filled_values(
         response = client.documents.edit(
             document=fidelity_form_path,
             instructions=fidelity_instructions,
-            model="retab-small",
+            model="retab-micro",
         )
     
     validate_edit_response(response)

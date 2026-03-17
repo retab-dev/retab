@@ -66,7 +66,7 @@ export class AbstractClient {
     if (!bodyType) {
       return;
     }
-    if (response.headers.get("Content-Type") !== "application/json") throw new APIError(response.status, "Response is not JSON");
+    if (!response.headers.get("Content-Type")?.startsWith("application/json")) throw new APIError(response.status, "Response is not JSON");
     return bodyType.parseAsync(await response.json());
   }
   protected async _fetchStream<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, params: FetchParams): Promise<AsyncGenerator<z.output<ZodSchema>>> {
@@ -74,7 +74,7 @@ export class AbstractClient {
     if (!response.ok) {
       throw new APIError(response.status, await response.text());
     }
-    if (response.headers.get("Content-Type") !== "application/stream+json") throw new APIError(response.status, "Response is not stream JSON");
+    if (!response.headers.get("Content-Type")?.startsWith("application/stream+json")) throw new APIError(response.status, "Response is not stream JSON");
     return streamResponse(schema, response);
   }
 }

@@ -2,15 +2,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..mime import MIMEData, BaseMIMEData
-
+from .usage import RetabUsage
 TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 
 
-class RetabUsage(BaseModel):
-    """Usage information for document processing."""
-
-    page_count: int = Field(..., description="Number of pages processed")
-    credits: float = Field(..., description="Credits consumed for processing")
 
 
 class ParseRequest(BaseModel):
@@ -23,7 +18,7 @@ class ParseRequest(BaseModel):
     image_resolution_dpi: int = Field(default=192, description="DPI for image processing", ge=96, le=300)
 
 
-class ParseResult(BaseModel):
+class ParseResponse(BaseModel):
     """Result of document parsing."""
 
     document: BaseMIMEData = Field(..., description="Processed document metadata")

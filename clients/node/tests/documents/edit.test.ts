@@ -110,7 +110,7 @@ describe('Retab SDK Edit Tests', () => {
                     ).toString('base64')}`,
                 },
                 instructions: fidelityInstructions,
-                model: 'retab-small',
+                model: 'retab-micro',
             });
 
             validateEditResponse(response);
@@ -128,7 +128,7 @@ describe('Retab SDK Edit Tests', () => {
                     ).toString('base64')}`,
                 },
                 instructions: fidelityInstructions,
-                model: 'retab-small',
+                model: 'retab-micro',
             });
 
             // Validate basic structure
@@ -159,7 +159,7 @@ describe('Retab SDK Edit Tests', () => {
                     ).toString('base64')}`,
                 },
                 instructions: fidelityInstructions,
-                model: 'retab-small',
+                model: 'retab-micro',
             });
 
             validateEditResponse(response);
@@ -191,7 +191,7 @@ describe('Retab SDK Edit Tests', () => {
                     ).toString('base64')}`,
                 },
                 instructions: fidelityInstructions,
-                model: 'retab-small',
+                model: 'retab-micro',
             });
 
             validateEditResponse(response);

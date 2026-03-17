@@ -20,7 +20,7 @@ from ....types.documents.edit import (
 )
 from ....types.edit.templates import EditTemplate, FillTemplateRequest
 from ....types.mime import MIMEData
-from ....types.standards import PreparedRequest, FieldUnset
+from ....types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
 from ....types.pagination import PaginatedList
 
 
@@ -135,8 +135,8 @@ class BaseTemplatesMixin:
     def _prepare_generate(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: str = FieldUnset,
-        instructions: str | None = FieldUnset,
+        model: str | _Unset = UNSET,
+        instructions: str | None | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -145,9 +145,9 @@ class BaseTemplatesMixin:
             "document": mime_document,
         }
 
-        if model is not FieldUnset:
+        if model is not UNSET:
             request_dict["model"] = model
-        if instructions is not FieldUnset:
+        if instructions is not UNSET:
             request_dict["instructions"] = instructions
         if extra_body:
             request_dict.update(extra_body)
@@ -163,8 +163,8 @@ class BaseTemplatesMixin:
         self,
         template_id: str,
         instructions: str,
-        model: str = FieldUnset,
-        color: str = FieldUnset,
+        model: str | _Unset = UNSET,
+        color: str | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
@@ -172,9 +172,9 @@ class BaseTemplatesMixin:
             "instructions": instructions,
         }
 
-        if model is not FieldUnset:
+        if model is not UNSET:
             request_dict["model"] = model
-        if color is not FieldUnset:
+        if color is not UNSET:
             request_dict["config"] = EditConfig(color=color)
         if extra_body:
             request_dict.update(extra_body)
@@ -334,8 +334,8 @@ class Templates(SyncAPIResource, BaseTemplatesMixin):
     def generate(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: str = FieldUnset,
-        instructions: str | None = FieldUnset,
+        model: str | _Unset = UNSET,
+        instructions: str | None | _Unset = UNSET,
         **extra_body: Any,
     ) -> InferFormSchemaResponse:
         """
@@ -371,8 +371,8 @@ class Templates(SyncAPIResource, BaseTemplatesMixin):
         self,
         template_id: str,
         instructions: str,
-        model: str = FieldUnset,
-        color: str = FieldUnset,
+        model: str | _Unset = UNSET,
+        color: str | _Unset = UNSET,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -555,8 +555,8 @@ class AsyncTemplates(AsyncAPIResource, BaseTemplatesMixin):
     async def generate(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: str = FieldUnset,
-        instructions: str | None = FieldUnset,
+        model: str | _Unset = UNSET,
+        instructions: str | None | _Unset = UNSET,
         **extra_body: Any,
     ) -> InferFormSchemaResponse:
         """
@@ -592,8 +592,8 @@ class AsyncTemplates(AsyncAPIResource, BaseTemplatesMixin):
         self,
         template_id: str,
         instructions: str,
-        model: str = FieldUnset,
-        color: str = FieldUnset,
+        model: str | _Unset = UNSET,
+        color: str | _Unset = UNSET,
         **extra_body: Any,
     ) -> EditResponse:
         """

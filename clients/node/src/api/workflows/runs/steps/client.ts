@@ -2,15 +2,18 @@ import { CompositionClient, RequestOptions } from "../../../../client.js";
 import {
     StepOutputResponse,
     ZStepOutputResponse,
+    StepOutputsBatchResponse,
+    ZStepOutputsBatchResponse,
     WorkflowRunStep,
     ZWorkflowRunStep,
+    ZWorkflowRun,
 } from "../../../../types.js";
 import * as z from "zod";
 
 /**
  * Workflow Run Steps API client for accessing step-level outputs.
  *
- * Usage: `client.workflows.runs.steps.get(runId, nodeId)` or `client.workflows.runs.steps.list(runId)`
+ * Usage: `client.workflows.runs.steps.get(runId, nodeId)` or `client.workflows.runs.steps.batch(runId, nodeIds)`
  */
 export default class APIWorkflowRunSteps extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -18,17 +21,12 @@ export default class APIWorkflowRunSteps extends CompositionClient {
     }
 
     /**
-     * Get the full output data for a specific step in a workflow run.
-     *
-     * @param runId - The ID of the workflow run
-     * @param nodeId - The ID of the node/step to get output for
-     * @param options - Optional request options
-     * @returns The step output with handle outputs and inputs
+     * Get step status and handle data for a specific step in a workflow run.
      *
      * @example
      * ```typescript
      * const step = await client.workflows.runs.steps.get("run_abc123", "extract-node-1");
-     * console.log(`Step status: ${step.status}, output:`, step.output);
+     * const data = step.handle_outputs?.["output-json-0"]?.data;
      * ```
      */
     async get(
@@ -46,10 +44,6 @@ export default class APIWorkflowRunSteps extends CompositionClient {
 
     /**
      * List all persisted step documents for a workflow run.
-     *
-     * @param runId - The ID of the workflow run
-     * @param options - Optional request options
-     * @returns All step documents for the run
      *
      * @example
      * ```typescript
@@ -69,5 +63,66 @@ export default class APIWorkflowRunSteps extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    /**
+     * Batch-get step outputs for multiple nodes in a single request.
+     *
+     * @param runId - The workflow run ID
+     * @param nodeIds - List of node IDs to fetch outputs for
+     * @returns Step outputs keyed by node ID
+     *
+     * @example
+     * ```typescript
+     * const batch = await client.workflows.runs.steps.batch("run_abc123", ["extract-1", "classifier-1"]);
+     * console.log(batch.outputs["extract-1"]?.handle_outputs);
+     * ```
+     */
+    async batch(
+        runId: string,
+        nodeIds: string[],
+        options?: RequestOptions
+    ): Promise<StepOutputsBatchResponse> {
+        return this._fetchJson(ZStepOutputsBatchResponse, {
+            url: `/workflows/runs/${runId}/steps/batch`,
+            method: "POST",
+            body: { node_ids: nodeIds, ...(options?.body || {}) },
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
+     * Fetch outputs for all steps in a workflow run in one call.
+     *
+     * Internally fetches the run to discover step node IDs, then batch-fetches all outputs.
+     *
+     * @param runId - The workflow run ID
+     * @returns Step outputs keyed by node ID
+     *
+     * @example
+     * ```typescript
+     * const allOutputs = await client.workflows.runs.steps.getAll("run_abc123");
+     * console.log(allOutputs.outputs["extract-1"]?.handle_outputs);
+     * ```
+     */
+    async getAll(
+        runId: string,
+        options?: RequestOptions
+    ): Promise<StepOutputsBatchResponse> {
+        // Fetch the run to get step node IDs
+        const run = await this._fetchJson(ZWorkflowRun, {
+            url: `/workflows/runs/${runId}`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+
+        const nodeIds = run.steps.map((s) => s.node_id);
+        if (nodeIds.length === 0) {
+            return { outputs: {} };
+        }
+
+        return this.batch(runId, nodeIds, options);
     }
 }
