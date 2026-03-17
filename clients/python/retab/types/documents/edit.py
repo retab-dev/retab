@@ -3,6 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from ..mime import MIMEData
+from .usage import RetabUsage
 
 
 class BBox(BaseModel):
@@ -140,6 +141,7 @@ class EditResponse(BaseModel):
         ),
     )
     filled_document: MIMEData = Field(..., description="PDF with filled form values")
+    usage: RetabUsage = Field(..., description="Usage information for the edit operation")
 
 
 class ProcessOCRRequest(BaseModel):

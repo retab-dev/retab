@@ -15,16 +15,9 @@ default_inference_settings = InferenceSettings(
     n_consensus=1,
 )
 
-class Computation(BaseModel):
-    expression: str = Field(description="The expression to use for the computation")
-
-class ComputationSpec(BaseModel):
-    computations: dict[str, Computation] = Field(default_factory=dict, description="The computations to use for the project")
-
 class DraftConfig(BaseModel):
     inference_settings: InferenceSettings = Field(default=default_inference_settings, description="The inference settings of the project")
     json_schema: dict[str, Any] = Field(default_factory=dict, description="The json schema of the builder config")
-    computation_spec: ComputationSpec = Field(default_factory=ComputationSpec, description="The computation spec of the project")
 
 class PublishedConfig(DraftConfig):
     origin: str = Field(default="manual", description="The origin of the published config. Either 'Manual' or the iteration id that was used to generate the config")
@@ -56,7 +49,6 @@ class PatchProjectRequest(BaseModel):
     published_config: Optional[PublishedConfig] = Field(default=None, description="The published config of the project")
     draft_config: Optional[DraftConfig] = Field(default=None, description="The draft config of the project")
     is_published: Optional[bool] = Field(default=None, description="The published status of the project")
-    computation_spec: Optional[ComputationSpec] = Field(default=None, description="The computation spec of the project")
 # ----------------------------
 # ----------------------------
 # ----------------------------

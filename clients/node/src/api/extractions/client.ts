@@ -28,8 +28,8 @@ export default class APIExtractions extends CompositionClient {
             after,
             limit = 10,
             order = "desc",
-            origin_dot_type,
-            origin_dot_id,
+            origin_type,
+            origin_id,
             from_date,
             to_date,
             metadata,
@@ -39,8 +39,8 @@ export default class APIExtractions extends CompositionClient {
             after?: string;
             limit?: number;
             order?: "asc" | "desc";
-            origin_dot_type?: string;
-            origin_dot_id?: string;
+            origin_type?: string;
+            origin_id?: string;
             from_date?: Date;
             to_date?: Date;
             metadata?: Record<string, string>;
@@ -53,8 +53,8 @@ export default class APIExtractions extends CompositionClient {
             after,
             limit,
             order,
-            origin_dot_type,
-            origin_dot_id,
+            origin_type,
+            origin_id,
             from_date: from_date?.toISOString(),
             to_date: to_date?.toISOString(),
             filename,
@@ -78,7 +78,7 @@ export default class APIExtractions extends CompositionClient {
     async download(
         {
             order = "desc",
-            origin_dot_id,
+            origin_id,
             from_date,
             to_date,
             metadata,
@@ -86,7 +86,7 @@ export default class APIExtractions extends CompositionClient {
             format = "jsonl",
         }: {
             order?: "asc" | "desc";
-            origin_dot_id?: string;
+            origin_id?: string;
             from_date?: Date;
             to_date?: Date;
             metadata?: Record<string, string>;
@@ -97,7 +97,7 @@ export default class APIExtractions extends CompositionClient {
     ): Promise<DownloadResponse> {
         const params: Record<string, any> = {
             order,
-            origin_dot_id,
+            origin_id,
             from_date: from_date?.toISOString(),
             to_date: to_date?.toISOString(),
             filename,

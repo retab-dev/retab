@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from ..mime import MIMEData
+from .usage import RetabUsage
 
 class Subdocument(BaseModel):
     name: str = Field(..., description="The name of the subdocument")
@@ -9,7 +10,7 @@ class Subdocument(BaseModel):
 
 class SplitRequest(BaseModel):
     document: MIMEData = Field(..., description="The document to split")
-    subdocuments: list[Subdocument] = Field(..., description="The subdocuments to split the document into")
+    subdocuments: list[Subdocument] = Field(..., min_length=1, description="The subdocuments to split the document into")
     model: str = Field(default="retab-small", description="The model to use to split the document")
     context: str | None = Field(default=None, description="Additional context for the split operation (e.g., iteration context from a loop)")
     n_consensus: int = Field(default=1, ge=1, le=8, description="Number of consensus split runs to perform. Uses deterministic single-pass when set to 1.")
@@ -36,6 +37,7 @@ class SplitResult(BaseModel):
 
 class SplitResponse(BaseModel):
     splits: list[SplitResult] = Field(..., description="The list of document splits with their page ranges")
+    usage: RetabUsage = Field(..., description="Usage information for the split operation")
 
 
 class GenerateSplitConfigRequest(BaseModel):

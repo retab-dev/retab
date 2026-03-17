@@ -1,14 +1,14 @@
 import { z } from "zod";
 
-export const ZPartialSchema = z.lazy(() => (z.object({
+export const ZSchemaGenerationResponse = z.lazy(() => (z.object({
     object: z.literal("schema").default("schema"),
     created_at: z.string(),
     json_schema: z.record(z.string(), z.any()).default({}),
     strict: z.boolean().default(true),
 })));
-export type PartialSchema = z.infer<typeof ZPartialSchema>;
+export type SchemaGenerationResponse = z.infer<typeof ZSchemaGenerationResponse>;
 
-export const ZSchema = z.lazy(() => (ZPartialSchema.schema).merge(z.object({
+export const ZSchema = z.lazy(() => (ZSchemaGenerationResponse.schema).merge(z.object({
     object: z.literal("schema").default("schema"),
     created_at: z.string(),
     json_schema: z.record(z.string(), z.any()).default({}),

@@ -9,17 +9,17 @@ from .._resource import AsyncAPIResource, SyncAPIResource
 from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.schemas.generate import GenerateSchemaRequest
-from ..types.standards import PreparedRequest, FieldUnset
+from ..types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
 
 
 class SchemasMixin:
     def prepare_generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
-        instructions: str | None = FieldUnset,
-        model: str = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
-        image_resolution_dpi: int = FieldUnset,
+        instructions: str | None | _Unset = UNSET,
+        model: str | _Unset = UNSET,
+        reasoning_effort: ChatCompletionReasoningEffort | _Unset = UNSET,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_documents = prepare_mime_document_list(documents)
@@ -27,13 +27,13 @@ class SchemasMixin:
         body: dict[str, Any] = {
             "documents": mime_documents,
         }
-        if instructions is not FieldUnset:
+        if instructions is not UNSET:
             body["instructions"] = instructions
-        if model is not FieldUnset:
+        if model is not UNSET:
             body["model"] = model
-        if reasoning_effort is not FieldUnset:
+        if reasoning_effort is not UNSET:
             body["reasoning_effort"] = reasoning_effort
-        if image_resolution_dpi is not FieldUnset:
+        if image_resolution_dpi is not UNSET:
             body["image_resolution_dpi"] = image_resolution_dpi
         if extra_body:
             body.update(extra_body)
@@ -47,10 +47,10 @@ class Schemas(SyncAPIResource, SchemasMixin):
     def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
-        instructions: str | None = FieldUnset,
-        model: str = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
-        image_resolution_dpi: int = FieldUnset,
+        instructions: str | None | _Unset = UNSET,
+        model: str | _Unset = UNSET,
+        reasoning_effort: ChatCompletionReasoningEffort | _Unset = UNSET,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> dict[str, Any]:
         """
@@ -84,10 +84,10 @@ class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     async def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
-        instructions: str | None = FieldUnset,
-        model: str = FieldUnset,
-        reasoning_effort: ChatCompletionReasoningEffort = FieldUnset,
-        image_resolution_dpi: int = FieldUnset,
+        instructions: str | None | _Unset = UNSET,
+        model: str | _Unset = UNSET,
+        reasoning_effort: ChatCompletionReasoningEffort | _Unset = UNSET,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> dict[str, Any]:
         """

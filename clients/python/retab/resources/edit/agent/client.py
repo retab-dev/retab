@@ -17,7 +17,7 @@ from ....types.documents.edit import (
     EditResponse,
 )
 from ....types.mime import MIMEData
-from ....types.standards import PreparedRequest, FieldUnset
+from ....types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
 
 
 class BaseAgentMixin:
@@ -27,8 +27,8 @@ class BaseAgentMixin:
         self,
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str = FieldUnset,
-        color: str = FieldUnset,
+        model: str | _Unset = UNSET,
+        color: str | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
@@ -39,10 +39,10 @@ class BaseAgentMixin:
             mime_document = prepare_mime_document(document)
             request_dict["document"] = mime_document
 
-        if model is not FieldUnset:
+        if model is not UNSET:
             request_dict["model"] = model
 
-        if color is not FieldUnset:
+        if color is not UNSET:
             request_dict["config"] = EditConfig(color=color)
 
         # Merge any extra fields provided by the caller
@@ -67,8 +67,8 @@ class Agent(SyncAPIResource, BaseAgentMixin):
         self,
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str = FieldUnset,
-        color: str = FieldUnset,
+        model: str | _Unset = UNSET,
+        color: str | _Unset = UNSET,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -122,8 +122,8 @@ class AsyncAgent(AsyncAPIResource, BaseAgentMixin):
         self,
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str = FieldUnset,
-        color: str = FieldUnset,
+        model: str | _Unset = UNSET,
+        color: str | _Unset = UNSET,
         **extra_body: Any,
     ) -> EditResponse:
         """

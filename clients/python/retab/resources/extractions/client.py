@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Literal
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
+from ...types.extractions import Extraction, SourcesResponse
 from ...types.pagination import PaginatedList, PaginationOrder
 from ...types.standards import PreparedRequest
 
@@ -14,8 +15,8 @@ class ExtractionsMixin:
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
-        origin_dot_type: str | None = None,
-        origin_dot_id: str | None = None,
+        origin_type: str | None = None,
+        origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
         metadata: Dict[str, str] | None = None,
@@ -27,8 +28,8 @@ class ExtractionsMixin:
             "after": after,
             "limit": limit,
             "order": order,
-            "origin_dot_type": origin_dot_type,
-            "origin_dot_id": origin_dot_id,
+            "origin_type": origin_type,
+            "origin_id": origin_id,
             "from_date": from_date.isoformat() if from_date else None,
             "to_date": to_date.isoformat() if to_date else None,
             # Note: metadata must be JSON-serialized as the backend expects a JSON string
@@ -42,7 +43,7 @@ class ExtractionsMixin:
     def prepare_download(
         self,
         order: Literal["asc", "desc"] = "desc",
-        origin_dot_id: str | None = None,
+        origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
         metadata: Dict[str, str] | None = None,
@@ -52,7 +53,7 @@ class ExtractionsMixin:
         """Prepare a request to download extractions in various formats."""
         params = {
             "order": order,
-            "origin_dot_id": origin_dot_id,
+            "origin_id": origin_id,
             "from_date": from_date.isoformat() if from_date else None,
             "to_date": to_date.isoformat() if to_date else None,
             # Note: metadata must be JSON-serialized as the backend expects a JSON string
@@ -109,8 +110,8 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
-        origin_dot_type: str | None = None,
-        origin_dot_id: str | None = None,
+        origin_type: str | None = None,
+        origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
         metadata: Dict[str, str] | None = None,
@@ -122,20 +123,38 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             after=after,
             limit=limit,
             order=order,
-            origin_dot_type=origin_dot_type,
-            origin_dot_id=origin_dot_id,
+            origin_type=origin_type,
+            origin_id=origin_id,
             from_date=from_date,
             to_date=to_date,
             metadata=metadata,
             **extra_params,
         )
         response = self._client._prepared_request(request)
-        return PaginatedList(**response)
+        result = PaginatedList(**response)
+
+        # Enable auto-pagination
+        def fetch_next(after: str) -> PaginatedList:
+            return self.list(
+                before=before,
+                after=after,
+                limit=limit,
+                order=order,
+                origin_type=origin_type,
+                origin_id=origin_id,
+                from_date=from_date,
+                to_date=to_date,
+                metadata=metadata,
+                **extra_params,
+            )
+
+        result._fetch_next_page = fetch_next
+        return result
 
     def download(
         self,
         order: Literal["asc", "desc"] = "desc",
-        origin_dot_id: str | None = None,
+        origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
         metadata: Dict[str, str] | None = None,
@@ -145,7 +164,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         """Download extractions in various formats."""
         request = self.prepare_download(
             order=order,
-            origin_dot_id=origin_dot_id,
+            origin_id=origin_id,
             from_date=from_date,
             to_date=to_date,
             metadata=metadata,
@@ -161,7 +180,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         json_schema: dict[str, Any] | None = None,
         inference_settings: dict[str, Any] | None = None,
         **extra_body: Any,
-    ) -> dict[str, Any]:
+    ) -> Extraction:
         """Update an extraction."""
         request = self.prepare_update(
             extraction_id=extraction_id,
@@ -170,26 +189,25 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             inference_settings=inference_settings,
             **extra_body,
         )
-        response = self._client._prepared_request(request)
-        return response
+        return Extraction.model_validate(self._client._prepared_request(request))
 
-    def get(self, extraction_id: str) -> dict[str, Any]:
+    def get(self, extraction_id: str) -> Extraction:
         """Get an extraction by ID."""
         request = self.prepare_get(extraction_id)
-        return self._client._prepared_request(request)
+        return Extraction.model_validate(self._client._prepared_request(request))
 
-    def sources(self, extraction_id: str) -> dict[str, Any]:
+    def sources(self, extraction_id: str) -> SourcesResponse:
         """Get extraction result enriched with per-leaf source provenance.
 
         Args:
             extraction_id: ID of the extraction to source.
 
         Returns:
-            GetSourcesResponse dict with `extraction` (original) and
-            `sourced_extraction` (leaves wrapped as {value, source}).
+            SourcesResponse with `extraction` (original) and
+            `sources` (leaves wrapped as {value, source}).
         """
         request = self.prepare_sources(extraction_id)
-        return self._client._prepared_request(request)
+        return SourcesResponse.model_validate(self._client._prepared_request(request))
 
     def delete(self, extraction_id: str) -> None:
         """Delete an extraction by ID."""
@@ -209,8 +227,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
-        origin_dot_type: str | None = None,
-        origin_dot_id: str | None = None,
+        origin_type: str | None = None,
+        origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
         metadata: Dict[str, str] | None = None,
@@ -222,8 +240,8 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             after=after,
             limit=limit,
             order=order,
-            origin_dot_type=origin_dot_type,
-            origin_dot_id=origin_dot_id,
+            origin_type=origin_type,
+            origin_id=origin_id,
             from_date=from_date,
             to_date=to_date,
             metadata=metadata,
@@ -235,7 +253,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
     async def download(
         self,
         order: Literal["asc", "desc"] = "desc",
-        origin_dot_id: str | None = None,
+        origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
         metadata: Dict[str, str] | None = None,
@@ -245,7 +263,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         """Download extractions in various formats."""
         request = self.prepare_download(
             order=order,
-            origin_dot_id=origin_dot_id,
+            origin_id=origin_id,
             from_date=from_date,
             to_date=to_date,
             metadata=metadata,
@@ -261,7 +279,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         json_schema: dict[str, Any] | None = None,
         inference_settings: dict[str, Any] | None = None,
         **extra_body: Any,
-    ) -> dict[str, Any]:
+    ) -> Extraction:
         """Update an extraction."""
         request = self.prepare_update(
             extraction_id=extraction_id,
@@ -270,26 +288,25 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             inference_settings=inference_settings,
             **extra_body,
         )
-        response = await self._client._prepared_request(request)
-        return response
+        return Extraction.model_validate(await self._client._prepared_request(request))
 
-    async def get(self, extraction_id: str) -> dict[str, Any]:
+    async def get(self, extraction_id: str) -> Extraction:
         """Get an extraction by ID."""
         request = self.prepare_get(extraction_id)
-        return await self._client._prepared_request(request)
+        return Extraction.model_validate(await self._client._prepared_request(request))
 
-    async def sources(self, extraction_id: str) -> dict[str, Any]:
+    async def sources(self, extraction_id: str) -> SourcesResponse:
         """Get extraction result enriched with per-leaf source provenance.
 
         Args:
             extraction_id: ID of the extraction to source.
 
         Returns:
-            GetSourcesResponse dict with `extraction` (original) and
-            `sourced_extraction` (leaves wrapped as {value, source}).
+            SourcesResponse with `extraction` (original) and
+            `sources` (leaves wrapped as {value, source}).
         """
         request = self.prepare_sources(extraction_id)
-        return await self._client._prepared_request(request)
+        return SourcesResponse.model_validate(await self._client._prepared_request(request))
 
     async def delete(self, extraction_id: str) -> None:
         """Delete an extraction by ID."""

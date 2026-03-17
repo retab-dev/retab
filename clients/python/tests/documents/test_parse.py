@@ -7,7 +7,7 @@ import nanoid  # type: ignore
 import pytest
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.parse import ParseResult, TableParsingFormat
+from retab.types.documents.parse import ParseResponse, TableParsingFormat
 
 # List of AI Models to test (focusing on models that support parsing)
 AI_MODELS = Literal[
@@ -26,10 +26,10 @@ ResponseModeType = Literal[
 ]
 
 
-def validate_parse_response(response: ParseResult | None) -> None:
+def validate_parse_response(response: ParseResponse | None) -> None:
     """Validate that the parse response has the expected structure and content."""
     # Assert the instance
-    assert isinstance(response, ParseResult), f"Response should be of type ParseResult, received {type(response)}"
+    assert isinstance(response, ParseResponse), f"Response should be of type ParseResponse, received {type(response)}"
     
     # Assert the response has required fields
     assert response.document is not None, "Response document should not be None"
@@ -63,7 +63,7 @@ async def base_test_parse(
     image_resolution_dpi: int = 96,
 ) -> None:
     document = booking_confirmation_file_path_1
-    response: ParseResult | None = None
+    response: ParseResponse | None = None
 
     if client_type == "sync":
         with sync_client as client:

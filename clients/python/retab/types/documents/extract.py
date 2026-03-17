@@ -18,7 +18,6 @@ from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..standards import StreamingBaseModel
 from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel, unflatten_dict
-
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
     document: MIMEData = Field(..., description="Document to be analyzed")
@@ -37,15 +36,6 @@ class DocumentExtractRequest(BaseModel):
 class ConsensusModel(BaseModel):
     model: str = Field(description="Model name")
     temperature: float = Field(default=0.0, description="Temperature for consensus")
-    reasoning_effort: ChatCompletionReasoningEffort = Field(
-        default="minimal", description="The effort level for the model to reason about the input data. If not provided, the default reasoning effort for the model will be used."
-    )
-
-    @field_validator("reasoning_effort", mode="before")
-    @classmethod
-    def force_minimal_reasoning_effort(cls, _: Any) -> ChatCompletionReasoningEffort:
-        return "minimal"
-
 
 class RetabParsedChoice(ParsedChoice):
     # Adaptable ParsedChoice that allows None for the finish_reason
@@ -67,6 +57,35 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
     request_at: datetime.datetime | None = Field(default=None, description="Timestamp of the request")
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
+
+    @property
+    def data(self) -> Any:
+        """The extracted structured data. Shortcut for ``choices[0].message.parsed``."""
+        if self.choices:
+            return self.choices[0].message.parsed
+        return None
+
+    @property
+    def text(self) -> str | None:
+        """The raw JSON content string. Shortcut for ``choices[0].message.content``."""
+        if self.choices:
+            return self.choices[0].message.content
+        return None
+
+    def __repr__(self) -> str:
+        data_repr = self.data
+        # Truncate large data for display
+        data_str = repr(data_repr)
+        if len(data_str) > 200:
+            data_str = data_str[:200] + "..."
+        parts = [
+            f"extraction_id={self.extraction_id!r}",
+            f"model={self.model!r}",
+            f"data={data_str}",
+        ]
+        if self.likelihoods:
+            parts.append("likelihoods=...")
+        return f"ExtractionResult({', '.join(parts)})"
 
 
 class LogExtractionRequest(BaseModel):
@@ -280,6 +299,17 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
             likelihoods=final_likelihoods,
             usage=self.usage,
         )
+
+
+ExtractResponse = RetabParsedChatCompletion
+"""User-friendly alias for :class:`RetabParsedChatCompletion`.
+
+Use ``result.data`` to access the extracted structured data and
+``result.text`` for the raw JSON content string.
+"""
+
+# Backward compatibility
+ExtractionResult = ExtractResponse
 
 
 def maybe_parse_to_pydantic(schema: dict[str, Any], response: RetabParsedChatCompletion, allow_partial: bool = False) -> RetabParsedChatCompletion:

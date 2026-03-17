@@ -6,7 +6,7 @@ import {
     getBookingConfirmationFilePath1,
     TEST_MODEL,
 } from '../fixtures';
-import { ParseResult } from '../../src/types';
+import { ParseResponse } from '../../src/types';
 
 // Simple ID generator to replace nanoid
 function generateId(): string {
@@ -27,7 +27,7 @@ type ResponseModeType = "parse";
 // Define the types based on the generated types
 type TableParsingFormat = "markdown" | "yaml" | "html" | "json";
 
-function validateParseResponse(response: ParseResult | null): void {
+function validateParseResponse(response: ParseResponse | null): void {
     // Assert the instance
     expect(response).not.toBeNull();
     expect(response).toBeDefined();
@@ -67,7 +67,7 @@ async function baseTestParse(
     imageResolutionDpi: number = 96,
 ): Promise<void> {
     const document = bookingConfirmationFilePath1;
-    let response: ParseResult | null = null;
+    let response: ParseResponse | null = null;
 
     if (clientType === "sync") {
         response = await client.documents.parse({

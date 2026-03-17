@@ -30,17 +30,7 @@ JobListOrder = Literal[
     "desc",
 ]
 
-SupportedEndpoint = Literal[
-    "/v1/documents/extract",
-    "/v1/documents/parse",
-    "/v1/documents/split",
-    "/v1/documents/classify",
-    "/v1/schemas/generate",
-    "/v1/edit/agent/fill",
-    "/v1/edit/templates/fill",
-    "/v1/edit/templates/generate",
-    "/v1/projects/extract",  # Requires "project_id" in request body
-]
+SupportedEndpoint = str
 
 
 class JobResponse(BaseModel):

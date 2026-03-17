@@ -17,6 +17,7 @@ from .chat import convert_to_anthropic_format, convert_to_google_genai_format
 from .chat import convert_to_openai_completions_api_format
 
 from ...utils.json_schema import convert_json_schema_to_basemodel, expand_refs, load_json_schema
+from ..documents.usage import RetabUsage
 from .chat import convert_to_openai_responses_api_format
 from ..standards import StreamingBaseModel
 from ..chat import ChatCompletionRetabMessage
@@ -886,13 +887,18 @@ def has_cyclic_refs(schema: dict[str, Any]) -> bool:
     return False
 
 
-class PartialSchema(BaseModel):
-    """Response from the Generate Schema API -- A partial Schema object with no validation"""
+class SchemaGenerationResponse(BaseModel):
+    """Response from the Generate Schema API."""
 
     object: Literal["schema"] = "schema"
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     json_schema: dict[str, Any] = {}
     strict: bool = True
+    usage: RetabUsage = Field(default_factory=lambda: RetabUsage(credits=0), description="Usage information for the schema generation")
+
+
+# Backward compatibility
+PartialSchema = SchemaGenerationResponse
 
 
 class PartialSchemaChunk(StreamingBaseModel):

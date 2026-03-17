@@ -14,12 +14,12 @@ from ...types.documents.create_messages import DocumentCreateInputRequest, Docum
 from ...types.chat import ChatCompletionRetabMessage
 from ...types.documents.edit import EditRequest, EditResponse
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
-from ...types.documents.parse import ParseRequest, ParseResult, TableParsingFormat
+from ...types.documents.parse import ParseRequest, ParseResponse, TableParsingFormat
 from ...types.documents.split import Subdocument, SplitRequest, SplitResponse, GenerateSplitConfigRequest, GenerateSplitConfigResponse
 from ...types.documents.classify import Category
 from ...types.documents.classify import ClassifyRequest, ClassifyResponse
 from ...types.mime import MIMEData
-from ...types.standards import PreparedRequest, FieldUnset
+from ...types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
 from ...utils.json_schema import load_json_schema, unflatten_dict
 from ...types.mime import OCR
 
@@ -28,13 +28,13 @@ class BaseDocumentsMixin:
     def _prepare_create_messages(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        image_resolution_dpi: int = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
 
         loading_request_dict: dict[str, Any] = {"document": mime_document}
-        if image_resolution_dpi is not FieldUnset:
+        if image_resolution_dpi is not UNSET:
             loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
 
         # Merge any extra fields provided by the caller
@@ -59,7 +59,7 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
-        image_resolution_dpi: int = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -69,7 +69,7 @@ class BaseDocumentsMixin:
             "document": mime_document,
             "json_schema": loaded_schema,
         }
-        if image_resolution_dpi is not FieldUnset:
+        if image_resolution_dpi is not UNSET:
             loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
 
         # Merge any extra fields provided by the caller
@@ -95,8 +95,8 @@ class BaseDocumentsMixin:
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: str,
-        table_parsing_format: TableParsingFormat = FieldUnset,
-        image_resolution_dpi: int = FieldUnset,
+        table_parsing_format: TableParsingFormat | _Unset = UNSET,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -105,9 +105,9 @@ class BaseDocumentsMixin:
             "document": mime_document,
             "model": model,
         }
-        if table_parsing_format is not FieldUnset:
+        if table_parsing_format is not UNSET:
             request_dict["table_parsing_format"] = table_parsing_format
-        if image_resolution_dpi is not FieldUnset:
+        if image_resolution_dpi is not UNSET:
             request_dict["image_resolution_dpi"] = image_resolution_dpi
 
         # Merge any extra fields provided by the caller
@@ -121,8 +121,8 @@ class BaseDocumentsMixin:
         self,
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str = FieldUnset,
-        template_id: str | None = FieldUnset,
+        model: str | _Unset = UNSET,
+        template_id: str | None | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
@@ -133,9 +133,9 @@ class BaseDocumentsMixin:
             mime_document = prepare_mime_document(document)
             request_dict["document"] = mime_document
         
-        if model is not FieldUnset:
+        if model is not UNSET:
             request_dict["model"] = model
-        if template_id is not FieldUnset:
+        if template_id is not UNSET:
             request_dict["template_id"] = template_id
 
         # Merge any extra fields provided by the caller
@@ -150,7 +150,7 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
-        n_consensus: int = FieldUnset,
+        n_consensus: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -166,7 +166,7 @@ class BaseDocumentsMixin:
             "subdocuments": subdocument_objects,
             "model": model,
         }
-        if n_consensus is not FieldUnset:
+        if n_consensus is not UNSET:
             request_dict["n_consensus"] = n_consensus
 
         # Merge any extra fields provided by the caller
@@ -228,11 +228,11 @@ class BaseDocumentsMixin:
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
-        image_resolution_dpi: int = FieldUnset,
-        n_consensus: int = FieldUnset,
-        stream: bool = FieldUnset,
-        metadata: dict[str, str] = FieldUnset,
-        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
+        n_consensus: int | _Unset = UNSET,
+        stream: bool | _Unset = UNSET,
+        metadata: dict[str, str] | _Unset = UNSET,
+        additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
         **extra_body: Any,
     ) -> PreparedRequest:
         loaded_schema = load_json_schema(json_schema)
@@ -249,15 +249,15 @@ class BaseDocumentsMixin:
             "document": processed_document,
             "model": model,
         }
-        if stream is not FieldUnset:
+        if stream is not UNSET:
             request_dict["stream"] = stream
-        if n_consensus is not FieldUnset:
+        if n_consensus is not UNSET:
             request_dict["n_consensus"] = n_consensus
-        if image_resolution_dpi is not FieldUnset:
+        if image_resolution_dpi is not UNSET:
             request_dict["image_resolution_dpi"] = image_resolution_dpi
-        if metadata is not FieldUnset:
+        if metadata is not UNSET:
             request_dict["metadata"] = metadata
-        if additional_messages is not FieldUnset:
+        if additional_messages is not UNSET:
             request_dict["additional_messages"] = additional_messages
 
         # Merge any extra fields provided by the caller
@@ -281,7 +281,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
     def create_messages(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        image_resolution_dpi: int = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> DocumentMessage:
         """
@@ -308,7 +308,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
-        image_resolution_dpi: int = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> DocumentMessage:
         """
@@ -338,10 +338,10 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
-        image_resolution_dpi: int = FieldUnset,
-        n_consensus: int = FieldUnset,
-        metadata: dict[str, str] = FieldUnset,
-        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
+        n_consensus: int | _Unset = UNSET,
+        metadata: dict[str, str] | _Unset = UNSET,
+        additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
         **extra_body: Any,
     ) -> RetabParsedChatCompletion:
         """
@@ -473,10 +473,10 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
-        image_resolution_dpi: int = FieldUnset,
-        n_consensus: int = FieldUnset,
-        metadata: dict[str, str] = FieldUnset,
-        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
+        n_consensus: int | _Unset = UNSET,
+        metadata: dict[str, str] | _Unset = UNSET,
+        additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
         **extra_body: Any,
     ) -> Generator[RetabParsedChatCompletion, None, None]:
         """
@@ -559,10 +559,10 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: str,
-        table_parsing_format: TableParsingFormat = FieldUnset,
-        image_resolution_dpi: int = FieldUnset,
+        table_parsing_format: TableParsingFormat | _Unset = UNSET,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
-    ) -> ParseResult:
+    ) -> ParseResponse:
         """
         Parse a document and extract text content from each page.
 
@@ -576,7 +576,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi: DPI for image processing. Defaults to 72.
 
         Returns:
-            ParseResult: Parsed response containing document metadata, usage information, and page text content.
+            ParseResponse: Parsed response containing document metadata, usage information, and page text content.
 
         Raises:
             HTTPException: If the request fails.
@@ -589,14 +589,14 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             **extra_body,
         )
         response = self._client._prepared_request(request)
-        return ParseResult.model_validate(response)
+        return ParseResponse.model_validate(response)
 
     def edit(
         self,
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str = FieldUnset,
-        template_id: str | None = FieldUnset,
+        model: str | _Unset = UNSET,
+        template_id: str | None | _Unset = UNSET,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -641,7 +641,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
-        n_consensus: int = FieldUnset,
+        n_consensus: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> SplitResponse:
         """
@@ -789,7 +789,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     async def create_messages(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image,
-        image_resolution_dpi: int = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> DocumentMessage:
         """
@@ -815,7 +815,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         json_schema: dict[str, Any] | Path | str,
-        image_resolution_dpi: int = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> DocumentMessage:
         """
@@ -845,10 +845,10 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
-        image_resolution_dpi: int = FieldUnset,
-        n_consensus: int = FieldUnset,
-        metadata: dict[str, str] = FieldUnset,
-        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
+        n_consensus: int | _Unset = UNSET,
+        metadata: dict[str, str] | _Unset = UNSET,
+        additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
         **extra_body: Any,
     ) -> RetabParsedChatCompletion:
         """
@@ -892,10 +892,10 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         json_schema: dict[str, Any] | Path | str,
         model: str,
         document: Path | str | IOBase | HttpUrl | MIMEData,
-        image_resolution_dpi: int = FieldUnset,
-        n_consensus: int = FieldUnset,
-        metadata: dict[str, str] = FieldUnset,
-        additional_messages: list[ChatCompletionRetabMessage] = FieldUnset,
+        image_resolution_dpi: int | _Unset = UNSET,
+        n_consensus: int | _Unset = UNSET,
+        metadata: dict[str, str] | _Unset = UNSET,
+        additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
         **extra_body: Any,
     ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
         """
@@ -977,10 +977,10 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         model: str,
-        table_parsing_format: TableParsingFormat = FieldUnset,
-        image_resolution_dpi: int = FieldUnset,
+        table_parsing_format: TableParsingFormat | _Unset = UNSET,
+        image_resolution_dpi: int | _Unset = UNSET,
         **extra_body: Any,
-    ) -> ParseResult:
+    ) -> ParseResponse:
         """
         Parse a document and extract text content from each page asynchronously.
 
@@ -994,7 +994,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             image_resolution_dpi: DPI for image processing. Defaults to 96.
 
         Returns:
-            ParseResult: Parsed response containing document metadata, usage information, and page text content.
+            ParseResponse: Parsed response containing document metadata, usage information, and page text content.
 
         Raises:
             HTTPException: If the request fails.
@@ -1007,14 +1007,14 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             **extra_body,
         )
         response = await self._client._prepared_request(request)
-        return ParseResult.model_validate(response)
+        return ParseResponse.model_validate(response)
 
     async def edit(
         self,
         instructions: str,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str = FieldUnset,
-        template_id: str | None = FieldUnset,
+        model: str | _Unset = UNSET,
+        template_id: str | None | _Unset = UNSET,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -1059,7 +1059,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
-        n_consensus: int = FieldUnset,
+        n_consensus: int | _Unset = UNSET,
         **extra_body: Any,
     ) -> SplitResponse:
         """

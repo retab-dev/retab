@@ -313,7 +313,6 @@ export const ZPatchProjectRequest = z.lazy(() => (z.object({
     published_config: ZPublishedConfig.nullable().optional(),
     draft_config: ZDraftConfig.nullable().optional(),
     is_published: z.boolean().nullable().optional(),
-    computation_spec: ZComputationSpec.nullable().optional(),
 })));
 export type PatchProjectRequest = z.infer<typeof ZPatchProjectRequest>;
 
@@ -345,20 +344,9 @@ export const ZBuilderDocument = z.lazy(() => (z.object({
 })));
 export type BuilderDocument = z.infer<typeof ZBuilderDocument>;
 
-export const ZComputation = z.lazy(() => (z.object({
-    expression: z.string(),
-})));
-export type Computation = z.infer<typeof ZComputation>;
-
-export const ZComputationSpec = z.lazy(() => (z.object({
-    computations: z.record(z.string(), ZComputation),
-})));
-export type ComputationSpec = z.infer<typeof ZComputationSpec>;
-
 export const ZDraftConfig = z.lazy(() => (z.object({
     inference_settings: ZInferenceSettings.default({"model": "retab-small", "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
     json_schema: z.record(z.string(), z.any()),
-    computation_spec: ZComputationSpec,
 })));
 export type DraftConfig = z.infer<typeof ZDraftConfig>;
 
@@ -410,7 +398,6 @@ export const ZStepOutputResponse = z.lazy(() => (z.object({
     node_type: z.string(),
     node_label: z.string(),
     status: z.string(),
-    output: z.record(z.any()).nullable().optional(),
     handle_outputs: z.record(z.string(), z.any()).nullable().optional(),
     handle_inputs: z.record(z.string(), z.any()).nullable().optional(),
 })));
@@ -430,7 +417,6 @@ export const ZStepStatus = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
-    output: z.record(z.any()).nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     input_document: ZBaseMIMEData.nullable().optional(),
     output_document: ZBaseMIMEData.nullable().optional(),
@@ -458,6 +444,15 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     updated_at: z.string(),
     waiting_for_node_ids: z.array(z.string()),
     pending_node_outputs: z.record(z.any()).nullable().optional(),
+    config_snapshot_id: z.string().nullable().optional(),
+    trigger_type: z.string().nullable().optional(),
+    trigger_email: z.string().nullable().optional(),
+    execution_phase: z.string().nullable().optional(),
+    input_json_data: z.record(z.string(), z.record(z.any())).nullable().optional(),
+    error_details: z.record(z.any()).nullable().optional(),
+    cost_summary: z.record(z.any()).nullable().optional(),
+    trace_spans: z.array(z.any()).nullable().optional(),
+    human_waiting_duration_ms: z.number().default(0),
 })));
 export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
 
@@ -516,7 +511,7 @@ export const ZRowList = z.lazy(() => (z.object({
 })));
 export type RowList = z.infer<typeof ZRowList>;
 
-export const ZSchema = z.lazy(() => (ZPartialSchema.schema).merge(z.object({
+export const ZSchema = z.lazy(() => (ZSchemaGenerationResponse.schema).merge(z.object({
     object: z.literal("schema").default("schema"),
     created_at: z.string(),
     json_schema: z.record(z.string(), z.any()).default({}),
@@ -529,21 +524,21 @@ export const ZMessageParam = z.lazy(() => (z.object({
 })));
 export type MessageParam = z.infer<typeof ZMessageParam>;
 
-export const ZPartialSchema = z.lazy(() => (z.object({
+export const ZSchemaGenerationResponse = z.lazy(() => (z.object({
     object: z.literal("schema").default("schema"),
     created_at: z.string(),
     json_schema: z.record(z.string(), z.any()).default({}),
     strict: z.boolean().default(true),
 })));
-export type PartialSchema = z.infer<typeof ZPartialSchema>;
+export type SchemaGenerationResponse = z.infer<typeof ZSchemaGenerationResponse>;
 
-export const ZPartialSchemaChunk = z.lazy(() => (ZStreamingBaseModel.schema).merge(z.object({
+export const ZSchemaGenerationResponseChunk = z.lazy(() => (ZStreamingBaseModel.schema).merge(z.object({
     object: z.literal("schema.chunk").default("schema.chunk"),
     created_at: z.string(),
     delta_json_schema_flat: z.record(z.string(), z.any()).default({}),
     delta_flat_deleted_keys: z.array(z.string()).default([]),
 })));
-export type PartialSchemaChunk = z.infer<typeof ZPartialSchemaChunk>;
+export type SchemaGenerationResponseChunk = z.infer<typeof ZSchemaGenerationResponseChunk>;
 
 export const ZTemplateSchema = z.lazy(() => (z.object({
     id: z.string(),
@@ -833,13 +828,13 @@ export const ZParseRequest = z.lazy(() => (z.object({
 })));
 export type ParseRequest = z.infer<typeof ZParseRequest>;
 
-export const ZParseResult = z.lazy(() => (z.object({
+export const ZParseResponse = z.lazy(() => (z.object({
     document: ZBaseMIMEData,
     usage: ZRetabUsage,
     pages: z.array(z.string()),
     text: z.string(),
 })));
-export type ParseResult = z.infer<typeof ZParseResult>;
+export type ParseResponse = z.infer<typeof ZParseResponse>;
 
 export const ZRetabUsage = z.lazy(() => (z.object({
     page_count: z.number(),
@@ -849,7 +844,7 @@ export type RetabUsage = z.infer<typeof ZRetabUsage>;
 
 export const ZSplitRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    subdocuments: z.array(ZSubdocument),
+    subdocuments: z.array(ZSubdocument).min(1),
     model: z.string().default("retab-small"),
     context: z.string().nullable().optional(),
     n_consensus: z.number().default(1),

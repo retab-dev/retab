@@ -1,3 +1,4 @@
+import * as z from "zod";
 import { CompositionClient, RequestOptions } from "../../../client.js";
 import {
     MIMEDataInput,
@@ -23,7 +24,7 @@ function sleep(ms: number): Promise<void> {
  * Workflow Runs API client for managing workflow executions.
  *
  * Sub-clients:
- * - steps: Step output operations (get, list)
+ * - steps: Step output operations (get, list, batch, getAll)
  */
 export default class APIWorkflowRuns extends CompositionClient {
     public steps: APIWorkflowRunSteps;
@@ -40,24 +41,12 @@ export default class APIWorkflowRuns extends CompositionClient {
      * The returned WorkflowRun will have status "running" - use get()
      * to check for updates on the run status.
      *
-     * @param workflowId - The ID of the workflow to run
-     * @param documents - Mapping of start node IDs to their input documents
-     * @param jsonInputs - Mapping of start_json node IDs to their input JSON data
-     * @param options - Optional request options
-     * @returns The created workflow run with status "running"
-     *
      * @example
      * ```typescript
      * const run = await client.workflows.runs.create({
      *     workflowId: "wf_abc123",
-     *     documents: {
-     *         "start-node-1": "./invoice.pdf",
-     *     },
-     *     jsonInputs: {
-     *         "json-node-1": { key: "value" },
-     *     },
+     *     documents: { "start-node-1": "./invoice.pdf" },
      * });
-     * console.log(`Run started: ${run.id}, status: ${run.status}`);
      * ```
      */
     async create(
@@ -107,16 +96,6 @@ export default class APIWorkflowRuns extends CompositionClient {
 
     /**
      * Get a workflow run by ID.
-     *
-     * @param runId - The ID of the workflow run to retrieve
-     * @param options - Optional request options
-     * @returns The workflow run
-     *
-     * @example
-     * ```typescript
-     * const run = await client.workflows.runs.get("run_abc123");
-     * console.log(`Run status: ${run.status}`);
-     * ```
      */
     async get(runId: string, options?: RequestOptions): Promise<WorkflowRun> {
         return this._fetchJson(ZWorkflowRun, {
@@ -129,16 +108,6 @@ export default class APIWorkflowRuns extends CompositionClient {
 
     /**
      * List workflow runs with filtering and pagination.
-     *
-     * @example
-     * ```typescript
-     * const runs = await client.workflows.runs.list({
-     *     workflowId: "wf_abc123",
-     *     status: "completed",
-     *     limit: 10,
-     * });
-     * console.log(`Found ${runs.data.length} runs`);
-     * ```
      */
     async list(
         {
@@ -221,14 +190,6 @@ export default class APIWorkflowRuns extends CompositionClient {
 
     /**
      * Delete a workflow run and its associated step data.
-     *
-     * @param runId - The ID of the workflow run to delete
-     * @param options - Optional request options
-     *
-     * @example
-     * ```typescript
-     * await client.workflows.runs.delete("run_abc123");
-     * ```
      */
     async delete(runId: string, options?: RequestOptions): Promise<void> {
         return this._fetchJson({
@@ -241,17 +202,6 @@ export default class APIWorkflowRuns extends CompositionClient {
 
     /**
      * Cancel a running or pending workflow run.
-     *
-     * @param runId - The ID of the workflow run to cancel
-     * @param commandId - Optional idempotency key for deduplicating cancel commands
-     * @param options - Optional request options
-     * @returns The updated run with cancellation status
-     *
-     * @example
-     * ```typescript
-     * const result = await client.workflows.runs.cancel("run_abc123");
-     * console.log(`Cancellation: ${result.cancellation_status}`);
-     * ```
      */
     async cancel(
         runId: string,
@@ -273,17 +223,6 @@ export default class APIWorkflowRuns extends CompositionClient {
 
     /**
      * Restart a completed or failed workflow run with the same inputs.
-     *
-     * @param runId - The ID of the workflow run to restart
-     * @param commandId - Optional idempotency key for deduplicating restart commands
-     * @param options - Optional request options
-     * @returns The new workflow run
-     *
-     * @example
-     * ```typescript
-     * const newRun = await client.workflows.runs.restart("run_abc123");
-     * console.log(`New run: ${newRun.id}`);
-     * ```
      */
     async restart(
         runId: string,
@@ -305,24 +244,6 @@ export default class APIWorkflowRuns extends CompositionClient {
 
     /**
      * Resume a workflow run after human-in-the-loop (HIL) review.
-     *
-     * @param runId - The ID of the workflow run to resume
-     * @param nodeId - The ID of the HIL node being approved/rejected
-     * @param approved - Whether the human approved the data
-     * @param modifiedData - Optional modified data if the human made changes
-     * @param commandId - Optional idempotency key for deduplicating resume commands
-     * @param options - Optional request options
-     * @returns The resume response with status and queue information
-     *
-     * @example
-     * ```typescript
-     * const result = await client.workflows.runs.resume("run_abc123", {
-     *     nodeId: "hil-node-1",
-     *     approved: true,
-     *     modifiedData: { field: "corrected value" },
-     * });
-     * console.log(`Resume status: ${result.resume_status}`);
-     * ```
      */
     async resume(
         runId: string,
@@ -364,16 +285,13 @@ export default class APIWorkflowRuns extends CompositionClient {
      * @param runId - The ID of the workflow run to wait for
      * @param pollIntervalMs - Milliseconds between polls (default: 2000)
      * @param timeoutMs - Maximum time to wait in milliseconds (default: 600000 = 10 minutes)
-     * @returns The workflow run in a terminal state
-     * @throws Error if the run doesn't complete within the timeout
+     * @param onStatus - Optional callback invoked with the WorkflowRun on each poll
      *
      * @example
      * ```typescript
      * const run = await client.workflows.runs.waitForCompletion("run_abc123", {
-     *     pollIntervalMs: 1000,
-     *     timeoutMs: 300000,
+     *     onStatus: (r) => console.log(`${r.status}...`),
      * });
-     * console.log(`Final status: ${run.status}`);
      * ```
      */
     async waitForCompletion(
@@ -381,9 +299,11 @@ export default class APIWorkflowRuns extends CompositionClient {
         {
             pollIntervalMs = 2000,
             timeoutMs = 600000,
+            onStatus,
         }: {
             pollIntervalMs?: number;
             timeoutMs?: number;
+            onStatus?: (run: WorkflowRun) => void;
         } = {}
     ): Promise<WorkflowRun> {
         if (pollIntervalMs <= 0) throw new Error("pollIntervalMs must be positive");
@@ -393,6 +313,8 @@ export default class APIWorkflowRuns extends CompositionClient {
 
         while (true) {
             const run = await this.get(runId);
+
+            if (onStatus) onStatus(run);
 
             if (TERMINAL_STATUSES.has(run.status)) {
                 return run;
@@ -411,26 +333,17 @@ export default class APIWorkflowRuns extends CompositionClient {
     /**
      * Create a workflow run and wait for it to complete.
      *
-     * Convenience method that combines create() and waitForCompletion().
-     *
-     * @param workflowId - The ID of the workflow to run
-     * @param documents - Mapping of start node IDs to their input documents
-     * @param jsonInputs - Mapping of start_json node IDs to their input JSON data
-     * @param pollIntervalMs - Milliseconds between polls (default: 2000)
-     * @param timeoutMs - Maximum time to wait in milliseconds (default: 600000)
-     * @param options - Optional request options
-     * @returns The workflow run in a terminal state
-     *
      * @example
      * ```typescript
+     * import { raiseForStatus, getWorkflowRunOutput } from "retab";
+     *
      * const run = await client.workflows.runs.createAndWait({
      *     workflowId: "wf_abc123",
      *     documents: { "start-node-1": "./invoice.pdf" },
-     *     timeoutMs: 120000,
+     *     onStatus: (r) => console.log(`${r.status}...`),
      * });
-     * if (run.status === "completed") {
-     *     console.log("Outputs:", run.final_outputs);
-     * }
+     * raiseForStatus(run);
+     * console.log(getWorkflowRunOutput(run));
      * ```
      */
     async createAndWait(
@@ -440,12 +353,14 @@ export default class APIWorkflowRuns extends CompositionClient {
             jsonInputs,
             pollIntervalMs = 2000,
             timeoutMs = 600000,
+            onStatus,
         }: {
             workflowId: string;
             documents?: Record<string, MIMEDataInput>;
             jsonInputs?: Record<string, Record<string, unknown>>;
             pollIntervalMs?: number;
             timeoutMs?: number;
+            onStatus?: (run: WorkflowRun) => void;
         },
         options?: RequestOptions
     ): Promise<WorkflowRun> {
@@ -453,6 +368,124 @@ export default class APIWorkflowRuns extends CompositionClient {
             { workflowId, documents, jsonInputs },
             options
         );
-        return this.waitForCompletion(run.id, { pollIntervalMs, timeoutMs });
+        return this.waitForCompletion(run.id, { pollIntervalMs, timeoutMs, onStatus });
+    }
+
+    /**
+     * Get run counts by status.
+     *
+     * @returns Object with status counts (e.g., `{ total: 42, completed: 30, error: 5 }`)
+     */
+    async counts(
+        { workflowId }: { workflowId?: string } = {},
+        options?: RequestOptions
+    ): Promise<Record<string, number>> {
+        const params = Object.fromEntries(
+            Object.entries({
+                workflow_id: workflowId,
+                ...(options?.params || {}),
+            }).filter(([_, v]) => v !== undefined)
+        );
+
+        return this._fetchJson(z.record(z.string(), z.number()), {
+            url: "/workflows/runs/counts",
+            method: "GET",
+            params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
+     * Get the configuration snapshot used for a run.
+     */
+    async getConfig(runId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
+        return this._fetchJson(z.record(z.any()), {
+            url: `/workflows/runs/${runId}/config`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
+     * Get the DAG-ordered execution order for a run.
+     */
+    async executionOrder(runId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
+        return this._fetchJson(z.record(z.any()), {
+            url: `/workflows/runs/${runId}/execution-order`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
+     * Get a signed URL for downloading a document from a run step.
+     */
+    async getDocumentUrl(
+        runId: string,
+        nodeId: string,
+        options?: RequestOptions
+    ): Promise<Record<string, unknown>> {
+        return this._fetchJson(z.record(z.any()), {
+            url: `/workflows/runs/${runId}/documents/${nodeId}`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
+     * Export run results as structured CSV data.
+     *
+     * @returns Object with `csv_data` (string), `rows` (number), `columns` (number)
+     */
+    async export(
+        {
+            workflowId,
+            nodeId,
+            exportSource = "outputs",
+            selectedRunIds,
+            status,
+            excludeStatus,
+            fromDate,
+            toDate,
+            triggerTypes,
+            preferredColumns,
+        }: {
+            workflowId: string;
+            nodeId: string;
+            exportSource?: "outputs" | "inputs";
+            selectedRunIds?: string[];
+            status?: string;
+            excludeStatus?: string;
+            fromDate?: string;
+            toDate?: string;
+            triggerTypes?: string[];
+            preferredColumns?: string[];
+        },
+        options?: RequestOptions
+    ): Promise<Record<string, unknown>> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const body: Record<string, any> = {
+            workflow_id: workflowId,
+            node_id: nodeId,
+            export_source: exportSource,
+            preferred_columns: preferredColumns || [],
+        };
+        if (selectedRunIds !== undefined) body.selected_run_ids = selectedRunIds;
+        if (status !== undefined) body.status = status;
+        if (excludeStatus !== undefined) body.exclude_status = excludeStatus;
+        if (fromDate !== undefined) body.from_date = fromDate;
+        if (toDate !== undefined) body.to_date = toDate;
+        if (triggerTypes !== undefined) body.trigger_types = triggerTypes;
+
+        return this._fetchJson(z.record(z.any()), {
+            url: "/workflows/runs/export_payload",
+            method: "POST",
+            body: { ...body, ...(options?.body || {}) },
+            params: options?.params,
+            headers: options?.headers,
+        });
     }
 }

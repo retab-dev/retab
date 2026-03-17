@@ -1,5 +1,5 @@
 import { CompositionClient, RequestOptions } from "../../client.js";
-import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResult, ZParseResult, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse, SplitRequest, ZSplitRequest, ZSplitResponse, ClassifyRequest, ZClassifyRequest, ZClassifyResponse, GenerateSplitConfigRequest, ZGenerateSplitConfigRequest } from "../../types.js";
+import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResponse, ZParseResponse, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse, SplitRequest, ZSplitRequest, ZSplitResponse, ClassifyRequest, ZClassifyRequest, ZClassifyResponse, GenerateSplitConfigRequest, ZGenerateSplitConfigRequest } from "../../types.js";
 import type { SplitResponse, ClassifyResponse, GenerateSplitConfigResponse } from "../../generated_types.js";
 import { ZGenerateSplitConfigResponse } from "../../generated_types.js";
 
@@ -28,8 +28,8 @@ export default class APIDocuments extends CompositionClient {
             headers: options?.headers,
         });
     }
-    async parse(params: ParseRequest, options?: RequestOptions): Promise<ParseResult> {
-        return this._fetchJson(ZParseResult, {
+    async parse(params: ParseRequest, options?: RequestOptions): Promise<ParseResponse> {
+        return this._fetchJson(ZParseResponse, {
             url: "/documents/parse",
             method: "POST",
             body: { ...(await ZParseRequest.parseAsync(params)), ...(options?.body || {}) },

@@ -183,7 +183,6 @@ export const ZWorkflowRunStep = z.object({
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
-    output: z.record(z.any()).nullable().optional(),
     handle_outputs: z.record(z.string(), z.any()).nullable().optional(),
     handle_inputs: z.record(z.string(), z.any()).nullable().optional(),
     input_document: generated.ZBaseMIMEData.nullable().optional(),
@@ -215,6 +214,107 @@ export const ZWorkflow = z.object({
     updated_at: z.string(),
 }).passthrough();
 export type Workflow = z.infer<typeof ZWorkflow>;
+
+// ---------------------------------------------------------------------------
+// Workflow graph types (blocks, edges, subflows)
+// ---------------------------------------------------------------------------
+
+export const ZWorkflowBlock = z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    type: z.string(),
+    label: z.string().default(""),
+    position_x: z.number().default(0),
+    position_y: z.number().default(0),
+    width: z.number().nullable().optional(),
+    height: z.number().nullable().optional(),
+    config: z.record(z.any()).nullable().optional(),
+    subflow_id: z.string().nullable().optional(),
+    parent_id: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+}).passthrough();
+export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
+
+export const ZWorkflowEdge = z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    source_block: z.string(),
+    target_block: z.string(),
+    source_handle: z.string().nullable().optional(),
+    target_handle: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+}).passthrough();
+export type WorkflowEdge = z.infer<typeof ZWorkflowEdge>;
+
+export const ZWorkflowSubflow = z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    type: z.string(),
+    label: z.string().default(""),
+    position_x: z.number().default(0),
+    position_y: z.number().default(0),
+    width: z.number().default(400),
+    height: z.number().default(300),
+    config: z.record(z.any()).nullable().optional(),
+    child_block_ids: z.array(z.string()).default([]),
+}).passthrough();
+export type WorkflowSubflow = z.infer<typeof ZWorkflowSubflow>;
+
+export const ZWorkflowWithEntities = z.object({
+    workflow: ZWorkflow,
+    blocks: z.array(ZWorkflowBlock).default([]),
+    edges: z.array(ZWorkflowEdge).default([]),
+    subflows: z.array(ZWorkflowSubflow).default([]),
+}).passthrough();
+export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
+
+// ---------------------------------------------------------------------------
+// Workflow run utility functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the final output data from a completed workflow run.
+ *
+ * Each end node produces `{document, data}`.
+ *
+ * - Single end node: returns `data` directly.
+ * - Multiple end nodes: returns `{endNodeId: data}` dict.
+ * - No outputs: returns `null`.
+ */
+export function getWorkflowRunOutput(run: generated.WorkflowRun): Record<string, unknown> | null {
+    if (!run.final_outputs) return null;
+    const entries = Object.entries(run.final_outputs);
+    if (entries.length === 1) {
+        const val = entries[0]![1];
+        return (val && typeof val === "object" && "data" in val) ? (val as Record<string, unknown>).data as Record<string, unknown> | null : null;
+    }
+    return Object.fromEntries(
+        entries.map(([k, v]) => {
+            const data = (v && typeof v === "object" && "data" in v) ? (v as Record<string, unknown>).data : null;
+            return [k, data];
+        })
+    );
+}
+
+/**
+ * Error thrown by {@link raiseForStatus} when a workflow run has failed.
+ */
+export class WorkflowRunError extends Error {
+    public readonly run: generated.WorkflowRun;
+    constructor(run: generated.WorkflowRun) {
+        super(`Workflow run ${run.id} failed${run.error ? `: ${run.error}` : ""}`);
+        this.name = "WorkflowRunError";
+        this.run = run;
+    }
+}
+
+/**
+ * Throw a {@link WorkflowRunError} if the run has status "error".
+ * Modelled after `httpx.Response.raise_for_status()`.
+ */
+export function raiseForStatus(run: generated.WorkflowRun): void {
+    if (run.status === "error") throw new WorkflowRunError(run);
+}
 
 export const ZModel = z.lazy(() => (z.object({
     id: z.string(),

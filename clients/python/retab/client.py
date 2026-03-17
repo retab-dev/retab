@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 import os
 from types import TracebackType
 from typing import Any, AsyncIterator, Iterator, Optional
@@ -10,8 +11,21 @@ import backoff.types
 import httpx
 import truststore
 
-from .resources import documents, files, models, schemas, projects, extractions, edit, workflows, jobs
-from .types.standards import PreparedRequest, FieldUnset
+from .exceptions import (
+    APIConnectionError,
+    APIError,
+    APITimeoutError,
+    AuthenticationError,
+    InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
+    RateLimitError,
+    ValidationError,
+)
+from .resources import documents, files, models, schemas, projects, extractions, edit, workflows, jobs, evals
+from .types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
+
+logger = logging.getLogger("retab")
 
 
 class SignatureVerificationError(Exception):
@@ -30,6 +44,15 @@ def raise_max_tries_exceeded(details: backoff.types.Details) -> None:
         raise Exception(f"Max tries exceeded after {tries} tries.") from exception
     else:
         raise Exception(f"Max tries exceeded after {tries} tries.")
+
+
+_STATUS_CODE_TO_EXCEPTION: dict[int, type[APIError]] = {
+    401: AuthenticationError,
+    403: PermissionDeniedError,
+    404: NotFoundError,
+    422: ValidationError,
+    429: RateLimitError,
+}
 
 
 class BaseRetab:
@@ -83,12 +106,44 @@ class BaseRetab:
         return f"{self.base_url}/{endpoint.lstrip('/')}"
 
     def _validate_response(self, response_object: httpx.Response) -> None:
-        if response_object.status_code >= 500:
-            response_object.raise_for_status()
-        elif response_object.status_code == 422:
-            raise RuntimeError(f"Validation error (422): {response_object.text}")
-        elif not response_object.is_success:
-            raise RuntimeError(f"Request failed ({response_object.status_code}): {response_object.text}")
+        if response_object.is_success:
+            return
+
+        status_code = response_object.status_code
+        body = response_object.text
+        request_id = response_object.headers.get("x-request-id")
+
+        # Try to parse structured error from response body
+        code: str | None = None
+        message: str = f"Request failed ({status_code})"
+        details: dict[str, Any] | None = None
+        try:
+            error_body = response_object.json()
+            if isinstance(error_body, dict):
+                detail = error_body.get("detail")
+                if isinstance(detail, dict):
+                    code = detail.get("code")
+                    message = detail.get("message", message)
+                    details = detail.get("details")
+                elif isinstance(detail, str):
+                    message = detail
+        except Exception:
+            message = body or message
+
+        # Select the appropriate exception class
+        if status_code >= 500:
+            exc_cls = InternalServerError
+        else:
+            exc_cls = _STATUS_CODE_TO_EXCEPTION.get(status_code, APIError)
+
+        raise exc_cls(
+            message,
+            status_code=status_code,
+            code=code,
+            details=details,
+            body=body,
+            request_id=request_id,
+        )
 
     def _get_headers(self, idempotency_key: str | None = None) -> dict[str, Any]:
         headers = self.headers.copy()
@@ -160,6 +215,7 @@ class Retab(BaseRetab):
         self.client = httpx.Client(timeout=self.timeout)
         self.files = files.Files(client=self)
         self.projects = projects.Projects(client=self)
+        self.evals = evals.Evals(client=self)
         self.extractions = extractions.Extractions(client=self)
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
@@ -194,14 +250,17 @@ class Retab(BaseRetab):
             Any: Parsed JSON response or raw text string depending on response content-type
 
         Raises:
-            RuntimeError: If request fails after max retries or validation error occurs
+            APIError: If request fails (AuthenticationError, ValidationError, etc.)
         """
 
         def raw_request() -> Any:
+            url = self._prepare_url(endpoint)
+            logger.debug("Request: %s %s", method, url)
+
             # Prepare request kwargs
             request_kwargs = {
                 "method": method,
-                "url": self._prepare_url(endpoint),
+                "url": url,
                 "params": params,
                 "headers": self._get_headers(idempotency_key),
             }
@@ -221,11 +280,18 @@ class Retab(BaseRetab):
                 # For JSON requests
                 request_kwargs["json"] = data
 
-            response = self.client.request(**request_kwargs)
+            try:
+                response = self.client.request(**request_kwargs)
+            except httpx.TimeoutException as exc:
+                raise APITimeoutError(f"Request timed out: {method} {url}") from exc
+            except httpx.ConnectError as exc:
+                raise APIConnectionError(f"Connection error: {method} {url}: {exc}") from exc
+
+            logger.debug("Response: %s (request_id=%s)", response.status_code, response.headers.get("x-request-id"))
             self._validate_response(response)
             return self._parse_response(response)
 
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        @backoff.on_exception(backoff.expo, (InternalServerError, RateLimitError), max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Any:
             return raw_request()
 
@@ -261,14 +327,17 @@ class Retab(BaseRetab):
             Iterator[Any]: Generator yielding parsed JSON objects or raw text strings from the stream
 
         Raises:
-            RuntimeError: If request fails after max retries or validation error occurs
+            APIError: If request fails (AuthenticationError, ValidationError, etc.)
         """
 
         def raw_request() -> Iterator[Any]:
+            url = self._prepare_url(endpoint)
+            logger.debug("Stream request: %s %s", method, url)
+
             # Prepare request kwargs
             stream_kwargs = {
                 "method": method,
-                "url": self._prepare_url(endpoint),
+                "url": url,
                 "params": params,
                 "headers": self._get_headers(idempotency_key),
             }
@@ -288,7 +357,14 @@ class Retab(BaseRetab):
                 # For JSON requests
                 stream_kwargs["json"] = data
 
-            with self.client.stream(**stream_kwargs) as response_ctx_manager:
+            try:
+                ctx_manager = self.client.stream(**stream_kwargs)
+            except httpx.TimeoutException as exc:
+                raise APITimeoutError(f"Request timed out: {method} {url}") from exc
+            except httpx.ConnectError as exc:
+                raise APIConnectionError(f"Connection error: {method} {url}: {exc}") from exc
+
+            with ctx_manager as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
 
                 content_type = response_ctx_manager.headers.get("content-type", "")
@@ -313,7 +389,7 @@ class Retab(BaseRetab):
                         except Exception:
                             yield chunk
 
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        @backoff.on_exception(backoff.expo, (InternalServerError, RateLimitError), max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         def wrapped_request() -> Iterator[Any]:
             for item in raw_request():
                 yield item
@@ -452,6 +528,7 @@ class AsyncRetab(BaseRetab):
 
         self.files = files.AsyncFiles(client=self)
         self.projects = projects.AsyncProjects(client=self)
+        self.evals = evals.AsyncEvals(client=self)
         self.extractions = extractions.AsyncExtractions(client=self)
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
@@ -459,28 +536,6 @@ class AsyncRetab(BaseRetab):
         self.edit = edit.AsyncEdit(client=self)
         self.workflows = workflows.AsyncWorkflows(client=self)
         self.jobs = jobs.AsyncJobs(client=self)
-        
-    def _parse_response(self, response: httpx.Response) -> Any:
-        """Parse response based on content-type.
-
-        Returns:
-            Any: Parsed JSON object for JSON responses, raw text string for text responses
-        """
-        content_type = response.headers.get("content-type", "")
-
-        # Check if it's a JSON response
-        if "application/json" in content_type or "application/stream+json" in content_type:
-            return response.json()
-        # Check if it's a text response
-        elif "text/plain" in content_type or "text/" in content_type:
-            return response.text
-        else:
-            # Default to JSON parsing for backwards compatibility
-            try:
-                return response.json()
-            except Exception:
-                # If JSON parsing fails, return as text
-                return response.text
 
     async def _request(
         self,
@@ -508,14 +563,17 @@ class AsyncRetab(BaseRetab):
             Any: Parsed JSON response or raw text string depending on response content-type
 
         Raises:
-            RuntimeError: If request fails after max retries or validation error occurs
+            APIError: If request fails (AuthenticationError, ValidationError, etc.)
         """
 
         async def raw_request() -> Any:
+            url = self._prepare_url(endpoint)
+            logger.debug("Request: %s %s", method, url)
+
             # Prepare request kwargs
             request_kwargs = {
                 "method": method,
-                "url": self._prepare_url(endpoint),
+                "url": url,
                 "params": params,
                 "headers": self._get_headers(idempotency_key),
             }
@@ -535,11 +593,18 @@ class AsyncRetab(BaseRetab):
                 # For JSON requests
                 request_kwargs["json"] = data
 
-            response = await self.client.request(**request_kwargs)
+            try:
+                response = await self.client.request(**request_kwargs)
+            except httpx.TimeoutException as exc:
+                raise APITimeoutError(f"Request timed out: {method} {url}") from exc
+            except httpx.ConnectError as exc:
+                raise APIConnectionError(f"Connection error: {method} {url}: {exc}") from exc
+
+            logger.debug("Response: %s (request_id=%s)", response.status_code, response.headers.get("x-request-id"))
             self._validate_response(response)
             return self._parse_response(response)
 
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        @backoff.on_exception(backoff.expo, (InternalServerError, RateLimitError), max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> Any:
             return await raw_request()
 
@@ -574,14 +639,17 @@ class AsyncRetab(BaseRetab):
             AsyncIterator[Any]: Async generator yielding parsed JSON objects or raw text strings from the stream
 
         Raises:
-            RuntimeError: If request fails after max retries or validation error occurs
+            APIError: If request fails (AuthenticationError, ValidationError, etc.)
         """
 
         async def raw_request() -> AsyncIterator[Any]:
+            url = self._prepare_url(endpoint)
+            logger.debug("Stream request: %s %s", method, url)
+
             # Prepare request kwargs
             stream_kwargs = {
                 "method": method,
-                "url": self._prepare_url(endpoint),
+                "url": url,
                 "params": params,
                 "headers": self._get_headers(idempotency_key),
             }
@@ -601,7 +669,14 @@ class AsyncRetab(BaseRetab):
                 # For JSON requests
                 stream_kwargs["json"] = data
 
-            async with self.client.stream(**stream_kwargs) as response_ctx_manager:
+            try:
+                ctx_manager = self.client.stream(**stream_kwargs)
+            except httpx.TimeoutException as exc:
+                raise APITimeoutError(f"Request timed out: {method} {url}") from exc
+            except httpx.ConnectError as exc:
+                raise APIConnectionError(f"Connection error: {method} {url}: {exc}") from exc
+
+            async with ctx_manager as response_ctx_manager:
                 self._validate_response(response_ctx_manager)
 
                 content_type = response_ctx_manager.headers.get("content-type", "")
@@ -626,7 +701,7 @@ class AsyncRetab(BaseRetab):
                         except Exception:
                             yield chunk
 
-        @backoff.on_exception(backoff.expo, httpx.HTTPStatusError, max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
+        @backoff.on_exception(backoff.expo, (InternalServerError, RateLimitError), max_tries=self.max_retries + 1, on_giveup=raise_max_tries_exceeded)
         async def wrapped_request() -> AsyncIterator[Any]:
             async for item in raw_request():
                 yield item
