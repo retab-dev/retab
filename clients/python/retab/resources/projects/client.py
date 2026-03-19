@@ -1,5 +1,6 @@
 import base64
 import json
+import warnings
 from io import IOBase
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
@@ -292,6 +293,11 @@ class Projects(SyncAPIResource, ProjectsMixin):
         Returns:
             RetabParsedChatCompletion: The processing result
         """
+        warnings.warn(
+            "client.projects.extract(...) is deprecated; use client.evals.extract.process(eval_id=..., document=...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self.prepare_extract(
             project_id=project_id,
             iteration_id=iteration_id,
@@ -316,6 +322,11 @@ class Projects(SyncAPIResource, ProjectsMixin):
         extraction_id: str | None = None,
         **extra_form: Any,
     ) -> RetabParsedChatCompletion:
+        warnings.warn(
+            "client.projects.split(...) is deprecated; use client.evals.split.process(eval_id=..., document=...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self.prepare_split(
             project_id=project_id,
             document=document,
@@ -434,6 +445,11 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         Returns:
             RetabParsedChatCompletion: The processing result
         """
+        warnings.warn(
+            "client.projects.extract(...) is deprecated; use client.evals.extract.process(eval_id=..., document=...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self.prepare_extract(project_id=project_id, iteration_id=iteration_id, document=document, documents=documents, model=model, image_resolution_dpi=image_resolution_dpi, n_consensus=n_consensus)
         response = await self._client._prepared_request(request)
         return RetabParsedChatCompletion.model_validate(response)
@@ -449,6 +465,11 @@ class AsyncProjects(AsyncAPIResource, ProjectsMixin):
         extraction_id: str | None = None,
         **extra_form: Any,
     ) -> RetabParsedChatCompletion:
+        warnings.warn(
+            "client.projects.split(...) is deprecated; use client.evals.split.process(eval_id=..., document=...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self.prepare_split(
             project_id=project_id,
             document=document,

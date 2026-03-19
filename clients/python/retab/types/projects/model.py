@@ -10,7 +10,6 @@ from .predictions import PredictionData
 
 default_inference_settings = InferenceSettings(
     model="retab-small",
-    reasoning_effort="minimal",
     image_resolution_dpi=192,
     n_consensus=1,
 )
@@ -46,6 +45,7 @@ class CreateProjectRequest(BaseModel):
 class PatchProjectRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     name: Optional[str] = Field(default=None, description="The name of the document")
+    json_schema: Optional[dict[str, Any]] = Field(default=None, description="The json schema of the project")
     published_config: Optional[PublishedConfig] = Field(default=None, description="The published config of the project")
     draft_config: Optional[DraftConfig] = Field(default=None, description="The draft config of the project")
     is_published: Optional[bool] = Field(default=None, description="The published status of the project")

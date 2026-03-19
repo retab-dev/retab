@@ -2,6 +2,10 @@ import { CompositionClient, RequestOptions } from "../../client.js";
 import { mimeToBlob } from "../../mime.js";
 import { dataArray, Project, ZProject, ZCreateProjectRequest, CreateProjectRequest, MIMEDataInput, ZMIMEData, RetabParsedChatCompletion, ZRetabParsedChatCompletion } from "../../types.js";
 
+function emitEvalDeprecationWarning(message: string): void {
+    process.emitWarning(message, "DeprecationWarning");
+}
+
 export default class APIProjects extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
@@ -74,6 +78,9 @@ export default class APIProjects extends CompositionClient {
         metadata?: Record<string, string>,
         extraction_id?: string,
     }, options?: RequestOptions): Promise<RetabParsedChatCompletion> {
+        emitEvalDeprecationWarning(
+            "client.projects.extract(...) is deprecated; use client.evals.extract.process(...) instead."
+        );
         const url = iteration_id ? `/projects/extract/${project_id}/${iteration_id}` : `/projects/extract/${project_id}`;
 
         // Parse and convert document to blob for multipart form upload
@@ -118,6 +125,9 @@ export default class APIProjects extends CompositionClient {
         metadata?: Record<string, string>,
         extraction_id?: string,
     }, options?: RequestOptions): Promise<RetabParsedChatCompletion> {
+        emitEvalDeprecationWarning(
+            "client.projects.split(...) is deprecated; use client.evals.split.process(...) instead."
+        );
         const parsedDocument = await ZMIMEData.parseAsync(document);
 
         const bodyParams: Record<string, any> = {
