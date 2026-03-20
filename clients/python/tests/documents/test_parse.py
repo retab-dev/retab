@@ -30,22 +30,21 @@ def validate_parse_response(response: ParseResponse | None) -> None:
     """Validate that the parse response has the expected structure and content."""
     # Assert the instance
     assert isinstance(response, ParseResponse), f"Response should be of type ParseResponse, received {type(response)}"
-    
+
     # Assert the response has required fields
     assert response.document is not None, "Response document should not be None"
     assert response.usage is not None, "Response usage should not be None"
     assert response.pages is not None, "Response pages should not be None"
     assert response.text is not None, "Response text should not be None"
-    
+
     # Assert usage information is valid
-    assert response.usage.page_count > 0, "Page count should be greater than 0"
     assert response.usage.credits >= 0, "Credits should be non-negative"
-    
+
     # Assert pages is a list of strings
     assert isinstance(response.pages, list), "Pages should be a list"
     assert all(isinstance(page, str) for page in response.pages), "All pages should be strings"
     assert len(response.pages) > 0, "Should have at least one page"
-    
+
     # Assert text is a non-empty string
     assert isinstance(response.text, str), "Text should be a string"
     assert len(response.text.strip()) > 0, "Text should not be empty"
@@ -157,24 +156,23 @@ async def test_parse_response_structure(
             document=booking_confirmation_file_path_1,
             model="retab-micro",
         )
-    
+
     # Validate basic structure
     validate_parse_response(response)
-    
+
     # Additional specific validations
     assert hasattr(response, 'document'), "Response should have document attribute"
     assert hasattr(response, 'usage'), "Response should have usage attribute"
     assert hasattr(response, 'pages'), "Response should have pages attribute"
     assert hasattr(response, 'text'), "Response should have text attribute"
-    
+
     # Validate document metadata
     assert hasattr(response.document, 'mime_type'), "Document should have mime_type"
-    
+
     # Validate usage information
-    assert isinstance(response.usage.page_count, int), "Page count should be an integer"
     assert isinstance(response.usage.credits, (int, float)), "Credits should be a number"
-    
+
     # Validate that pages and text are consistent
-    # The text might be formatted differently than just joining pages, but should contain similar content
     assert len(response.text) > 0, "Text should not be empty"
-    assert len(response.pages) == response.usage.page_count, "Number of pages should match page count in usage"
+    assert len(response.pages) > 0, "Pages should not be empty"
+    assert any(page.strip() for page in response.pages), "At least one page should contain text"

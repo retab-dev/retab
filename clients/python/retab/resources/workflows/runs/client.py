@@ -183,10 +183,11 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         >>> client = Retab(api_key="your-api-key")
         >>>
         >>> # Run a workflow and wait for completion
-        >>> run = client.workflows.runs.create_and_wait(
+        >>> run = client.workflows.runs.create(
         ...     workflow_id="wf_abc123",
         ...     documents={"start-node-1": Path("invoice.pdf")},
         ... )
+        >>> run = client.workflows.runs.wait_for_completion(run.id)
         >>>
         >>> # Get outputs from a specific step
         >>> step = client.workflows.runs.steps.get(run.id, "extract-node-1")
@@ -501,10 +502,11 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         >>> client = AsyncRetab(api_key="your-api-key")
         >>>
         >>> # Run a workflow and wait for completion
-        >>> run = await client.workflows.runs.create_and_wait(
+        >>> run = await client.workflows.runs.create(
         ...     workflow_id="wf_abc123",
         ...     documents={"start-node-1": Path("invoice.pdf")},
         ... )
+        >>> run = await client.workflows.runs.wait_for_completion(run.id)
         >>>
         >>> # Get outputs from a specific step
         >>> step = await client.workflows.runs.steps.get(run.id, "extract-node-1")

@@ -156,4 +156,3 @@ class InferFormSchemaResponse(BaseModel):
     form_schema: FormSchema = Field(..., description="Form schema with detected bounding boxes and field names")
     annotated_pdf: MIMEData = Field(..., description="PDF with form field bounding boxes")
     field_count: int = Field(..., description="Number of fields detected")
-

@@ -43,7 +43,9 @@ async def test_evaluation_crud_basic(
     client = sync_client if client_type == "sync" else async_client
 
     # CREATE - Create a new evaluation
-    project = await await_or_return(client.projects.create(name=evaluation_name, json_schema=booking_confirmation_json_schema))
+    project = await await_or_return(
+        client.evals.extract.create(name=evaluation_name, json_schema=booking_confirmation_json_schema)
+    )
 
     assert project.name == evaluation_name
     assert project.draft_config.json_schema == booking_confirmation_json_schema
@@ -52,24 +54,24 @@ async def test_evaluation_crud_basic(
 
     try:
         # READ - Get the evaluation by ID
-        retrieved_evaluation = await await_or_return(client.projects.get(project_id))
+        retrieved_evaluation = await await_or_return(client.evals.extract.get(project_id))
         assert retrieved_evaluation.id == project_id
         assert retrieved_evaluation.name == evaluation_name
 
         # PUBLISH - Promote draft configuration
         published_project = await await_or_return(
-            client.projects.publish(project_id)  # type: ignore[attr-defined]
+            client.evals.extract.publish(project_id)
         )
         assert published_project.id == project_id
 
         # LIST - List evaluations
-        evaluations = await await_or_return(client.projects.list())
+        evaluations = await await_or_return(client.evals.extract.list())
         assert any(e.id == project_id for e in evaluations)
 
     finally:
         # DELETE - Clean up
         try:
-            await await_or_return(client.projects.delete(project_id))
+            await await_or_return(client.evals.extract.delete(project_id))
         except Exception:
             pass
 
@@ -89,7 +91,7 @@ async def test_extract_without_iteration_id(
 
     # Create a project
     project = await await_or_return(
-        client.projects.create(
+        client.evals.extract.create(
             name=evaluation_name,
             json_schema=booking_confirmation_json_schema,
         )
@@ -99,15 +101,15 @@ async def test_extract_without_iteration_id(
 
     # PUBLISH - Promote draft configuration
     published_project = await await_or_return(
-        client.projects.publish(project_id)  # type: ignore[attr-defined]
+        client.evals.extract.publish(project_id)
     )
     assert published_project.id == project_id
 
     try:
         # Call extract without providing iteration_id
         completion_response = await await_or_return(
-            client.projects.extract(
-                project_id=project_id,
+            client.evals.extract.process(
+                eval_id=project_id,
                 document=booking_confirmation_file_path_1,
             )
         )
@@ -128,7 +130,7 @@ async def test_extract_without_iteration_id(
     finally:
         # Cleanup
         try:
-            await await_or_return(client.projects.delete(project_id))
+            await await_or_return(client.evals.extract.delete(project_id))
         except Exception:
             pass
 
@@ -146,23 +148,19 @@ async def test_split_project_via_projects_resource(
     split_document_path = f"{test_data_dir}/edit/fidelity_original.pdf"
 
     split_project = await await_or_return(
-        client._request(  # type: ignore[attr-defined]
-            "POST",
-            "/split-projects",
-            data={
-                "name": split_project_name,
-                "split_config": [
-                    {"name": "Document", "description": "The full document"},
-                ],
-            },
+        client.evals.split.create(
+            name=split_project_name,
+            split_config=[
+                {"name": "Document", "description": "The full document"},
+            ],
         )
     )
-    project_id = split_project["id"]
+    project_id = split_project.id
 
     try:
         response = await await_or_return(
-            client.projects.split(
-                project_id=project_id,
+            client.evals.split.process(
+                eval_id=project_id,
                 document=split_document_path,
             )
         )
@@ -176,7 +174,7 @@ async def test_split_project_via_projects_resource(
         assert "splits" in parsed_content
     finally:
         try:
-            await await_or_return(client._request("DELETE", f"/split-projects/{project_id}"))  # type: ignore[attr-defined]
+            await await_or_return(client.evals.split.delete(project_id))
         except Exception:
             pass
 

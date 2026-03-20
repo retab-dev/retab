@@ -573,7 +573,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document: The document to parse. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
-            image_resolution_dpi: DPI for image processing. Defaults to 72.
+            image_resolution_dpi: DPI for image processing. Defaults to 192.
 
         Returns:
             ParseResponse: Parsed response containing document metadata, usage information, and page text content.
@@ -647,8 +647,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         """
         Split a document into sections based on provided subdocuments.
 
-        This method analyzes a multi-page document and classifies pages into 
-        user-defined subdocuments, returning the page ranges for each section.
+        This method analyzes a multi-page document and classifies pages into
+        user-defined subdocuments, returning the assigned pages for each section.
 
         Args:
             document: The document to split. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
@@ -659,7 +659,12 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
         Returns:
             SplitResponse: Response containing:
-                - splits: List of SplitResult objects with name, start_page, and end_page for each section.
+                - splits: List of SplitResult objects with:
+                    - name: The matched subdocument name
+                    - pages: The 1-indexed pages assigned to that section
+                    - likelihood: Consensus confidence when n_consensus > 1
+                    - votes: Per-run page assignments used to build the consensus result
+                    - partitions: Repeated items detected from partition_key, when configured
 
         Raises:
             HTTPException: If the request fails.
@@ -673,10 +678,11 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
                     {"name": "invoice", "description": "Invoice documents with billing information"},
                     {"name": "receipt", "description": "Receipt documents for payments"},
                     {"name": "contract", "description": "Legal contract documents"},
-                ]
+                ],
+                n_consensus=3,
             )
             for split in response.splits:
-                print(f"{split.name}: pages {split.start_page}-{split.end_page}")
+                print(f"{split.name}: pages {split.pages} (likelihood={split.likelihood})")
             ```
         """
         request = self._prepare_split(
@@ -991,7 +997,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document: The document to parse. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
             model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
-            image_resolution_dpi: DPI for image processing. Defaults to 96.
+            image_resolution_dpi: DPI for image processing. Defaults to 192.
 
         Returns:
             ParseResponse: Parsed response containing document metadata, usage information, and page text content.
@@ -1065,8 +1071,8 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         """
         Split a document into sections based on provided subdocuments asynchronously.
 
-        This method analyzes a multi-page document and classifies pages into 
-        user-defined subdocuments, returning the page ranges for each section.
+        This method analyzes a multi-page document and classifies pages into
+        user-defined subdocuments, returning the assigned pages for each section.
 
         Args:
             document: The document to split. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
@@ -1077,7 +1083,12 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         Returns:
             SplitResponse: Response containing:
-                - splits: List of SplitResult objects with name, start_page, and end_page for each section.
+                - splits: List of SplitResult objects with:
+                    - name: The matched subdocument name
+                    - pages: The 1-indexed pages assigned to that section
+                    - likelihood: Consensus confidence when n_consensus > 1
+                    - votes: Per-run page assignments used to build the consensus result
+                    - partitions: Repeated items detected from partition_key, when configured
 
         Raises:
             HTTPException: If the request fails.
@@ -1091,10 +1102,11 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
                     {"name": "invoice", "description": "Invoice documents with billing information"},
                     {"name": "receipt", "description": "Receipt documents for payments"},
                     {"name": "contract", "description": "Legal contract documents"},
-                ]
+                ],
+                n_consensus=3,
             )
             for split in response.splits:
-                print(f"{split.name}: pages {split.start_page}-{split.end_page}")
+                print(f"{split.name}: pages {split.pages} (likelihood={split.likelihood})")
             ```
         """
         request = self._prepare_split(

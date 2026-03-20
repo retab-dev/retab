@@ -10,6 +10,7 @@ from openai.types.chat.chat_completion_chunk import Choice as ChoiceChunk
 from openai.types.chat.chat_completion_chunk import ChoiceDelta as ChoiceDeltaChunk
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
+from openai.types.completion_usage import CompletionUsage
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
@@ -17,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..standards import StreamingBaseModel
+from .usage import RetabUsage
 from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel, unflatten_dict
 class DocumentExtractRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
@@ -42,6 +44,13 @@ class RetabParsedChoice(ParsedChoice):
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
     key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
 
+    @field_validator("finish_reason", mode="before")
+    @classmethod
+    def normalize_finish_reason(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return value.lower()
+        return value
+
 
 LikelihoodsSource = Literal["consensus", "log_probs"]
 
@@ -49,6 +58,7 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
     extraction_id: str | None = None
     choices: list[RetabParsedChoice]  # type: ignore
+    usage: CompletionUsage | RetabUsage | None = Field(default=None, description="Usage information for the extraction")
     # Additional metadata fields
     likelihoods: Optional[dict[str, Any]] = Field(
         default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."

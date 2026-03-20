@@ -1,7 +1,8 @@
 import datetime
-from typing import Literal, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic import field_validator
 
 from ..inference_settings import InferenceSettings
 from ..mime import BaseMIMEData
@@ -34,7 +35,14 @@ class Iteration(BaseModel):
     project_id: str
     dataset_id: str
     draft: DraftIteration = Field(default_factory=DraftIteration, description="The drafted changes of the iteration")
-    status: Literal["draft", "completed"] = Field(default="draft", description="Iteration status: 'draft' for editable, 'completed' for finalized")
+    status: str = Field(default="draft", description="Iteration status: draft, finalizing, or finalized")
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def _normalize_status(cls, value: str | None) -> str:
+        if value == "completed":
+            return "finalized"
+        return value or "draft"
 
 
 class IterationDocument(BaseModel):
@@ -49,5 +57,4 @@ class IterationDocument(BaseModel):
     mime_data: BaseMIMEData = Field(description="The mime data of the document")
     prediction_data: PredictionData = Field(default_factory=PredictionData, description="The prediction data of the document")
     extraction_id: str | None = Field(default=None, description="The extraction id of the document")
-
 

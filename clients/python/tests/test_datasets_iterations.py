@@ -4,8 +4,8 @@ import nanoid  # type: ignore
 import pytest
 
 from retab import AsyncRetab, Retab
-from retab.types.projects.datasets import Dataset, DatasetDocument
-from retab.types.projects.iterations import Iteration, IterationDocument, SchemaOverrides
+from retab.types.projects.datasets import Dataset
+from retab.types.projects.iterations import Iteration
 from retab.types.inference_settings import InferenceSettings
 
 T = TypeVar("T")
@@ -37,44 +37,46 @@ async def test_dataset_crud(
 
     # Create a project first
     project = await await_or_return(
-        client.projects.create(name=project_name, json_schema=booking_confirmation_json_schema)
+        client.evals.extract.create(name=project_name, json_schema=booking_confirmation_json_schema)
     )
-    project_id = project.id
+    eval_id = project.id
+    published_project = await await_or_return(client.evals.extract.publish(eval_id))
+    assert published_project.id == eval_id
 
     try:
         # CREATE dataset
         dataset_name = f"dataset_{nanoid.generate()}"
         dataset = await await_or_return(
-            client.projects.datasets.create(
-                project_id=project_id,
+            client.evals.extract.datasets.create(
+                eval_id=eval_id,
                 name=dataset_name,
                 base_json_schema=booking_confirmation_json_schema,
             )
         )
         assert isinstance(dataset, Dataset)
         assert dataset.name == dataset_name
-        assert dataset.project_id == project_id
+        assert dataset.project_id == eval_id
         dataset_id = dataset.id
 
         try:
             # GET dataset
             retrieved = await await_or_return(
-                client.projects.datasets.get(project_id=project_id, dataset_id=dataset_id)
+                client.evals.extract.datasets.get(eval_id=eval_id, dataset_id=dataset_id)
             )
             assert retrieved.id == dataset_id
             assert retrieved.name == dataset_name
 
             # LIST datasets
             datasets = await await_or_return(
-                client.projects.datasets.list(project_id=project_id)
+                client.evals.extract.datasets.list(eval_id=eval_id)
             )
             assert any(d.id == dataset_id for d in datasets)
 
             # UPDATE dataset
             new_name = f"updated_{nanoid.generate()}"
             updated = await await_or_return(
-                client.projects.datasets.update(
-                    project_id=project_id, dataset_id=dataset_id, name=new_name
+                client.evals.extract.datasets.update(
+                    eval_id=eval_id, dataset_id=dataset_id, name=new_name
                 )
             )
             assert updated.name == new_name
@@ -83,14 +85,14 @@ async def test_dataset_crud(
             # DELETE dataset
             try:
                 await await_or_return(
-                    client.projects.datasets.delete(project_id=project_id, dataset_id=dataset_id)
+                    client.evals.extract.datasets.delete(eval_id=eval_id, dataset_id=dataset_id)
                 )
             except Exception:
                 pass
     finally:
         # Clean up project
         try:
-            await await_or_return(client.projects.delete(project_id))
+            await await_or_return(client.evals.extract.delete(eval_id))
         except Exception:
             pass
 
@@ -109,15 +111,17 @@ async def test_iteration_draft_workflow(
 
     # Create project
     project = await await_or_return(
-        client.projects.create(name=project_name, json_schema=booking_confirmation_json_schema)
+        client.evals.extract.create(name=project_name, json_schema=booking_confirmation_json_schema)
     )
-    project_id = project.id
+    eval_id = project.id
+    published_project = await await_or_return(client.evals.extract.publish(eval_id))
+    assert published_project.id == eval_id
 
     try:
         # Create dataset
         dataset = await await_or_return(
-            client.projects.datasets.create(
-                project_id=project_id,
+            client.evals.extract.datasets.create(
+                eval_id=eval_id,
                 name=f"dataset_{nanoid.generate()}",
                 base_json_schema=booking_confirmation_json_schema,
             )
@@ -127,8 +131,8 @@ async def test_iteration_draft_workflow(
         try:
             # CREATE iteration (starts as draft)
             iteration = await await_or_return(
-                client.projects.datasets.iterations.create(
-                    project_id=project_id,
+                client.evals.extract.datasets.iterations.create(
+                    eval_id=eval_id,
                     dataset_id=dataset_id,
                 )
             )
@@ -139,8 +143,8 @@ async def test_iteration_draft_workflow(
             try:
                 # GET iteration
                 retrieved = await await_or_return(
-                    client.projects.datasets.iterations.get(
-                        project_id=project_id, dataset_id=dataset_id, iteration_id=iteration_id
+                    client.evals.extract.datasets.iterations.get(
+                        eval_id=eval_id, dataset_id=dataset_id, iteration_id=iteration_id
                     )
                 )
                 assert retrieved.id == iteration_id
@@ -148,8 +152,8 @@ async def test_iteration_draft_workflow(
 
                 # LIST iterations
                 iterations = await await_or_return(
-                    client.projects.datasets.iterations.list(
-                        project_id=project_id, dataset_id=dataset_id
+                    client.evals.extract.datasets.iterations.list(
+                        eval_id=eval_id, dataset_id=dataset_id
                     )
                 )
                 assert any(i.id == iteration_id for i in iterations)
@@ -157,8 +161,8 @@ async def test_iteration_draft_workflow(
                 # UPDATE DRAFT with new inference settings
                 new_settings = InferenceSettings(model="retab-small", n_consensus=1)
                 updated = await await_or_return(
-                    client.projects.datasets.iterations.update_draft(
-                        project_id=project_id,
+                    client.evals.extract.datasets.iterations.update_draft(
+                        eval_id=eval_id,
                         dataset_id=dataset_id,
                         iteration_id=iteration_id,
                         inference_settings=new_settings,
@@ -168,8 +172,8 @@ async def test_iteration_draft_workflow(
 
                 # GET SCHEMA (without draft)
                 schema_response = await await_or_return(
-                    client.projects.datasets.iterations.get_schema(
-                        project_id=project_id,
+                    client.evals.extract.datasets.iterations.get_schema(
+                        eval_id=eval_id,
                         dataset_id=dataset_id,
                         iteration_id=iteration_id,
                     )
@@ -178,8 +182,8 @@ async def test_iteration_draft_workflow(
 
                 # GET SCHEMA (with draft applied)
                 draft_schema_response = await await_or_return(
-                    client.projects.datasets.iterations.get_schema(
-                        project_id=project_id,
+                    client.evals.extract.datasets.iterations.get_schema(
+                        eval_id=eval_id,
                         dataset_id=dataset_id,
                         iteration_id=iteration_id,
                         use_draft=True,
@@ -189,19 +193,19 @@ async def test_iteration_draft_workflow(
 
                 # FINALIZE iteration (promotes draft → main, status → completed)
                 finalized = await await_or_return(
-                    client.projects.datasets.iterations.finalize(
-                        project_id=project_id, dataset_id=dataset_id, iteration_id=iteration_id
+                    client.evals.extract.datasets.iterations.finalize(
+                        eval_id=eval_id, dataset_id=dataset_id, iteration_id=iteration_id
                     )
                 )
-                assert finalized.status == "completed"
+                assert finalized.status in {"finalizing", "finalized"}
                 assert finalized.inference_settings.model == "retab-small"
 
             finally:
                 # DELETE iteration
                 try:
                     await await_or_return(
-                        client.projects.datasets.iterations.delete(
-                            project_id=project_id, dataset_id=dataset_id, iteration_id=iteration_id
+                        client.evals.extract.datasets.iterations.delete(
+                            eval_id=eval_id, dataset_id=dataset_id, iteration_id=iteration_id
                         )
                     )
                 except Exception:
@@ -209,12 +213,12 @@ async def test_iteration_draft_workflow(
         finally:
             try:
                 await await_or_return(
-                    client.projects.datasets.delete(project_id=project_id, dataset_id=dataset_id)
+                    client.evals.extract.datasets.delete(eval_id=eval_id, dataset_id=dataset_id)
                 )
             except Exception:
                 pass
     finally:
         try:
-            await await_or_return(client.projects.delete(project_id))
+            await await_or_return(client.evals.extract.delete(eval_id))
         except Exception:
             pass
