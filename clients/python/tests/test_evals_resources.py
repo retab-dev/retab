@@ -816,7 +816,7 @@ def test_extract_lifecycle_sync_methods_parse_models_and_requests() -> None:
     assert updated_iteration_document.extraction_id == "ext-doc-updated"
     assert metrics.overall_metrics.total_documents == 1
     assert processed_iteration_document.data == {"status": "iteration"}
-    assert finalized_iteration.status == "completed"
+    assert finalized_iteration.status == "finalized"
     assert deleted_iteration_document["id"] == "iter_doc_111"
     assert deleted_iteration["id"] == "iter_999"
     assert deleted_dataset["id"] == "dataset_456"

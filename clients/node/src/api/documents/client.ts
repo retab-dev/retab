@@ -86,15 +86,18 @@ export default class APIDocuments extends CompositionClient {
     /**
      * Split a document into sections based on provided subdocuments.
      * 
-     * This method analyzes a multi-page document and classifies pages into 
-     * user-defined subdocuments, returning the page ranges for each section.
+     * This method analyzes a multi-page document and classifies pages into
+     * user-defined subdocuments, returning the assigned pages for each section.
      * 
      * @param params - SplitRequest containing:
      *   - document: MIMEData object, file path, Buffer, or Readable stream
-     *   - subdocuments: Array of subdocuments with 'name' and 'description'
+     *   - subdocuments: Array of subdocuments with 'name', 'description', and optional 'partition_key'
      *   - model: LLM model for inference (e.g., "retab-small")
+     *   - context: Optional business context for the split
+     *   - n_consensus: Optional number of split runs to use for consensus scoring
      * @param options - Optional request options
-     * @returns SplitResponse containing splits array with name and pages for each section
+     * @returns SplitResponse containing splits with page lists, optional likelihood/votes,
+     * and partitions when partition_key is configured
      * 
      * @example
      * ```typescript
@@ -105,10 +108,11 @@ export default class APIDocuments extends CompositionClient {
      *         { name: "invoice", description: "Invoice documents with billing information" },
      *         { name: "receipt", description: "Receipt documents for payments" },
      *         { name: "contract", description: "Legal contract documents" },
-     *     ]
+     *     ],
+     *     n_consensus: 3,
      * });
      * for (const split of response.splits) {
-     *     console.log(`${split.name}: pages ${split.pages.join(', ')}`);
+     *     console.log(`${split.name}: pages ${split.pages.join(', ')} likelihood=${split.likelihood}`);
      * }
      * ```
      */
@@ -161,6 +165,32 @@ export default class APIDocuments extends CompositionClient {
             headers: options?.headers,
         });
     }
+    /**
+     * Analyze a document and suggest the subdocuments to use for a later split call.
+     *
+     * This is useful when you do not know the right split configuration yet.
+     * The response can be passed directly into `documents.split(...)`.
+     *
+     * @param params - GenerateSplitConfigRequest containing:
+     *   - document: MIMEData object, file path, Buffer, or Readable stream
+     *   - model: LLM model for inference (e.g., "retab-small")
+     * @param options - Optional request options
+     * @returns GenerateSplitConfigResponse containing suggested subdocuments
+     *
+     * @example
+     * ```typescript
+     * const config = await retab.documents.generate_split_config({
+     *   document: "property_portfolio.pdf",
+     *   model: "retab-small",
+     * });
+     *
+     * const result = await retab.documents.split({
+     *   document: "property_portfolio.pdf",
+     *   model: "retab-small",
+     *   subdocuments: config.subdocuments,
+     * });
+     * ```
+     */
     async generate_split_config(params: GenerateSplitConfigRequest, options?: RequestOptions): Promise<GenerateSplitConfigResponse> {
         return this._fetchJson(ZGenerateSplitConfigResponse, {
             url: "/documents/split/generate_config",
