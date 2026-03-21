@@ -1738,17 +1738,6 @@ export const ZProcessOCRRequest = z.lazy(() => (z.object({
 })));
 export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
 
-export const ZGenerateSplitConfigRequest = z.lazy(() => (z.object({
-    document: ZMIMEData,
-    model: z.string().default("retab-small"),
-})));
-export type GenerateSplitConfigRequest = z.infer<typeof ZGenerateSplitConfigRequest>;
-
-export const ZGenerateSplitConfigResponse = z.lazy(() => (z.object({
-    subdocuments: z.array(ZSubdocument),
-})));
-export type GenerateSplitConfigResponse = z.infer<typeof ZGenerateSplitConfigResponse>;
-
 export const ZPartition = z.lazy(() => (z.object({
     key: z.string(),
     pages: z.array(z.number()),
@@ -1773,26 +1762,6 @@ export const ZSplitVote = z.lazy(() => (z.object({
     pages: z.array(z.number()),
 })));
 export type SplitVote = z.infer<typeof ZSplitVote>;
-
-export const ZDocumentCreateInputRequest = z.lazy(() => (ZDocumentCreateMessageRequest.schema).merge(z.object({
-    json_schema: z.record(z.string(), z.any()),
-})));
-export type DocumentCreateInputRequest = z.infer<typeof ZDocumentCreateInputRequest>;
-
-export const ZDocumentCreateMessageRequest = z.lazy(() => (z.object({
-    document: ZMIMEData,
-    image_resolution_dpi: z.number().default(192),
-    model: z.string().default("retab-small"),
-})));
-export type DocumentCreateMessageRequest = z.infer<typeof ZDocumentCreateMessageRequest>;
-
-export const ZDocumentMessage = z.lazy(() => (z.object({
-    id: z.string(),
-    object: z.literal("document_message").default("document_message"),
-    messages: z.array(ZChatCompletionRetabMessage),
-    created: z.number(),
-})));
-export type DocumentMessage = z.infer<typeof ZDocumentMessage>;
 
 export const ZTokenCount = z.lazy(() => (z.object({
     total_tokens: z.number().default(0),
@@ -5103,4 +5072,3 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
-

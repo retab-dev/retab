@@ -24,18 +24,9 @@ const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
   APIWorkflowEdges: ["list", "get", "create", "create_batch", "delete", "delete_all"],
   APIWorkflowRuns: ["create", "get", "list", "delete", "cancel", "restart", "resume"],
   APIWorkflowRunSteps: ["get", "list", "get_many"],
-  APIEvalsExtract: ["create", "get", "list", "update", "delete", "publish", "process", "extract", "process_stream"],
-  ExtractTemplates: ["list", "list_builder_document_previews", "get", "list_builder_documents", "clone"],
-  ExtractDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document", "process_document"],
-  ExtractIterations: ["create", "get", "list", "update_draft", "delete", "finalize", "get_schema", "process_documents", "get_document", "list_documents", "update_document", "delete_document", "get_metrics", "process_document"],
-  APIEvalsSplit: ["create", "get", "list", "update", "delete", "publish", "process"],
-  SplitTemplates: ["list", "list_builder_document_previews", "get", "list_builder_documents", "clone"],
-  SplitDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document", "process_document"],
-  SplitIterations: ["create", "get", "list", "update_draft", "delete", "finalize", "get_schema", "process_documents", "get_document", "list_documents", "update_document", "delete_document", "get_metrics", "process_document"],
-  APIEvalsClassify: ["create", "get", "list", "update", "delete", "publish", "process"],
-  ClassifyTemplates: ["list", "list_builder_document_previews", "get", "list_builder_documents", "clone"],
-  ClassifyDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document", "process_document"],
-  ClassifyIterations: ["create", "get", "list", "update_draft", "delete", "finalize", "get_categories", "get_schema", "process_documents", "get_document", "list_documents", "update_document", "delete_document", "get_metrics", "process_document"],
+  APIEvalsExtract: ["process", "process_stream"],
+  APIEvalsSplit: ["process"],
+  APIEvalsClassify: ["process"],
 };
 
 async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, response: Response): AsyncGenerator<z.output<ZodSchema>> {

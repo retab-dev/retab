@@ -1,207 +1,16 @@
 import { CompositionClient, RequestOptions } from "../../../client.js";
 import {
-    ZPaginatedList,
-    PaginatedList,
+    EditResponse,
     InferFormSchemaRequest,
     InferFormSchemaResponse,
+    ZEditResponse,
     ZInferFormSchemaRequest,
     ZInferFormSchemaResponse,
-    MIMEDataInput,
-    ZMIMEData,
-    EditResponse,
-    ZEditResponse,
 } from "../../../types.js";
-import {
-    EditTemplate,
-    ZEditTemplate,
-    FormField,
-} from "../../../generated_types.js";
 
 export default class APIEditTemplates extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
-    }
-
-    /**
-     * List edit templates with pagination and optional filtering.
-     *
-     * @param params - Pagination and filter parameters
-     * @param options - Optional request options
-     * @returns PaginatedList of EditTemplate objects
-     */
-    async list(
-        {
-            before,
-            after,
-            limit = 10,
-            order = "desc",
-            filename,
-            mime_type,
-            include_embeddings = false,
-            sort_by = "created_at",
-        }: {
-            before?: string;
-            after?: string;
-            limit?: number;
-            order?: "asc" | "desc";
-            filename?: string;
-            mime_type?: string;
-            include_embeddings?: boolean;
-            sort_by?: string;
-        } = {},
-        options?: RequestOptions
-    ): Promise<PaginatedList> {
-        const params: Record<string, any> = {
-            before,
-            after,
-            limit,
-            order,
-            filename,
-            mime_type,
-            include_embeddings,
-            sort_by,
-        };
-
-        // Remove undefined values
-        const cleanParams = Object.fromEntries(
-            Object.entries(params).filter(([_, v]) => v !== undefined)
-        );
-
-        return this._fetchJson(ZPaginatedList, {
-            url: "/edit/templates",
-            method: "GET",
-            params: { ...cleanParams, ...(options?.params || {}) },
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Get an edit template by ID.
-     *
-     * @param template_id - The ID of the template to retrieve
-     * @param options - Optional request options
-     * @returns EditTemplate object
-     */
-    async get(template_id: string, options?: RequestOptions): Promise<EditTemplate> {
-        return this._fetchJson(ZEditTemplate, {
-            url: `/edit/templates/${template_id}`,
-            method: "GET",
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Create a new edit template.
-     *
-     * @param params - CreateEditTemplateRequest containing:
-     *   - name: Name of the template
-     *   - document: The document to use as a template (MIMEData, file path, Buffer, or Readable)
-     *   - form_fields: Array of form field definitions
-     * @param options - Optional request options
-     * @returns EditTemplate object
-     */
-    async create(
-        {
-            name,
-            document,
-            form_fields,
-        }: {
-            name: string;
-            document: MIMEDataInput;
-            form_fields: FormField[];
-        },
-        options?: RequestOptions
-    ): Promise<EditTemplate> {
-        const parsedDocument = await ZMIMEData.parseAsync(document);
-
-        return this._fetchJson(ZEditTemplate, {
-            url: "/edit/templates",
-            method: "POST",
-            body: {
-                name,
-                document: parsedDocument,
-                form_fields,
-                ...(options?.body || {}),
-            },
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Update an existing edit template.
-     *
-     * @param template_id - The ID of the template to update
-     * @param params - UpdateEditTemplateRequest containing optional fields to update:
-     *   - name: New name for the template
-     *   - form_fields: Updated array of form field definitions
-     * @param options - Optional request options
-     * @returns EditTemplate object
-     */
-    async update(
-        template_id: string,
-        {
-            name,
-            form_fields,
-        }: {
-            name?: string;
-            form_fields?: FormField[];
-        } = {},
-        options?: RequestOptions
-    ): Promise<EditTemplate> {
-        const body: Record<string, any> = {};
-        if (name !== undefined) body.name = name;
-        if (form_fields !== undefined) body.form_fields = form_fields;
-
-        return this._fetchJson(ZEditTemplate, {
-            url: `/edit/templates/${template_id}`,
-            method: "PATCH",
-            body: { ...body, ...(options?.body || {}) },
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Delete an edit template by ID.
-     *
-     * @param template_id - The ID of the template to delete
-     * @param options - Optional request options
-     */
-    async delete(template_id: string, options?: RequestOptions): Promise<void> {
-        return this._fetchJson({
-            url: `/edit/templates/${template_id}`,
-            method: "DELETE",
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Duplicate an existing edit template.
-     *
-     * @param template_id - The ID of the template to duplicate
-     * @param params - DuplicateEditTemplateRequest containing optional:
-     *   - name: Name for the duplicated template (defaults to "{original_name} (copy)")
-     * @param options - Optional request options
-     * @returns EditTemplate object (the new duplicated template)
-     */
-    async duplicate(
-        template_id: string,
-        { name }: { name?: string } = {},
-        options?: RequestOptions
-    ): Promise<EditTemplate> {
-        const body: Record<string, any> = {};
-        if (name !== undefined) body.name = name;
-
-        return this._fetchJson(ZEditTemplate, {
-            url: `/edit/templates/${template_id}/duplicate`,
-            method: "POST",
-            body: { ...body, ...(options?.body || {}) },
-            params: options?.params,
-            headers: options?.headers,
-        });
     }
 
     /**
@@ -271,7 +80,7 @@ export default class APIEditTemplates extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<EditResponse> {
-        const body: Record<string, any> = {
+        const body: Record<string, unknown> = {
             template_id,
             instructions,
             model,
@@ -292,4 +101,3 @@ export default class APIEditTemplates extends CompositionClient {
         });
     }
 }
-

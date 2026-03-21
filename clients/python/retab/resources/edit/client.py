@@ -3,7 +3,7 @@ Edit SDK client - Wrapper for document editing functionality.
 
 Provides access to:
 - edit.agent.fill() - Agent-based document editing (PDF, DOCX, PPTX, XLSX)
-- edit.templates.* - Template-based PDF form filling
+- edit.templates.generate() / edit.templates.fill() - Template-based PDF form filling
 """
 
 from typing import Any
@@ -18,7 +18,7 @@ class Edit(SyncAPIResource):
     
     Sub-clients:
         agent: Agent-based document editing (fill any document with AI)
-        templates: Template-based PDF form filling (for batch processing)
+        templates: Template generation and fill helpers for PDF workflows
     """
 
     def __init__(self, client: Any) -> None:
@@ -32,7 +32,7 @@ class AsyncEdit(AsyncAPIResource):
     
     Sub-clients:
         agent: Agent-based document editing (fill any document with AI)
-        templates: Template-based PDF form filling (for batch processing)
+        templates: Template generation and fill helpers for PDF workflows
     """
 
     def __init__(self, client: Any) -> None:

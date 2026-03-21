@@ -7,7 +7,7 @@ import APIEditAgent from "./agent/client.js";
  * 
  * Sub-clients:
  * - agent: Agent-based document editing (fill any document with AI)
- * - templates: Template-based PDF form filling (for batch processing)
+ * - templates: Template generation and fill helpers for PDF workflows
  */
 export default class APIEdit extends CompositionClient {
     public agent: APIEditAgent;
@@ -19,4 +19,3 @@ export default class APIEdit extends CompositionClient {
         this.templates = new APIEditTemplates(this);
     }
 }
-

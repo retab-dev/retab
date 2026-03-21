@@ -2,6 +2,7 @@ import json
 import warnings
 import os
 import shutil
+import sys
 from typing import IO, Any
 
 import pytest
@@ -14,10 +15,13 @@ from typing import AsyncGenerator, Generator
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from retab import AsyncRetab, Retab
-
 # Get the directory containing the tests
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+SDK_ROOT = os.path.dirname(TEST_DIR)
+if SDK_ROOT not in sys.path:
+    sys.path.insert(0, SDK_ROOT)
+
+from retab import AsyncRetab, Retab
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

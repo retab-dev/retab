@@ -8,18 +8,7 @@ When processing documents, selecting the right modality is crucial for efficienc
 
 ## **Modalities**
 
-With Retab, you can easily switch between modalities:
-
-```python
-from retab import Retab
-
-reclient = Retab()
-
-doc_msg = reclient.documents.create_messages(
-    document="contract.pdf",
-    modality="text", # or "image", "native"
-)
-```
+With Retab, you can tune document preprocessing to emphasize text-heavy or vision-heavy analysis depending on the file.
 
 ```
 
@@ -81,16 +70,7 @@ Web pages can be saved as a single file format (e.g., `.mhtml`), which closely r
 ## **A Hybrid Approach: Image + Text Modality**
 In some cases, combining both modalities offers the best results. For example, on complex documents, the LLM can benefit from the image to understand the layout, but struggles to extract the text precisely. In this case, having the image and the text in the context window of the LLM is a great way to get the best of both worlds.
 
-```python
-from retab import Retab
-
-reclient = Retab()
-
-doc_msg = reclient.documents.create_messages(
-    document="contract.pdf",
-    modality="native",
-)
-```
+In practice, this means using a hybrid preprocessing strategy when layout matters as much as the text itself.
 
 ## Supported File Types by Modality
 

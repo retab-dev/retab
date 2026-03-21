@@ -10,12 +10,11 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import prepare_mime_document
 from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
-from ...types.documents.create_messages import DocumentCreateInputRequest, DocumentCreateMessageRequest, DocumentMessage
 from ...types.chat import ChatCompletionRetabMessage
 from ...types.documents.edit import EditRequest, EditResponse
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResponse, TableParsingFormat
-from ...types.documents.split import Subdocument, SplitRequest, SplitResponse, GenerateSplitConfigRequest, GenerateSplitConfigResponse
+from ...types.documents.split import Subdocument, SplitRequest, SplitResponse
 from ...types.documents.classify import Category
 from ...types.documents.classify import ClassifyRequest, ClassifyResponse
 from ...types.mime import MIMEData
@@ -25,27 +24,6 @@ from ...types.mime import OCR
 
 
 class BaseDocumentsMixin:
-    def _prepare_create_messages(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        image_resolution_dpi: int | _Unset = UNSET,
-        **extra_body: Any,
-    ) -> PreparedRequest:
-        mime_document = prepare_mime_document(document)
-
-        loading_request_dict: dict[str, Any] = {"document": mime_document}
-        if image_resolution_dpi is not UNSET:
-            loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
-
-        # Merge any extra fields provided by the caller
-        if extra_body:
-            loading_request_dict.update(extra_body)
-
-        loading_request = DocumentCreateMessageRequest(**loading_request_dict)
-        return PreparedRequest(
-            method="POST", url="/documents/create_messages", data=loading_request.model_dump(mode="json", exclude_unset=True)
-        )
-
     def _prepare_get_extraction(self, extraction_id: str) -> PreparedRequest:
         return PreparedRequest(method="GET", url=f"/extractions/{extraction_id}")
 
@@ -54,42 +32,6 @@ class BaseDocumentsMixin:
 
     def _prepare_compute_field_locations(self, ocr_file_id: str, ocr_result: OCR | None = None, data: dict[str, Any] = {}) -> PreparedRequest:
         return PreparedRequest(method="POST", url="/documents/compute_field_locations", data={"ocr_file_id": ocr_file_id, "ocr_result": ocr_result, "data": data})
-
-    def _prepare_create_inputs(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        json_schema: dict[str, Any] | Path | str,
-        image_resolution_dpi: int | _Unset = UNSET,
-        **extra_body: Any,
-    ) -> PreparedRequest:
-        mime_document = prepare_mime_document(document)
-        loaded_schema = load_json_schema(json_schema)
-
-        loading_request_dict = {
-            "document": mime_document,
-            "json_schema": loaded_schema,
-        }
-        if image_resolution_dpi is not UNSET:
-            loading_request_dict["image_resolution_dpi"] = image_resolution_dpi
-
-        # Merge any extra fields provided by the caller
-        if extra_body:
-            loading_request_dict.update(extra_body)
-
-        loading_request = DocumentCreateInputRequest(**loading_request_dict)
-        return PreparedRequest(method="POST", url="/documents/create_inputs", data=loading_request.model_dump(mode="json", exclude_unset=True))
-
-    def _prepare_correct_image_orientation(self, document: Path | str | IOBase | MIMEData | PIL.Image.Image) -> PreparedRequest:
-        mime_document = prepare_mime_document(document)
-
-        if not mime_document.mime_type.startswith("image/"):
-            raise ValueError("Image is not a valid image")
-
-        return PreparedRequest(
-            method="POST",
-            url="/documents/correct_image_orientation",
-            data={"document": mime_document.model_dump()},
-        )
 
     def _prepare_parse(
         self,
@@ -176,25 +118,6 @@ class BaseDocumentsMixin:
         split_request = SplitRequest(**request_dict)
         return PreparedRequest(method="POST", url="/documents/split", data=split_request.model_dump(mode="json", exclude_unset=True))
 
-    def _prepare_generate_split_config(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: str,
-        **extra_body: Any,
-    ) -> PreparedRequest:
-        mime_document = prepare_mime_document(document)
-
-        request_dict: dict[str, Any] = {
-            "document": mime_document,
-            "model": model,
-        }
-
-        if extra_body:
-            request_dict.update(extra_body)
-
-        request = GenerateSplitConfigRequest(**request_dict)
-        return PreparedRequest(method="POST", url="/documents/split/generate_config", data=request.model_dump(mode="json", exclude_unset=True))
-
     def _prepare_classify(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
@@ -277,61 +200,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
-
-    def create_messages(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        image_resolution_dpi: int | _Unset = UNSET,
-        **extra_body: Any,
-    ) -> DocumentMessage:
-        """
-        Create document messages from a file using the Retab API.
-
-        Args:
-            document: The document to process. Can be a file path (Path or str) or a file-like object.
-            image_resolution_dpi: Optional image resolution DPI.
-        Returns:
-            DocumentMessage: The processed document message containing extracted content.
-
-        Raises:
-            RetabAPIError: If the API request fails.
-        """
-        request = self._prepare_create_messages(
-            document=document,
-            image_resolution_dpi=image_resolution_dpi,
-            **extra_body,
-        )
-        response = self._client._prepared_request(request)
-        return DocumentMessage.model_validate(response)
-
-    def create_inputs(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        json_schema: dict[str, Any] | Path | str,
-        image_resolution_dpi: int | _Unset = UNSET,
-        **extra_body: Any,
-    ) -> DocumentMessage:
-        """
-        Create document inputs (messages with schema) from a file using the Retab API.
-
-        Args:
-            document: The document to process. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
-            json_schema: The JSON schema to use for structuring the document content.
-            image_resolution_dpi: Optional image resolution DPI.
-        Returns:
-            DocumentMessage: The processed document message containing extracted content with schema context.
-
-        Raises:
-            RetabAPIError: If the API request fails.
-        """
-        request = self._prepare_create_inputs(
-            document=document,
-            json_schema=json_schema,
-            image_resolution_dpi=image_resolution_dpi,
-            **extra_body,
-        )
-        response = self._client._prepared_request(request)
-        return DocumentMessage.model_validate(response)
 
     def extract(
         self,
@@ -695,44 +563,6 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(request)
         return SplitResponse.model_validate(response)
 
-    def generate_split_config(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: str,
-        **extra_body: Any,
-    ) -> GenerateSplitConfigResponse:
-        """
-        Analyze a document and automatically generate a splitting configuration.
-
-        This method sends a document to an LLM which identifies the distinct types
-        of content (subdocuments) and detects repeated patterns that require partition keys.
-
-        Args:
-            document: The document to analyze. Can be a file path, file-like object, MIMEData, PIL Image, or URL.
-            model: The AI model to use for analysis (e.g., "retab-small").
-
-        Returns:
-            GenerateSplitConfigResponse: Response containing a list of suggested subdocuments
-                with names, descriptions, and optional partition keys.
-
-        Example:
-            ```python
-            response = retab.documents.generate_split_config(
-                document="property_portfolio.pdf",
-                model="retab-small",
-            )
-            for subdoc in response.subdocuments:
-                print(f"{subdoc.name}: {subdoc.description} (partition_key={subdoc.partition_key})")
-            ```
-        """
-        request = self._prepare_generate_split_config(
-            document=document,
-            model=model,
-            **extra_body,
-        )
-        response = self._client._prepared_request(request)
-        return GenerateSplitConfigResponse.model_validate(response)
-
     def classify(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
@@ -791,60 +621,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         # self.extractions_api = AsyncExtractions(client=client)
-
-    async def create_messages(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image,
-        image_resolution_dpi: int | _Unset = UNSET,
-        **extra_body: Any,
-    ) -> DocumentMessage:
-        """
-        Create document messages from a file using the Retab API asynchronously.
-
-        Args:
-            document: The document to process. Can be a file path (Path or str) or a file-like object.
-        Returns:
-            DocumentMessage: The processed document message containing extracted content.
-
-        Raises:
-            RetabAPIError: If the API request fails.
-        """
-        request = self._prepare_create_messages(
-            document=document,
-            image_resolution_dpi=image_resolution_dpi,
-            **extra_body,
-        )
-        response = await self._client._prepared_request(request)
-        return DocumentMessage.model_validate(response)
-
-    async def create_inputs(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        json_schema: dict[str, Any] | Path | str,
-        image_resolution_dpi: int | _Unset = UNSET,
-        **extra_body: Any,
-    ) -> DocumentMessage:
-        """
-        Create document inputs (messages with schema) from a file using the Retab API asynchronously.
-
-        Args:
-            document: The document to process. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
-            json_schema: The JSON schema to use for structuring the document content.
-            image_resolution_dpi: Optional image resolution DPI.
-        Returns:
-            DocumentMessage: The processed document message containing extracted content with schema context.
-
-        Raises:
-            RetabAPIError: If the API request fails.
-        """
-        request = self._prepare_create_inputs(
-            document=document,
-            json_schema=json_schema,
-            image_resolution_dpi=image_resolution_dpi,
-            **extra_body,
-        )
-        response = await self._client._prepared_request(request)
-        return DocumentMessage.model_validate(response)
 
     async def extract(
         self,
@@ -1118,44 +894,6 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         )
         response = await self._client._prepared_request(request)
         return SplitResponse.model_validate(response)
-
-    async def generate_split_config(
-        self,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        model: str,
-        **extra_body: Any,
-    ) -> GenerateSplitConfigResponse:
-        """
-        Analyze a document and automatically generate a splitting configuration asynchronously.
-
-        This method sends a document to an LLM which identifies the distinct types
-        of content (subdocuments) and detects repeated patterns that require partition keys.
-
-        Args:
-            document: The document to analyze. Can be a file path, file-like object, MIMEData, PIL Image, or URL.
-            model: The AI model to use for analysis (e.g., "retab-small").
-
-        Returns:
-            GenerateSplitConfigResponse: Response containing a list of suggested subdocuments
-                with names, descriptions, and optional partition keys.
-
-        Example:
-            ```python
-            response = await retab.documents.generate_split_config(
-                document="property_portfolio.pdf",
-                model="retab-small",
-            )
-            for subdoc in response.subdocuments:
-                print(f"{subdoc.name}: {subdoc.description} (partition_key={subdoc.partition_key})")
-            ```
-        """
-        request = self._prepare_generate_split_config(
-            document=document,
-            model=model,
-            **extra_body,
-        )
-        response = await self._client._prepared_request(request)
-        return GenerateSplitConfigResponse.model_validate(response)
 
     async def classify(
         self,

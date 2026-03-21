@@ -108,19 +108,6 @@ export const ZParseRequest = z.object({
 });
 export type ParseRequest = z.input<typeof ZParseRequest>;
 
-export const ZDocumentCreateMessageRequest = z.object({
-    ...generated.ZDocumentCreateMessageRequest.schema.shape,
-    document: ZMIMEData,
-});
-export type DocumentCreateMessageRequest = z.input<typeof ZDocumentCreateMessageRequest>;
-
-export const ZDocumentCreateInputRequest = z.object({
-    ...generated.ZDocumentCreateInputRequest.schema.shape,
-    document: ZMIMEData,
-    json_schema: ZJSONSchema,
-});
-export type DocumentCreateInputRequest = z.input<typeof ZDocumentCreateInputRequest>;
-
 export const ZGenerateSchemaRequest = z.object({
     ...generated.ZGenerateSchemaRequest.schema.shape,
     documents: ZMIMEData.array(),
@@ -145,12 +132,6 @@ export const ZClassifyRequest = z.object({
     document: ZMIMEData,
 });
 export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
-
-export const ZGenerateSplitConfigRequest = z.object({
-    ...generated.ZGenerateSplitConfigRequest.schema.shape,
-    document: ZMIMEData,
-});
-export type GenerateSplitConfigRequest = z.input<typeof ZGenerateSplitConfigRequest>;
 
 export const ZEditRequest = z.object({
     ...generated.ZEditRequest.schema.shape,

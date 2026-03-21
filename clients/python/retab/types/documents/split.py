@@ -39,15 +39,6 @@ class SplitResponse(BaseModel):
     usage: RetabUsage = Field(..., description="Usage information for the split operation")
 
 
-class GenerateSplitConfigRequest(BaseModel):
-    document: MIMEData = Field(..., description="The document to analyze for automatic split configuration generation")
-    model: str = Field(default="retab-small", description="The model to use for document analysis")
-
-
-class GenerateSplitConfigResponse(BaseModel):
-    subdocuments: list[Subdocument] = Field(..., description="The auto-generated subdocument definitions with optional partition keys")
-
-
 class SplitOutputItem(BaseModel):
     """Internal schema item for LLM structured output validation."""
     name: str = Field(..., description="The name of the subdocument")
