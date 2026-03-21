@@ -204,7 +204,7 @@ export type ExportResponse = z.infer<typeof ZExportResponse>;
 export const ZPreparedRequest = z.lazy(() => (z.object({
     method: z.union([z.literal("POST"), z.literal("GET"), z.literal("PUT"), z.literal("PATCH"), z.literal("DELETE"), z.literal("HEAD"), z.literal("OPTIONS"), z.literal("CONNECT"), z.literal("TRACE")]),
     url: z.string(),
-    data: z.record(z.any()).nullable().optional(),
+    data: z.any(),
     params: z.record(z.any()).nullable().optional(),
     form_data: z.record(z.any()).nullable().optional(),
     files: z.union([z.record(z.any()), z.array(z.tuple([z.string(), z.tuple([z.string(), z.instanceof(Uint8Array), z.string()])]))]).nullable().optional(),
@@ -715,7 +715,7 @@ export const ZIteration = z.lazy(() => (z.object({
     project_id: z.string(),
     dataset_id: z.string(),
     draft: ZDraftIteration,
-    status: z.union([z.literal("draft"), z.literal("completed")]).default("draft"),
+    status: z.string().default("draft"),
 })));
 export type Iteration = z.infer<typeof ZIteration>;
 
@@ -860,12 +860,6 @@ export const ZModelExportResponse = z.lazy(() => (z.object({
 })));
 export type ModelExportResponse = z.infer<typeof ZModelExportResponse>;
 
-export const ZFinalNodeOutput = z.lazy(() => (z.object({
-    document: z.record(z.any()).nullable().optional(),
-    data: z.record(z.any()).nullable().optional(),
-})));
-export type FinalNodeOutput = z.infer<typeof ZFinalNodeOutput>;
-
 export const ZHandlePayload = z.lazy(() => (z.object({
     type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
     document: ZBaseMIMEData.nullable().optional(),
@@ -948,6 +942,33 @@ export const ZWorkflowBlock = z.lazy(() => (z.object({
 })));
 export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
 
+export const ZWorkflowBlockCreateRequest = z.lazy(() => (z.object({
+    id: z.string(),
+    type: z.string(),
+    label: z.string().default(""),
+    position_x: z.number().default(0),
+    position_y: z.number().default(0),
+    width: z.number().nullable().optional(),
+    height: z.number().nullable().optional(),
+    config: z.record(z.any()).nullable().optional(),
+    subflow_id: z.string().nullable().optional(),
+    parent_id: z.string().nullable().optional(),
+})));
+export type WorkflowBlockCreateRequest = z.infer<typeof ZWorkflowBlockCreateRequest>;
+
+export const ZWorkflowBlockUpdateRequest = z.lazy(() => (z.object({
+    block_id: z.string(),
+    label: z.string().nullable().optional(),
+    position_x: z.number().nullable().optional(),
+    position_y: z.number().nullable().optional(),
+    width: z.number().nullable().optional(),
+    height: z.number().nullable().optional(),
+    config: z.record(z.any()).nullable().optional(),
+    subflow_id: z.string().nullable().optional(),
+    parent_id: z.string().nullable().optional(),
+})));
+export type WorkflowBlockUpdateRequest = z.infer<typeof ZWorkflowBlockUpdateRequest>;
+
 export const ZWorkflowEdge = z.lazy(() => (z.object({
     id: z.string(),
     workflow_id: z.string(),
@@ -958,6 +979,15 @@ export const ZWorkflowEdge = z.lazy(() => (z.object({
     updated_at: z.string().nullable().optional(),
 })));
 export type WorkflowEdge = z.infer<typeof ZWorkflowEdge>;
+
+export const ZWorkflowEdgeCreateRequest = z.lazy(() => (z.object({
+    id: z.string(),
+    source_block: z.string(),
+    target_block: z.string(),
+    source_handle: z.string().nullable().optional(),
+    target_handle: z.string().nullable().optional(),
+})));
+export type WorkflowEdgeCreateRequest = z.infer<typeof ZWorkflowEdgeCreateRequest>;
 
 export const ZWorkflowRun = z.lazy(() => (z.object({
     id: z.string(),
@@ -1524,6 +1554,7 @@ export type ResponseInputTextParam = z.infer<typeof ZResponseInputTextParam>;
 
 export const ZRetabParsedChatCompletion = z.lazy(() => (ZParsedChatCompletion.schema).merge(z.object({
     choices: z.array(ZRetabParsedChoice),
+    usage: z.union([ZCompletionUsage, ZRetabUsage]).nullable().optional(),
     extraction_id: z.string().nullable().optional(),
     likelihoods: z.record(z.string(), z.any()).nullable().optional(),
     request_at: z.string().nullable().optional(),
@@ -1738,6 +1769,17 @@ export const ZProcessOCRRequest = z.lazy(() => (z.object({
 })));
 export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
 
+export const ZGenerateSplitConfigRequest = z.lazy(() => (z.object({
+    document: ZMIMEData,
+    model: z.string().default("retab-small"),
+})));
+export type GenerateSplitConfigRequest = z.infer<typeof ZGenerateSplitConfigRequest>;
+
+export const ZGenerateSplitConfigResponse = z.lazy(() => (z.object({
+    subdocuments: z.array(ZSubdocument),
+})));
+export type GenerateSplitConfigResponse = z.infer<typeof ZGenerateSplitConfigResponse>;
+
 export const ZPartition = z.lazy(() => (z.object({
     key: z.string(),
     pages: z.array(z.number()),
@@ -1762,13 +1804,6 @@ export const ZSplitVote = z.lazy(() => (z.object({
     pages: z.array(z.number()),
 })));
 export type SplitVote = z.infer<typeof ZSplitVote>;
-
-export const ZTokenCount = z.lazy(() => (z.object({
-    total_tokens: z.number().default(0),
-    developer_tokens: z.number().default(0),
-    user_tokens: z.number().default(0),
-})));
-export type TokenCount = z.infer<typeof ZTokenCount>;
 
 export const ZChatCompletion = z.lazy(() => (z.object({
     id: z.string(),
@@ -5072,3 +5107,4 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
+

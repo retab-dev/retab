@@ -1,4 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Run the Python script and capture output in generated_types.ts
-python3 retab/generate_types.py > ../node/src/generated_types.ts
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Execute as a module so stdlib imports like `types` do not get shadowed by
+# `retab/types` when Python initializes `sys.path`.
+cd "$script_dir"
+python3 -m retab.generate_types > ../node/src/generated_types.ts
