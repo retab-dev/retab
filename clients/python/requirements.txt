@@ -1,62 +1,23 @@
-########################
-## Imports from the standard library
-########################
-# typing
-# copy
-# json
-# collections
-# datetime
-# re
-# asyncio
-# pathlib
-# concurrent
-# types
-# os
-# functools
-# base64
-# hashlib
-Pillow
-# io
-# math
-# time
-
-########################
-## More exotic dependencies
-########################
+# Core HTTP / models
 httpx
 pydantic
-pydantic_core
 requests
 backoff
-numpy
-rich
-puremagic
-fastapi
+jiter
+truststore
+typing-extensions
 
-########################
-## Validation dependencies
-########################
-pycountry
-phonenumbers
-email_validator
-python-stdnum
+# MIME / document helpers
+Pillow
+puremagic
 nanoid
 
-########################
-## AI dependencies
-########################
+# Display helpers
+numpy
+rich
+tiktoken
+
+# Provider type compatibility
 openai
 anthropic
 google-genai
-tiktoken
-
-
-########################
-## SSL dependencies
-########################
-truststore
-
-########################
-## Development dependencies
-########################
-# ruff - development tool, not runtime dependency

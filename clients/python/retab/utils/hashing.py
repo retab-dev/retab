@@ -1,10 +1,14 @@
 import base64
 import hashlib
 import json
+from typing import Any
 
-from fastapi.encoders import jsonable_encoder
+from pydantic import TypeAdapter
 
 # ************* Generalistic utils *************
+
+
+_JSON_DICT_ADAPTER = TypeAdapter(dict[str, Any])
 
 
 def generate_blake2b_hash_from_bytes(bytes_: bytes) -> str:
@@ -20,5 +24,5 @@ def generate_blake2b_hash_from_string(input_string: str) -> str:
 
 
 def generate_blake2b_hash_from_dict(input_dict: dict) -> str:
-    jsonable_dict = jsonable_encoder(input_dict)
+    jsonable_dict = _JSON_DICT_ADAPTER.dump_python(input_dict, mode="json")
     return generate_blake2b_hash_from_string(json.dumps(jsonable_dict, sort_keys=True).strip())
