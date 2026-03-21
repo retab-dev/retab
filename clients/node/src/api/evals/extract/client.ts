@@ -31,13 +31,13 @@ const ZSchemaOverrides = z.object({
 const ZDraftIteration = z.object({
     schema_overrides: ZSchemaOverrides.default({}),
     updated_at: z.string().optional(),
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
 }).passthrough();
 
 const ZIteration = z.object({
     id: z.string(),
     updated_at: z.string(),
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     schema_overrides: ZSchemaOverrides.default({}),
     parent_id: z.string().nullable().optional(),
     project_id: z.string(),
@@ -128,6 +128,14 @@ class ExtractTemplates extends CompositionClient {
             headers: options?.headers,
         });
         return response.project;
+    }
+
+    async list_builder_document_previews(templateIds: string[], options?: RequestOptions): Promise<Record<string, unknown[]>> {
+        return this.listBuilderDocumentPreviews(templateIds, options);
+    }
+
+    async list_builder_documents(templateId: string, options?: RequestOptions) {
+        return this.listBuilderDocuments(templateId, options);
     }
 }
 
@@ -287,6 +295,49 @@ class ExtractIterations extends CompositionClient {
             headers: options?.headers,
         });
     }
+
+    async update_draft(evalId: string, datasetId: string, iterationId: string, body: {
+        inference_settings?: unknown;
+        schema_overrides?: Record<string, unknown>;
+        draft?: Record<string, unknown>;
+    }, options?: RequestOptions) {
+        return this.updateDraft(evalId, datasetId, iterationId, body, options);
+    }
+
+    async get_schema(evalId: string, datasetId: string, iterationId: string, { use_draft = false }: { use_draft?: boolean } = {}, options?: RequestOptions) {
+        return this.getSchema(evalId, datasetId, iterationId, { useDraft: use_draft }, options);
+    }
+
+    async process_documents(evalId: string, datasetId: string, iterationId: string, datasetDocumentId: string, options?: RequestOptions) {
+        return this.processDocuments(evalId, datasetId, iterationId, datasetDocumentId, options);
+    }
+
+    async get_document(evalId: string, datasetId: string, iterationId: string, documentId: string, options?: RequestOptions) {
+        return this.getDocument(evalId, datasetId, iterationId, documentId, options);
+    }
+
+    async list_documents(evalId: string, datasetId: string, iterationId: string, { limit = 1000, offset = 0 }: { limit?: number; offset?: number } = {}, options?: RequestOptions) {
+        return this.listDocuments(evalId, datasetId, iterationId, { limit, offset }, options);
+    }
+
+    async update_document(evalId: string, datasetId: string, iterationId: string, documentId: string, body: {
+        prediction_data?: unknown;
+        extraction_id?: string;
+    }, options?: RequestOptions) {
+        return this.updateDocument(evalId, datasetId, iterationId, documentId, body, options);
+    }
+
+    async delete_document(evalId: string, datasetId: string, iterationId: string, documentId: string, options?: RequestOptions) {
+        return this.deleteDocument(evalId, datasetId, iterationId, documentId, options);
+    }
+
+    async get_metrics(evalId: string, datasetId: string, iterationId: string, { force_refresh = false }: { force_refresh?: boolean } = {}, options?: RequestOptions) {
+        return this.getMetrics(evalId, datasetId, iterationId, { forceRefresh: force_refresh }, options);
+    }
+
+    async process_document(evalId: string, datasetId: string, iterationId: string, documentId: string, options?: RequestOptions) {
+        return this.processDocument(evalId, datasetId, iterationId, documentId, options);
+    }
 }
 
 class ExtractDatasets extends CompositionClient {
@@ -432,6 +483,37 @@ class ExtractDatasets extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async add_document(evalId: string, datasetId: string, body: {
+        mime_data: MIMEDataInput;
+        prediction_data?: unknown;
+    }, options?: RequestOptions) {
+        return this.addDocument(evalId, datasetId, body, options);
+    }
+
+    async get_document(evalId: string, datasetId: string, documentId: string, options?: RequestOptions) {
+        return this.getDocument(evalId, datasetId, documentId, options);
+    }
+
+    async list_documents(evalId: string, datasetId: string, { limit = 1000, offset = 0 }: { limit?: number; offset?: number } = {}, options?: RequestOptions) {
+        return this.listDocuments(evalId, datasetId, { limit, offset }, options);
+    }
+
+    async update_document(evalId: string, datasetId: string, documentId: string, body: {
+        validation_flags?: Record<string, unknown>;
+        prediction_data?: unknown;
+        extraction_id?: string;
+    }, options?: RequestOptions) {
+        return this.updateDocument(evalId, datasetId, documentId, body, options);
+    }
+
+    async delete_document(evalId: string, datasetId: string, documentId: string, options?: RequestOptions) {
+        return this.deleteDocument(evalId, datasetId, documentId, options);
+    }
+
+    async process_document(evalId: string, datasetId: string, documentId: string, options?: RequestOptions) {
+        return this.processDocument(evalId, datasetId, documentId, options);
     }
 }
 
@@ -602,5 +684,18 @@ export default class APIEvalsExtract extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async process_stream(params: {
+        eval_id: string;
+        iteration_id?: string;
+        document?: MIMEDataInput;
+        model?: string;
+        image_resolution_dpi?: number;
+        n_consensus?: number;
+        metadata?: Record<string, string>;
+        extraction_id?: string;
+    }, options?: RequestOptions) {
+        return this.processStream(params, options);
     }
 }

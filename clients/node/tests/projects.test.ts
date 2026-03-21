@@ -7,11 +7,7 @@ import {
     getBookingConfirmationJsonSchema,
     getBookingConfirmationFilePath1,
     getBookingConfirmationFilePath2,
-    getBookingConfirmationData1,
-    getBookingConfirmationData2,
-    TEST_MODEL,
-    TEST_MODALITY,
-    getPayslipFilePath,
+    getFidelityFormPath,
 } from './fixtures';
 
 // Simple ID generator to replace nanoid
@@ -27,8 +23,6 @@ describe('Retab SDK Tests', () => {
     let bookingConfirmationJsonSchema: Record<string, any>;
     let bookingConfirmationFilePath1: string;
     let bookingConfirmationFilePath2: string;
-    let bookingConfirmationData1: Record<string, any>;
-    let bookingConfirmationData2: Record<string, any>;
 
     beforeAll(() => {
         const envConfig = getEnvConfig();
@@ -40,8 +34,6 @@ describe('Retab SDK Tests', () => {
         bookingConfirmationJsonSchema = getBookingConfirmationJsonSchema();
         bookingConfirmationFilePath1 = getBookingConfirmationFilePath1();
         bookingConfirmationFilePath2 = getBookingConfirmationFilePath2();
-        bookingConfirmationData1 = getBookingConfirmationData1();
-        bookingConfirmationData2 = getBookingConfirmationData2();
     });
 
     describe('Authentication and Basic SDK Functionality', () => {
@@ -81,26 +73,21 @@ describe('Retab SDK Tests', () => {
         test('test_projects_extract_without_iteration_id', async () => {
             const evaluationName = `test_extract_no_iter_${generateId()}`;
 
-            // Create a project
-            const project = await client.projects.create({
+            const evaluation = await client.evals.extract.create({
                 name: evaluationName,
                 json_schema: bookingConfirmationJsonSchema,
             });
+            const evalId = evaluation.id;
 
-            const projectId = project.id;
-
-            // PUBLISH - Promote draft configuration
-            const publishedProject = await client.projects.publish(projectId);
-            expect(publishedProject.id).toBe(projectId);
+            const publishedEvaluation = await client.evals.extract.publish(evalId);
+            expect(publishedEvaluation.id).toBe(evalId);
 
             try {
-                // Extract without providing iteration_id (should default to base configuration)
-                const response: any = await client.projects.extract({
-                    project_id: projectId,
+                const response: any = await client.evals.extract.process({
+                    eval_id: evalId,
                     document: bookingConfirmationFilePath1,
                 });
 
-                // Validate response structure
                 expect(response).toBeDefined();
                 expect(response.id).toBeDefined();
                 expect(response.choices).toBeDefined();
@@ -108,20 +95,18 @@ describe('Retab SDK Tests', () => {
                 expect(response.choices[0].message).toBeDefined();
                 expect(response.choices[0].message.content).toBeDefined();
 
-                // Validate parsed content if available
                 if (response.choices[0].message.parsed) {
                     expect(typeof response.choices[0].message.parsed).toBe('object');
+                } else {
+                    expect(() => JSON.parse(response.choices[0].message.content)).not.toThrow();
                 }
 
-                // Validate usage information if present
                 if (response.usage) {
                     expect(response.usage.total_tokens).toBeGreaterThan(0);
                 }
-
             } finally {
-                // Cleanup created project
                 try {
-                    await client.projects.delete(projectId);
+                    await client.evals.extract.delete(evalId);
                 } catch (error) {
                     // ignore cleanup errors
                 }
@@ -129,31 +114,20 @@ describe('Retab SDK Tests', () => {
         }, { timeout: TEST_TIMEOUT });
 
         test('test_projects_split_uses_split_project_config', async () => {
-            const envConfig = getEnvConfig();
-            const splitProjectName = `test_split_project_${generateId()}`;
+            const splitEvalName = `test_split_project_${generateId()}`;
             const splitDocumentPath = getFidelityFormPath();
 
-            const createResponse = await fetch(`${envConfig.retabApiBaseUrl}/split-projects`, {
-                method: 'POST',
-                headers: {
-                    'Api-Key': envConfig.retabApiKey,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: splitProjectName,
-                    split_config: [
-                        { name: 'Document', description: 'The full document' },
-                    ],
-                }),
+            const splitEval = await client.evals.split.create({
+                name: splitEvalName,
+                split_config: [
+                    { name: 'Document', description: 'The full document' },
+                ],
             });
-
-            expect(createResponse.ok).toBe(true);
-            const splitProject: any = await createResponse.json();
-            const projectId = splitProject.id;
+            const evalId = splitEval.id;
 
             try {
-                const response: any = await client.projects.split({
-                    project_id: projectId,
+                const response: any = await client.evals.split.process({
+                    eval_id: evalId,
                     document: splitDocumentPath,
                 });
 
@@ -166,78 +140,45 @@ describe('Retab SDK Tests', () => {
                 expect(parsed).toBeDefined();
                 expect(parsed.splits).toBeDefined();
             } finally {
-                await fetch(`${envConfig.retabApiBaseUrl}/split-projects/${projectId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Api-Key': envConfig.retabApiKey,
-                    },
-                });
+                try {
+                    await client.evals.split.delete(evalId);
+                } catch (error) {
+                    // ignore cleanup errors
+                }
             }
         }, { timeout: TEST_TIMEOUT });
 
         test('test_projects_extract_functionality', async () => {
-            // Create an isolated project + iteration, then call extract
-            const envConfig = getEnvConfig();
-            const testDocumentPath = getPayslipFilePath();
+            const evaluationName = `test_extract_${generateId()}`;
 
-            // Skip if the test document doesn't exist
-            try {
-                const fs = require('fs');
-                if (!fs.existsSync(testDocumentPath)) {
-                    console.log(`⚠️  Skipping extract test - Document not found: ${testDocumentPath}`);
-                    return;
-                }
-            } catch (error) {
-                console.log('⚠️  Skipping extract test - Cannot check document existence');
-                return;
-            }
-
-            const testClient = new Retab({
-                apiKey: envConfig.retabApiKey,
-                baseUrl: envConfig.retabApiBaseUrl,
-            });
-
-            // Create project and iteration scoped to this test
-            const projectName = `test_extract_${generateId()}`;
-            const project = await testClient.projects.create({
-                name: projectName,
-                json_schema: bookingConfirmationJsonSchema,
-            });
-        }, { timeout: TEST_TIMEOUT });
-    });
-
-    describe('Basic Project CRUD Operations', () => {
-        test('test_evaluation_crud_basic', async () => {
-            const evaluationName = `test_eval_basic_${generateId()}`;
-
-            // CREATE - Create a new evaluation
-            const evaluation = await client.projects.create({
+            const evaluation = await client.evals.extract.create({
                 name: evaluationName,
                 json_schema: bookingConfirmationJsonSchema,
             });
+            const evalId = evaluation.id;
 
-            expect(evaluation.name).toBe(evaluationName);
-
-            const projectId = evaluation.id;
+            await client.evals.extract.publish(evalId);
 
             try {
-                // READ - Get the evaluation by ID
-                const retrievedEvaluation = await client.projects.get(projectId);
-                expect(retrievedEvaluation.id).toBe(projectId);
-                expect(retrievedEvaluation.name).toBe(evaluationName);
+                const response: any = await client.evals.extract.process({
+                    eval_id: evalId,
+                    document: bookingConfirmationFilePath2,
+                });
 
-                // PUBLISH - Promote draft configuration
-                const publishedEvaluation = await client.projects.publish(projectId);
-                expect(publishedEvaluation.id).toBe(projectId);
+                expect(response.id).toBeDefined();
+                expect(response.extraction_id).toBeDefined();
+                expect(response.choices.length).toBeGreaterThan(0);
+                expect(response.choices[0].message.content).toBeDefined();
 
-                // LIST - List evaluations
-                const evaluations = await client.projects.list();
-                expect(evaluations.some(e => e.id === projectId)).toBe(true);
-
+                if (response.choices[0].message.parsed) {
+                    expect(typeof response.choices[0].message.parsed).toBe('object');
+                } else {
+                    const parsed = JSON.parse(response.choices[0].message.content);
+                    expect(typeof parsed).toBe('object');
+                }
             } finally {
-                // DELETE - Clean up
                 try {
-                    await client.projects.delete(projectId);
+                    await client.evals.extract.delete(evalId);
                 } catch (error) {
                     // Ignore cleanup errors
                 }
@@ -245,5 +186,37 @@ describe('Retab SDK Tests', () => {
         }, { timeout: TEST_TIMEOUT });
     });
 
+    describe('Basic Evaluation CRUD Operations', () => {
+        test('test_evaluation_crud_basic', async () => {
+            const evaluationName = `test_eval_basic_${generateId()}`;
 
+            const evaluation = await client.evals.extract.create({
+                name: evaluationName,
+                json_schema: bookingConfirmationJsonSchema,
+            });
+
+            expect(evaluation.name).toBe(evaluationName);
+            expect(evaluation.draft_config.json_schema).toEqual(bookingConfirmationJsonSchema);
+
+            const evalId = evaluation.id;
+
+            try {
+                const retrievedEvaluation = await client.evals.extract.get(evalId);
+                expect(retrievedEvaluation.id).toBe(evalId);
+                expect(retrievedEvaluation.name).toBe(evaluationName);
+
+                const publishedEvaluation = await client.evals.extract.publish(evalId);
+                expect(publishedEvaluation.id).toBe(evalId);
+
+                const evaluations = await client.evals.extract.list();
+                expect(evaluations.some(e => e.id === evalId)).toBe(true);
+            } finally {
+                try {
+                    await client.evals.extract.delete(evalId);
+                } catch (error) {
+                    // Ignore cleanup errors
+                }
+            }
+        }, { timeout: TEST_TIMEOUT });
+    });
 });

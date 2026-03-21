@@ -7,7 +7,6 @@ class Subdocument(BaseModel):
     description: str = Field(default="", description="The description of the subdocument")
     partition_key: str | None = Field(default=None, description="The key to partition the subdocument")
 
-
 class SplitRequest(BaseModel):
     document: MIMEData = Field(..., description="The document to split")
     subdocuments: list[Subdocument] = Field(..., min_length=1, description="The subdocuments to split the document into")
@@ -36,7 +35,7 @@ class SplitResult(BaseModel):
 
 
 class SplitResponse(BaseModel):
-    splits: list[SplitResult] = Field(..., description="The list of document splits with their page ranges")
+    splits: list[SplitResult] = Field(..., description="The list of document splits with their assigned pages")
     usage: RetabUsage = Field(..., description="Usage information for the split operation")
 
 

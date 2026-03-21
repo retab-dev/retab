@@ -23,7 +23,10 @@ type FileLink = z.infer<typeof ZFileLink>;
 const ZUploadFileResponse = z.object({
     fileId: z.string(),
     filename: z.string(),
-});
+}).transform((value) => ({
+    ...value,
+    file_id: value.fileId,
+}));
 type UploadFileResponse = z.infer<typeof ZUploadFileResponse>;
 
 export default class APIFiles extends CompositionClient {
@@ -98,5 +101,9 @@ export default class APIFiles extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async get_download_link(fileId: string, options?: RequestOptions): Promise<FileLink> {
+        return this.getDownloadLink(fileId, options);
     }
 }

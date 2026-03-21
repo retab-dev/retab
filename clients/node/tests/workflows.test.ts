@@ -3,8 +3,10 @@ import { describe, expect, test } from "bun:test";
 import { AbstractClient } from "../src/client";
 import APIWorkflows from "../src/api/workflows/client";
 import APIWorkflowRuns from "../src/api/workflows/runs/client";
-import { getWorkflowRunOutput, raiseForStatus, WorkflowRunError } from "../src/types";
-import type { WorkflowRun } from "../src/types";
+import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
+import APIWorkflowEdges from "../src/api/workflows/edges/client";
+import { raiseForStatus, WorkflowRunError } from "../src/types";
+import type { WorkflowRun, WorkflowRunExportResponse } from "../src/types";
 
 class MockClient extends AbstractClient {
     public lastFetchParams: Record<string, unknown> | null = null;
@@ -218,16 +220,6 @@ describe("workflows client", () => {
         expect(run.steps[1]?.status).toBe("skipped");
     });
 
-    test("runs.counts() sends GET to /workflows/runs/counts", async () => {
-        const mockClient = new MockClient({ total: 42, completed: 30, error: 5 });
-        const runsClient = new APIWorkflowRuns(mockClient);
-
-        const counts = await runsClient.counts({ workflowId: "wf_1" });
-
-        expect(mockClient.lastFetchParams?.url).toBe("/workflows/runs/counts");
-        expect(counts.total).toBe(42);
-    });
-
     test("runs.enriched fields parse correctly", async () => {
         const mockClient = new MockClient({
             id: "run_789",
@@ -254,6 +246,225 @@ describe("workflows client", () => {
         expect(run.cost_summary).toEqual({ total: 0.05 });
         expect(run.human_waiting_duration_ms).toBe(5000);
     });
+
+    test("runs.list() serializes array and date filters", async () => {
+        const mockClient = new MockClient({
+            data: [],
+            list_metadata: { before: null, after: null },
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        await runsClient.list({
+            workflowId: "wf_1",
+            statuses: ["completed", "error"],
+            triggerTypes: ["api", "email"],
+            fromDate: new Date("2026-01-01T00:00:00.000Z"),
+            toDate: new Date("2026-01-31T00:00:00.000Z"),
+            fields: ["id", "status"],
+            after: "cursor_1",
+        });
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/runs",
+            method: "GET",
+            params: {
+                workflow_id: "wf_1",
+                statuses: "completed,error",
+                trigger_types: "api,email",
+                from_date: "2026-01-01",
+                to_date: "2026-01-31",
+                fields: "id,status",
+                after: "cursor_1",
+                limit: 20,
+                order: "desc",
+            },
+            headers: undefined,
+        });
+    });
+
+    test("blocks.createBatch() accepts camelCase request objects", async () => {
+        const mockClient = new MockClient([
+            { id: "start-1", workflow_id: "wf_1", type: "start" },
+            { id: "extract-1", workflow_id: "wf_1", type: "extract" },
+        ]);
+        const blocksClient = new APIWorkflowBlocks(mockClient);
+
+        const blocks = await blocksClient.createBatch("wf_1", [
+            { id: "start-1", type: "start" },
+            { id: "extract-1", type: "extract", positionX: 120, positionY: 80 },
+        ]);
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/wf_1/blocks/batch",
+            method: "POST",
+            body: [
+                { id: "start-1", type: "start", label: "", position_x: 0, position_y: 0, width: undefined, height: undefined, config: undefined, subflow_id: undefined, parent_id: undefined },
+                { id: "extract-1", type: "extract", label: "", position_x: 120, position_y: 80, width: undefined, height: undefined, config: undefined, subflow_id: undefined, parent_id: undefined },
+            ],
+            params: undefined,
+            headers: undefined,
+        });
+        expect(blocks.map((block) => block.id)).toEqual(["start-1", "extract-1"]);
+    });
+
+    test("edges.createBatch() accepts camelCase request objects", async () => {
+        const mockClient = new MockClient([
+            { id: "edge-1", workflow_id: "wf_1", source_block: "start-1", target_block: "extract-1" },
+        ]);
+        const edgesClient = new APIWorkflowEdges(mockClient);
+
+        const edges = await edgesClient.createBatch("wf_1", [
+            { id: "edge-1", sourceBlock: "start-1", targetBlock: "extract-1" },
+        ]);
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/wf_1/edges/batch",
+            method: "POST",
+            body: [
+                { id: "edge-1", source_block: "start-1", target_block: "extract-1", source_handle: undefined, target_handle: undefined },
+            ],
+            params: undefined,
+            headers: undefined,
+        });
+        expect(edges.map((edge) => edge.id)).toEqual(["edge-1"]);
+    });
+
+    test("runs.cancel() sends POST to /cancel", async () => {
+        const mockClient = new MockClient({
+            run: {
+                id: "run_1",
+                workflow_id: "wf_1",
+                workflow_name: "Test",
+                organization_id: "org_1",
+                status: "cancelled",
+                started_at: "2026-01-01T00:00:00Z",
+                created_at: "2026-01-01T00:00:00Z",
+                updated_at: "2026-01-01T00:00:00Z",
+                steps: [],
+                waiting_for_node_ids: [],
+            },
+            cancellation_status: "cancelled",
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        const result = await runsClient.cancel("run_1", { commandId: "cmd_1" });
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/runs/run_1/cancel",
+            method: "POST",
+            body: { command_id: "cmd_1" },
+            params: undefined,
+            headers: undefined,
+        });
+        expect(result.cancellation_status).toBe("cancelled");
+    });
+
+    test("runs.restart() sends POST to /restart", async () => {
+        const mockClient = new MockClient({
+            id: "run_2",
+            workflow_id: "wf_1",
+            workflow_name: "Test",
+            organization_id: "org_1",
+            status: "running",
+            started_at: "2026-01-01T00:00:00Z",
+            created_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:00Z",
+            steps: [],
+            waiting_for_node_ids: [],
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        const run = await runsClient.restart("run_1", { commandId: "cmd_2" });
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/runs/run_1/restart",
+            method: "POST",
+            body: { command_id: "cmd_2" },
+            params: undefined,
+            headers: undefined,
+        });
+        expect(run.id).toBe("run_2");
+    });
+
+    test("runs.resume() sends POST to /resume", async () => {
+        const mockClient = new MockClient({
+            run: {
+                id: "run_1",
+                workflow_id: "wf_1",
+                workflow_name: "Test",
+                organization_id: "org_1",
+                status: "running",
+                started_at: "2026-01-01T00:00:00Z",
+                created_at: "2026-01-01T00:00:00Z",
+                updated_at: "2026-01-01T00:00:00Z",
+                steps: [],
+                waiting_for_node_ids: [],
+            },
+            resume_status: "processing",
+            queue_item_id: "queue_1",
+            queue_position: null,
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        const result = await runsClient.resume("run_1", {
+            nodeId: "hil-1",
+            approved: true,
+            modifiedData: { field: "value" },
+            commandId: "cmd_3",
+        });
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/runs/run_1/resume",
+            method: "POST",
+            body: {
+                node_id: "hil-1",
+                approved: true,
+                modified_data: { field: "value" },
+                command_id: "cmd_3",
+            },
+            params: undefined,
+            headers: undefined,
+        });
+        expect(result.resume_status).toBe("processing");
+    });
+
+    test("runs.export() sends POST to /export_payload", async () => {
+        const mockClient = new MockClient({
+            csv_data: "a,b\n1,2\n",
+            rows: 1,
+            columns: 2,
+        } satisfies WorkflowRunExportResponse);
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        const result = await runsClient.export({
+            workflowId: "wf_1",
+            nodeId: "extract-1",
+            exportSource: "outputs",
+            selectedRunIds: ["run_1", "run_2"],
+            fromDate: new Date("2026-01-01T00:00:00.000Z"),
+            toDate: new Date("2026-01-31T00:00:00.000Z"),
+            triggerTypes: ["api"],
+            preferredColumns: ["invoice_number", "total_amount"],
+        });
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/runs/export_payload",
+            method: "POST",
+            body: {
+                workflow_id: "wf_1",
+                node_id: "extract-1",
+                export_source: "outputs",
+                preferred_columns: ["invoice_number", "total_amount"],
+                selected_run_ids: ["run_1", "run_2"],
+                from_date: "2026-01-01",
+                to_date: "2026-01-31",
+                trigger_types: ["api"],
+            },
+            params: undefined,
+            headers: undefined,
+        });
+        expect(result.rows).toBe(1);
+    });
 });
 
 describe("workflow run utilities", () => {
@@ -272,31 +483,17 @@ describe("workflow run utilities", () => {
         ...overrides,
     });
 
-    test("getWorkflowRunOutput() single end node returns data directly", () => {
+    test("final_outputs are preserved as raw backend payload", () => {
         const run = makeRun({
             final_outputs: {
                 "end-1": { document: null, data: { invoice: "INV-001" } },
+                "end-2": { document: { id: "file_1", filename: "out.pdf", mime_type: "application/pdf" }, data: { count: 5 } },
             },
         });
-        expect(getWorkflowRunOutput(run)).toEqual({ invoice: "INV-001" });
-    });
-
-    test("getWorkflowRunOutput() multiple end nodes returns {endNodeId: data}", () => {
-        const run = makeRun({
-            final_outputs: {
-                "end-1": { document: null, data: { count: 3 } },
-                "end-2": { document: null, data: { count: 5 } },
-            },
+        expect(run.final_outputs).toEqual({
+            "end-1": { document: null, data: { invoice: "INV-001" } },
+            "end-2": { document: { id: "file_1", filename: "out.pdf", mime_type: "application/pdf" }, data: { count: 5 } },
         });
-        expect(getWorkflowRunOutput(run)).toEqual({
-            "end-1": { count: 3 },
-            "end-2": { count: 5 },
-        });
-    });
-
-    test("getWorkflowRunOutput() returns null when no final_outputs", () => {
-        const run = makeRun({ final_outputs: null });
-        expect(getWorkflowRunOutput(run)).toBeNull();
     });
 
     test("raiseForStatus() throws WorkflowRunError on error status", () => {
@@ -314,5 +511,94 @@ describe("workflow run utilities", () => {
     test("raiseForStatus() does not throw on completed status", () => {
         const run = makeRun({ status: "completed" });
         expect(() => raiseForStatus(run)).not.toThrow();
+    });
+
+    test("raiseForStatus() throws WorkflowRunError on cancelled status", () => {
+        const run = makeRun({ status: "cancelled" });
+        expect(() => raiseForStatus(run)).toThrow(WorkflowRunError);
+        try {
+            raiseForStatus(run);
+        } catch (e) {
+            expect(e).toBeInstanceOf(WorkflowRunError);
+            expect((e as WorkflowRunError).message).toContain("cancelled");
+        }
+    });
+
+    test("waitForCompletion() returns waiting_for_human runs", async () => {
+        class WaitMockClient extends AbstractClient {
+            public lastFetchParams: Record<string, unknown> | null = null;
+            private responses = [
+                {
+                    id: "run_1",
+                    workflow_id: "wf_1",
+                    workflow_name: "Test",
+                    organization_id: "org_1",
+                    status: "running",
+                    started_at: "2026-01-01T00:00:00Z",
+                    created_at: "2026-01-01T00:00:00Z",
+                    updated_at: "2026-01-01T00:00:00Z",
+                    steps: [],
+                    waiting_for_node_ids: [],
+                },
+                {
+                    id: "run_1",
+                    workflow_id: "wf_1",
+                    workflow_name: "Test",
+                    organization_id: "org_1",
+                    status: "waiting_for_human",
+                    started_at: "2026-01-01T00:00:00Z",
+                    created_at: "2026-01-01T00:00:00Z",
+                    updated_at: "2026-01-01T00:00:01Z",
+                    steps: [],
+                    waiting_for_node_ids: ["hil-1"],
+                },
+            ];
+
+            protected async _fetch(params: {
+                url: string;
+                method: string;
+                params?: Record<string, unknown>;
+                headers?: Record<string, unknown>;
+                body?: unknown;
+            }): Promise<Response> {
+                this.lastFetchParams = params;
+                return new Response(JSON.stringify(this.responses.shift()), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+        }
+
+        const runsClient = new APIWorkflowRuns(new WaitMockClient());
+        const run = await runsClient.waitForCompletion("run_1", { pollIntervalMs: 1 });
+
+        expect(run.status).toBe("waiting_for_human");
+        expect(run.waiting_for_node_ids).toEqual(["hil-1"]);
+    });
+
+    test("waitForCompletion() awaits async status callbacks", async () => {
+        const mockClient = new MockClient({
+            id: "run_1",
+            workflow_id: "wf_1",
+            workflow_name: "Test",
+            organization_id: "org_1",
+            status: "completed",
+            started_at: "2026-01-01T00:00:00Z",
+            created_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:00Z",
+            steps: [],
+            waiting_for_node_ids: [],
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+        const seenRunIds: string[] = [];
+
+        const run = await runsClient.waitForCompletion("run_1", {
+            onStatus: async (workflowRun) => {
+                seenRunIds.push(workflowRun.id);
+            },
+        });
+
+        expect(run.status).toBe("completed");
+        expect(seenRunIds).toEqual(["run_1"]);
     });
 });

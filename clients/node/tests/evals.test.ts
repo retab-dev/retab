@@ -192,6 +192,9 @@ function buildResponse(params: RecordedRequest): unknown {
                 reasoning: "matched category",
                 classification: "invoice",
             },
+            usage: {
+                credits: 1,
+            },
         };
     }
 

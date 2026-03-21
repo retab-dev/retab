@@ -1,5 +1,7 @@
+import * as z from "zod";
+
 import { CompositionClient, RequestOptions } from "../../client.js";
-import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResponse, ZParseResponse, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse, SplitRequest, ZSplitRequest, ZSplitResponse, ClassifyRequest, ZClassifyRequest, ZClassifyResponse, GenerateSplitConfigRequest, ZGenerateSplitConfigRequest } from "../../types.js";
+import { ZDocumentExtractRequest, DocumentExtractRequest, RetabParsedChatCompletion, ZRetabParsedChatCompletion, ParseRequest, ParseResponse, ZParseResponse, ZParseRequest, DocumentCreateMessageRequest, DocumentMessage, ZDocumentMessage, ZDocumentCreateMessageRequest, DocumentCreateInputRequest, ZDocumentCreateInputRequest, RetabParsedChatCompletionChunk, ZRetabParsedChatCompletionChunk, EditRequest, EditResponse, ZEditRequest, ZEditResponse, SplitRequest, ZSplitRequest, ZSplitResponse, ClassifyRequest, ZClassifyRequest, ZClassifyResponse, GenerateSplitConfigRequest, ZGenerateSplitConfigRequest, ZMIMEData, MIMEDataInput } from "../../types.js";
 import type { SplitResponse, ClassifyResponse, GenerateSplitConfigResponse } from "../../generated_types.js";
 import { ZGenerateSplitConfigResponse } from "../../generated_types.js";
 
@@ -18,10 +20,95 @@ export default class APIDocuments extends CompositionClient {
             headers: options?.headers,
         });
     }
+    async sources(
+        extraction_id: string,
+        {
+            file,
+            file_id,
+            fileId,
+        }: {
+            file?: MIMEDataInput;
+            file_id?: string;
+            fileId?: string;
+        } = {},
+        options?: RequestOptions,
+    ): Promise<Record<string, unknown>> {
+        const extraction = await this._fetchJson(z.any(), {
+            url: `/extractions/${extraction_id}`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+
+        let inferredFileId = file_id ?? fileId;
+        if (!inferredFileId && file) {
+            const parsedFile = await ZMIMEData.parseAsync(file);
+            const maybeId = (parsedFile as { id?: string }).id;
+            if (typeof maybeId === "string" && maybeId.length > 0) {
+                inferredFileId = maybeId;
+            }
+        }
+        if (!inferredFileId) {
+            const extractionFileIds = Array.isArray(extraction?.file_ids)
+                ? extraction.file_ids.filter((candidate: unknown): candidate is string => typeof candidate === "string" && candidate.length > 0)
+                : [];
+            if (extractionFileIds.length === 1) {
+                inferredFileId = extractionFileIds[0];
+            } else if (typeof extraction?.file_id === "string" && extraction.file_id.length > 0) {
+                inferredFileId = extraction.file_id;
+            }
+        }
+
+        if (!inferredFileId) {
+            throw new Error("Unable to infer file_id. Provide file_id explicitly, pass a MIMEData with an id, or use an extraction with a single file.");
+        }
+
+        let data: Record<string, unknown> = {};
+        const completion = extraction?.completion;
+        const message = completion?.choices?.[0]?.message;
+        if (message?.parsed && typeof message.parsed === "object") {
+            data = message.parsed as Record<string, unknown>;
+        } else if (typeof message?.content === "string") {
+            try {
+                data = JSON.parse(message.content) as Record<string, unknown>;
+            } catch {
+                data = {};
+            }
+        }
+
+        const ocrResponse = await this._fetchJson(z.any(), {
+            url: "/documents/perform_ocr_only",
+            method: "POST",
+            body: {
+                file_id: inferredFileId,
+                ...(options?.body || {}),
+            },
+            params: options?.params,
+            headers: options?.headers,
+        });
+
+        const ocrFileId = ocrResponse?.ocr_file_id;
+        if (typeof ocrFileId !== "string" || ocrFileId.length === 0) {
+            throw new Error("perform_ocr_only did not return a valid ocr_file_id");
+        }
+
+        return this._fetchJson(z.record(z.any()), {
+            url: "/documents/compute_field_locations",
+            method: "POST",
+            body: {
+                ocr_file_id: ocrFileId,
+                ocr_result: ocrResponse?.ocr_result,
+                data,
+                ...(options?.body || {}),
+            },
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
     async extract_stream(params: DocumentExtractRequest, options?: RequestOptions): Promise<AsyncGenerator<RetabParsedChatCompletionChunk>> {
         let request = await ZDocumentExtractRequest.parseAsync(params);
         return this._fetchStream(ZRetabParsedChatCompletionChunk, {
-            url: "/documents/extract",
+            url: "/documents/extractions",
             method: "POST",
             body: { ...request, stream: true, ...(options?.body || {}) },
             params: options?.params,

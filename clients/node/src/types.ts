@@ -268,33 +268,64 @@ export const ZWorkflowWithEntities = z.object({
 }).passthrough();
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
 
+export type WorkflowRunStatus =
+    | "pending"
+    | "running"
+    | "completed"
+    | "error"
+    | "waiting_for_human"
+    | "cancelled";
+
+export type WorkflowRunTriggerType =
+    | "manual"
+    | "api"
+    | "schedule"
+    | "webhook"
+    | "email"
+    | "restart";
+
+export type WorkflowBlockCreateRequest = {
+    id: string;
+    type: string;
+    label?: string;
+    positionX?: number;
+    positionY?: number;
+    width?: number;
+    height?: number;
+    config?: Record<string, unknown>;
+    subflowId?: string;
+    parentId?: string;
+};
+
+export type WorkflowBlockUpdateRequest = {
+    label?: string;
+    positionX?: number;
+    positionY?: number;
+    width?: number;
+    height?: number;
+    config?: Record<string, unknown>;
+    subflowId?: string;
+    parentId?: string;
+};
+
+export type WorkflowEdgeCreateRequest = {
+    id: string;
+    sourceBlock: string;
+    targetBlock: string;
+    sourceHandle?: string;
+    targetHandle?: string;
+};
+
+export const ZWorkflowRunExportResponse = z.object({
+    csv_data: z.string(),
+    rows: z.number(),
+    columns: z.number(),
+}).passthrough();
+export type WorkflowRunExportResponse = z.infer<typeof ZWorkflowRunExportResponse>;
+
 // ---------------------------------------------------------------------------
 // Workflow run utility functions
 // ---------------------------------------------------------------------------
-
-/**
- * Extract the final output data from a completed workflow run.
- *
- * Each end node produces `{document, data}`.
- *
- * - Single end node: returns `data` directly.
- * - Multiple end nodes: returns `{endNodeId: data}` dict.
- * - No outputs: returns `null`.
- */
-export function getWorkflowRunOutput(run: generated.WorkflowRun): Record<string, unknown> | null {
-    if (!run.final_outputs) return null;
-    const entries = Object.entries(run.final_outputs);
-    if (entries.length === 1) {
-        const val = entries[0]![1];
-        return (val && typeof val === "object" && "data" in val) ? (val as Record<string, unknown>).data as Record<string, unknown> | null : null;
-    }
-    return Object.fromEntries(
-        entries.map(([k, v]) => {
-            const data = (v && typeof v === "object" && "data" in v) ? (v as Record<string, unknown>).data : null;
-            return [k, data];
-        })
-    );
-}
 
 /**
  * Error thrown by {@link raiseForStatus} when a workflow run has failed.
@@ -302,18 +333,20 @@ export function getWorkflowRunOutput(run: generated.WorkflowRun): Record<string,
 export class WorkflowRunError extends Error {
     public readonly run: generated.WorkflowRun;
     constructor(run: generated.WorkflowRun) {
-        super(`Workflow run ${run.id} failed${run.error ? `: ${run.error}` : ""}`);
+        super(
+            `Workflow run ${run.id} ${run.status === "cancelled" ? "was cancelled" : "failed"}${run.error ? `: ${run.error}` : ""}`
+        );
         this.name = "WorkflowRunError";
         this.run = run;
     }
 }
 
 /**
- * Throw a {@link WorkflowRunError} if the run has status "error".
+ * Throw a {@link WorkflowRunError} if the run did not succeed.
  * Modelled after `httpx.Response.raise_for_status()`.
  */
 export function raiseForStatus(run: generated.WorkflowRun): void {
-    if (run.status === "error") throw new WorkflowRunError(run);
+    if (run.status === "error" || run.status === "cancelled") throw new WorkflowRunError(run);
 }
 
 export const ZModel = z.lazy(() => (z.object({

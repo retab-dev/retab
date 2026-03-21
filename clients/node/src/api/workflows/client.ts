@@ -217,4 +217,8 @@ export default class APIWorkflows extends CompositionClient {
             headers: options?.headers,
         });
     }
+
+    async get_entities(workflowId: string, options?: RequestOptions): Promise<WorkflowWithEntities> {
+        return this.getEntities(workflowId, options);
+    }
 }

@@ -97,7 +97,7 @@ describe("workflow run steps client", () => {
         expect(steps[0] && "output" in steps[0]).toBe(false);
     });
 
-    test("batch() sends POST to /steps/batch", async () => {
+    test("getMany() sends POST to /steps/batch", async () => {
         class BatchMockClient extends AbstractClient {
             public lastFetchParams: Record<string, unknown> | null = null;
 
@@ -106,7 +106,7 @@ describe("workflow run steps client", () => {
                 method: string;
                 params?: Record<string, unknown>;
                 headers?: Record<string, unknown>;
-                body?: Record<string, unknown>;
+                body?: unknown;
             }): Promise<Response> {
                 this.lastFetchParams = params;
                 return new Response(JSON.stringify({
@@ -132,11 +132,10 @@ describe("workflow run steps client", () => {
         const mockClient = new BatchMockClient();
         const stepsClient = new APIWorkflowRunSteps(mockClient);
 
-        const batch = await stepsClient.batch("run_123", ["extract-1"]);
+        const batch = await stepsClient.getMany("run_123", ["extract-1"]);
 
         expect(mockClient.lastFetchParams?.url).toBe("/workflows/runs/run_123/steps/batch");
         expect(mockClient.lastFetchParams?.method).toBe("POST");
-        expect(batch.outputs["extract-1"]).toBeDefined();
         expect(batch.outputs["extract-1"]?.node_id).toBe("extract-1");
     });
 });

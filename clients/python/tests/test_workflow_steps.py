@@ -110,7 +110,39 @@ async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
 
 
 def test_workflow_steps_list_with_node_ids() -> None:
-    """list() with node_ids uses batch endpoint and returns StepOutputsBatchResponse."""
+    """list() with node_ids filters the persisted step list and still returns WorkflowRunStep items."""
+    client = MagicMock()
+    client._prepared_request.return_value = [
+        {
+            "run_id": "run_123",
+            "organization_id": "org_123",
+            "node_id": "extract-1",
+            "step_id": "extract-1",
+            "node_type": "extract",
+            "node_label": "Extract",
+            "status": "completed",
+        },
+        {
+            "run_id": "run_123",
+            "organization_id": "org_123",
+            "node_id": "parse-1",
+            "step_id": "parse-1",
+            "node_type": "parse",
+            "node_label": "Parse",
+            "status": "completed",
+        },
+    ]
+
+    result = WorkflowSteps(client=client).list("run_123", node_ids=["extract-1"])
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/runs/run_123/steps"
+    assert len(result) == 1
+    assert result[0].node_id == "extract-1"
+
+
+def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "outputs": {
@@ -130,7 +162,7 @@ def test_workflow_steps_list_with_node_ids() -> None:
         },
     }
 
-    result = WorkflowSteps(client=client).list("run_123", node_ids=["extract-1"])
+    result = WorkflowSteps(client=client).get_many("run_123", ["extract-1"])
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"

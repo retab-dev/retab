@@ -1,8 +1,10 @@
 import asyncio
+import inspect
 import time
+from datetime import date
 from io import IOBase
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, Sequence, TypeAlias
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -17,12 +19,33 @@ from ....types.workflows import (
     CancelWorkflowResponse,
     ResumeWorkflowResponse,
     ExportResponse,
+    WorkflowRunStatus,
+    WorkflowRunTriggerType,
 )
 from .steps import WorkflowSteps, AsyncWorkflowSteps
 
 
 # Type alias for document inputs
 DocumentInput = Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl
+DateInput: TypeAlias = str | date
+ProgressCallback: TypeAlias = Callable[[WorkflowRun], Any]
+AsyncProgressCallback: TypeAlias = Callable[[WorkflowRun], Any | Awaitable[Any]]
+
+
+def _normalize_csv_param(value: str | Sequence[str] | None) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    return ",".join(value)
+
+
+def _normalize_date_param(value: DateInput | None) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value.isoformat()
+    return value
 
 
 class WorkflowRunsMixin:
@@ -83,20 +106,20 @@ class WorkflowRunsMixin:
     def prepare_list(
         self,
         workflow_id: str | None = None,
-        status: Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"] | None = None,
-        statuses: str | None = None,
-        exclude_status: Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"] | None = None,
-        trigger_type: Literal["manual", "api", "schedule", "webhook", "email", "restart"] | None = None,
-        trigger_types: str | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
+        status: WorkflowRunStatus | None = None,
+        statuses: str | Sequence[WorkflowRunStatus] | None = None,
+        exclude_status: WorkflowRunStatus | None = None,
+        trigger_type: WorkflowRunTriggerType | None = None,
+        trigger_types: str | Sequence[WorkflowRunTriggerType] | None = None,
+        from_date: DateInput | None = None,
+        to_date: DateInput | None = None,
         min_cost: float | None = None,
         max_cost: float | None = None,
         min_duration: int | None = None,
         max_duration: int | None = None,
         search: str | None = None,
         sort_by: str = "created_at",
-        fields: str | None = None,
+        fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 20,
@@ -108,18 +131,22 @@ class WorkflowRunsMixin:
             params["workflow_id"] = workflow_id
         if status is not None:
             params["status"] = status
-        if statuses is not None:
-            params["statuses"] = statuses
+        normalized_statuses = _normalize_csv_param(statuses)
+        if normalized_statuses is not None:
+            params["statuses"] = normalized_statuses
         if exclude_status is not None:
             params["exclude_status"] = exclude_status
         if trigger_type is not None:
             params["trigger_type"] = trigger_type
-        if trigger_types is not None:
-            params["trigger_types"] = trigger_types
-        if from_date is not None:
-            params["from_date"] = from_date
-        if to_date is not None:
-            params["to_date"] = to_date
+        normalized_trigger_types = _normalize_csv_param(trigger_types)
+        if normalized_trigger_types is not None:
+            params["trigger_types"] = normalized_trigger_types
+        normalized_from_date = _normalize_date_param(from_date)
+        if normalized_from_date is not None:
+            params["from_date"] = normalized_from_date
+        normalized_to_date = _normalize_date_param(to_date)
+        if normalized_to_date is not None:
+            params["to_date"] = normalized_to_date
         if min_cost is not None:
             params["min_cost"] = min_cost
         if max_cost is not None:
@@ -130,13 +157,14 @@ class WorkflowRunsMixin:
             params["max_duration"] = max_duration
         if search is not None:
             params["search"] = search
-        if fields is not None:
-            params["fields"] = fields
+        normalized_fields = _normalize_csv_param(fields)
+        if normalized_fields is not None:
+            params["fields"] = normalized_fields
         if before is not None:
             params["before"] = before
         if after is not None:
             params["after"] = after
-        return PreparedRequest(method="GET", url="/workflows/runs/", params=params)
+        return PreparedRequest(method="GET", url="/workflows/runs", params=params)
 
     def prepare_delete(self, run_id: str) -> PreparedRequest:
         """Prepare a request to delete a workflow run."""
@@ -253,20 +281,20 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def list(
         self,
         workflow_id: str | None = None,
-        status: Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"] | None = None,
-        statuses: str | None = None,
-        exclude_status: Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"] | None = None,
-        trigger_type: Literal["manual", "api", "schedule", "webhook", "email", "restart"] | None = None,
-        trigger_types: str | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
+        status: WorkflowRunStatus | None = None,
+        statuses: str | Sequence[WorkflowRunStatus] | None = None,
+        exclude_status: WorkflowRunStatus | None = None,
+        trigger_type: WorkflowRunTriggerType | None = None,
+        trigger_types: str | Sequence[WorkflowRunTriggerType] | None = None,
+        from_date: DateInput | None = None,
+        to_date: DateInput | None = None,
         min_cost: float | None = None,
         max_cost: float | None = None,
         min_duration: int | None = None,
         max_duration: int | None = None,
         search: str | None = None,
         sort_by: str = "created_at",
-        fields: str | None = None,
+        fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 20,
@@ -395,11 +423,11 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 
         poll_interval_seconds: float = 2.0,
         timeout_seconds: float = 600.0,
-        on_status: Callable[[WorkflowRun], None] | None = None,
+        on_status: ProgressCallback | None = None,
     ) -> WorkflowRun:
         """Poll a workflow run until it reaches a terminal state.
 
-        Terminal states are: completed, error, cancelled.
+        Stops when the run completes, fails, is cancelled, or pauses for human review.
 
         Args:
             run_id: The ID of the workflow run to wait for
@@ -409,7 +437,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
                 Useful for logging progress or updating a progress bar.
 
         Returns:
-            WorkflowRun: The completed workflow run
+            WorkflowRun: The completed, cancelled, failed, or waiting-for-human workflow run
 
         Raises:
             TimeoutError: If the run doesn't complete within timeout_seconds
@@ -426,7 +454,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             run = self.get(run_id)
             if on_status is not None:
                 on_status(run)
-            if run.status in TERMINAL_WORKFLOW_RUN_STATUSES:
+            if run.status in TERMINAL_WORKFLOW_RUN_STATUSES or run.status == "waiting_for_human":
                 return run
 
             now = time.monotonic()
@@ -570,20 +598,20 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     async def list(
         self,
         workflow_id: str | None = None,
-        status: Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"] | None = None,
-        statuses: str | None = None,
-        exclude_status: Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"] | None = None,
-        trigger_type: Literal["manual", "api", "schedule", "webhook", "email", "restart"] | None = None,
-        trigger_types: str | None = None,
-        from_date: str | None = None,
-        to_date: str | None = None,
+        status: WorkflowRunStatus | None = None,
+        statuses: str | Sequence[WorkflowRunStatus] | None = None,
+        exclude_status: WorkflowRunStatus | None = None,
+        trigger_type: WorkflowRunTriggerType | None = None,
+        trigger_types: str | Sequence[WorkflowRunTriggerType] | None = None,
+        from_date: DateInput | None = None,
+        to_date: DateInput | None = None,
         min_cost: float | None = None,
         max_cost: float | None = None,
         min_duration: int | None = None,
         max_duration: int | None = None,
         search: str | None = None,
         sort_by: str = "created_at",
-        fields: str | None = None,
+        fields: str | Sequence[str] | None = None,
         before: str | None = None,
         after: str | None = None,
         limit: int = 20,
@@ -712,11 +740,11 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
 
         poll_interval_seconds: float = 2.0,
         timeout_seconds: float = 600.0,
-        on_status: Callable[[WorkflowRun], None] | None = None,
+        on_status: AsyncProgressCallback | None = None,
     ) -> WorkflowRun:
         """Poll a workflow run until it reaches a terminal state.
 
-        Terminal states are: completed, error, cancelled.
+        Stops when the run completes, fails, is cancelled, or pauses for human review.
 
         Args:
             run_id: The ID of the workflow run to wait for
@@ -725,7 +753,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             on_status: Optional callback invoked with the ``WorkflowRun`` on each poll.
 
         Returns:
-            WorkflowRun: The completed workflow run
+            WorkflowRun: The completed, cancelled, failed, or waiting-for-human workflow run
 
         Raises:
             TimeoutError: If the run doesn't complete within timeout_seconds
@@ -741,8 +769,10 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         while True:
             run = await self.get(run_id)
             if on_status is not None:
-                on_status(run)
-            if run.status in TERMINAL_WORKFLOW_RUN_STATUSES:
+                callback_result = on_status(run)
+                if inspect.isawaitable(callback_result):
+                    await callback_result
+            if run.status in TERMINAL_WORKFLOW_RUN_STATUSES or run.status == "waiting_for_human":
                 return run
 
             now = time.monotonic()
