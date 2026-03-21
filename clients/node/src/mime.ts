@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { Readable } from 'stream';
 import {
     fileTypeFromBuffer,
@@ -38,6 +39,7 @@ export function mimeToBlob(mime: MIMEData): Blob {
 export async function inferFileInfo(input: Buffer | string | Readable): Promise<MIMEData> {
     let buffer: Buffer;
     let filePath: string | null = null;
+    let filename: string | null = null;
     let mime: string | null = null;
 
     if (Buffer.isBuffer(input)) {
@@ -45,6 +47,7 @@ export async function inferFileInfo(input: Buffer | string | Readable): Promise<
     } else if (typeof input === 'string') {
         if (await fs.promises.stat(input).then(stat => stat.isFile()).catch(() => false)) {
             filePath = input;
+            filename = path.basename(filePath);
             buffer = await fs.promises.readFile(filePath);
         } else if (input.startsWith('data:')) {
             mime = input.split(/[,;]/)[0].split(':')[1];
@@ -55,6 +58,12 @@ export async function inferFileInfo(input: Buffer | string | Readable): Promise<
         }
     } else if (input instanceof Readable) {
         buffer = await streamToBuffer(input);
+        const streamInput = input as Readable & { path?: unknown; name?: unknown };
+        if (typeof streamInput.path === 'string') {
+            filename = path.basename(streamInput.path);
+        } else if (typeof streamInput.name === 'string') {
+            filename = path.basename(streamInput.name);
+        }
     } else {
         throw new Error('Unsupported input type');
     }
@@ -76,8 +85,7 @@ export async function inferFileInfo(input: Buffer | string | Readable): Promise<
     const base64Data = buffer.toString('base64');
 
     return {
-        filename: `file.${ext}`,
+        filename: filename ?? `uploaded_file.${ext}`,
         url: `data:${mime};base64,${base64Data}`,
     };
 }
-

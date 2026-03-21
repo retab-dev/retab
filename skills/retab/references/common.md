@@ -38,7 +38,7 @@ const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 
 - `parse`: convert a document into page-by-page text or structured table output
 - `extract`: map a document into a JSON schema
-- `split`: assign page ranges to named subdocuments
+- `split`: assign pages to named subdocuments
 - `edit`: fill or update a form-like document from natural-language instructions
 - `classify`: choose one category from a fixed list
 - `workflows`: run an existing multi-step workflow and poll its outputs

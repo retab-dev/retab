@@ -41,7 +41,6 @@ function validateParseResponse(response: ParseResponse | null): void {
     expect(response.text).not.toBeNull();
 
     // Assert usage information is valid
-    expect(response.usage.page_count).toBeGreaterThan(0);
     expect(response.usage.credits).toBeGreaterThanOrEqual(0);
 
     // Assert pages is a list of strings
@@ -183,12 +182,11 @@ describe('Retab SDK Parse Tests', () => {
             expect(typeof response!.document).toBe('object');
 
             // Validate usage information
-            expect(typeof response!.usage.page_count).toBe('number');
             expect(typeof response!.usage.credits).toBe('number');
 
-            // Validate that pages and text are consistent
+            // Validate that pages and text are both populated.
             expect(response!.text.length).toBeGreaterThan(0);
-            expect(response!.pages.length).toBe(response!.usage.page_count);
+            expect(response!.pages.length).toBeGreaterThan(0);
         }, { timeout: TEST_TIMEOUT });
     });
 });

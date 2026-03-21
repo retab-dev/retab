@@ -43,7 +43,7 @@ class DocumentPreprocessResponseContent(BaseModel):
 class PreparedRequest(BaseModel):
     method: Literal["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "CONNECT", "TRACE"]
     url: str
-    data: dict | None = None
+    data: Any = None
     params: dict | None = None
     form_data: dict | None = None
     files: dict | List[Tuple[str, Tuple[str, bytes, str]]] | None = None

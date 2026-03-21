@@ -76,7 +76,10 @@ class WorkflowRunError(Exception):
 
     def __init__(self, run: "WorkflowRun") -> None:
         self.run = run
-        msg = f"Workflow run {run.id} failed"
+        if run.status == "cancelled":
+            msg = f"Workflow run {run.id} was cancelled"
+        else:
+            msg = f"Workflow run {run.id} failed"
         if run.error:
             msg += f": {run.error}"
         super().__init__(msg)
@@ -111,30 +114,12 @@ class WorkflowRun(BaseModel):
     cost_summary: Optional[dict] = Field(default=None, description="Aggregate cost and token usage for the run")
     human_waiting_duration_ms: int = Field(default=0, description="Total time spent waiting for human review in milliseconds")
 
-    @property
-    def output(self) -> Optional[Dict[str, "FinalNodeOutput"]]:
-        """Final outputs from end nodes, keyed by end node ID.
-
-        Each value has ``document`` (file reference or None) and ``data`` (JSON dict or None).
-
-        Returns ``None`` if the run has no outputs yet.
-        """
-        if not self.final_outputs:
-            return None
-        result: Dict[str, "FinalNodeOutput"] = {}
-        for k, v in self.final_outputs.items():
-            if isinstance(v, dict):
-                result[k] = FinalNodeOutput.model_validate(v)
-            else:
-                result[k] = FinalNodeOutput()
-        return result
-
     def raise_for_status(self) -> None:
-        """Raise :class:`WorkflowRunError` if the run has failed.
+        """Raise :class:`WorkflowRunError` if the run did not succeed.
 
         Modelled after ``httpx.Response.raise_for_status()``.
         """
-        if self.status == "error":
+        if self.status in {"error", "cancelled"}:
             raise WorkflowRunError(self)
 
 
@@ -162,6 +147,7 @@ class Workflow(BaseModel):
 # ---------------------------------------------------------------------------
 
 WorkflowRunStatus = Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"]
+WorkflowRunTriggerType = Literal["manual", "api", "schedule", "webhook", "email", "restart"]
 
 TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancelled")
 
@@ -555,17 +541,6 @@ class ResumeWorkflowResponse(BaseModel):
     queue_item_id: str = Field(..., description="ID of the queue item for tracking")
 
 
-# ---------------------------------------------------------------------------
-# Final output & typed response models
-# ---------------------------------------------------------------------------
-
-
-class FinalNodeOutput(BaseModel):
-    """Output from a single end node. Uses the same ``{document, data}`` interface as webhooks."""
-    document: Optional[dict] = Field(default=None, description="Output document reference (BaseMIMEData) or None")
-    data: Optional[dict] = Field(default=None, description="Output JSON data or None")
-
-
 class RunCountsResponse(BaseModel):
     """Run counts grouped by status."""
     total: int = 0
@@ -598,7 +573,54 @@ class ExportResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Workflow graph models (blocks, edges, subflows)
+# Workflow graph request models
+# ---------------------------------------------------------------------------
+
+
+class WorkflowBlockCreateRequest(BaseModel):
+    """Typed request payload for creating a workflow block."""
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    type: str
+    label: str = ""
+    position_x: float = 0
+    position_y: float = 0
+    width: Optional[float] = None
+    height: Optional[float] = None
+    config: Optional[dict] = None
+    subflow_id: Optional[str] = None
+    parent_id: Optional[str] = None
+
+
+class WorkflowBlockUpdateRequest(BaseModel):
+    """Typed request payload for updating a workflow block."""
+    model_config = ConfigDict(extra="forbid")
+
+    block_id: str
+    label: Optional[str] = None
+    position_x: Optional[float] = None
+    position_y: Optional[float] = None
+    width: Optional[float] = None
+    height: Optional[float] = None
+    config: Optional[dict] = None
+    subflow_id: Optional[str] = None
+    parent_id: Optional[str] = None
+
+
+class WorkflowEdgeCreateRequest(BaseModel):
+    """Typed request payload for creating a workflow edge."""
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    source_block: str
+    target_block: str
+    source_handle: Optional[str] = None
+    target_handle: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# Workflow graph response models (blocks, edges, subflows)
 # ---------------------------------------------------------------------------
 
 

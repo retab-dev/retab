@@ -11,10 +11,31 @@ import {
     ZCancelWorkflowResponse,
     ResumeWorkflowResponse,
     ZResumeWorkflowResponse,
+    WorkflowRunExportResponse,
+    ZWorkflowRunExportResponse,
+    WorkflowRunStatus,
+    WorkflowRunTriggerType,
 } from "../../../types.js";
 import APIWorkflowRunSteps from "./steps/client.js";
 
 const TERMINAL_STATUSES = new Set(["completed", "error", "cancelled"]);
+
+function normalizeCsvParam(value?: string | string[]): string | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+    return Array.isArray(value) ? value.join(",") : value;
+}
+
+function normalizeDateParam(value?: string | Date): string | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value instanceof Date) {
+        return value.toISOString().slice(0, 10);
+    }
+    return value;
+}
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -24,7 +45,7 @@ function sleep(ms: number): Promise<void> {
  * Workflow Runs API client for managing workflow executions.
  *
  * Sub-clients:
- * - steps: Step output operations (get, list, batch, getAll)
+ * - steps: Step output operations (get, list, getMany, getAll)
  */
 export default class APIWorkflowRuns extends CompositionClient {
     public steps: APIWorkflowRunSteps;
@@ -132,20 +153,20 @@ export default class APIWorkflowRuns extends CompositionClient {
             order = "desc",
         }: {
             workflowId?: string;
-            status?: "pending" | "running" | "completed" | "error" | "waiting_for_human" | "cancelled";
-            statuses?: string;
-            excludeStatus?: "pending" | "running" | "completed" | "error" | "waiting_for_human" | "cancelled";
-            triggerType?: "manual" | "api" | "schedule" | "webhook" | "email" | "restart";
-            triggerTypes?: string;
-            fromDate?: string;
-            toDate?: string;
+            status?: WorkflowRunStatus;
+            statuses?: WorkflowRunStatus[] | string;
+            excludeStatus?: WorkflowRunStatus;
+            triggerType?: WorkflowRunTriggerType;
+            triggerTypes?: WorkflowRunTriggerType[] | string;
+            fromDate?: string | Date;
+            toDate?: string | Date;
             minCost?: number;
             maxCost?: number;
             minDuration?: number;
             maxDuration?: number;
             search?: string;
             sortBy?: string;
-            fields?: string;
+            fields?: string[] | string;
             before?: string;
             after?: string;
             limit?: number;
@@ -157,19 +178,19 @@ export default class APIWorkflowRuns extends CompositionClient {
         const params: Record<string, any> = {
             workflow_id: workflowId,
             status,
-            statuses,
+            statuses: normalizeCsvParam(statuses),
             exclude_status: excludeStatus,
             trigger_type: triggerType,
-            trigger_types: triggerTypes,
-            from_date: fromDate,
-            to_date: toDate,
+            trigger_types: normalizeCsvParam(triggerTypes),
+            from_date: normalizeDateParam(fromDate),
+            to_date: normalizeDateParam(toDate),
             min_cost: minCost,
             max_cost: maxCost,
             min_duration: minDuration,
             max_duration: maxDuration,
             search,
             sort_by: sortBy,
-            fields,
+            fields: normalizeCsvParam(fields),
             before,
             after,
             limit,
@@ -280,7 +301,7 @@ export default class APIWorkflowRuns extends CompositionClient {
     /**
      * Poll a workflow run until it reaches a terminal state.
      *
-     * Terminal states: "completed", "error", "cancelled".
+     * Terminal states: "completed", "error", "cancelled", "waiting_for_human".
      *
      * @param runId - The ID of the workflow run to wait for
      * @param pollIntervalMs - Milliseconds between polls (default: 2000)
@@ -303,7 +324,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         }: {
             pollIntervalMs?: number;
             timeoutMs?: number;
-            onStatus?: (run: WorkflowRun) => void;
+            onStatus?: (run: WorkflowRun) => void | Promise<void>;
         } = {}
     ): Promise<WorkflowRun> {
         if (pollIntervalMs <= 0) throw new Error("pollIntervalMs must be positive");
@@ -314,9 +335,9 @@ export default class APIWorkflowRuns extends CompositionClient {
         while (true) {
             const run = await this.get(runId);
 
-            if (onStatus) onStatus(run);
+            if (onStatus) await onStatus(run);
 
-            if (TERMINAL_STATUSES.has(run.status)) {
+            if (TERMINAL_STATUSES.has(run.status) || run.status === "waiting_for_human") {
                 return run;
             }
 
@@ -330,12 +351,31 @@ export default class APIWorkflowRuns extends CompositionClient {
         }
     }
 
+    async wait_for_completion(
+        runId: string,
+        {
+            poll_interval_ms = 2000,
+            timeout_ms = 600000,
+            on_status,
+        }: {
+            poll_interval_ms?: number;
+            timeout_ms?: number;
+            on_status?: (run: WorkflowRun) => void | Promise<void>;
+        } = {}
+    ): Promise<WorkflowRun> {
+        return this.waitForCompletion(runId, {
+            pollIntervalMs: poll_interval_ms,
+            timeoutMs: timeout_ms,
+            onStatus: on_status,
+        });
+    }
+
     /**
      * Create a workflow run and wait for it to complete.
      *
      * @example
      * ```typescript
-     * import { raiseForStatus, getWorkflowRunOutput } from "retab";
+     * import { raiseForStatus } from "retab";
      *
      * const run = await client.workflows.runs.createAndWait({
      *     workflowId: "wf_abc123",
@@ -343,7 +383,7 @@ export default class APIWorkflowRuns extends CompositionClient {
      *     onStatus: (r) => console.log(`${r.status}...`),
      * });
      * raiseForStatus(run);
-     * console.log(getWorkflowRunOutput(run));
+     * console.log(run.final_outputs);
      * ```
      */
     async createAndWait(
@@ -360,7 +400,7 @@ export default class APIWorkflowRuns extends CompositionClient {
             jsonInputs?: Record<string, Record<string, unknown>>;
             pollIntervalMs?: number;
             timeoutMs?: number;
-            onStatus?: (run: WorkflowRun) => void;
+            onStatus?: (run: WorkflowRun) => void | Promise<void>;
         },
         options?: RequestOptions
     ): Promise<WorkflowRun> {
@@ -369,30 +409,6 @@ export default class APIWorkflowRuns extends CompositionClient {
             options
         );
         return this.waitForCompletion(run.id, { pollIntervalMs, timeoutMs, onStatus });
-    }
-
-    /**
-     * Get run counts by status.
-     *
-     * @returns Object with status counts (e.g., `{ total: 42, completed: 30, error: 5 }`)
-     */
-    async counts(
-        { workflowId }: { workflowId?: string } = {},
-        options?: RequestOptions
-    ): Promise<Record<string, number>> {
-        const params = Object.fromEntries(
-            Object.entries({
-                workflow_id: workflowId,
-                ...(options?.params || {}),
-            }).filter(([_, v]) => v !== undefined)
-        );
-
-        return this._fetchJson(z.record(z.string(), z.number()), {
-            url: "/workflows/runs/counts",
-            method: "GET",
-            params,
-            headers: options?.headers,
-        });
     }
 
     /**
@@ -459,13 +475,13 @@ export default class APIWorkflowRuns extends CompositionClient {
             selectedRunIds?: string[];
             status?: string;
             excludeStatus?: string;
-            fromDate?: string;
-            toDate?: string;
-            triggerTypes?: string[];
+            fromDate?: string | Date;
+            toDate?: string | Date;
+            triggerTypes?: WorkflowRunTriggerType[];
             preferredColumns?: string[];
         },
         options?: RequestOptions
-    ): Promise<Record<string, unknown>> {
+    ): Promise<WorkflowRunExportResponse> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const body: Record<string, any> = {
             workflow_id: workflowId,
@@ -476,14 +492,14 @@ export default class APIWorkflowRuns extends CompositionClient {
         if (selectedRunIds !== undefined) body.selected_run_ids = selectedRunIds;
         if (status !== undefined) body.status = status;
         if (excludeStatus !== undefined) body.exclude_status = excludeStatus;
-        if (fromDate !== undefined) body.from_date = fromDate;
-        if (toDate !== undefined) body.to_date = toDate;
+        if (fromDate !== undefined) body.from_date = normalizeDateParam(fromDate);
+        if (toDate !== undefined) body.to_date = normalizeDateParam(toDate);
         if (triggerTypes !== undefined) body.trigger_types = triggerTypes;
 
-        return this._fetchJson(z.record(z.any()), {
+        return this._fetchJson(ZWorkflowRunExportResponse, {
             url: "/workflows/runs/export_payload",
             method: "POST",
-            body: { ...body, ...(options?.body || {}) },
+            body: { ...body, ...(options?.body as Record<string, unknown> || {}) },
             params: options?.params,
             headers: options?.headers,
         });

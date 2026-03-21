@@ -131,6 +131,10 @@ export default class APIJobs extends CompositionClient {
         });
     }
 
+    async retrieve_full(job_id: string, options?: RequestOptions): Promise<Job> {
+        return this.retrieveFull(job_id, options);
+    }
+
     /**
      * Poll a job until terminal status, then fetch final payload once.
      */
@@ -173,6 +177,13 @@ export default class APIJobs extends CompositionClient {
             const sleep_for_ms = Math.min(poll_interval_ms, Math.max(deadline_ms - now_ms, 0));
             await new Promise((resolve) => setTimeout(resolve, sleep_for_ms));
         }
+    }
+
+    async wait_for_completion(
+        job_id: string,
+        options: JobWaitForCompletionOptions = {},
+    ): Promise<Job> {
+        return this.waitForCompletion(job_id, options);
     }
 
     /**

@@ -9,7 +9,7 @@ import {
 } from "../../generated_types.js";
 
 export const ZSplitProjectDraftConfig = z.object({
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     split_config: z.array(ZSubdocument).default([]),
     json_schema: z.record(z.any()).default({}),
     subdocuments: z.array(ZSubdocument).default([]),
@@ -63,7 +63,7 @@ export const ZSplitDataset = z.object({
     base_split_config: z.array(ZSubdocument).default([]),
     base_json_schema: z.record(z.any()).default({}),
     base_subdocuments: z.array(ZSubdocument).default([]),
-    base_inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    base_inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     project_id: z.string(),
 }).passthrough();
 export type SplitDataset = z.infer<typeof ZSplitDataset>;
@@ -71,7 +71,7 @@ export type SplitDataset = z.infer<typeof ZSplitDataset>;
 export const ZCreateSplitDatasetRequest = z.object({
     name: z.string(),
     base_split_config: z.array(ZSubdocument).default([]),
-    base_inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    base_inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
 }).passthrough();
 export type CreateSplitDatasetRequest = z.input<typeof ZCreateSplitDatasetRequest>;
 
@@ -102,14 +102,14 @@ export type SplitConfigOverrides = z.infer<typeof ZSplitConfigOverrides>;
 export const ZSplitDraftIteration = z.object({
     split_config_overrides: ZSplitConfigOverrides.default({}),
     updated_at: z.string().optional(),
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
 }).passthrough();
 export type SplitDraftIteration = z.infer<typeof ZSplitDraftIteration>;
 
 export const ZSplitIteration = z.object({
     id: z.string(),
     updated_at: z.string(),
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     split_config_overrides: ZSplitConfigOverrides.default({}),
     parent_id: z.string().nullable().optional(),
     project_id: z.string(),
@@ -122,7 +122,7 @@ export const ZSplitIteration = z.object({
 export type SplitIteration = z.infer<typeof ZSplitIteration>;
 
 export const ZCreateSplitIterationRequest = z.object({
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     split_config_overrides: ZSplitConfigOverrides.default({}),
     project_id: z.string(),
     dataset_id: z.string(),
@@ -152,7 +152,7 @@ export const ZSplitIterationDocument = z.object({
 export type SplitIterationDocument = z.infer<typeof ZSplitIterationDocument>;
 
 export const ZClassifyProjectDraftConfig = z.object({
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     categories: z.array(ZCategory).default([]),
 }).passthrough();
 export type ClassifyProjectDraftConfig = z.infer<typeof ZClassifyProjectDraftConfig>;
@@ -202,7 +202,7 @@ export const ZClassifyDataset = z.object({
     name: z.string().default(""),
     updated_at: z.string(),
     base_categories: z.array(ZCategory).default([]),
-    base_inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    base_inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     project_id: z.string(),
 }).passthrough();
 export type ClassifyDataset = z.infer<typeof ZClassifyDataset>;
@@ -210,7 +210,7 @@ export type ClassifyDataset = z.infer<typeof ZClassifyDataset>;
 export const ZCreateClassifyDatasetRequest = z.object({
     name: z.string(),
     base_categories: z.array(ZCategory).default([]),
-    base_inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    base_inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
 }).passthrough();
 export type CreateClassifyDatasetRequest = z.input<typeof ZCreateClassifyDatasetRequest>;
 
@@ -240,14 +240,14 @@ export type CategoryOverrides = z.infer<typeof ZCategoryOverrides>;
 export const ZClassifyDraftIteration = z.object({
     category_overrides: ZCategoryOverrides.default({}),
     updated_at: z.string().optional(),
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
 }).passthrough();
 export type ClassifyDraftIteration = z.infer<typeof ZClassifyDraftIteration>;
 
 export const ZClassifyIteration = z.object({
     id: z.string(),
     updated_at: z.string(),
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     category_overrides: ZCategoryOverrides.default({}),
     parent_id: z.string().nullable().optional(),
     project_id: z.string(),
@@ -260,7 +260,7 @@ export const ZClassifyIteration = z.object({
 export type ClassifyIteration = z.infer<typeof ZClassifyIteration>;
 
 export const ZCreateClassifyIterationRequest = z.object({
-    inference_settings: ZInferenceSettings.default({ model: "retab-small", reasoning_effort: "minimal", image_resolution_dpi: 192, n_consensus: 1 }),
+    inference_settings: ZInferenceSettings.default({ model: "retab-small", image_resolution_dpi: 192, n_consensus: 1 }),
     category_overrides: ZCategoryOverrides.default({}),
     project_id: z.string(),
     dataset_id: z.string(),

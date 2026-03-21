@@ -1,6 +1,55 @@
 import * as z from "zod";
 import { CompositionClient, RequestOptions } from "../../../client.js";
-import { WorkflowBlock, ZWorkflowBlock } from "../../../types.js";
+import {
+    WorkflowBlock,
+    WorkflowBlockCreateRequest,
+    WorkflowBlockUpdateRequest,
+    ZWorkflowBlock,
+} from "../../../types.js";
+
+type LegacyWorkflowBlockCreateRequest = {
+    id: string;
+    type: string;
+    label?: string;
+    position_x?: number;
+    position_y?: number;
+    width?: number;
+    height?: number;
+    config?: Record<string, unknown>;
+    subflow_id?: string;
+    parent_id?: string;
+};
+
+function serializeBlockCreateRequest(
+    request: WorkflowBlockCreateRequest | LegacyWorkflowBlockCreateRequest
+): Record<string, unknown> {
+    const legacyRequest = request as Partial<LegacyWorkflowBlockCreateRequest>;
+    return {
+        id: request.id,
+        type: request.type,
+        label: request.label ?? "",
+        position_x: "positionX" in request ? (request.positionX ?? 0) : (legacyRequest.position_x ?? 0),
+        position_y: "positionY" in request ? (request.positionY ?? 0) : (legacyRequest.position_y ?? 0),
+        width: request.width,
+        height: request.height,
+        config: request.config,
+        subflow_id: "subflowId" in request ? request.subflowId : legacyRequest.subflow_id,
+        parent_id: "parentId" in request ? request.parentId : legacyRequest.parent_id,
+    };
+}
+
+function serializeBlockUpdateRequest(request: WorkflowBlockUpdateRequest): Record<string, unknown> {
+    return {
+        label: request.label,
+        position_x: request.positionX,
+        position_y: request.positionY,
+        width: request.width,
+        height: request.height,
+        config: request.config,
+        subflow_id: request.subflowId,
+        parent_id: request.parentId,
+    };
+}
 
 /**
  * Workflow Blocks API client for managing blocks (nodes) in a workflow graph.
@@ -65,49 +114,13 @@ export default class APIWorkflowBlocks extends CompositionClient {
      */
     async create(
         workflowId: string,
-        {
-            id,
-            type,
-            label = "",
-            positionX = 0,
-            positionY = 0,
-            width,
-            height,
-            config,
-            subflowId,
-            parentId,
-        }: {
-            id: string;
-            type: string;
-            label?: string;
-            positionX?: number;
-            positionY?: number;
-            width?: number;
-            height?: number;
-            config?: Record<string, unknown>;
-            subflowId?: string;
-            parentId?: string;
-        },
+        request: WorkflowBlockCreateRequest,
         options?: RequestOptions
     ): Promise<WorkflowBlock> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {
-            id,
-            type,
-            label,
-            position_x: positionX,
-            position_y: positionY,
-        };
-        if (width !== undefined) body.width = width;
-        if (height !== undefined) body.height = height;
-        if (config !== undefined) body.config = config;
-        if (subflowId !== undefined) body.subflow_id = subflowId;
-        if (parentId !== undefined) body.parent_id = parentId;
-
         return this._fetchJson(ZWorkflowBlock, {
             url: `/workflows/${workflowId}/blocks`,
             method: "POST",
-            body: { ...body, ...(options?.body || {}) },
+            body: { ...serializeBlockCreateRequest(request), ...(options?.body as Record<string, unknown> || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -121,27 +134,24 @@ export default class APIWorkflowBlocks extends CompositionClient {
      */
     async createBatch(
         workflowId: string,
-        blocks: Array<{
-            id: string;
-            type: string;
-            label?: string;
-            position_x?: number;
-            position_y?: number;
-            width?: number;
-            height?: number;
-            config?: Record<string, unknown>;
-            subflow_id?: string;
-            parent_id?: string;
-        }>,
+        blocks: Array<WorkflowBlockCreateRequest | LegacyWorkflowBlockCreateRequest>,
         options?: RequestOptions
     ): Promise<WorkflowBlock[]> {
         return this._fetchJson(z.array(ZWorkflowBlock), {
             url: `/workflows/${workflowId}/blocks/batch`,
             method: "POST",
-            body: blocks,
+            body: blocks.map((block) => serializeBlockCreateRequest(block)),
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async create_batch(
+        workflowId: string,
+        blocks: Array<WorkflowBlockCreateRequest | LegacyWorkflowBlockCreateRequest>,
+        options?: RequestOptions
+    ): Promise<WorkflowBlock[]> {
+        return this.createBatch(workflowId, blocks, options);
     }
 
     /**
@@ -150,42 +160,13 @@ export default class APIWorkflowBlocks extends CompositionClient {
     async update(
         workflowId: string,
         blockId: string,
-        {
-            label,
-            positionX,
-            positionY,
-            width,
-            height,
-            config,
-            subflowId,
-            parentId,
-        }: {
-            label?: string;
-            positionX?: number;
-            positionY?: number;
-            width?: number;
-            height?: number;
-            config?: Record<string, unknown>;
-            subflowId?: string;
-            parentId?: string;
-        },
+        request: WorkflowBlockUpdateRequest,
         options?: RequestOptions
     ): Promise<WorkflowBlock> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {};
-        if (label !== undefined) body.label = label;
-        if (positionX !== undefined) body.position_x = positionX;
-        if (positionY !== undefined) body.position_y = positionY;
-        if (width !== undefined) body.width = width;
-        if (height !== undefined) body.height = height;
-        if (config !== undefined) body.config = config;
-        if (subflowId !== undefined) body.subflow_id = subflowId;
-        if (parentId !== undefined) body.parent_id = parentId;
-
         return this._fetchJson(ZWorkflowBlock, {
             url: `/workflows/${workflowId}/blocks/${blockId}`,
             method: "PATCH",
-            body: { ...body, ...(options?.body || {}) },
+            body: { ...serializeBlockUpdateRequest(request), ...(options?.body as Record<string, unknown> || {}) },
             params: options?.params,
             headers: options?.headers,
         });

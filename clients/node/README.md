@@ -1,83 +1,80 @@
 # Retab Node.js SDK
 
-Official Node.js SDK for the Retab API - extract structured data from documents using AI.
+Official Node.js SDK for the Retab API.
 
 ## Installation
-
-### From npm Registry
 
 ```bash
 npm install @retab/node
 ```
 
-### For Local Development
-
-To install and test the SDK locally using npm link:
+## Local Development
 
 ```bash
-# From the SDK directory
-cd open_source/sdk/clients/node
+cd open-source/sdk/clients/node
 bun install
 bun run build
-bun link
-
-# From your project directory
-bun link @retab/node
-
 bun test tests/
 ```
 
 ## Quick Start
 
 ```typescript
-import { Retab } from '@retab/node';
+import fs from "fs";
+import { Retab } from "@retab/node";
 
-// Initialize the client
 const retab = new Retab({
-  apiKey: 'your-api-key', // Or set RETAB_API_KEY environment variable
+  apiKey: "your-api-key",
 });
 
-// Extract data from a document
 const extraction = await retab.documents.extract({
-  document: 'path/to/invoice.pdf',
+  document: "path/to/invoice.pdf",
   schema: {
     json_schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        invoice_number: { type: 'string' },
-        total_amount: { type: 'number' },
-        due_date: { type: 'string', format: 'date' }
-      }
-    }
-  }
+        invoice_number: { type: "string" },
+        total_amount: { type: "number" },
+        due_date: { type: "string", format: "date" },
+      },
+    },
+  },
 });
 
 console.log(extraction.extracted_data);
 
-// From file path
-const result = await retab.documents.extract({
-  document: 'path/to/document.pdf',
-  schema: mySchema
-});
-
-// From buffer
-const buffer = fs.readFileSync('document.pdf');
-const result = await retab.documents.extract({
+const buffer = fs.readFileSync("document.pdf");
+const parsed = await retab.documents.parse({
   document: buffer,
-  schema: mySchema
 });
 
-// With specific AI model
-const result = await retab.documents.extract({
-  document: 'document.pdf',
-  schema: mySchema,
-  model: 'gpt-5.4'
+console.log(parsed.pages[0]);
 ```
 
-## Key Features
+## Workflows
 
+```typescript
+import { Retab, raiseForStatus } from "@retab/node";
 
+const retab = new Retab({
+  apiKey: "your-api-key",
+});
 
+const run = await retab.workflows.runs.createAndWait({
+  workflowId: "wf_abc123",
+  documents: { "start-node-1": "invoice.pdf" },
+  onStatus: (currentRun) => console.log(currentRun.status),
+});
+
+raiseForStatus(run);
+
+const steps = await retab.workflows.runs.steps.list(run.id);
+const outputs = await retab.workflows.runs.steps.getMany(run.id, ["extract-1"]);
+
+console.log(run.final_outputs);
+console.log(steps.map((step) => `${step.node_id}: ${step.status}`));
+console.log(outputs.outputs["extract-1"]?.handle_outputs);
+```
 
 ## Support
 

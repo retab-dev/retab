@@ -1,6 +1,27 @@
 import * as z from "zod";
 import { CompositionClient, RequestOptions } from "../../../client.js";
-import { WorkflowEdge, ZWorkflowEdge } from "../../../types.js";
+import { WorkflowEdge, WorkflowEdgeCreateRequest, ZWorkflowEdge } from "../../../types.js";
+
+type LegacyWorkflowEdgeCreateRequest = {
+    id: string;
+    source_block: string;
+    target_block: string;
+    source_handle?: string;
+    target_handle?: string;
+};
+
+function serializeEdgeCreateRequest(
+    request: WorkflowEdgeCreateRequest | LegacyWorkflowEdgeCreateRequest
+): Record<string, unknown> {
+    const legacyRequest = request as Partial<LegacyWorkflowEdgeCreateRequest>;
+    return {
+        id: request.id,
+        source_block: "sourceBlock" in request ? request.sourceBlock : legacyRequest.source_block,
+        target_block: "targetBlock" in request ? request.targetBlock : legacyRequest.target_block,
+        source_handle: "sourceHandle" in request ? request.sourceHandle : legacyRequest.source_handle,
+        target_handle: "targetHandle" in request ? request.targetHandle : legacyRequest.target_handle,
+    };
+}
 
 /**
  * Workflow Edges API client for managing connections between blocks.
@@ -68,34 +89,13 @@ export default class APIWorkflowEdges extends CompositionClient {
      */
     async create(
         workflowId: string,
-        {
-            id,
-            sourceBlock,
-            targetBlock,
-            sourceHandle,
-            targetHandle,
-        }: {
-            id: string;
-            sourceBlock: string;
-            targetBlock: string;
-            sourceHandle?: string;
-            targetHandle?: string;
-        },
+        request: WorkflowEdgeCreateRequest,
         options?: RequestOptions
     ): Promise<WorkflowEdge> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {
-            id,
-            source_block: sourceBlock,
-            target_block: targetBlock,
-        };
-        if (sourceHandle !== undefined) body.source_handle = sourceHandle;
-        if (targetHandle !== undefined) body.target_handle = targetHandle;
-
         return this._fetchJson(ZWorkflowEdge, {
             url: `/workflows/${workflowId}/edges`,
             method: "POST",
-            body: { ...body, ...(options?.body || {}) },
+            body: { ...serializeEdgeCreateRequest(request), ...(options?.body as Record<string, unknown> || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -109,22 +109,24 @@ export default class APIWorkflowEdges extends CompositionClient {
      */
     async createBatch(
         workflowId: string,
-        edges: Array<{
-            id: string;
-            source_block: string;
-            target_block: string;
-            source_handle?: string;
-            target_handle?: string;
-        }>,
+        edges: Array<WorkflowEdgeCreateRequest | LegacyWorkflowEdgeCreateRequest>,
         options?: RequestOptions
     ): Promise<WorkflowEdge[]> {
         return this._fetchJson(z.array(ZWorkflowEdge), {
             url: `/workflows/${workflowId}/edges/batch`,
             method: "POST",
-            body: edges,
+            body: edges.map((edge) => serializeEdgeCreateRequest(edge)),
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async create_batch(
+        workflowId: string,
+        edges: Array<WorkflowEdgeCreateRequest | LegacyWorkflowEdgeCreateRequest>,
+        options?: RequestOptions
+    ): Promise<WorkflowEdge[]> {
+        return this.createBatch(workflowId, edges, options);
     }
 
     /**
@@ -149,5 +151,9 @@ export default class APIWorkflowEdges extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async delete_all(workflowId: string, options?: RequestOptions): Promise<void> {
+        return this.deleteAll(workflowId, options);
     }
 }

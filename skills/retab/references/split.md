@@ -5,7 +5,7 @@ Endpoint: `POST /v1/documents/split`
 ## Use it when
 
 - One uploaded file contains multiple subdocuments
-- You need page ranges for each document type
+- You need the assigned pages for each document type
 - You need partitions inside one type, such as one invoice number per section
 
 ## Minimal Python

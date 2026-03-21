@@ -125,6 +125,54 @@ export const ZUploadFileResponse = z.lazy(() => (z.object({
 })));
 export type UploadFileResponse = z.infer<typeof ZUploadFileResponse>;
 
+export const ZExtraction = z.lazy(() => (z.object({
+    id: z.string(),
+    file: ZExtractionFile,
+    predictions: z.record(z.string(), z.any()).nullable().optional(),
+    likelihoods: z.record(z.string(), z.any()).nullable().optional(),
+    consensus_details: z.array(z.record(z.string(), z.any())).nullable().optional(),
+    origin: ZProcessingRequestOrigin,
+    inference_settings: ZExtractionInferenceSettings,
+    original_model: z.string().nullable().optional(),
+    json_schema: z.record(z.string(), z.any()),
+    metadata: z.record(z.string(), z.string()),
+    created_at: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+    organization_id: z.string().nullable().optional(),
+})));
+export type Extraction = z.infer<typeof ZExtraction>;
+
+export const ZExtractionFile = z.lazy(() => (z.object({
+    id: z.string(),
+    filename: z.string(),
+    mime_type: z.string(),
+})));
+export type ExtractionFile = z.infer<typeof ZExtractionFile>;
+
+export const ZExtractionInferenceSettings = z.lazy(() => (z.object({
+    model: z.string().default("retab-small"),
+    image_resolution_dpi: z.number().default(192),
+    n_consensus: z.number().default(1),
+    chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
+})));
+export type ExtractionInferenceSettings = z.infer<typeof ZExtractionInferenceSettings>;
+
+export const ZProcessingRequestOrigin = z.lazy(() => (z.object({
+    type: z.string(),
+    id: z.string().nullable().optional(),
+})));
+export type ProcessingRequestOrigin = z.infer<typeof ZProcessingRequestOrigin>;
+
+export const ZSourcesResponse = z.lazy(() => (z.object({
+    object: z.literal("extraction.sources").default("extraction.sources"),
+    extraction_id: z.string(),
+    document_type: z.string().nullable().optional(),
+    file: ZExtractionFile.nullable().optional(),
+    extraction: z.record(z.string(), z.any()),
+    sources: z.record(z.string(), z.any()),
+})));
+export type SourcesResponse = z.infer<typeof ZSourcesResponse>;
+
 export const ZDeleteResponse = z.lazy(() => (z.object({
     success: z.boolean(),
     id: z.string(),
@@ -136,6 +184,9 @@ export const ZDocumentPreprocessResponseContent = z.lazy(() => (z.object({
     json_schema: z.record(z.string(), z.any()),
 })));
 export type DocumentPreprocessResponseContent = z.infer<typeof ZDocumentPreprocessResponseContent>;
+
+export const ZEnum = z.lazy(() => z.any());
+export type Enum = z.infer<typeof ZEnum>;
 
 export const ZErrorDetail = z.lazy(() => (z.object({
     code: z.string(),
@@ -173,7 +224,7 @@ export const ZStreamingBaseModel = z.lazy(() => (z.object({
 export type StreamingBaseModel = z.infer<typeof ZStreamingBaseModel>;
 
 export const ZCreateJobRequest = z.lazy(() => (z.object({
-    endpoint: z.union([z.literal("/v1/documents/extract"), z.literal("/v1/documents/parse"), z.literal("/v1/documents/split"), z.literal("/v1/documents/classify"), z.literal("/v1/schemas/generate"), z.literal("/v1/edit/agent/fill"), z.literal("/v1/edit/templates/fill"), z.literal("/v1/edit/templates/generate"), z.literal("/v1/projects/extract")]),
+    endpoint: z.string(),
     request: z.record(z.string(), z.any()),
     metadata: z.record(z.string(), z.string()).nullable().optional(),
 })));
@@ -183,7 +234,7 @@ export const ZJob = z.lazy(() => (z.object({
     id: z.string(),
     object: z.literal("job").default("job"),
     status: z.union([z.literal("validating"), z.literal("queued"), z.literal("in_progress"), z.literal("completed"), z.literal("failed"), z.literal("cancelled"), z.literal("expired")]),
-    endpoint: z.union([z.literal("/v1/documents/extract"), z.literal("/v1/documents/parse"), z.literal("/v1/documents/split"), z.literal("/v1/documents/classify"), z.literal("/v1/schemas/generate"), z.literal("/v1/edit/agent/fill"), z.literal("/v1/edit/templates/fill"), z.literal("/v1/edit/templates/generate"), z.literal("/v1/projects/extract")]),
+    endpoint: z.string(),
     request: z.record(z.string(), z.any()).nullable().optional(),
     response: ZJobResponse.nullable().optional(),
     error: ZJobError.nullable().optional(),
@@ -217,6 +268,9 @@ export const ZJobResponse = z.lazy(() => (z.object({
     body: z.record(z.string(), z.any()),
 })));
 export type JobResponse = z.infer<typeof ZJobResponse>;
+
+export const Zstr = z.lazy(() => z.string());
+export type str = z.infer<typeof Zstr>;
 
 export const ZChatCompletionMessageFunctionToolCallParam = z.lazy(() => (z.object({
     id: z.string(),
@@ -252,12 +306,327 @@ export type ExtractionSettings = z.infer<typeof ZExtractionSettings>;
 
 export const ZInferenceSettings = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
-    reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
     image_resolution_dpi: z.number().default(192),
     n_consensus: z.number().default(1),
     chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
 })));
 export type InferenceSettings = z.infer<typeof ZInferenceSettings>;
+
+export const ZCategory = z.lazy(() => (z.object({
+    name: z.string(),
+    description: z.string().default(""),
+})));
+export type Category = z.infer<typeof ZCategory>;
+
+export const ZCategoryOverrides = z.lazy(() => (z.object({
+    description_overrides: z.record(z.string(), z.string()),
+})));
+export type CategoryOverrides = z.infer<typeof ZCategoryOverrides>;
+
+export const ZClassifyBuilderDocument = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    project_id: z.string(),
+    mime_data: ZBaseMIMEData,
+    prediction_data: ZPredictionData,
+    classification_id: z.string().nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+})));
+export type ClassifyBuilderDocument = z.infer<typeof ZClassifyBuilderDocument>;
+
+export const ZClassifyDataset = z.lazy(() => (z.object({
+    id: z.string(),
+    name: z.string().default(""),
+    updated_at: z.string(),
+    base_categories: z.array(ZCategory),
+    base_inference_settings: ZInferenceSettings,
+    project_id: z.string(),
+})));
+export type ClassifyDataset = z.infer<typeof ZClassifyDataset>;
+
+export const ZClassifyDatasetDocument = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    project_id: z.string(),
+    dataset_id: z.string(),
+    mime_data: ZBaseMIMEData,
+    prediction_data: ZPredictionData,
+    classification_id: z.string().nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+    validation_flag: z.boolean().nullable().optional(),
+})));
+export type ClassifyDatasetDocument = z.infer<typeof ZClassifyDatasetDocument>;
+
+export const ZClassifyDraftConfig = z.lazy(() => (z.object({
+    inference_settings: ZInferenceSettings.default({"model": "retab-small", "image_resolution_dpi": 192, "n_consensus": 1}),
+    categories: z.array(ZCategory),
+})));
+export type ClassifyDraftConfig = z.infer<typeof ZClassifyDraftConfig>;
+
+export const ZClassifyDraftIteration = z.lazy(() => (z.object({
+    category_overrides: ZCategoryOverrides,
+    updated_at: z.string(),
+    inference_settings: ZInferenceSettings,
+})));
+export type ClassifyDraftIteration = z.infer<typeof ZClassifyDraftIteration>;
+
+export const ZClassifyIteration = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    inference_settings: ZInferenceSettings,
+    category_overrides: ZCategoryOverrides,
+    parent_id: z.string().nullable().optional(),
+    project_id: z.string(),
+    dataset_id: z.string(),
+    draft: ZClassifyDraftIteration,
+    status: z.string().default("draft"),
+    finalized_at: z.string().nullable().optional(),
+    last_finalize_error: z.string().nullable().optional(),
+})));
+export type ClassifyIteration = z.infer<typeof ZClassifyIteration>;
+
+export const ZClassifyIterationDocument = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    project_id: z.string(),
+    iteration_id: z.string(),
+    dataset_id: z.string(),
+    dataset_document_id: z.string(),
+    mime_data: ZBaseMIMEData,
+    prediction_data: ZPredictionData,
+    classification_id: z.string().nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+})));
+export type ClassifyIterationDocument = z.infer<typeof ZClassifyIterationDocument>;
+
+export const ZClassifyProject = z.lazy(() => (z.object({
+    id: z.string(),
+    name: z.string().default(""),
+    updated_at: z.string(),
+    published_config: ZClassifyPublishedConfig,
+    draft_config: ZClassifyDraftConfig,
+    is_published: z.boolean().default(false),
+})));
+export type ClassifyProject = z.infer<typeof ZClassifyProject>;
+
+export const ZClassifyPublishedConfig = z.lazy(() => (ZClassifyDraftConfig.schema).merge(z.object({
+    origin: z.string().default("manual"),
+})));
+export type ClassifyPublishedConfig = z.infer<typeof ZClassifyPublishedConfig>;
+
+export const ZCreateClassifyDatasetRequest = z.lazy(() => (z.object({
+    name: z.string(),
+    base_categories: z.array(ZCategory),
+    base_inference_settings: ZInferenceSettings,
+})));
+export type CreateClassifyDatasetRequest = z.infer<typeof ZCreateClassifyDatasetRequest>;
+
+export const ZCreateClassifyIterationRequest = z.lazy(() => (z.object({
+    inference_settings: ZInferenceSettings,
+    category_overrides: ZCategoryOverrides,
+    project_id: z.string(),
+    dataset_id: z.string(),
+    parent_id: z.string().nullable().optional(),
+})));
+export type CreateClassifyIterationRequest = z.infer<typeof ZCreateClassifyIterationRequest>;
+
+export const ZCreateClassifyProjectRequest = z.lazy(() => (z.object({
+    name: z.string(),
+    categories: z.array(ZCategory),
+})));
+export type CreateClassifyProjectRequest = z.infer<typeof ZCreateClassifyProjectRequest>;
+
+export const ZPatchClassifyDatasetDocumentRequest = z.lazy(() => (z.object({
+    validation_flag: z.boolean().nullable().optional(),
+    prediction_data: ZPredictionData.nullable().optional(),
+    classification_id: z.string().nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+})));
+export type PatchClassifyDatasetDocumentRequest = z.infer<typeof ZPatchClassifyDatasetDocumentRequest>;
+
+export const ZPatchClassifyDatasetRequest = z.lazy(() => (z.object({
+    name: z.string().nullable().optional(),
+})));
+export type PatchClassifyDatasetRequest = z.infer<typeof ZPatchClassifyDatasetRequest>;
+
+export const ZPatchClassifyIterationRequest = z.lazy(() => (z.object({
+    inference_settings: ZInferenceSettings.nullable().optional(),
+    category_overrides: ZCategoryOverrides.nullable().optional(),
+    draft: ZClassifyDraftIteration.nullable().optional(),
+})));
+export type PatchClassifyIterationRequest = z.infer<typeof ZPatchClassifyIterationRequest>;
+
+export const ZPatchClassifyProjectRequest = z.lazy(() => (z.object({
+    name: z.string().nullable().optional(),
+    published_config: ZClassifyPublishedConfig.nullable().optional(),
+    draft_config: ZClassifyDraftConfig.nullable().optional(),
+    is_published: z.boolean().nullable().optional(),
+})));
+export type PatchClassifyProjectRequest = z.infer<typeof ZPatchClassifyProjectRequest>;
+
+export const ZPredictionData = z.lazy(() => (z.object({
+    prediction: z.record(z.string(), z.any()).default({}),
+    metadata: ZPredictionMetadata.nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+})));
+export type PredictionData = z.infer<typeof ZPredictionData>;
+
+export const ZCreateSplitDatasetRequest = z.lazy(() => (z.object({
+    name: z.string(),
+    base_split_config: z.array(ZSubdocument),
+    base_inference_settings: ZInferenceSettings,
+})));
+export type CreateSplitDatasetRequest = z.infer<typeof ZCreateSplitDatasetRequest>;
+
+export const ZCreateSplitIterationRequest = z.lazy(() => (z.object({
+    inference_settings: ZInferenceSettings,
+    split_config_overrides: ZSplitConfigOverrides,
+    project_id: z.string(),
+    dataset_id: z.string(),
+    parent_id: z.string().nullable().optional(),
+})));
+export type CreateSplitIterationRequest = z.infer<typeof ZCreateSplitIterationRequest>;
+
+export const ZCreateSplitProjectRequest = z.lazy(() => (z.object({
+    name: z.string(),
+    split_config: z.array(ZSubdocument),
+})));
+export type CreateSplitProjectRequest = z.infer<typeof ZCreateSplitProjectRequest>;
+
+export const ZPatchSplitDatasetDocumentRequest = z.lazy(() => (z.object({
+    validation_flags: z.record(z.string(), z.any()).nullable().optional(),
+    prediction_data: ZPredictionData.nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+})));
+export type PatchSplitDatasetDocumentRequest = z.infer<typeof ZPatchSplitDatasetDocumentRequest>;
+
+export const ZPatchSplitDatasetRequest = z.lazy(() => (z.object({
+    name: z.string().nullable().optional(),
+})));
+export type PatchSplitDatasetRequest = z.infer<typeof ZPatchSplitDatasetRequest>;
+
+export const ZPatchSplitIterationRequest = z.lazy(() => (z.object({
+    inference_settings: ZInferenceSettings.nullable().optional(),
+    split_config_overrides: ZSplitConfigOverrides.nullable().optional(),
+    draft: ZSplitDraftIteration.nullable().optional(),
+})));
+export type PatchSplitIterationRequest = z.infer<typeof ZPatchSplitIterationRequest>;
+
+export const ZPatchSplitProjectRequest = z.lazy(() => (z.object({
+    name: z.string().nullable().optional(),
+    published_config: ZSplitPublishedConfig.nullable().optional(),
+    draft_config: ZSplitDraftConfig.nullable().optional(),
+    is_published: z.boolean().nullable().optional(),
+})));
+export type PatchSplitProjectRequest = z.infer<typeof ZPatchSplitProjectRequest>;
+
+export const ZSplitBuilderDocument = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    project_id: z.string(),
+    mime_data: ZBaseMIMEData,
+    prediction_data: ZPredictionData,
+    split_id: z.string().nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+})));
+export type SplitBuilderDocument = z.infer<typeof ZSplitBuilderDocument>;
+
+export const ZSplitConfigOverrides = z.lazy(() => (z.object({
+    descriptions_override: z.record(z.string(), z.string()).nullable().optional(),
+    partition_keys_override: z.record(z.string(), z.string().nullable().optional()).nullable().optional(),
+})));
+export type SplitConfigOverrides = z.infer<typeof ZSplitConfigOverrides>;
+
+export const ZSplitDataset = z.lazy(() => (z.object({
+    id: z.string(),
+    name: z.string().default(""),
+    updated_at: z.string(),
+    base_split_config: z.array(ZSubdocument),
+    base_json_schema: z.record(z.string(), z.any()),
+    base_subdocuments: z.array(ZSubdocument),
+    base_inference_settings: ZInferenceSettings,
+    project_id: z.string(),
+})));
+export type SplitDataset = z.infer<typeof ZSplitDataset>;
+
+export const ZSplitDatasetDocument = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    project_id: z.string(),
+    dataset_id: z.string(),
+    mime_data: ZBaseMIMEData,
+    prediction_data: ZPredictionData,
+    extraction_id: z.string().nullable().optional(),
+    split_id: z.string().nullable().optional(),
+    validation_flags: z.record(z.string(), z.any()),
+})));
+export type SplitDatasetDocument = z.infer<typeof ZSplitDatasetDocument>;
+
+export const ZSplitDraftConfig = z.lazy(() => (z.object({
+    inference_settings: ZInferenceSettings.default({"model": "retab-small", "image_resolution_dpi": 192, "n_consensus": 1}),
+    split_config: z.array(ZSubdocument),
+    json_schema: z.record(z.string(), z.any()),
+    subdocuments: z.array(ZSubdocument),
+})));
+export type SplitDraftConfig = z.infer<typeof ZSplitDraftConfig>;
+
+export const ZSplitDraftIteration = z.lazy(() => (z.object({
+    split_config_overrides: ZSplitConfigOverrides,
+    updated_at: z.string(),
+    inference_settings: ZInferenceSettings,
+})));
+export type SplitDraftIteration = z.infer<typeof ZSplitDraftIteration>;
+
+export const ZSplitIteration = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    inference_settings: ZInferenceSettings,
+    split_config_overrides: ZSplitConfigOverrides,
+    parent_id: z.string().nullable().optional(),
+    project_id: z.string(),
+    dataset_id: z.string(),
+    draft: ZSplitDraftIteration,
+    status: z.string().default("draft"),
+    finalized_at: z.string().nullable().optional(),
+    last_finalize_error: z.string().nullable().optional(),
+})));
+export type SplitIteration = z.infer<typeof ZSplitIteration>;
+
+export const ZSplitIterationDocument = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    project_id: z.string(),
+    iteration_id: z.string(),
+    dataset_id: z.string(),
+    dataset_document_id: z.string(),
+    mime_data: ZBaseMIMEData,
+    prediction_data: ZPredictionData,
+    extraction_id: z.string().nullable().optional(),
+    split_id: z.string().nullable().optional(),
+})));
+export type SplitIterationDocument = z.infer<typeof ZSplitIterationDocument>;
+
+export const ZSplitProject = z.lazy(() => (z.object({
+    id: z.string(),
+    name: z.string().default(""),
+    updated_at: z.string(),
+    published_config: ZSplitPublishedConfig,
+    draft_config: ZSplitDraftConfig,
+    is_published: z.boolean().default(false),
+})));
+export type SplitProject = z.infer<typeof ZSplitProject>;
+
+export const ZSplitPublishedConfig = z.lazy(() => (ZSplitDraftConfig.schema).merge(z.object({
+    origin: z.string().default("manual"),
+})));
+export type SplitPublishedConfig = z.infer<typeof ZSplitPublishedConfig>;
+
+export const ZSubdocument = z.lazy(() => (z.object({
+    name: z.string(),
+    description: z.string().default(""),
+    partition_key: z.string().nullable().optional(),
+})));
+export type Subdocument = z.infer<typeof ZSubdocument>;
 
 export const ZDistancesResult = z.lazy(() => (z.object({
     distances: z.record(z.string(), z.any()),
@@ -286,12 +655,40 @@ export const ZMetricResult = z.lazy(() => (z.object({
 })));
 export type MetricResult = z.infer<typeof ZMetricResult>;
 
-export const ZPredictionData = z.lazy(() => (z.object({
-    prediction: z.record(z.string(), z.any()).default({}),
-    metadata: ZPredictionMetadata.nullable().optional(),
-    updated_at: z.string().nullable().optional(),
+export const ZOptimizedDocumentMetrics = z.lazy(() => (z.object({
+    document_id: z.string(),
+    filename: z.string(),
+    true_positives: z.array(z.record(z.string(), z.any())),
+    true_negatives: z.array(z.record(z.string(), z.any())),
+    false_positives: z.array(z.record(z.string(), z.any())),
+    false_negatives: z.array(z.record(z.string(), z.any())),
+    mismatched_values: z.array(z.record(z.string(), z.any())),
+    field_similarities: z.record(z.string(), z.number()),
+    key_mappings: z.record(z.string(), z.string().nullable().optional()),
 })));
-export type PredictionData = z.infer<typeof ZPredictionData>;
+export type OptimizedDocumentMetrics = z.infer<typeof ZOptimizedDocumentMetrics>;
+
+export const ZOptimizedIterationMetrics = z.lazy(() => (z.object({
+    overall_metrics: ZOptimizedOverallMetrics,
+    document_metrics: z.array(ZOptimizedDocumentMetrics),
+})));
+export type OptimizedIterationMetrics = z.infer<typeof ZOptimizedIterationMetrics>;
+
+export const ZOptimizedOverallMetrics = z.lazy(() => (z.object({
+    accuracy: z.number(),
+    similarity: z.number(),
+    total_error_rate: z.number(),
+    true_positive_rate: z.number(),
+    true_negative_rate: z.number(),
+    false_positive_rate: z.number(),
+    false_negative_rate: z.number(),
+    mismatched_value_rate: z.number(),
+    accuracy_per_field: z.record(z.string(), z.number()),
+    similarity_per_field: z.record(z.string(), z.number()),
+    total_documents: z.number(),
+    total_fields_compared: z.number(),
+})));
+export type OptimizedOverallMetrics = z.infer<typeof ZOptimizedOverallMetrics>;
 
 export const ZPredictionMetadata = z.lazy(() => (z.object({
     extraction_id: z.string().nullable().optional(),
@@ -302,6 +699,84 @@ export const ZPredictionMetadata = z.lazy(() => (z.object({
 })));
 export type PredictionMetadata = z.infer<typeof ZPredictionMetadata>;
 
+export const ZDraftIteration = z.lazy(() => (z.object({
+    schema_overrides: ZSchemaOverrides,
+    updated_at: z.string(),
+    inference_settings: ZInferenceSettings,
+})));
+export type DraftIteration = z.infer<typeof ZDraftIteration>;
+
+export const ZIteration = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    inference_settings: ZInferenceSettings,
+    schema_overrides: ZSchemaOverrides,
+    parent_id: z.string().nullable().optional(),
+    project_id: z.string(),
+    dataset_id: z.string(),
+    draft: ZDraftIteration,
+    status: z.union([z.literal("draft"), z.literal("completed")]).default("draft"),
+})));
+export type Iteration = z.infer<typeof ZIteration>;
+
+export const ZIterationDocument = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    project_id: z.string(),
+    iteration_id: z.string(),
+    dataset_id: z.string(),
+    dataset_document_id: z.string(),
+    mime_data: ZBaseMIMEData,
+    prediction_data: ZPredictionData,
+    extraction_id: z.string().nullable().optional(),
+})));
+export type IterationDocument = z.infer<typeof ZIterationDocument>;
+
+export const ZSchemaOverrides = z.lazy(() => (z.object({
+    descriptionsOverride: z.record(z.string(), z.string()).nullable().optional(),
+    reasoningPromptsOverride: z.record(z.string(), z.string()).nullable().optional(),
+})));
+export type SchemaOverrides = z.infer<typeof ZSchemaOverrides>;
+
+export const ZCreateDatasetRequest = z.lazy(() => (z.object({
+    name: z.string(),
+    base_json_schema: z.record(z.string(), z.any()),
+})));
+export type CreateDatasetRequest = z.infer<typeof ZCreateDatasetRequest>;
+
+export const ZDataset = z.lazy(() => (z.object({
+    id: z.string(),
+    name: z.string().default(""),
+    updated_at: z.string(),
+    base_json_schema: z.record(z.string(), z.any()),
+    project_id: z.string(),
+})));
+export type Dataset = z.infer<typeof ZDataset>;
+
+export const ZDatasetDocument = z.lazy(() => (z.object({
+    id: z.string(),
+    updated_at: z.string(),
+    project_id: z.string(),
+    dataset_id: z.string(),
+    mime_data: ZBaseMIMEData,
+    prediction_data: ZPredictionData,
+    extraction_id: z.string().nullable().optional(),
+    validation_flags: z.record(z.string(), z.any()),
+})));
+export type DatasetDocument = z.infer<typeof ZDatasetDocument>;
+
+export const ZPatchDatasetDocumentRequest = z.lazy(() => (z.object({
+    validation_flags: z.record(z.string(), z.any()).nullable().optional(),
+    prediction_data: ZPredictionData.nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+})));
+export type PatchDatasetDocumentRequest = z.infer<typeof ZPatchDatasetDocumentRequest>;
+
+export const ZPatchDatasetRequest = z.lazy(() => (z.object({
+    name: z.string().nullable().optional(),
+})));
+export type PatchDatasetRequest = z.infer<typeof ZPatchDatasetRequest>;
+
 export const ZCreateProjectRequest = z.lazy(() => (z.object({
     name: z.string(),
     json_schema: z.record(z.string(), z.any()),
@@ -310,6 +785,7 @@ export type CreateProjectRequest = z.infer<typeof ZCreateProjectRequest>;
 
 export const ZPatchProjectRequest = z.lazy(() => (z.object({
     name: z.string().nullable().optional(),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
     published_config: ZPublishedConfig.nullable().optional(),
     draft_config: ZDraftConfig.nullable().optional(),
     is_published: z.boolean().nullable().optional(),
@@ -345,7 +821,7 @@ export const ZBuilderDocument = z.lazy(() => (z.object({
 export type BuilderDocument = z.infer<typeof ZBuilderDocument>;
 
 export const ZDraftConfig = z.lazy(() => (z.object({
-    inference_settings: ZInferenceSettings.default({"model": "retab-small", "reasoning_effort": "minimal", "image_resolution_dpi": 192, "n_consensus": 1}),
+    inference_settings: ZInferenceSettings.default({"model": "retab-small", "image_resolution_dpi": 192, "n_consensus": 1}),
     json_schema: z.record(z.string(), z.any()),
 })));
 export type DraftConfig = z.infer<typeof ZDraftConfig>;
@@ -377,6 +853,19 @@ export const ZCancelWorkflowResponse = z.lazy(() => (z.object({
 })));
 export type CancelWorkflowResponse = z.infer<typeof ZCancelWorkflowResponse>;
 
+export const ZModelExportResponse = z.lazy(() => (z.object({
+    csv_data: z.string(),
+    rows: z.number(),
+    columns: z.number(),
+})));
+export type ModelExportResponse = z.infer<typeof ZModelExportResponse>;
+
+export const ZFinalNodeOutput = z.lazy(() => (z.object({
+    document: z.record(z.any()).nullable().optional(),
+    data: z.record(z.any()).nullable().optional(),
+})));
+export type FinalNodeOutput = z.infer<typeof ZFinalNodeOutput>;
+
 export const ZHandlePayload = z.lazy(() => (z.object({
     type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
     document: ZBaseMIMEData.nullable().optional(),
@@ -398,8 +887,8 @@ export const ZStepOutputResponse = z.lazy(() => (z.object({
     node_type: z.string(),
     node_label: z.string(),
     status: z.string(),
-    handle_outputs: z.record(z.string(), z.any()).nullable().optional(),
-    handle_inputs: z.record(z.string(), z.any()).nullable().optional(),
+    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
+    handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
 })));
 export type StepOutputResponse = z.infer<typeof ZStepOutputResponse>;
 
@@ -427,6 +916,49 @@ export const ZStepStatus = z.lazy(() => (z.object({
 })));
 export type StepStatus = z.infer<typeof ZStepStatus>;
 
+export const ZWorkflow = z.lazy(() => (z.object({
+    id: z.string(),
+    name: z.string().default("Untitled Workflow"),
+    description: z.string().default(""),
+    is_published: z.boolean().default(false),
+    published_snapshot_id: z.string().nullable().optional(),
+    published_at: z.string().nullable().optional(),
+    draft_version: z.string().nullable().optional(),
+    organization_id: z.string().nullable().optional(),
+    email_senders_whitelist: z.array(z.string()),
+    email_domains_whitelist: z.array(z.string()),
+    created_at: z.string(),
+    updated_at: z.string(),
+})));
+export type Workflow = z.infer<typeof ZWorkflow>;
+
+export const ZWorkflowBlock = z.lazy(() => (z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    type: z.string(),
+    label: z.string().default(""),
+    position_x: z.number().default(0),
+    position_y: z.number().default(0),
+    width: z.number().nullable().optional(),
+    height: z.number().nullable().optional(),
+    config: z.record(z.any()).nullable().optional(),
+    subflow_id: z.string().nullable().optional(),
+    parent_id: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+})));
+export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
+
+export const ZWorkflowEdge = z.lazy(() => (z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    source_block: z.string(),
+    target_block: z.string(),
+    source_handle: z.string().nullable().optional(),
+    target_handle: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+})));
+export type WorkflowEdge = z.infer<typeof ZWorkflowEdge>;
+
 export const ZWorkflowRun = z.lazy(() => (z.object({
     id: z.string(),
     workflow_id: z.string(),
@@ -451,10 +983,286 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     input_json_data: z.record(z.string(), z.record(z.any())).nullable().optional(),
     error_details: z.record(z.any()).nullable().optional(),
     cost_summary: z.record(z.any()).nullable().optional(),
-    trace_spans: z.array(z.any()).nullable().optional(),
     human_waiting_duration_ms: z.number().default(0),
 })));
 export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
+
+export const ZWorkflowRunStep = z.lazy(() => (z.object({
+    run_id: z.string(),
+    organization_id: z.string(),
+    node_id: z.string(),
+    step_id: z.string(),
+    node_type: z.string(),
+    node_label: z.string(),
+    status: z.string(),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    error: z.string().nullable().optional(),
+    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
+    handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
+    input_document: ZBaseMIMEData.nullable().optional(),
+    output_document: ZBaseMIMEData.nullable().optional(),
+    split_documents: z.record(z.string(), ZBaseMIMEData).nullable().optional(),
+    requires_human_review: z.boolean().nullable().optional(),
+    human_reviewed_at: z.string().nullable().optional(),
+    human_review_approved: z.boolean().nullable().optional(),
+    retry_count: z.number().nullable().optional(),
+    loop_id: z.string().nullable().optional(),
+    iteration: z.number().nullable().optional(),
+    created_at: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+})));
+export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
+
+export const ZWorkflowSubflow = z.lazy(() => (z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    type: z.string(),
+    label: z.string().default(""),
+    position_x: z.number().default(0),
+    position_y: z.number().default(0),
+    width: z.number().default(400),
+    height: z.number().default(300),
+    config: z.record(z.any()).nullable().optional(),
+    child_block_ids: z.array(z.string()),
+})));
+export type WorkflowSubflow = z.infer<typeof ZWorkflowSubflow>;
+
+export const ZWorkflowWithEntities = z.lazy(() => (z.object({
+    workflow: ZWorkflow,
+    blocks: z.array(ZWorkflowBlock),
+    edges: z.array(ZWorkflowEdge),
+    subflows: z.array(ZWorkflowSubflow),
+})));
+export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
+
+export const ZAPICallStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    url: z.string(),
+    method: z.string(),
+    status_code: z.number(),
+    response_data: z.record(z.string(), z.any()).nullable().optional(),
+    response_text: z.string().nullable().optional(),
+    request_body: z.string().nullable().optional(),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+    error: z.string().nullable().optional(),
+})));
+export type APICallStepOutput = z.infer<typeof ZAPICallStepOutput>;
+
+export const ZClassifierStepOutput = z.lazy(() => (z.object({
+    category: z.string(),
+    reasoning: z.string().nullable().optional(),
+    all_categories: z.array(z.string()),
+    confidence: z.number().nullable().optional(),
+})));
+export type ClassifierStepOutput = z.infer<typeof ZClassifierStepOutput>;
+
+export const ZConditionalCheckStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    requires_review: z.boolean(),
+    matched_conditions: z.array(z.string()),
+    evaluations: z.array(z.record(z.string(), z.any())),
+    extracted_data: z.record(z.string(), z.any()).nullable().optional(),
+    conditional_data: z.record(z.string(), z.any()).nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+    computation_spec: z.record(z.string(), z.any()).nullable().optional(),
+    human_modified: z.boolean().default(false),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type ConditionalCheckStepOutput = z.infer<typeof ZConditionalCheckStepOutput>;
+
+export const ZConditionalStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    selected_branch: z.string().nullable().optional(),
+    matched_condition_id: z.string().nullable().optional(),
+    branch_outputs: z.record(z.string(), z.any()),
+    evaluations: z.array(z.record(z.string(), z.any())),
+    extracted_data: z.record(z.string(), z.any()).nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+    computation_spec: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type ConditionalStepOutput = z.infer<typeof ZConditionalStepOutput>;
+
+export const ZDocumentSignedUrlResponse = z.lazy(() => (z.object({
+    signed_url: z.string(),
+    filename: z.string(),
+    mime_type: z.string().nullable().optional(),
+})));
+export type DocumentSignedUrlResponse = z.infer<typeof ZDocumentSignedUrlResponse>;
+
+export const ZEditStepOutput = z.lazy(() => (z.object({
+    mode: z.union([z.literal("template"), z.literal("document")]),
+    form_fields: z.array(z.record(z.string(), z.any())),
+    filled_count: z.number(),
+    total_fields: z.number(),
+    template_id: z.string().nullable().optional(),
+})));
+export type EditStepOutput = z.infer<typeof ZEditStepOutput>;
+
+export const ZEndStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    webhook_sent: z.boolean().default(false),
+    webhook_status_code: z.number().nullable().optional(),
+    webhook_response_text: z.string().nullable().optional(),
+    webhook_response_headers: z.record(z.string(), z.string()).nullable().optional(),
+    webhook_request_body: z.record(z.string(), z.any()).nullable().optional(),
+    webhook_duration_ms: z.number().nullable().optional(),
+    webhook_error: z.string().nullable().optional(),
+})));
+export type EndStepOutput = z.infer<typeof ZEndStepOutput>;
+
+export const ZExecutionOrderResponse = z.lazy(() => (z.object({
+    run_id: z.string(),
+    ordered_step_ids: z.array(z.string()),
+})));
+export type ExecutionOrderResponse = z.infer<typeof ZExecutionOrderResponse>;
+
+export const ZExtractStepOutput = z.lazy(() => (z.object({
+    extracted_data: z.record(z.string(), z.any()),
+    likelihoods: z.record(z.string(), z.any()).nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type ExtractStepOutput = z.infer<typeof ZExtractStepOutput>;
+
+export const ZForEachSentinelEndStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    mr_phase: z.string().default("processing"),
+    mr_id: z.string(),
+    current_index: z.number(),
+    total_items: z.number(),
+    max_iterations: z.number(),
+    should_continue: z.boolean(),
+    is_reduce_phase: z.boolean(),
+    all_item_keys: z.array(z.string()).nullable().optional(),
+    output: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type ForEachSentinelEndStepOutput = z.infer<typeof ZForEachSentinelEndStepOutput>;
+
+export const ZForEachSentinelStartStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    mr_phase: z.string().default("processing"),
+    mr_id: z.string(),
+    current_index: z.number(),
+    total_items: z.number(),
+    max_iterations: z.number(),
+    is_first_iteration: z.boolean(),
+    map_method: z.string().nullable().optional(),
+    current_item_key: z.string().nullable().optional(),
+    all_item_keys: z.array(z.string()).nullable().optional(),
+    all_iteration_context_texts: z.array(z.string()).nullable().optional(),
+})));
+export type ForEachSentinelStartStepOutput = z.infer<typeof ZForEachSentinelStartStepOutput>;
+
+export const ZFunctionsStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    computations: z.array(z.string()),
+    extracted_data: z.record(z.string(), z.any()),
+    extraction_id: z.string().nullable().optional(),
+    computation_spec: z.record(z.string(), z.any()).nullable().optional(),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type FunctionsStepOutput = z.infer<typeof ZFunctionsStepOutput>;
+
+export const ZHILStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    requires_review: z.boolean().default(true),
+    extracted_data: z.record(z.string(), z.any()).nullable().optional(),
+    extraction_id: z.string().nullable().optional(),
+    computation_spec: z.record(z.string(), z.any()).nullable().optional(),
+    human_modified: z.boolean().default(false),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type HILStepOutput = z.infer<typeof ZHILStepOutput>;
+
+export const ZLoopContextStepOutput = z.lazy(() => (z.object({
+    iteration: z.number(),
+    condition_info: z.record(z.string(), z.any()),
+    previous_output: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type LoopContextStepOutput = z.infer<typeof ZLoopContextStepOutput>;
+
+export const ZMergeDictsStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    field_count: z.number(),
+    fields: z.array(z.string()),
+    extracted_data: z.record(z.string(), z.any()),
+    merged_schema: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type MergeDictsStepOutput = z.infer<typeof ZMergeDictsStepOutput>;
+
+export const ZMergePdfStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    document_count: z.number(),
+})));
+export type MergePdfStepOutput = z.infer<typeof ZMergePdfStepOutput>;
+
+export const ZParseStepOutput = z.lazy(() => (z.object({
+    pages: z.array(z.string()),
+})));
+export type ParseStepOutput = z.infer<typeof ZParseStepOutput>;
+
+export const ZReshapeStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    mappings: z.array(z.record(z.string(), z.any())),
+    extracted_data: z.record(z.string(), z.any()),
+    extraction_id: z.string().nullable().optional(),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type ReshapeStepOutput = z.infer<typeof ZReshapeStepOutput>;
+
+export const ZRunCountsResponse = z.lazy(() => (z.object({
+    total: z.number().default(0),
+    completed: z.number().default(0),
+    running: z.number().default(0),
+    error: z.number().default(0),
+    pending: z.number().default(0),
+    waiting_for_human: z.number().default(0),
+    cancelled: z.number().default(0),
+})));
+export type RunCountsResponse = z.infer<typeof ZRunCountsResponse>;
+
+export const ZSkippedStepOutput = z.lazy(() => (z.object({
+    skipped: z.boolean().default(true),
+    reason: z.string(),
+    missing_input: z.string(),
+})));
+export type SkippedStepOutput = z.infer<typeof ZSkippedStepOutput>;
+
+export const ZSplitResponse = z.lazy(() => (z.object({
+    splits: z.array(ZSplitResult),
+    usage: ZRetabUsage,
+})));
+export type SplitResponse = z.infer<typeof ZSplitResponse>;
+
+export const ZStartDocumentStepOutput = z.lazy(() => (z.object({
+    filename: z.string(),
+    mime_type: z.string(),
+    id: z.string().nullable().optional(),
+})));
+export type StartDocumentStepOutput = z.infer<typeof ZStartDocumentStepOutput>;
+
+export const ZWhileLoopSentinelEndStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    loop_id: z.string(),
+    iteration: z.number(),
+    max_iterations: z.number(),
+    should_continue: z.boolean(),
+    termination_reason: z.string().nullable().optional(),
+    evaluations: z.array(z.record(z.string(), z.any())),
+})));
+export type WhileLoopSentinelEndStepOutput = z.infer<typeof ZWhileLoopSentinelEndStepOutput>;
+
+export const ZWhileLoopSentinelStartStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    loop_id: z.string(),
+    iteration: z.number(),
+    max_iterations: z.number(),
+    passed_through: z.boolean().default(true),
+    iteration_context_text: z.string().nullable().optional(),
+})));
+export type WhileLoopSentinelStartStepOutput = z.infer<typeof ZWhileLoopSentinelStartStepOutput>;
 
 export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     documents: z.array(ZMIMEData),
@@ -529,16 +1337,22 @@ export const ZSchemaGenerationResponse = z.lazy(() => (z.object({
     created_at: z.string(),
     json_schema: z.record(z.string(), z.any()).default({}),
     strict: z.boolean().default(true),
+    usage: ZRetabUsage,
 })));
 export type SchemaGenerationResponse = z.infer<typeof ZSchemaGenerationResponse>;
 
-export const ZSchemaGenerationResponseChunk = z.lazy(() => (ZStreamingBaseModel.schema).merge(z.object({
+export const ZPartialSchemaChunk = z.lazy(() => (ZStreamingBaseModel.schema).merge(z.object({
     object: z.literal("schema.chunk").default("schema.chunk"),
     created_at: z.string(),
     delta_json_schema_flat: z.record(z.string(), z.any()).default({}),
     delta_flat_deleted_keys: z.array(z.string()).default([]),
 })));
-export type SchemaGenerationResponseChunk = z.infer<typeof ZSchemaGenerationResponseChunk>;
+export type PartialSchemaChunk = z.infer<typeof ZPartialSchemaChunk>;
+
+export const ZRetabUsage = z.lazy(() => (z.object({
+    credits: z.number(),
+})));
+export type RetabUsage = z.infer<typeof ZRetabUsage>;
 
 export const ZTemplateSchema = z.lazy(() => (z.object({
     id: z.string(),
@@ -647,6 +1461,8 @@ export const ZPartDict = z.lazy(() => (z.object({
     thought: z.boolean().nullable().optional(),
     thought_signature: z.instanceof(Uint8Array).nullable().optional(),
     video_metadata: ZVideoMetadataDict.nullable().optional(),
+    tool_call: ZToolCallDict.nullable().optional(),
+    tool_response: ZToolResponseDict.nullable().optional(),
 })));
 export type PartDict = z.infer<typeof ZPartDict>;
 
@@ -663,7 +1479,7 @@ export const ZResponse = z.lazy(() => (z.object({
     incomplete_details: ZIncompleteDetails.nullable().optional(),
     instructions: z.union([z.string(), z.array(z.union([ZEasyInputMessage, ZMessage, ZResponseOutputMessage, ZResponseFileSearchToolCall, ZResponseComputerToolCall, ZComputerCallOutput, ZResponseFunctionWebSearch, ZResponseFunctionToolCall, ZFunctionCallOutput, ZToolSearchCall, ZResponseToolSearchOutputItemParam, ZResponseReasoningItem, ZResponseCompactionItemParam, ZImageGenerationCall, ZResponseCodeInterpreterToolCall, ZLocalShellCall, ZLocalShellCallOutput, ZShellCall, ZShellCallOutput, ZApplyPatchCall, ZApplyPatchCallOutput, ZMcpListTools, ZMcpApprovalRequest, ZMcpApprovalResponse, ZMcpCall, ZResponseCustomToolCallOutput, ZResponseCustomToolCall, ZItemReference]))]).nullable().optional(),
     metadata: z.record(z.string(), z.string()).nullable().optional(),
-    model: z.union([z.string(), z.union([z.literal("gpt-5.4"), z.literal("gpt-5.3-chat-latest"), z.literal("gpt-5.2"), z.literal("gpt-5.2-2025-12-11"), z.literal("gpt-5.2-chat-latest"), z.literal("gpt-5.2-pro"), z.literal("gpt-5.2-pro-2025-12-11"), z.literal("gpt-5.1"), z.literal("gpt-5.1-2025-11-13"), z.literal("gpt-5.1-codex"), z.literal("gpt-5.1-mini"), z.literal("gpt-5.1-chat-latest"), z.literal("gpt-5"), z.literal("gpt-5-mini"), z.literal("gpt-5-nano"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-5-chat-latest"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o3-mini"), z.literal("o3-mini-2025-01-31"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o1-preview"), z.literal("o1-preview-2024-09-12"), z.literal("o1-mini"), z.literal("o1-mini-2024-09-12"), z.literal("gpt-4o"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-audio-preview"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2025-06-03"), z.literal("gpt-4o-mini-audio-preview"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-search-preview"), z.literal("gpt-4o-mini-search-preview"), z.literal("gpt-4o-search-preview-2025-03-11"), z.literal("gpt-4o-mini-search-preview-2025-03-11"), z.literal("chatgpt-4o-latest"), z.literal("codex-mini-latest"), z.literal("gpt-4o-mini"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("gpt-4-turbo"), z.literal("gpt-4-turbo-2024-04-09"), z.literal("gpt-4-0125-preview"), z.literal("gpt-4-turbo-preview"), z.literal("gpt-4-1106-preview"), z.literal("gpt-4-vision-preview"), z.literal("gpt-4"), z.literal("gpt-4-0314"), z.literal("gpt-4-0613"), z.literal("gpt-4-32k"), z.literal("gpt-4-32k-0314"), z.literal("gpt-4-32k-0613"), z.literal("gpt-3.5-turbo"), z.literal("gpt-3.5-turbo-16k"), z.literal("gpt-3.5-turbo-0301"), z.literal("gpt-3.5-turbo-0613"), z.literal("gpt-3.5-turbo-1106"), z.literal("gpt-3.5-turbo-0125"), z.literal("gpt-3.5-turbo-16k-0613")]), z.union([z.literal("o1-pro"), z.literal("o1-pro-2025-03-19"), z.literal("o3-pro"), z.literal("o3-pro-2025-06-10"), z.literal("o3-deep-research"), z.literal("o3-deep-research-2025-06-26"), z.literal("o4-mini-deep-research"), z.literal("o4-mini-deep-research-2025-06-26"), z.literal("computer-use-preview"), z.literal("computer-use-preview-2025-03-11"), z.literal("gpt-5-codex"), z.literal("gpt-5-pro"), z.literal("gpt-5-pro-2025-10-06"), z.literal("gpt-5.1-codex-max")])]),
+    model: z.union([z.string(), z.union([z.literal("gpt-5.4"), z.literal("gpt-5.4-mini"), z.literal("gpt-5.4-nano"), z.literal("gpt-5.4-mini-2026-03-17"), z.literal("gpt-5.4-nano-2026-03-17"), z.literal("gpt-5.3-chat-latest"), z.literal("gpt-5.2"), z.literal("gpt-5.2-2025-12-11"), z.literal("gpt-5.2-chat-latest"), z.literal("gpt-5.2-pro"), z.literal("gpt-5.2-pro-2025-12-11"), z.literal("gpt-5.1"), z.literal("gpt-5.1-2025-11-13"), z.literal("gpt-5.1-codex"), z.literal("gpt-5.1-mini"), z.literal("gpt-5.1-chat-latest"), z.literal("gpt-5"), z.literal("gpt-5-mini"), z.literal("gpt-5-nano"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-5-chat-latest"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o3-mini"), z.literal("o3-mini-2025-01-31"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o1-preview"), z.literal("o1-preview-2024-09-12"), z.literal("o1-mini"), z.literal("o1-mini-2024-09-12"), z.literal("gpt-4o"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-audio-preview"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2025-06-03"), z.literal("gpt-4o-mini-audio-preview"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-search-preview"), z.literal("gpt-4o-mini-search-preview"), z.literal("gpt-4o-search-preview-2025-03-11"), z.literal("gpt-4o-mini-search-preview-2025-03-11"), z.literal("chatgpt-4o-latest"), z.literal("codex-mini-latest"), z.literal("gpt-4o-mini"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("gpt-4-turbo"), z.literal("gpt-4-turbo-2024-04-09"), z.literal("gpt-4-0125-preview"), z.literal("gpt-4-turbo-preview"), z.literal("gpt-4-1106-preview"), z.literal("gpt-4-vision-preview"), z.literal("gpt-4"), z.literal("gpt-4-0314"), z.literal("gpt-4-0613"), z.literal("gpt-4-32k"), z.literal("gpt-4-32k-0314"), z.literal("gpt-4-32k-0613"), z.literal("gpt-3.5-turbo"), z.literal("gpt-3.5-turbo-16k"), z.literal("gpt-3.5-turbo-0301"), z.literal("gpt-3.5-turbo-0613"), z.literal("gpt-3.5-turbo-1106"), z.literal("gpt-3.5-turbo-0125"), z.literal("gpt-3.5-turbo-16k-0613")]), z.union([z.literal("o1-pro"), z.literal("o1-pro-2025-03-19"), z.literal("o3-pro"), z.literal("o3-pro-2025-06-10"), z.literal("o3-deep-research"), z.literal("o3-deep-research-2025-06-26"), z.literal("o4-mini-deep-research"), z.literal("o4-mini-deep-research-2025-06-26"), z.literal("computer-use-preview"), z.literal("computer-use-preview-2025-03-11"), z.literal("gpt-5-codex"), z.literal("gpt-5-pro"), z.literal("gpt-5-pro-2025-10-06"), z.literal("gpt-5.1-codex-max")])]),
     object: z.literal("response"),
     output: z.array(z.union([ZResponseOutputMessage, ZResponseFileSearchToolCall, ZResponseFunctionToolCall, ZResponseFunctionWebSearch, ZResponseComputerToolCall, ZResponseReasoningItem, ZResponseToolSearchCall, ZResponseToolSearchOutputItem, ZResponseCompactionItem, ZResponseOutputItemImageGenerationCall, ZResponseCodeInterpreterToolCall, ZResponseOutputItemLocalShellCall, ZResponseFunctionShellToolCall, ZResponseFunctionShellToolCallOutput, ZResponseApplyPatchToolCall, ZResponseApplyPatchToolCallOutput, ZResponseOutputItemMcpCall, ZResponseOutputItemMcpListTools, ZResponseOutputItemMcpApprovalRequest, ZResponseCustomToolCall])),
     parallel_tool_calls: z.boolean(),
@@ -788,12 +1604,6 @@ export const ZDocumentTransformResponse = z.lazy(() => (z.object({
 })));
 export type DocumentTransformResponse = z.infer<typeof ZDocumentTransformResponse>;
 
-export const ZCategory = z.lazy(() => (z.object({
-    name: z.string(),
-    description: z.string(),
-})));
-export type Category = z.infer<typeof ZCategory>;
-
 export const ZClassifyOutputSchema = z.lazy(() => (z.object({
     reasoning: z.string(),
     classification: z.string(),
@@ -811,6 +1621,7 @@ export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
 
 export const ZClassifyResponse = z.lazy(() => (z.object({
     result: ZClassifyResult,
+    usage: ZRetabUsage,
 })));
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
 
@@ -836,25 +1647,14 @@ export const ZParseResponse = z.lazy(() => (z.object({
 })));
 export type ParseResponse = z.infer<typeof ZParseResponse>;
 
-export const ZRetabUsage = z.lazy(() => (z.object({
-    page_count: z.number(),
-    credits: z.number(),
-})));
-export type RetabUsage = z.infer<typeof ZRetabUsage>;
-
 export const ZSplitRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
-    subdocuments: z.array(ZSubdocument).min(1),
+    subdocuments: z.array(ZSubdocument),
     model: z.string().default("retab-small"),
     context: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
 })));
 export type SplitRequest = z.infer<typeof ZSplitRequest>;
-
-export const ZSplitResponse = z.lazy(() => (z.object({
-    splits: z.array(ZSplitResult),
-})));
-export type SplitResponse = z.infer<typeof ZSplitResponse>;
 
 export const ZSplitResult = z.lazy(() => (z.object({
     name: z.string(),
@@ -864,13 +1664,6 @@ export const ZSplitResult = z.lazy(() => (z.object({
     partitions: z.array(ZPartition),
 })));
 export type SplitResult = z.infer<typeof ZSplitResult>;
-
-export const ZSubdocument = z.lazy(() => (z.object({
-    name: z.string(),
-    description: z.string(),
-    partition_key: z.string().nullable().optional(),
-})));
-export type Subdocument = z.infer<typeof ZSubdocument>;
 
 export const ZBBox = z.lazy(() => (z.object({
     left: z.number(),
@@ -901,11 +1694,9 @@ export type EditRequest = z.infer<typeof ZEditRequest>;
 export const ZEditResponse = z.lazy(() => (z.object({
     form_data: z.array(ZFormField),
     filled_document: ZMIMEData,
+    usage: ZRetabUsage,
 })));
 export type EditResponse = z.infer<typeof ZEditResponse>;
-
-export const ZEnum = z.lazy(() => z.any());
-export type Enum = z.infer<typeof ZEnum>;
 
 export const ZFieldType = z.lazy(() => z.any());
 export type FieldType = z.infer<typeof ZFieldType>;
@@ -1054,7 +1845,6 @@ export type ChoiceDelta = z.infer<typeof ZChoiceDelta>;
 export const ZConsensusModel = z.lazy(() => (z.object({
     model: z.string(),
     temperature: z.number().default(0.0),
-    reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
 })));
 export type ConsensusModel = z.infer<typeof ZConsensusModel>;
 
@@ -1352,7 +2142,6 @@ export type InputAudio = z.infer<typeof ZInputAudio>;
 
 export const ZResponseInputFileParam = z.lazy(() => (z.object({
     type: z.literal("input_file"),
-    detail: z.union([z.literal("low"), z.literal("high")]),
     file_data: z.string(),
     file_id: z.string().nullable().optional(),
     file_url: z.string(),
@@ -1393,12 +2182,14 @@ export type PartMediaResolutionDict = z.infer<typeof ZPartMediaResolutionDict>;
 export const ZCodeExecutionResultDict = z.lazy(() => (z.object({
     outcome: z.any().nullable().optional(),
     output: z.string().nullable().optional(),
+    id: z.string().nullable().optional(),
 })));
 export type CodeExecutionResultDict = z.infer<typeof ZCodeExecutionResultDict>;
 
 export const ZExecutableCodeDict = z.lazy(() => (z.object({
     code: z.string().nullable().optional(),
     language: z.any().nullable().optional(),
+    id: z.string().nullable().optional(),
 })));
 export type ExecutableCodeDict = z.infer<typeof ZExecutableCodeDict>;
 
@@ -1434,6 +2225,20 @@ export const ZVideoMetadataDict = z.lazy(() => (z.object({
     start_offset: z.string().nullable().optional(),
 })));
 export type VideoMetadataDict = z.infer<typeof ZVideoMetadataDict>;
+
+export const ZToolCallDict = z.lazy(() => (z.object({
+    id: z.string().nullable().optional(),
+    tool_type: z.any().nullable().optional(),
+    args: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type ToolCallDict = z.infer<typeof ZToolCallDict>;
+
+export const ZToolResponseDict = z.lazy(() => (z.object({
+    id: z.string().nullable().optional(),
+    tool_type: z.any().nullable().optional(),
+    response: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type ToolResponseDict = z.infer<typeof ZToolResponseDict>;
 
 export const ZResponseError = z.lazy(() => (z.object({
     code: z.union([z.literal("server_error"), z.literal("rate_limit_exceeded"), z.literal("invalid_prompt"), z.literal("vector_store_timeout"), z.literal("invalid_image"), z.literal("invalid_image_format"), z.literal("invalid_base64_image"), z.literal("invalid_image_url"), z.literal("image_too_large"), z.literal("image_too_small"), z.literal("image_parse_error"), z.literal("image_content_policy_violation"), z.literal("invalid_image_mode"), z.literal("image_file_too_large"), z.literal("unsupported_image_media_type"), z.literal("empty_image_file"), z.literal("failed_to_download_image"), z.literal("image_file_not_found")]),
@@ -2794,7 +3599,6 @@ export type ResponseInputImage = z.infer<typeof ZResponseInputImage>;
 
 export const ZResponseInputFile = z.lazy(() => (z.object({
     type: z.literal("input_file"),
-    detail: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
@@ -3001,7 +3805,6 @@ export type ResponseInputImageContent = z.infer<typeof ZResponseInputImageConten
 
 export const ZResponseInputFileContent = z.lazy(() => (z.object({
     type: z.literal("input_file"),
-    detail: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
@@ -3163,7 +3966,7 @@ export type ResponseOutputItemMcpListToolsTool = z.infer<typeof ZResponseOutputI
 
 export const ZComparisonFilter = z.lazy(() => (z.object({
     key: z.string(),
-    type: z.union([z.literal("eq"), z.literal("ne"), z.literal("gt"), z.literal("gte"), z.literal("lt"), z.literal("lte")]),
+    type: z.union([z.literal("eq"), z.literal("ne"), z.literal("gt"), z.literal("gte"), z.literal("lt"), z.literal("lte"), z.literal("in"), z.literal("nin")]),
     value: z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))]),
 })));
 export type ComparisonFilter = z.infer<typeof ZComparisonFilter>;
@@ -3245,6 +4048,7 @@ export type Grammar = z.infer<typeof ZGrammar>;
 export const ZToolFunction = z.lazy(() => (z.object({
     name: z.string(),
     type: z.literal("function"),
+    defer_loading: z.boolean().nullable().optional(),
     description: z.string().nullable().optional(),
     parameters: z.object({}).passthrough().nullable().optional(),
     strict: z.boolean().nullable().optional(),
@@ -3543,7 +4347,6 @@ export type ResponseInputImageContentParam = z.infer<typeof ZResponseInputImageC
 
 export const ZResponseInputFileContentParam = z.lazy(() => (z.object({
     type: z.literal("input_file"),
-    detail: z.union([z.literal("high"), z.literal("low")]),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
@@ -4059,7 +4862,7 @@ export type ResponseFunctionWebSearchParamActionSearchSource = z.infer<typeof ZR
 
 export const ZComparisonFilterComparisonFilter = z.lazy(() => (z.object({
     key: z.string(),
-    type: z.union([z.literal("eq"), z.literal("ne"), z.literal("gt"), z.literal("gte"), z.literal("lt"), z.literal("lte")]),
+    type: z.union([z.literal("eq"), z.literal("ne"), z.literal("gt"), z.literal("gte"), z.literal("lt"), z.literal("lte"), z.literal("in"), z.literal("nin")]),
     value: z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))]),
 })));
 export type ComparisonFilterComparisonFilter = z.infer<typeof ZComparisonFilterComparisonFilter>;
@@ -4141,6 +4944,7 @@ export type CustomToolInputFormatGrammar = z.infer<typeof ZCustomToolInputFormat
 export const ZNamespaceToolParamToolFunction = z.lazy(() => (z.object({
     name: z.string(),
     type: z.literal("function"),
+    defer_loading: z.boolean(),
     description: z.string().nullable().optional(),
     parameters: z.object({}).passthrough().nullable().optional(),
     strict: z.boolean().nullable().optional(),
@@ -4299,3 +5103,4 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
+

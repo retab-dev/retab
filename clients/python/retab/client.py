@@ -227,7 +227,7 @@ class Retab(BaseRetab):
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict[str, Any]] = None,
+        data: Any = None,
         params: Optional[dict[str, Any]] = None,
         form_data: Optional[dict[str, Any]] = None,
         files: Optional[dict[str, Any] | list] = None,
@@ -239,7 +239,7 @@ class Retab(BaseRetab):
         Args:
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
-            data (Optional[dict]): Request payload (JSON)
+            data (Any): Request payload (JSON object or array)
             params (Optional[dict]): Query parameters
             form_data (Optional[dict]): Form data for multipart/form-data requests
             files (Optional[dict]): Files for multipart/form-data requests
@@ -305,7 +305,7 @@ class Retab(BaseRetab):
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict[str, Any]] = None,
+        data: Any = None,
         params: Optional[dict[str, Any]] = None,
         form_data: Optional[dict[str, Any]] = None,
         files: Optional[dict[str, Any] | list] = None,
@@ -317,7 +317,7 @@ class Retab(BaseRetab):
         Args:
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
-            data (Optional[dict]): Request payload (JSON)
+            data (Any): Request payload (JSON object or array)
             params (Optional[dict]): Query parameters
             form_data (Optional[dict]): Form data for multipart/form-data requests
             files (Optional[dict]): Files for multipart/form-data requests
@@ -541,7 +541,7 @@ class AsyncRetab(BaseRetab):
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict[str, Any]] = None,
+        data: Any = None,
         params: Optional[dict[str, Any]] = None,
         form_data: Optional[dict[str, Any]] = None,
         files: Optional[dict[str, Any] | list] = None,
@@ -553,7 +553,7 @@ class AsyncRetab(BaseRetab):
         Args:
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
-            data (Optional[dict]): Request payload (JSON)
+            data (Any): Request payload (JSON object or array)
             params (Optional[dict]): Query parameters
             form_data (Optional[dict]): Form data for multipart/form-data requests
             files (Optional[dict]): Files for multipart/form-data requests
@@ -617,7 +617,7 @@ class AsyncRetab(BaseRetab):
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict[str, Any]] = None,
+        data: Any = None,
         params: Optional[dict[str, Any]] = None,
         form_data: Optional[dict[str, Any]] = None,
         files: Optional[dict[str, Any] | list] = None,
@@ -629,7 +629,7 @@ class AsyncRetab(BaseRetab):
         Args:
             method (str): HTTP method (GET, POST, etc.)
             endpoint (str): API endpoint path
-            data (Optional[dict]): Request payload (JSON)
+            data (Any): Request payload (JSON object or array)
             params (Optional[dict]): Query parameters
             form_data (Optional[dict]): Form data for multipart/form-data requests
             files (Optional[dict]): Files for multipart/form-data requests
@@ -794,4 +794,3 @@ class AsyncRetab(BaseRetab):
             raise SignatureVerificationError("Invalid signature")
 
         return json.loads(event_body.decode("utf-8"))
-

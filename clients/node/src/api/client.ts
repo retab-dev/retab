@@ -8,6 +8,7 @@ import APIEdit from "./edit/client";
 import APIFiles from "./files/client";
 import APIJobs from "./jobs/client";
 import APIEvals from "./evals/client";
+import APIModels from "./models/client";
 
 export default class APIV1 extends CompositionClient {
     constructor(client: AbstractClient) {
@@ -22,4 +23,5 @@ export default class APIV1 extends CompositionClient {
     workflows = new APIWorkflows(this);
     edit = new APIEdit(this);
     jobs = new APIJobs(this);
+    models = new APIModels(this);
 }

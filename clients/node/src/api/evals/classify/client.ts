@@ -78,6 +78,14 @@ class ClassifyTemplates extends CompositionClient {
         });
         return response.project;
     }
+
+    async list_builder_document_previews(templateIds: string[], options?: RequestOptions): Promise<Record<string, unknown[]>> {
+        return this.listBuilderDocumentPreviews(templateIds, options);
+    }
+
+    async list_builder_documents(templateId: string, options?: RequestOptions) {
+        return this.listBuilderDocuments(templateId, options);
+    }
 }
 
 class ClassifyIterations extends CompositionClient {
@@ -238,6 +246,54 @@ class ClassifyIterations extends CompositionClient {
             headers: options?.headers,
         });
     }
+
+    async update_draft(evalId: string, datasetId: string, iterationId: string, body: {
+        inference_settings?: unknown;
+        category_overrides?: Record<string, unknown>;
+        draft?: Record<string, unknown>;
+    }, options?: RequestOptions) {
+        return this.updateDraft(evalId, datasetId, iterationId, body, options);
+    }
+
+    async get_categories(evalId: string, datasetId: string, iterationId: string, options?: RequestOptions) {
+        return this.getCategories(evalId, datasetId, iterationId, options);
+    }
+
+    async get_schema(evalId: string, datasetId: string, iterationId: string, options?: RequestOptions) {
+        return this.getSchema(evalId, datasetId, iterationId, options);
+    }
+
+    async process_documents(evalId: string, datasetId: string, iterationId: string, datasetDocumentId: string, options?: RequestOptions) {
+        return this.processDocuments(evalId, datasetId, iterationId, datasetDocumentId, options);
+    }
+
+    async get_document(evalId: string, datasetId: string, iterationId: string, documentId: string, options?: RequestOptions) {
+        return this.getDocument(evalId, datasetId, iterationId, documentId, options);
+    }
+
+    async list_documents(evalId: string, datasetId: string, iterationId: string, { limit = 1000, offset = 0 }: { limit?: number; offset?: number } = {}, options?: RequestOptions) {
+        return this.listDocuments(evalId, datasetId, iterationId, { limit, offset }, options);
+    }
+
+    async update_document(evalId: string, datasetId: string, iterationId: string, documentId: string, body: {
+        prediction_data?: unknown;
+        classification_id?: string;
+        extraction_id?: string;
+    }, options?: RequestOptions) {
+        return this.updateDocument(evalId, datasetId, iterationId, documentId, body, options);
+    }
+
+    async delete_document(evalId: string, datasetId: string, iterationId: string, documentId: string, options?: RequestOptions) {
+        return this.deleteDocument(evalId, datasetId, iterationId, documentId, options);
+    }
+
+    async get_metrics(evalId: string, datasetId: string, iterationId: string, { force_refresh = false }: { force_refresh?: boolean } = {}, options?: RequestOptions) {
+        return this.getMetrics(evalId, datasetId, iterationId, { forceRefresh: force_refresh }, options);
+    }
+
+    async process_document(evalId: string, datasetId: string, iterationId: string, documentId: string, options?: RequestOptions) {
+        return this.processDocument(evalId, datasetId, iterationId, documentId, options);
+    }
 }
 
 class ClassifyDatasets extends CompositionClient {
@@ -371,6 +427,35 @@ class ClassifyDatasets extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async add_document(evalId: string, datasetId: string, body: { mime_data: MIMEDataInput; prediction_data?: unknown }, options?: RequestOptions) {
+        return this.addDocument(evalId, datasetId, body, options);
+    }
+
+    async get_document(evalId: string, datasetId: string, documentId: string, options?: RequestOptions) {
+        return this.getDocument(evalId, datasetId, documentId, options);
+    }
+
+    async list_documents(evalId: string, datasetId: string, { limit = 1000, offset = 0 }: { limit?: number; offset?: number } = {}, options?: RequestOptions) {
+        return this.listDocuments(evalId, datasetId, { limit, offset }, options);
+    }
+
+    async update_document(evalId: string, datasetId: string, documentId: string, body: {
+        validation_flag?: boolean | null;
+        prediction_data?: unknown;
+        classification_id?: string;
+        extraction_id?: string;
+    }, options?: RequestOptions) {
+        return this.updateDocument(evalId, datasetId, documentId, body, options);
+    }
+
+    async delete_document(evalId: string, datasetId: string, documentId: string, options?: RequestOptions) {
+        return this.deleteDocument(evalId, datasetId, documentId, options);
+    }
+
+    async process_document(evalId: string, datasetId: string, documentId: string, options?: RequestOptions) {
+        return this.processDocument(evalId, datasetId, documentId, options);
     }
 }
 

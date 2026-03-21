@@ -7,8 +7,35 @@ type FetchParams = {
   params?: Record<string, any>,
   headers?: Record<string, any>,
   bodyMime?: "application/json" | "multipart/form-data",
-  body?: Record<string, any>,
+  body?: Record<string, any> | unknown[],
   auth?: string[],
+};
+
+const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
+  APIModels: ["list"],
+  APISchemas: ["generate"],
+  APIExtractions: ["list", "download", "update", "get", "sources", "delete"],
+  APIFiles: ["upload", "list", "get", "get_download_link"],
+  APIProjects: ["create", "get", "list", "delete", "publish", "extract", "split"],
+  ProjectDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document"],
+  ProjectIterations: ["create", "get", "list", "update_draft", "delete", "finalize", "get_schema", "process_documents", "get_document", "list_documents", "update_document", "delete_document", "get_metrics"],
+  APIWorkflows: ["get", "list", "create", "update", "delete", "publish", "duplicate", "get_entities"],
+  APIWorkflowBlocks: ["list", "get", "create", "create_batch", "update", "delete"],
+  APIWorkflowEdges: ["list", "get", "create", "create_batch", "delete", "delete_all"],
+  APIWorkflowRuns: ["create", "get", "list", "delete", "cancel", "restart", "resume"],
+  APIWorkflowRunSteps: ["get", "list", "get_many"],
+  APIEvalsExtract: ["create", "get", "list", "update", "delete", "publish", "process", "extract", "process_stream"],
+  ExtractTemplates: ["list", "list_builder_document_previews", "get", "list_builder_documents", "clone"],
+  ExtractDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document", "process_document"],
+  ExtractIterations: ["create", "get", "list", "update_draft", "delete", "finalize", "get_schema", "process_documents", "get_document", "list_documents", "update_document", "delete_document", "get_metrics", "process_document"],
+  APIEvalsSplit: ["create", "get", "list", "update", "delete", "publish", "process"],
+  SplitTemplates: ["list", "list_builder_document_previews", "get", "list_builder_documents", "clone"],
+  SplitDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document", "process_document"],
+  SplitIterations: ["create", "get", "list", "update_draft", "delete", "finalize", "get_schema", "process_documents", "get_document", "list_documents", "update_document", "delete_document", "get_metrics", "process_document"],
+  APIEvalsClassify: ["create", "get", "list", "update", "delete", "publish", "process"],
+  ClassifyTemplates: ["list", "list_builder_document_previews", "get", "list_builder_documents", "clone"],
+  ClassifyDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document", "process_document"],
+  ClassifyIterations: ["create", "get", "list", "update_draft", "delete", "finalize", "get_categories", "get_schema", "process_documents", "get_document", "list_documents", "update_document", "delete_document", "get_metrics", "process_document"],
 };
 
 async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, response: Response): AsyncGenerator<z.output<ZodSchema>> {
@@ -84,9 +111,74 @@ export class CompositionClient extends AbstractClient {
   constructor(client: AbstractClient) {
     super();
     this._client = client;
+    this._installPrepareMethods();
   }
   protected _fetch(params: FetchParams): Promise<Response> {
     return this._client["_fetch"](params);
+  }
+
+  private _installPrepareMethods(): void {
+    const allowedMethods = PYTHON_PUBLIC_PREPARE_METHODS[this.constructor.name] ?? [];
+    if (allowedMethods.length === 0) {
+      return;
+    }
+
+    for (const methodName of allowedMethods) {
+      const method = (this as Record<string, unknown>)[methodName];
+      const prepareMethodName = `prepare_${methodName}`;
+      if (typeof method !== "function" || prepareMethodName in this) {
+        continue;
+      }
+
+      Object.defineProperty(this, prepareMethodName, {
+        configurable: true,
+        enumerable: false,
+        writable: false,
+        value: (...args: unknown[]) => this._capturePreparedRequest(methodName, args),
+      });
+    }
+  }
+
+  protected async _capturePreparedRequest(methodName: string, args: unknown[]): Promise<FetchParams> {
+    let capturedRequest: FetchParams | undefined;
+    const self = this as Record<string, any>;
+    const originalFetch = self._fetch;
+    const originalFetchJson = self._fetchJson;
+    const originalFetchStream = self._fetchStream;
+
+    self._fetch = async (params: FetchParams) => {
+      capturedRequest = params;
+      return new Response("{}", {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    };
+
+    self._fetchJson = async (...fetchArgs: unknown[]) => {
+      capturedRequest = (fetchArgs.length === 2 ? fetchArgs[1] : fetchArgs[0]) as FetchParams;
+      return {};
+    };
+
+    self._fetchStream = async (...fetchArgs: unknown[]) => {
+      capturedRequest = fetchArgs[1] as FetchParams;
+      return (async function* emptyStream() {})();
+    };
+
+    try {
+      await self[methodName](...args);
+    } finally {
+      self._fetch = originalFetch;
+      self._fetchJson = originalFetchJson;
+      self._fetchStream = originalFetchStream;
+    }
+
+    if (!capturedRequest) {
+      throw new Error(`Unable to capture prepared request for ${methodName}`);
+    }
+
+    return capturedRequest;
   }
 }
 
@@ -151,7 +243,7 @@ export class FetcherClient extends AbstractClient {
     params?: Record<string, any>;
     headers?: Record<string, any>;
     bodyMime?: "application/json" | "multipart/form-data";
-    body?: Record<string, any>,
+    body?: Record<string, any> | unknown[];
   }): Promise<Response> {
     let query = "";
     if (params.params) {
@@ -169,8 +261,9 @@ export class FetcherClient extends AbstractClient {
     if (params.method !== "GET") {
       if (params.bodyMime === "multipart/form-data") {
         let formData: FormData = new FormData();
-        for (const key of Object.keys(params.body || {})) {
-          let value = params.body![key];
+        const multipartBody = (params.body || {}) as Record<string, any>;
+        for (const key of Object.keys(multipartBody)) {
+          let value = multipartBody[key];
           if (Array.isArray(value)) {
             for (const item of value) {
               formData.append(key, item);

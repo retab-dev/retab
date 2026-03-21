@@ -6,6 +6,7 @@ import {
     ZStepOutputsBatchResponse,
     WorkflowRunStep,
     ZWorkflowRunStep,
+    WorkflowRun,
     ZWorkflowRun,
 } from "../../../../types.js";
 import * as z from "zod";
@@ -13,7 +14,7 @@ import * as z from "zod";
 /**
  * Workflow Run Steps API client for accessing step-level outputs.
  *
- * Usage: `client.workflows.runs.steps.get(runId, nodeId)` or `client.workflows.runs.steps.batch(runId, nodeIds)`
+ * Usage: `client.workflows.runs.steps.get(runId, nodeId)` or `client.workflows.runs.steps.getMany(runId, nodeIds)`
  */
 export default class APIWorkflowRunSteps extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -74,11 +75,11 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      *
      * @example
      * ```typescript
-     * const batch = await client.workflows.runs.steps.batch("run_abc123", ["extract-1", "classifier-1"]);
+     * const batch = await client.workflows.runs.steps.getMany("run_abc123", ["extract-1", "classifier-1"]);
      * console.log(batch.outputs["extract-1"]?.handle_outputs);
      * ```
      */
-    async batch(
+    async getMany(
         runId: string,
         nodeIds: string[],
         options?: RequestOptions
@@ -90,6 +91,14 @@ export default class APIWorkflowRunSteps extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async get_many(
+        runId: string,
+        nodeIds: string[],
+        options?: RequestOptions
+    ): Promise<StepOutputsBatchResponse> {
+        return this.getMany(runId, nodeIds, options);
     }
 
     /**
@@ -107,22 +116,30 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      * ```
      */
     async getAll(
-        runId: string,
+        run: WorkflowRun | string,
         options?: RequestOptions
     ): Promise<StepOutputsBatchResponse> {
-        // Fetch the run to get step node IDs
-        const run = await this._fetchJson(ZWorkflowRun, {
-            url: `/workflows/runs/${runId}`,
-            method: "GET",
-            params: options?.params,
-            headers: options?.headers,
-        });
+        const workflowRun = typeof run === "string"
+            ? await this._fetchJson(ZWorkflowRun, {
+                url: `/workflows/runs/${run}`,
+                method: "GET",
+                params: options?.params,
+                headers: options?.headers,
+            })
+            : run;
 
-        const nodeIds = run.steps.map((s) => s.node_id);
+        const nodeIds = workflowRun.steps.map((s) => s.node_id);
         if (nodeIds.length === 0) {
             return { outputs: {} };
         }
 
-        return this.batch(runId, nodeIds, options);
+        return this.getMany(workflowRun.id, nodeIds, options);
+    }
+
+    async get_all(
+        run: WorkflowRun | string,
+        options?: RequestOptions
+    ): Promise<StepOutputsBatchResponse> {
+        return this.getAll(run, options);
     }
 }
