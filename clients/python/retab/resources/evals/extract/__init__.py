@@ -1,3 +1,3 @@
-from .client import AsyncExtract, AsyncExtractProjects, Extract, ExtractProjects
+from .client import AsyncExtract, Extract
 
-__all__ = ["Extract", "AsyncExtract", "ExtractProjects", "AsyncExtractProjects"]
+__all__ = ["Extract", "AsyncExtract"]
