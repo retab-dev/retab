@@ -8,10 +8,10 @@ import sys
 import inspect
 from datetime import datetime, date
 from typing import Any, Type, get_args, get_origin, Union, Literal, is_typeddict
-from typing_extensions import is_typeddict as is_typeddict_ext
 import typing_extensions
-from pydantic_core import PydanticUndefined
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
+from pydantic.fields import PydanticUndefined
+from typing_extensions import is_typeddict as is_typeddict_ext
 import PIL.Image
 
 to_compile: list[tuple[str, Type, bool]] = []
@@ -37,6 +37,13 @@ def get_class_name(cls: Type) -> str:
 
 def is_base_model(field_type: Type) -> bool:
     return getattr(field_type, "__name__", None) in ["BaseModel", "GenericModel", "ConfigDict", "Generic"]
+
+
+def is_email_str_type(field_type: Any) -> bool:
+    return (
+        getattr(field_type, "__name__", None) == "EmailStr"
+        and getattr(field_type, "__module__", "").startswith("pydantic")
+    )
 
 def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> str:
     origin = get_origin(field_type) or field_type
@@ -132,7 +139,7 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
     elif field_type is bytes or field_type is PIL.Image.Image or field_type is typing.BinaryIO or origin is typing.IO or origin is typing_extensions.IO:
         typename = "z.instanceof(Uint8Array)"
         ts_typename = "Uint8Array"
-    elif field_type is EmailStr:
+    elif is_email_str_type(field_type):
         typename = "z.string().email()"
         ts_typename = "string"
     elif field_type is os.PathLike:
@@ -198,4 +205,3 @@ if __name__ == "__main__":
             raise e
         print("export const Z" + name + " = z.lazy(() => " + compiled + ");")
         print("export type " + name + " = z.infer<typeof Z" + name + ">;\n")
-
