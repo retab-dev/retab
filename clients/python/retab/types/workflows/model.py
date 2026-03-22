@@ -202,7 +202,7 @@ class ClassifierStepOutput(BaseModel):
     confidence: Optional[float] = Field(default=None, description="Classification confidence")
 
 
-class FunctionsStepOutput(BaseModel):
+class FormulaStepOutput(BaseModel):
     message: str = Field(..., description="Status message about the computation")
     computations: List[str] = Field(default_factory=list, description="List of computed field names")
     extracted_data: Dict[str, Any] = Field(default_factory=dict, description="Enriched JSON data")
@@ -345,7 +345,7 @@ WorkflowStepOutputData: TypeAlias = (
     | MergeDictsStepOutput
     | SplitResponse
     | ClassifierStepOutput
-    | FunctionsStepOutput
+    | FormulaStepOutput
     | HILStepOutput
     | ConditionalStepOutput
     | ConditionalCheckStepOutput
@@ -372,7 +372,7 @@ _STEP_OUTPUT_MODEL_BY_NODE_TYPE: Dict[str, type[BaseModel]] = {
     "conditional": ConditionalStepOutput,
     "hil": HILStepOutput,
     "api_call": APICallStepOutput,
-    "functions": FunctionsStepOutput,
+    "formula": FormulaStepOutput,
     "reshape": ReshapeStepOutput,
     "merge_pdf": MergePdfStepOutput,
     "merge_dicts": MergeDictsStepOutput,
@@ -436,7 +436,7 @@ class StepOutputResponse(BaseModel):
     def get_json_output(self, handle_id: str = "output-json-0") -> Optional[dict]:
         """Get JSON data from a specific output handle.
 
-        Most extract/functions/reshape nodes emit JSON on ``output-json-0``.
+        Most extract/formula/reshape nodes emit JSON on ``output-json-0``.
         """
         if not self.handle_outputs:
             return None
