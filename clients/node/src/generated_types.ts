@@ -1185,7 +1185,7 @@ export const ZForEachSentinelStartStepOutput = z.lazy(() => (z.object({
 })));
 export type ForEachSentinelStartStepOutput = z.infer<typeof ZForEachSentinelStartStepOutput>;
 
-export const ZFunctionsStepOutput = z.lazy(() => (z.object({
+export const ZFormulaStepOutput = z.lazy(() => (z.object({
     message: z.string(),
     computations: z.array(z.string()),
     extracted_data: z.record(z.string(), z.any()),
@@ -1193,7 +1193,7 @@ export const ZFunctionsStepOutput = z.lazy(() => (z.object({
     computation_spec: z.record(z.string(), z.any()).nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
 })));
-export type FunctionsStepOutput = z.infer<typeof ZFunctionsStepOutput>;
+export type FormulaStepOutput = z.infer<typeof ZFormulaStepOutput>;
 
 export const ZHILStepOutput = z.lazy(() => (z.object({
     message: z.string(),
