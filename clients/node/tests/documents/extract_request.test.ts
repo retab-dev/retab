@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import path from "path";
 
 import APIV1 from "../../src/api/client.js";
 import { AbstractClient } from "../../src/client.js";
@@ -75,8 +76,10 @@ class MockClient extends AbstractClient {
     }
 }
 
-const bookingConfirmationPath =
-    "/Users/sachaichbiah/Local/retab/open-source/sdk/clients/node/tests/data/freight/booking_confirmation_1.jpg";
+const bookingConfirmationPath = path.resolve(
+    import.meta.dirname,
+    "../data/freight/booking_confirmation_1.jpg",
+);
 
 describe("Retab SDK Extract Request Tests", () => {
     test("extract preserves the original filename for file path documents", async () => {
