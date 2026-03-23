@@ -102,6 +102,13 @@ export const ZDocumentExtractRequest = z.object({
 })
 export type DocumentExtractRequest = z.input<typeof ZDocumentExtractRequest>;
 
+export const ZRetabParsedChatCompletion = generated.ZRetabParsedChatCompletion.transform((completion) => ({
+    ...completion,
+    data: completion.choices?.[0]?.message?.parsed ?? null,
+    text: completion.choices?.[0]?.message?.content ?? null,
+}));
+export type RetabParsedChatCompletion = z.output<typeof ZRetabParsedChatCompletion>;
+
 export const ZParseRequest = z.object({
     ...generated.ZParseRequest.schema.shape,
     document: ZMIMEData,

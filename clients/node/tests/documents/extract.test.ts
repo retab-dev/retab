@@ -6,7 +6,7 @@ import {
     getBookingConfirmationFilePath1,
     getBookingConfirmationJsonSchema,
 } from '../fixtures';
-import { RetabParsedChatCompletion } from '../../src/types';
+import { RetabParsedChatCompletion, ZRetabParsedChatCompletion } from '../../src/types';
 
 // Simple ID generator to replace nanoid
 function generateId(): string {
@@ -54,7 +54,34 @@ function validateExtractionResponse(response: RetabParsedChatCompletion | null):
     // (null can happen when an invalid schema is provided and parsing fails)
     const parsed = response.choices[0].message.parsed;
     expect(parsed === null || (typeof parsed === 'object' && parsed !== null)).toBe(true);
+    expect(response.data).toEqual(response.choices[0].message.parsed);
+    expect(response.text).toBe(response.choices[0].message.content);
 }
+
+test('serializes top-level data and text on extract completions', () => {
+    const response = ZRetabParsedChatCompletion.parse({
+        id: 'chatcmpl_test',
+        object: 'chat.completion',
+        created: 1,
+        model: 'retab-micro',
+        choices: [
+            {
+                index: 0,
+                finish_reason: 'stop',
+                message: {
+                    role: 'assistant',
+                    content: '{"status":"ok"}',
+                    parsed: { status: 'ok' },
+                },
+            },
+        ],
+    });
+
+    expect(response.data).toEqual({ status: 'ok' });
+    expect(response.text).toBe('{"status":"ok"}');
+    expect(response.choices[0].message.parsed).toEqual({ status: 'ok' });
+    expect(response.choices[0].message.content).toBe('{"status":"ok"}');
+});
 
 // Test the extraction endpoint
 async function baseTestExtract(
@@ -103,6 +130,8 @@ async function baseTestExtract(
         const content = lastFullParsed ? JSON.stringify(lastFullParsed) : combinedContent;
         return {
             ...lastChunkWithChoice,
+            data: lastFullParsed,
+            text: content,
             choices: [{
                 ...lastChunkWithChoice.choices[0],
                 message: {

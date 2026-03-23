@@ -14,7 +14,7 @@ from openai.types.completion_usage import CompletionUsage
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..standards import StreamingBaseModel
@@ -68,6 +68,7 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
     first_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the first token of the document. If non-streaming, set to last_token_at")
     last_token_at: datetime.datetime | None = Field(default=None, description="Timestamp of the last token of the document")
 
+    @computed_field  # type: ignore
     @property
     def data(self) -> Any:
         """The extracted structured data. Shortcut for ``choices[0].message.parsed``."""
@@ -75,6 +76,7 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
             return self.choices[0].message.parsed
         return None
 
+    @computed_field  # type: ignore
     @property
     def text(self) -> str | None:
         """The raw JSON content string. Shortcut for ``choices[0].message.content``."""
