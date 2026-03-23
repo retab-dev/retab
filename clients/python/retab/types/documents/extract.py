@@ -8,7 +8,6 @@ from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice as ChoiceChunk
 from openai.types.chat.chat_completion_chunk import ChoiceDelta as ChoiceDeltaChunk
-from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletion, ParsedChoice
 from openai.types.completion_usage import CompletionUsage
 from openai.types.responses.response import Response
