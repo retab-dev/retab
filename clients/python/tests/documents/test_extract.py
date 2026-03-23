@@ -43,6 +43,42 @@ def validate_extraction_response(response: RetabParsedChatCompletion | None) -> 
         response.choices[0].message.parsed is None or isinstance(response.choices[0].message.parsed, BaseModel)
     ), f"Response parsed should be a valid pydantic BaseModel instance or None, received {type(response.choices[0].message.parsed)}"
 
+    assert response.data == response.choices[0].message.parsed, "Response data should mirror choices[0].message.parsed"
+    assert response.text == response.choices[0].message.content, "Response text should mirror choices[0].message.content"
+
+    response_dump = response.model_dump()
+    assert "data" in response_dump, "Serialized response should include top-level data"
+    assert "text" in response_dump, "Serialized response should include top-level text"
+
+
+def test_extract_result_serializes_computed_fields() -> None:
+    response = RetabParsedChatCompletion.model_validate(
+        {
+            "id": "chatcmpl_test",
+            "object": "chat.completion",
+            "created": 1,
+            "model": "retab-micro",
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "message": {
+                        "role": "assistant",
+                        "content": "{\"status\":\"ok\"}",
+                        "parsed": {"status": "ok"},
+                    },
+                }
+            ],
+        }
+    )
+
+    assert response.data == {"status": "ok"}
+    assert response.text == "{\"status\":\"ok\"}"
+    assert response.model_dump()["data"] == {"status": "ok"}
+    assert response.model_dump()["text"] == "{\"status\":\"ok\"}"
+    assert response.model_dump(mode="json")["data"] == {"status": "ok"}
+    assert response.model_dump(mode="json")["text"] == "{\"status\":\"ok\"}"
+
 
 # Test the extraction endpoint
 async def base_test_extract(
@@ -266,4 +302,3 @@ async def test_extract_with_multiple_additional_messages(
         )
 
     validate_extraction_response(response)
-
