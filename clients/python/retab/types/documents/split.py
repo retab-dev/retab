@@ -13,6 +13,7 @@ class SplitRequest(BaseModel):
     model: str = Field(default="retab-small", description="The model to use to split the document")
     context: str | None = Field(default=None, description="Additional context for the split operation (e.g., iteration context from a loop)")
     n_consensus: int = Field(default=1, ge=1, le=8, description="Number of consensus split runs to perform. Uses deterministic single-pass when set to 1.")
+    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
 class Partition(BaseModel):

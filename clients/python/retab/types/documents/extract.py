@@ -32,6 +32,7 @@ class DocumentExtractRequest(BaseModel):
     metadata: dict[str, str] = Field(default_factory=dict, description="User-defined metadata to associate with this extraction")
     extraction_id: Optional[str] = Field(default=None, description="Extraction ID to use for this extraction. If not provided, a new ID will be generated.")
     additional_messages: Optional[list[ChatCompletionRetabMessage]] = Field(default=None, description="Additional chat messages to append after the document content messages. Useful for providing extra context or instructions.")
+    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
 class ConsensusModel(BaseModel):

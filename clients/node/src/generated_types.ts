@@ -1647,6 +1647,7 @@ export const ZClassifyRequest = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     first_n_pages: z.number().nullable().optional(),
     context: z.string().nullable().optional(),
+    bust_cache: z.boolean().default(false),
 })));
 export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
 
@@ -1667,6 +1668,7 @@ export const ZParseRequest = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     table_parsing_format: z.union([z.literal("markdown"), z.literal("yaml"), z.literal("html"), z.literal("json")]).default("html"),
     image_resolution_dpi: z.number().default(192),
+    bust_cache: z.boolean().default(false),
 })));
 export type ParseRequest = z.infer<typeof ZParseRequest>;
 
@@ -1684,6 +1686,7 @@ export const ZSplitRequest = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     context: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
+    bust_cache: z.boolean().default(false),
 })));
 export type SplitRequest = z.infer<typeof ZSplitRequest>;
 
@@ -1719,6 +1722,7 @@ export const ZEditRequest = z.lazy(() => (z.object({
     instructions: z.string(),
     template_id: z.string().nullable().optional(),
     config: ZEditConfig,
+    bust_cache: z.boolean().default(false),
 })));
 export type EditRequest = z.infer<typeof ZEditRequest>;
 
@@ -1863,6 +1867,7 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     metadata: z.record(z.string(), z.string()),
     extraction_id: z.string().nullable().optional(),
     additional_messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
+    bust_cache: z.boolean().default(false),
 })));
 export type DocumentExtractRequest = z.infer<typeof ZDocumentExtractRequest>;
 

@@ -25,6 +25,7 @@ class SplitMixin:
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ) -> PreparedRequest:
         if "documents" in extra_form:
@@ -39,6 +40,7 @@ class SplitMixin:
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
 
@@ -56,6 +58,7 @@ class Split(SyncAPIResource, SplitMixin):
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ) -> RetabParsedChatCompletion:
         request = self.prepare_process(
@@ -67,6 +70,7 @@ class Split(SyncAPIResource, SplitMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
         response = self._client._prepared_request(request)
@@ -86,6 +90,7 @@ class AsyncSplit(AsyncAPIResource, SplitMixin):
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ) -> RetabParsedChatCompletion:
         request = self.prepare_process(
@@ -97,6 +102,7 @@ class AsyncSplit(AsyncAPIResource, SplitMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
         response = await self._client._prepared_request(request)

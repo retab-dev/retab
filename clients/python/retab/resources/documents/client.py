@@ -39,6 +39,7 @@ class BaseDocumentsMixin:
         model: str,
         table_parsing_format: TableParsingFormat | _Unset = UNSET,
         image_resolution_dpi: int | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
@@ -51,6 +52,8 @@ class BaseDocumentsMixin:
             request_dict["table_parsing_format"] = table_parsing_format
         if image_resolution_dpi is not UNSET:
             request_dict["image_resolution_dpi"] = image_resolution_dpi
+        if bust_cache:
+            request_dict["bust_cache"] = True
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -65,20 +68,23 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str | _Unset = UNSET,
         template_id: str | None | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
             "instructions": instructions,
         }
-        
+
         if document is not None:
             mime_document = prepare_mime_document(document)
             request_dict["document"] = mime_document
-        
+
         if model is not UNSET:
             request_dict["model"] = model
         if template_id is not UNSET:
             request_dict["template_id"] = template_id
+        if bust_cache:
+            request_dict["bust_cache"] = True
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -93,16 +99,17 @@ class BaseDocumentsMixin:
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
         n_consensus: int | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        
+
         # Convert dict subdocuments to Subdocument objects if needed
         subdocument_objects = [
             Subdocument(**subdoc) if isinstance(subdoc, dict) else subdoc
             for subdoc in subdocuments
         ]
-        
+
         request_dict: dict[str, Any] = {
             "document": mime_document,
             "subdocuments": subdocument_objects,
@@ -110,6 +117,8 @@ class BaseDocumentsMixin:
         }
         if n_consensus is not UNSET:
             request_dict["n_consensus"] = n_consensus
+        if bust_cache:
+            request_dict["bust_cache"] = True
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -123,21 +132,24 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category] | list[dict[str, str]],
         model: str,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
-        
+
         # Convert dict categories to Category objects if needed
         category_objects = [
             Category(**cat) if isinstance(cat, dict) else cat
             for cat in categories
         ]
-        
+
         request_dict: dict[str, Any] = {
             "document": mime_document,
             "categories": category_objects,
             "model": model,
         }
+        if bust_cache:
+            request_dict["bust_cache"] = True
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -156,6 +168,7 @@ class BaseDocumentsMixin:
         stream: bool | _Unset = UNSET,
         metadata: dict[str, str] | _Unset = UNSET,
         additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> PreparedRequest:
         loaded_schema = load_json_schema(json_schema)
@@ -182,6 +195,8 @@ class BaseDocumentsMixin:
             request_dict["metadata"] = metadata
         if additional_messages is not UNSET:
             request_dict["additional_messages"] = additional_messages
+        if bust_cache:
+            request_dict["bust_cache"] = True
 
         # Merge any extra fields provided by the caller
         if extra_body:
@@ -210,6 +225,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         n_consensus: int | _Unset = UNSET,
         metadata: dict[str, str] | _Unset = UNSET,
         additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> RetabParsedChatCompletion:
         """
@@ -225,6 +241,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
+            bust_cache: If True, skip the LLM cache and force a fresh completion
 
         Returns:
             RetabParsedChatCompletion: Parsed response from the API
@@ -241,6 +258,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             additional_messages=additional_messages,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -345,6 +363,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         n_consensus: int | _Unset = UNSET,
         metadata: dict[str, str] | _Unset = UNSET,
         additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> Generator[RetabParsedChatCompletion, None, None]:
         """
@@ -358,6 +377,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
+            bust_cache: If True, skip the LLM cache and force a fresh completion
 
         Returns:
             Generator[RetabParsedChatCompletion]: Stream of parsed responses
@@ -380,6 +400,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             additional_messages=additional_messages,
+            bust_cache=bust_cache,
             **extra_body,
         )
         schema = load_json_schema(json_schema)
@@ -429,6 +450,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         model: str,
         table_parsing_format: TableParsingFormat | _Unset = UNSET,
         image_resolution_dpi: int | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> ParseResponse:
         """
@@ -442,6 +464,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
             image_resolution_dpi: DPI for image processing. Defaults to 192.
+            bust_cache: If True, skip the LLM cache and force a fresh completion.
 
         Returns:
             ParseResponse: Parsed response containing document metadata, usage information, and page text content.
@@ -454,6 +477,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -465,6 +489,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str | _Unset = UNSET,
         template_id: str | None | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -485,6 +510,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             model: The LLM model to use for inference. Defaults to "retab-small".
             template_id: Template ID to use for filling. When provided, uses the template's pre-defined form fields
                 and empty PDF. Only works for PDF documents. Mutually exclusive with document.
+            bust_cache: If True, skip the LLM cache and force a fresh completion.
 
         Returns:
             EditResponse: Response containing:
@@ -499,6 +525,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document=document,
             model=model,
             template_id=template_id,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -510,6 +537,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
         n_consensus: int | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> SplitResponse:
         """
@@ -558,6 +586,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             subdocuments=subdocuments,
             model=model,
             n_consensus=n_consensus,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -568,6 +597,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category] | list[dict[str, str]],
         model: str,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> ClassifyResponse:
         """
@@ -609,6 +639,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document=document,
             categories=categories,
             model=model,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = self._client._prepared_request(request)
@@ -631,6 +662,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         n_consensus: int | _Unset = UNSET,
         metadata: dict[str, str] | _Unset = UNSET,
         additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> RetabParsedChatCompletion:
         """
@@ -646,6 +678,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
+            bust_cache: If True, skip the LLM cache and force a fresh completion
 
         Returns:
             RetabParsedChatCompletion: Parsed response from the API
@@ -662,6 +695,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             additional_messages=additional_messages,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
@@ -678,6 +712,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         n_consensus: int | _Unset = UNSET,
         metadata: dict[str, str] | _Unset = UNSET,
         additional_messages: list[ChatCompletionRetabMessage] | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> AsyncGenerator[RetabParsedChatCompletion, None]:
         """
@@ -691,6 +726,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus: Number of consensus extractions to perform (default: 1 which computes a single extraction and the likelihoods comes from the model logprobs)
             metadata: User-defined metadata to associate with this extraction
             additional_messages: Additional chat messages to append after the document content messages
+            bust_cache: If True, skip the LLM cache and force a fresh completion
         Returns:
             AsyncGenerator[RetabParsedChatCompletion, None]: Stream of parsed responses.
         Raises:
@@ -712,6 +748,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             additional_messages=additional_messages,
+            bust_cache=bust_cache,
             **extra_body,
         )
         schema = load_json_schema(json_schema)
@@ -761,6 +798,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         model: str,
         table_parsing_format: TableParsingFormat | _Unset = UNSET,
         image_resolution_dpi: int | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> ParseResponse:
         """
@@ -774,6 +812,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             model: The AI model to use for document parsing.
             table_parsing_format: Format for parsing tables. Options: "html", "json", "yaml", "markdown". Defaults to "html".
             image_resolution_dpi: DPI for image processing. Defaults to 192.
+            bust_cache: If True, skip the LLM cache and force a fresh completion.
 
         Returns:
             ParseResponse: Parsed response containing document metadata, usage information, and page text content.
@@ -786,6 +825,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
@@ -797,6 +837,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str | _Unset = UNSET,
         template_id: str | None | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> EditResponse:
         """
@@ -817,6 +858,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             model: The LLM model to use for inference. Defaults to "retab-large".
             template_id: Template ID to use for filling. When provided, uses the template's pre-defined form fields
                 and empty PDF. Only works for PDF documents. Mutually exclusive with document.
+            bust_cache: If True, skip the LLM cache and force a fresh completion.
 
         Returns:
             EditResponse: Response containing:
@@ -831,6 +873,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document=document,
             model=model,
             template_id=template_id,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
@@ -842,6 +885,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         subdocuments: list[Subdocument] | list[dict[str, str]],
         model: str,
         n_consensus: int | _Unset = UNSET,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> SplitResponse:
         """
@@ -890,6 +934,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             subdocuments=subdocuments,
             model=model,
             n_consensus=n_consensus,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = await self._client._prepared_request(request)
@@ -900,6 +945,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category] | list[dict[str, str]],
         model: str,
+        bust_cache: bool = False,
         **extra_body: Any,
     ) -> ClassifyResponse:
         """
@@ -941,6 +987,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document=document,
             categories=categories,
             model=model,
+            bust_cache=bust_cache,
             **extra_body,
         )
         response = await self._client._prepared_request(request)

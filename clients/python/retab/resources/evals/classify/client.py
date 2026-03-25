@@ -22,6 +22,7 @@ class ClassifyMixin:
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str | None = None,
         metadata: Dict[str, str] | None = None,
+
         **extra_form: Any,
     ) -> PreparedRequest:
         if "documents" in extra_form:
@@ -33,6 +34,7 @@ class ClassifyMixin:
             document=document,
             model=model,
             metadata=metadata,
+
             **extra_form,
         )
 
@@ -47,6 +49,7 @@ class Classify(SyncAPIResource, ClassifyMixin):
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str | None = None,
         metadata: Dict[str, str] | None = None,
+
         **extra_form: Any,
     ) -> ClassifyResponse:
         request = self.prepare_process(
@@ -55,6 +58,7 @@ class Classify(SyncAPIResource, ClassifyMixin):
             document=document,
             model=model,
             metadata=metadata,
+
             **extra_form,
         )
         response = self._client._prepared_request(request)
@@ -71,6 +75,7 @@ class AsyncClassify(AsyncAPIResource, ClassifyMixin):
         document: Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
         model: str | None = None,
         metadata: Dict[str, str] | None = None,
+
         **extra_form: Any,
     ) -> ClassifyResponse:
         request = self.prepare_process(
@@ -79,6 +84,7 @@ class AsyncClassify(AsyncAPIResource, ClassifyMixin):
             document=document,
             model=model,
             metadata=metadata,
+
             **extra_form,
         )
         response = await self._client._prepared_request(request)
