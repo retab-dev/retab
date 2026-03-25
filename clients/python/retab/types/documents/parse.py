@@ -16,6 +16,7 @@ class ParseRequest(BaseModel):
     model: str = Field(default="retab-small", description="Model to use for parsing")
     table_parsing_format: TableParsingFormat = Field(default="html", description="Format for parsing tables")
     image_resolution_dpi: int = Field(default=192, description="DPI for image processing", ge=96, le=300)
+    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
 class ParseResponse(BaseModel):

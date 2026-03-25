@@ -26,6 +26,7 @@ class ExtractMixin:
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ) -> PreparedRequest:
         if "documents" in extra_form:
@@ -40,6 +41,7 @@ class ExtractMixin:
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
 
@@ -53,6 +55,7 @@ class ExtractMixin:
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ) -> PreparedRequest:
         if "documents" in extra_form:
@@ -66,6 +69,7 @@ class ExtractMixin:
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
         return request.model_copy(update={"url": f"{request.url}/stream"})
@@ -84,6 +88,7 @@ class Extract(SyncAPIResource, ExtractMixin):
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ) -> RetabParsedChatCompletion:
         request = self.prepare_process(
@@ -95,6 +100,7 @@ class Extract(SyncAPIResource, ExtractMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
         response = self._client._prepared_request(request)
@@ -111,6 +117,7 @@ class Extract(SyncAPIResource, ExtractMixin):
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ):
         request = self.prepare_process_stream(
@@ -122,6 +129,7 @@ class Extract(SyncAPIResource, ExtractMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
         for chunk_json in self._client._prepared_request_stream(request):
@@ -143,6 +151,7 @@ class AsyncExtract(AsyncAPIResource, ExtractMixin):
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ) -> RetabParsedChatCompletion:
         request = self.prepare_process(
@@ -154,6 +163,7 @@ class AsyncExtract(AsyncAPIResource, ExtractMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
         response = await self._client._prepared_request(request)
@@ -170,6 +180,7 @@ class AsyncExtract(AsyncAPIResource, ExtractMixin):
         n_consensus: int | None = None,
         metadata: Dict[str, str] | None = None,
         extraction_id: str | None = None,
+
         **extra_form: Any,
     ):
         request = self.prepare_process_stream(
@@ -181,6 +192,7 @@ class AsyncExtract(AsyncAPIResource, ExtractMixin):
             n_consensus=n_consensus,
             metadata=metadata,
             extraction_id=extraction_id,
+
             **extra_form,
         )
         async for chunk_json in self._client._prepared_request_stream(request):

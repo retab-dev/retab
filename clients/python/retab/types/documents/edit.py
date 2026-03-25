@@ -129,6 +129,7 @@ class EditRequest(BaseModel):
     instructions: str = Field(..., description="Instructions to fill the form")
     template_id: Optional[str] = Field(default=None, description="Template ID to use for filling. When provided, uses the template's pre-defined form fields and empty PDF. Only works for PDF documents. Mutually exclusive with document.")
     config: EditConfig = Field(default_factory=EditConfig, description="Configuration for the edit request")
+    bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 class EditResponse(BaseModel):
     """Response from the fill_form endpoint.
