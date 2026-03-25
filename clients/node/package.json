@@ -33,13 +33,13 @@
   "author": "Retab",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.9.0",
     "axios-retry": "^4.0.0",
     "blake2": "^5.0.0",
     "dotenv": "^17.2.0",
-    "file-type": "^21.0.0",
+    "file-type": "^21.3.4",
     "form-data": "^4.0.4",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "openai": "^5.8.2",
     "zod": "^3.22.0",
     "zod-to-json-schema": "^3.24.6"
@@ -53,6 +53,10 @@
     "eslint": "^8.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.0.0"
+  },
+  "overrides": {
+    "minimatch": ">=9.0.4",
+    "flatted": ">=3.3.4"
   },
   "engines": {
     "node": ">=16.0.0"

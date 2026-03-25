@@ -6,9 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28.1",
-    "mcp>=1.6.0",
+    "mcp>=1.9.0",
     "retab",
 ]
 
 [tool.uv.sources]
-retab = { git = "https://github.com/Retab-dev/retab.git", subdirectory = "clients/python", rev = "main" }
+retab = { path = "../../clients/python", editable = true }
