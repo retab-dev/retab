@@ -1,3 +1,0 @@
-git+https://github.com/retab-dev/retab.git@main#subdirectory=clients/python
-mcp
-httpx
