@@ -334,7 +334,11 @@ def maybe_parse_to_pydantic(schema: dict[str, Any], response: RetabParsedChatCom
             else:
                 response.choices[0].message.parsed = full_pydantic_model.model_validate(filter_auxiliary_fields_json(response.choices[0].message.content))
         except Exception:
-            # If parsing fails (e.g., due to invalid schema), set parsed to None
-            # instead of leaving it as a raw dictionary
-            response.choices[0].message.parsed = None
+            # Don't overwrite an existing parsed value from the API response (e.g. consensus).
+            # Fall back to the raw filtered dict only if parsed is still None.
+            if response.choices[0].message.parsed is None:
+                try:
+                    response.choices[0].message.parsed = filter_auxiliary_fields_json(response.choices[0].message.content)
+                except Exception:
+                    pass
     return response
