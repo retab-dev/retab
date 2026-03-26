@@ -426,6 +426,33 @@ describe("workflows client", () => {
         expect(result.submission_status).toBe("accepted");
     });
 
+    test("runs.submitHilDecision() accepts already_applied responses", async () => {
+        const mockClient = new MockClient({
+            submission_status: "already_applied",
+            decision: {
+                run_id: "run_1",
+                node_id: "hil-1",
+                node_status: "completed",
+                decision_received: true,
+                decision_applied: true,
+                approved: true,
+                modified_data: { field: "value" },
+                payload_hash: "hash_1",
+                received_at: "2026-01-01T00:00:01Z",
+                applied_at: "2026-01-01T00:00:05Z",
+            },
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        const result = await runsClient.submitHilDecision("run_1", {
+            nodeId: "hil-1",
+            approved: true,
+        });
+
+        expect(result.submission_status).toBe("already_applied");
+        expect(result.decision.decision_applied).toBe(true);
+    });
+
     test("runs.getHilDecision() sends GET to /hil-decisions/{nodeId}", async () => {
         const mockClient = new MockClient({
             run_id: "run_1",

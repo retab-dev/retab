@@ -556,7 +556,7 @@ class HILDecisionResource(BaseModel):
 
 class SubmitHILDecisionResponse(BaseModel):
     """Response from submitting a HIL decision."""
-    submission_status: Literal["accepted", "already_received"] = Field(
+    submission_status: Literal["accepted", "already_received", "already_applied"] = Field(
         ...,
         description="Decision submission lifecycle status",
     )
