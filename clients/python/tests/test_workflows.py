@@ -551,25 +551,25 @@ def test_workflow_runs_restart_route() -> None:
     assert run.id == "run_2"
 
 
-def test_workflow_runs_resume_route() -> None:
+def test_workflow_runs_submit_hil_decision_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
-        "run": {
-            "id": "run_1",
-            "workflow_id": "wf_1",
-            "workflow_name": "Test",
-            "organization_id": "org_1",
-            "status": "running",
-            "started_at": "2026-01-01T00:00:00Z",
-            "created_at": "2026-01-01T00:00:00Z",
-            "updated_at": "2026-01-01T00:00:00Z",
+        "submission_status": "accepted",
+        "decision": {
+            "run_id": "run_1",
+            "node_id": "hil-1",
+            "node_status": "waiting_for_hil",
+            "decision_received": True,
+            "decision_applied": False,
+            "approved": True,
+            "modified_data": {"field": "value"},
+            "payload_hash": "hash_1",
+            "received_at": "2026-01-01T00:00:01Z",
+            "applied_at": None,
         },
-        "resume_status": "processing",
-        "queue_item_id": "queue_1",
-        "queue_position": None,
     }
 
-    result = WorkflowRuns(client=client).resume(
+    result = WorkflowRuns(client=client).submit_hil_decision(
         "run_1",
         node_id="hil-1",
         approved=True,
@@ -579,15 +579,38 @@ def test_workflow_runs_resume_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/runs/run_1/resume"
+    assert request.url == "/workflows/runs/run_1/hil-decisions"
     assert request.data == {
         "node_id": "hil-1",
         "approved": True,
         "modified_data": {"field": "value"},
         "command_id": "cmd_3",
     }
-    assert result.resume_status == "processing"
-    assert result.queue_item_id == "queue_1"
+    assert result.submission_status == "accepted"
+    assert result.decision.node_id == "hil-1"
+
+
+def test_workflow_runs_get_hil_decision_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "run_id": "run_1",
+        "node_id": "hil-1",
+        "node_status": "completed",
+        "decision_received": True,
+        "decision_applied": True,
+        "approved": True,
+        "modified_data": {"field": "value"},
+        "payload_hash": "hash_1",
+        "received_at": "2026-01-01T00:00:01Z",
+        "applied_at": "2026-01-01T00:00:05Z",
+    }
+
+    result = WorkflowRuns(client=client).get_hil_decision("run_1", "hil-1")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/runs/run_1/hil-decisions/hil-1"
+    assert result.decision_applied is True
 
 
 def test_workflow_runs_export_route() -> None:

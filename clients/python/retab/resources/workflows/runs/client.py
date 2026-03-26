@@ -17,7 +17,8 @@ from ....types.workflows import (
     WorkflowRun,
     TERMINAL_WORKFLOW_RUN_STATUSES,
     CancelWorkflowResponse,
-    ResumeWorkflowResponse,
+    HILDecisionResource,
+    SubmitHILDecisionResponse,
     ExportResponse,
     WorkflowRunStatus,
     WorkflowRunTriggerType,
@@ -184,7 +185,7 @@ class WorkflowRunsMixin:
             data = {"command_id": command_id}
         return PreparedRequest(method="POST", url=f"/workflows/runs/{run_id}/restart", data=data)
 
-    def prepare_resume(
+    def prepare_submit_hil_decision(
         self,
         run_id: str,
         node_id: str,
@@ -192,13 +193,24 @@ class WorkflowRunsMixin:
         modified_data: dict | None = None,
         command_id: str | None = None,
     ) -> PreparedRequest:
-        """Prepare a request to resume a workflow run after HIL review."""
+        """Prepare a request to submit a HIL decision for a workflow run."""
         data: Dict[str, Any] = {"node_id": node_id, "approved": approved}
         if modified_data is not None:
             data["modified_data"] = modified_data
         if command_id is not None:
             data["command_id"] = command_id
-        return PreparedRequest(method="POST", url=f"/workflows/runs/{run_id}/resume", data=data)
+        return PreparedRequest(
+            method="POST",
+            url=f"/workflows/runs/{run_id}/hil-decisions",
+            data=data,
+        )
+
+    def prepare_get_hil_decision(self, run_id: str, node_id: str) -> PreparedRequest:
+        """Prepare a request to get the authoritative HIL decision state for a node."""
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/runs/{run_id}/hil-decisions/{node_id}",
+        )
 
 class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     """Workflow Runs API wrapper for synchronous operations.
@@ -389,33 +401,41 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         response = self._client._prepared_request(request)
         return WorkflowRun.model_validate(response)
 
-    def resume(
+    def submit_hil_decision(
         self,
         run_id: str,
-
         node_id: str,
         approved: bool,
         modified_data: dict | None = None,
         command_id: str | None = None,
-    ) -> ResumeWorkflowResponse:
-        """Resume a workflow run after human-in-the-loop (HIL) review.
+    ) -> SubmitHILDecisionResponse:
+        """Submit a human-in-the-loop (HIL) decision for a workflow run.
 
         Args:
-            run_id: The ID of the workflow run to resume
+            run_id: The ID of the workflow run
             node_id: The ID of the HIL node being approved/rejected
             approved: Whether the human approved the data
             modified_data: Optional modified data if the human made changes
-            command_id: Optional idempotency key for deduplicating resume commands
+            command_id: Optional idempotency key for deduplicating decision submissions
 
         Returns:
-            ResumeWorkflowResponse: The updated run and resume status
+            SubmitHILDecisionResponse: The decision submission result
         """
-        request = self.prepare_resume(
-            run_id, node_id=node_id, approved=approved,
-            modified_data=modified_data, command_id=command_id,
+        request = self.prepare_submit_hil_decision(
+            run_id,
+            node_id=node_id,
+            approved=approved,
+            modified_data=modified_data,
+            command_id=command_id,
         )
         response = self._client._prepared_request(request)
-        return ResumeWorkflowResponse.model_validate(response)
+        return SubmitHILDecisionResponse.model_validate(response)
+
+    def get_hil_decision(self, run_id: str, node_id: str) -> HILDecisionResource:
+        """Get the authoritative HIL decision state for a workflow run node."""
+        request = self.prepare_get_hil_decision(run_id, node_id)
+        response = self._client._prepared_request(request)
+        return HILDecisionResource.model_validate(response)
 
     def wait_for_completion(
         self,
@@ -706,33 +726,41 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         response = await self._client._prepared_request(request)
         return WorkflowRun.model_validate(response)
 
-    async def resume(
+    async def submit_hil_decision(
         self,
         run_id: str,
-
         node_id: str,
         approved: bool,
         modified_data: dict | None = None,
         command_id: str | None = None,
-    ) -> ResumeWorkflowResponse:
-        """Resume a workflow run after human-in-the-loop (HIL) review.
+    ) -> SubmitHILDecisionResponse:
+        """Submit a human-in-the-loop (HIL) decision for a workflow run.
 
         Args:
-            run_id: The ID of the workflow run to resume
+            run_id: The ID of the workflow run
             node_id: The ID of the HIL node being approved/rejected
             approved: Whether the human approved the data
             modified_data: Optional modified data if the human made changes
-            command_id: Optional idempotency key for deduplicating resume commands
+            command_id: Optional idempotency key for deduplicating decision submissions
 
         Returns:
-            ResumeWorkflowResponse: The updated run and resume status
+            SubmitHILDecisionResponse: The decision submission result
         """
-        request = self.prepare_resume(
-            run_id, node_id=node_id, approved=approved,
-            modified_data=modified_data, command_id=command_id,
+        request = self.prepare_submit_hil_decision(
+            run_id,
+            node_id=node_id,
+            approved=approved,
+            modified_data=modified_data,
+            command_id=command_id,
         )
         response = await self._client._prepared_request(request)
-        return ResumeWorkflowResponse.model_validate(response)
+        return SubmitHILDecisionResponse.model_validate(response)
+
+    async def get_hil_decision(self, run_id: str, node_id: str) -> HILDecisionResource:
+        """Get the authoritative HIL decision state for a workflow run node."""
+        request = self.prepare_get_hil_decision(run_id, node_id)
+        response = await self._client._prepared_request(request)
+        return HILDecisionResource.model_validate(response)
 
     async def wait_for_completion(
         self,

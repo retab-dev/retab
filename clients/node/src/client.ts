@@ -22,7 +22,7 @@ const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
   APIWorkflows: ["get", "list", "create", "update", "delete", "publish", "duplicate", "get_entities"],
   APIWorkflowBlocks: ["list", "get", "create", "create_batch", "update", "delete"],
   APIWorkflowEdges: ["list", "get", "create", "create_batch", "delete", "delete_all"],
-  APIWorkflowRuns: ["create", "get", "list", "delete", "cancel", "restart", "resume"],
+  APIWorkflowRuns: ["create", "get", "list", "delete", "cancel", "restart", "submitHilDecision", "getHilDecision"],
   APIWorkflowRunSteps: ["get", "list", "get_many"],
   APIEvalsExtract: ["process", "process_stream"],
   APIEvalsSplit: ["process"],

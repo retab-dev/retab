@@ -386,27 +386,25 @@ describe("workflows client", () => {
         expect(run.id).toBe("run_2");
     });
 
-    test("runs.resume() sends POST to /resume", async () => {
+    test("runs.submitHilDecision() sends POST to /hil-decisions", async () => {
         const mockClient = new MockClient({
-            run: {
-                id: "run_1",
-                workflow_id: "wf_1",
-                workflow_name: "Test",
-                organization_id: "org_1",
-                status: "running",
-                started_at: "2026-01-01T00:00:00Z",
-                created_at: "2026-01-01T00:00:00Z",
-                updated_at: "2026-01-01T00:00:00Z",
-                steps: [],
-                waiting_for_node_ids: [],
+            submission_status: "accepted",
+            decision: {
+                run_id: "run_1",
+                node_id: "hil-1",
+                node_status: "waiting_for_hil",
+                decision_received: true,
+                decision_applied: false,
+                approved: true,
+                modified_data: { field: "value" },
+                payload_hash: "hash_1",
+                received_at: "2026-01-01T00:00:01Z",
+                applied_at: null,
             },
-            resume_status: "processing",
-            queue_item_id: "queue_1",
-            queue_position: null,
         });
         const runsClient = new APIWorkflowRuns(mockClient);
 
-        const result = await runsClient.resume("run_1", {
+        const result = await runsClient.submitHilDecision("run_1", {
             nodeId: "hil-1",
             approved: true,
             modifiedData: { field: "value" },
@@ -414,7 +412,7 @@ describe("workflows client", () => {
         });
 
         expect(mockClient.lastFetchParams).toEqual({
-            url: "/workflows/runs/run_1/resume",
+            url: "/workflows/runs/run_1/hil-decisions",
             method: "POST",
             body: {
                 node_id: "hil-1",
@@ -425,7 +423,33 @@ describe("workflows client", () => {
             params: undefined,
             headers: undefined,
         });
-        expect(result.resume_status).toBe("processing");
+        expect(result.submission_status).toBe("accepted");
+    });
+
+    test("runs.getHilDecision() sends GET to /hil-decisions/{nodeId}", async () => {
+        const mockClient = new MockClient({
+            run_id: "run_1",
+            node_id: "hil-1",
+            node_status: "completed",
+            decision_received: true,
+            decision_applied: true,
+            approved: true,
+            modified_data: { field: "value" },
+            payload_hash: "hash_1",
+            received_at: "2026-01-01T00:00:01Z",
+            applied_at: "2026-01-01T00:00:05Z",
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        const result = await runsClient.getHilDecision("run_1", "hil-1");
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/runs/run_1/hil-decisions/hil-1",
+            method: "GET",
+            params: undefined,
+            headers: undefined,
+        });
+        expect(result.decision_applied).toBe(true);
     });
 
     test("runs.export() sends POST to /export_payload", async () => {
