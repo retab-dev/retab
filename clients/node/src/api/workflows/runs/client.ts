@@ -9,8 +9,10 @@ import {
     ZPaginatedList,
     CancelWorkflowResponse,
     ZCancelWorkflowResponse,
-    ResumeWorkflowResponse,
-    ZResumeWorkflowResponse,
+    HILDecisionResource,
+    ZHILDecisionResource,
+    SubmitHILDecisionResponse,
+    ZSubmitHILDecisionResponse,
     WorkflowRunExportResponse,
     ZWorkflowRunExportResponse,
     WorkflowRunStatus,
@@ -264,9 +266,9 @@ export default class APIWorkflowRuns extends CompositionClient {
     }
 
     /**
-     * Resume a workflow run after human-in-the-loop (HIL) review.
+     * Submit a human-in-the-loop (HIL) decision for a workflow run node.
      */
-    async resume(
+    async submitHilDecision(
         runId: string,
         {
             nodeId,
@@ -280,7 +282,7 @@ export default class APIWorkflowRuns extends CompositionClient {
             commandId?: string;
         },
         options?: RequestOptions
-    ): Promise<ResumeWorkflowResponse> {
+    ): Promise<SubmitHILDecisionResponse> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const body: Record<string, any> = {
             node_id: nodeId,
@@ -289,10 +291,26 @@ export default class APIWorkflowRuns extends CompositionClient {
         if (modifiedData !== undefined) body.modified_data = modifiedData;
         if (commandId !== undefined) body.command_id = commandId;
 
-        return this._fetchJson(ZResumeWorkflowResponse, {
-            url: `/workflows/runs/${runId}/resume`,
+        return this._fetchJson(ZSubmitHILDecisionResponse, {
+            url: `/workflows/runs/${runId}/hil-decisions`,
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
+     * Read the authoritative HIL decision state for a workflow run node.
+     */
+    async getHilDecision(
+        runId: string,
+        nodeId: string,
+        options?: RequestOptions
+    ): Promise<HILDecisionResource> {
+        return this._fetchJson(ZHILDecisionResource, {
+            url: `/workflows/runs/${runId}/hil-decisions/${nodeId}`,
+            method: "GET",
             params: options?.params,
             headers: options?.headers,
         });

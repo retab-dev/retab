@@ -868,13 +868,25 @@ export const ZHandlePayload = z.lazy(() => (z.object({
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
-export const ZResumeWorkflowResponse = z.lazy(() => (z.object({
-    run: ZWorkflowRun,
-    resume_status: z.union([z.literal("processing"), z.literal("queued"), z.literal("already_processed")]),
-    queue_position: z.number().nullable().optional(),
-    queue_item_id: z.string(),
+export const ZHILDecisionResource = z.lazy(() => (z.object({
+    run_id: z.string(),
+    node_id: z.string(),
+    node_status: z.string().nullable(),
+    decision_received: z.boolean(),
+    decision_applied: z.boolean(),
+    approved: z.boolean().nullable().optional(),
+    modified_data: z.record(z.any()).nullable().optional(),
+    payload_hash: z.string().nullable().optional(),
+    received_at: z.string().datetime({ offset: true }).nullable().optional(),
+    applied_at: z.string().datetime({ offset: true }).nullable().optional(),
 })));
-export type ResumeWorkflowResponse = z.infer<typeof ZResumeWorkflowResponse>;
+export type HILDecisionResource = z.infer<typeof ZHILDecisionResource>;
+
+export const ZSubmitHILDecisionResponse = z.lazy(() => (z.object({
+    submission_status: z.union([z.literal("accepted"), z.literal("already_received")]),
+    decision: ZHILDecisionResource,
+})));
+export type SubmitHILDecisionResponse = z.infer<typeof ZSubmitHILDecisionResponse>;
 
 export const ZStepOutputResponse = z.lazy(() => (z.object({
     node_id: z.string(),
@@ -5112,4 +5124,3 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
-

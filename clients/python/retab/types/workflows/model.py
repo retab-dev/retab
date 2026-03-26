@@ -519,7 +519,7 @@ class StepOutputsBatchResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Cancel / Restart / Resume response types
+# Cancel / Restart / HIL decision response types
 # ---------------------------------------------------------------------------
 
 class CancelWorkflowResponse(BaseModel):
@@ -531,14 +531,39 @@ class CancelWorkflowResponse(BaseModel):
     )
 
 
-class ResumeWorkflowResponse(BaseModel):
-    """Response from resuming a workflow run after HIL review."""
-    run: WorkflowRun
-    resume_status: Literal["processing", "queued", "already_processed"] = Field(
-        ..., description="Status of the resume operation"
+class HILDecisionResource(BaseModel):
+    """Temporal-owned decision state for a workflow HIL node."""
+    run_id: str = Field(..., description="Workflow run ID")
+    node_id: str = Field(..., description="HIL node ID")
+    node_status: Optional[str] = Field(default=None, description="Current workflow node status")
+    decision_received: bool = Field(default=False, description="Whether Temporal received the decision")
+    decision_applied: bool = Field(default=False, description="Whether the workflow applied the decision")
+    approved: Optional[bool] = Field(default=None, description="Approved or rejected decision value")
+    modified_data: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Modified data retained by Temporal for approved decisions",
     )
-    queue_position: Optional[int] = Field(default=None, description="Position in queue if queued")
-    queue_item_id: str = Field(..., description="ID of the queue item for tracking")
+    payload_hash: Optional[str] = Field(default=None, description="Stable hash for the decision payload")
+    received_at: Optional[datetime.datetime] = Field(
+        default=None,
+        description="When Temporal received the decision",
+    )
+    applied_at: Optional[datetime.datetime] = Field(
+        default=None,
+        description="When the workflow applied the decision",
+    )
+
+
+class SubmitHILDecisionResponse(BaseModel):
+    """Response from submitting a HIL decision."""
+    submission_status: Literal["accepted", "already_received"] = Field(
+        ...,
+        description="Decision submission lifecycle status",
+    )
+    decision: HILDecisionResource = Field(
+        ...,
+        description="Temporal-owned HIL decision state for the node",
+    )
 
 
 class RunCountsResponse(BaseModel):
