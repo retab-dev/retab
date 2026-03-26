@@ -9,7 +9,7 @@ import pytest
 from pydantic import BaseModel
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.extract import RetabParsedChatCompletion
+from retab.types.documents.extract import RetabParsedChatCompletion, maybe_parse_to_pydantic
 from retab.types.chat import ChatCompletionRetabMessage
 # List of AI Providers to test
 AI_MODELS = Literal[
@@ -78,6 +78,162 @@ def test_extract_result_serializes_computed_fields() -> None:
     assert response.model_dump()["text"] == "{\"status\":\"ok\"}"
     assert response.model_dump(mode="json")["data"] == {"status": "ok"}
     assert response.model_dump(mode="json")["text"] == "{\"status\":\"ok\"}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for maybe_parse_to_pydantic
+# ---------------------------------------------------------------------------
+
+SIMPLE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "amount": {"type": "number"},
+    },
+    "required": ["name", "amount"],
+}
+
+
+def _build_completion(content: str, parsed: Any = None) -> RetabParsedChatCompletion:
+    """Helper to build a minimal RetabParsedChatCompletion for unit tests."""
+    return RetabParsedChatCompletion.model_validate(
+        {
+            "id": "chatcmpl_test",
+            "object": "chat.completion",
+            "created": 1,
+            "model": "test-model",
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "message": {
+                        "role": "assistant",
+                        "content": content,
+                        "parsed": parsed,
+                    },
+                }
+            ],
+        }
+    )
+
+
+def test_maybe_parse_to_pydantic_success() -> None:
+    """When content matches the schema, parsed should be a Pydantic model."""
+    content = '{"name": "Alice", "amount": 42.0}'
+    response = _build_completion(content)
+    result = maybe_parse_to_pydantic(SIMPLE_SCHEMA, response)
+
+    assert result.choices[0].message.parsed is not None
+    assert isinstance(result.choices[0].message.parsed, BaseModel)
+    assert result.data is not None
+    assert result.data.name == "Alice"  # type: ignore[union-attr]
+    assert result.data.amount == 42.0  # type: ignore[union-attr]
+
+
+def test_maybe_parse_to_pydantic_preserves_existing_parsed_on_failure() -> None:
+    """Consensus bug regression: when Pydantic validation fails but parsed was
+    already set from the API response, the existing dict must be preserved."""
+    # Content has null for a required string field → Pydantic validation will fail
+    content = '{"name": null, "amount": 42.0}'
+    existing_parsed = {"name": None, "amount": 42.0}
+    response = _build_completion(content, parsed=existing_parsed)
+
+    # Confirm parsed is set before calling maybe_parse_to_pydantic
+    assert response.choices[0].message.parsed == existing_parsed
+
+    result = maybe_parse_to_pydantic(SIMPLE_SCHEMA, response)
+
+    # parsed must NOT be overwritten with None — the existing dict is preserved
+    assert result.choices[0].message.parsed is not None
+    assert result.data is not None
+    assert result.data["amount"] == 42.0  # type: ignore[index]
+
+
+def test_maybe_parse_to_pydantic_falls_back_to_raw_dict() -> None:
+    """When Pydantic validation fails and parsed is None, fall back to raw dict."""
+    content = '{"name": null, "amount": 42.0}'
+    response = _build_completion(content, parsed=None)
+
+    result = maybe_parse_to_pydantic(SIMPLE_SCHEMA, response)
+
+    # Should fall back to the raw filtered dict, not None
+    assert result.choices[0].message.parsed is not None
+    assert result.data is not None
+    assert result.data["amount"] == 42.0  # type: ignore[index]
+
+
+def test_maybe_parse_to_pydantic_filters_reasoning_fields() -> None:
+    """Auxiliary fields like reasoning___ should be filtered from parsed."""
+    content = '{"name": "Bob", "amount": 10.0, "reasoning___amount": "Because..."}'
+    response = _build_completion(content)
+    result = maybe_parse_to_pydantic(SIMPLE_SCHEMA, response)
+
+    assert result.data is not None
+    dumped = result.data.model_dump() if isinstance(result.data, BaseModel) else result.data
+    assert "reasoning___amount" not in dumped
+
+
+def test_maybe_parse_to_pydantic_consensus_multi_choice() -> None:
+    """Full consensus scenario: choices[0] is consensus with nulls, choices[1..N] are votes."""
+    consensus_content = json.dumps({
+        "name": None,
+        "amount": 100.0,
+    })
+    consensus_parsed = {"name": None, "amount": 100.0}
+
+    vote_content = json.dumps({
+        "name": "Alice",
+        "amount": 100.0,
+        "reasoning___amount": "Stated in the doc",
+    })
+    vote_parsed = {"name": "Alice", "amount": 100.0, "reasoning___amount": "Stated in the doc"}
+
+    response = RetabParsedChatCompletion.model_validate(
+        {
+            "id": "chatcmpl_consensus",
+            "object": "chat.completion",
+            "created": 1,
+            "model": "test-model",
+            "likelihoods": {"name": 0.5, "amount": 1.0},
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "message": {
+                        "role": "assistant",
+                        "content": consensus_content,
+                        "parsed": consensus_parsed,
+                        "likelihoods": {"name": 0.5, "amount": 1.0},
+                    },
+                },
+                {
+                    "index": 1,
+                    "finish_reason": "stop",
+                    "message": {
+                        "role": "assistant",
+                        "content": vote_content,
+                        "parsed": vote_parsed,
+                    },
+                },
+            ],
+        }
+    )
+
+    result = maybe_parse_to_pydantic(SIMPLE_SCHEMA, response)
+
+    # data (choices[0].message.parsed) must not be None
+    assert result.data is not None
+    assert result.data["amount"] == 100.0  # type: ignore[index]
+    # choices[1] should be untouched
+    assert result.choices[1].message.parsed == vote_parsed
+
+
+def test_maybe_parse_to_pydantic_empty_content() -> None:
+    """When content is empty, parsed should remain unchanged."""
+    response = _build_completion("", parsed=None)
+    result = maybe_parse_to_pydantic(SIMPLE_SCHEMA, response)
+    assert result.choices[0].message.parsed is None
+    assert result.data is None
 
 
 # Test the extraction endpoint
