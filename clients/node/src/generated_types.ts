@@ -883,7 +883,7 @@ export const ZHILDecisionResource = z.lazy(() => (z.object({
 export type HILDecisionResource = z.infer<typeof ZHILDecisionResource>;
 
 export const ZSubmitHILDecisionResponse = z.lazy(() => (z.object({
-    submission_status: z.union([z.literal("accepted"), z.literal("already_received")]),
+    submission_status: z.union([z.literal("accepted"), z.literal("already_received"), z.literal("already_applied")]),
     decision: ZHILDecisionResource,
 })));
 export type SubmitHILDecisionResponse = z.infer<typeof ZSubmitHILDecisionResponse>;

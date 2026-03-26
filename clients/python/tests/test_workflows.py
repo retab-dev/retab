@@ -590,6 +590,34 @@ def test_workflow_runs_submit_hil_decision_route() -> None:
     assert result.decision.node_id == "hil-1"
 
 
+def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "submission_status": "already_applied",
+        "decision": {
+            "run_id": "run_1",
+            "node_id": "hil-1",
+            "node_status": "completed",
+            "decision_received": True,
+            "decision_applied": True,
+            "approved": True,
+            "modified_data": {"field": "value"},
+            "payload_hash": "hash_1",
+            "received_at": "2026-01-01T00:00:01Z",
+            "applied_at": "2026-01-01T00:00:05Z",
+        },
+    }
+
+    result = WorkflowRuns(client=client).submit_hil_decision(
+        "run_1",
+        node_id="hil-1",
+        approved=True,
+    )
+
+    assert result.submission_status == "already_applied"
+    assert result.decision.decision_applied is True
+
+
 def test_workflow_runs_get_hil_decision_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
