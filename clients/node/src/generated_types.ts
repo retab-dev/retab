@@ -1092,6 +1092,17 @@ export const ZAPICallStepOutput = z.lazy(() => (z.object({
 })));
 export type APICallStepOutput = z.infer<typeof ZAPICallStepOutput>;
 
+export const ZFunctionStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    execution_time_ms: z.number().nullable().optional(),
+    stdout: z.string().nullable().optional(),
+    stderr: z.string().nullable().optional(),
+    error: z.string().nullable().optional(),
+    traceback_str: z.string().nullable().optional(),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type FunctionStepOutput = z.infer<typeof ZFunctionStepOutput>;
+
 export const ZClassifierStepOutput = z.lazy(() => (z.object({
     category: z.string(),
     reasoning: z.string().nullable().optional(),
