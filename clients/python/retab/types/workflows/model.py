@@ -257,6 +257,16 @@ class APICallStepOutput(BaseModel):
     error: Optional[str] = Field(default=None, description="Error message if the request failed")
 
 
+class FunctionStepOutput(BaseModel):
+    message: str = Field(..., description="Status message about the function execution")
+    execution_time_ms: Optional[float] = Field(default=None, description="Execution time in milliseconds")
+    stdout: Optional[str] = Field(default=None, description="Standard output from the sandbox")
+    stderr: Optional[str] = Field(default=None, description="Standard error from the sandbox")
+    error: Optional[str] = Field(default=None, description="Error message if execution failed")
+    traceback_str: Optional[str] = Field(default=None, description="Python traceback if execution failed")
+    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Output schema for downstream nodes")
+
+
 class EditStepOutput(BaseModel):
     mode: Literal["template", "document"] = Field(..., description="Edit execution mode")
     form_fields: List[Dict[str, Any]] = Field(default_factory=list, description="Form fields produced by the edit workflow")
@@ -350,6 +360,7 @@ WorkflowStepOutputData: TypeAlias = (
     | ConditionalStepOutput
     | ConditionalCheckStepOutput
     | APICallStepOutput
+    | FunctionStepOutput
     | EditStepOutput
     | ReshapeStepOutput
     | EndStepOutput
@@ -372,6 +383,7 @@ _STEP_OUTPUT_MODEL_BY_NODE_TYPE: Dict[str, type[BaseModel]] = {
     "conditional": ConditionalStepOutput,
     "hil": HILStepOutput,
     "api_call": APICallStepOutput,
+    "function": FunctionStepOutput,
     "formula": FormulaStepOutput,
     "reshape": ReshapeStepOutput,
     "merge_pdf": MergePdfStepOutput,
