@@ -275,14 +275,6 @@ class EditStepOutput(BaseModel):
     template_id: Optional[str] = Field(default=None, description="Template ID used in template mode")
 
 
-class ReshapeStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the reshape")
-    mappings: List[Dict[str, Any]] = Field(default_factory=list, description="Applied field mappings")
-    extracted_data: Dict[str, Any] = Field(default_factory=dict, description="Reshaped JSON data")
-    extraction_id: Optional[str] = Field(default=None, description="Associated extraction ID")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Derived schema for the reshaped data")
-
-
 class EndStepOutput(BaseModel):
     message: str = Field(..., description="Status message for the end node")
     webhook_sent: bool = Field(default=False, description="Whether a webhook was attempted")
@@ -362,7 +354,6 @@ WorkflowStepOutputData: TypeAlias = (
     | APICallStepOutput
     | FunctionStepOutput
     | EditStepOutput
-    | ReshapeStepOutput
     | EndStepOutput
     | LoopContextStepOutput
     | ForEachSentinelStartStepOutput
@@ -385,7 +376,6 @@ _STEP_OUTPUT_MODEL_BY_NODE_TYPE: Dict[str, type[BaseModel]] = {
     "api_call": APICallStepOutput,
     "function": FunctionStepOutput,
     "formula": FormulaStepOutput,
-    "reshape": ReshapeStepOutput,
     "merge_pdf": MergePdfStepOutput,
     "merge_dicts": MergeDictsStepOutput,
     "end": EndStepOutput,
@@ -448,7 +438,7 @@ class StepOutputResponse(BaseModel):
     def get_json_output(self, handle_id: str = "output-json-0") -> Optional[dict]:
         """Get JSON data from a specific output handle.
 
-        Most extract/formula/reshape nodes emit JSON on ``output-json-0``.
+        Most extract/formula nodes emit JSON on ``output-json-0``.
         """
         if not self.handle_outputs:
             return None
