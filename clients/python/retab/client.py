@@ -40,7 +40,10 @@ class MaxRetriesExceeded(Exception):
 def raise_max_tries_exceeded(details: backoff.types.Details) -> None:
     exception = details.get("exception")
     tries = details["tries"]
-    if isinstance(exception, BaseException):
+    if isinstance(exception, APIError):
+        exception.retries = tries
+        raise exception
+    elif isinstance(exception, BaseException):
         raise Exception(f"Max tries exceeded after {tries} tries.") from exception
     else:
         raise Exception(f"Max tries exceeded after {tries} tries.")
@@ -112,6 +115,8 @@ class BaseRetab:
         status_code = response_object.status_code
         body = response_object.text
         request_id = response_object.headers.get("x-request-id")
+        method = response_object.request.method
+        url = str(response_object.request.url)
 
         # Try to parse structured error from response body
         code: str | None = None
@@ -143,6 +148,8 @@ class BaseRetab:
             details=details,
             body=body,
             request_id=request_id,
+            method=method,
+            url=url,
         )
 
     def _get_headers(self, idempotency_key: str | None = None) -> dict[str, Any]:

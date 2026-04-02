@@ -30,20 +30,54 @@ class APIError(RetabError, RuntimeError):
         details: dict[str, Any] | None = None,
         body: str = "",
         request_id: str | None = None,
+        method: str | None = None,
+        url: str | None = None,
     ) -> None:
         self.status_code = status_code
         self.code = code
         self.details = details
         self.body = body
         self.request_id = request_id
+        self.method = method
+        self.url = url
+        self.retries: int = 0
         super().__init__(message)
 
+    def __str__(self) -> str:
+        lines = [f"{self.status_code} — {self.message}"]
+        if self.method and self.url:
+            lines.append(f"  URL:        {self.method} {self.url}")
+        if self.request_id:
+            lines.append(f"  Request-ID: {self.request_id}")
+        if self.code:
+            lines.append(f"  Code:       {self.code}")
+        if self.details:
+            lines.append(f"  Details:    {self.details}")
+        if self.body:
+            truncated = self.body[:500]
+            if len(self.body) > 500:
+                truncated += "..."
+            lines.append(f"  Body:       {truncated}")
+        if self.retries > 0:
+            lines.append(f"  Retries:    {self.retries}")
+        return "\n".join(lines)
+
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(message={self.message!r}, "
-            f"status_code={self.status_code}, code={self.code!r}, "
-            f"request_id={self.request_id!r})"
-        )
+        parts = [
+            f"message={self.message!r}",
+            f"status_code={self.status_code}",
+            f"code={self.code!r}",
+            f"request_id={self.request_id!r}",
+        ]
+        if self.method and self.url:
+            parts.append(f"url={self.method!r} {self.url!r}")
+        if self.details:
+            parts.append(f"details={self.details!r}")
+        if self.body:
+            parts.append(f"body={self.body!r}")
+        if self.retries > 0:
+            parts.append(f"retries={self.retries}")
+        return f"{self.__class__.__name__}({', '.join(parts)})"
 
 
 class AuthenticationError(APIError):
