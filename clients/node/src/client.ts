@@ -79,7 +79,7 @@ export class AbstractClient {
     let bodyType = _params ? _bodyType as ZodSchema : undefined;
     let response = await this._fetch(params);
     if (!response.ok) {
-      throw new APIError(response.status, await response.text());
+      throw await buildAPIError(response, params.method, params.url);
     }
     if (!bodyType) {
       return;
@@ -90,7 +90,7 @@ export class AbstractClient {
   protected async _fetchStream<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, params: FetchParams): Promise<AsyncGenerator<z.output<ZodSchema>>> {
     let response = await this._fetch(params);
     if (!response.ok) {
-      throw new APIError(response.status, await response.text());
+      throw await buildAPIError(response, params.method, params.url);
     }
     if (!response.headers.get("Content-Type")?.startsWith("application/stream+json")) throw new APIError(response.status, "Response is not stream JSON");
     return streamResponse(schema, response);
@@ -176,11 +176,96 @@ export class CompositionClient extends AbstractClient {
 export class APIError extends Error {
   status: number;
   info: string;
-  constructor(status: number, info: string) {
-    super(`API Error ${status}: ${info}`);
+  code: string | null;
+  details: Record<string, any> | null;
+  body: string;
+  requestId: string | null;
+  method: string | null;
+  url: string | null;
+  retries: number;
+
+  constructor(
+    status: number,
+    info: string,
+    options?: {
+      code?: string | null;
+      details?: Record<string, any> | null;
+      body?: string;
+      requestId?: string | null;
+      method?: string | null;
+      url?: string | null;
+    },
+  ) {
+    super(info);
+    this.name = "APIError";
     this.status = status;
     this.info = info;
+    this.code = options?.code ?? null;
+    this.details = options?.details ?? null;
+    this.body = options?.body ?? "";
+    this.requestId = options?.requestId ?? null;
+    this.method = options?.method ?? null;
+    this.url = options?.url ?? null;
+    this.retries = 0;
   }
+
+  override toString(): string {
+    const lines = [`${this.status} — ${this.info}`];
+    if (this.method && this.url) {
+      lines.push(`  URL:        ${this.method} ${this.url}`);
+    }
+    if (this.requestId) {
+      lines.push(`  Request-ID: ${this.requestId}`);
+    }
+    if (this.code) {
+      lines.push(`  Code:       ${this.code}`);
+    }
+    if (this.details) {
+      lines.push(`  Details:    ${JSON.stringify(this.details)}`);
+    }
+    if (this.body) {
+      const truncated = this.body.length > 500 ? this.body.slice(0, 500) + "..." : this.body;
+      lines.push(`  Body:       ${truncated}`);
+    }
+    if (this.retries > 0) {
+      lines.push(`  Retries:    ${this.retries}`);
+    }
+    return lines.join("\n");
+  }
+}
+
+async function buildAPIError(response: Response, method?: string, url?: string): Promise<APIError> {
+  const body = await response.text();
+  const requestId = response.headers.get("x-request-id") ?? null;
+
+  let code: string | null = null;
+  let message = `Request failed (${response.status})`;
+  let details: Record<string, any> | null = null;
+
+  try {
+    const errorBody = JSON.parse(body);
+    if (typeof errorBody === "object" && errorBody !== null && !Array.isArray(errorBody)) {
+      const detail = errorBody.detail;
+      if (typeof detail === "object" && detail !== null && !Array.isArray(detail)) {
+        code = detail.code ?? null;
+        message = detail.message ?? message;
+        details = detail.details ?? null;
+      } else if (typeof detail === "string") {
+        message = detail;
+      }
+    }
+  } catch {
+    if (body) message = body;
+  }
+
+  return new APIError(response.status, message, {
+    code,
+    details,
+    body,
+    requestId,
+    method: method ?? null,
+    url: url ?? null,
+  });
 }
 
 export class SignatureVerificationError extends Error {
@@ -277,7 +362,7 @@ export class FetcherClient extends AbstractClient {
     init.signal = AbortSignal.timeout(this.timeout);
     let res = await fetch(url, init);
     if (!res.ok) {
-      throw new APIError(res.status, await res.text());
+      throw await buildAPIError(res, params.method, url);
     }
     return res;
   }
