@@ -652,7 +652,7 @@ class WorkflowEdgeCreateRequest(BaseModel):
 
 
 class WorkflowBlock(BaseModel):
-    """A block (node) in a workflow graph."""
+    """A block in a workflow graph."""
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Block ID")
