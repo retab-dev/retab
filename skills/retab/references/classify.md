@@ -17,6 +17,7 @@ client = Retab()
 result = client.documents.classify(
     document="document.pdf",
     model="retab-small",
+    n_consensus=3,
     categories=[
         {"name": "invoice", "description": "Invoice documents"},
         {"name": "receipt", "description": "Receipt documents"},
@@ -47,6 +48,7 @@ const result = await client.documents.classify({
 
 console.log(result.result.classification);
 console.log(result.result.reasoning);
+console.log(result.likelihood);
 ```
 
 ## Minimal REST
@@ -61,6 +63,7 @@ curl -X POST "https://api.retab.com/v1/documents/classify" \
       "url": "data:application/pdf;base64,..."
     },
     "model": "retab-small",
+    "n_consensus": 3,
     "categories": [
       { "name": "invoice", "description": "Invoice documents" },
       { "name": "receipt", "description": "Receipt documents" },
@@ -74,11 +77,14 @@ curl -X POST "https://api.retab.com/v1/documents/classify" \
 - `categories`: required; each item needs `name` and `description`
 - `first_n_pages`: limit analysis when early pages are enough
 - `context`: add business context for ambiguous categories
+- `n_consensus`: run classification multiple times and majority-vote the final label
 
 ## Response shape
 
 - `result.classification`
 - `result.reasoning`
+- `likelihood` when consensus produced at least two successful votes
+- `votes[]` with each individual classify vote when `n_consensus > 1`
 
 ## Guidance
 

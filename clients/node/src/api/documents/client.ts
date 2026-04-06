@@ -205,8 +205,9 @@ export default class APIDocuments extends CompositionClient {
      *   - categories: Array of categories with 'name' and 'description'
      *   - model: LLM model for inference (e.g., "retab-small")
      *   - first_n_pages: (optional) Only use the first N pages for classification. Useful for large documents.
+     *   - n_consensus: (optional) Number of classify runs to use for consensus voting
      * @param options - Optional request options
-     * @returns ClassifyResponse containing result with reasoning and classification
+     * @returns ClassifyResponse containing the consensus result, optional likelihood, and optional individual votes
      *
      * @example
      * ```typescript
@@ -218,10 +219,12 @@ export default class APIDocuments extends CompositionClient {
      *         { name: "receipt", description: "Receipt documents for payments" },
      *         { name: "contract", description: "Legal contract documents" },
      *     ],
-     *     first_n_pages: 3  // Optional: only use first 3 pages
+     *     first_n_pages: 3,  // Optional: only use first 3 pages
+     *     n_consensus: 3,
      * });
      * console.log(`Classification: ${response.result.classification}`);
      * console.log(`Reasoning: ${response.result.reasoning}`);
+     * console.log(`Likelihood: ${response.likelihood}`);
      * ```
      */
     async classify(params: ClassifyRequest, options?: RequestOptions): Promise<ClassifyResponse> {
