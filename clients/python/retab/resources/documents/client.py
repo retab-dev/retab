@@ -132,6 +132,7 @@ class BaseDocumentsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category] | list[dict[str, str]],
         model: str,
+        n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
         **extra_body: Any,
     ) -> PreparedRequest:
@@ -148,6 +149,8 @@ class BaseDocumentsMixin:
             "categories": category_objects,
             "model": model,
         }
+        if n_consensus is not UNSET:
+            request_dict["n_consensus"] = n_consensus
         if bust_cache:
             request_dict["bust_cache"] = True
 
@@ -597,6 +600,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category] | list[dict[str, str]],
         model: str,
+        n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
         **extra_body: Any,
     ) -> ClassifyResponse:
@@ -612,6 +616,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             categories: List of categories to classify the document into. Each category should have a 'name' and 'description'.
                 Can be Category objects or dicts with 'name' and 'description' keys.
             model: The AI model to use for document classification (e.g., "retab-small").
+            n_consensus: Number of classification runs to use for consensus voting.
 
         Returns:
             ClassifyResponse: Response containing:
@@ -639,6 +644,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             document=document,
             categories=categories,
             model=model,
+            n_consensus=n_consensus,
             bust_cache=bust_cache,
             **extra_body,
         )
@@ -945,6 +951,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         categories: list[Category] | list[dict[str, str]],
         model: str,
+        n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
         **extra_body: Any,
     ) -> ClassifyResponse:
@@ -960,6 +967,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             categories: List of categories to classify the document into. Each category should have a 'name' and 'description'.
                 Can be Category objects or dicts with 'name' and 'description' keys.
             model: The AI model to use for document classification (e.g., "retab-small").
+            n_consensus: Number of classification runs to use for consensus voting.
 
         Returns:
             ClassifyResponse: Response containing:
@@ -987,6 +995,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             document=document,
             categories=categories,
             model=model,
+            n_consensus=n_consensus,
             bust_cache=bust_cache,
             **extra_body,
         )

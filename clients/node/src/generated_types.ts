@@ -1670,12 +1670,15 @@ export const ZClassifyRequest = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     first_n_pages: z.number().nullable().optional(),
     context: z.string().nullable().optional(),
+    n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
 })));
 export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
 
 export const ZClassifyResponse = z.lazy(() => (z.object({
     result: ZClassifyResult,
+    likelihood: z.number().nullable().optional(),
+    votes: z.array(ZClassifyVote).default([]),
     usage: ZRetabUsage,
 })));
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
@@ -1685,6 +1688,12 @@ export const ZClassifyResult = z.lazy(() => (z.object({
     classification: z.string(),
 })));
 export type ClassifyResult = z.infer<typeof ZClassifyResult>;
+
+export const ZClassifyVote = z.lazy(() => (z.object({
+    reasoning: z.string(),
+    classification: z.string(),
+})));
+export type ClassifyVote = z.infer<typeof ZClassifyVote>;
 
 export const ZParseRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
