@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Sequence
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.standards import PreparedRequest
-from ....types.workflows import WorkflowEdge, WorkflowEdgeCreateRequest
+from ....types.workflows import WorkflowEdgeDoc, WorkflowEdgeCreateRequest
 
 
 class WorkflowEdgesMixin:
@@ -98,7 +98,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
 
         source_block: str | None = None,
         target_block: str | None = None,
-    ) -> List[WorkflowEdge]:
+    ) -> List[WorkflowEdgeDoc]:
         """List all edges for a workflow.
 
         Args:
@@ -107,17 +107,17 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
             target_block: Filter by target block ID (optional)
 
         Returns:
-            List of workflow edges
+            List of workflow edge documents
         """
         request = self.prepare_list(workflow_id, source_block=source_block, target_block=target_block)
         response = self._client._prepared_request(request)
-        return [WorkflowEdge.model_validate(item) for item in response]
+        return [WorkflowEdgeDoc.model_validate(item) for item in response]
 
-    def get(self, workflow_id: str, edge_id: str) -> WorkflowEdge:
+    def get(self, workflow_id: str, edge_id: str) -> WorkflowEdgeDoc:
         """Get a single edge by ID."""
         request = self.prepare_get(workflow_id, edge_id)
         response = self._client._prepared_request(request)
-        return WorkflowEdge.model_validate(response)
+        return WorkflowEdgeDoc.model_validate(response)
 
     def create(
         self,
@@ -128,7 +128,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         source_handle: str | None = None,
         target_handle: str | None = None,
         request: WorkflowEdgeCreateRequest | None = None,
-    ) -> WorkflowEdge:
+    ) -> WorkflowEdgeDoc:
         """Create a new edge connecting two blocks.
 
         Args:
@@ -141,7 +141,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
             request: Optional typed request model. When provided, its values are used directly.
 
         Returns:
-            WorkflowEdge: The created edge
+            WorkflowEdgeDoc: The created edge document
         """
         create_request = self._coerce_create_request(
             request=request,
@@ -153,13 +153,13 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         )
         prepared_request = self.prepare_create(workflow_id, create_request)
         response = self._client._prepared_request(prepared_request)
-        return WorkflowEdge.model_validate(response)
+        return WorkflowEdgeDoc.model_validate(response)
 
     def create_batch(
         self,
         workflow_id: str,
         edges: Sequence[WorkflowEdgeCreateRequest | Dict[str, Any]],
-    ) -> List[WorkflowEdge]:
+    ) -> List[WorkflowEdgeDoc]:
         """Create multiple edges in a single request.
 
         Args:
@@ -172,7 +172,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         batch_requests = self._coerce_batch_requests(edges)
         prepared_request = self.prepare_create_batch(workflow_id, batch_requests)
         response = self._client._prepared_request(prepared_request)
-        return [WorkflowEdge.model_validate(item) for item in response]
+        return [WorkflowEdgeDoc.model_validate(item) for item in response]
 
     def delete(self, workflow_id: str, edge_id: str) -> None:
         """Delete an edge."""
@@ -197,17 +197,17 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
 
         source_block: str | None = None,
         target_block: str | None = None,
-    ) -> List[WorkflowEdge]:
+    ) -> List[WorkflowEdgeDoc]:
         """List all edges for a workflow."""
         request = self.prepare_list(workflow_id, source_block=source_block, target_block=target_block)
         response = await self._client._prepared_request(request)
-        return [WorkflowEdge.model_validate(item) for item in response]
+        return [WorkflowEdgeDoc.model_validate(item) for item in response]
 
-    async def get(self, workflow_id: str, edge_id: str) -> WorkflowEdge:
+    async def get(self, workflow_id: str, edge_id: str) -> WorkflowEdgeDoc:
         """Get a single edge by ID."""
         request = self.prepare_get(workflow_id, edge_id)
         response = await self._client._prepared_request(request)
-        return WorkflowEdge.model_validate(response)
+        return WorkflowEdgeDoc.model_validate(response)
 
     async def create(
         self,
@@ -218,7 +218,7 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         source_handle: str | None = None,
         target_handle: str | None = None,
         request: WorkflowEdgeCreateRequest | None = None,
-    ) -> WorkflowEdge:
+    ) -> WorkflowEdgeDoc:
         """Create a new edge connecting two blocks."""
         create_request = self._coerce_create_request(
             request=request,
@@ -230,18 +230,18 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         )
         prepared_request = self.prepare_create(workflow_id, create_request)
         response = await self._client._prepared_request(prepared_request)
-        return WorkflowEdge.model_validate(response)
+        return WorkflowEdgeDoc.model_validate(response)
 
     async def create_batch(
         self,
         workflow_id: str,
         edges: Sequence[WorkflowEdgeCreateRequest | Dict[str, Any]],
-    ) -> List[WorkflowEdge]:
+    ) -> List[WorkflowEdgeDoc]:
         """Create multiple edges in a single request."""
         batch_requests = self._coerce_batch_requests(edges)
         prepared_request = self.prepare_create_batch(workflow_id, batch_requests)
         response = await self._client._prepared_request(prepared_request)
-        return [WorkflowEdge.model_validate(item) for item in response]
+        return [WorkflowEdgeDoc.model_validate(item) for item in response]
 
     async def delete(self, workflow_id: str, edge_id: str) -> None:
         """Delete an edge."""

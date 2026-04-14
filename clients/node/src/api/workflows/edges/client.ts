@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { CompositionClient, RequestOptions } from "../../../client.js";
-import { WorkflowEdge, WorkflowEdgeCreateRequest, ZWorkflowEdge } from "../../../types.js";
+import { WorkflowEdgeDoc, WorkflowEdgeCreateRequest, ZWorkflowEdgeDoc } from "../../../types.js";
 
 type LegacyWorkflowEdgeCreateRequest = {
     id: string;
@@ -44,7 +44,7 @@ export default class APIWorkflowEdges extends CompositionClient {
         workflowId: string,
         { sourceBlock, targetBlock }: { sourceBlock?: string; targetBlock?: string } = {},
         options?: RequestOptions
-    ): Promise<WorkflowEdge[]> {
+    ): Promise<WorkflowEdgeDoc[]> {
         const params = Object.fromEntries(
             Object.entries({
                 source_block: sourceBlock,
@@ -53,7 +53,7 @@ export default class APIWorkflowEdges extends CompositionClient {
             }).filter(([_, v]) => v !== undefined)
         );
 
-        return this._fetchJson(z.array(ZWorkflowEdge), {
+        return this._fetchJson(z.array(ZWorkflowEdgeDoc), {
             url: `/workflows/${workflowId}/edges`,
             method: "GET",
             params,
@@ -64,8 +64,8 @@ export default class APIWorkflowEdges extends CompositionClient {
     /**
      * Get a single edge by ID.
      */
-    async get(workflowId: string, edgeId: string, options?: RequestOptions): Promise<WorkflowEdge> {
-        return this._fetchJson(ZWorkflowEdge, {
+    async get(workflowId: string, edgeId: string, options?: RequestOptions): Promise<WorkflowEdgeDoc> {
+        return this._fetchJson(ZWorkflowEdgeDoc, {
             url: `/workflows/${workflowId}/edges/${edgeId}`,
             method: "GET",
             params: options?.params,
@@ -91,8 +91,8 @@ export default class APIWorkflowEdges extends CompositionClient {
         workflowId: string,
         request: WorkflowEdgeCreateRequest,
         options?: RequestOptions
-    ): Promise<WorkflowEdge> {
-        return this._fetchJson(ZWorkflowEdge, {
+    ): Promise<WorkflowEdgeDoc> {
+        return this._fetchJson(ZWorkflowEdgeDoc, {
             url: `/workflows/${workflowId}/edges`,
             method: "POST",
             body: { ...serializeEdgeCreateRequest(request), ...(options?.body as Record<string, unknown> || {}) },
@@ -111,8 +111,8 @@ export default class APIWorkflowEdges extends CompositionClient {
         workflowId: string,
         edges: Array<WorkflowEdgeCreateRequest | LegacyWorkflowEdgeCreateRequest>,
         options?: RequestOptions
-    ): Promise<WorkflowEdge[]> {
-        return this._fetchJson(z.array(ZWorkflowEdge), {
+    ): Promise<WorkflowEdgeDoc[]> {
+        return this._fetchJson(z.array(ZWorkflowEdgeDoc), {
             url: `/workflows/${workflowId}/edges/batch`,
             method: "POST",
             body: edges.map((edge) => serializeEdgeCreateRequest(edge)),
@@ -125,7 +125,7 @@ export default class APIWorkflowEdges extends CompositionClient {
         workflowId: string,
         edges: Array<WorkflowEdgeCreateRequest | LegacyWorkflowEdgeCreateRequest>,
         options?: RequestOptions
-    ): Promise<WorkflowEdge[]> {
+    ): Promise<WorkflowEdgeDoc[]> {
         return this.createBatch(workflowId, edges, options);
     }
 

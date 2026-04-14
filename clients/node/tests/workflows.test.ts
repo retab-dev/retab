@@ -38,9 +38,8 @@ describe("workflows client", () => {
             id: "workflow_123",
             name: "Test Workflow",
             description: "",
-            is_published: false,
-            email_senders_whitelist: [],
-            email_domains_whitelist: [],
+            published: null,
+            email_trigger: { allowed_senders: [], allowed_domains: [] },
             created_at: "2026-03-12T10:00:00Z",
             updated_at: "2026-03-12T10:00:00Z",
         });
@@ -92,9 +91,8 @@ describe("workflows client", () => {
             id: "wf_new",
             name: "My Workflow",
             description: "A test",
-            is_published: false,
-            email_senders_whitelist: [],
-            email_domains_whitelist: [],
+            published: null,
+            email_trigger: { allowed_senders: [], allowed_domains: [] },
             created_at: "2026-03-12T10:00:00Z",
             updated_at: "2026-03-12T10:00:00Z",
         });
@@ -112,10 +110,11 @@ describe("workflows client", () => {
         const mockClient = new MockClient({
             id: "wf_1",
             name: "Test",
-            is_published: true,
-            published_snapshot_id: "snap_1",
-            email_senders_whitelist: [],
-            email_domains_whitelist: [],
+            published: {
+                snapshot_id: "snap_1",
+                published_at: "2026-03-12T10:00:00Z",
+            },
+            email_trigger: { allowed_senders: [], allowed_domains: [] },
             created_at: "2026-03-12T10:00:00Z",
             updated_at: "2026-03-12T10:00:00Z",
         });
@@ -125,7 +124,7 @@ describe("workflows client", () => {
 
         expect(mockClient.lastFetchParams?.url).toBe("/workflows/wf_1/publish");
         expect(mockClient.lastFetchParams?.method).toBe("POST");
-        expect(wf.is_published).toBe(true);
+        expect(wf.published?.snapshot_id).toBe("snap_1");
     });
 
     test("getEntities() returns blocks, edges, subflows", async () => {
@@ -135,11 +134,18 @@ describe("workflows client", () => {
                 created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z",
             },
             blocks: [
-                { id: "start-1", workflow_id: "wf_1", type: "start", label: "Doc Input" },
-                { id: "extract-1", workflow_id: "wf_1", type: "extract", label: "Extract" },
+                { id: "start-1", workflow_id: "wf_1", organization_id: "org_1", draft_version: "draft_1", type: "start", label: "Doc Input" },
+                { id: "extract-1", workflow_id: "wf_1", organization_id: "org_1", draft_version: "draft_1", type: "extract", label: "Extract" },
             ],
             edges: [
-                { id: "edge-1", workflow_id: "wf_1", source_block: "start-1", target_block: "extract-1" },
+                {
+                    id: "edge-1",
+                    workflow_id: "wf_1",
+                    organization_id: "org_1",
+                    draft_version: "draft_1",
+                    source_block: "start-1",
+                    target_block: "extract-1",
+                },
             ],
             subflows: [],
         });
@@ -150,6 +156,8 @@ describe("workflows client", () => {
         expect(mockClient.lastFetchParams?.url).toBe("/workflows/wf_1/entities");
         expect(entities.blocks).toHaveLength(2);
         expect(entities.edges).toHaveLength(1);
+        expect(entities.edges[0]?.organization_id).toBe("org_1");
+        expect(entities.edges[0]?.draft_version).toBe("draft_1");
         expect(entities.blocks.filter(b => b.type === "start")).toHaveLength(1);
     });
 
@@ -167,9 +175,8 @@ describe("workflows client", () => {
         const mockClient = new MockClient({
             id: "wf_copy",
             name: "Test (Copy)",
-            is_published: false,
-            email_senders_whitelist: [],
-            email_domains_whitelist: [],
+            published: null,
+            email_trigger: { allowed_senders: [], allowed_domains: [] },
             created_at: "2026-03-12T10:00:00Z",
             updated_at: "2026-03-12T10:00:00Z",
         });
@@ -309,8 +316,8 @@ describe("workflows client", () => {
 
     test("blocks.createBatch() accepts camelCase request objects", async () => {
         const mockClient = new MockClient([
-            { id: "start-1", workflow_id: "wf_1", type: "start" },
-            { id: "extract-1", workflow_id: "wf_1", type: "extract" },
+            { id: "start-1", workflow_id: "wf_1", organization_id: "org_1", draft_version: "draft_1", type: "start" },
+            { id: "extract-1", workflow_id: "wf_1", organization_id: "org_1", draft_version: "draft_1", type: "extract" },
         ]);
         const blocksClient = new APIWorkflowBlocks(mockClient);
 
@@ -323,8 +330,8 @@ describe("workflows client", () => {
             url: "/workflows/wf_1/blocks/batch",
             method: "POST",
             body: [
-                { id: "start-1", type: "start", label: "", position_x: 0, position_y: 0, width: undefined, height: undefined, config: undefined, subflow_id: undefined, parent_id: undefined },
-                { id: "extract-1", type: "extract", label: "", position_x: 120, position_y: 80, width: undefined, height: undefined, config: undefined, subflow_id: undefined, parent_id: undefined },
+                { id: "start-1", type: "start", label: "", position_x: 0, position_y: 0, width: undefined, height: undefined, config: undefined, parent_id: undefined },
+                { id: "extract-1", type: "extract", label: "", position_x: 120, position_y: 80, width: undefined, height: undefined, config: undefined, parent_id: undefined },
             ],
             params: undefined,
             headers: undefined,
@@ -332,9 +339,33 @@ describe("workflows client", () => {
         expect(blocks.map((block) => block.id)).toEqual(["start-1", "extract-1"]);
     });
 
+    test("workflow blocks expose live-editing metadata", async () => {
+        const mockClient = new MockClient({
+            id: "extract-1",
+            workflow_id: "wf_1",
+            organization_id: "org_1",
+            draft_version: "draft_1",
+            type: "extract",
+            label: "Extract",
+        });
+        const blocksClient = new APIWorkflowBlocks(mockClient);
+
+        const block = await blocksClient.get("wf_1", "extract-1");
+
+        expect(block.organization_id).toBe("org_1");
+        expect(block.draft_version).toBe("draft_1");
+    });
+
     test("edges.createBatch() accepts camelCase request objects", async () => {
         const mockClient = new MockClient([
-            { id: "edge-1", workflow_id: "wf_1", source_block: "start-1", target_block: "extract-1" },
+            {
+                id: "edge-1",
+                workflow_id: "wf_1",
+                organization_id: "org_1",
+                draft_version: "draft_1",
+                source_block: "start-1",
+                target_block: "extract-1",
+            },
         ]);
         const edgesClient = new APIWorkflowEdges(mockClient);
 

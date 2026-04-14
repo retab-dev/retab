@@ -60,10 +60,12 @@ class WorkflowsMixin:
             data["name"] = name
         if description is not None:
             data["description"] = description
-        if email_senders_whitelist is not None:
-            data["email_senders_whitelist"] = email_senders_whitelist
-        if email_domains_whitelist is not None:
-            data["email_domains_whitelist"] = email_domains_whitelist
+        if email_senders_whitelist is not None or email_domains_whitelist is not None:
+            data["email_trigger"] = {}
+            if email_senders_whitelist is not None:
+                data["email_trigger"]["allowed_senders"] = email_senders_whitelist
+            if email_domains_whitelist is not None:
+                data["email_trigger"]["allowed_domains"] = email_domains_whitelist
         return PreparedRequest(method="PATCH", url=f"/workflows/{workflow_id}", data=data)
 
     def prepare_delete(self, workflow_id: str) -> PreparedRequest:
@@ -125,7 +127,8 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         )
         response = self._client._prepared_request(request)
         result = PaginatedList(**response)
-        result.data = [Workflow.model_validate(item) if isinstance(item, dict) else item for item in result.data]
+        if fields is None:
+            result.data = [Workflow.model_validate(item) if isinstance(item, dict) else item for item in result.data]
         return result
 
     def create(self, name: str = "Untitled Workflow", description: str = "") -> Workflow:
@@ -184,7 +187,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
             description: Optional description for this published version
 
         Returns:
-            Workflow: The updated workflow with new published_snapshot_id
+            Workflow: The updated workflow with new published metadata
         """
         request = self.prepare_publish(workflow_id, description=description)
         response = self._client._prepared_request(request)
@@ -253,7 +256,8 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         )
         response = await self._client._prepared_request(request)
         result = PaginatedList(**response)
-        result.data = [Workflow.model_validate(item) if isinstance(item, dict) else item for item in result.data]
+        if fields is None:
+            result.data = [Workflow.model_validate(item) if isinstance(item, dict) else item for item in result.data]
         return result
 
     async def create(self, name: str = "Untitled Workflow", description: str = "") -> Workflow:
@@ -302,4 +306,3 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         request = self.prepare_get_entities(workflow_id)
         response = await self._client._prepared_request(request)
         return WorkflowWithEntities.model_validate(response)
-

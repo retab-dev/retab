@@ -128,18 +128,38 @@ class Workflow(BaseModel):
     """A stored workflow record."""
     model_config = ConfigDict(extra="ignore")
 
+    class Published(BaseModel):
+        snapshot_id: Optional[str] = Field(default=None, description="Published snapshot ID")
+        published_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow was last published")
+
+    class EmailTrigger(BaseModel):
+        allowed_senders: List[str] = Field(default_factory=list, description="Allowed sender email addresses")
+        allowed_domains: List[str] = Field(default_factory=list, description="Allowed sender email domains")
+
     id: str = Field(..., description="Unique ID for this workflow")
     name: str = Field(default="Untitled Workflow", description="Workflow name")
     description: str = Field(default="", description="Workflow description")
-    is_published: bool = Field(default=False, description="Whether the workflow has a published snapshot")
-    published_snapshot_id: Optional[str] = Field(default=None, description="Published snapshot ID")
-    published_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow was last published")
-    draft_version: Optional[str] = Field(default=None, description="Current draft version")
     organization_id: Optional[str] = Field(default=None, description="Organization that owns this workflow")
-    email_senders_whitelist: List[str] = Field(default_factory=list, description="Allowed sender email addresses")
-    email_domains_whitelist: List[str] = Field(default_factory=list, description="Allowed sender email domains")
+    published: Optional[Published] = Field(default=None, description="Published workflow metadata")
+    email_trigger: EmailTrigger = Field(default_factory=EmailTrigger, description="Email trigger allowlist policy")
     created_at: datetime.datetime = Field(..., description="When the workflow was created")
     updated_at: datetime.datetime = Field(..., description="When the workflow was last updated")
+
+    @property
+    def published_snapshot_id(self) -> Optional[str]:
+        return self.published.snapshot_id if self.published is not None else None
+
+    @property
+    def published_at(self) -> Optional[datetime.datetime]:
+        return self.published.published_at if self.published is not None else None
+
+    @property
+    def email_senders_whitelist(self) -> List[str]:
+        return list(self.email_trigger.allowed_senders)
+
+    @property
+    def email_domains_whitelist(self) -> List[str]:
+        return list(self.email_trigger.allowed_domains)
 
 
 # ---------------------------------------------------------------------------
@@ -616,7 +636,6 @@ class WorkflowBlockCreateRequest(BaseModel):
     width: Optional[float] = None
     height: Optional[float] = None
     config: Optional[dict] = None
-    subflow_id: Optional[str] = None
     parent_id: Optional[str] = None
 
 
@@ -631,7 +650,6 @@ class WorkflowBlockUpdateRequest(BaseModel):
     width: Optional[float] = None
     height: Optional[float] = None
     config: Optional[dict] = None
-    subflow_id: Optional[str] = None
     parent_id: Optional[str] = None
 
 
@@ -657,6 +675,8 @@ class WorkflowBlock(BaseModel):
 
     id: str = Field(..., description="Block ID")
     workflow_id: str = Field(..., description="Parent workflow ID")
+    organization_id: str = Field(..., description="Organization ID")
+    draft_version: Optional[str] = Field(default=None, description="Draft version for the live entity")
     type: str = Field(..., description="Block type (start, extract, parse, classifier, etc.)")
     label: str = Field(default="", description="Display label")
     position_x: float = Field(default=0, description="X position on canvas")
@@ -664,17 +684,18 @@ class WorkflowBlock(BaseModel):
     width: Optional[float] = Field(default=None, description="Block width")
     height: Optional[float] = Field(default=None, description="Block height")
     config: Optional[dict] = Field(default=None, description="Block-specific configuration")
-    subflow_id: Optional[str] = Field(default=None, description="Parent subflow ID if inside a subflow")
     parent_id: Optional[str] = Field(default=None, description="Parent container block ID (while_loop, for_each)")
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
 
-class WorkflowEdge(BaseModel):
-    """An edge connecting two blocks in a workflow graph."""
+class WorkflowEdgeDoc(BaseModel):
+    """A persisted edge document connecting two blocks in a workflow graph."""
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Edge ID")
     workflow_id: str = Field(..., description="Parent workflow ID")
+    organization_id: str = Field(..., description="Organization ID")
+    draft_version: Optional[str] = Field(default=None, description="Draft version for the live entity")
     source_block: str = Field(..., description="Source block ID")
     target_block: str = Field(..., description="Target block ID")
     source_handle: Optional[str] = Field(default=None, description="Output handle on source block")
@@ -688,6 +709,8 @@ class WorkflowSubflow(BaseModel):
 
     id: str = Field(..., description="Subflow ID")
     workflow_id: str = Field(..., description="Parent workflow ID")
+    organization_id: str = Field(..., description="Organization ID")
+    draft_version: Optional[str] = Field(default=None, description="Draft version for the live entity")
     type: str = Field(..., description="Subflow type (while, parallel)")
     label: str = Field(default="", description="Display label")
     position_x: float = Field(default=0, description="X position on canvas")
@@ -696,6 +719,7 @@ class WorkflowSubflow(BaseModel):
     height: float = Field(default=300, description="Container height")
     config: Optional[dict] = Field(default=None, description="Subflow configuration")
     child_block_ids: List[str] = Field(default_factory=list, description="Block IDs inside this subflow")
+    updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
 
 class WorkflowWithEntities(BaseModel):
@@ -704,7 +728,7 @@ class WorkflowWithEntities(BaseModel):
 
     workflow: Workflow
     blocks: List[WorkflowBlock] = Field(default_factory=list)
-    edges: List[WorkflowEdge] = Field(default_factory=list)
+    edges: List[WorkflowEdgeDoc] = Field(default_factory=list)
     subflows: List[WorkflowSubflow] = Field(default_factory=list)
 
     @property
