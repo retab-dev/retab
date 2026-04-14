@@ -12,12 +12,9 @@ from ....types.workflows import (
 class WorkflowBlocksMixin:
     """Mixin providing shared prepare methods for workflow block operations."""
 
-    def prepare_list(self, workflow_id: str, subflow_id: str | None = None) -> PreparedRequest:
+    def prepare_list(self, workflow_id: str) -> PreparedRequest:
         """Prepare a request to list all blocks for a workflow."""
-        params: Dict[str, Any] = {}
-        if subflow_id is not None:
-            params["subflow_id"] = subflow_id
-        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/blocks", params=params or None)
+        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/blocks")
 
     def prepare_get(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to get a single block."""
@@ -75,7 +72,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         width: float | None,
         height: float | None,
         config: dict | None,
-        subflow_id: str | None,
         parent_id: str | None,
     ) -> WorkflowBlockCreateRequest:
         if request is not None:
@@ -91,7 +87,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             width=width,
             height=height,
             config=config,
-            subflow_id=subflow_id,
             parent_id=parent_id,
         )
 
@@ -105,7 +100,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         width: float | None,
         height: float | None,
         config: dict | None,
-        subflow_id: str | None,
         parent_id: str | None,
     ) -> WorkflowBlockUpdateRequest:
         if request is not None:
@@ -120,7 +114,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             width=width,
             height=height,
             config=config,
-            subflow_id=subflow_id,
             parent_id=parent_id,
         )
 
@@ -133,17 +126,16 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             for block in blocks
         ]
 
-    def list(self, workflow_id: str, subflow_id: str | None = None) -> List[WorkflowBlock]:
+    def list(self, workflow_id: str) -> List[WorkflowBlock]:
         """List all blocks for a workflow.
 
         Args:
             workflow_id: The workflow ID
-            subflow_id: Filter by subflow ID (blocks inside a specific subflow)
 
         Returns:
             List of workflow blocks
         """
-        request = self.prepare_list(workflow_id, subflow_id=subflow_id)
+        request = self.prepare_list(workflow_id)
         response = self._client._prepared_request(request)
         return [WorkflowBlock.model_validate(item) for item in response]
 
@@ -164,7 +156,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         width: float | None = None,
         height: float | None = None,
         config: dict | None = None,
-        subflow_id: str | None = None,
         parent_id: str | None = None,
         request: WorkflowBlockCreateRequest | None = None,
     ) -> WorkflowBlock:
@@ -180,7 +171,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             width: Block width (optional)
             height: Block height (optional)
             config: Block-specific configuration dict (optional)
-            subflow_id: Parent subflow ID if inside a subflow (optional)
             parent_id: Parent container block ID (optional)
             request: Optional typed request model. When provided, its values are used directly.
 
@@ -197,7 +187,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             width=width,
             height=height,
             config=config,
-            subflow_id=subflow_id,
             parent_id=parent_id,
         )
         prepared_request = self.prepare_create(workflow_id, create_request)
@@ -233,7 +222,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         width: float | None = None,
         height: float | None = None,
         config: dict | None = None,
-        subflow_id: str | None = None,
         parent_id: str | None = None,
         request: WorkflowBlockUpdateRequest | None = None,
     ) -> WorkflowBlock:
@@ -251,7 +239,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             width=width,
             height=height,
             config=config,
-            subflow_id=subflow_id,
             parent_id=parent_id,
         )
         prepared_request = self.prepare_update(workflow_id, update_request)
@@ -270,9 +257,9 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
     Usage: ``await client.workflows.blocks.list(workflow_id)``
     """
 
-    async def list(self, workflow_id: str, subflow_id: str | None = None) -> List[WorkflowBlock]:
+    async def list(self, workflow_id: str) -> List[WorkflowBlock]:
         """List all blocks for a workflow."""
-        request = self.prepare_list(workflow_id, subflow_id=subflow_id)
+        request = self.prepare_list(workflow_id)
         response = await self._client._prepared_request(request)
         return [WorkflowBlock.model_validate(item) for item in response]
 
@@ -293,7 +280,6 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         width: float | None = None,
         height: float | None = None,
         config: dict | None = None,
-        subflow_id: str | None = None,
         parent_id: str | None = None,
         request: WorkflowBlockCreateRequest | None = None,
     ) -> WorkflowBlock:
@@ -308,7 +294,6 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
             width=width,
             height=height,
             config=config,
-            subflow_id=subflow_id,
             parent_id=parent_id,
         )
         prepared_request = self.prepare_create(workflow_id, create_request)
@@ -336,7 +321,6 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         width: float | None = None,
         height: float | None = None,
         config: dict | None = None,
-        subflow_id: str | None = None,
         parent_id: str | None = None,
         request: WorkflowBlockUpdateRequest | None = None,
     ) -> WorkflowBlock:
@@ -350,7 +334,6 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
             width=width,
             height=height,
             config=config,
-            subflow_id=subflow_id,
             parent_id=parent_id,
         )
         prepared_request = self.prepare_update(workflow_id, update_request)

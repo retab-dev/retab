@@ -191,13 +191,18 @@ export const ZWorkflow = z.object({
     id: z.string(),
     name: z.string().default("Untitled Workflow"),
     description: z.string().default(""),
-    is_published: z.boolean().default(false),
-    published_snapshot_id: z.string().nullable().optional(),
-    published_at: z.string().nullable().optional(),
-    draft_version: z.string().nullable().optional(),
     organization_id: z.string().nullable().optional(),
-    email_senders_whitelist: z.array(z.string()).default([]),
-    email_domains_whitelist: z.array(z.string()).default([]),
+    published: z.object({
+        snapshot_id: z.string().nullable().optional(),
+        published_at: z.string().nullable().optional(),
+    }).nullable().default(null),
+    email_trigger: z.object({
+        allowed_senders: z.array(z.string()).default([]),
+        allowed_domains: z.array(z.string()).default([]),
+    }).default({
+        allowed_senders: [],
+        allowed_domains: [],
+    }),
     created_at: z.string(),
     updated_at: z.string(),
 }).passthrough();
@@ -210,6 +215,8 @@ export type Workflow = z.infer<typeof ZWorkflow>;
 export const ZWorkflowBlock = z.object({
     id: z.string(),
     workflow_id: z.string(),
+    organization_id: z.string(),
+    draft_version: z.string().nullable().optional(),
     type: z.string(),
     label: z.string().default(""),
     position_x: z.number().default(0),
@@ -217,26 +224,29 @@ export const ZWorkflowBlock = z.object({
     width: z.number().nullable().optional(),
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
-    subflow_id: z.string().nullable().optional(),
     parent_id: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
 }).passthrough();
 export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
 
-export const ZWorkflowEdge = z.object({
+export const ZWorkflowEdgeDoc = z.object({
     id: z.string(),
     workflow_id: z.string(),
+    organization_id: z.string(),
+    draft_version: z.string().nullable().optional(),
     source_block: z.string(),
     target_block: z.string(),
     source_handle: z.string().nullable().optional(),
     target_handle: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
 }).passthrough();
-export type WorkflowEdge = z.infer<typeof ZWorkflowEdge>;
+export type WorkflowEdgeDoc = z.infer<typeof ZWorkflowEdgeDoc>;
 
 export const ZWorkflowSubflow = z.object({
     id: z.string(),
     workflow_id: z.string(),
+    organization_id: z.string(),
+    draft_version: z.string().nullable().optional(),
     type: z.string(),
     label: z.string().default(""),
     position_x: z.number().default(0),
@@ -245,13 +255,14 @@ export const ZWorkflowSubflow = z.object({
     height: z.number().default(300),
     config: z.record(z.any()).nullable().optional(),
     child_block_ids: z.array(z.string()).default([]),
+    updated_at: z.string().nullable().optional(),
 }).passthrough();
 export type WorkflowSubflow = z.infer<typeof ZWorkflowSubflow>;
 
 export const ZWorkflowWithEntities = z.object({
     workflow: ZWorkflow,
     blocks: z.array(ZWorkflowBlock).default([]),
-    edges: z.array(ZWorkflowEdge).default([]),
+    edges: z.array(ZWorkflowEdgeDoc).default([]),
     subflows: z.array(ZWorkflowSubflow).default([]),
 }).passthrough();
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
@@ -281,7 +292,6 @@ export type WorkflowBlockCreateRequest = {
     width?: number;
     height?: number;
     config?: Record<string, unknown>;
-    subflowId?: string;
     parentId?: string;
 };
 
@@ -292,7 +302,6 @@ export type WorkflowBlockUpdateRequest = {
     width?: number;
     height?: number;
     config?: Record<string, unknown>;
-    subflowId?: string;
     parentId?: string;
 };
 

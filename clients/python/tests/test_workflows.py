@@ -11,7 +11,7 @@ from retab.types.workflows.model import (
     WorkflowRun,
     WorkflowRunError,
     WorkflowBlock,
-    WorkflowEdge,
+    WorkflowEdgeDoc,
     WorkflowSubflow,
     WorkflowWithEntities,
     Workflow,
@@ -27,9 +27,8 @@ def test_workflows_get_uses_detail_route() -> None:
         "id": "workflow_123",
         "name": "Test Workflow",
         "description": "",
-        "is_published": False,
-        "email_senders_whitelist": [],
-        "email_domains_whitelist": [],
+        "published": None,
+        "email_trigger": {"allowed_senders": [], "allowed_domains": []},
         "created_at": "2026-03-12T10:00:00Z",
         "updated_at": "2026-03-12T10:00:00Z",
     }
@@ -77,9 +76,8 @@ async def test_async_workflows_get_uses_detail_route() -> None:
         "id": "workflow_123",
         "name": "Test Workflow",
         "description": "",
-        "is_published": False,
-        "email_senders_whitelist": [],
-        "email_domains_whitelist": [],
+        "published": None,
+        "email_trigger": {"allowed_senders": [], "allowed_domains": []},
         "created_at": "2026-03-12T10:00:00Z",
         "updated_at": "2026-03-12T10:00:00Z",
     })
@@ -220,14 +218,22 @@ def test_workflow_with_entities_parsing() -> None:
             "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
         },
         "blocks": [
-            {"id": "start-1", "workflow_id": "wf_1", "type": "start", "label": "Document Input"},
-            {"id": "extract-1", "workflow_id": "wf_1", "type": "extract", "label": "Extract"},
-            {"id": "json-1", "workflow_id": "wf_1", "type": "start_json", "label": "JSON Input"},
-            {"id": "end-1", "workflow_id": "wf_1", "type": "end", "label": "Output"},
+            {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start", "label": "Document Input"},
+            {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract", "label": "Extract"},
+            {"id": "json-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_json", "label": "JSON Input"},
+            {"id": "end-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "end", "label": "Output"},
         ],
         "edges": [
-            {"id": "edge-1", "workflow_id": "wf_1", "source_block": "start-1", "target_block": "extract-1",
-             "source_handle": "output-file-0", "target_handle": "input-file-0"},
+            {
+                "id": "edge-1",
+                "workflow_id": "wf_1",
+                "organization_id": "org_1",
+                "draft_version": "draft_1",
+                "source_block": "start-1",
+                "target_block": "extract-1",
+                "source_handle": "output-file-0",
+                "target_handle": "input-file-0",
+            },
         ],
         "subflows": [],
     })
@@ -245,6 +251,8 @@ def test_workflow_with_entities_parsing() -> None:
     assert json_nodes[0].id == "json-1"
 
     edge = wfe.edges[0]
+    assert edge.organization_id == "org_1"
+    assert edge.draft_version == "draft_1"
     assert edge.source_block == "start-1"
     assert edge.target_block == "extract-1"
 
@@ -255,9 +263,8 @@ def test_workflows_create_route() -> None:
         "id": "wf_new",
         "name": "My Workflow",
         "description": "A test",
-        "is_published": False,
-        "email_senders_whitelist": [],
-        "email_domains_whitelist": [],
+        "published": None,
+        "email_trigger": {"allowed_senders": [], "allowed_domains": []},
         "created_at": "2026-03-12T10:00:00Z",
         "updated_at": "2026-03-12T10:00:00Z",
     }
@@ -276,6 +283,8 @@ def test_workflow_blocks_create_accepts_typed_request() -> None:
     client._prepared_request.return_value = {
         "id": "extract-1",
         "workflow_id": "wf_1",
+        "organization_id": "org_1",
+        "draft_version": "draft_1",
         "type": "extract",
         "label": "Extract",
     }
@@ -311,6 +320,8 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
     client._prepared_request.return_value = {
         "id": "extract-1",
         "workflow_id": "wf_1",
+        "organization_id": "org_1",
+        "draft_version": "draft_1",
         "type": "extract",
         "label": "Renamed",
     }
@@ -334,8 +345,8 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
 def test_workflow_blocks_create_batch_accepts_typed_requests() -> None:
     client = MagicMock()
     client._prepared_request.return_value = [
-        {"id": "start-1", "workflow_id": "wf_1", "type": "start"},
-        {"id": "extract-1", "workflow_id": "wf_1", "type": "extract"},
+        {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start"},
+        {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract"},
     ]
 
     blocks = WorkflowBlocks(client=client).create_batch(
@@ -356,11 +367,29 @@ def test_workflow_blocks_create_batch_accepts_typed_requests() -> None:
     assert [block.id for block in blocks] == ["start-1", "extract-1"]
 
 
+def test_workflow_block_parses_live_editing_metadata() -> None:
+    block = WorkflowBlock.model_validate(
+        {
+            "id": "extract-1",
+            "workflow_id": "wf_1",
+            "organization_id": "org_1",
+            "draft_version": "draft_1",
+            "type": "extract",
+            "label": "Extract",
+        }
+    )
+
+    assert block.organization_id == "org_1"
+    assert block.draft_version == "draft_1"
+
+
 def test_workflow_edges_create_accepts_typed_request() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "id": "edge-1",
         "workflow_id": "wf_1",
+        "organization_id": "org_1",
+        "draft_version": "draft_1",
         "source_block": "start-1",
         "target_block": "extract-1",
         "source_handle": "output-file-0",
@@ -394,7 +423,14 @@ def test_workflow_edges_create_accepts_typed_request() -> None:
 def test_workflow_edges_create_batch_accepts_typed_requests() -> None:
     client = MagicMock()
     client._prepared_request.return_value = [
-        {"id": "edge-1", "workflow_id": "wf_1", "source_block": "start-1", "target_block": "extract-1"},
+        {
+            "id": "edge-1",
+            "workflow_id": "wf_1",
+            "organization_id": "org_1",
+            "draft_version": "draft_1",
+            "source_block": "start-1",
+            "target_block": "extract-1",
+        },
     ]
 
     edges = WorkflowEdges(client=client).create_batch(
@@ -416,10 +452,11 @@ def test_workflows_publish_route() -> None:
     client._prepared_request.return_value = {
         "id": "wf_1",
         "name": "Test",
-        "is_published": True,
-        "published_snapshot_id": "snap_1",
-        "email_senders_whitelist": [],
-        "email_domains_whitelist": [],
+        "published": {
+            "snapshot_id": "snap_1",
+            "published_at": "2026-03-12T10:00:00Z",
+        },
+        "email_trigger": {"allowed_senders": [], "allowed_domains": []},
         "created_at": "2026-03-12T10:00:00Z",
         "updated_at": "2026-03-12T10:00:00Z",
     }
@@ -429,7 +466,7 @@ def test_workflows_publish_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/workflows/wf_1/publish"
-    assert wf.is_published is True
+    assert wf.published_snapshot_id == "snap_1"
 
 
 def test_workflows_get_entities_route() -> None:
@@ -439,7 +476,7 @@ def test_workflows_get_entities_route() -> None:
             "id": "wf_1", "name": "Test",
             "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
         },
-        "blocks": [{"id": "start-1", "workflow_id": "wf_1", "type": "start"}],
+        "blocks": [{"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start"}],
         "edges": [],
         "subflows": [],
     }
@@ -459,9 +496,11 @@ def test_workflows_list_returns_typed_items() -> None:
         "data": [
             {
                 "id": "wf_1", "name": "Workflow A",
-                "is_published": True,
-                "email_senders_whitelist": [],
-                "email_domains_whitelist": [],
+                "published": {
+                    "snapshot_id": "snap_1",
+                    "published_at": "2026-01-01T00:00:00Z",
+                },
+                "email_trigger": {"allowed_senders": [], "allowed_domains": []},
                 "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
             },
         ],

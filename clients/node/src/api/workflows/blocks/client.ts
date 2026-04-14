@@ -7,34 +7,19 @@ import {
     ZWorkflowBlock,
 } from "../../../types.js";
 
-type LegacyWorkflowBlockCreateRequest = {
-    id: string;
-    type: string;
-    label?: string;
-    position_x?: number;
-    position_y?: number;
-    width?: number;
-    height?: number;
-    config?: Record<string, unknown>;
-    subflow_id?: string;
-    parent_id?: string;
-};
-
 function serializeBlockCreateRequest(
-    request: WorkflowBlockCreateRequest | LegacyWorkflowBlockCreateRequest
+    request: WorkflowBlockCreateRequest
 ): Record<string, unknown> {
-    const legacyRequest = request as Partial<LegacyWorkflowBlockCreateRequest>;
     return {
         id: request.id,
         type: request.type,
         label: request.label ?? "",
-        position_x: "positionX" in request ? (request.positionX ?? 0) : (legacyRequest.position_x ?? 0),
-        position_y: "positionY" in request ? (request.positionY ?? 0) : (legacyRequest.position_y ?? 0),
+        position_x: request.positionX ?? 0,
+        position_y: request.positionY ?? 0,
         width: request.width,
         height: request.height,
         config: request.config,
-        subflow_id: "subflowId" in request ? request.subflowId : legacyRequest.subflow_id,
-        parent_id: "parentId" in request ? request.parentId : legacyRequest.parent_id,
+        parent_id: request.parentId,
     };
 }
 
@@ -46,7 +31,6 @@ function serializeBlockUpdateRequest(request: WorkflowBlockUpdateRequest): Recor
         width: request.width,
         height: request.height,
         config: request.config,
-        subflow_id: request.subflowId,
         parent_id: request.parentId,
     };
 }
@@ -63,26 +47,15 @@ export default class APIWorkflowBlocks extends CompositionClient {
 
     /**
      * List all blocks for a workflow.
-     *
-     * @param workflowId - The workflow ID
-     * @param subflowId - Optional: filter by subflow ID
      */
     async list(
         workflowId: string,
-        { subflowId }: { subflowId?: string } = {},
         options?: RequestOptions
     ): Promise<WorkflowBlock[]> {
-        const params = Object.fromEntries(
-            Object.entries({
-                subflow_id: subflowId,
-                ...(options?.params || {}),
-            }).filter(([_, v]) => v !== undefined)
-        );
-
         return this._fetchJson(z.array(ZWorkflowBlock), {
             url: `/workflows/${workflowId}/blocks`,
             method: "GET",
-            params,
+            params: options?.params,
             headers: options?.headers,
         });
     }
@@ -134,7 +107,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
      */
     async createBatch(
         workflowId: string,
-        blocks: Array<WorkflowBlockCreateRequest | LegacyWorkflowBlockCreateRequest>,
+        blocks: WorkflowBlockCreateRequest[],
         options?: RequestOptions
     ): Promise<WorkflowBlock[]> {
         return this._fetchJson(z.array(ZWorkflowBlock), {
@@ -148,7 +121,7 @@ export default class APIWorkflowBlocks extends CompositionClient {
 
     async create_batch(
         workflowId: string,
-        blocks: Array<WorkflowBlockCreateRequest | LegacyWorkflowBlockCreateRequest>,
+        blocks: WorkflowBlockCreateRequest[],
         options?: RequestOptions
     ): Promise<WorkflowBlock[]> {
         return this.createBatch(workflowId, blocks, options);

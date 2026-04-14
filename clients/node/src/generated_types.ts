@@ -860,6 +860,20 @@ export const ZModelExportResponse = z.lazy(() => (z.object({
 })));
 export type ModelExportResponse = z.infer<typeof ZModelExportResponse>;
 
+export const ZHILDecisionResource = z.lazy(() => (z.object({
+    run_id: z.string(),
+    node_id: z.string(),
+    node_status: z.string().nullable().optional(),
+    decision_received: z.boolean().default(false),
+    decision_applied: z.boolean().default(false),
+    approved: z.boolean().nullable().optional(),
+    modified_data: z.record(z.string(), z.any()).nullable().optional(),
+    payload_hash: z.string().nullable().optional(),
+    received_at: z.string().nullable().optional(),
+    applied_at: z.string().nullable().optional(),
+})));
+export type HILDecisionResource = z.infer<typeof ZHILDecisionResource>;
+
 export const ZHandlePayload = z.lazy(() => (z.object({
     type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
     document: ZBaseMIMEData.nullable().optional(),
@@ -867,26 +881,6 @@ export const ZHandlePayload = z.lazy(() => (z.object({
     text: z.string().nullable().optional(),
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
-
-export const ZHILDecisionResource = z.lazy(() => (z.object({
-    run_id: z.string(),
-    node_id: z.string(),
-    node_status: z.string().nullable(),
-    decision_received: z.boolean(),
-    decision_applied: z.boolean(),
-    approved: z.boolean().nullable().optional(),
-    modified_data: z.record(z.any()).nullable().optional(),
-    payload_hash: z.string().nullable().optional(),
-    received_at: z.string().datetime({ offset: true }).nullable().optional(),
-    applied_at: z.string().datetime({ offset: true }).nullable().optional(),
-})));
-export type HILDecisionResource = z.infer<typeof ZHILDecisionResource>;
-
-export const ZSubmitHILDecisionResponse = z.lazy(() => (z.object({
-    submission_status: z.union([z.literal("accepted"), z.literal("already_received"), z.literal("already_applied")]),
-    decision: ZHILDecisionResource,
-})));
-export type SubmitHILDecisionResponse = z.infer<typeof ZSubmitHILDecisionResponse>;
 
 export const ZStepOutputResponse = z.lazy(() => (z.object({
     node_id: z.string(),
@@ -922,17 +916,19 @@ export const ZStepStatus = z.lazy(() => (z.object({
 })));
 export type StepStatus = z.infer<typeof ZStepStatus>;
 
+export const ZSubmitHILDecisionResponse = z.lazy(() => (z.object({
+    submission_status: z.union([z.literal("accepted"), z.literal("already_received"), z.literal("already_applied")]),
+    decision: ZHILDecisionResource,
+})));
+export type SubmitHILDecisionResponse = z.infer<typeof ZSubmitHILDecisionResponse>;
+
 export const ZWorkflow = z.lazy(() => (z.object({
     id: z.string(),
     name: z.string().default("Untitled Workflow"),
     description: z.string().default(""),
-    is_published: z.boolean().default(false),
-    published_snapshot_id: z.string().nullable().optional(),
-    published_at: z.string().nullable().optional(),
-    draft_version: z.string().nullable().optional(),
     organization_id: z.string().nullable().optional(),
-    email_senders_whitelist: z.array(z.string()),
-    email_domains_whitelist: z.array(z.string()),
+    published: ZPublished.nullable().optional(),
+    email_trigger: ZEmailTrigger,
     created_at: z.string(),
     updated_at: z.string(),
 })));
@@ -941,6 +937,8 @@ export type Workflow = z.infer<typeof ZWorkflow>;
 export const ZWorkflowBlock = z.lazy(() => (z.object({
     id: z.string(),
     workflow_id: z.string(),
+    organization_id: z.string(),
+    draft_version: z.string().nullable().optional(),
     type: z.string(),
     label: z.string().default(""),
     position_x: z.number().default(0),
@@ -948,7 +946,6 @@ export const ZWorkflowBlock = z.lazy(() => (z.object({
     width: z.number().nullable().optional(),
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
-    subflow_id: z.string().nullable().optional(),
     parent_id: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
 })));
@@ -963,7 +960,6 @@ export const ZWorkflowBlockCreateRequest = z.lazy(() => (z.object({
     width: z.number().nullable().optional(),
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
-    subflow_id: z.string().nullable().optional(),
     parent_id: z.string().nullable().optional(),
 })));
 export type WorkflowBlockCreateRequest = z.infer<typeof ZWorkflowBlockCreateRequest>;
@@ -976,21 +972,9 @@ export const ZWorkflowBlockUpdateRequest = z.lazy(() => (z.object({
     width: z.number().nullable().optional(),
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
-    subflow_id: z.string().nullable().optional(),
     parent_id: z.string().nullable().optional(),
 })));
 export type WorkflowBlockUpdateRequest = z.infer<typeof ZWorkflowBlockUpdateRequest>;
-
-export const ZWorkflowEdge = z.lazy(() => (z.object({
-    id: z.string(),
-    workflow_id: z.string(),
-    source_block: z.string(),
-    target_block: z.string(),
-    source_handle: z.string().nullable().optional(),
-    target_handle: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
-})));
-export type WorkflowEdge = z.infer<typeof ZWorkflowEdge>;
 
 export const ZWorkflowEdgeCreateRequest = z.lazy(() => (z.object({
     id: z.string(),
@@ -1000,6 +984,19 @@ export const ZWorkflowEdgeCreateRequest = z.lazy(() => (z.object({
     target_handle: z.string().nullable().optional(),
 })));
 export type WorkflowEdgeCreateRequest = z.infer<typeof ZWorkflowEdgeCreateRequest>;
+
+export const ZWorkflowEdgeDoc = z.lazy(() => (z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    organization_id: z.string(),
+    draft_version: z.string().nullable().optional(),
+    source_block: z.string(),
+    target_block: z.string(),
+    source_handle: z.string().nullable().optional(),
+    target_handle: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+})));
+export type WorkflowEdgeDoc = z.infer<typeof ZWorkflowEdgeDoc>;
 
 export const ZWorkflowRun = z.lazy(() => (z.object({
     id: z.string(),
@@ -1060,6 +1057,8 @@ export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
 export const ZWorkflowSubflow = z.lazy(() => (z.object({
     id: z.string(),
     workflow_id: z.string(),
+    organization_id: z.string(),
+    draft_version: z.string().nullable().optional(),
     type: z.string(),
     label: z.string().default(""),
     position_x: z.number().default(0),
@@ -1068,13 +1067,14 @@ export const ZWorkflowSubflow = z.lazy(() => (z.object({
     height: z.number().default(300),
     config: z.record(z.any()).nullable().optional(),
     child_block_ids: z.array(z.string()),
+    updated_at: z.string().nullable().optional(),
 })));
 export type WorkflowSubflow = z.infer<typeof ZWorkflowSubflow>;
 
 export const ZWorkflowWithEntities = z.lazy(() => (z.object({
     workflow: ZWorkflow,
     blocks: z.array(ZWorkflowBlock),
-    edges: z.array(ZWorkflowEdge),
+    edges: z.array(ZWorkflowEdgeDoc),
     subflows: z.array(ZWorkflowSubflow),
 })));
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
@@ -1091,17 +1091,6 @@ export const ZAPICallStepOutput = z.lazy(() => (z.object({
     error: z.string().nullable().optional(),
 })));
 export type APICallStepOutput = z.infer<typeof ZAPICallStepOutput>;
-
-export const ZFunctionStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    execution_time_ms: z.number().nullable().optional(),
-    stdout: z.string().nullable().optional(),
-    stderr: z.string().nullable().optional(),
-    error: z.string().nullable().optional(),
-    traceback_str: z.string().nullable().optional(),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type FunctionStepOutput = z.infer<typeof ZFunctionStepOutput>;
 
 export const ZClassifierStepOutput = z.lazy(() => (z.object({
     category: z.string(),
@@ -1218,6 +1207,17 @@ export const ZFormulaStepOutput = z.lazy(() => (z.object({
 })));
 export type FormulaStepOutput = z.infer<typeof ZFormulaStepOutput>;
 
+export const ZFunctionStepOutput = z.lazy(() => (z.object({
+    message: z.string(),
+    execution_time_ms: z.number().nullable().optional(),
+    stdout: z.string().nullable().optional(),
+    stderr: z.string().nullable().optional(),
+    error: z.string().nullable().optional(),
+    traceback_str: z.string().nullable().optional(),
+    json_schema: z.record(z.string(), z.any()).nullable().optional(),
+})));
+export type FunctionStepOutput = z.infer<typeof ZFunctionStepOutput>;
+
 export const ZHILStepOutput = z.lazy(() => (z.object({
     message: z.string(),
     requires_review: z.boolean().default(true),
@@ -1255,15 +1255,6 @@ export const ZParseStepOutput = z.lazy(() => (z.object({
     pages: z.array(z.string()),
 })));
 export type ParseStepOutput = z.infer<typeof ZParseStepOutput>;
-
-export const ZReshapeStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    mappings: z.array(z.record(z.string(), z.any())),
-    extracted_data: z.record(z.string(), z.any()),
-    extraction_id: z.string().nullable().optional(),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type ReshapeStepOutput = z.infer<typeof ZReshapeStepOutput>;
 
 export const ZRunCountsResponse = z.lazy(() => (z.object({
     total: z.number().default(0),
@@ -1678,7 +1669,7 @@ export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
 export const ZClassifyResponse = z.lazy(() => (z.object({
     result: ZClassifyResult,
     likelihood: z.number().nullable().optional(),
-    votes: z.array(ZClassifyVote).default([]),
+    votes: z.array(ZClassifyVote),
     usage: ZRetabUsage,
 })));
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
@@ -1841,6 +1832,33 @@ export const ZSplitVote = z.lazy(() => (z.object({
 })));
 export type SplitVote = z.infer<typeof ZSplitVote>;
 
+export const ZDocumentCreateInputRequest = z.lazy(() => (ZDocumentCreateMessageRequest.schema).merge(z.object({
+    json_schema: z.record(z.string(), z.any()),
+})));
+export type DocumentCreateInputRequest = z.infer<typeof ZDocumentCreateInputRequest>;
+
+export const ZDocumentCreateMessageRequest = z.lazy(() => (z.object({
+    document: ZMIMEData,
+    image_resolution_dpi: z.number().default(192),
+    model: z.string().default("retab-small"),
+})));
+export type DocumentCreateMessageRequest = z.infer<typeof ZDocumentCreateMessageRequest>;
+
+export const ZDocumentMessage = z.lazy(() => (z.object({
+    id: z.string(),
+    object: z.literal("document_message").default("document_message"),
+    messages: z.array(ZChatCompletionRetabMessage),
+    created: z.number(),
+})));
+export type DocumentMessage = z.infer<typeof ZDocumentMessage>;
+
+export const ZTokenCount = z.lazy(() => (z.object({
+    total_tokens: z.number().default(0),
+    developer_tokens: z.number().default(0),
+    user_tokens: z.number().default(0),
+})));
+export type TokenCount = z.infer<typeof ZTokenCount>;
+
 export const ZChatCompletion = z.lazy(() => (z.object({
     id: z.string(),
     choices: z.array(ZChatCompletionChoice),
@@ -1967,6 +1985,18 @@ export const ZChatCompletionContentPartParamFile = z.lazy(() => (z.object({
     type: z.literal("file"),
 })));
 export type ChatCompletionContentPartParamFile = z.infer<typeof ZChatCompletionContentPartParamFile>;
+
+export const ZPublished = z.lazy(() => (z.object({
+    snapshot_id: z.string().nullable().optional(),
+    published_at: z.string().nullable().optional(),
+})));
+export type Published = z.infer<typeof ZPublished>;
+
+export const ZEmailTrigger = z.lazy(() => (z.object({
+    allowed_senders: z.array(z.string()),
+    allowed_domains: z.array(z.string()),
+})));
+export type EmailTrigger = z.infer<typeof ZEmailTrigger>;
 
 export const ZDocumentBlockParam = z.lazy(() => (z.object({
     source: z.union([ZBase64PDFSourceParam, ZPlainTextSourceParam, ZContentBlockSourceParam, ZURLPDFSourceParam]),
