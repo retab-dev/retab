@@ -224,7 +224,7 @@ export default class APIJobs extends CompositionClient {
         source,
         project_id,
         workflow_id,
-        workflow_node_id,
+        workflow_block_id,
         model,
         filename_regex,
         filename_contains,
@@ -245,7 +245,7 @@ export default class APIJobs extends CompositionClient {
         source?: JobListSource;
         project_id?: string;
         workflow_id?: string;
-        workflow_node_id?: string;
+        workflow_block_id?: string;
         model?: string;
         filename_regex?: string;
         filename_contains?: string;
@@ -267,7 +267,7 @@ export default class APIJobs extends CompositionClient {
             source,
             project_id,
             workflow_id,
-            workflow_node_id,
+            workflow_block_id,
             model,
             filename_regex,
             filename_contains,

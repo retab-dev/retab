@@ -119,7 +119,7 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
     assert result.list_metadata.after == "cursor_1"
 
 
-def test_workflow_run_accepts_newer_step_node_types() -> None:
+def test_workflow_run_accepts_newer_step_block_types() -> None:
     run = WorkflowRun.model_validate(
         {
             "id": "run_123",
@@ -130,9 +130,9 @@ def test_workflow_run_accepts_newer_step_node_types() -> None:
             "started_at": "2026-03-13T10:00:00Z",
             "steps": [
                 {
-                    "node_id": "classifier-1",
-                    "node_type": "classifier",
-                    "node_label": "Classifier",
+                    "block_id": "classifier-1",
+                    "block_type": "classifier",
+                    "block_label": "Classifier",
                     "status": "completed",
                 }
             ],
@@ -141,7 +141,7 @@ def test_workflow_run_accepts_newer_step_node_types() -> None:
         }
     )
 
-    assert run.steps[0].node_type == "classifier"
+    assert run.steps[0].block_type == "classifier"
 
 
 def test_workflow_run_accepts_skipped_step_statuses() -> None:
@@ -155,15 +155,15 @@ def test_workflow_run_accepts_skipped_step_statuses() -> None:
             "started_at": "2026-03-13T10:00:00Z",
             "steps": [
                 {
-                    "node_id": "extract-1",
-                    "node_type": "extract",
-                    "node_label": "Extract",
+                    "block_id": "extract-1",
+                    "block_type": "extract",
+                    "block_label": "Extract",
                     "status": "completed",
                 },
                 {
-                    "node_id": "extract-2",
-                    "node_type": "extract",
-                    "node_label": "Skipped branch",
+                    "block_id": "extract-2",
+                    "block_type": "extract",
+                    "block_label": "Skipped branch",
                     "status": "skipped",
                 },
             ],
@@ -596,7 +596,7 @@ def test_workflow_runs_submit_hil_decision_route() -> None:
         "submission_status": "accepted",
         "decision": {
             "run_id": "run_1",
-            "node_id": "hil-1",
+            "block_id": "hil-1",
             "node_status": "waiting_for_hil",
             "decision_received": True,
             "decision_applied": False,
@@ -610,7 +610,7 @@ def test_workflow_runs_submit_hil_decision_route() -> None:
 
     result = WorkflowRuns(client=client).submit_hil_decision(
         "run_1",
-        node_id="hil-1",
+        block_id="hil-1",
         approved=True,
         modified_data={"field": "value"},
         command_id="cmd_3",
@@ -620,13 +620,13 @@ def test_workflow_runs_submit_hil_decision_route() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/runs/run_1/hil-decisions"
     assert request.data == {
-        "node_id": "hil-1",
+        "block_id": "hil-1",
         "approved": True,
         "modified_data": {"field": "value"},
         "command_id": "cmd_3",
     }
     assert result.submission_status == "accepted"
-    assert result.decision.node_id == "hil-1"
+    assert result.decision.block_id == "hil-1"
 
 
 def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> None:
@@ -635,7 +635,7 @@ def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> N
         "submission_status": "already_applied",
         "decision": {
             "run_id": "run_1",
-            "node_id": "hil-1",
+            "block_id": "hil-1",
             "node_status": "completed",
             "decision_received": True,
             "decision_applied": True,
@@ -649,7 +649,7 @@ def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> N
 
     result = WorkflowRuns(client=client).submit_hil_decision(
         "run_1",
-        node_id="hil-1",
+        block_id="hil-1",
         approved=True,
     )
 
@@ -661,7 +661,7 @@ def test_workflow_runs_get_hil_decision_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "run_id": "run_1",
-        "node_id": "hil-1",
+        "block_id": "hil-1",
         "node_status": "completed",
         "decision_received": True,
         "decision_applied": True,
@@ -690,7 +690,7 @@ def test_workflow_runs_export_route() -> None:
 
     result = WorkflowRuns(client=client).export(
         workflow_id="wf_1",
-        node_id="extract-1",
+        block_id="extract-1",
         export_source="outputs",
         selected_run_ids=["run_1", "run_2"],
         trigger_types=["api"],
@@ -702,7 +702,7 @@ def test_workflow_runs_export_route() -> None:
     assert request.url == "/workflows/runs/export_payload"
     assert request.data == {
         "workflow_id": "wf_1",
-        "node_id": "extract-1",
+        "block_id": "extract-1",
         "export_source": "outputs",
         "preferred_columns": ["invoice_number", "total_amount"],
         "selected_run_ids": ["run_1", "run_2"],
@@ -804,7 +804,7 @@ def test_wait_for_completion_returns_waiting_for_human(monkeypatch: pytest.Monke
         {
             "id": "run_1", "workflow_id": "wf_1", "workflow_name": "Test",
             "organization_id": "org_1", "status": "waiting_for_human",
-            "waiting_for_node_ids": ["hil-1"],
+            "waiting_for_block_ids": ["hil-1"],
             "started_at": "2026-01-01T00:00:00Z",
             "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:01Z",
         },
@@ -814,7 +814,7 @@ def test_wait_for_completion_returns_waiting_for_human(monkeypatch: pytest.Monke
     run = WorkflowRuns(client=client).wait_for_completion("run_1")
 
     assert run.status == "waiting_for_human"
-    assert run.waiting_for_node_ids == ["hil-1"]
+    assert run.waiting_for_block_ids == ["hil-1"]
 
 
 @pytest.mark.asyncio
@@ -830,7 +830,7 @@ async def test_async_wait_for_completion_returns_waiting_for_human(monkeypatch: 
         {
             "id": "run_1", "workflow_id": "wf_1", "workflow_name": "Test",
             "organization_id": "org_1", "status": "waiting_for_human",
-            "waiting_for_node_ids": ["hil-1"],
+            "waiting_for_block_ids": ["hil-1"],
             "started_at": "2026-01-01T00:00:00Z",
             "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:01Z",
         },
@@ -844,7 +844,7 @@ async def test_async_wait_for_completion_returns_waiting_for_human(monkeypatch: 
     run = await AsyncWorkflowRuns(client=client).wait_for_completion("run_1")
 
     assert run.status == "waiting_for_human"
-    assert run.waiting_for_node_ids == ["hil-1"]
+    assert run.waiting_for_block_ids == ["hil-1"]
 
 
 @pytest.mark.asyncio
@@ -878,14 +878,14 @@ def test_step_status_extracted_data() -> None:
         "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
         "steps": [
             {
-                "node_id": "extract-1", "node_type": "extract", "node_label": "Extract",
+                "block_id": "extract-1", "block_type": "extract", "block_label": "Extract",
                 "status": "completed",
                 "handle_outputs": {
                     "output-json-0": {"type": "json", "data": {"invoice": "INV-001"}},
                 },
             },
             {
-                "node_id": "parse-1", "node_type": "parse", "node_label": "Parse",
+                "block_id": "parse-1", "block_type": "parse", "block_label": "Parse",
                 "status": "completed",
                 "handle_outputs": {
                     "output-file-0": {"type": "file"},
@@ -903,8 +903,8 @@ def test_workflow_run_step_extracted_data() -> None:
 
     step = WorkflowRunStep.model_validate({
         "run_id": "run_1", "organization_id": "org_1",
-        "node_id": "extract-1", "step_id": "extract-1",
-        "node_type": "extract", "node_label": "Extract",
+        "block_id": "extract-1", "step_id": "extract-1",
+        "block_type": "extract", "block_label": "Extract",
         "status": "completed",
         "handle_outputs": {
             "output-json-0": {"type": "json", "data": {"total": 1234}},

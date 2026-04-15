@@ -14,7 +14,7 @@ import * as z from "zod";
 /**
  * Workflow Run Steps API client for accessing step-level outputs.
  *
- * Usage: `client.workflows.runs.steps.get(runId, nodeId)` or `client.workflows.runs.steps.getMany(runId, nodeIds)`
+ * Usage: `client.workflows.runs.steps.get(runId, blockId)` or `client.workflows.runs.steps.getMany(runId, blockIds)`
  */
 export default class APIWorkflowRunSteps extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -32,11 +32,11 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      */
     async get(
         runId: string,
-        nodeId: string,
+        blockId: string,
         options?: RequestOptions
     ): Promise<StepOutputResponse> {
         return this._fetchJson(ZStepOutputResponse, {
-            url: `/workflows/runs/${runId}/steps/${nodeId}`,
+            url: `/workflows/runs/${runId}/steps/${blockId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -50,7 +50,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      * ```typescript
      * const steps = await client.workflows.runs.steps.list("run_abc123");
      * for (const step of steps) {
-     *     console.log(`${step.node_id}: ${step.status}`);
+     *     console.log(`${step.block_id}: ${step.status}`);
      * }
      * ```
      */
@@ -67,11 +67,11 @@ export default class APIWorkflowRunSteps extends CompositionClient {
     }
 
     /**
-     * Batch-get step outputs for multiple nodes in a single request.
+     * Batch-get step outputs for multiple blocks in a single request.
      *
      * @param runId - The workflow run ID
-     * @param nodeIds - List of node IDs to fetch outputs for
-     * @returns Step outputs keyed by node ID
+     * @param blockIds - List of block IDs to fetch outputs for
+     * @returns Step outputs keyed by block ID
      *
      * @example
      * ```typescript
@@ -81,13 +81,13 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      */
     async getMany(
         runId: string,
-        nodeIds: string[],
+        blockIds: string[],
         options?: RequestOptions
     ): Promise<StepOutputsBatchResponse> {
         return this._fetchJson(ZStepOutputsBatchResponse, {
             url: `/workflows/runs/${runId}/steps/batch`,
             method: "POST",
-            body: { node_ids: nodeIds, ...(options?.body || {}) },
+            body: { block_ids: blockIds, ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -95,19 +95,19 @@ export default class APIWorkflowRunSteps extends CompositionClient {
 
     async get_many(
         runId: string,
-        nodeIds: string[],
+        blockIds: string[],
         options?: RequestOptions
     ): Promise<StepOutputsBatchResponse> {
-        return this.getMany(runId, nodeIds, options);
+        return this.getMany(runId, blockIds, options);
     }
 
     /**
      * Fetch outputs for all steps in a workflow run in one call.
      *
-     * Internally fetches the run to discover step node IDs, then batch-fetches all outputs.
+     * Internally fetches the run to discover step block IDs, then batch-fetches all outputs.
      *
      * @param runId - The workflow run ID
-     * @returns Step outputs keyed by node ID
+     * @returns Step outputs keyed by block ID
      *
      * @example
      * ```typescript
@@ -128,12 +128,12 @@ export default class APIWorkflowRunSteps extends CompositionClient {
             })
             : run;
 
-        const nodeIds = workflowRun.steps.map((s) => s.node_id);
-        if (nodeIds.length === 0) {
+        const blockIds = workflowRun.steps.map((s) => s.block_id);
+        if (blockIds.length === 0) {
             return { outputs: {} };
         }
 
-        return this.getMany(workflowRun.id, nodeIds, options);
+        return this.getMany(workflowRun.id, blockIds, options);
     }
 
     async get_all(

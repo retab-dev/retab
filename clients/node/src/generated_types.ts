@@ -862,7 +862,7 @@ export type ModelExportResponse = z.infer<typeof ZModelExportResponse>;
 
 export const ZHILDecisionResource = z.lazy(() => (z.object({
     run_id: z.string(),
-    node_id: z.string(),
+    block_id: z.string(),
     node_status: z.string().nullable().optional(),
     decision_received: z.boolean().default(false),
     decision_applied: z.boolean().default(false),
@@ -883,9 +883,9 @@ export const ZHandlePayload = z.lazy(() => (z.object({
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
 export const ZStepOutputResponse = z.lazy(() => (z.object({
-    node_id: z.string(),
-    node_type: z.string(),
-    node_label: z.string(),
+    block_id: z.string(),
+    block_type: z.string(),
+    block_label: z.string(),
     status: z.string(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
@@ -898,9 +898,9 @@ export const ZStepOutputsBatchResponse = z.lazy(() => (z.object({
 export type StepOutputsBatchResponse = z.infer<typeof ZStepOutputsBatchResponse>;
 
 export const ZStepStatus = z.lazy(() => (z.object({
-    node_id: z.string(),
-    node_type: z.string(),
-    node_label: z.string(),
+    block_id: z.string(),
+    block_type: z.string(),
+    block_label: z.string(),
     status: z.union([z.literal("pending"), z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("skipped"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
@@ -1013,8 +1013,8 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     error: z.string().nullable().optional(),
     created_at: z.string(),
     updated_at: z.string(),
-    waiting_for_node_ids: z.array(z.string()),
-    pending_node_outputs: z.record(z.any()).nullable().optional(),
+    waiting_for_block_ids: z.array(z.string()),
+    pending_block_outputs: z.record(z.any()).nullable().optional(),
     config_snapshot_id: z.string().nullable().optional(),
     trigger_type: z.string().nullable().optional(),
     trigger_email: z.string().nullable().optional(),
@@ -1029,10 +1029,10 @@ export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
 export const ZWorkflowRunStep = z.lazy(() => (z.object({
     run_id: z.string(),
     organization_id: z.string(),
-    node_id: z.string(),
+    block_id: z.string(),
     step_id: z.string(),
-    node_type: z.string(),
-    node_label: z.string(),
+    block_type: z.string(),
+    block_label: z.string(),
     status: z.string(),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),

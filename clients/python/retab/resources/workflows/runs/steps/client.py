@@ -17,53 +17,53 @@ if TYPE_CHECKING:
 class WorkflowStepsMixin:
     """Mixin providing shared prepare methods for workflow step operations."""
 
-    def prepare_get(self, run_id: str, node_id: str) -> PreparedRequest:
+    def prepare_get(self, run_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to get status and handles for a specific step."""
-        return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}/steps/{node_id}")
+        return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}/steps/{block_id}")
 
     def prepare_list(self, run_id: str) -> PreparedRequest:
         """Prepare a request to list all persisted step documents for a run."""
         return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}/steps")
 
-    def prepare_get_many(self, run_id: str, node_ids: List[str]) -> PreparedRequest:
-        """Prepare a request to fetch normalized outputs for a subset of nodes."""
+    def prepare_get_many(self, run_id: str, block_ids: List[str]) -> PreparedRequest:
+        """Prepare a request to fetch normalized outputs for a subset of blocks."""
         return PreparedRequest(
             method="POST",
             url=f"/workflows/runs/{run_id}/steps/batch",
-            data={"node_ids": node_ids},
+            data={"block_ids": block_ids},
         )
 
 
 class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
     """Workflow Run Steps API wrapper for synchronous operations.
 
-    Usage: ``client.workflows.runs.steps.get(run_id, node_id)``
+    Usage: ``client.workflows.runs.steps.get(run_id, block_id)``
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def get(self, run_id: str, node_id: str) -> StepOutputResponse:
+    def get(self, run_id: str, block_id: str) -> StepOutputResponse:
         """Get step status and handle data for a specific step in a workflow run.
 
         Args:
             run_id: The ID of the workflow run
-            node_id: The ID of the node/step to get output for
+            block_id: The ID of the node/step to get output for
 
         Returns:
             StepOutputResponse with handle_outputs and handle_inputs.
                 Use ``.extracted_data`` for quick access to JSON output data.
         """
-        request = self.prepare_get(run_id, node_id)
+        request = self.prepare_get(run_id, block_id)
         response = self._client._prepared_request(request)
         return StepOutputResponse.model_validate(response)
 
-    def list(self, run_id: str, node_ids: Optional[List[str]] = None) -> List[WorkflowRunStep]:
+    def list(self, run_id: str, block_ids: Optional[List[str]] = None) -> List[WorkflowRunStep]:
         """List step documents for a workflow run.
 
         Args:
             run_id: The ID of the workflow run
-            node_ids: If provided, filters the returned step documents to these node IDs.
+            block_ids: If provided, filters the returned step documents to these block IDs.
 
         Returns:
             List[WorkflowRunStep] for the requested steps.
@@ -71,14 +71,14 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
         request = self.prepare_list(run_id)
         response = self._client._prepared_request(request)
         steps = [WorkflowRunStep.model_validate(item) for item in response]
-        if node_ids is None:
+        if block_ids is None:
             return steps
-        requested_node_ids = set(node_ids)
-        return [step for step in steps if step.node_id in requested_node_ids]
+        requested_block_ids = set(block_ids)
+        return [step for step in steps if step.block_id in requested_block_ids]
 
-    def get_many(self, run_id: str, node_ids: List[str]) -> StepOutputsBatchResponse:
-        """Fetch normalized outputs for a subset of nodes in a workflow run."""
-        request = self.prepare_get_many(run_id, node_ids)
+    def get_many(self, run_id: str, block_ids: List[str]) -> StepOutputsBatchResponse:
+        """Fetch normalized outputs for a subset of blocks in a workflow run."""
+        request = self.prepare_get_many(run_id, block_ids)
         response = self._client._prepared_request(request)
         return StepOutputsBatchResponse.model_validate(response)
 
@@ -97,42 +97,42 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
             req = PreparedRequest(method="GET", url=f"/workflows/runs/{run}")
             resp = self._client._prepared_request(req)
             run = WR.model_validate(resp)
-        node_ids = [s.node_id for s in run.steps]
-        if not node_ids:
+        block_ids = [s.block_id for s in run.steps]
+        if not block_ids:
             return StepOutputsBatchResponse(outputs={})
-        return self.get_many(run.id, node_ids=node_ids)
+        return self.get_many(run.id, block_ids=block_ids)
 
 
 class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
     """Workflow Run Steps API wrapper for asynchronous operations.
 
-    Usage: ``await client.workflows.runs.steps.get(run_id, node_id)``
+    Usage: ``await client.workflows.runs.steps.get(run_id, block_id)``
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    async def get(self, run_id: str, node_id: str) -> StepOutputResponse:
+    async def get(self, run_id: str, block_id: str) -> StepOutputResponse:
         """Get step status and handle data for a specific step in a workflow run.
 
         Args:
             run_id: The ID of the workflow run
-            node_id: The ID of the node/step to get output for
+            block_id: The ID of the node/step to get output for
 
         Returns:
             StepOutputResponse with handle_outputs and handle_inputs.
                 Use ``.extracted_data`` for quick access to JSON output data.
         """
-        request = self.prepare_get(run_id, node_id)
+        request = self.prepare_get(run_id, block_id)
         response = await self._client._prepared_request(request)
         return StepOutputResponse.model_validate(response)
 
-    async def list(self, run_id: str, node_ids: Optional[List[str]] = None) -> List[WorkflowRunStep]:
+    async def list(self, run_id: str, block_ids: Optional[List[str]] = None) -> List[WorkflowRunStep]:
         """List step documents for a workflow run.
 
         Args:
             run_id: The ID of the workflow run
-            node_ids: If provided, filters the returned step documents to these node IDs.
+            block_ids: If provided, filters the returned step documents to these block IDs.
 
         Returns:
             List[WorkflowRunStep] for the requested steps.
@@ -140,14 +140,14 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
         request = self.prepare_list(run_id)
         response = await self._client._prepared_request(request)
         steps = [WorkflowRunStep.model_validate(item) for item in response]
-        if node_ids is None:
+        if block_ids is None:
             return steps
-        requested_node_ids = set(node_ids)
-        return [step for step in steps if step.node_id in requested_node_ids]
+        requested_block_ids = set(block_ids)
+        return [step for step in steps if step.block_id in requested_block_ids]
 
-    async def get_many(self, run_id: str, node_ids: List[str]) -> StepOutputsBatchResponse:
-        """Fetch normalized outputs for a subset of nodes in a workflow run."""
-        request = self.prepare_get_many(run_id, node_ids)
+    async def get_many(self, run_id: str, block_ids: List[str]) -> StepOutputsBatchResponse:
+        """Fetch normalized outputs for a subset of blocks in a workflow run."""
+        request = self.prepare_get_many(run_id, block_ids)
         response = await self._client._prepared_request(request)
         return StepOutputsBatchResponse.model_validate(response)
 
@@ -165,7 +165,7 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
             req = PreparedRequest(method="GET", url=f"/workflows/runs/{run}")
             resp = await self._client._prepared_request(req)
             run = WR.model_validate(resp)
-        node_ids = [s.node_id for s in run.steps]
-        if not node_ids:
+        block_ids = [s.block_id for s in run.steps]
+        if not block_ids:
             return StepOutputsBatchResponse(outputs={})
-        return await self.get_many(run.id, node_ids=node_ids)
+        return await self.get_many(run.id, block_ids=block_ids)

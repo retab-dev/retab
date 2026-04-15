@@ -26,7 +26,7 @@ class HandlePayload(BaseModel):
 # Workflow run payloads can contain newer backend node types before the SDK is
 # regenerated. Keep runtime validation permissive so informational step metadata
 # does not break run parsing.
-NodeType = str
+BlockType = str
 StepExecutionStatus = Literal[
     "pending",
     "queued",
@@ -41,9 +41,9 @@ StepExecutionStatus = Literal[
 
 class StepStatus(BaseModel):
     """Status of a single step in workflow execution"""
-    node_id: str = Field(..., description="ID of the node")
-    node_type: NodeType = Field(..., description="Type of the node")
-    node_label: str = Field(..., description="Label of the node")
+    block_id: str = Field(..., description="ID of the node")
+    block_type: BlockType = Field(..., description="Type of the node")
+    block_label: str = Field(..., description="Label of the node")
     status: StepExecutionStatus = Field(..., description="Current status")
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
@@ -103,8 +103,8 @@ class WorkflowRun(BaseModel):
     error: Optional[str] = Field(default=None, description="Error message if workflow failed")
     created_at: datetime.datetime = Field(..., description="When the run was created")
     updated_at: datetime.datetime = Field(..., description="When the run was last updated")
-    waiting_for_node_ids: List[str] = Field(default_factory=list, description="Node IDs that are waiting for human review")
-    pending_node_outputs: Optional[dict] = Field(default=None, description="Serialized node outputs to resume from")
+    waiting_for_block_ids: List[str] = Field(default_factory=list, description="Node IDs that are waiting for human review")
+    pending_block_outputs: Optional[dict] = Field(default=None, description="Serialized node outputs to resume from")
     config_snapshot_id: Optional[str] = Field(default=None, description="ID of the config snapshot used for this run")
     trigger_type: Optional[str] = Field(default=None, description="How the run was triggered (manual, api, schedule, webhook, email, restart)")
     trigger_email: Optional[str] = Field(default=None, description="Email address that triggered the run (for email triggers)")
@@ -173,7 +173,7 @@ TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancel
 
 
 # ---------------------------------------------------------------------------
-# Step output types (from GET /v1/workflows/runs/{run_id}/steps/{node_id})
+# Step output types (from GET /v1/workflows/runs/{run_id}/steps/{block_id})
 # ---------------------------------------------------------------------------
 
 
@@ -408,17 +408,17 @@ _STEP_OUTPUT_MODEL_BY_NODE_TYPE: Dict[str, type[BaseModel]] = {
 
 
 def parse_workflow_step_output(
-    node_type: Optional[str],
+    block_type: Optional[str],
     output: Any,
 ) -> Optional[WorkflowStepOutputData]:
     if output is None:
         return None
     if not isinstance(output, dict):
         return output
-    if node_type is None:
+    if block_type is None:
         return output
 
-    model_cls = _STEP_OUTPUT_MODEL_BY_NODE_TYPE.get(node_type)
+    model_cls = _STEP_OUTPUT_MODEL_BY_NODE_TYPE.get(block_type)
     if model_cls is None:
         return output
 
@@ -429,9 +429,9 @@ def parse_workflow_step_output(
 
 class StepOutputResponse(BaseModel):
     """Step status and handle data for a specific step in a workflow run."""
-    node_id: str = Field(..., description="ID of the node")
-    node_type: str = Field(..., description="Type of the node")
-    node_label: str = Field(..., description="Label of the node")
+    block_id: str = Field(..., description="ID of the node")
+    block_type: str = Field(..., description="Type of the node")
+    block_label: str = Field(..., description="Label of the node")
     status: str = Field(..., description="Step status")
     handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
     handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID (what this node received)")
@@ -479,10 +479,10 @@ class WorkflowRunStep(BaseModel):
 
     run_id: str = Field(..., description="Parent workflow run ID")
     organization_id: str = Field(..., description="Organization that owns this run")
-    node_id: str = Field(..., description="Logical ID of the node")
+    block_id: str = Field(..., description="Logical ID of the node")
     step_id: str = Field(..., description="Stored step ID")
-    node_type: str = Field(..., description="Type of the node")
-    node_label: str = Field(..., description="Label of the node")
+    block_type: str = Field(..., description="Type of the node")
+    block_label: str = Field(..., description="Label of the node")
     status: str = Field(..., description="Step status")
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
@@ -556,7 +556,7 @@ class CancelWorkflowResponse(BaseModel):
 class HILDecisionResource(BaseModel):
     """Temporal-owned decision state for a workflow HIL node."""
     run_id: str = Field(..., description="Workflow run ID")
-    node_id: str = Field(..., description="HIL node ID")
+    block_id: str = Field(..., description="HIL node ID")
     node_status: Optional[str] = Field(default=None, description="Current workflow node status")
     decision_received: bool = Field(default=False, description="Whether Temporal received the decision")
     decision_applied: bool = Field(default=False, description="Whether the workflow applied the decision")
