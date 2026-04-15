@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic import field_validator
 
 from ..inference_settings import InferenceSettings
-from ..mime import BaseMIMEData
+from ..mime import FileRef
 from .predictions import PredictionData
 
 
@@ -54,7 +54,6 @@ class IterationDocument(BaseModel):
     iteration_id: str
     dataset_id: str
     dataset_document_id: str
-    mime_data: BaseMIMEData = Field(description="The mime data of the document")
+    mime_data: FileRef = Field(description="The mime data of the document")
     prediction_data: PredictionData = Field(default_factory=PredictionData, description="The prediction data of the document")
     extraction_id: str | None = Field(default=None, description="The extraction id of the document")
-

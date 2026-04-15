@@ -4,7 +4,7 @@ from typing import Any, Optional
 import nanoid  # type: ignore
 from pydantic import BaseModel, Field, ConfigDict
 
-from ..mime import BaseMIMEData, MIMEData
+from ..mime import FileRef, MIMEData
 from ..inference_settings import InferenceSettings
 from .predictions import PredictionData
 
@@ -58,7 +58,7 @@ class BuilderDocument(BaseModel):
     id: str = Field(default_factory=lambda: "builder_doc_" + nanoid.generate())
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
     project_id: str
-    mime_data: BaseMIMEData = Field(description="The mime data of the document")
+    mime_data: FileRef = Field(description="The mime data of the document")
     
     prediction_data: PredictionData = Field(default=PredictionData(), description="The prediction data of the document")
     extraction_id: str | None = Field(default=None, description="The extraction id of the document")

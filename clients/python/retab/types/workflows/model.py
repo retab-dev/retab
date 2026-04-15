@@ -4,7 +4,7 @@ from typing import TypeAlias
 
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
-from retab.types.mime import BaseMIMEData
+from retab.types.mime import FileRef
 from retab.types.documents.split import SplitResponse
 
 
@@ -18,7 +18,7 @@ class HandlePayload(BaseModel):
     - text: Plain text content
     """
     type: Literal["file", "json", "text"] = Field(..., description="Type of payload")
-    document: Optional[BaseMIMEData] = Field(default=None, description="For file handles: document reference")
+    document: Optional[FileRef] = Field(default=None, description="For file handles: document reference")
     data: Optional[dict] = Field(default=None, description="For JSON handles: structured data")
     text: Optional[str] = Field(default=None, description="For text payloads: text content")
 
@@ -53,9 +53,9 @@ class StepStatus(BaseModel):
         default=None,
         description="Output payloads keyed by handle ID (e.g., 'output-file-0', 'output-json-0')"
     )
-    input_document: Optional[BaseMIMEData] = Field(default=None, description="Reference to input document")
-    output_document: Optional[BaseMIMEData] = Field(default=None, description="Reference to output document")
-    split_documents: Optional[Dict[str, BaseMIMEData]] = Field(default=None, description="For split nodes: subdocument -> document reference")
+    input_document: Optional[FileRef] = Field(default=None, description="Reference to input document")
+    output_document: Optional[FileRef] = Field(default=None, description="Reference to output document")
+    split_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="For split nodes: subdocument -> document reference")
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review was completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
@@ -98,7 +98,7 @@ class WorkflowRun(BaseModel):
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow completed")
     duration_ms: Optional[int] = Field(default=None, description="Total duration in milliseconds")
     steps: List[StepStatus] = Field(default_factory=list, description="Status of each step")
-    input_documents: Optional[Dict[str, BaseMIMEData]] = Field(default=None, description="Start node ID -> input document reference")
+    input_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="Start node ID -> input document reference")
     final_outputs: Optional[dict] = Field(default=None, description="Final outputs from end nodes")
     error: Optional[str] = Field(default=None, description="Error message if workflow failed")
     created_at: datetime.datetime = Field(..., description="When the run was created")
@@ -490,9 +490,9 @@ class WorkflowRunStep(BaseModel):
     error: Optional[str] = Field(default=None, description="Error message if failed")
     handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
     handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID")
-    input_document: Optional[BaseMIMEData] = Field(default=None, description="Reference to input document")
-    output_document: Optional[BaseMIMEData] = Field(default=None, description="Reference to output document")
-    split_documents: Optional[Dict[str, BaseMIMEData]] = Field(default=None, description="Split node document outputs")
+    input_document: Optional[FileRef] = Field(default=None, description="Reference to input document")
+    output_document: Optional[FileRef] = Field(default=None, description="Reference to output document")
+    split_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="Split node document outputs")
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")

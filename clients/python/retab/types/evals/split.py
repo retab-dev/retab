@@ -6,7 +6,7 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, computed_field,
 
 from ..documents.split import Subdocument
 from ..inference_settings import InferenceSettings
-from ..mime import BaseMIMEData, MIMEData
+from ..mime import FileRef, MIMEData
 from ..projects.predictions import PredictionData
 from ..projects.model import default_inference_settings
 
@@ -101,7 +101,7 @@ class SplitDatasetDocument(BaseModel):
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
     project_id: str
     dataset_id: str
-    mime_data: BaseMIMEData = Field(description="The mime data of the document")
+    mime_data: FileRef = Field(description="The mime data of the document")
     prediction_data: PredictionData = Field(default_factory=PredictionData)
     extraction_id: str | None = Field(default=None)
     split_id: str | None = Field(default=None)
@@ -114,7 +114,7 @@ class SplitBuilderDocument(BaseModel):
     id: str
     updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc))
     project_id: str
-    mime_data: BaseMIMEData = Field(description="The mime data of the document")
+    mime_data: FileRef = Field(description="The mime data of the document")
     prediction_data: PredictionData = Field(default_factory=PredictionData)
     split_id: str | None = Field(default=None)
     extraction_id: str | None = Field(default=None)
@@ -217,7 +217,7 @@ class SplitIterationDocument(BaseModel):
     iteration_id: str
     dataset_id: str
     dataset_document_id: str
-    mime_data: BaseMIMEData = Field(description="The mime data of the document")
+    mime_data: FileRef = Field(description="The mime data of the document")
     prediction_data: PredictionData = Field(default_factory=PredictionData)
     extraction_id: str | None = Field(default=None)
     split_id: str | None = Field(default=None)
