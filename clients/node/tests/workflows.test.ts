@@ -198,21 +198,21 @@ describe("workflows client", () => {
             started_at: "2026-03-13T10:00:00Z",
             steps: [
                 {
-                    node_id: "classifier-1",
-                    node_type: "classifier",
-                    node_label: "Classifier",
+                    block_id: "classifier-1",
+                    block_type: "classifier",
+                    block_label: "Classifier",
                     status: "completed",
                 },
                 {
-                    node_id: "extract-2",
-                    node_type: "extract",
-                    node_label: "Skipped branch",
+                    block_id: "extract-2",
+                    block_type: "extract",
+                    block_label: "Skipped branch",
                     status: "skipped",
                 },
             ],
             created_at: "2026-03-13T10:00:00Z",
             updated_at: "2026-03-13T10:00:00Z",
-            waiting_for_node_ids: [],
+            waiting_for_block_ids: [],
         });
         const runsClient = new APIWorkflowRuns(mockClient);
 
@@ -224,7 +224,7 @@ describe("workflows client", () => {
             params: undefined,
             headers: undefined,
         });
-        expect(run.steps[0]?.node_type).toBe("classifier");
+        expect(run.steps[0]?.block_type).toBe("classifier");
         expect(run.steps[1]?.status).toBe("skipped");
     });
 
@@ -239,7 +239,7 @@ describe("workflows client", () => {
             created_at: "2026-01-01T00:00:00Z",
             updated_at: "2026-01-01T00:00:00Z",
             steps: [],
-            waiting_for_node_ids: [],
+            waiting_for_block_ids: [],
             trigger_type: "api",
             config_snapshot_id: "snap_abc",
             cost_summary: { total: 0.05 },
@@ -397,7 +397,7 @@ describe("workflows client", () => {
                 created_at: "2026-01-01T00:00:00Z",
                 updated_at: "2026-01-01T00:00:00Z",
                 steps: [],
-                waiting_for_node_ids: [],
+                waiting_for_block_ids: [],
             },
             cancellation_status: "cancelled",
         });
@@ -426,7 +426,7 @@ describe("workflows client", () => {
             created_at: "2026-01-01T00:00:00Z",
             updated_at: "2026-01-01T00:00:00Z",
             steps: [],
-            waiting_for_node_ids: [],
+            waiting_for_block_ids: [],
         });
         const runsClient = new APIWorkflowRuns(mockClient);
 
@@ -447,7 +447,7 @@ describe("workflows client", () => {
             submission_status: "accepted",
             decision: {
                 run_id: "run_1",
-                node_id: "hil-1",
+                block_id: "hil-1",
                 node_status: "waiting_for_hil",
                 decision_received: true,
                 decision_applied: false,
@@ -461,7 +461,7 @@ describe("workflows client", () => {
         const runsClient = new APIWorkflowRuns(mockClient);
 
         const result = await runsClient.submitHilDecision("run_1", {
-            nodeId: "hil-1",
+            blockId: "hil-1",
             approved: true,
             modifiedData: { field: "value" },
             commandId: "cmd_3",
@@ -471,7 +471,7 @@ describe("workflows client", () => {
             url: "/workflows/runs/run_1/hil-decisions",
             method: "POST",
             body: {
-                node_id: "hil-1",
+                block_id: "hil-1",
                 approved: true,
                 modified_data: { field: "value" },
                 command_id: "cmd_3",
@@ -487,7 +487,7 @@ describe("workflows client", () => {
             submission_status: "already_applied",
             decision: {
                 run_id: "run_1",
-                node_id: "hil-1",
+                block_id: "hil-1",
                 node_status: "completed",
                 decision_received: true,
                 decision_applied: true,
@@ -501,7 +501,7 @@ describe("workflows client", () => {
         const runsClient = new APIWorkflowRuns(mockClient);
 
         const result = await runsClient.submitHilDecision("run_1", {
-            nodeId: "hil-1",
+            blockId: "hil-1",
             approved: true,
         });
 
@@ -509,10 +509,10 @@ describe("workflows client", () => {
         expect(result.decision.decision_applied).toBe(true);
     });
 
-    test("runs.getHilDecision() sends GET to /hil-decisions/{nodeId}", async () => {
+    test("runs.getHilDecision() sends GET to /hil-decisions/{blockId}", async () => {
         const mockClient = new MockClient({
             run_id: "run_1",
-            node_id: "hil-1",
+            block_id: "hil-1",
             node_status: "completed",
             decision_received: true,
             decision_applied: true,
@@ -545,7 +545,7 @@ describe("workflows client", () => {
 
         const result = await runsClient.export({
             workflowId: "wf_1",
-            nodeId: "extract-1",
+            blockId: "extract-1",
             exportSource: "outputs",
             selectedRunIds: ["run_1", "run_2"],
             fromDate: new Date("2026-01-01T00:00:00.000Z"),
@@ -559,7 +559,7 @@ describe("workflows client", () => {
             method: "POST",
             body: {
                 workflow_id: "wf_1",
-                node_id: "extract-1",
+                block_id: "extract-1",
                 export_source: "outputs",
                 preferred_columns: ["invoice_number", "total_amount"],
                 selected_run_ids: ["run_1", "run_2"],
@@ -585,7 +585,7 @@ describe("workflow run utilities", () => {
         created_at: "2026-01-01T00:00:00Z",
         updated_at: "2026-01-01T00:00:00Z",
         steps: [],
-        waiting_for_node_ids: [],
+        waiting_for_block_ids: [],
         human_waiting_duration_ms: 0,
         ...overrides,
     });
@@ -645,7 +645,7 @@ describe("workflow run utilities", () => {
                     created_at: "2026-01-01T00:00:00Z",
                     updated_at: "2026-01-01T00:00:00Z",
                     steps: [],
-                    waiting_for_node_ids: [],
+                    waiting_for_block_ids: [],
                 },
                 {
                     id: "run_1",
@@ -657,7 +657,7 @@ describe("workflow run utilities", () => {
                     created_at: "2026-01-01T00:00:00Z",
                     updated_at: "2026-01-01T00:00:01Z",
                     steps: [],
-                    waiting_for_node_ids: ["hil-1"],
+                    waiting_for_block_ids: ["hil-1"],
                 },
             ];
 
@@ -680,7 +680,7 @@ describe("workflow run utilities", () => {
         const run = await runsClient.waitForCompletion("run_1", { pollIntervalMs: 1 });
 
         expect(run.status).toBe("waiting_for_human");
-        expect(run.waiting_for_node_ids).toEqual(["hil-1"]);
+        expect(run.waiting_for_block_ids).toEqual(["hil-1"]);
     });
 
     test("waitForCompletion() awaits async status callbacks", async () => {
@@ -694,7 +694,7 @@ describe("workflow run utilities", () => {
             created_at: "2026-01-01T00:00:00Z",
             updated_at: "2026-01-01T00:00:00Z",
             steps: [],
-            waiting_for_node_ids: [],
+            waiting_for_block_ids: [],
         });
         const runsClient = new APIWorkflowRuns(mockClient);
         const seenRunIds: string[] = [];

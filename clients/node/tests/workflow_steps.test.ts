@@ -18,10 +18,10 @@ class MockClient extends AbstractClient {
             {
                 run_id: "run_123",
                 organization_id: "org_123",
-                node_id: "extract-1",
+                block_id: "extract-1",
                 step_id: "extract-1",
-                node_type: "extract",
-                node_label: "Extract",
+                block_type: "extract",
+                block_label: "Extract",
                 status: "completed",
             },
         ]), {
@@ -45,9 +45,9 @@ describe("workflow run steps client", () => {
             }): Promise<Response> {
                 this.lastFetchParams = params;
                 return new Response(JSON.stringify({
-                    node_id: "extract-1",
-                    node_type: "extract",
-                    node_label: "Extract",
+                    block_id: "extract-1",
+                    block_type: "extract",
+                    block_label: "Extract",
                     status: "completed",
                     handle_outputs: {
                         "output-json-0": {
@@ -74,7 +74,7 @@ describe("workflow run steps client", () => {
             params: undefined,
             headers: undefined,
         });
-        expect(step.node_id).toBe("extract-1");
+        expect(step.block_id).toBe("extract-1");
         expect("output" in step).toBe(false);
         expect(step.handle_outputs?.["output-json-0"]).toBeDefined();
     });
@@ -92,7 +92,7 @@ describe("workflow run steps client", () => {
             headers: undefined,
         });
         expect(steps).toHaveLength(1);
-        expect(steps[0]?.node_id).toBe("extract-1");
+        expect(steps[0]?.block_id).toBe("extract-1");
         expect(steps[0]?.status).toBe("completed");
         expect(steps[0] && "output" in steps[0]).toBe(false);
     });
@@ -112,9 +112,9 @@ describe("workflow run steps client", () => {
                 return new Response(JSON.stringify({
                     outputs: {
                         "extract-1": {
-                            node_id: "extract-1",
-                            node_type: "extract",
-                            node_label: "Extract",
+                            block_id: "extract-1",
+                            block_type: "extract",
+                            block_label: "Extract",
                             status: "completed",
                             handle_outputs: {
                                 "output-json-0": { type: "json", data: { field: "value" } },
@@ -136,6 +136,6 @@ describe("workflow run steps client", () => {
 
         expect(mockClient.lastFetchParams?.url).toBe("/workflows/runs/run_123/steps/batch");
         expect(mockClient.lastFetchParams?.method).toBe("POST");
-        expect(batch.outputs["extract-1"]?.node_id).toBe("extract-1");
+        expect(batch.outputs["extract-1"]?.block_id).toBe("extract-1");
     });
 });

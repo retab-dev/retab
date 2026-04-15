@@ -67,7 +67,7 @@ class BaseJobsMixin:
         source: JobListSource | None = None,
         project_id: str | None = None,
         workflow_id: str | None = None,
-        workflow_node_id: str | None = None,
+        workflow_block_id: str | None = None,
         model: str | None = None,
         filename_regex: str | None = None,
         filename_contains: str | None = None,
@@ -97,8 +97,8 @@ class BaseJobsMixin:
             params["project_id"] = project_id
         if workflow_id is not None:
             params["workflow_id"] = workflow_id
-        if workflow_node_id is not None:
-            params["workflow_node_id"] = workflow_node_id
+        if workflow_block_id is not None:
+            params["workflow_block_id"] = workflow_block_id
         if model is not None:
             params["model"] = model
         if filename_regex is not None:
@@ -280,7 +280,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         source: JobListSource | None = None,
         project_id: str | None = None,
         workflow_id: str | None = None,
-        workflow_node_id: str | None = None,
+        workflow_block_id: str | None = None,
         model: str | None = None,
         filename_regex: str | None = None,
         filename_contains: str | None = None,
@@ -305,7 +305,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
             source: High-level source filter (api/project/workflow)
             project_id: Filter by request.project_id
             workflow_id: Filter by metadata.workflow_id
-            workflow_node_id: Filter by metadata.workflow_node_id or metadata.node_id
+            workflow_block_id: Filter by metadata.workflow_block_id or metadata.block_id
             model: Filter by request.model
             filename_regex: Regex/plain-text filename filter
             filename_contains: Substring filename filter
@@ -330,7 +330,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
             source=source,
             project_id=project_id,
             workflow_id=workflow_id,
-            workflow_node_id=workflow_node_id,
+            workflow_block_id=workflow_block_id,
             model=model,
             filename_regex=filename_regex,
             filename_contains=filename_contains,
@@ -505,7 +505,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         source: JobListSource | None = None,
         project_id: str | None = None,
         workflow_id: str | None = None,
-        workflow_node_id: str | None = None,
+        workflow_block_id: str | None = None,
         model: str | None = None,
         filename_regex: str | None = None,
         filename_contains: str | None = None,
@@ -530,7 +530,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
             source: High-level source filter (api/project/workflow)
             project_id: Filter by request.project_id
             workflow_id: Filter by metadata.workflow_id
-            workflow_node_id: Filter by metadata.workflow_node_id or metadata.node_id
+            workflow_block_id: Filter by metadata.workflow_block_id or metadata.block_id
             model: Filter by request.model
             filename_regex: Regex/plain-text filename filter
             filename_contains: Substring filename filter
@@ -555,7 +555,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
             source=source,
             project_id=project_id,
             workflow_id=workflow_id,
-            workflow_node_id=workflow_node_id,
+            workflow_block_id=workflow_block_id,
             model=model,
             filename_regex=filename_regex,
             filename_contains=filename_contains,

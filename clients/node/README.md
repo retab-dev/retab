@@ -72,7 +72,7 @@ const steps = await retab.workflows.runs.steps.list(run.id);
 const outputs = await retab.workflows.runs.steps.getMany(run.id, ["extract-1"]);
 
 console.log(run.final_outputs);
-console.log(steps.map((step) => `${step.node_id}: ${step.status}`));
+console.log(steps.map((step) => `${step.block_id}: ${step.status}`));
 console.log(outputs.outputs["extract-1"]?.handle_outputs);
 ```
 

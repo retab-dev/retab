@@ -162,10 +162,10 @@ export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 export const ZWorkflowRunStep = z.object({
     run_id: z.string(),
     organization_id: z.string(),
-    node_id: z.string(),
+    block_id: z.string(),
     step_id: z.string(),
-    node_type: z.string(),
-    node_label: z.string(),
+    block_type: z.string(),
+    block_label: z.string(),
     status: z.string(),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),

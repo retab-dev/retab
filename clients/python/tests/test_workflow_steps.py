@@ -11,10 +11,10 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
         {
             "run_id": "run_123",
             "organization_id": "org_123",
-            "node_id": "extract-1",
+            "block_id": "extract-1",
             "step_id": "extract-1",
-            "node_type": "extract",
-            "node_label": "Extract",
+            "block_type": "extract",
+            "block_label": "Extract",
             "status": "completed",
         }
     ]
@@ -25,7 +25,7 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/runs/run_123/steps"
     assert len(steps) == 1
-    assert steps[0].node_id == "extract-1"
+    assert steps[0].block_id == "extract-1"
 
 
 @pytest.mark.asyncio
@@ -35,10 +35,10 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
         {
             "run_id": "run_123",
             "organization_id": "org_123",
-            "node_id": "extract-1",
+            "block_id": "extract-1",
             "step_id": "extract-1",
-            "node_type": "extract",
-            "node_label": "Extract",
+            "block_type": "extract",
+            "block_label": "Extract",
             "status": "completed",
         }
     ])
@@ -49,15 +49,15 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/runs/run_123/steps"
     assert len(steps) == 1
-    assert steps[0].node_id == "extract-1"
+    assert steps[0].block_id == "extract-1"
 
 
 def test_workflow_steps_get_handle_outputs_typed() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
-        "node_id": "extract-1",
-        "node_type": "extract",
-        "node_label": "Extract",
+        "block_id": "extract-1",
+        "block_type": "extract",
+        "block_label": "Extract",
         "status": "completed",
         "handle_outputs": {
             "output-json-0": {
@@ -87,9 +87,9 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
 async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(return_value={
-        "node_id": "start-json-1",
-        "node_type": "start_json",
-        "node_label": "Start JSON",
+        "block_id": "start-json-1",
+        "block_type": "start_json",
+        "block_label": "Start JSON",
         "status": "completed",
         "handle_outputs": {
             "output-json-0": {
@@ -109,37 +109,37 @@ async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
     assert step.extracted_data == {"payload": {"ok": True}}
 
 
-def test_workflow_steps_list_with_node_ids() -> None:
-    """list() with node_ids filters the persisted step list and still returns WorkflowRunStep items."""
+def test_workflow_steps_list_with_block_ids() -> None:
+    """list() with block_ids filters the persisted step list and still returns WorkflowRunStep items."""
     client = MagicMock()
     client._prepared_request.return_value = [
         {
             "run_id": "run_123",
             "organization_id": "org_123",
-            "node_id": "extract-1",
+            "block_id": "extract-1",
             "step_id": "extract-1",
-            "node_type": "extract",
-            "node_label": "Extract",
+            "block_type": "extract",
+            "block_label": "Extract",
             "status": "completed",
         },
         {
             "run_id": "run_123",
             "organization_id": "org_123",
-            "node_id": "parse-1",
+            "block_id": "parse-1",
             "step_id": "parse-1",
-            "node_type": "parse",
-            "node_label": "Parse",
+            "block_type": "parse",
+            "block_label": "Parse",
             "status": "completed",
         },
     ]
 
-    result = WorkflowSteps(client=client).list("run_123", node_ids=["extract-1"])
+    result = WorkflowSteps(client=client).list("run_123", block_ids=["extract-1"])
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/workflows/runs/run_123/steps"
     assert len(result) == 1
-    assert result[0].node_id == "extract-1"
+    assert result[0].block_id == "extract-1"
 
 
 def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
@@ -147,9 +147,9 @@ def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
     client._prepared_request.return_value = {
         "outputs": {
             "extract-1": {
-                "node_id": "extract-1",
-                "node_type": "extract",
-                "node_label": "Extract",
+                "block_id": "extract-1",
+                "block_type": "extract",
+                "block_label": "Extract",
                 "status": "completed",
                 "handle_outputs": {
                     "output-json-0": {
@@ -175,9 +175,9 @@ def test_workflow_steps_get_no_json_output() -> None:
     """extracted_data returns None when there are no JSON outputs."""
     client = MagicMock()
     client._prepared_request.return_value = {
-        "node_id": "parse-1",
-        "node_type": "parse",
-        "node_label": "Parse",
+        "block_id": "parse-1",
+        "block_type": "parse",
+        "block_label": "Parse",
         "status": "completed",
         "handle_outputs": {
             "output-file-0": {
@@ -197,9 +197,9 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
     """extracted_data returns None when handle_outputs is None."""
     client = MagicMock()
     client._prepared_request.return_value = {
-        "node_id": "start-1",
-        "node_type": "start",
-        "node_label": "Start",
+        "block_id": "start-1",
+        "block_type": "start",
+        "block_label": "Start",
         "status": "completed",
         "handle_outputs": None,
         "handle_inputs": None,

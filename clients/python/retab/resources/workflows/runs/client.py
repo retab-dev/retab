@@ -86,9 +86,9 @@ class WorkflowRunsMixin:
         # Convert each document to MIMEData and then to the format expected by the backend
         if documents:
             documents_payload: Dict[str, Dict[str, Any]] = {}
-            for node_id, document in documents.items():
+            for block_id, document in documents.items():
                 mime_data = prepare_mime_document(document)
-                documents_payload[node_id] = {
+                documents_payload[block_id] = {
                     "filename": mime_data.filename,
                     "content": mime_data.content,
                     "mime_type": mime_data.mime_type,
@@ -188,13 +188,13 @@ class WorkflowRunsMixin:
     def prepare_submit_hil_decision(
         self,
         run_id: str,
-        node_id: str,
+        block_id: str,
         approved: bool,
         modified_data: dict | None = None,
         command_id: str | None = None,
     ) -> PreparedRequest:
         """Prepare a request to submit a HIL decision for a workflow run."""
-        data: Dict[str, Any] = {"node_id": node_id, "approved": approved}
+        data: Dict[str, Any] = {"block_id": block_id, "approved": approved}
         if modified_data is not None:
             data["modified_data"] = modified_data
         if command_id is not None:
@@ -205,11 +205,11 @@ class WorkflowRunsMixin:
             data=data,
         )
 
-    def prepare_get_hil_decision(self, run_id: str, node_id: str) -> PreparedRequest:
-        """Prepare a request to get the authoritative HIL decision state for a node."""
+    def prepare_get_hil_decision(self, run_id: str, block_id: str) -> PreparedRequest:
+        """Prepare a request to get the authoritative HIL decision state for a block."""
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/runs/{run_id}/hil-decisions/{node_id}",
+            url=f"/workflows/runs/{run_id}/hil-decisions/{block_id}",
         )
 
 class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
@@ -404,7 +404,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def submit_hil_decision(
         self,
         run_id: str,
-        node_id: str,
+        block_id: str,
         approved: bool,
         modified_data: dict | None = None,
         command_id: str | None = None,
@@ -413,7 +413,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 
         Args:
             run_id: The ID of the workflow run
-            node_id: The ID of the HIL node being approved/rejected
+            block_id: The ID of the HIL block being approved/rejected
             approved: Whether the human approved the data
             modified_data: Optional modified data if the human made changes
             command_id: Optional idempotency key for deduplicating decision submissions
@@ -423,7 +423,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         """
         request = self.prepare_submit_hil_decision(
             run_id,
-            node_id=node_id,
+            block_id=block_id,
             approved=approved,
             modified_data=modified_data,
             command_id=command_id,
@@ -431,9 +431,9 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         response = self._client._prepared_request(request)
         return SubmitHILDecisionResponse.model_validate(response)
 
-    def get_hil_decision(self, run_id: str, node_id: str) -> HILDecisionResource:
+    def get_hil_decision(self, run_id: str, block_id: str) -> HILDecisionResource:
         """Get the authoritative HIL decision state for a workflow run node."""
-        request = self.prepare_get_hil_decision(run_id, node_id)
+        request = self.prepare_get_hil_decision(run_id, block_id)
         response = self._client._prepared_request(request)
         return HILDecisionResource.model_validate(response)
 
@@ -488,7 +488,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def export(
         self,
         workflow_id: str,
-        node_id: str,
+        block_id: str,
         export_source: Literal["outputs", "inputs"] = "outputs",
 
         selected_run_ids: List[str] | None = None,
@@ -503,7 +503,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 
         Args:
             workflow_id: The workflow ID
-            node_id: The node ID to export outputs from
+            block_id: The block ID to export outputs from
             export_source: Whether to export "outputs" or "inputs" (default "outputs")
             selected_run_ids: Limit export to specific run IDs (optional)
             status: Filter by status (optional)
@@ -518,7 +518,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         """
         data: Dict[str, Any] = {
             "workflow_id": workflow_id,
-            "node_id": node_id,
+            "block_id": block_id,
             "export_source": export_source,
             "preferred_columns": preferred_columns or [],
         }
@@ -729,7 +729,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     async def submit_hil_decision(
         self,
         run_id: str,
-        node_id: str,
+        block_id: str,
         approved: bool,
         modified_data: dict | None = None,
         command_id: str | None = None,
@@ -738,7 +738,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
 
         Args:
             run_id: The ID of the workflow run
-            node_id: The ID of the HIL node being approved/rejected
+            block_id: The ID of the HIL block being approved/rejected
             approved: Whether the human approved the data
             modified_data: Optional modified data if the human made changes
             command_id: Optional idempotency key for deduplicating decision submissions
@@ -748,7 +748,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         """
         request = self.prepare_submit_hil_decision(
             run_id,
-            node_id=node_id,
+            block_id=block_id,
             approved=approved,
             modified_data=modified_data,
             command_id=command_id,
@@ -756,9 +756,9 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         response = await self._client._prepared_request(request)
         return SubmitHILDecisionResponse.model_validate(response)
 
-    async def get_hil_decision(self, run_id: str, node_id: str) -> HILDecisionResource:
+    async def get_hil_decision(self, run_id: str, block_id: str) -> HILDecisionResource:
         """Get the authoritative HIL decision state for a workflow run node."""
-        request = self.prepare_get_hil_decision(run_id, node_id)
+        request = self.prepare_get_hil_decision(run_id, block_id)
         response = await self._client._prepared_request(request)
         return HILDecisionResource.model_validate(response)
 
@@ -814,7 +814,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     async def export(
         self,
         workflow_id: str,
-        node_id: str,
+        block_id: str,
         export_source: Literal["outputs", "inputs"] = "outputs",
 
         selected_run_ids: List[str] | None = None,
@@ -828,7 +828,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         """Export run results as structured CSV data."""
         data: Dict[str, Any] = {
             "workflow_id": workflow_id,
-            "node_id": node_id,
+            "block_id": block_id,
             "export_source": export_source,
             "preferred_columns": preferred_columns or [],
         }

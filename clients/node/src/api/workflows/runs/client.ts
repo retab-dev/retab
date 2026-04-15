@@ -90,12 +90,12 @@ export default class APIWorkflowRuns extends CompositionClient {
         if (documents) {
             const documentsPayload: Record<string, { filename: string; content: string; mime_type: string }> = {};
 
-            for (const [nodeId, document] of Object.entries(documents)) {
+            for (const [blockId, document] of Object.entries(documents)) {
                 const parsedDocument = await ZMIMEData.parseAsync(document);
                 const content = parsedDocument.url.split(",")[1];
                 const mimeType = parsedDocument.url.split(";")[0].split(":")[1];
 
-                documentsPayload[nodeId] = {
+                documentsPayload[blockId] = {
                     filename: parsedDocument.filename,
                     content: content,
                     mime_type: mimeType,
@@ -271,12 +271,12 @@ export default class APIWorkflowRuns extends CompositionClient {
     async submitHilDecision(
         runId: string,
         {
-            nodeId,
+            blockId,
             approved,
             modifiedData,
             commandId,
         }: {
-            nodeId: string;
+            blockId: string;
             approved: boolean;
             modifiedData?: Record<string, unknown> | null;
             commandId?: string;
@@ -285,7 +285,7 @@ export default class APIWorkflowRuns extends CompositionClient {
     ): Promise<SubmitHILDecisionResponse> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const body: Record<string, any> = {
-            node_id: nodeId,
+            block_id: blockId,
             approved,
         };
         if (modifiedData !== undefined) body.modified_data = modifiedData;
@@ -305,11 +305,11 @@ export default class APIWorkflowRuns extends CompositionClient {
      */
     async getHilDecision(
         runId: string,
-        nodeId: string,
+        blockId: string,
         options?: RequestOptions
     ): Promise<HILDecisionResource> {
         return this._fetchJson(ZHILDecisionResource, {
-            url: `/workflows/runs/${runId}/hil-decisions/${nodeId}`,
+            url: `/workflows/runs/${runId}/hil-decisions/${blockId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -458,11 +458,11 @@ export default class APIWorkflowRuns extends CompositionClient {
      */
     async getDocumentUrl(
         runId: string,
-        nodeId: string,
+        blockId: string,
         options?: RequestOptions
     ): Promise<Record<string, unknown>> {
         return this._fetchJson(z.record(z.any()), {
-            url: `/workflows/runs/${runId}/documents/${nodeId}`,
+            url: `/workflows/runs/${runId}/documents/${blockId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -477,7 +477,7 @@ export default class APIWorkflowRuns extends CompositionClient {
     async export(
         {
             workflowId,
-            nodeId,
+            blockId,
             exportSource = "outputs",
             selectedRunIds,
             status,
@@ -488,7 +488,7 @@ export default class APIWorkflowRuns extends CompositionClient {
             preferredColumns,
         }: {
             workflowId: string;
-            nodeId: string;
+            blockId: string;
             exportSource?: "outputs" | "inputs";
             selectedRunIds?: string[];
             status?: string;
@@ -503,7 +503,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const body: Record<string, any> = {
             workflow_id: workflowId,
-            node_id: nodeId,
+            block_id: blockId,
             export_source: exportSource,
             preferred_columns: preferredColumns || [],
         };
