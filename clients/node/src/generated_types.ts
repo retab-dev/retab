@@ -12,7 +12,7 @@ export const ZAttachmentMetadata = z.lazy(() => (z.object({
 })));
 export type AttachmentMetadata = z.infer<typeof ZAttachmentMetadata>;
 
-export const ZBaseAttachmentMIMEData = z.lazy(() => (ZBaseMIMEData.schema).merge(z.object({
+export const ZBaseAttachmentMIMEData = z.lazy(() => (ZFileRef.schema).merge(z.object({
     metadata: ZAttachmentMetadata.default({}),
 })));
 export type BaseAttachmentMIMEData = z.infer<typeof ZBaseAttachmentMIMEData>;
@@ -37,13 +37,6 @@ export const ZBaseEmailData = z.lazy(() => (z.object({
 })));
 export type BaseEmailData = z.infer<typeof ZBaseEmailData>;
 
-export const ZBaseMIMEData = z.lazy(() => (z.object({
-    id: z.string(),
-    filename: z.string(),
-    mime_type: z.string(),
-})));
-export type BaseMIMEData = z.infer<typeof ZBaseMIMEData>;
-
 export const ZEmailAddressData = z.lazy(() => (z.object({
     email: z.string(),
     display_name: z.string().nullable().optional(),
@@ -54,6 +47,13 @@ export const ZEmailData = z.lazy(() => (ZBaseEmailData.schema).merge(z.object({
     attachments: z.array(ZAttachmentMIMEData).default([]),
 })));
 export type EmailData = z.infer<typeof ZEmailData>;
+
+export const ZFileRef = z.lazy(() => (z.object({
+    id: z.string(),
+    filename: z.string(),
+    mime_type: z.string(),
+})));
+export type FileRef = z.infer<typeof ZFileRef>;
 
 export const ZMIMEData = z.lazy(() => (z.object({
     filename: z.string(),
@@ -327,7 +327,7 @@ export const ZClassifyBuilderDocument = z.lazy(() => (z.object({
     id: z.string(),
     updated_at: z.string(),
     project_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     classification_id: z.string().nullable().optional(),
     extraction_id: z.string().nullable().optional(),
@@ -349,7 +349,7 @@ export const ZClassifyDatasetDocument = z.lazy(() => (z.object({
     updated_at: z.string(),
     project_id: z.string(),
     dataset_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     classification_id: z.string().nullable().optional(),
     extraction_id: z.string().nullable().optional(),
@@ -392,7 +392,7 @@ export const ZClassifyIterationDocument = z.lazy(() => (z.object({
     iteration_id: z.string(),
     dataset_id: z.string(),
     dataset_document_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     classification_id: z.string().nullable().optional(),
     extraction_id: z.string().nullable().optional(),
@@ -524,7 +524,7 @@ export const ZSplitBuilderDocument = z.lazy(() => (z.object({
     id: z.string(),
     updated_at: z.string(),
     project_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     split_id: z.string().nullable().optional(),
     extraction_id: z.string().nullable().optional(),
@@ -554,7 +554,7 @@ export const ZSplitDatasetDocument = z.lazy(() => (z.object({
     updated_at: z.string(),
     project_id: z.string(),
     dataset_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     extraction_id: z.string().nullable().optional(),
     split_id: z.string().nullable().optional(),
@@ -599,7 +599,7 @@ export const ZSplitIterationDocument = z.lazy(() => (z.object({
     iteration_id: z.string(),
     dataset_id: z.string(),
     dataset_document_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     extraction_id: z.string().nullable().optional(),
     split_id: z.string().nullable().optional(),
@@ -726,7 +726,7 @@ export const ZIterationDocument = z.lazy(() => (z.object({
     iteration_id: z.string(),
     dataset_id: z.string(),
     dataset_document_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     extraction_id: z.string().nullable().optional(),
 })));
@@ -758,7 +758,7 @@ export const ZDatasetDocument = z.lazy(() => (z.object({
     updated_at: z.string(),
     project_id: z.string(),
     dataset_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     extraction_id: z.string().nullable().optional(),
     validation_flags: z.record(z.string(), z.any()),
@@ -814,7 +814,7 @@ export const ZBuilderDocument = z.lazy(() => (z.object({
     id: z.string(),
     updated_at: z.string(),
     project_id: z.string(),
-    mime_data: ZBaseMIMEData,
+    mime_data: ZFileRef,
     prediction_data: ZPredictionData.default({}),
     extraction_id: z.string().nullable().optional(),
 })));
@@ -876,7 +876,7 @@ export type HILDecisionResource = z.infer<typeof ZHILDecisionResource>;
 
 export const ZHandlePayload = z.lazy(() => (z.object({
     type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
-    document: ZBaseMIMEData.nullable().optional(),
+    document: ZFileRef.nullable().optional(),
     data: z.record(z.any()).nullable().optional(),
     text: z.string().nullable().optional(),
 })));
@@ -907,9 +907,9 @@ export const ZStepStatus = z.lazy(() => (z.object({
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    input_document: ZBaseMIMEData.nullable().optional(),
-    output_document: ZBaseMIMEData.nullable().optional(),
-    split_documents: z.record(z.string(), ZBaseMIMEData).nullable().optional(),
+    input_document: ZFileRef.nullable().optional(),
+    output_document: ZFileRef.nullable().optional(),
+    split_documents: z.record(z.string(), ZFileRef).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
     human_review_approved: z.boolean().nullable().optional(),
@@ -1008,7 +1008,7 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     steps: z.array(ZStepStatus),
-    input_documents: z.record(z.string(), ZBaseMIMEData).nullable().optional(),
+    input_documents: z.record(z.string(), ZFileRef).nullable().optional(),
     final_outputs: z.record(z.any()).nullable().optional(),
     error: z.string().nullable().optional(),
     created_at: z.string(),
@@ -1040,9 +1040,9 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     error: z.string().nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    input_document: ZBaseMIMEData.nullable().optional(),
-    output_document: ZBaseMIMEData.nullable().optional(),
-    split_documents: z.record(z.string(), ZBaseMIMEData).nullable().optional(),
+    input_document: ZFileRef.nullable().optional(),
+    output_document: ZFileRef.nullable().optional(),
+    split_documents: z.record(z.string(), ZFileRef).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
     human_review_approved: z.boolean().nullable().optional(),
@@ -1606,7 +1606,7 @@ export type DuplicateEditTemplateRequest = z.infer<typeof ZDuplicateEditTemplate
 export const ZEditTemplate = z.lazy(() => (z.object({
     id: z.string(),
     name: z.string(),
-    file: ZBaseMIMEData,
+    file: ZFileRef,
     form_fields: z.array(ZFormField),
     field_count: z.number().default(0),
     organization_id: z.string().nullable().optional(),
@@ -1696,7 +1696,7 @@ export const ZParseRequest = z.lazy(() => (z.object({
 export type ParseRequest = z.infer<typeof ZParseRequest>;
 
 export const ZParseResponse = z.lazy(() => (z.object({
-    document: ZBaseMIMEData,
+    document: ZFileRef,
     usage: ZRetabUsage,
     pages: z.array(z.string()),
     text: z.string(),
@@ -5174,3 +5174,4 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
+

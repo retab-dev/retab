@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 import datetime
 
-from ..mime import BaseMIMEData, MIMEData
+from ..mime import FileRef, MIMEData
 from ..documents.edit import FormField, EditConfig
 
 
@@ -13,7 +13,7 @@ class EditTemplate(BaseModel):
 
     id: str = Field(..., description="Unique identifier of the template")
     name: str = Field(..., description="Name of the template")
-    file: BaseMIMEData = Field(..., description="File information for the empty PDF template")
+    file: FileRef = Field(..., description="File information for the empty PDF template")
     form_fields: list[FormField] = Field(default_factory=list, description="List of form fields in the template")
     field_count: int = Field(default=0, description="Number of form fields in the template")
     organization_id: Optional[str] = Field(default=None, description="Organization that owns this template")

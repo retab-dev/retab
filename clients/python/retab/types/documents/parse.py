@@ -1,7 +1,7 @@
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..mime import MIMEData, BaseMIMEData
+from ..mime import MIMEData, FileRef
 from .usage import RetabUsage
 TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 
@@ -22,7 +22,7 @@ class ParseRequest(BaseModel):
 class ParseResponse(BaseModel):
     """Result of document parsing."""
 
-    document: BaseMIMEData = Field(..., description="Processed document metadata")
+    document: FileRef = Field(..., description="Processed document metadata")
     usage: RetabUsage = Field(..., description="Processing usage information")
     pages: list[str] = Field(..., description="Text content of each page")
     text: str = Field(..., description="Text content of the document")

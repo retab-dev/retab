@@ -3,9 +3,9 @@ import datetime
 import gzip
 import mimetypes
 import re
-from typing import Any, Optional, Self, Sequence
+from typing import Optional, Self, Sequence
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from ..utils.hashing import generate_blake2b_hash_from_base64
 
 import io
@@ -171,10 +171,13 @@ class MIMEData(BaseModel):
         return self.__str__()
 
 
-class BaseMIMEData(BaseModel):
+class FileRef(BaseModel):
+    """Public/shared file reference used across SDK and customer-facing APIs."""
+
     id: str = Field(..., description="ID of the file")
     filename: str = Field(..., description="Filename of the file")
     mime_type: str = Field(..., description="MIME type of the file")
+
 
 # **** MIME DATACLASSES ****
 class AttachmentMetadata(BaseModel):
@@ -186,7 +189,7 @@ class AttachmentMetadata(BaseModel):
     )
 
 
-class BaseAttachmentMIMEData(BaseMIMEData):
+class BaseAttachmentMIMEData(FileRef):
     metadata: AttachmentMetadata = Field(default=AttachmentMetadata(), description="Additional metadata about the attachment.")
 
 

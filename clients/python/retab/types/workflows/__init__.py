@@ -1,4 +1,4 @@
-from retab.types.mime import BaseMIMEData
+from retab.types.mime import FileRef
 
 from .model import (
     Workflow,
@@ -28,7 +28,7 @@ from .model import (
 
 
 __all__ = [
-    "BaseMIMEData",
+    "FileRef",
     "Workflow",
     "WorkflowRun",
     "StepStatus",
