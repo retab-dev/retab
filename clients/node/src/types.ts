@@ -140,6 +140,12 @@ export const ZClassifyRequest = z.object({
 });
 export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
 
+export const ZClassifyResponse = z.object({
+    ...generated.ZClassifyResponse.schema.shape,
+    votes: generated.ZClassifyResponse.schema.shape.votes.default([]),
+});
+export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
+
 export const ZEditRequest = z.object({
     ...generated.ZEditRequest.schema.shape,
     document: ZMIMEData.nullable().optional(),
