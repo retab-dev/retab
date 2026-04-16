@@ -25,10 +25,12 @@ def test_split_response_model_accepts_native_consensus_envelope() -> None:
                 "likelihoods": {
                     "splits": [
                         {
+                            "likelihood": 0.9703,
                             "name": 0.9703,
                             "pages": [1.0, 1.0, 1.0],
                             "partitions": [
                                 {
+                                    "likelihood": 1.0,
                                     "key": 1.0,
                                     "pages": [1.0],
                                 }
@@ -48,6 +50,11 @@ def test_split_response_model_accepts_native_consensus_envelope() -> None:
     )
 
     assert response.splits[0].pages == [1, 2, 3]
+    assert response.splits[0].metric_key == "properties"
+    assert response.splits[0].display_label == "properties"
+    assert response.splits[0].instance_index == 1
+    assert response.splits[0].page_start == 1
+    assert response.splits[0].page_end == 3
     assert response.splits[0].partitions[0].model_dump() == {
         "key": "10*310146",
         "pages": [1],
@@ -57,10 +64,12 @@ def test_split_response_model_accepts_native_consensus_envelope() -> None:
     assert response.consensus.likelihoods.model_dump(exclude_none=True) == {
         "splits": [
             {
+                "likelihood": 0.9703,
                 "name": 0.9703,
                 "pages": [1.0, 1.0, 1.0],
                 "partitions": [
                     {
+                        "likelihood": 1.0,
                         "key": 1.0,
                         "pages": [1.0],
                     }
@@ -74,3 +83,4 @@ def test_split_response_model_accepts_native_consensus_envelope() -> None:
         [1, 2, 3, 4],
         [1, 2, 3],
     ]
+    assert response.model_dump()["splits"][0]["metric_key"] == "properties"

@@ -971,7 +971,7 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         Returns:
             ClassifyResponse: Response containing:
-                - result: ClassifyResult with reasoning and classification.
+                - classification: ClassifyResult with reasoning and category.
 
         Raises:
             HTTPException: If the request fails.

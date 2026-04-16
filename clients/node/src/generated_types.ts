@@ -1685,16 +1685,10 @@ export const ZClassifyResponse = z.lazy(() => (z.object({
 })));
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
 
-export const ZClassifyResult = z.lazy(() => (z.object({
-    reasoning: z.string(),
-    classification: z.string(),
-})));
+export const ZClassifyResult = ZClassifyDecision;
 export type ClassifyResult = z.infer<typeof ZClassifyResult>;
 
-export const ZClassifyVote = z.lazy(() => (z.object({
-    reasoning: z.string(),
-    classification: z.string(),
-})));
+export const ZClassifyVote = ZClassifyDecision;
 export type ClassifyVote = z.infer<typeof ZClassifyVote>;
 
 export const ZParseRequest = z.lazy(() => (z.object({
@@ -1725,12 +1719,14 @@ export const ZSplitRequest = z.lazy(() => (z.object({
 export type SplitRequest = z.infer<typeof ZSplitRequest>;
 
 export const ZSplitPartitionLikelihood = z.lazy(() => (z.object({
+    likelihood: z.number().nullable().optional(),
     key: z.number().nullable().optional(),
     pages: z.array(z.number().nullable().optional()).default([]),
 })));
 export type SplitPartitionLikelihood = z.infer<typeof ZSplitPartitionLikelihood>;
 
 export const ZSplitLikelihoodNode = z.lazy(() => (z.object({
+    likelihood: z.number().nullable().optional(),
     name: z.number().nullable().optional(),
     pages: z.array(z.number().nullable().optional()).default([]),
     partitions: z.array(ZSplitPartitionLikelihood).default([]),
@@ -1850,23 +1846,6 @@ export const ZPartition = z.lazy(() => (z.object({
     pages: z.array(z.number()),
 })));
 export type Partition = z.infer<typeof ZPartition>;
-
-export const ZSplitOutputItem = z.lazy(() => (z.object({
-    name: z.string(),
-    start_page: z.number(),
-    end_page: z.number(),
-})));
-export type SplitOutputItem = z.infer<typeof ZSplitOutputItem>;
-
-export const ZSplitOutputSchema = z.lazy(() => (z.object({
-    splits: z.array(ZSplitOutputItem),
-})));
-export type SplitOutputSchema = z.infer<typeof ZSplitOutputSchema>;
-
-export const ZSplitVote = z.lazy(() => (z.object({
-    pages: z.array(z.number()),
-})));
-export type SplitVote = z.infer<typeof ZSplitVote>;
 
 export const ZDocumentCreateInputRequest = z.lazy(() => (ZDocumentCreateMessageRequest.schema).merge(z.object({
     json_schema: z.record(z.string(), z.any()),
