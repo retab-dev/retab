@@ -1,6 +1,6 @@
 from .parse import ParseRequest, ParseResponse, RetabUsage
 from .split import Subdocument, SplitRequest, SplitResult, SplitChoice, SplitConsensus, SplitResponse
-from .classify import ClassifyRequest, ClassifyResult, ClassifyResponse, Category
+from .classify import Category, ClassifyDecision, ClassifyRequest, ClassifyResponse, ClassifyResult
 
 
 __all__ = [
@@ -15,6 +15,7 @@ __all__ = [
     "SplitConsensus",
     "SplitResponse",
     "ClassifyRequest",
+    "ClassifyDecision",
     "ClassifyResult",
     "ClassifyResponse",
 ]
