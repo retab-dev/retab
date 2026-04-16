@@ -140,10 +140,81 @@ export const ZClassifyRequest = z.object({
 });
 export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
 
-export const ZClassifyResponse = z.object({
+function normalizeClassifyDecision(
+    value: unknown,
+): z.input<typeof generated.ZClassifyDecision> | undefined {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+        return undefined;
+    }
+
+    const record = value as Record<string, unknown>;
+    if (typeof record.reasoning === "string" && typeof record.category === "string") {
+        return {
+            reasoning: record.reasoning,
+            category: record.category,
+        };
+    }
+
+    if (typeof record.reasoning === "string" && typeof record.classification === "string") {
+        return {
+            reasoning: record.reasoning,
+            category: record.classification,
+        };
+    }
+
+    if (typeof record.classification === "object" && record.classification !== null) {
+        return normalizeClassifyDecision(record.classification);
+    }
+
+    return undefined;
+}
+
+function normalizeClassifyChoices(value: unknown): z.input<typeof generated.ZClassifyConsensusChoice>[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.flatMap((choice) => {
+        const normalized = normalizeClassifyDecision(choice);
+        return normalized ? [{ classification: normalized }] : [];
+    });
+}
+
+function normalizeClassifyResponsePayload(payload: unknown): unknown {
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+        return payload;
+    }
+
+    const record = payload as Record<string, unknown>;
+    const classification =
+        normalizeClassifyDecision(record.classification) ??
+        normalizeClassifyDecision(record.result);
+    if (!classification) {
+        return payload;
+    }
+
+    const consensusRecord =
+        typeof record.consensus === "object" && record.consensus !== null && !Array.isArray(record.consensus)
+            ? (record.consensus as Record<string, unknown>)
+            : undefined;
+
+    const likelihood = consensusRecord?.likelihood ?? record.likelihood;
+    const choices = normalizeClassifyChoices(consensusRecord?.choices ?? record.votes);
+
+    return {
+        classification,
+        consensus: {
+            choices,
+            ...(likelihood !== undefined ? { likelihood } : {}),
+        },
+        usage: record.usage,
+    };
+}
+
+export const ZClassifyResponse = z.preprocess((payload) => normalizeClassifyResponsePayload(payload), z.object({
     ...generated.ZClassifyResponse.schema.shape,
     consensus: generated.ZClassifyResponse.schema.shape.consensus.default({ choices: [] }),
-});
+}));
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
 
 export const ZEditRequest = z.object({
