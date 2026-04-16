@@ -59,9 +59,13 @@ def _build_stream_chunk(status: str = "streaming") -> dict[str, Any]:
 
 def _build_classify_response(label: str = "invoice") -> dict[str, Any]:
     return {
-        "result": {
+        "classification": {
             "reasoning": "Detected invoice keywords",
-            "classification": label,
+            "category": label,
+        },
+        "consensus": {
+            "choices": [],
+            "likelihood": None,
         },
         "usage": {
             "credits": 0.12,
@@ -196,7 +200,7 @@ def test_sync_process_methods_parse_typed_models() -> None:
 
     assert extract_result.choices[0].message.parsed == {"status": "ok"}
     assert split_result.choices[0].message.parsed == {"status": "split"}
-    assert classify_result.result.classification == "invoice"
+    assert classify_result.classification.category == "invoice"
 
     with extract.process_stream(eval_id="eval_123", document=_mime_document()) as stream:
         chunks = list(stream)

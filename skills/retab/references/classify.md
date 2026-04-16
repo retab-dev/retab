@@ -25,8 +25,8 @@ result = client.documents.classify(
     ],
 )
 
-print(result.result.classification)
-print(result.result.reasoning)
+print(result.classification.category)
+print(result.classification.reasoning)
 ```
 
 ## Minimal Node
@@ -46,9 +46,9 @@ const result = await client.documents.classify({
   ],
 });
 
-console.log(result.result.classification);
-console.log(result.result.reasoning);
-console.log(result.likelihood);
+console.log(result.classification.category);
+console.log(result.classification.reasoning);
+console.log(result.consensus?.likelihood);
 ```
 
 ## Minimal REST
@@ -81,10 +81,10 @@ curl -X POST "https://api.retab.com/v1/documents/classify" \
 
 ## Response shape
 
-- `result.classification`
-- `result.reasoning`
-- `likelihood` when consensus produced at least two successful votes
-- `votes[]` with each individual classify vote when `n_consensus > 1`
+- `classification.category`
+- `classification.reasoning`
+- `consensus.likelihood` when consensus produced at least two successful votes
+- `consensus.choices[]` with the consolidated choice plus individual classify votes when `n_consensus > 1`
 
 ## Guidance
 

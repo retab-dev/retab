@@ -164,8 +164,12 @@ export default class APIDocuments extends CompositionClient {
      *   - context: Optional business context for the split
      *   - n_consensus: Optional number of split runs to use for consensus scoring
      * @param options - Optional request options
-     * @returns SplitResponse containing splits with page lists, optional likelihood/votes,
-     * and partitions when partition_key is configured
+     * @returns SplitResponse containing:
+     *   - splits: the consolidated split output without vote noise
+     *   - consensus.likelihoods: optional likelihood tree mirroring the split structure
+     *   - consensus.choices: optional split choice list when n_consensus > 1,
+     *     where choices[0] is the consolidated output and choices[1:] are per-run alternatives
+     *   - usage: usage information
      * 
      * @example
      * ```typescript
@@ -180,8 +184,9 @@ export default class APIDocuments extends CompositionClient {
      *     n_consensus: 3,
      * });
      * for (const split of response.splits) {
-     *     console.log(`${split.name}: pages ${split.pages.join(', ')} likelihood=${split.likelihood}`);
+     *     console.log(`${split.name}: pages ${split.pages.join(', ')}`);
      * }
+     * console.log(response.consensus?.likelihoods);
      * ```
      */
     async split(params: SplitRequest, options?: RequestOptions): Promise<SplitResponse> {
@@ -207,7 +212,7 @@ export default class APIDocuments extends CompositionClient {
      *   - first_n_pages: (optional) Only use the first N pages for classification. Useful for large documents.
      *   - n_consensus: (optional) Number of classify runs to use for consensus voting
      * @param options - Optional request options
-     * @returns ClassifyResponse containing the consensus result, optional likelihood, and optional individual votes
+     * @returns ClassifyResponse containing the classification result and consensus metadata
      *
      * @example
      * ```typescript
@@ -222,9 +227,9 @@ export default class APIDocuments extends CompositionClient {
      *     first_n_pages: 3,  // Optional: only use first 3 pages
      *     n_consensus: 3,
      * });
-     * console.log(`Classification: ${response.result.classification}`);
-     * console.log(`Reasoning: ${response.result.reasoning}`);
-     * console.log(`Likelihood: ${response.likelihood}`);
+     * console.log(`Classification: ${response.classification.category}`);
+     * console.log(`Reasoning: ${response.classification.reasoning}`);
+     * console.log(`Likelihood: ${response.consensus?.likelihood}`);
      * ```
      */
     async classify(params: ClassifyRequest, options?: RequestOptions): Promise<ClassifyResponse> {

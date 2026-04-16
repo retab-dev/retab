@@ -153,8 +153,8 @@ def test_job_classify(sync_client: Retab) -> None:
         _assert_completed(job)
 
         body = job.response.body
-        assert "result" in body, f"Classify response should have 'result', got keys: {list(body.keys())}"
-        assert "classification" in body["result"], "result should contain 'classification'"
+        assert "classification" in body, f"Classify response should have 'classification', got keys: {list(body.keys())}"
+        assert "category" in body["classification"], "classification should contain 'category'"
 
 
 def test_job_schema_generate(sync_client: Retab) -> None:
