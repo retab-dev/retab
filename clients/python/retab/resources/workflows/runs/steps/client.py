@@ -48,7 +48,7 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
 
         Args:
             run_id: The ID of the workflow run
-            block_id: The ID of the node/step to get output for
+            block_id: The ID of the block/step to get output for
 
         Returns:
             StepOutputResponse with handle_outputs and handle_inputs.
@@ -87,10 +87,10 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
 
         Args:
             run: A ``WorkflowRun`` object or a run ID string.
-                If a string is passed, the run is fetched first to discover step node IDs.
+                If a string is passed, the run is fetched first to discover step block IDs.
 
         Returns:
-            StepOutputsBatchResponse with all step outputs keyed by node ID.
+            StepOutputsBatchResponse with all step outputs keyed by block ID.
         """
         if isinstance(run, str):
             from .....types.workflows import WorkflowRun as WR
@@ -117,7 +117,7 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
 
         Args:
             run_id: The ID of the workflow run
-            block_id: The ID of the node/step to get output for
+            block_id: The ID of the block/step to get output for
 
         Returns:
             StepOutputResponse with handle_outputs and handle_inputs.
@@ -158,7 +158,7 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
             run: A ``WorkflowRun`` object or a run ID string.
 
         Returns:
-            StepOutputsBatchResponse with all step outputs keyed by node ID.
+            StepOutputsBatchResponse with all step outputs keyed by block ID.
         """
         if isinstance(run, str):
             from .....types.workflows import WorkflowRun as WR

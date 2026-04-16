@@ -12,7 +12,7 @@ class HandlePayload(BaseModel):
     """
     Payload for a single output handle.
 
-    Each output handle on a node produces a typed payload that can be:
+    Each output handle on a block produces a typed payload that can be:
     - file: A document reference (PDF, image, etc.)
     - json: Structured JSON data (extracted data, etc.)
     - text: Plain text content
@@ -23,7 +23,7 @@ class HandlePayload(BaseModel):
     text: Optional[str] = Field(default=None, description="For text payloads: text content")
 
 
-# Workflow run payloads can contain newer backend node types before the SDK is
+# Workflow run payloads can contain newer backend block types before the SDK is
 # regenerated. Keep runtime validation permissive so informational step metadata
 # does not break run parsing.
 BlockType = str
@@ -41,9 +41,9 @@ StepExecutionStatus = Literal[
 
 class StepStatus(BaseModel):
     """Status of a single step in workflow execution"""
-    block_id: str = Field(..., description="ID of the node")
-    block_type: BlockType = Field(..., description="Type of the node")
-    block_label: str = Field(..., description="Label of the node")
+    block_id: str = Field(..., description="ID of the block")
+    block_type: BlockType = Field(..., description="Type of the block")
+    block_label: str = Field(..., description="Label of the block")
     status: StepExecutionStatus = Field(..., description="Current status")
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
@@ -53,9 +53,6 @@ class StepStatus(BaseModel):
         default=None,
         description="Output payloads keyed by handle ID (e.g., 'output-file-0', 'output-json-0')"
     )
-    input_document: Optional[FileRef] = Field(default=None, description="Reference to input document")
-    output_document: Optional[FileRef] = Field(default=None, description="Reference to output document")
-    split_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="For split nodes: subdocument -> document reference")
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review was completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
@@ -98,18 +95,18 @@ class WorkflowRun(BaseModel):
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow completed")
     duration_ms: Optional[int] = Field(default=None, description="Total duration in milliseconds")
     steps: List[StepStatus] = Field(default_factory=list, description="Status of each step")
-    input_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="Start node ID -> input document reference")
-    final_outputs: Optional[dict] = Field(default=None, description="Final outputs from end nodes")
+    input_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="Start block ID -> input document reference")
+    final_outputs: Optional[dict] = Field(default=None, description="Final outputs from end blocks")
     error: Optional[str] = Field(default=None, description="Error message if workflow failed")
     created_at: datetime.datetime = Field(..., description="When the run was created")
     updated_at: datetime.datetime = Field(..., description="When the run was last updated")
-    waiting_for_block_ids: List[str] = Field(default_factory=list, description="Node IDs that are waiting for human review")
-    pending_block_outputs: Optional[dict] = Field(default=None, description="Serialized node outputs to resume from")
+    waiting_for_block_ids: List[str] = Field(default_factory=list, description="Block IDs that are waiting for human review")
+    pending_block_outputs: Optional[dict] = Field(default=None, description="Serialized block outputs to resume from")
     config_snapshot_id: Optional[str] = Field(default=None, description="ID of the config snapshot used for this run")
     trigger_type: Optional[str] = Field(default=None, description="How the run was triggered (manual, api, schedule, webhook, email, restart)")
     trigger_email: Optional[str] = Field(default=None, description="Email address that triggered the run (for email triggers)")
     execution_phase: Optional[str] = Field(default=None, description="Current execution phase (created, dispatching, started, running)")
-    input_json_data: Optional[Dict[str, dict]] = Field(default=None, description="Start JSON node ID -> input JSON data")
+    input_json_data: Optional[Dict[str, dict]] = Field(default=None, description="Start JSON block ID -> input JSON data")
     error_details: Optional[dict] = Field(default=None, description="Detailed error information including stack trace and context")
     cost_summary: Optional[dict] = Field(default=None, description="Aggregate cost and token usage for the run")
     human_waiting_duration_ms: int = Field(default=0, description="Total time spent waiting for human review in milliseconds")
@@ -178,7 +175,7 @@ TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancel
 
 
 class StartDocumentStepOutput(BaseModel):
-    """Metadata persisted for document-based start nodes."""
+    """Metadata persisted for document-based start blocks."""
 
     filename: str = Field(..., description="Original filename")
     mime_type: str = Field(..., description="Document MIME type")
@@ -186,8 +183,8 @@ class StartDocumentStepOutput(BaseModel):
 
 
 class SkippedStepOutput(BaseModel):
-    skipped: bool = Field(default=True, description="Whether this node was skipped")
-    reason: str = Field(..., description="Reason why the node was skipped")
+    skipped: bool = Field(default=True, description="Whether this block was skipped")
+    reason: str = Field(..., description="Reason why the block was skipped")
     missing_input: str = Field(..., description="The type of input that was missing")
 
 
@@ -232,7 +229,7 @@ class FormulaStepOutput(BaseModel):
 
 
 class HILStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the HIL node")
+    message: str = Field(..., description="Status message about the HIL block")
     requires_review: bool = Field(default=True, description="Whether human review is required")
     extracted_data: Optional[Dict[str, Any]] = Field(default=None, description="Data awaiting or completed review")
     extraction_id: Optional[str] = Field(default=None, description="Associated extraction ID")
@@ -273,7 +270,7 @@ class APICallStepOutput(BaseModel):
     response_data: Optional[Dict[str, Any]] = Field(default=None, description="Parsed JSON response data")
     response_text: Optional[str] = Field(default=None, description="Raw response text")
     request_body: Optional[str] = Field(default=None, description="Request body that was sent")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Output schema for downstream nodes")
+    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Output schema for downstream blocks")
     error: Optional[str] = Field(default=None, description="Error message if the request failed")
 
 
@@ -284,7 +281,7 @@ class FunctionStepOutput(BaseModel):
     stderr: Optional[str] = Field(default=None, description="Standard error from the sandbox")
     error: Optional[str] = Field(default=None, description="Error message if execution failed")
     traceback_str: Optional[str] = Field(default=None, description="Python traceback if execution failed")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Output schema for downstream nodes")
+    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Output schema for downstream blocks")
 
 
 class EditStepOutput(BaseModel):
@@ -296,7 +293,7 @@ class EditStepOutput(BaseModel):
 
 
 class EndStepOutput(BaseModel):
-    message: str = Field(..., description="Status message for the end node")
+    message: str = Field(..., description="Status message for the end block")
     webhook_sent: bool = Field(default=False, description="Whether a webhook was attempted")
     webhook_status_code: Optional[int] = Field(default=None, description="HTTP status code from webhook response")
     webhook_response_text: Optional[str] = Field(default=None, description="Response body text from the webhook")
@@ -429,12 +426,12 @@ def parse_workflow_step_output(
 
 class StepOutputResponse(BaseModel):
     """Step status and handle data for a specific step in a workflow run."""
-    block_id: str = Field(..., description="ID of the node")
-    block_type: str = Field(..., description="Type of the node")
-    block_label: str = Field(..., description="Label of the node")
+    block_id: str = Field(..., description="ID of the block")
+    block_type: str = Field(..., description="Type of the block")
+    block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
     handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
-    handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID (what this node received)")
+    handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID (what this block received)")
 
     @model_validator(mode="before")
     @classmethod
@@ -458,7 +455,7 @@ class StepOutputResponse(BaseModel):
     def get_json_output(self, handle_id: str = "output-json-0") -> Optional[dict]:
         """Get JSON data from a specific output handle.
 
-        Most extract/formula nodes emit JSON on ``output-json-0``.
+        Most extract/formula blocks emit JSON on ``output-json-0``.
         """
         if not self.handle_outputs:
             return None
@@ -479,10 +476,10 @@ class WorkflowRunStep(BaseModel):
 
     run_id: str = Field(..., description="Parent workflow run ID")
     organization_id: str = Field(..., description="Organization that owns this run")
-    block_id: str = Field(..., description="Logical ID of the node")
+    block_id: str = Field(..., description="Logical ID of the block")
     step_id: str = Field(..., description="Stored step ID")
-    block_type: str = Field(..., description="Type of the node")
-    block_label: str = Field(..., description="Label of the node")
+    block_type: str = Field(..., description="Type of the block")
+    block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
@@ -490,9 +487,6 @@ class WorkflowRunStep(BaseModel):
     error: Optional[str] = Field(default=None, description="Error message if failed")
     handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
     handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID")
-    input_document: Optional[FileRef] = Field(default=None, description="Reference to input document")
-    output_document: Optional[FileRef] = Field(default=None, description="Reference to output document")
-    split_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="Split node document outputs")
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
@@ -533,10 +527,10 @@ class WorkflowRunStep(BaseModel):
 
 
 class StepOutputsBatchResponse(BaseModel):
-    """Response for batch step output retrieval, keyed by node ID."""
+    """Response for batch step output retrieval, keyed by block ID."""
     outputs: Dict[str, StepOutputResponse] = Field(
         default_factory=dict,
-        description="Step outputs keyed by node ID (missing steps are omitted)",
+        description="Step outputs keyed by block ID (missing steps are omitted)",
     )
 
 
@@ -554,10 +548,10 @@ class CancelWorkflowResponse(BaseModel):
 
 
 class HILDecisionResource(BaseModel):
-    """Temporal-owned decision state for a workflow HIL node."""
+    """Temporal-owned decision state for a workflow HIL block."""
     run_id: str = Field(..., description="Workflow run ID")
-    block_id: str = Field(..., description="HIL node ID")
-    node_status: Optional[str] = Field(default=None, description="Current workflow node status")
+    block_id: str = Field(..., description="HIL block ID")
+    block_status: Optional[str] = Field(default=None, description="Current workflow block status")
     decision_received: bool = Field(default=False, description="Whether Temporal received the decision")
     decision_applied: bool = Field(default=False, description="Whether the workflow applied the decision")
     approved: Optional[bool] = Field(default=None, description="Approved or rejected decision value")
@@ -584,7 +578,7 @@ class SubmitHILDecisionResponse(BaseModel):
     )
     decision: HILDecisionResource = Field(
         ...,
-        description="Temporal-owned HIL decision state for the node",
+        description="Temporal-owned HIL decision state for the block",
     )
 
 
@@ -732,11 +726,11 @@ class WorkflowWithEntities(BaseModel):
     subflows: List[WorkflowSubflow] = Field(default_factory=list)
 
     @property
-    def start_nodes(self) -> List[WorkflowBlock]:
-        """Document input start nodes."""
+    def start_blocks(self) -> List[WorkflowBlock]:
+        """Document input start blocks."""
         return [b for b in self.blocks if b.type == "start"]
 
     @property
-    def start_json_nodes(self) -> List[WorkflowBlock]:
-        """JSON input start nodes."""
+    def start_json_blocks(self) -> List[WorkflowBlock]:
+        """JSON input start blocks."""
         return [b for b in self.blocks if b.type == "start_json"]
