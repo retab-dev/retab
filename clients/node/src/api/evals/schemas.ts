@@ -193,7 +193,6 @@ export const ZClassifyBuilderDocument = z.object({
     mime_data: ZFileRef,
     prediction_data: ZPredictionData.default({}),
     classification_id: z.string().nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
 }).passthrough();
 export type ClassifyBuilderDocument = z.infer<typeof ZClassifyBuilderDocument>;
 
@@ -227,7 +226,6 @@ export const ZClassifyDatasetDocument = z.object({
     mime_data: ZFileRef,
     prediction_data: ZPredictionData.default({}),
     classification_id: z.string().nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
     validation_flag: z.boolean().nullable().optional(),
 }).passthrough();
 export type ClassifyDatasetDocument = z.infer<typeof ZClassifyDatasetDocument>;
@@ -285,6 +283,5 @@ export const ZClassifyIterationDocument = z.object({
     mime_data: ZFileRef,
     prediction_data: ZPredictionData.default({}),
     classification_id: z.string().nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
 }).passthrough();
 export type ClassifyIterationDocument = z.infer<typeof ZClassifyIterationDocument>;
