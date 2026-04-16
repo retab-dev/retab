@@ -84,7 +84,7 @@ curl -X POST "https://api.retab.com/v1/documents/classify" \
 - `classification.category`
 - `classification.reasoning`
 - `consensus.likelihood` when consensus produced at least two successful votes
-- `consensus.choices[]` with the consolidated choice plus individual classify votes when `n_consensus > 1`
+- `consensus.choices[]` with the individual classify votes when `n_consensus > 1`
 
 ## Guidance
 

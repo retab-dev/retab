@@ -32,7 +32,6 @@ def test_classify_response_model_accepts_native_shape() -> None:
             "consensus": {
                 "likelihood": 0.75,
                 "choices": [
-                    {"classification": {"reasoning": "Detected invoice keywords", "category": "invoice"}},
                     {"classification": {"reasoning": "invoice vote one", "category": "invoice"}},
                     {"classification": {"reasoning": "invoice vote two", "category": "invoice"}},
                     {"classification": {"reasoning": "receipt vote", "category": "receipt"}},
@@ -45,7 +44,6 @@ def test_classify_response_model_accepts_native_shape() -> None:
     assert response.classification.category == "invoice"
     assert response.consensus.likelihood == 0.75
     assert [choice.classification.category for choice in response.consensus.choices] == [
-        "invoice",
         "invoice",
         "invoice",
         "receipt",
