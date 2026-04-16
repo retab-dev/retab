@@ -1644,12 +1644,6 @@ export const ZDocumentTransformResponse = z.lazy(() => (z.object({
 })));
 export type DocumentTransformResponse = z.infer<typeof ZDocumentTransformResponse>;
 
-export const ZClassifyOutputSchema = z.lazy(() => (z.object({
-    reasoning: z.string(),
-    classification: z.string(),
-})));
-export type ClassifyOutputSchema = z.infer<typeof ZClassifyOutputSchema>;
-
 export const ZClassifyDecision = z.lazy(() => (z.object({
     reasoning: z.string(),
     category: z.string(),
@@ -1684,12 +1678,6 @@ export const ZClassifyResponse = z.lazy(() => (z.object({
     usage: ZRetabUsage,
 })));
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
-
-export const ZClassifyResult = ZClassifyDecision;
-export type ClassifyResult = z.infer<typeof ZClassifyResult>;
-
-export const ZClassifyVote = ZClassifyDecision;
-export type ClassifyVote = z.infer<typeof ZClassifyVote>;
 
 export const ZParseRequest = z.lazy(() => (z.object({
     document: ZMIMEData,

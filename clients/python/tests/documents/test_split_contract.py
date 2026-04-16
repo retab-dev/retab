@@ -39,22 +39,78 @@ def test_split_response_model_accepts_native_consensus_envelope() -> None:
                     ]
                 },
                 "choices": [
-                    {"splits": [{"name": "properties", "pages": [1, 2, 3], "partitions": [{"key": "10*310146", "pages": [1]}]}]},
-                    {"splits": [{"name": "properties", "pages": [1, 2, 3], "partitions": [{"key": "10*310146", "pages": [1]}]}]},
-                    {"splits": [{"name": "properties", "pages": [1, 2, 3, 4], "partitions": [{"key": "10*310146", "pages": [1]}]}]},
-                    {"splits": [{"name": "properties", "pages": [1, 2, 3], "partitions": [{"key": "10*310146", "pages": [1]}]}]},
+                    {
+                        "splits": [
+                            {
+                                "name": "properties",
+                                "metric_key": "properties",
+                                "display_label": "properties",
+                                "instance_index": 1,
+                                "pages": [1, 2, 3],
+                                "page_start": 1,
+                                "page_end": 3,
+                                "partitions": [{"key": "10*310146", "pages": [1]}],
+                            }
+                        ]
+                    },
+                    {
+                        "splits": [
+                            {
+                                "name": "properties",
+                                "metric_key": "properties",
+                                "display_label": "properties",
+                                "instance_index": 1,
+                                "pages": [1, 2, 3],
+                                "page_start": 1,
+                                "page_end": 3,
+                                "partitions": [{"key": "10*310146", "pages": [1]}],
+                            }
+                        ]
+                    },
+                    {
+                        "splits": [
+                            {
+                                "name": "properties",
+                                "metric_key": "properties",
+                                "display_label": "properties",
+                                "instance_index": 1,
+                                "pages": [1, 2, 3, 4],
+                                "page_start": 1,
+                                "page_end": 4,
+                                "partitions": [{"key": "10*310146", "pages": [1]}],
+                            }
+                        ]
+                    },
+                    {
+                        "splits": [
+                            {
+                                "name": "properties",
+                                "metric_key": "properties",
+                                "display_label": "properties",
+                                "instance_index": 1,
+                                "pages": [1, 2, 3],
+                                "page_start": 1,
+                                "page_end": 3,
+                                "partitions": [{"key": "10*310146", "pages": [1]}],
+                            }
+                        ]
+                    },
                 ],
             },
             "usage": {"credits": 4.0},
         }
     )
 
-    assert response.splits[0].pages == [1, 2, 3]
-    assert response.splits[0].metric_key == "properties"
-    assert response.splits[0].display_label == "properties"
-    assert response.splits[0].instance_index == 1
-    assert response.splits[0].page_start == 1
-    assert response.splits[0].page_end == 3
+    assert response.splits[0].model_dump(exclude_none=True) == {
+        "name": "properties",
+        "pages": [1, 2, 3],
+        "partitions": [
+            {
+                "key": "10*310146",
+                "pages": [1],
+            }
+        ],
+    }
     assert response.splits[0].partitions[0].model_dump() == {
         "key": "10*310146",
         "pages": [1],
@@ -83,4 +139,8 @@ def test_split_response_model_accepts_native_consensus_envelope() -> None:
         [1, 2, 3, 4],
         [1, 2, 3],
     ]
-    assert response.model_dump()["splits"][0]["metric_key"] == "properties"
+    assert response.model_dump(exclude_none=True)["splits"][0] == {
+        "name": "properties",
+        "pages": [1, 2, 3],
+        "partitions": [{"key": "10*310146", "pages": [1]}],
+    }

@@ -31,33 +31,29 @@ class SplitRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
+class GenerateSplitConfigRequest(BaseModel):
+    document: MIMEData = Field(
+        ...,
+        description="The document to analyze for automatic split configuration generation",
+    )
+    model: str = Field(default="retab-small", description="The model to use for document analysis")
+
+
+class GenerateSplitConfigResponse(BaseModel):
+    subdocuments: list[Subdocument] = Field(
+        ...,
+        description="The auto-generated subdocument definitions with optional partition keys",
+    )
+
+
 class Partition(BaseModel):
     key: str = Field(..., description="The partition key value (e.g., property ID, invoice number)")
     pages: list[int] = Field(..., description="The pages of the partition (1-indexed)")
 
+
 class SplitResult(BaseModel):
     name: str = Field(..., description="The name of the subdocument")
-    metric_key: str | None = Field(
-        default=None,
-        description="Stable metric key for this split instance in projected/native outputs",
-    )
-    display_label: str | None = Field(
-        default=None,
-        description="Display label for this split instance in projected/native outputs",
-    )
-    instance_index: int | None = Field(
-        default=None,
-        description="1-indexed occurrence for repeated split names in projected/native outputs",
-    )
     pages: list[int] = Field(..., description="The pages of the subdocument (1-indexed)")
-    page_start: int | None = Field(
-        default=None,
-        description="First page in the split range when provided by the native output envelope",
-    )
-    page_end: int | None = Field(
-        default=None,
-        description="Last page in the split range when provided by the native output envelope",
-    )
     partitions: list[Partition] = Field(default_factory=list, description="The partitions of the subdocument")
 
 
@@ -74,7 +70,7 @@ class PartitionLikelihood(BaseModel):
     )
 
 
-class SplitLikelihood(BaseModel):
+class SplitSubdocumentLikelihood(BaseModel):
     likelihood: float | None = Field(default=None, description="Aggregate confidence for this split node")
     name: float | None = Field(default=None, description="Confidence that this split label is correct")
     pages: list[float] = Field(
@@ -88,7 +84,7 @@ class SplitLikelihood(BaseModel):
 
 
 class SplitLikelihoodTree(BaseModel):
-    splits: list[SplitLikelihood] = Field(
+    splits: list[SplitSubdocumentLikelihood] = Field(
         default_factory=list,
         description="Likelihood tree aligned with the top-level splits array",
     )
@@ -115,18 +111,3 @@ class SplitResponse(BaseModel):
         description="Consensus metadata for multi-vote split runs",
     )
     usage: RetabUsage = Field(..., description="Usage information for the split operation")
-
-
-class GenerateSplitConfigRequest(BaseModel):
-    document: MIMEData = Field(
-        ...,
-        description="The document to analyze for automatic split configuration generation",
-    )
-    model: str = Field(default="retab-small", description="The model to use for document analysis")
-
-
-class GenerateSplitConfigResponse(BaseModel):
-    subdocuments: list[Subdocument] = Field(
-        ...,
-        description="The auto-generated subdocument definitions with optional partition keys",
-    )

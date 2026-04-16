@@ -37,16 +37,12 @@ class ClassifyDecision(BaseModel):
     category: str = Field(..., description="The category name that the document belongs to")
 
 
-ClassifyResult = ClassifyDecision
-ClassifyVote = ClassifyDecision
-
-
-class ClassifyConsensusChoice(BaseModel):
+class ClassifyChoice(BaseModel):
     classification: ClassifyDecision = Field(..., description="One alternative classification vote output")
 
 
 class ClassifyConsensus(BaseModel):
-    choices: list[ClassifyConsensusChoice] = Field(
+    choices: list[ClassifyChoice] = Field(
         default_factory=list,
         description="Alternative classification vote outputs used to build the consolidated result.",
     )
@@ -63,16 +59,3 @@ class ClassifyResponse(BaseModel):
         description="Consensus metadata for multi-vote classification runs",
     )
     usage: RetabUsage = Field(..., description="Usage information for the classification")
-
-
-class ClassifyOutputSchema(BaseModel):
-    """Schema for LLM structured output."""
-
-    reasoning: str = Field(
-        ...,
-        description="Step-by-step reasoning explaining why this document belongs to the chosen category",
-    )
-    classification: str = Field(
-        ...,
-        description="The category name that this document belongs to",
-    )
