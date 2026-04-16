@@ -2,24 +2,15 @@ import * as z from "zod";
 import { CompositionClient, RequestOptions } from "../../../client.js";
 import { WorkflowEdgeDoc, WorkflowEdgeCreateRequest, ZWorkflowEdgeDoc } from "../../../types.js";
 
-type LegacyWorkflowEdgeCreateRequest = {
-    id: string;
-    source_block: string;
-    target_block: string;
-    source_handle?: string;
-    target_handle?: string;
-};
-
 function serializeEdgeCreateRequest(
-    request: WorkflowEdgeCreateRequest | LegacyWorkflowEdgeCreateRequest
+    request: WorkflowEdgeCreateRequest
 ): Record<string, unknown> {
-    const legacyRequest = request as Partial<LegacyWorkflowEdgeCreateRequest>;
     return {
         id: request.id,
-        source_block: "sourceBlock" in request ? request.sourceBlock : legacyRequest.source_block,
-        target_block: "targetBlock" in request ? request.targetBlock : legacyRequest.target_block,
-        source_handle: "sourceHandle" in request ? request.sourceHandle : legacyRequest.source_handle,
-        target_handle: "targetHandle" in request ? request.targetHandle : legacyRequest.target_handle,
+        source_block: request.sourceBlock,
+        target_block: request.targetBlock,
+        source_handle: request.sourceHandle,
+        target_handle: request.targetHandle,
     };
 }
 
@@ -109,7 +100,7 @@ export default class APIWorkflowEdges extends CompositionClient {
      */
     async createBatch(
         workflowId: string,
-        edges: Array<WorkflowEdgeCreateRequest | LegacyWorkflowEdgeCreateRequest>,
+        edges: WorkflowEdgeCreateRequest[],
         options?: RequestOptions
     ): Promise<WorkflowEdgeDoc[]> {
         return this._fetchJson(z.array(ZWorkflowEdgeDoc), {
@@ -123,7 +114,7 @@ export default class APIWorkflowEdges extends CompositionClient {
 
     async create_batch(
         workflowId: string,
-        edges: Array<WorkflowEdgeCreateRequest | LegacyWorkflowEdgeCreateRequest>,
+        edges: WorkflowEdgeCreateRequest[],
         options?: RequestOptions
     ): Promise<WorkflowEdgeDoc[]> {
         return this.createBatch(workflowId, edges, options);

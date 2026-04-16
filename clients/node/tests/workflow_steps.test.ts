@@ -95,6 +95,9 @@ describe("workflow run steps client", () => {
         expect(steps[0]?.block_id).toBe("extract-1");
         expect(steps[0]?.status).toBe("completed");
         expect(steps[0] && "output" in steps[0]).toBe(false);
+        expect(steps[0] && "input_document" in steps[0]).toBe(false);
+        expect(steps[0] && "output_document" in steps[0]).toBe(false);
+        expect(steps[0] && "split_documents" in steps[0]).toBe(false);
     });
 
     test("getMany() sends POST to /steps/batch", async () => {

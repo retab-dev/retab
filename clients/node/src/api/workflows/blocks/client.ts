@@ -36,7 +36,7 @@ function serializeBlockUpdateRequest(request: WorkflowBlockUpdateRequest): Recor
 }
 
 /**
- * Workflow Blocks API client for managing blocks (nodes) in a workflow graph.
+ * Workflow Blocks API client for managing blocks in a workflow graph.
  *
  * Usage: `client.workflows.blocks.list(workflowId)`
  */

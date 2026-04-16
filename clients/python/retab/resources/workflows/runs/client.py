@@ -62,10 +62,10 @@ class WorkflowRunsMixin:
 
         Args:
             workflow_id: The ID of the workflow to run
-            documents: Mapping of start node IDs to their input documents.
+            documents: Mapping of start block IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
-            json_inputs: Mapping of start_json node IDs to their input JSON data.
+            json_inputs: Mapping of start_json block IDs to their input JSON data.
 
         Returns:
             PreparedRequest: The prepared request
@@ -74,11 +74,11 @@ class WorkflowRunsMixin:
             >>> client.workflows.runs.create(
             ...     workflow_id="wf_abc123",
             ...     documents={
-            ...         "start-node-1": Path("invoice.pdf"),
-            ...         "start-node-2": Path("receipt.pdf"),
+            ...         "start-block-1": Path("invoice.pdf"),
+            ...         "start-block-2": Path("receipt.pdf"),
             ...     },
             ...     json_inputs={
-            ...         "json-node-1": {"key": "value"},
+            ...         "start-json-block-1": {"key": "value"},
             ...     },            ... )
         """
         data: Dict[str, Any] = {}
@@ -225,12 +225,12 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         >>> # Run a workflow and wait for completion
         >>> run = client.workflows.runs.create(
         ...     workflow_id="wf_abc123",
-        ...     documents={"start-node-1": Path("invoice.pdf")},
+        ...     documents={"start-block-1": Path("invoice.pdf")},
         ... )
         >>> run = client.workflows.runs.wait_for_completion(run.id)
         >>>
         >>> # Get outputs from a specific step
-        >>> step = client.workflows.runs.steps.get(run.id, "extract-node-1")
+        >>> step = client.workflows.runs.steps.get(run.id, "extract-block-1")
         >>> print(step.handle_outputs)
     """
 
@@ -252,10 +252,10 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 
         Args:
             workflow_id: The ID of the workflow to run
-            documents: Mapping of start node IDs to their input documents.
+            documents: Mapping of start block IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
-            json_inputs: Mapping of start_json node IDs to their input JSON data.
+            json_inputs: Mapping of start_json block IDs to their input JSON data.
 
         Returns:
             WorkflowRun: The created workflow run with status "running"
@@ -264,7 +264,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             >>> run = client.workflows.runs.create(
             ...     workflow_id="wf_abc123",
             ...     documents={
-            ...         "start-node-1": Path("invoice.pdf"),
+            ...         "start-block-1": Path("invoice.pdf"),
             ...     },
             ... )
             >>> print(f"Run started: {run.id}, status: {run.status}")
@@ -432,7 +432,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         return SubmitHILDecisionResponse.model_validate(response)
 
     def get_hil_decision(self, run_id: str, block_id: str) -> HILDecisionResource:
-        """Get the authoritative HIL decision state for a workflow run node."""
+        """Get the authoritative HIL decision state for a workflow run block."""
         request = self.prepare_get_hil_decision(run_id, block_id)
         response = self._client._prepared_request(request)
         return HILDecisionResource.model_validate(response)
@@ -552,12 +552,12 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         >>> # Run a workflow and wait for completion
         >>> run = await client.workflows.runs.create(
         ...     workflow_id="wf_abc123",
-        ...     documents={"start-node-1": Path("invoice.pdf")},
+        ...     documents={"start-block-1": Path("invoice.pdf")},
         ... )
         >>> run = await client.workflows.runs.wait_for_completion(run.id)
         >>>
         >>> # Get outputs from a specific step
-        >>> step = await client.workflows.runs.steps.get(run.id, "extract-node-1")
+        >>> step = await client.workflows.runs.steps.get(run.id, "extract-block-1")
         >>> print(step.handle_outputs)
     """
 
@@ -579,10 +579,10 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
 
         Args:
             workflow_id: The ID of the workflow to run
-            documents: Mapping of start node IDs to their input documents.
+            documents: Mapping of start block IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
-            json_inputs: Mapping of start_json node IDs to their input JSON data.
+            json_inputs: Mapping of start_json block IDs to their input JSON data.
 
         Returns:
             WorkflowRun: The created workflow run with status "running"
@@ -590,7 +590,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         Example:
             >>> run = await client.workflows.runs.create(
             ...     workflow_id="wf_abc123",
-            ...     documents={"start-node-1": Path("invoice.pdf")},
+            ...     documents={"start-block-1": Path("invoice.pdf")},
             ... )
             >>> print(f"Run started: {run.id}, status: {run.status}")
         """
@@ -757,7 +757,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         return SubmitHILDecisionResponse.model_validate(response)
 
     async def get_hil_decision(self, run_id: str, block_id: str) -> HILDecisionResource:
-        """Get the authoritative HIL decision state for a workflow run node."""
+        """Get the authoritative HIL decision state for a workflow run block."""
         request = self.prepare_get_hil_decision(run_id, block_id)
         response = await self._client._prepared_request(request)
         return HILDecisionResource.model_validate(response)

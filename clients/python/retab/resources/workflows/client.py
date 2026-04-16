@@ -139,7 +139,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
             description: Workflow description
 
         Returns:
-            Workflow: The created workflow (unpublished, with a default start node)
+            Workflow: The created workflow (unpublished, with a default start block)
         """
         request = self.prepare_create(name=name, description=description)
         response = self._client._prepared_request(request)
@@ -208,7 +208,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
 
         Returns:
             WorkflowWithEntities: The workflow with its full graph structure.
-                Use ``.start_nodes`` and ``.start_json_nodes`` to discover input nodes.
+                Use ``.start_blocks`` and ``.start_json_blocks`` to discover input blocks.
         """
         request = self.prepare_get_entities(workflow_id)
         response = self._client._prepared_request(request)

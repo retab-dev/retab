@@ -211,7 +211,7 @@ def test_workflow_run_enriched_fields() -> None:
 
 
 def test_workflow_with_entities_parsing() -> None:
-    """WorkflowWithEntities parses blocks, edges, subflows and exposes start_nodes."""
+    """WorkflowWithEntities parses blocks, edges, subflows and exposes start_blocks."""
     wfe = WorkflowWithEntities.model_validate({
         "workflow": {
             "id": "wf_1", "name": "Test Workflow",
@@ -242,13 +242,13 @@ def test_workflow_with_entities_parsing() -> None:
     assert len(wfe.blocks) == 4
     assert len(wfe.edges) == 1
 
-    start_nodes = wfe.start_nodes
-    assert len(start_nodes) == 1
-    assert start_nodes[0].id == "start-1"
+    start_blocks = wfe.start_blocks
+    assert len(start_blocks) == 1
+    assert start_blocks[0].id == "start-1"
 
-    json_nodes = wfe.start_json_nodes
-    assert len(json_nodes) == 1
-    assert json_nodes[0].id == "json-1"
+    json_blocks = wfe.start_json_blocks
+    assert len(json_blocks) == 1
+    assert json_blocks[0].id == "json-1"
 
     edge = wfe.edges[0]
     assert edge.organization_id == "org_1"
@@ -487,7 +487,7 @@ def test_workflows_get_entities_route() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/wf_1/entities"
     assert isinstance(wfe, WorkflowWithEntities)
-    assert len(wfe.start_nodes) == 1
+    assert len(wfe.start_blocks) == 1
 
 
 def test_workflows_list_returns_typed_items() -> None:
@@ -597,7 +597,7 @@ def test_workflow_runs_submit_hil_decision_route() -> None:
         "decision": {
             "run_id": "run_1",
             "block_id": "hil-1",
-            "node_status": "waiting_for_hil",
+            "block_status": "waiting_for_hil",
             "decision_received": True,
             "decision_applied": False,
             "approved": True,
@@ -627,6 +627,7 @@ def test_workflow_runs_submit_hil_decision_route() -> None:
     }
     assert result.submission_status == "accepted"
     assert result.decision.block_id == "hil-1"
+    assert result.decision.block_status == "waiting_for_hil"
 
 
 def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> None:
@@ -636,7 +637,7 @@ def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> N
         "decision": {
             "run_id": "run_1",
             "block_id": "hil-1",
-            "node_status": "completed",
+            "block_status": "completed",
             "decision_received": True,
             "decision_applied": True,
             "approved": True,
@@ -655,6 +656,7 @@ def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> N
 
     assert result.submission_status == "already_applied"
     assert result.decision.decision_applied is True
+    assert result.decision.block_status == "completed"
 
 
 def test_workflow_runs_get_hil_decision_route() -> None:
@@ -662,7 +664,7 @@ def test_workflow_runs_get_hil_decision_route() -> None:
     client._prepared_request.return_value = {
         "run_id": "run_1",
         "block_id": "hil-1",
-        "node_status": "completed",
+        "block_status": "completed",
         "decision_received": True,
         "decision_applied": True,
         "approved": True,
@@ -678,6 +680,7 @@ def test_workflow_runs_get_hil_decision_route() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/runs/run_1/hil-decisions/hil-1"
     assert result.decision_applied is True
+    assert result.block_status == "completed"
 
 
 def test_workflow_runs_export_route() -> None:
@@ -916,3 +919,6 @@ def test_workflow_run_step_extracted_data() -> None:
     payload = step.handle_outputs["output-json-0"]
     assert isinstance(payload, HandlePayload)
     assert payload.type == "json"
+    assert "input_document" not in WorkflowRunStep.model_fields
+    assert "output_document" not in WorkflowRunStep.model_fields
+    assert "split_documents" not in WorkflowRunStep.model_fields

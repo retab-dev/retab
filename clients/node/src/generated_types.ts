@@ -863,7 +863,7 @@ export type ModelExportResponse = z.infer<typeof ZModelExportResponse>;
 export const ZHILDecisionResource = z.lazy(() => (z.object({
     run_id: z.string(),
     block_id: z.string(),
-    node_status: z.string().nullable().optional(),
+    block_status: z.string().nullable().optional(),
     decision_received: z.boolean().default(false),
     decision_applied: z.boolean().default(false),
     approved: z.boolean().nullable().optional(),
@@ -907,9 +907,6 @@ export const ZStepStatus = z.lazy(() => (z.object({
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    input_document: ZFileRef.nullable().optional(),
-    output_document: ZFileRef.nullable().optional(),
-    split_documents: z.record(z.string(), ZFileRef).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
     human_review_approved: z.boolean().nullable().optional(),
@@ -1040,9 +1037,6 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     error: z.string().nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    input_document: ZFileRef.nullable().optional(),
-    output_document: ZFileRef.nullable().optional(),
-    split_documents: z.record(z.string(), ZFileRef).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
     human_review_approved: z.boolean().nullable().optional(),
@@ -5174,4 +5168,3 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
-

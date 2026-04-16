@@ -448,7 +448,7 @@ describe("workflows client", () => {
             decision: {
                 run_id: "run_1",
                 block_id: "hil-1",
-                node_status: "waiting_for_hil",
+                block_status: "waiting_for_hil",
                 decision_received: true,
                 decision_applied: false,
                 approved: true,
@@ -480,6 +480,7 @@ describe("workflows client", () => {
             headers: undefined,
         });
         expect(result.submission_status).toBe("accepted");
+        expect(result.decision.block_status).toBe("waiting_for_hil");
     });
 
     test("runs.submitHilDecision() accepts already_applied responses", async () => {
@@ -488,7 +489,7 @@ describe("workflows client", () => {
             decision: {
                 run_id: "run_1",
                 block_id: "hil-1",
-                node_status: "completed",
+                block_status: "completed",
                 decision_received: true,
                 decision_applied: true,
                 approved: true,
@@ -507,13 +508,14 @@ describe("workflows client", () => {
 
         expect(result.submission_status).toBe("already_applied");
         expect(result.decision.decision_applied).toBe(true);
+        expect(result.decision.block_status).toBe("completed");
     });
 
     test("runs.getHilDecision() sends GET to /hil-decisions/{blockId}", async () => {
         const mockClient = new MockClient({
             run_id: "run_1",
             block_id: "hil-1",
-            node_status: "completed",
+            block_status: "completed",
             decision_received: true,
             decision_applied: true,
             approved: true,
@@ -533,6 +535,7 @@ describe("workflows client", () => {
             headers: undefined,
         });
         expect(result.decision_applied).toBe(true);
+        expect(result.block_status).toBe("completed");
     });
 
     test("runs.export() sends POST to /export_payload", async () => {

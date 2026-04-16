@@ -68,7 +68,7 @@ export default class APIWorkflowRuns extends CompositionClient {
      * ```typescript
      * const run = await client.workflows.runs.create({
      *     workflowId: "wf_abc123",
-     *     documents: { "start-node-1": "./invoice.pdf" },
+     *     documents: { "start-block-1": "./invoice.pdf" },
      * });
      * ```
      */
@@ -266,7 +266,7 @@ export default class APIWorkflowRuns extends CompositionClient {
     }
 
     /**
-     * Submit a human-in-the-loop (HIL) decision for a workflow run node.
+     * Submit a human-in-the-loop (HIL) decision for a workflow run block.
      */
     async submitHilDecision(
         runId: string,
@@ -301,7 +301,7 @@ export default class APIWorkflowRuns extends CompositionClient {
     }
 
     /**
-     * Read the authoritative HIL decision state for a workflow run node.
+     * Read the authoritative HIL decision state for a workflow run block.
      */
     async getHilDecision(
         runId: string,
@@ -397,7 +397,7 @@ export default class APIWorkflowRuns extends CompositionClient {
      *
      * const run = await client.workflows.runs.createAndWait({
      *     workflowId: "wf_abc123",
-     *     documents: { "start-node-1": "./invoice.pdf" },
+     *     documents: { "start-block-1": "./invoice.pdf" },
      *     onStatus: (r) => console.log(`${r.status}...`),
      * });
      * raiseForStatus(run);

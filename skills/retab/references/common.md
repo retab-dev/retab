@@ -29,7 +29,7 @@ const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 
 - Default to `model="retab-small"` unless the user asks for a different tradeoff.
 - For direct document REST routes, send JSON with `document: { "filename": "...", "url": "data:...base64,..." }`.
-- For workflow-run REST routes, send `documents` keyed by start node ID, and each document uses `{ "filename", "content", "mime_type" }`.
+- For workflow-run REST routes, send `documents` keyed by start block ID, and each document uses `{ "filename", "content", "mime_type" }`.
 - For SDKs, prefer a local path string when the file is already on disk.
 - Keep uploads focused. Trim or split overly large documents before sending them.
 - Use generous timeouts for slow or multi-page documents.
