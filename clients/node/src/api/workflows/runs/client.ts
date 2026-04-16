@@ -316,6 +316,41 @@ export default class APIWorkflowRuns extends CompositionClient {
         });
     }
 
+    async submit_hil_decision(
+        runId: string,
+        {
+            block_id,
+            approved,
+            modified_data,
+            command_id,
+        }: {
+            block_id: string;
+            approved: boolean;
+            modified_data?: Record<string, unknown> | null;
+            command_id?: string;
+        },
+        options?: RequestOptions
+    ): Promise<SubmitHILDecisionResponse> {
+        return this.submitHilDecision(
+            runId,
+            {
+                blockId: block_id,
+                approved,
+                modifiedData: modified_data,
+                commandId: command_id,
+            },
+            options
+        );
+    }
+
+    async get_hil_decision(
+        runId: string,
+        blockId: string,
+        options?: RequestOptions
+    ): Promise<HILDecisionResource> {
+        return this.getHilDecision(runId, blockId, options);
+    }
+
     /**
      * Poll a workflow run until it reaches a terminal state.
      *
