@@ -84,7 +84,6 @@ class ClassifyDatasetDocument(BaseModel):
     mime_data: FileRef = Field(description="The mime data of the document")
     prediction_data: PredictionData = Field(default_factory=PredictionData)
     classification_id: str | None = Field(default=None)
-    extraction_id: str | None = Field(default=None)
     validation_flag: bool | None = Field(default=None)
 
 
@@ -97,7 +96,6 @@ class ClassifyBuilderDocument(BaseModel):
     mime_data: FileRef = Field(description="The mime data of the document")
     prediction_data: PredictionData = Field(default_factory=PredictionData)
     classification_id: str | None = Field(default=None)
-    extraction_id: str | None = Field(default=None)
 
 
 class PatchClassifyDatasetDocumentRequest(BaseModel):
@@ -106,7 +104,6 @@ class PatchClassifyDatasetDocumentRequest(BaseModel):
     validation_flag: Optional[bool] = Field(default=None)
     prediction_data: Optional[PredictionData] = Field(default=None)
     classification_id: Optional[str] = Field(default=None)
-    extraction_id: Optional[str] = Field(default=None)
 
 
 class CategoryOverrides(BaseModel):
@@ -176,4 +173,3 @@ class ClassifyIterationDocument(BaseModel):
     mime_data: FileRef = Field(description="The mime data of the document")
     prediction_data: PredictionData = Field(default_factory=PredictionData)
     classification_id: str | None = Field(default=None)
-    extraction_id: str | None = Field(default=None)

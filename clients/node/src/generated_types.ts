@@ -330,7 +330,6 @@ export const ZClassifyBuilderDocument = z.lazy(() => (z.object({
     mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     classification_id: z.string().nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
 })));
 export type ClassifyBuilderDocument = z.infer<typeof ZClassifyBuilderDocument>;
 
@@ -352,7 +351,6 @@ export const ZClassifyDatasetDocument = z.lazy(() => (z.object({
     mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     classification_id: z.string().nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
     validation_flag: z.boolean().nullable().optional(),
 })));
 export type ClassifyDatasetDocument = z.infer<typeof ZClassifyDatasetDocument>;
@@ -395,7 +393,6 @@ export const ZClassifyIterationDocument = z.lazy(() => (z.object({
     mime_data: ZFileRef,
     prediction_data: ZPredictionData,
     classification_id: z.string().nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
 })));
 export type ClassifyIterationDocument = z.infer<typeof ZClassifyIterationDocument>;
 
@@ -440,7 +437,6 @@ export const ZPatchClassifyDatasetDocumentRequest = z.lazy(() => (z.object({
     validation_flag: z.boolean().nullable().optional(),
     prediction_data: ZPredictionData.nullable().optional(),
     classification_id: z.string().nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
 })));
 export type PatchClassifyDatasetDocumentRequest = z.infer<typeof ZPatchClassifyDatasetDocumentRequest>;
 
