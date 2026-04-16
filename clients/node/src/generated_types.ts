@@ -1270,6 +1270,7 @@ export type SkippedStepOutput = z.infer<typeof ZSkippedStepOutput>;
 
 export const ZSplitResponse = z.lazy(() => (z.object({
     splits: z.array(ZSplitResult),
+    consensus: ZSplitConsensus.nullable().optional(),
     usage: ZRetabUsage,
 })));
 export type SplitResponse = z.infer<typeof ZSplitResponse>;
@@ -1649,6 +1650,23 @@ export const ZClassifyOutputSchema = z.lazy(() => (z.object({
 })));
 export type ClassifyOutputSchema = z.infer<typeof ZClassifyOutputSchema>;
 
+export const ZClassifyDecision = z.lazy(() => (z.object({
+    reasoning: z.string(),
+    category: z.string(),
+})));
+export type ClassifyDecision = z.infer<typeof ZClassifyDecision>;
+
+export const ZClassifyConsensusChoice = z.lazy(() => (z.object({
+    classification: ZClassifyDecision,
+})));
+export type ClassifyConsensusChoice = z.infer<typeof ZClassifyConsensusChoice>;
+
+export const ZClassifyConsensus = z.lazy(() => (z.object({
+    choices: z.array(ZClassifyConsensusChoice),
+    likelihood: z.number().nullable().optional(),
+})));
+export type ClassifyConsensus = z.infer<typeof ZClassifyConsensus>;
+
 export const ZClassifyRequest = z.lazy(() => (z.object({
     document: ZMIMEData,
     categories: z.array(ZCategory),
@@ -1661,9 +1679,8 @@ export const ZClassifyRequest = z.lazy(() => (z.object({
 export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
 
 export const ZClassifyResponse = z.lazy(() => (z.object({
-    result: ZClassifyResult,
-    likelihood: z.number().nullable().optional(),
-    votes: z.array(ZClassifyVote),
+    classification: ZClassifyDecision,
+    consensus: ZClassifyConsensus,
     usage: ZRetabUsage,
 })));
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
@@ -1707,14 +1724,41 @@ export const ZSplitRequest = z.lazy(() => (z.object({
 })));
 export type SplitRequest = z.infer<typeof ZSplitRequest>;
 
+export const ZSplitPartitionLikelihood = z.lazy(() => (z.object({
+    key: z.number().nullable().optional(),
+    pages: z.array(z.number().nullable().optional()).default([]),
+})));
+export type SplitPartitionLikelihood = z.infer<typeof ZSplitPartitionLikelihood>;
+
+export const ZSplitLikelihoodNode = z.lazy(() => (z.object({
+    name: z.number().nullable().optional(),
+    pages: z.array(z.number().nullable().optional()).default([]),
+    partitions: z.array(ZSplitPartitionLikelihood).default([]),
+})));
+export type SplitLikelihoodNode = z.infer<typeof ZSplitLikelihoodNode>;
+
+export const ZSplitLikelihoodTree = z.lazy(() => (z.object({
+    splits: z.array(ZSplitLikelihoodNode).default([]),
+})));
+export type SplitLikelihoodTree = z.infer<typeof ZSplitLikelihoodTree>;
+
+export const ZSplitConsensus = z.lazy(() => (z.object({
+    likelihoods: ZSplitLikelihoodTree.default({ splits: [] }),
+    choices: z.array(ZSplitChoice).default([]),
+})));
+export type SplitConsensus = z.infer<typeof ZSplitConsensus>;
+
 export const ZSplitResult = z.lazy(() => (z.object({
     name: z.string(),
     pages: z.array(z.number()),
-    likelihood: z.number().nullable().optional(),
-    votes: z.array(ZSplitVote),
     partitions: z.array(ZPartition),
 })));
 export type SplitResult = z.infer<typeof ZSplitResult>;
+
+export const ZSplitChoice = z.lazy(() => (z.object({
+    splits: z.array(ZSplitResult),
+})));
+export type SplitChoice = z.infer<typeof ZSplitChoice>;
 
 export const ZBBox = z.lazy(() => (z.object({
     left: z.number(),
@@ -1804,8 +1848,6 @@ export type GenerateSplitConfigResponse = z.infer<typeof ZGenerateSplitConfigRes
 export const ZPartition = z.lazy(() => (z.object({
     key: z.string(),
     pages: z.array(z.number()),
-    first_page_y_start: z.number().default(0.0),
-    last_page_y_end: z.number().default(1.0),
 })));
 export type Partition = z.infer<typeof ZPartition>;
 

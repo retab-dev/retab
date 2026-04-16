@@ -160,8 +160,8 @@ describe('Jobs API', () => {
                 expect(['queued', 'validating']).toContain(job.status);
 
                 const completed = await waitAndAssertCompleted(client, job.id);
-                expect(completed.response!.body).toHaveProperty('result');
-                expect(completed.response!.body.result).toHaveProperty('classification');
+                expect(completed.response!.body).toHaveProperty('classification');
+                expect(completed.response!.body.classification).toHaveProperty('category');
             },
             { timeout: TEST_TIMEOUT },
         );

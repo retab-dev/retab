@@ -105,9 +105,13 @@ function buildResponse(params: RecordedRequest): unknown {
 
     if (params.url.startsWith("/evals/classify/extract/")) {
         return {
-            result: {
+            classification: {
                 reasoning: "Detected invoice keywords",
-                classification: "invoice",
+                category: "invoice",
+            },
+            consensus: {
+                choices: [],
+                likelihood: null,
             },
             usage: {
                 credits: 0.12,
@@ -171,7 +175,7 @@ describe("Node SDK evals", () => {
 
         expect(extractResponse.choices[0].message.parsed).toEqual({ status: "extract" });
         expect(splitResponse.choices[0].message.parsed).toEqual({ status: "split" });
-        expect(classifyResponse.result.classification).toBe("invoice");
+        expect(classifyResponse.classification.category).toBe("invoice");
 
         expect(mockClient.requests.map((request) => request.url)).toEqual([
             "/evals/extract/extract/eval-extract/iter-extract",

@@ -558,12 +558,11 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
         Returns:
             SplitResponse: Response containing:
-                - splits: List of SplitResult objects with:
-                    - name: The matched subdocument name
-                    - pages: The 1-indexed pages assigned to that section
-                    - likelihood: Consensus confidence when n_consensus > 1
-                    - votes: Per-run page assignments used to build the consensus result
-                    - partitions: Repeated items detected from partition_key, when configured
+                - splits: Consolidated split output without vote noise
+                - consensus.likelihoods: A mirrored likelihood tree aligned with `splits` when n_consensus > 1
+                - consensus.choices: Split choice list when n_consensus > 1, where choices[0]
+                  is the consolidated output and choices[1:] are per-run alternatives
+                - usage: Usage information
 
         Raises:
             HTTPException: If the request fails.
@@ -581,7 +580,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
                 n_consensus=3,
             )
             for split in response.splits:
-                print(f"{split.name}: pages {split.pages} (likelihood={split.likelihood})")
+                print(f"{split.name}: pages {split.pages}")
+            print(response.consensus.likelihoods if response.consensus else None)
             ```
         """
         request = self._prepare_split(
@@ -620,7 +620,7 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
         Returns:
             ClassifyResponse: Response containing:
-                - result: ClassifyResult with reasoning and classification.
+                - classification: ClassifyResult with reasoning and category.
 
         Raises:
             HTTPException: If the request fails.
@@ -636,8 +636,8 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
                     {"name": "contract", "description": "Legal contract documents"},
                 ]
             )
-            print(f"Classification: {response.result.classification}")
-            print(f"Reasoning: {response.result.reasoning}")
+            print(f"Classification: {response.classification.category}")
+            print(f"Reasoning: {response.classification.reasoning}")
             ```
         """
         request = self._prepare_classify(
@@ -909,12 +909,11 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         Returns:
             SplitResponse: Response containing:
-                - splits: List of SplitResult objects with:
-                    - name: The matched subdocument name
-                    - pages: The 1-indexed pages assigned to that section
-                    - likelihood: Consensus confidence when n_consensus > 1
-                    - votes: Per-run page assignments used to build the consensus result
-                    - partitions: Repeated items detected from partition_key, when configured
+                - splits: Consolidated split output without vote noise
+                - consensus.likelihoods: A mirrored likelihood tree aligned with `splits` when n_consensus > 1
+                - consensus.choices: Split choice list when n_consensus > 1, where choices[0]
+                  is the consolidated output and choices[1:] are per-run alternatives
+                - usage: Usage information
 
         Raises:
             HTTPException: If the request fails.
@@ -932,7 +931,8 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
                 n_consensus=3,
             )
             for split in response.splits:
-                print(f"{split.name}: pages {split.pages} (likelihood={split.likelihood})")
+                print(f"{split.name}: pages {split.pages}")
+            print(response.consensus.likelihoods if response.consensus else None)
             ```
         """
         request = self._prepare_split(
@@ -987,8 +987,8 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
                     {"name": "contract", "description": "Legal contract documents"},
                 ]
             )
-            print(f"Classification: {response.result.classification}")
-            print(f"Reasoning: {response.result.reasoning}")
+            print(f"Classification: {response.classification.category}")
+            print(f"Reasoning: {response.classification.reasoning}")
             ```
         """
         request = self._prepare_classify(

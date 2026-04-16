@@ -142,7 +142,7 @@ export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
 
 export const ZClassifyResponse = z.object({
     ...generated.ZClassifyResponse.schema.shape,
-    votes: generated.ZClassifyResponse.schema.shape.votes.default([]),
+    consensus: generated.ZClassifyResponse.schema.shape.consensus.default({ choices: [] }),
 });
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
 
