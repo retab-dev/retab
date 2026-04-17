@@ -164,6 +164,9 @@ class BaseRetab:
         Returns:
             Any: Parsed JSON object for JSON responses, raw text string for text responses
         """
+        if response.status_code == 204 or not response.content:
+            return None
+
         content_type = response.headers.get("content-type", "")
 
         # Check if it's a JSON response
