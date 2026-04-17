@@ -3,12 +3,15 @@ from datetime import datetime
 from typing import Any, Dict
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.extractions import Extraction, SourcesResponse
+from ...types.extractions import Extraction, ExtractionRequest, SourcesResponse
 from ...types.pagination import PaginatedList, PaginationOrder
 from ...types.standards import PreparedRequest
 
 
 class ExtractionsMixin:
+    def prepare_create(self, payload: ExtractionRequest) -> PreparedRequest:
+        return PreparedRequest(method="POST", url="/extractions", data=payload.model_dump(mode="json", exclude_none=True))
+
     def prepare_list(
         self,
         before: str | None = None,
@@ -47,6 +50,9 @@ class ExtractionsMixin:
     def prepare_sources(self, extraction_id: str) -> PreparedRequest:
         """Prepare a request to get sourced extraction with per-leaf provenance."""
         return PreparedRequest(method="GET", url=f"/extractions/{extraction_id}/sources")
+
+    def prepare_delete(self, extraction_id: str) -> PreparedRequest:
+        return PreparedRequest(method="DELETE", url=f"/extractions/{extraction_id}")
 
 class Extractions(SyncAPIResource, ExtractionsMixin):
     """Extractions API wrapper."""
@@ -106,6 +112,11 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         request = self.prepare_get(extraction_id)
         return Extraction.model_validate(self._client._prepared_request(request))
 
+    def create(self, payload: ExtractionRequest) -> Extraction:
+        """Create an extraction using the modern /v1/extractions endpoint."""
+        request = self.prepare_create(payload)
+        return Extraction.model_validate(self._client._prepared_request(request))
+
     def sources(self, extraction_id: str) -> SourcesResponse:
         """Get extraction result enriched with per-leaf source provenance.
 
@@ -118,6 +129,10 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         """
         request = self.prepare_sources(extraction_id)
         return SourcesResponse.model_validate(self._client._prepared_request(request))
+
+    def delete(self, extraction_id: str) -> None:
+        request = self.prepare_delete(extraction_id)
+        self._client._prepared_request(request)
 
 class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
     """Async Extractions API wrapper."""
@@ -159,6 +174,11 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         request = self.prepare_get(extraction_id)
         return Extraction.model_validate(await self._client._prepared_request(request))
 
+    async def create(self, payload: ExtractionRequest) -> Extraction:
+        """Create an extraction using the modern /v1/extractions endpoint."""
+        request = self.prepare_create(payload)
+        return Extraction.model_validate(await self._client._prepared_request(request))
+
     async def sources(self, extraction_id: str) -> SourcesResponse:
         """Get extraction result enriched with per-leaf source provenance.
 
@@ -171,3 +191,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         """
         request = self.prepare_sources(extraction_id)
         return SourcesResponse.model_validate(await self._client._prepared_request(request))
+
+    async def delete(self, extraction_id: str) -> None:
+        request = self.prepare_delete(extraction_id)
+        await self._client._prepared_request(request)

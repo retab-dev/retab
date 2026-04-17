@@ -1,6 +1,6 @@
 # Classify
 
-Endpoint: `POST /v1/documents/classify`
+Endpoint: `POST /v1/classifications`
 
 ## Use it when
 
@@ -14,7 +14,7 @@ Endpoint: `POST /v1/documents/classify`
 from retab import Retab
 
 client = Retab()
-result = client.documents.classify(
+result = client.classifications.create(
     document="document.pdf",
     model="retab-small",
     n_consensus=3,
@@ -25,8 +25,8 @@ result = client.documents.classify(
     ],
 )
 
-print(result.classification.category)
-print(result.classification.reasoning)
+print(result.output.category)
+print(result.output.reasoning)
 ```
 
 ## Minimal Node
@@ -36,7 +36,7 @@ import { Retab } from "@retab/node";
 
 const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 
-const result = await client.documents.classify({
+const result = await client.classifications.create({
   document: "document.pdf",
   model: "retab-small",
   categories: [
@@ -46,15 +46,15 @@ const result = await client.documents.classify({
   ],
 });
 
-console.log(result.classification.category);
-console.log(result.classification.reasoning);
+console.log(result.output.category);
+console.log(result.output.reasoning);
 console.log(result.consensus?.likelihood);
 ```
 
 ## Minimal REST
 
 ```bash
-curl -X POST "https://api.retab.com/v1/documents/classify" \
+curl -X POST "https://api.retab.com/v1/classifications" \
   -H "Api-Key: $RETAB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -81,10 +81,10 @@ curl -X POST "https://api.retab.com/v1/documents/classify" \
 
 ## Response shape
 
-- `classification.category`
-- `classification.reasoning`
+- `output.category`
+- `output.reasoning`
 - `consensus.likelihood` when consensus produced at least two successful votes
-- `consensus.choices[]` with the individual classify votes when `n_consensus > 1`
+- `consensus.choices[]` with the individual classification votes when `n_consensus > 1`
 
 ## Guidance
 

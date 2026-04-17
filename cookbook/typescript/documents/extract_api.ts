@@ -6,7 +6,7 @@ import { config } from 'dotenv';
 
 async function main() {
   // ---------------------------------------------
-  // Quick example: Extract structured data using Retab's all-in-one `.parse()` method.
+  // Quick example: Extract structured data using `client.extractions.create()`.
   // ---------------------------------------------
 
 
@@ -22,8 +22,8 @@ async function main() {
   const client = new Retab({ apiKey: retabApiKey });
 
   // Document Extraction via Retab API
-  const response = await client.documents.extract({
-    documents: ['../../assets/docs/invoice.jpeg'],
+  const response = await client.extractions.create({
+    document: '../../assets/docs/invoice.jpeg',
     model: 'gpt-5.4',
     json_schema: JSON.parse(fs.readFileSync('../../assets/code/invoice_schema.json', 'utf-8')),
     n_consensus: 1,
@@ -31,7 +31,7 @@ async function main() {
 
   // Output
   console.log('\n✅ Extracted Result:');
-  console.log(response.choices[0].message.content);
+  console.log(response.output);
 
 }
 

@@ -73,13 +73,13 @@ from retab import Retab
 from retab import Retab
 client = Retab()
 
-response = client.documents.extract(
+response = client.extractions.create(
     json_schema = "Invoice_schema.json",
     document = "Invoice.pdf",
     model="retab-small",
 )
 
-print(response)
+print(response.output)
 ```
 
 ---

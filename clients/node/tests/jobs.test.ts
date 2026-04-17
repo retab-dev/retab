@@ -100,10 +100,10 @@ describe('Jobs API', () => {
         );
 
         test(
-            'parse — job completes and returns text',
+            'parse — job completes and returns stored parse output',
             async () => {
                 const job = await client.jobs.create({
-                    endpoint: '/v1/documents/parse',
+                    endpoint: '/v1/parses',
                     request: {
                         document: INLINE_TEXT_DOCUMENT,
                         model: MODEL,
@@ -113,8 +113,29 @@ describe('Jobs API', () => {
 
                 const completed = await waitAndAssertCompleted(client, job.id);
                 const body = completed.response!.body;
-                const hasContent = 'text' in body || 'pages' in body;
-                expect(hasContent).toBe(true);
+                expect(body).toHaveProperty('output');
+                expect(body.output).toHaveProperty('text');
+                expect(body.output).toHaveProperty('pages');
+            },
+            { timeout: TEST_TIMEOUT },
+        );
+
+        test(
+            'parses resource — job completes and returns stored parse',
+            async () => {
+                const job = await client.jobs.create({
+                    endpoint: '/v1/parses',
+                    request: {
+                        document: INLINE_TEXT_DOCUMENT,
+                        model: MODEL,
+                    },
+                });
+                expect(['queued', 'validating']).toContain(job.status);
+
+                const completed = await waitAndAssertCompleted(client, job.id);
+                expect(completed.response!.body).toHaveProperty('id');
+                expect(completed.response!.body).toHaveProperty('output');
+                expect(completed.response!.body.output).toHaveProperty('pages');
             },
             { timeout: TEST_TIMEOUT },
         );
@@ -203,7 +224,7 @@ describe('Jobs API', () => {
             'create returns queued job',
             async () => {
                 const job = await client.jobs.create({
-                    endpoint: '/v1/documents/parse',
+                    endpoint: '/v1/parses',
                     request: {
                         document: INLINE_TEXT_DOCUMENT,
                         model: MODEL,
@@ -211,7 +232,7 @@ describe('Jobs API', () => {
                 });
                 expect(job.id).toBeDefined();
                 expect(['queued', 'validating']).toContain(job.status);
-                expect(job.endpoint).toBe('/v1/documents/parse');
+                expect(job.endpoint).toBe('/v1/parses');
                 expect(job.object).toBe('job');
 
                 // Clean up
@@ -224,7 +245,7 @@ describe('Jobs API', () => {
             'retrieve without payload omits request and response',
             async () => {
                 const job = await client.jobs.create({
-                    endpoint: '/v1/documents/parse',
+                    endpoint: '/v1/parses',
                     request: {
                         document: INLINE_TEXT_DOCUMENT,
                         model: MODEL,
@@ -245,7 +266,7 @@ describe('Jobs API', () => {
             'retrieveFull includes request and response',
             async () => {
                 const job = await client.jobs.create({
-                    endpoint: '/v1/documents/parse',
+                    endpoint: '/v1/parses',
                     request: {
                         document: INLINE_TEXT_DOCUMENT,
                         model: MODEL,
@@ -267,7 +288,7 @@ describe('Jobs API', () => {
             'list with filters returns matching jobs',
             async () => {
                 const job = await client.jobs.create({
-                    endpoint: '/v1/documents/parse',
+                    endpoint: '/v1/parses',
                     request: {
                         document: INLINE_TEXT_DOCUMENT,
                         model: MODEL,
@@ -276,13 +297,13 @@ describe('Jobs API', () => {
                 await client.jobs.waitForCompletion(job.id, { timeout_ms: JOB_TIMEOUT_MS });
 
                 const result = await client.jobs.list({
-                    endpoint: '/v1/documents/parse',
+                    endpoint: '/v1/parses',
                     status: 'completed',
                     limit: 5,
                 });
                 expect(result.data.length).toBeGreaterThan(0);
                 for (const j of result.data) {
-                    expect(j.endpoint).toBe('/v1/documents/parse');
+                    expect(j.endpoint).toBe('/v1/parses');
                     expect(j.status).toBe('completed');
                 }
             },
@@ -294,7 +315,7 @@ describe('Jobs API', () => {
             async () => {
                 const metadata = { test_key: 'test_value', source: 'node_sdk_test' };
                 const job = await client.jobs.create({
-                    endpoint: '/v1/documents/parse',
+                    endpoint: '/v1/parses',
                     request: {
                         document: INLINE_TEXT_DOCUMENT,
                         model: MODEL,
@@ -315,7 +336,7 @@ describe('Jobs API', () => {
             'cancel a queued job',
             async () => {
                 const job = await client.jobs.create({
-                    endpoint: '/v1/documents/parse',
+                    endpoint: '/v1/parses',
                     request: {
                         document: INLINE_TEXT_DOCUMENT,
                         model: MODEL,

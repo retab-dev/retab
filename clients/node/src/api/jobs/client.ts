@@ -72,7 +72,7 @@ export default class APIJobs extends CompositionClient {
     /**
      * Create a new asynchronous job.
      *
-     * @param endpoint - The API endpoint to call ("/documents/extract" or "/documents/parse")
+     * @param endpoint - The API endpoint to call (for example "/v1/extractions" or "/v1/parses")
      * @param request - The full request body for the target endpoint
      * @param metadata - Optional metadata (max 16 pairs; keys ≤64 chars, values ≤512 chars)
      */

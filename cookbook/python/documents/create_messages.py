@@ -15,11 +15,10 @@ assert retab_api_key, "Missing RETAB_API_KEY"
 
 # Retab Setup
 client = Retab(api_key=retab_api_key)
-result = client.documents.parse(
+result = client.parses.create(
     document="../../assets/docs/booking_confirmation.jpg",
-    model="gemini-2.5-flash",
+    model="retab-small",
     image_resolution_dpi=192,
-    browser_canvas="A4",
 )
 
-print(result.pages)
+print(result.output.pages)

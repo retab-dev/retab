@@ -1,4 +1,5 @@
 import json
+import warnings
 from io import IOBase
 from pathlib import Path
 from typing import Any, AsyncGenerator, Generator
@@ -11,7 +12,6 @@ from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...utils.mime import prepare_mime_document
 from ...utils.stream_context_managers import as_async_context_manager, as_context_manager
 from ...types.chat import ChatCompletionRetabMessage
-from ...types.documents.edit import EditRequest, EditResponse
 from ...types.documents.extract import DocumentExtractRequest, RetabParsedChatCompletion, RetabParsedChatCompletionChunk, RetabParsedChoice, maybe_parse_to_pydantic
 from ...types.documents.parse import ParseRequest, ParseResponse, TableParsingFormat
 from ...types.documents.split import Subdocument, SplitRequest, SplitResponse
@@ -62,41 +62,10 @@ class BaseDocumentsMixin:
         parse_request = ParseRequest(**request_dict)
         return PreparedRequest(method="POST", url="/documents/parse", data=parse_request.model_dump(mode="json", exclude_unset=True))
 
-    def _prepare_edit(
-        self,
-        instructions: str,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str | _Unset = UNSET,
-        template_id: str | None | _Unset = UNSET,
-        bust_cache: bool = False,
-        **extra_body: Any,
-    ) -> PreparedRequest:
-        request_dict: dict[str, Any] = {
-            "instructions": instructions,
-        }
-
-        if document is not None:
-            mime_document = prepare_mime_document(document)
-            request_dict["document"] = mime_document
-
-        if model is not UNSET:
-            request_dict["model"] = model
-        if template_id is not UNSET:
-            request_dict["template_id"] = template_id
-        if bust_cache:
-            request_dict["bust_cache"] = True
-
-        # Merge any extra fields provided by the caller
-        if extra_body:
-            request_dict.update(extra_body)
-
-        edit_request = EditRequest(**request_dict)
-        return PreparedRequest(method="POST", url="/documents/edit", data=edit_request.model_dump(mode="json", exclude_unset=True))
-
     def _prepare_split(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        subdocuments: list[Subdocument] | list[dict[str, str]],
+        subdocuments: list[Subdocument] | list[dict[str, str | None]],
         model: str,
         n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
@@ -208,8 +177,9 @@ class BaseDocumentsMixin:
         # Validate DocumentAPIRequest data (raises exception if invalid)
         extract_request = DocumentExtractRequest(**request_dict)
 
-        # Use the same URL as extractions.py for consistency when streaming
-        url = "/documents/extractions" if stream else "/documents/extract"
+        # `_Unset` is truthy, so gate the streaming route on an explicit boolean.
+        is_streaming = stream is not UNSET and bool(stream)
+        url = "/documents/extractions" if is_streaming else "/documents/extract"
         return PreparedRequest(method="POST", url=url, data=extract_request.model_dump(mode="json", exclude_unset=True, exclude_defaults=True))
 
 
@@ -253,6 +223,11 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             ValueError: If document is not provided
             HTTPException: If the request fails
         """
+        warnings.warn(
+            "client.documents.extract() is deprecated; use client.extractions.create() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_extract(
             json_schema=json_schema,
             model=model,
@@ -266,7 +241,10 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         )
         response = self._client._prepared_request(request)
 
-        return maybe_parse_to_pydantic(load_json_schema(json_schema), RetabParsedChatCompletion.model_validate(response))
+        return maybe_parse_to_pydantic(
+            load_json_schema(json_schema),
+            RetabParsedChatCompletion.model_validate(response),
+        )
         # returns a RetabParsedChatCompletion
 
     def sources(
@@ -393,7 +371,18 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             for response in stream:
                 print(response)
         ```
+
+        .. deprecated::
+            Use ``client.extractions.create(..., stream=True)`` — the canonical
+            resource at ``POST /v1/extractions/stream``. This method keeps
+            the legacy ``RetabParsedChatCompletion`` chunk shape for
+            backward compatibility with existing integrations.
         """
+        warnings.warn(
+            "client.documents.extract_stream() is deprecated; use client.extractions.create(..., stream=True) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_extract(
             json_schema=json_schema,
             document=document,
@@ -474,7 +463,17 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
 
         Raises:
             HTTPException: If the request fails.
+
+        .. deprecated::
+            Use ``client.parses.create(...)`` — the canonical resource at
+            ``POST /v1/parses``. This method keeps the legacy ``ParseResponse``
+            shape for backward compatibility with existing integrations.
         """
+        warnings.warn(
+            "client.documents.parse() is deprecated; use client.parses.create() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_parse(
             document=document,
             model=model,
@@ -486,58 +485,10 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
         response = self._client._prepared_request(request)
         return ParseResponse.model_validate(response)
 
-    def edit(
-        self,
-        instructions: str,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str | _Unset = UNSET,
-        template_id: str | None | _Unset = UNSET,
-        bust_cache: bool = False,
-        **extra_body: Any,
-    ) -> EditResponse:
-        """
-        Edit a PDF document by inferring form fields and filling them with provided instructions.
-
-        This method performs:
-        1. OCR on the PDF to extract text elements with bounding boxes
-        2. LLM inference to identify fillable form fields
-        3. LLM-based form filling using the provided instructions
-        4. Returns the filled PDF with form field values populated
-
-        Either `document` OR `template_id` must be provided, but not both.
-
-        Args:
-            instructions: Instructions describing how to fill the form fields.
-            document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
-                Mutually exclusive with template_id.
-            model: The LLM model to use for inference. Defaults to "retab-small".
-            template_id: Template ID to use for filling. When provided, uses the template's pre-defined form fields
-                and empty PDF. Only works for PDF documents. Mutually exclusive with document.
-            bust_cache: If True, skip the LLM cache and force a fresh completion.
-
-        Returns:
-            EditResponse: Response containing:
-                - form_data: List of form fields with filled values
-                - filled_document: PDF with filled form values (MIMEData)
-
-        Raises:
-            HTTPException: If the request fails.
-        """
-        request = self._prepare_edit(
-            instructions=instructions,
-            document=document,
-            model=model,
-            template_id=template_id,
-            bust_cache=bust_cache,
-            **extra_body,
-        )
-        response = self._client._prepared_request(request)
-        return EditResponse.model_validate(response)
-
     def split(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        subdocuments: list[Subdocument] | list[dict[str, str]],
+        subdocuments: list[Subdocument] | list[dict[str, str | None]],
         model: str,
         n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
@@ -584,6 +535,11 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             print(response.consensus.likelihoods if response.consensus else None)
             ```
         """
+        warnings.warn(
+            "client.documents.split() is deprecated; use client.splits.create() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_split(
             document=document,
             subdocuments=subdocuments,
@@ -640,6 +596,11 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             print(f"Reasoning: {response.classification.reasoning}")
             ```
         """
+        warnings.warn(
+            "client.documents.classify() is deprecated; use client.classifications.create() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_classify(
             document=document,
             categories=categories,
@@ -693,6 +654,11 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             ValueError: If document is not provided
             HTTPException: If the request fails
         """
+        warnings.warn(
+            "client.documents.extract() is deprecated; use client.extractions.create() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_extract(
             json_schema=json_schema,
             model=model,
@@ -706,7 +672,10 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         )
         response = await self._client._prepared_request(request)
 
-        return maybe_parse_to_pydantic(load_json_schema(json_schema), RetabParsedChatCompletion.model_validate(response))
+        return maybe_parse_to_pydantic(
+            load_json_schema(json_schema),
+            RetabParsedChatCompletion.model_validate(response),
+        )
 
     @as_async_context_manager
     async def extract_stream(
@@ -744,7 +713,18 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             async for response in stream:
                 print(response)
         ```
+
+        .. deprecated::
+            Use ``client.extractions.create(..., stream=True)`` — the canonical
+            resource at ``POST /v1/extractions/stream``. This method keeps
+            the legacy ``RetabParsedChatCompletion`` chunk shape for
+            backward compatibility with existing integrations.
         """
+        warnings.warn(
+            "client.documents.extract_stream() is deprecated; use client.extractions.create(..., stream=True) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_extract(
             json_schema=json_schema,
             document=document,
@@ -825,7 +805,17 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
         Raises:
             HTTPException: If the request fails.
+
+        .. deprecated::
+            Use ``client.parses.create(...)`` — the canonical resource at
+            ``POST /v1/parses``. This method keeps the legacy ``ParseResponse``
+            shape for backward compatibility with existing integrations.
         """
+        warnings.warn(
+            "client.documents.parse() is deprecated; use client.parses.create() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_parse(
             document=document,
             model=model,
@@ -837,58 +827,10 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
         response = await self._client._prepared_request(request)
         return ParseResponse.model_validate(response)
 
-    async def edit(
-        self,
-        instructions: str,
-        document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl | None = None,
-        model: str | _Unset = UNSET,
-        template_id: str | None | _Unset = UNSET,
-        bust_cache: bool = False,
-        **extra_body: Any,
-    ) -> EditResponse:
-        """
-        Edit a PDF document by inferring form fields and filling them asynchronously.
-
-        This method performs:
-        1. OCR on the PDF to extract text elements with bounding boxes
-        2. LLM inference to identify fillable form fields
-        3. LLM-based form filling using the provided instructions
-        4. Returns the filled PDF with form field values populated
-
-        Either `document` OR `template_id` must be provided, but not both.
-
-        Args:
-            instructions: Instructions describing how to fill the form fields.
-            document: The document to edit. Can be a file path (Path or str), file-like object, MIMEData, PIL Image, or URL.
-                Mutually exclusive with template_id.
-            model: The LLM model to use for inference. Defaults to "retab-large".
-            template_id: Template ID to use for filling. When provided, uses the template's pre-defined form fields
-                and empty PDF. Only works for PDF documents. Mutually exclusive with document.
-            bust_cache: If True, skip the LLM cache and force a fresh completion.
-
-        Returns:
-            EditResponse: Response containing:
-                - form_data: List of form fields with filled values
-                - filled_document: PDF with filled form values (MIMEData)
-
-        Raises:
-            HTTPException: If the request fails.
-        """
-        request = self._prepare_edit(
-            instructions=instructions,
-            document=document,
-            model=model,
-            template_id=template_id,
-            bust_cache=bust_cache,
-            **extra_body,
-        )
-        response = await self._client._prepared_request(request)
-        return EditResponse.model_validate(response)
-
     async def split(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
-        subdocuments: list[Subdocument] | list[dict[str, str]],
+        subdocuments: list[Subdocument] | list[dict[str, str | None]],
         model: str,
         n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
@@ -935,6 +877,11 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             print(response.consensus.likelihoods if response.consensus else None)
             ```
         """
+        warnings.warn(
+            "client.documents.split() is deprecated; use client.splits.create() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_split(
             document=document,
             subdocuments=subdocuments,
@@ -991,6 +938,11 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             print(f"Reasoning: {response.classification.reasoning}")
             ```
         """
+        warnings.warn(
+            "client.documents.classify() is deprecated; use client.classifications.create() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         request = self._prepare_classify(
             document=document,
             categories=categories,

@@ -22,7 +22,7 @@ from .exceptions import (
     RateLimitError,
     ValidationError,
 )
-from .resources import documents, files, models, schemas, projects, extractions, edit, workflows, jobs, evals
+from .resources import documents, files, models, schemas, extractions, classifications, parses, splits, edits, workflows, jobs
 from .types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
 
 logger = logging.getLogger("retab")
@@ -221,13 +221,14 @@ class Retab(BaseRetab):
 
         self.client = httpx.Client(timeout=self.timeout)
         self.files = files.Files(client=self)
-        self.projects = projects.Projects(client=self)
-        self.evals = evals.Evals(client=self)
         self.extractions = extractions.Extractions(client=self)
+        self.classifications = classifications.Classifications(client=self)
+        self.parses = parses.Parses(client=self)
+        self.splits = splits.Splits(client=self)
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
-        self.edit = edit.Edit(client=self)
+        self.edits = edits.Edits(client=self)
         self.workflows = workflows.Workflows(client=self)
         self.jobs = jobs.Jobs(client=self)
     def _request(
@@ -534,13 +535,14 @@ class AsyncRetab(BaseRetab):
         self.client = httpx.AsyncClient(timeout=self.timeout)
 
         self.files = files.AsyncFiles(client=self)
-        self.projects = projects.AsyncProjects(client=self)
-        self.evals = evals.AsyncEvals(client=self)
         self.extractions = extractions.AsyncExtractions(client=self)
+        self.classifications = classifications.AsyncClassifications(client=self)
+        self.parses = parses.AsyncParses(client=self)
+        self.splits = splits.AsyncSplits(client=self)
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
-        self.edit = edit.AsyncEdit(client=self)
+        self.edits = edits.AsyncEdits(client=self)
         self.workflows = workflows.AsyncWorkflows(client=self)
         self.jobs = jobs.AsyncJobs(client=self)
 

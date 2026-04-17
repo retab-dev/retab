@@ -27,28 +27,28 @@ const retab = new Retab({
   apiKey: "your-api-key",
 });
 
-const extraction = await retab.documents.extract({
+const extraction = await retab.extractions.create({
   document: "path/to/invoice.pdf",
-  schema: {
-    json_schema: {
-      type: "object",
-      properties: {
-        invoice_number: { type: "string" },
-        total_amount: { type: "number" },
-        due_date: { type: "string", format: "date" },
-      },
+  model: "retab-small",
+  json_schema: {
+    type: "object",
+    properties: {
+      invoice_number: { type: "string" },
+      total_amount: { type: "number" },
+      due_date: { type: "string", format: "date" },
     },
   },
 });
 
-console.log(extraction.extracted_data);
+console.log(extraction.output);
 
 const buffer = fs.readFileSync("document.pdf");
-const parsed = await retab.documents.parse({
+const parse = await retab.parses.create({
   document: buffer,
+  model: "retab-small",
 });
 
-console.log(parsed.pages[0]);
+console.log(parse.output.pages[0]);
 ```
 
 ## Workflows

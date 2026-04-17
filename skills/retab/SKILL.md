@@ -36,9 +36,9 @@ Use this skill to implement Retab document API calls and workflow runs without r
 ## References
 
 - `references/common.md`: auth, SDK setup, shared request conventions, operation chooser
-- `references/parse.md`: `POST /v1/documents/parse`
-- `references/extract.md`: `POST /v1/documents/extract`
-- `references/split.md`: `POST /v1/documents/split`
-- `references/edit.md`: `POST /v1/documents/edit`
-- `references/classify.md`: `POST /v1/documents/classify`
+- `references/parse.md`: `POST /v1/parses`
+- `references/extract.md`: `POST /v1/extractions`
+- `references/split.md`: `POST /v1/splits`
+- `references/edit.md`: `POST /v1/edits`
+- `references/classify.md`: `POST /v1/classifications`
 - `references/workflows.md`: workflow runs with `client.workflows.runs.create()` and `client.workflows.runs.get()`
