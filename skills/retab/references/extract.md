@@ -1,12 +1,14 @@
 # Extract
 
-Endpoint: `POST /v1/documents/extract`
+Endpoint: `POST /v1/extractions`
+
+> The legacy `client.documents.extract(...)` / `POST /v1/documents/extract` still works for backward compatibility, but new code should use `client.extractions.create(...)`.
 
 ## Use it when
 
 - You need structured JSON back from a document
 - The target shape is known or can be written as JSON Schema
-- You want per-field confidence signals through `likelihoods`
+- You want a persisted extraction resource you can fetch, list, delete, or source later
 
 ## Minimal Python
 
@@ -14,7 +16,7 @@ Endpoint: `POST /v1/documents/extract`
 from retab import Retab
 
 client = Retab()
-response = client.documents.extract(
+response = client.extractions.create(
     document="invoice.pdf",
     model="retab-small",
     json_schema={
@@ -27,8 +29,8 @@ response = client.documents.extract(
     },
 )
 
-parsed = response.choices[0].message.parsed
-print(parsed)
+print(response.id)
+print(response.output)
 ```
 
 ## Minimal Node
@@ -38,7 +40,7 @@ import { Retab } from "@retab/node";
 
 const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 
-const response = await client.documents.extract({
+const response = await client.extractions.create({
   document: "invoice.pdf",
   model: "retab-small",
   json_schema: {
@@ -51,13 +53,14 @@ const response = await client.documents.extract({
   },
 });
 
-console.log(response.choices[0].message.parsed);
+console.log(response.id);
+console.log(response.output);
 ```
 
 ## Minimal REST
 
 ```bash
-curl -X POST "https://api.retab.com/v1/documents/extract" \
+curl -X POST "https://api.retab.com/v1/extractions" \
   -H "Api-Key: $RETAB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -124,7 +127,7 @@ Consensus is not free. More passes mean more latency and more cost, so use it se
 
 ### How to read likelihoods
 
-`likelihoods` mirrors the extracted structure and reflects how strongly the runs agreed on each field.
+`consensus.likelihoods` mirrors the extracted structure and reflects how strongly the runs agreed on each field.
 
 - High likelihood: the runs converged on the same answer
 - Lower likelihood: the field was ambiguous, noisy, or interpreted in multiple ways
@@ -133,8 +136,9 @@ If a field keeps getting low likelihoods, first improve the schema before just i
 
 ## Response shape
 
-- `choices[0].message.parsed`: extracted JSON
-- `likelihoods`: per-field confidence values
+- `id`: extraction resource id
+- `output`: extracted JSON
+- `consensus.likelihoods`: per-field confidence values
 - `usage`: token and cost-related metadata
 
 ## Guidance

@@ -1,6 +1,6 @@
 # Split
 
-Endpoint: `POST /v1/documents/split`
+Endpoint: `POST /v1/splits`
 
 ## Use it when
 
@@ -14,7 +14,7 @@ Endpoint: `POST /v1/documents/split`
 from retab import Retab
 
 client = Retab()
-result = client.documents.split(
+result = client.splits.create(
     document="batch.pdf",
     model="retab-small",
     subdocuments=[
@@ -23,7 +23,7 @@ result = client.documents.split(
     ],
 )
 
-print(result.splits)
+print(result.output)
 ```
 
 ## Minimal Node
@@ -33,7 +33,7 @@ import { Retab } from "@retab/node";
 
 const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 
-const result = await client.documents.split({
+const result = await client.splits.create({
   document: "batch.pdf",
   model: "retab-small",
   subdocuments: [
@@ -42,13 +42,13 @@ const result = await client.documents.split({
   ],
 });
 
-console.log(result.splits);
+console.log(result.output);
 ```
 
 ## Minimal REST
 
 ```bash
-curl -X POST "https://api.retab.com/v1/documents/split" \
+curl -X POST "https://api.retab.com/v1/splits" \
   -H "Api-Key: $RETAB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -73,9 +73,11 @@ curl -X POST "https://api.retab.com/v1/documents/split" \
 
 ## Response shape
 
-- `splits[].name`
-- `splits[].pages`
-- `splits[].partitions[]` when `partition_key` is used
+- `output[].name`
+- `output[].pages`
+- `output[].partitions[]` when `partition_key` is used
+- `consensus.likelihoods[]` when `n_consensus > 1`
+- `consensus.choices[]` as raw voter outputs when `n_consensus > 1`
 
 ## Guidance
 

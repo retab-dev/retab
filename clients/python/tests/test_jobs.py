@@ -90,10 +90,10 @@ def test_job_extract(sync_client: Retab) -> None:
 
 
 def test_job_parse(sync_client: Retab) -> None:
-    """Job for /v1/documents/parse completes and returns parsed text."""
+    """Job for /v1/parses completes and returns a stored Parse resource."""
     with sync_client as client:
         job = client.jobs.create(
-            endpoint="/v1/documents/parse",
+            endpoint="/v1/parses",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "model": MODEL,
@@ -105,7 +105,30 @@ def test_job_parse(sync_client: Retab) -> None:
         _assert_completed(job)
 
         body = job.response.body
-        assert "text" in body or "pages" in body, f"Parse response should have 'text' or 'pages', got keys: {list(body.keys())}"
+        assert "output" in body, f"Parse response should have 'output', got keys: {list(body.keys())}"
+        assert "text" in body["output"], "Parse response output should contain text"
+        assert "pages" in body["output"], "Parse response output should contain pages"
+
+
+def test_job_parses_resource(sync_client: Retab) -> None:
+    """Job for /v1/parses completes and returns the stored Parse resource."""
+    with sync_client as client:
+        job = client.jobs.create(
+            endpoint="/v1/parses",
+            request={
+                "document": INLINE_TEXT_DOCUMENT,
+                "model": MODEL,
+            },
+        )
+        assert job.status in ("queued", "validating")
+
+        job = _wait(client, job.id)
+        _assert_completed(job)
+
+        body = job.response.body
+        assert "id" in body, f"Parse resource response should have 'id', got keys: {list(body.keys())}"
+        assert "output" in body, f"Parse resource response should have 'output', got keys: {list(body.keys())}"
+        assert "pages" in body["output"], "Parse resource output should contain pages"
 
 
 def test_job_split(sync_client: Retab) -> None:
@@ -186,7 +209,7 @@ def test_job_create_returns_queued(sync_client: Retab) -> None:
     """Creating a job returns it with status 'queued'."""
     with sync_client as client:
         job = client.jobs.create(
-            endpoint="/v1/documents/parse",
+            endpoint="/v1/parses",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "model": MODEL,
@@ -194,7 +217,7 @@ def test_job_create_returns_queued(sync_client: Retab) -> None:
         )
         assert job.id is not None
         assert job.status in ("queued", "validating")
-        assert job.endpoint == "/v1/documents/parse"
+        assert job.endpoint == "/v1/parses"
         assert job.object == "job"
 
         # Clean up — wait for it to finish
@@ -205,7 +228,7 @@ def test_job_retrieve_without_payload(sync_client: Retab) -> None:
     """Default retrieve omits request and response payloads."""
     with sync_client as client:
         job = client.jobs.create(
-            endpoint="/v1/documents/parse",
+            endpoint="/v1/parses",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "model": MODEL,
@@ -226,7 +249,7 @@ def test_job_retrieve_with_payload(sync_client: Retab) -> None:
     """retrieve_full includes both request and response."""
     with sync_client as client:
         job = client.jobs.create(
-            endpoint="/v1/documents/parse",
+            endpoint="/v1/parses",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "model": MODEL,
@@ -247,7 +270,7 @@ def test_job_list_filters(sync_client: Retab) -> None:
     with sync_client as client:
         # Create and complete a parse job
         job = client.jobs.create(
-            endpoint="/v1/documents/parse",
+            endpoint="/v1/parses",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "model": MODEL,
@@ -257,13 +280,13 @@ def test_job_list_filters(sync_client: Retab) -> None:
 
         # List with filters
         result = client.jobs.list(
-            endpoint="/v1/documents/parse",
+            endpoint="/v1/parses",
             status="completed",
             limit=5,
         )
         assert len(result.data) > 0, "Should find at least one completed parse job"
         for j in result.data:
-            assert j.endpoint == "/v1/documents/parse"
+            assert j.endpoint == "/v1/parses"
             assert j.status == "completed"
 
 
@@ -272,7 +295,7 @@ def test_job_metadata_roundtrip(sync_client: Retab) -> None:
     with sync_client as client:
         metadata = {"test_key": "test_value", "source": "sdk_test"}
         job = client.jobs.create(
-            endpoint="/v1/documents/parse",
+            endpoint="/v1/parses",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "model": MODEL,
@@ -291,7 +314,7 @@ def test_job_cancel(sync_client: Retab) -> None:
     """Cancelling a queued job sets status to 'cancelled'."""
     with sync_client as client:
         job = client.jobs.create(
-            endpoint="/v1/documents/parse",
+            endpoint="/v1/parses",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "model": MODEL,

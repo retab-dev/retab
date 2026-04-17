@@ -17,8 +17,9 @@ from .types.documents.extract import ExtractResponse, ExtractionResult, RetabPar
 from .types.documents.parse import ParseResponse
 from .types.documents.classify import ClassifyResponse
 from .types.documents.split import SplitResponse
-from .types.documents.edit import EditResponse
-from .types.extractions import Extraction, SourcesResponse
+from .types.extractions import Extraction, ExtractionRequest, SourcesResponse
+from .types.classifications import Classification
+from .types.splits import Split
 from .types.mime import MIMEData
 from .types.pagination import PaginatedList
 
@@ -40,14 +41,16 @@ __all__ = [
     "APIConnectionError",
     "APITimeoutError",
     # Response types
+    "Classification",
+    "Split",
     "Extraction",
+    "ExtractionRequest",
     "ExtractResponse",
     "ExtractionResult",
     "RetabParsedChatCompletion",
     "ParseResponse",
     "ClassifyResponse",
     "SplitResponse",
-    "EditResponse",
     "SourcesResponse",
     # Core types
     "MIMEData",

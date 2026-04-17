@@ -621,6 +621,7 @@ export const ZSubdocument = z.lazy(() => (z.object({
     name: z.string(),
     description: z.string().default(""),
     partition_key: z.string().nullable().optional(),
+    allow_multiple_instances: z.boolean().default(false),
 })));
 export type Subdocument = z.infer<typeof ZSubdocument>;
 

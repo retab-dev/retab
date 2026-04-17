@@ -1,8 +1,10 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from retab.resources.workflows.runs.steps.client import AsyncWorkflowSteps, WorkflowSteps
+from retab.types.workflows.model import ExtractStepOutput, parse_workflow_step_output
 
 
 def test_workflow_steps_list_uses_full_steps_route() -> None:
@@ -207,3 +209,39 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
 
     step = WorkflowSteps(client=client).get("run_123", "start-1")
     assert step.extracted_data is None
+
+
+def test_parse_workflow_step_output_extract_accepts_canonical_shape() -> None:
+    parsed = parse_workflow_step_output(
+        "extract",
+        {
+            "output": {"invoice_number": "INV-001"},
+            "consensus": {
+                "choices": [{"invoice_number": "INV-001"}],
+                "likelihoods": {"invoice_number": 0.98},
+            },
+            "extraction_id": "ext_123",
+        },
+    )
+
+    assert isinstance(parsed, ExtractStepOutput)
+    assert parsed.output == {"invoice_number": "INV-001"}
+    assert parsed.extracted_data == {"invoice_number": "INV-001"}
+    assert parsed.consensus.likelihoods == {"invoice_number": 0.98}
+    assert parsed.likelihoods == {"invoice_number": 0.98}
+    assert parsed.consensus_details == [{"data": {"invoice_number": "INV-001"}}]
+
+
+def test_parse_workflow_step_output_extract_rejects_legacy_shape() -> None:
+    legacy_payload = {
+        "extracted_data": {"invoice_number": "INV-002"},
+        "likelihoods": {"invoice_number": 0.91},
+        "consensus_details": [{"data": {"invoice_number": "INV-002"}}],
+        "extraction_id": "ext_456",
+    }
+
+    with pytest.raises(ValidationError):
+        ExtractStepOutput.model_validate(legacy_payload)
+
+    parsed = parse_workflow_step_output("extract", legacy_payload)
+    assert parsed == legacy_payload

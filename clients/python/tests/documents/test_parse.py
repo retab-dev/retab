@@ -66,20 +66,22 @@ async def base_test_parse(
 
     if client_type == "sync":
         with sync_client as client:
-            response = client.documents.parse(
-                document=document,
-                model=model,
-                table_parsing_format=table_parsing_format,
-                image_resolution_dpi=image_resolution_dpi,
-            )
+            with pytest.warns(DeprecationWarning):
+                response = client.documents.parse(
+                    document=document,
+                    model=model,
+                    table_parsing_format=table_parsing_format,
+                    image_resolution_dpi=image_resolution_dpi,
+                )
     elif client_type == "async":
         async with async_client:
-            response = await async_client.documents.parse(
-                document=document,
-                model=model,
-                table_parsing_format=table_parsing_format,
-                image_resolution_dpi=image_resolution_dpi,
-            )
+            with pytest.warns(DeprecationWarning):
+                response = await async_client.documents.parse(
+                    document=document,
+                    model=model,
+                    table_parsing_format=table_parsing_format,
+                    image_resolution_dpi=image_resolution_dpi,
+                )
     
     validate_parse_response(response)
 
@@ -93,11 +95,12 @@ async def test_parse_table_formats(
 ) -> None:
     """Test parsing with different table formats."""
     with sync_client as client:
-        response = client.documents.parse(
-            document=booking_confirmation_file_path_1,
-            model="retab-micro",
-            table_parsing_format=table_format,
-        )
+        with pytest.warns(DeprecationWarning):
+            response = client.documents.parse(
+                document=booking_confirmation_file_path_1,
+                model="retab-micro",
+                table_parsing_format=table_format,
+            )
     
     validate_parse_response(response)
     # Verify that the response contains some text content
@@ -113,11 +116,12 @@ async def test_parse_image_resolution(
 ) -> None:
     """Test parsing with different image resolutions."""
     with sync_client as client:
-        response = client.documents.parse(
-            document=booking_confirmation_file_path_1,
-            model="retab-micro",
-            image_resolution_dpi=dpi,
-        )
+        with pytest.warns(DeprecationWarning):
+            response = client.documents.parse(
+                document=booking_confirmation_file_path_1,
+                model="retab-micro",
+                image_resolution_dpi=dpi,
+            )
     
     validate_parse_response(response)
     # Higher DPI might result in better text extraction, but we just verify it works
@@ -152,10 +156,11 @@ async def test_parse_response_structure(
 ) -> None:
     """Test that parse response has the expected structure and data types."""
     with sync_client as client:
-        response = client.documents.parse(
-            document=booking_confirmation_file_path_1,
-            model="retab-micro",
-        )
+        with pytest.warns(DeprecationWarning):
+            response = client.documents.parse(
+                document=booking_confirmation_file_path_1,
+                model="retab-micro",
+            )
 
     # Validate basic structure
     validate_parse_response(response)

@@ -4,8 +4,9 @@ from typing import TypeAlias
 
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
+from retab.types.extractions import ExtractionConsensus
 from retab.types.mime import FileRef
-from retab.types.documents.split import SplitResponse
+from retab.types.splits import SplitConsensus, SplitResult
 
 
 class HandlePayload(BaseModel):
@@ -189,10 +190,25 @@ class SkippedStepOutput(BaseModel):
 
 
 class ExtractStepOutput(BaseModel):
-    extracted_data: Dict[str, Any] = Field(..., description="The extracted structured data")
-    likelihoods: Optional[Dict[str, Any]] = Field(default=None, description="Field confidence scores")
+    output: Dict[str, Any] = Field(..., description="The extracted structured data")
+    consensus: ExtractionConsensus = Field(
+        default_factory=ExtractionConsensus,
+        description="Consensus metadata for extract block outputs",
+    )
     extraction_id: Optional[str] = Field(default=None, description="Extraction ID")
     json_schema: Optional[Dict[str, Any]] = Field(default=None, description="JSON schema used for extraction")
+
+    @property
+    def extracted_data(self) -> Dict[str, Any]:
+        return self.output
+
+    @property
+    def likelihoods(self) -> Optional[Dict[str, Any]]:
+        return self.consensus.likelihoods
+
+    @property
+    def consensus_details(self) -> list[dict[str, Any]]:
+        return [{"data": choice} for choice in self.consensus.choices]
 
 
 class ParseStepOutput(BaseModel):
@@ -210,6 +226,29 @@ class MergeDictsStepOutput(BaseModel):
     fields: List[str] = Field(default_factory=list, description="Names of the merged fields")
     extracted_data: Dict[str, Any] = Field(default_factory=dict, description="Merged JSON data")
     merged_schema: Optional[Dict[str, Any]] = Field(default=None, description="Combined schema from merged inputs")
+
+
+class SplitStepOutput(BaseModel):
+    output: List[SplitResult] = Field(default_factory=list, description="Canonical split output")
+    consensus: Optional[SplitConsensus] = Field(
+        default=None,
+        description="Consensus metadata for multi-vote split runs",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_legacy_split_payload(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        if "output" not in value and isinstance(value.get("splits"), list):
+            normalized = dict(value)
+            normalized["output"] = normalized.pop("splits")
+            value = normalized
+        return value
+
+    @property
+    def splits(self) -> List[SplitResult]:
+        return self.output
 
 
 class ClassifierStepOutput(BaseModel):
@@ -362,7 +401,7 @@ WorkflowStepOutputData: TypeAlias = (
     | ParseStepOutput
     | MergePdfStepOutput
     | MergeDictsStepOutput
-    | SplitResponse
+    | SplitStepOutput
     | ClassifierStepOutput
     | FormulaStepOutput
     | HILStepOutput
@@ -386,7 +425,7 @@ _STEP_OUTPUT_MODEL_BY_NODE_TYPE: Dict[str, type[BaseModel]] = {
     "parse": ParseStepOutput,
     "edit": EditStepOutput,
     "extract": ExtractStepOutput,
-    "split": SplitResponse,
+    "split": SplitStepOutput,
     "classifier": ClassifierStepOutput,
     "conditional": ConditionalStepOutput,
     "hil": HILStepOutput,

@@ -1,6 +1,8 @@
 # Edit
 
-Endpoint: `POST /v1/documents/edit`
+Endpoint: `POST /v1/edits`
+
+> The legacy `client.documents.edit(...)` / `POST /v1/documents/edit` still works for backward compatibility, but new code should use `client.edits.create(...)`.
 
 ## Use it when
 
@@ -14,14 +16,15 @@ Endpoint: `POST /v1/documents/edit`
 from retab import Retab
 
 client = Retab()
-result = client.documents.edit(
+result = client.edits.create(
     document="form.pdf",
     model="retab-small",
     instructions="Fill full name as John Doe and date of birth as 1990-01-15.",
 )
 
-print(result.form_data)
-print(result.filled_document)
+print(result.id)
+print(result.data.form_data)
+print(result.data.filled_document)
 ```
 
 ## Minimal Node
@@ -31,20 +34,21 @@ import { Retab } from "@retab/node";
 
 const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 
-const result = await client.documents.edit({
+const result = await client.edits.create({
   document: "form.pdf",
   model: "retab-small",
   instructions: "Fill full name as John Doe and date of birth as 1990-01-15.",
 });
 
-console.log(result.form_data);
-console.log(result.filled_document);
+console.log(result.id);
+console.log(result.data.form_data);
+console.log(result.data.filled_document);
 ```
 
 ## Minimal REST
 
 ```bash
-curl -X POST "https://api.retab.com/v1/documents/edit" \
+curl -X POST "https://api.retab.com/v1/edits" \
   -H "Api-Key: $RETAB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -65,8 +69,9 @@ curl -X POST "https://api.retab.com/v1/documents/edit" \
 
 ## Response shape
 
-- `form_data[]`: field metadata and filled values
-- `filled_document`: output file as MIME data
+- `id`: edit resource id
+- `data.form_data[]`: field metadata and filled values
+- `data.filled_document`: output file as MIME data
 
 ## Guidance
 

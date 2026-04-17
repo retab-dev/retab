@@ -78,8 +78,6 @@ def test_extract_result_serializes_computed_fields() -> None:
     assert response.model_dump()["text"] == "{\"status\":\"ok\"}"
     assert response.model_dump(mode="json")["data"] == {"status": "ok"}
     assert response.model_dump(mode="json")["text"] == "{\"status\":\"ok\"}"
-
-
 # ---------------------------------------------------------------------------
 # Unit tests for maybe_parse_to_pydantic
 # ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 # ---------------------------------------------
-## Quick example: Extract structured data using Retab’s all-in-one `.parse()` method.
+## Quick example: Extract structured data using `client.extractions.create()`.
 # ---------------------------------------------
 
 import os
@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 
 from retab import Retab
+from retab.types.extractions import ExtractionRequest
 
 # Load environment variables
 load_dotenv()
@@ -18,15 +19,16 @@ assert retab_api_key, "Missing RETAB_API_KEY"
 client = Retab(api_key=retab_api_key)
 
 # Document Extraction via Retab API
-response = client.documents.extract(
-    document="../../assets/docs/invoice.jpeg",
-    model="gpt-5.4",
-    json_schema="../../assets/code/invoice_schema.json",
-    image_resolution_dpi=192,
-    browser_canvas="A4",
-    n_consensus=1,
+response = client.extractions.create(
+    ExtractionRequest(
+        document="../../assets/docs/invoice.jpeg",
+        model="gpt-5.4",
+        json_schema="../../assets/code/invoice_schema.json",
+        image_resolution_dpi=192,
+        n_consensus=1,
+    )
 )
 
 # Output
 print("\n✅ Extracted Result:")
-print(response.choices[0].message.content)
+print(response.output)

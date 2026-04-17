@@ -157,7 +157,7 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         Create a new asynchronous job.
 
         Args:
-            endpoint: The API endpoint to call ("/documents/extract" or "/documents/parse")
+            endpoint: The API endpoint to call (for example ``/v1/extractions`` or ``/v1/parses``)
             request: The full request body for the target endpoint
             metadata: Optional metadata (max 16 pairs; keys ≤64 chars, values ≤512 chars)
 
@@ -382,7 +382,7 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         Create a new asynchronous job.
 
         Args:
-            endpoint: The API endpoint to call ("/documents/extract" or "/documents/parse")
+            endpoint: The API endpoint to call (for example ``/v1/extractions`` or ``/v1/parses``)
             request: The full request body for the target endpoint
             metadata: Optional metadata (max 16 pairs; keys ≤64 chars, values ≤512 chars)
 

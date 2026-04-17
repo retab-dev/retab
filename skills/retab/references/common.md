@@ -54,7 +54,7 @@ If the user wants structured extraction but does not yet have a schema:
 ## REST skeleton
 
 ```bash
-curl -X POST "https://api.retab.com/v1/documents/ROUTE" \
+curl -X POST "https://api.retab.com/v1/RESOURCE_ROUTE" \
   -H "Api-Key: $RETAB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -65,5 +65,13 @@ curl -X POST "https://api.retab.com/v1/documents/ROUTE" \
     "model": "retab-small"
   }'
 ```
+
+Use the actual resource route for the operation:
+
+- parse: `/v1/parses`
+- extract: `/v1/extractions`
+- split: `/v1/splits`
+- edit: `/v1/edits`
+- classify: `/v1/classifications`
 
 Workflow runs are the main exception to this skeleton. See `references/workflows.md`.
