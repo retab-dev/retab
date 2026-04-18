@@ -43,6 +43,13 @@ const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 - `classify`: choose one category from a fixed list
 - `workflows`: run an existing multi-step workflow and poll its outputs
 
+Choose `workflows` instead of the direct routes when:
+
+- The user already has a workflow ID or dashboard workflow
+- The pipeline involves multiple operations or conditional branching
+- You need end-block `final_outputs` rather than one direct API response
+- You need step-by-step inspection, retries, or human-review checkpoints
+
 ## Before you extract
 
 If the user wants structured extraction but does not yet have a schema:

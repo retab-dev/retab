@@ -10,7 +10,7 @@ async function main() {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   // ---------------------------------------------
-  // Quick example: Extract structured data using `client.documents.extract()` from buffer.
+  // Quick example: Extract structured data using `client.extractions.create()` from buffer.
   // ---------------------------------------------
 
 
@@ -36,16 +36,16 @@ async function main() {
   const client = new Retab({ apiKey: retabApiKey });
 
   // Document Extraction via Retab API using buffer
-  const response = await client.documents.extract({
-    documents: [imageBuffer],
-    model: 'gpt-5.4',
-    json_schema: jsonSchema,
+  const response = await client.extractions.create({
+    document: imageBuffer,
+    model: 'retab-small',
+    json_schema: JSON.parse(jsonSchema),
     n_consensus: 1,
   });
 
   // Output
   console.log('\n✅ Extracted Result:');
-  console.log(response.choices[0]?.message.parsed);
+  console.log(response.output);
 
 }
 

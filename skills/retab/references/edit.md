@@ -2,8 +2,6 @@
 
 Endpoint: `POST /v1/edits`
 
-> The legacy `client.documents.edit(...)` / `POST /v1/documents/edit` still works for backward compatibility, but new code should use `client.edits.create(...)`.
-
 ## Use it when
 
 - You need to fill a form-like PDF or Office document
