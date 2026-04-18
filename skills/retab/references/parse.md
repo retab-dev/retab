@@ -2,8 +2,6 @@
 
 Endpoint: `POST /v1/parses`
 
-> The legacy `client.documents.parse(...)` / `POST /v1/documents/parse` still works and is kept for backward compatibility, but it is deprecated. New code should use `client.parses.create(...)`.
-
 ## Use it when
 
 - You need readable text for prompting, indexing, or debugging

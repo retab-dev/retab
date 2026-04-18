@@ -2,8 +2,6 @@
 
 Endpoint: `POST /v1/extractions`
 
-> The legacy `client.documents.extract(...)` / `POST /v1/documents/extract` still works for backward compatibility, but new code should use `client.extractions.create(...)`.
-
 ## Use it when
 
 - You need structured JSON back from a document

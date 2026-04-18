@@ -1,11 +1,16 @@
 ---
 name: retab
-description: Build apps and integrations on top of Retab's core APIs. Use when Codex needs to add document parsing, structured extraction, bundle splitting, form filling or document editing, document classification, or workflow run integration to a codebase through the Retab Python SDK, Node SDK, or direct REST calls.
+description: Build apps and integrations on top of Retab's core APIs. Use when Codex needs to add document parsing, structured extraction, bundle splitting, form filling or document editing, document classification, or workflow run integration to a codebase through the Retab Python SDK, Node SDK, or direct REST calls. Covers starting workflow runs, waiting for completion, inspecting step outputs, and handling human-review pauses.
 ---
 
 # Retab
 
 Use this skill to implement Retab document API calls and workflow runs without relying on external docs.
+
+It is especially useful for two kinds of tasks:
+
+- Direct document operations: `parse`, `extract`, `split`, `edit`, `classify`
+- Existing workflow execution: start a run, pass inputs to start blocks, wait for completion, inspect step outputs, and handle `waiting_for_human`
 
 ## Quick Start
 
@@ -14,13 +19,23 @@ Use this skill to implement Retab document API calls and workflow runs without r
    - Node: `npm install @retab/node`
 2. Load `RETAB_API_KEY`.
 3. Pick the smallest operation that solves the task:
-   - Need text or page content: read `references/parse.md`
-   - Need structured JSON from a schema: read `references/extract.md`
-   - Need to break a file into labeled sections: read `references/split.md`
-   - Need to fill or update a form-like document: read `references/edit.md`
-   - Need to choose one label from known categories: read `references/classify.md`
-   - Need to run an existing workflow and poll for results: read `references/workflows.md`
+  - Need text or page content: read `references/parse.md`
+  - Need structured JSON from a schema: read `references/extract.md`
+  - Need to break a file into labeled sections: read `references/split.md`
+  - Need to fill or update a form-like document: read `references/edit.md`
+  - Need to choose one label from known categories: read `references/classify.md`
+  - Need to run an existing multi-step pipeline, wait for completion, inspect block outputs, or handle human review: read `references/workflows.md`
 4. Read `references/common.md` before writing code if authentication, input format, or model defaults are still unclear.
+
+## Workflow-first cases
+
+Prefer the workflow reference over direct document routes when the user already has a workflow and any of these are true:
+
+- They mention a workflow ID such as `wf_...`
+- They need multiple steps chained together
+- They need outputs from specific workflow blocks
+- They mention `final_outputs`, `steps`, `waiting_for_human`, or HIL/human review
+- They want to reuse an existing dashboard workflow from code instead of rebuilding the logic inline
 
 ## Working Rules
 
@@ -29,8 +44,12 @@ Use this skill to implement Retab document API calls and workflow runs without r
 - Keep request bodies minimal. Add optional fields only when they solve a real problem.
 - For direct document REST calls, send the `Api-Key` header and a `document` object with `filename` and `url`.
 - For workflow-run REST calls, send `documents` keyed by start block ID, with `filename`, `content`, and `mime_type`.
+- For workflow-run SDK calls, map inputs by start block ID exactly. Do not invent friendly aliases for block keys.
 - For SDK calls, prefer passing a local file path when possible.
 - Add retries for transient network or 5xx failures. Do not blindly retry validation errors.
+- If a workflow run must finish before downstream code proceeds, use the SDK waiting helpers instead of hand-writing ad hoc polling when the SDK already provides one.
+- If a workflow stops at `waiting_for_human`, do not treat that as a generic failure. Surface it explicitly and inspect the relevant step or HIL decision state.
+- When debugging workflow outputs, prefer `workflows.runs.steps.get(...)`, `get_many(...)`, or `get_all(...)` over guessing from top-level `final_outputs` alone.
 - Stay within this skill's scope. It covers the direct document routes plus running existing workflows. If the user asks for workflow design, widgets, projects, or MCP setup, give the simplest useful answer and note that those areas are outside this skill's main coverage.
 
 ## References
