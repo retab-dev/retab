@@ -19,6 +19,16 @@ class MockClient extends AbstractClient {
         this.requests.push(params);
         return new Response(
             JSON.stringify({
+                id: "prtn_123",
+                file: {
+                    id: "file_123",
+                    filename: "invoice.pdf",
+                    mime_type: "application/pdf",
+                },
+                model: "retab-small",
+                key: "invoice_number",
+                instructions: "Group all pages belonging to the same invoice number.",
+                n_consensus: 3,
                 output: [
                     {
                         key: "INV-001",
@@ -48,7 +58,7 @@ const SAMPLE_DOCUMENT = {
 };
 
 describe("Node SDK partitions resource", () => {
-    test("partitions.create posts the simplified partition contract", async () => {
+    test("partitions.create posts the partition resource contract", async () => {
         const mockClient = new MockClient();
         const client = new APIV1(mockClient);
 
@@ -80,6 +90,16 @@ describe("Node SDK partitions resource", () => {
         });
 
         expect(response).toEqual({
+            id: "prtn_123",
+            file: {
+                id: "file_123",
+                filename: "invoice.pdf",
+                mime_type: "application/pdf",
+            },
+            model: "retab-small",
+            key: "invoice_number",
+            instructions: "Group all pages belonging to the same invoice number.",
+            n_consensus: 3,
             output: [
                 {
                     key: "INV-001",
