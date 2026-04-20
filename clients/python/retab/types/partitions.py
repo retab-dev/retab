@@ -26,7 +26,6 @@ class PartitionChunk(BaseModel):
 
 
 class PartitionChunkLikelihood(BaseModel):
-    likelihood: float | None = Field(default=None, description="Aggregate confidence for this partition chunk")
     key: float | None = Field(default=None, description="Confidence that this partition key value is correct")
     pages: list[float] = Field(
         default_factory=list,
@@ -52,4 +51,3 @@ class PartitionResponse(BaseModel):
         description="Consensus metadata for multi-vote partition runs",
     )
     usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
-

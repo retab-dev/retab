@@ -247,7 +247,6 @@ export const ZSplitResult = z.object({
 export type SplitResult = z.infer<typeof ZSplitResult>;
 
 export const ZSplitSubdocumentLikelihood = z.object({
-  likelihood: z.number().nullable().optional(),
   name: z.number().nullable().optional(),
   pages: z.array(z.number()).default([]),
 });
@@ -284,7 +283,6 @@ export const ZPartitionChunk = z.object({
 export type PartitionChunk = z.infer<typeof ZPartitionChunk>;
 
 export const ZPartitionChunkLikelihood = z.object({
-  likelihood: z.number().nullable().optional(),
   key: z.number().nullable().optional(),
   pages: z.array(z.number()).default([]),
 });
