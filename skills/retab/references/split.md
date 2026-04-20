@@ -68,7 +68,7 @@ curl -X POST "https://api.retab.com/v1/splits" \
 
 - `subdocuments`: required; each item needs `name` and `description`
 - `partition_key`: optional per subdocument; use it to break one label into repeated items
-- `context`: add domain or batch context
+- `instructions`: optional free-form instructions to steer the split (domain hints, tone, batch-specific guidance)
 - `n_consensus`: raise it when split boundaries are business-critical
 
 ## Response shape

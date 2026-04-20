@@ -7,16 +7,12 @@ import {
     ZSplit,
     Split,
 } from "../../types.js";
-import type { Subdocument } from "../../generated_types.js";
 
-export type SplitSubdocument =
-    | Subdocument
-    | {
-          name: string;
-          description?: string;
-          partition_key?: string | null;
-          allow_multiple_instances?: boolean;
-      };
+export type SplitSubdocument = {
+    name: string;
+    description?: string;
+    allow_multiple_instances?: boolean;
+};
 
 export type SplitCreateParams = {
     document: MIMEDataInput;
@@ -24,7 +20,7 @@ export type SplitCreateParams = {
     model: string;
     n_consensus?: number;
     bust_cache?: boolean;
-    context?: string;
+    instructions?: string;
 };
 
 export type SplitListParams = {
@@ -59,7 +55,6 @@ export default class APISplits extends CompositionClient {
             subdocuments: params.subdocuments.map((sd) => ({
                 name: sd.name,
                 description: sd.description ?? "",
-                partition_key: sd.partition_key ?? null,
                 allow_multiple_instances: sd.allow_multiple_instances ?? false,
             })),
             model: params.model,
@@ -67,8 +62,8 @@ export default class APISplits extends CompositionClient {
         if (params.n_consensus !== undefined) {
             body["n_consensus"] = params.n_consensus;
         }
-        if (params.context !== undefined) {
-            body["context"] = params.context;
+        if (params.instructions !== undefined) {
+            body["instructions"] = params.instructions;
         }
         if (params.bust_cache) {
             body["bust_cache"] = true;

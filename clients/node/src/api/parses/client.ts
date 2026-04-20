@@ -15,6 +15,7 @@ export type ParseCreateParams = {
     model: string;
     table_parsing_format?: TableParsingFormat;
     image_resolution_dpi?: number;
+    instructions?: string;
     bust_cache?: boolean;
 };
 
@@ -49,6 +50,9 @@ export default class APIParses extends CompositionClient {
         }
         if (params.image_resolution_dpi !== undefined) {
             body["image_resolution_dpi"] = params.image_resolution_dpi;
+        }
+        if (params.instructions !== undefined) {
+            body["instructions"] = params.instructions;
         }
         if (params.bust_cache) {
             body["bust_cache"] = true;

@@ -112,8 +112,7 @@ export const ZExtractionRequest = z.object({
   model: z.string().default('retab-small'),
   image_resolution_dpi: z.number().min(96).max(300).default(192),
   n_consensus: z.number().min(1).max(16).default(1),
-  chunking_keys: z.record(z.string(), z.string()).optional(),
-  context: z.string().optional(),
+  instructions: z.string().optional(),
   metadata: z.record(z.string(), z.string()).default({}),
   bust_cache: z.boolean().default(false),
 });
@@ -188,6 +187,7 @@ export const ZParse = z
       z.literal('json'),
     ]),
     image_resolution_dpi: z.number(),
+    instructions: z.string().nullable().optional(),
     output: ZParseOutput,
     usage: generated.ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
@@ -222,7 +222,7 @@ export const ZClassification = z
     model: z.string(),
     categories: z.array(generated.ZCategory),
     n_consensus: z.number().default(1),
-    context: z.string().nullable().optional(),
+    instructions: z.string().nullable().optional(),
     output: ZClassificationDecision,
     consensus: ZClassificationConsensus.default({ choices: [] }),
     usage: generated.ZRetabUsage.nullable().optional(),
@@ -233,31 +233,23 @@ export const ZClassification = z
 export type Classification = z.infer<typeof ZClassification>;
 
 // Split resource
-export const ZPartition = z.object({
-  key: z.string(),
-  pages: z.array(z.number()),
+export const ZSplitSubdocument = z.object({
+  name: z.string(),
+  description: z.string().default(""),
+  allow_multiple_instances: z.boolean().default(false),
 });
-export type Partition = z.infer<typeof ZPartition>;
+export type SplitSubdocument = z.infer<typeof ZSplitSubdocument>;
 
 export const ZSplitResult = z.object({
   name: z.string(),
   pages: z.array(z.number()),
-  partitions: z.array(ZPartition).default([]),
 });
 export type SplitResult = z.infer<typeof ZSplitResult>;
-
-export const ZPartitionLikelihood = z.object({
-  likelihood: z.number().nullable().optional(),
-  key: z.number().nullable().optional(),
-  pages: z.array(z.number()).default([]),
-});
-export type PartitionLikelihood = z.infer<typeof ZPartitionLikelihood>;
 
 export const ZSplitSubdocumentLikelihood = z.object({
   likelihood: z.number().nullable().optional(),
   name: z.number().nullable().optional(),
   pages: z.array(z.number()).default([]),
-  partitions: z.array(ZPartitionLikelihood).default([]),
 });
 export type SplitSubdocumentLikelihood = z.infer<typeof ZSplitSubdocumentLikelihood>;
 
@@ -272,9 +264,9 @@ export const ZSplit = z
     id: z.string(),
     file: generated.ZFileRef,
     model: z.string(),
-    subdocuments: z.array(generated.ZSubdocument),
+    subdocuments: z.array(ZSplitSubdocument),
     n_consensus: z.number().default(1),
-    context: z.string().nullable().optional(),
+    instructions: z.string().nullable().optional(),
     output: z.array(ZSplitResult),
     consensus: ZSplitConsensus.nullable().optional(),
     usage: generated.ZRetabUsage.nullable().optional(),
@@ -283,6 +275,33 @@ export const ZSplit = z
   })
   .passthrough();
 export type Split = z.infer<typeof ZSplit>;
+
+// Partitions resource
+export const ZPartitionChunk = z.object({
+  key: z.string(),
+  pages: z.array(z.number()).default([]),
+});
+export type PartitionChunk = z.infer<typeof ZPartitionChunk>;
+
+export const ZPartitionChunkLikelihood = z.object({
+  likelihood: z.number().nullable().optional(),
+  key: z.number().nullable().optional(),
+  pages: z.array(z.number()).default([]),
+});
+export type PartitionChunkLikelihood = z.infer<typeof ZPartitionChunkLikelihood>;
+
+export const ZPartitionConsensus = z.object({
+  choices: z.array(z.array(ZPartitionChunk)).default([]),
+  likelihoods: z.array(ZPartitionChunkLikelihood).nullable().optional(),
+});
+export type PartitionConsensus = z.infer<typeof ZPartitionConsensus>;
+
+export const ZPartitionResponse = z.object({
+  output: z.array(ZPartitionChunk).default([]),
+  consensus: ZPartitionConsensus.default({ choices: [] }),
+  usage: generated.ZRetabUsage.nullable().optional(),
+});
+export type PartitionResponse = z.infer<typeof ZPartitionResponse>;
 
 // Edit resource (canonical stored record from /v1/edits). NOTE: the generated
 // `ZEditResponse` already exists and represents the one-shot legacy response
@@ -334,8 +353,7 @@ export const ZExtractionV2 = z
     json_schema: z.record(z.any()),
     n_consensus: z.number().default(1),
     image_resolution_dpi: z.number().default(192),
-    chunking_keys: z.record(z.string()).nullable().optional(),
-    context: z.string().nullable().optional(),
+    instructions: z.string().nullable().optional(),
     output: z.record(z.any()),
     consensus: ZExtractionConsensus.default({ choices: [] }),
     origin: ZProcessingRequestOrigin.nullable().optional(),

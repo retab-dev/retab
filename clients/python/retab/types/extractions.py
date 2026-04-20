@@ -19,14 +19,9 @@ class ExtractionRequest(BaseModel):
         le=300,
         description="Resolution of the image sent to the LLM",
     )
-    chunking_keys: Optional[dict[str, str]] = Field(
+    instructions: Optional[str] = Field(
         default=None,
-        description="Parallel OCR chunking keys for long list fields",
-        examples=[{"properties": "ID", "products": "identity.id"}],
-    )
-    context: Optional[str] = Field(
-        default=None,
-        description="Additional context for the extraction (e.g., iteration context from a loop)",
+        description="Free-form instructions appended to the system prompt to steer the extraction.",
     )
     n_consensus: int = Field(
         default=1,
@@ -75,13 +70,9 @@ class Extraction(BaseModel):
     json_schema: dict[str, Any] = Field(..., description="JSON schema used for the extraction")
     n_consensus: int = Field(default=1, description="Number of consensus votes used")
     image_resolution_dpi: int = Field(default=192, description="DPI used to render document images")
-    chunking_keys: Optional[dict[str, str]] = Field(
+    instructions: Optional[str] = Field(
         default=None,
-        description="Parallel OCR chunking keys for long list fields",
-    )
-    context: Optional[str] = Field(
-        default=None,
-        description="Additional context supplied with the extraction request",
+        description="Free-form instructions supplied with the extraction request.",
     )
 
     output: dict[str, Any] = Field(..., description="The extracted structured data")

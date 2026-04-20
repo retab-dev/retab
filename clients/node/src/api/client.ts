@@ -11,6 +11,7 @@ import APIModels from './models/client';
 import APIParses from './parses/client';
 import APIClassifications from './classifications/client';
 import APISplits from './splits/client';
+import APIPartitions from './partitions/client';
 import APIEdits from './edits/client';
 import {
   MIMEDataInput,
@@ -709,6 +710,7 @@ export default class APIV1 extends CompositionClient {
   parses = new APIParses(this);
   classifications = new APIClassifications(this);
   splits = new APISplits(this);
+  partitions = new APIPartitions(this);
   edits = new APIEdits(this);
   declare evals: {
     extract: APIEvalsExtract;

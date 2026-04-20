@@ -76,7 +76,7 @@ curl -X POST "https://api.retab.com/v1/classifications" \
 
 - `categories`: required; each item needs `name` and `description`
 - `first_n_pages`: limit analysis when early pages are enough
-- `context`: add business context for ambiguous categories
+- `instructions`: optional free-form instructions for ambiguous categories (e.g. "invoices with totals under $100 should be classified as receipts")
 - `n_consensus`: run classification multiple times and majority-vote the final label
 
 ## Response shape

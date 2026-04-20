@@ -18,7 +18,7 @@ export type ClassificationCreateParams = {
     n_consensus?: number;
     bust_cache?: boolean;
     first_n_pages?: number;
-    context?: string;
+    instructions?: string;
 };
 
 export type ClassificationListParams = {
@@ -64,8 +64,8 @@ export default class APIClassifications extends CompositionClient {
         if (params.first_n_pages !== undefined) {
             body["first_n_pages"] = params.first_n_pages;
         }
-        if (params.context !== undefined) {
-            body["context"] = params.context;
+        if (params.instructions !== undefined) {
+            body["instructions"] = params.instructions;
         }
         if (params.bust_cache) {
             body["bust_cache"] = true;

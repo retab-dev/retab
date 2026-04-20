@@ -358,7 +358,7 @@ def test_classifications_resource_crud(sync_client: Retab, created_classificatio
             document=_inline_text_document(),
             model="retab-micro",
             categories=_classification_categories(),
-            context="sdk-delete-check",
+            instructions="sdk-delete-check",
         )
         client.classifications.delete(temp.id)
         _assert_deleted(client.classifications.get, temp.id)
