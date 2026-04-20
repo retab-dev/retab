@@ -19,7 +19,7 @@ from .types.documents.classify import ClassifyResponse
 from .types.documents.split import SplitResponse
 from .types.extractions import Extraction, ExtractionRequest, SourcesResponse
 from .types.classifications import Classification
-from .types.partitions import PartitionResponse
+from .types.partitions import Partition
 from .types.splits import Split
 from .types.mime import MIMEData
 from .types.pagination import PaginatedList
@@ -43,7 +43,7 @@ __all__ = [
     "APITimeoutError",
     # Response types
     "Classification",
-    "PartitionResponse",
+    "Partition",
     "Split",
     "Extraction",
     "ExtractionRequest",

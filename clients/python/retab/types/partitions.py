@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import datetime
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from .documents.usage import RetabUsage
-from .mime import MIMEData
+from .extractions import ProcessingRequestOrigin
+from .mime import FileRef, MIMEData
 
 
 class PartitionRequest(BaseModel):
@@ -44,10 +48,31 @@ class PartitionConsensus(BaseModel):
     )
 
 
-class PartitionResponse(BaseModel):
-    output: list[PartitionChunk] = Field(default_factory=list, description="The partitioned document chunks")
+class Partition(BaseModel):
+    id: str = Field(..., description="Unique identifier of the partition")
+    file: FileRef = Field(..., description="Information about the partitioned file")
+    model: str = Field(..., description="Model used for the partition operation")
+    key: str = Field(..., description="Partition key used for the run")
+    instructions: str = Field(
+        default="",
+        description="Instructions supplied with the partition request",
+    )
+    n_consensus: int = Field(default=1, description="Number of consensus votes used")
+    output: list[PartitionChunk] = Field(
+        default_factory=list,
+        description="The list of partition chunks with their assigned pages",
+    )
     consensus: PartitionConsensus = Field(
         default_factory=PartitionConsensus,
         description="Consensus metadata for multi-vote partition runs",
     )
-    usage: RetabUsage | None = Field(default=None, description="Usage information for the partition operation")
+    origin: Optional[ProcessingRequestOrigin] = Field(
+        default=None,
+        description="Origin of the partition request",
+    )
+    usage: Optional[RetabUsage] = Field(
+        default=None,
+        description="Usage information for the partition operation",
+    )
+    created_at: Optional[datetime.datetime] = None
+    updated_at: Optional[datetime.datetime] = None

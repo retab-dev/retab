@@ -9,7 +9,7 @@ from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.mime import MIMEData
-from ...types.partitions import PartitionRequest, PartitionResponse
+from ...types.partitions import Partition, PartitionRequest
 from ...types.standards import PreparedRequest
 from ...utils.mime import prepare_mime_document
 
@@ -51,7 +51,7 @@ class Partitions(SyncAPIResource, PartitionsMixin):
         model: str,
         n_consensus: int = 1,
         bust_cache: bool = False,
-    ) -> PartitionResponse:
+    ) -> Partition:
         request = self._prepare_create(
             document=document,
             key=key,
@@ -60,7 +60,7 @@ class Partitions(SyncAPIResource, PartitionsMixin):
             n_consensus=n_consensus,
             bust_cache=bust_cache,
         )
-        return PartitionResponse.model_validate(self._client._prepared_request(request))
+        return Partition.model_validate(self._client._prepared_request(request))
 
 
 class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
@@ -72,7 +72,7 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
         model: str,
         n_consensus: int = 1,
         bust_cache: bool = False,
-    ) -> PartitionResponse:
+    ) -> Partition:
         request = self._prepare_create(
             document=document,
             key=key,
@@ -81,4 +81,4 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
             n_consensus=n_consensus,
             bust_cache=bust_cache,
         )
-        return PartitionResponse.model_validate(await self._client._prepared_request(request))
+        return Partition.model_validate(await self._client._prepared_request(request))

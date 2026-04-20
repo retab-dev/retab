@@ -2,7 +2,7 @@ import pytest
 
 from retab import Retab
 from retab.types.mime import MIMEData
-from retab.types.partitions import PartitionResponse
+from retab.types.partitions import Partition
 from retab.types.splits import Split
 
 
@@ -75,6 +75,16 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
     def fake_prepared_request(request: object) -> dict[str, object]:
         captured["request"] = request
         return {
+            "id": "prtn_123",
+            "file": {
+                "id": "file_123",
+                "filename": "invoice.txt",
+                "mime_type": "text/plain",
+            },
+            "model": "retab-small",
+            "key": "invoice_number",
+            "instructions": "Split the document into one chunk per invoice number.",
+            "n_consensus": 3,
             "output": [
                 {
                     "key": "INV-001",
@@ -100,7 +110,8 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
             n_consensus=3,
         )
 
-    assert isinstance(result, PartitionResponse)
+    assert isinstance(result, Partition)
+    assert result.id == "prtn_123"
     assert result.output[0].key == "INV-001"
     assert result.consensus.choices == []
     assert result.usage is not None
