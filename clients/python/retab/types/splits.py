@@ -6,6 +6,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from .documents.usage import RetabUsage
+from .extractions import ProcessingRequestOrigin
 from .mime import FileRef, MIMEData
 
 
@@ -79,6 +80,10 @@ class Split(BaseModel):
     consensus: SplitConsensus | None = Field(
         default=None,
         description="Consensus metadata for multi-vote split runs",
+    )
+    origin: Optional[ProcessingRequestOrigin] = Field(
+        default=None,
+        description="Origin of the split request",
     )
     usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the split operation")
     created_at: Optional[datetime.datetime] = None

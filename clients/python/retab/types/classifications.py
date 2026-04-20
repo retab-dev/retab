@@ -6,6 +6,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from .documents.usage import RetabUsage
+from .extractions import ProcessingRequestOrigin
 from .mime import FileRef, MIMEData
 
 
@@ -62,6 +63,10 @@ class Classification(BaseModel):
     consensus: ClassificationConsensus = Field(
         default_factory=ClassificationConsensus,
         description="Consensus metadata for multi-vote classification runs",
+    )
+    origin: Optional[ProcessingRequestOrigin] = Field(
+        default=None,
+        description="Origin of the classification request",
     )
     usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the classification")
     created_at: Optional[datetime.datetime] = None

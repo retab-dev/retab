@@ -275,6 +275,12 @@ export const ZSplit = z
   .passthrough();
 export type Split = z.infer<typeof ZSplit>;
 
+export const ZProcessingRequestOrigin = z.object({
+  type: z.string(),
+  id: z.string().nullable().optional(),
+});
+export type ProcessingRequestOrigin = z.infer<typeof ZProcessingRequestOrigin>;
+
 // Partitions resource
 export const ZPartitionChunk = z.object({
   key: z.string(),
@@ -294,12 +300,23 @@ export const ZPartitionConsensus = z.object({
 });
 export type PartitionConsensus = z.infer<typeof ZPartitionConsensus>;
 
-export const ZPartitionResponse = z.object({
-  output: z.array(ZPartitionChunk).default([]),
-  consensus: ZPartitionConsensus.default({ choices: [] }),
-  usage: generated.ZRetabUsage.nullable().optional(),
-});
-export type PartitionResponse = z.infer<typeof ZPartitionResponse>;
+export const ZPartition = z
+  .object({
+    id: z.string(),
+    file: generated.ZFileRef,
+    model: z.string(),
+    key: z.string(),
+    instructions: z.string().default(""),
+    n_consensus: z.number().default(1),
+    output: z.array(ZPartitionChunk).default([]),
+    consensus: ZPartitionConsensus.default({ choices: [] }),
+    origin: ZProcessingRequestOrigin.nullable().optional(),
+    usage: generated.ZRetabUsage.nullable().optional(),
+    created_at: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+  })
+  .passthrough();
+export type Partition = z.infer<typeof ZPartition>;
 
 // Edit resource (canonical stored record from /v1/edits). NOTE: the generated
 // `ZEditResponse` already exists and represents the one-shot legacy response
@@ -336,12 +353,6 @@ export const ZExtractionConsensus = z.object({
   likelihoods: z.record(z.any()).nullable().optional(),
 });
 export type ExtractionConsensus = z.infer<typeof ZExtractionConsensus>;
-
-export const ZProcessingRequestOrigin = z.object({
-  type: z.string(),
-  id: z.string().nullable().optional(),
-});
-export type ProcessingRequestOrigin = z.infer<typeof ZProcessingRequestOrigin>;
 
 export const ZExtractionV2 = z
   .object({

@@ -2,8 +2,8 @@ import { CompositionClient, RequestOptions } from "../../client.js";
 import {
     ZMIMEData,
     MIMEDataInput,
-    ZPartitionResponse,
-    PartitionResponse,
+    ZPartition,
+    Partition,
 } from "../../types.js";
 
 export type PartitionCreateParams = {
@@ -26,7 +26,7 @@ export default class APIPartitions extends CompositionClient {
     async create(
         params: PartitionCreateParams,
         options?: RequestOptions,
-    ): Promise<PartitionResponse> {
+    ): Promise<Partition> {
         const document = await ZMIMEData.parseAsync(params.document);
         const body: Record<string, unknown> = {
             document,
@@ -38,7 +38,7 @@ export default class APIPartitions extends CompositionClient {
         if (params.bust_cache) {
             body["bust_cache"] = true;
         }
-        return this._fetchJson(ZPartitionResponse, {
+        return this._fetchJson(ZPartition, {
             url: "/partitions",
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
