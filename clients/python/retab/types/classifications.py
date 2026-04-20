@@ -22,9 +22,9 @@ class ClassificationRequest(BaseModel):
         default=None,
         description="Only use the first N pages of the document for classification. Useful for large documents where classification can be determined from early pages.",
     )
-    context: str | None = Field(
+    instructions: str | None = Field(
         default=None,
-        description="Additional context for classification (e.g., iteration context from a loop)",
+        description="Free-form instructions appended to the system prompt to steer the classification.",
     )
     n_consensus: int = Field(
         default=1,
@@ -57,7 +57,7 @@ class Classification(BaseModel):
     model: str = Field(..., description="Model used for classification")
     categories: list[Category] = Field(..., description="Categories the document was classified against")
     n_consensus: int = Field(default=1, description="Number of consensus votes used")
-    context: str | None = Field(default=None, description="Additional context supplied with the classification request")
+    instructions: str | None = Field(default=None, description="Free-form instructions supplied with the classification request.")
     output: ClassificationDecision = Field(..., description="The classification result with reasoning")
     consensus: ClassificationConsensus = Field(
         default_factory=ClassificationConsensus,

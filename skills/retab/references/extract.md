@@ -83,7 +83,8 @@ curl -X POST "https://api.retab.com/v1/extractions" \
 - `json_schema`: required
 - `n_consensus`: defaults to `1`; raise it when accuracy matters more than speed
 - `image_resolution_dpi`: defaults to `192`
-- `additional_messages`: add domain context without changing the schema
+- `instructions`: optional free-form instructions to steer the extraction (domain hints, tone, iteration context)
+- `additional_messages`: append raw chat messages to the LLM request when you need full message-level control
 
 ## Consensus
 

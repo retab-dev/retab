@@ -26,6 +26,10 @@ class ParseRequest(BaseModel):
         le=300,
         description="DPI used when rasterizing pages for the parser",
     )
+    instructions: str | None = Field(
+        default=None,
+        description="Free-form instructions appended to the system prompt to steer the parse.",
+    )
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
@@ -43,6 +47,10 @@ class Parse(BaseModel):
         description="Format used to render tables extracted from the document",
     )
     image_resolution_dpi: int = Field(..., description="DPI used when rasterizing pages for the parser")
+    instructions: str | None = Field(
+        default=None,
+        description="Free-form instructions supplied with the parse request.",
+    )
     output: ParseOutput = Field(..., description="The parsed document content")
     usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the parse operation")
     created_at: Optional[datetime.datetime] = None

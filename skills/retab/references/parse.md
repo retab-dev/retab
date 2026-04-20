@@ -70,8 +70,9 @@ curl -X POST "https://api.retab.com/v1/parses" \
 
 - `table_parsing_format`: defaults to `html`
 - `image_resolution_dpi`: defaults to `192`
+- `instructions`: optional free-form instructions (domain hints, layout guidance)
 - Parse is non-streaming in the SDK
-- The documented SDK surface is `document`, `model`, `table_parsing_format`, `image_resolution_dpi`
+- The documented SDK surface is `document`, `model`, `table_parsing_format`, `image_resolution_dpi`, `instructions`
 
 ## Response shape
 

@@ -17,6 +17,7 @@ export type ExtractionCreateParams = {
   document: MIMEDataInput;
   image_resolution_dpi?: number;
   n_consensus?: number;
+  instructions?: string;
   metadata?: Record<string, string>;
   additional_messages?: Record<string, unknown>[];
   bust_cache?: boolean;
@@ -47,6 +48,9 @@ export default class APIExtractions extends CompositionClient {
     }
     if (params.n_consensus !== undefined) {
       body['n_consensus'] = params.n_consensus;
+    }
+    if (params.instructions !== undefined) {
+      body['instructions'] = params.instructions;
     }
     if (params.metadata !== undefined) {
       body['metadata'] = params.metadata;

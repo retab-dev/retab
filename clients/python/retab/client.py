@@ -22,7 +22,7 @@ from .exceptions import (
     RateLimitError,
     ValidationError,
 )
-from .resources import documents, files, models, schemas, extractions, classifications, parses, splits, edits, workflows, jobs
+from .resources import documents, files, models, schemas, extractions, classifications, parses, splits, partitions, edits, workflows, jobs
 from .types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
 
 logger = logging.getLogger("retab")
@@ -228,6 +228,7 @@ class Retab(BaseRetab):
         self.classifications = classifications.Classifications(client=self)
         self.parses = parses.Parses(client=self)
         self.splits = splits.Splits(client=self)
+        self.partitions = partitions.Partitions(client=self)
         self.documents = documents.Documents(client=self)
         self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
@@ -542,6 +543,7 @@ class AsyncRetab(BaseRetab):
         self.classifications = classifications.AsyncClassifications(client=self)
         self.parses = parses.AsyncParses(client=self)
         self.splits = splits.AsyncSplits(client=self)
+        self.partitions = partitions.AsyncPartitions(client=self)
         self.documents = documents.AsyncDocuments(client=self)
         self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)

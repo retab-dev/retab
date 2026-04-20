@@ -2,6 +2,7 @@ import pytest
 
 from retab import Retab
 from retab.types.mime import MIMEData
+from retab.types.partitions import PartitionResponse
 from retab.types.splits import Split
 
 
@@ -43,7 +44,7 @@ def test_splits_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
                 {"name": "invoice", "description": "Invoice documents"},
             ],
             "output": [
-                {"name": "invoice", "pages": [1], "partitions": []},
+                {"name": "invoice", "pages": [1]},
             ],
             "consensus": {
                 "choices": [],
@@ -66,6 +67,55 @@ def test_splits_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
     assert isinstance(result, Split)
     assert result.id == "split_123"
     assert getattr(captured["request"], "url") == "/splits"
+
+
+def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_prepared_request(request: object) -> dict[str, object]:
+        captured["request"] = request
+        return {
+            "output": [
+                {
+                    "key": "INV-001",
+                    "pages": [1, 2],
+                }
+            ],
+            "consensus": {
+                "choices": [],
+                "likelihoods": None,
+            },
+            "usage": {
+                "credits": 1.0,
+            },
+        }
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+        result = client.partitions.create(
+            document=_sample_document(),
+            key="invoice_number",
+            instructions="Split the document into one chunk per invoice number.",
+            model="retab-small",
+            n_consensus=3,
+        )
+
+    assert isinstance(result, PartitionResponse)
+    assert result.output[0].key == "INV-001"
+    assert result.consensus.choices == []
+    assert result.usage is not None
+    assert result.usage.credits == 1.0
+    assert getattr(captured["request"], "url") == "/partitions"
+    assert getattr(captured["request"], "data") == {
+        "document": {
+            "filename": "invoice.txt",
+            "url": "data:text/plain;base64,aW52b2ljZQ==",
+        },
+        "key": "invoice_number",
+        "instructions": "Split the document into one chunk per invoice number.",
+        "model": "retab-small",
+        "n_consensus": 3,
+    }
 
 
 @pytest.mark.parametrize(
