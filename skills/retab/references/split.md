@@ -5,8 +5,11 @@ Endpoint: `POST /v1/splits`
 ## Use it when
 
 - One uploaded file contains multiple subdocuments
-- You need the assigned pages for each document type
-- You need partitions inside one type, such as one invoice number per section
+- You need page assignments for each subdocument type
+- The same subdocument can appear multiple times in one file
+- You want to route each detected subdocument into a different downstream step
+
+Do not use `split` for key-based grouping inside one homogeneous document type. Use `POST /v1/partitions` for that.
 
 ## Minimal Python
 
@@ -66,21 +69,21 @@ curl -X POST "https://api.retab.com/v1/splits" \
 
 ## Useful fields
 
-- `subdocuments`: required; each item needs `name` and `description`
-- `partition_key`: optional per subdocument; use it to break one label into repeated items
-- `instructions`: optional free-form instructions to steer the split (domain hints, tone, batch-specific guidance)
+- `subdocuments`: required; each item needs `name`, optional `description`, and optional `allow_multiple_instances`
+- `instructions`: optional free-form instructions to steer the split
 - `n_consensus`: raise it when split boundaries are business-critical
+- `bust_cache`: force a fresh run
 
 ## Response shape
 
 - `output[].name`
 - `output[].pages`
-- `output[].partitions[]` when `partition_key` is used
-- `consensus.likelihoods[]` when `n_consensus > 1`
+- `consensus.likelihoods[]` with `name` and `pages` when `n_consensus > 1`
 - `consensus.choices[]` as raw voter outputs when `n_consensus > 1`
 
 ## Guidance
 
 - Write distinct subdocument descriptions. Overlapping labels make routing worse.
-- Add `partition_key` when one subdocument type repeats inside the same file.
+- Use `allow_multiple_instances` when one subdocument type can repeat.
 - Use `split` before `extract` when a bundle must be separated first.
+- Use `partition` after `split` if a specific split output then needs key-based grouping.

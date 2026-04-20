@@ -44,7 +44,6 @@ class SplitResult(BaseModel):
     pages: list[int] = Field(..., description="The pages of the subdocument (1-indexed)")
 
 class SplitSubdocumentLikelihood(BaseModel):
-    likelihood: float | None = Field(default=None, description="Aggregate confidence for this split node")
     name: float | None = Field(default=None, description="Confidence that this split label is correct")
     pages: list[float] = Field(
         default_factory=list,
