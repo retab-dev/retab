@@ -46,4 +46,22 @@ export default class APIPartitions extends CompositionClient {
             headers: options?.headers,
         });
     }
+
+    /**
+     * Retrieve a persisted partition resource by id.
+     *
+     * Typically used to fetch the partition referenced by a workflow step's
+     * ``step.artifact`` (``operation === "partition"``).
+     */
+    async get(
+        partitionId: string,
+        options?: RequestOptions,
+    ): Promise<Partition> {
+        return this._fetchJson(ZPartition, {
+            url: `/partitions/${partitionId}`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
 }

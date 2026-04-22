@@ -125,28 +125,32 @@ export const ZLegacyExtractionConsensus = z.object({
 export type LegacyExtractionConsensus = z.infer<typeof ZLegacyExtractionConsensus>;
 
 export const ZLegacyExtractionRecord = generated.ZExtraction.transform((raw) => {
-  const inferenceSettings = raw.inference_settings ?? {
-    model: raw.original_model ?? 'retab-small',
+  // Legacy fields (inference_settings, original_model, predictions, consensus_details,
+  // likelihoods) may be present on older Extraction payloads but are no longer typed
+  // on the current ZExtraction schema. Access them through an untyped view.
+  const legacyRaw = raw as any;
+  const inferenceSettings = legacyRaw.inference_settings ?? {
+    model: legacyRaw.original_model ?? 'retab-small',
     image_resolution_dpi: 192,
     n_consensus: 1,
     chunking_keys: undefined,
   };
   return {
     ...raw,
-    model: (raw as any).model ?? inferenceSettings.model,
+    model: legacyRaw.model ?? inferenceSettings.model,
     image_resolution_dpi:
-      (raw as any).image_resolution_dpi ?? inferenceSettings.image_resolution_dpi,
-    n_consensus: (raw as any).n_consensus ?? inferenceSettings.n_consensus,
-    chunking_keys: (raw as any).chunking_keys ?? inferenceSettings.chunking_keys,
-    output: (raw as any).output ?? raw.predictions ?? {},
+      legacyRaw.image_resolution_dpi ?? inferenceSettings.image_resolution_dpi,
+    n_consensus: legacyRaw.n_consensus ?? inferenceSettings.n_consensus,
+    chunking_keys: legacyRaw.chunking_keys ?? inferenceSettings.chunking_keys,
+    output: legacyRaw.output ?? legacyRaw.predictions ?? {},
     consensus: {
-      choices: ((raw as any).consensus?.choices ?? raw.consensus_details ?? []).map(
+      choices: (legacyRaw.consensus?.choices ?? legacyRaw.consensus_details ?? []).map(
         (choice: any) => {
           const data = choice?.data;
           return data && typeof data === 'object' && !Array.isArray(data) ? data : choice;
         }
       ),
-      likelihoods: (raw as any).consensus?.likelihoods ?? raw.likelihoods ?? null,
+      likelihoods: legacyRaw.consensus?.likelihoods ?? legacyRaw.likelihoods ?? null,
     },
   };
 });
@@ -381,12 +385,6 @@ export const ZGenerateSchemaRequest = z.object({
 });
 export type GenerateSchemaRequest = z.input<typeof ZGenerateSchemaRequest>;
 
-export const ZCreateProjectRequest = z.object({
-  ...generated.ZCreateProjectRequest.schema.shape,
-  json_schema: ZJSONSchema,
-});
-export type CreateProjectRequest = z.input<typeof ZCreateProjectRequest>;
-
 export const ZSplitRequest = z.object({
   ...generated.ZSplitRequest.schema.shape,
   document: ZMIMEData,
@@ -430,7 +428,7 @@ function normalizeClassifyDecision(
 
 function normalizeClassifyChoices(
   value: unknown
-): z.input<typeof generated.ZClassifyConsensusChoice>[] {
+): z.input<typeof generated.ZClassifyChoice>[] {
   if (!Array.isArray(value)) {
     return [];
   }
