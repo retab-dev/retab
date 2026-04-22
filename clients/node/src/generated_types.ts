@@ -879,11 +879,18 @@ export const ZHandlePayload = z.lazy(() => (z.object({
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
+export const ZStepArtifactRef = z.lazy(() => (z.object({
+    operation: z.union([z.literal("extraction"), z.literal("split"), z.literal("classification"), z.literal("parse"), z.literal("edit"), z.literal("partition")]),
+    id: z.string(),
+})));
+export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
+
 export const ZStepOutputResponse = z.lazy(() => (z.object({
     block_id: z.string(),
     block_type: z.string(),
     block_label: z.string(),
     status: z.string(),
+    artifact: ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
 })));
@@ -903,6 +910,7 @@ export const ZStepStatus = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
+    artifact: ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
@@ -1032,6 +1040,7 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
+    artifact: ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
@@ -1168,6 +1177,7 @@ export const ZForEachSentinelEndStepOutput = z.lazy(() => (z.object({
     max_iterations: z.number(),
     should_continue: z.boolean(),
     is_reduce_phase: z.boolean(),
+    partition_id: z.string().nullable().optional(),
     all_item_keys: z.array(z.string()).nullable().optional(),
     output: z.record(z.string(), z.any()).nullable().optional(),
 })));
@@ -1183,6 +1193,7 @@ export const ZForEachSentinelStartStepOutput = z.lazy(() => (z.object({
     is_first_iteration: z.boolean(),
     map_method: z.string().nullable().optional(),
     current_item_key: z.string().nullable().optional(),
+    partition_id: z.string().nullable().optional(),
     all_item_keys: z.array(z.string()).nullable().optional(),
     all_iteration_context_texts: z.array(z.string()).nullable().optional(),
 })));

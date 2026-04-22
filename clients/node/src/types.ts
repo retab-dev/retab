@@ -514,6 +514,7 @@ export const ZWorkflowRunStep = z
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
+    artifact: generated.ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.record(z.string(), z.any()).nullable().optional(),
     handle_inputs: z.record(z.string(), z.any()).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),

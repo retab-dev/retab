@@ -4,7 +4,11 @@ import pytest
 from pydantic import ValidationError
 
 from retab.resources.workflows.runs.steps.client import AsyncWorkflowSteps, WorkflowSteps
-from retab.types.workflows.model import ExtractStepOutput, parse_workflow_step_output
+from retab.types.workflows.model import (
+    ExtractStepOutput,
+    ForEachSentinelStartStepOutput,
+    parse_workflow_step_output,
+)
 
 
 def test_workflow_steps_list_uses_full_steps_route() -> None:
@@ -61,6 +65,10 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
         "block_type": "extract",
         "block_label": "Extract",
         "status": "completed",
+        "artifact": {
+            "operation": "extraction",
+            "id": "ext_123",
+        },
         "handle_outputs": {
             "output-json-0": {
                 "type": "json",
@@ -76,6 +84,9 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/runs/run_123/steps/extract-1"
     assert step.handle_outputs is not None
+    assert step.artifact is not None
+    assert step.artifact.operation == "extraction"
+    assert step.artifact.id == "ext_123"
     # handle_outputs values are now HandlePayload objects
     payload = step.handle_outputs["output-json-0"]
     assert payload.type == "json"
@@ -83,6 +94,28 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
     # Convenience accessor
     assert step.extracted_data == {"invoice_number": "INV-001"}
     assert step.get_json_output("output-json-0") == {"invoice_number": "INV-001"}
+
+
+def test_workflow_steps_get_accepts_partition_artifact() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "block_id": "for_each-1",
+        "block_type": "for_each",
+        "block_label": "For Each",
+        "status": "completed",
+        "artifact": {
+            "operation": "partition",
+            "id": "prtn_123",
+        },
+        "handle_outputs": None,
+        "handle_inputs": None,
+    }
+
+    step = WorkflowSteps(client=client).get("run_123", "for_each-1")
+
+    assert step.artifact is not None
+    assert step.artifact.operation == "partition"
+    assert step.artifact.id == "prtn_123"
 
 
 @pytest.mark.asyncio
@@ -123,6 +156,7 @@ def test_workflow_steps_list_with_block_ids() -> None:
             "block_type": "extract",
             "block_label": "Extract",
             "status": "completed",
+            "artifact": {"operation": "extraction", "id": "ext_123"},
         },
         {
             "run_id": "run_123",
@@ -142,6 +176,8 @@ def test_workflow_steps_list_with_block_ids() -> None:
     assert request.url == "/workflows/runs/run_123/steps"
     assert len(result) == 1
     assert result[0].block_id == "extract-1"
+    assert result[0].artifact is not None
+    assert result[0].artifact.operation == "extraction"
 
 
 def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
@@ -153,6 +189,10 @@ def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
                 "block_type": "extract",
                 "block_label": "Extract",
                 "status": "completed",
+                "artifact": {
+                    "operation": "extraction",
+                    "id": "ext_789",
+                },
                 "handle_outputs": {
                     "output-json-0": {
                         "type": "json",
@@ -170,6 +210,8 @@ def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/runs/run_123/steps/batch"
     assert "extract-1" in result.outputs
+    assert result.outputs["extract-1"].artifact is not None
+    assert result.outputs["extract-1"].artifact.id == "ext_789"
     assert result.outputs["extract-1"].extracted_data == {"field": "value"}
 
 
@@ -245,3 +287,23 @@ def test_parse_workflow_step_output_extract_rejects_legacy_shape() -> None:
 
     parsed = parse_workflow_step_output("extract", legacy_payload)
     assert parsed == legacy_payload
+
+
+def test_parse_workflow_step_output_for_each_partition_payload() -> None:
+    parsed = parse_workflow_step_output(
+        "for_each_sentinel_start",
+        {
+            "message": "Splitting document",
+            "mr_id": "for_each-1",
+            "current_index": 0,
+            "total_items": 1,
+            "max_iterations": 1,
+            "is_first_iteration": True,
+            "map_method": "split_by_key",
+            "partition_id": "prtn_123",
+            "all_item_keys": ["invoice_1"],
+        },
+    )
+
+    assert isinstance(parsed, ForEachSentinelStartStepOutput)
+    assert parsed.partition_id == "prtn_123"

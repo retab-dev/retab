@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import { AbstractClient } from '../src/client';
 import APIWorkflowRunSteps from '../src/api/workflows/runs/steps/client';
-import { ZExtractStepOutput } from '../src/types';
+import { ZExtractStepOutput, ZForEachSentinelStartStepOutput } from '../src/types';
 
 class MockClient extends AbstractClient {
   public lastFetchParams: Record<string, unknown> | null = null;
@@ -25,6 +25,10 @@ class MockClient extends AbstractClient {
           block_type: 'extract',
           block_label: 'Extract',
           status: 'completed',
+          artifact: {
+            operation: 'extraction',
+            id: 'ext_123',
+          },
         },
       ]),
       {
@@ -54,6 +58,10 @@ describe('workflow run steps client', () => {
             block_type: 'extract',
             block_label: 'Extract',
             status: 'completed',
+            artifact: {
+              operation: 'extraction',
+              id: 'ext_123',
+            },
             handle_outputs: {
               'output-json-0': {
                 type: 'json',
@@ -82,6 +90,10 @@ describe('workflow run steps client', () => {
       headers: undefined,
     });
     expect(step.block_id).toBe('extract-1');
+    expect(step.artifact).toEqual({
+      operation: 'extraction',
+      id: 'ext_123',
+    });
     expect('output' in step).toBe(false);
     expect(step.handle_outputs?.['output-json-0']).toBeDefined();
   });
@@ -101,6 +113,10 @@ describe('workflow run steps client', () => {
     expect(steps).toHaveLength(1);
     expect(steps[0]?.block_id).toBe('extract-1');
     expect(steps[0]?.status).toBe('completed');
+    expect(steps[0]?.artifact).toEqual({
+      operation: 'extraction',
+      id: 'ext_123',
+    });
     expect(steps[0] && 'output' in steps[0]).toBe(false);
     expect(steps[0] && 'input_document' in steps[0]).toBe(false);
     expect(steps[0] && 'output_document' in steps[0]).toBe(false);
@@ -127,6 +143,10 @@ describe('workflow run steps client', () => {
                 block_type: 'extract',
                 block_label: 'Extract',
                 status: 'completed',
+                artifact: {
+                  operation: 'extraction',
+                  id: 'ext_456',
+                },
                 handle_outputs: {
                   'output-json-0': { type: 'json', data: { field: 'value' } },
                 },
@@ -150,6 +170,43 @@ describe('workflow run steps client', () => {
     expect(mockClient.lastFetchParams?.url).toBe('/workflows/runs/run_123/steps/batch');
     expect(mockClient.lastFetchParams?.method).toBe('POST');
     expect(batch.outputs['extract-1']?.block_id).toBe('extract-1');
+    expect(batch.outputs['extract-1']?.artifact).toEqual({
+      operation: 'extraction',
+      id: 'ext_456',
+    });
+  });
+
+  test('get() accepts partition artifacts on for_each steps', async () => {
+    class GetPartitionMockClient extends AbstractClient {
+      protected async _fetch(): Promise<Response> {
+        return new Response(
+          JSON.stringify({
+            block_id: 'for_each-1',
+            block_type: 'for_each',
+            block_label: 'For Each',
+            status: 'completed',
+            artifact: {
+              operation: 'partition',
+              id: 'prtn_123',
+            },
+            handle_outputs: null,
+            handle_inputs: null,
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    const stepsClient = new APIWorkflowRunSteps(new GetPartitionMockClient());
+    const step = await stepsClient.get('run_123', 'for_each-1');
+
+    expect(step.artifact).toEqual({
+      operation: 'partition',
+      id: 'prtn_123',
+    });
   });
 
   test('extract step output accepts canonical shape', () => {
@@ -182,5 +239,21 @@ describe('workflow run steps client', () => {
       choices: [{ invoice_number: 'INV-002' }],
       likelihoods: { invoice_number: 0.91 },
     });
+  });
+
+  test('for_each sentinel start output accepts partition payload', () => {
+    const parsed = ZForEachSentinelStartStepOutput.parse({
+      message: 'Splitting document',
+      mr_id: 'for_each-1',
+      current_index: 0,
+      total_items: 1,
+      max_iterations: 1,
+      is_first_iteration: true,
+      map_method: 'split_by_key',
+      partition_id: 'prtn_123',
+      all_item_keys: ['invoice_1'],
+    });
+
+    expect(parsed.partition_id).toBe('prtn_123');
   });
 });
