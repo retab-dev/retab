@@ -38,6 +38,24 @@ StepExecutionStatus = Literal[
     "waiting_for_human",
     "cancelled",
 ]
+WorkflowArtifactOperation = Literal[
+    "extraction",
+    "split",
+    "classification",
+    "parse",
+    "edit",
+    "partition",
+]
+
+
+class StepArtifactRef(BaseModel):
+    """Canonical persisted resource produced by a workflow step."""
+
+    operation: WorkflowArtifactOperation = Field(
+        ...,
+        description="Persisted resource operation to use for lookup",
+    )
+    id: str = Field(..., description="Persisted resource identifier")
 
 
 class StepStatus(BaseModel):
@@ -50,6 +68,10 @@ class StepStatus(BaseModel):
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
     duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
     error: Optional[str] = Field(default=None, description="Error message if failed")
+    artifact: Optional[StepArtifactRef] = Field(
+        default=None,
+        description="Canonical persisted resource produced by this step, if any",
+    )
     handle_outputs: Optional[Dict[str, HandlePayload]] = Field(
         default=None,
         description="Output payloads keyed by handle ID (e.g., 'output-file-0', 'output-json-0')"
@@ -358,6 +380,7 @@ class ForEachSentinelStartStepOutput(BaseModel):
     is_first_iteration: bool = Field(..., description="Whether this is the first iteration")
     map_method: Optional[str] = Field(default=None, description="Map method used for splitting")
     current_item_key: Optional[str] = Field(default=None, description="Partition key for the current item")
+    partition_id: Optional[str] = Field(default=None, description="Stored partition resource ID for split_by_key")
     all_item_keys: Optional[List[str]] = Field(default=None, description="All item keys")
     all_iteration_context_texts: Optional[List[str]] = Field(default=None, description="All iteration context texts")
 
@@ -371,6 +394,7 @@ class ForEachSentinelEndStepOutput(BaseModel):
     max_iterations: int = Field(..., description="Maximum allowed iterations")
     should_continue: bool = Field(..., description="Whether more items remain")
     is_reduce_phase: bool = Field(..., description="Whether this is the reduce phase")
+    partition_id: Optional[str] = Field(default=None, description="Stored partition resource ID for split_by_key")
     all_item_keys: Optional[List[str]] = Field(default=None, description="All item keys")
     output: Optional[Dict[str, Any]] = Field(default=None, description="Reduced output payload")
 
@@ -469,6 +493,10 @@ class StepOutputResponse(BaseModel):
     block_type: str = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
+    artifact: Optional[StepArtifactRef] = Field(
+        default=None,
+        description="Canonical persisted resource produced by this step, if any",
+    )
     handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
     handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID (what this block received)")
 
@@ -520,6 +548,10 @@ class WorkflowRunStep(BaseModel):
     block_type: str = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
+    artifact: Optional[StepArtifactRef] = Field(
+        default=None,
+        description="Canonical persisted resource produced by this step, if any",
+    )
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
     duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")

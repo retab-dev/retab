@@ -134,6 +134,10 @@ def test_workflow_run_accepts_newer_step_block_types() -> None:
                     "block_type": "classifier",
                     "block_label": "Classifier",
                     "status": "completed",
+                    "artifact": {
+                        "operation": "classification",
+                        "id": "cls_123",
+                    },
                 }
             ],
             "created_at": "2026-03-13T10:00:00Z",
@@ -142,6 +146,39 @@ def test_workflow_run_accepts_newer_step_block_types() -> None:
     )
 
     assert run.steps[0].block_type == "classifier"
+    assert run.steps[0].artifact is not None
+    assert run.steps[0].artifact.operation == "classification"
+
+
+def test_workflow_run_accepts_partition_step_artifact() -> None:
+    run = WorkflowRun.model_validate(
+        {
+            "id": "run_124",
+            "workflow_id": "workflow_123",
+            "workflow_name": "Partition Workflow",
+            "organization_id": "org_123",
+            "status": "running",
+            "started_at": "2026-03-13T10:00:00Z",
+            "steps": [
+                {
+                    "block_id": "for_each-1",
+                    "block_type": "for_each",
+                    "block_label": "For Each",
+                    "status": "completed",
+                    "artifact": {
+                        "operation": "partition",
+                        "id": "prtn_123",
+                    },
+                }
+            ],
+            "created_at": "2026-03-13T10:00:00Z",
+            "updated_at": "2026-03-13T10:00:00Z",
+        }
+    )
+
+    assert run.steps[0].artifact is not None
+    assert run.steps[0].artifact.operation == "partition"
+    assert run.steps[0].artifact.id == "prtn_123"
 
 
 def test_workflow_run_accepts_skipped_step_statuses() -> None:
