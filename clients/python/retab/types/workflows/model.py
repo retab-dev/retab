@@ -1,12 +1,9 @@
 import datetime
 from typing import Any, Dict, List, Literal, Optional
-from typing import TypeAlias
 
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
-from retab.types.extractions import ExtractionConsensus
 from retab.types.mime import FileRef
-from retab.types.splits import SplitConsensus, SplitResult
 
 
 class HandlePayload(BaseModel):
@@ -142,6 +139,11 @@ class WorkflowRun(BaseModel):
         if self.status in {"error", "cancelled"}:
             raise WorkflowRunError(self)
 
+    @property
+    def is_terminal(self) -> bool:
+        """Whether the run has reached a terminal state (``completed``, ``error``, ``cancelled``)."""
+        return self.status in TERMINAL_WORKFLOW_RUN_STATUSES
+
 
 
 class Workflow(BaseModel):
@@ -192,307 +194,13 @@ WorkflowRunTriggerType = Literal["manual", "api", "schedule", "webhook", "email"
 TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancelled")
 
 
-# ---------------------------------------------------------------------------
-# Step output types (from GET /v1/workflows/runs/{run_id}/steps/{block_id})
-# ---------------------------------------------------------------------------
-
-
-class StartDocumentStepOutput(BaseModel):
-    """Metadata persisted for document-based start blocks."""
-
-    filename: str = Field(..., description="Original filename")
-    mime_type: str = Field(..., description="Document MIME type")
-    id: Optional[str] = Field(default=None, description="Stored file identifier")
-
-
-class SkippedStepOutput(BaseModel):
-    skipped: bool = Field(default=True, description="Whether this block was skipped")
-    reason: str = Field(..., description="Reason why the block was skipped")
-    missing_input: str = Field(..., description="The type of input that was missing")
-
-
-class ExtractStepOutput(BaseModel):
-    output: Dict[str, Any] = Field(..., description="The extracted structured data")
-    consensus: ExtractionConsensus = Field(
-        default_factory=ExtractionConsensus,
-        description="Consensus metadata for extract block outputs",
-    )
-    extraction_id: Optional[str] = Field(default=None, description="Extraction ID")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="JSON schema used for extraction")
-
-    @property
-    def extracted_data(self) -> Dict[str, Any]:
-        return self.output
-
-    @property
-    def likelihoods(self) -> Optional[Dict[str, Any]]:
-        return self.consensus.likelihoods
-
-    @property
-    def consensus_details(self) -> list[dict[str, Any]]:
-        return [{"data": choice} for choice in self.consensus.choices]
-
-
-class ParseStepOutput(BaseModel):
-    pages: List[str] = Field(..., description="Text content for each parsed page")
-
-
-class MergePdfStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the merge operation")
-    document_count: int = Field(..., description="Number of documents merged")
-
-
-class MergeDictsStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the merge operation")
-    field_count: int = Field(..., description="Number of fields in the merged output")
-    fields: List[str] = Field(default_factory=list, description="Names of the merged fields")
-    extracted_data: Dict[str, Any] = Field(default_factory=dict, description="Merged JSON data")
-    merged_schema: Optional[Dict[str, Any]] = Field(default=None, description="Combined schema from merged inputs")
-
-
-class SplitStepOutput(BaseModel):
-    output: List[SplitResult] = Field(default_factory=list, description="Canonical split output")
-    consensus: Optional[SplitConsensus] = Field(
-        default=None,
-        description="Consensus metadata for multi-vote split runs",
-    )
-
-    @model_validator(mode="before")
-    @classmethod
-    def _coerce_legacy_split_payload(cls, value: Any) -> Any:
-        if not isinstance(value, dict):
-            return value
-        if "output" not in value and isinstance(value.get("splits"), list):
-            normalized = dict(value)
-            normalized["output"] = normalized.pop("splits")
-            value = normalized
-        return value
-
-    @property
-    def splits(self) -> List[SplitResult]:
-        return self.output
-
-
-class ClassifierStepOutput(BaseModel):
-    category: str = Field(..., description="The classified category")
-    reasoning: Optional[str] = Field(default=None, description="Model reasoning")
-    all_categories: List[str] = Field(default_factory=list, description="All available categories")
-    confidence: Optional[float] = Field(default=None, description="Classification confidence")
-
-
-class FormulaStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the computation")
-    computations: List[str] = Field(default_factory=list, description="List of computed field names")
-    extracted_data: Dict[str, Any] = Field(default_factory=dict, description="Enriched JSON data")
-    extraction_id: Optional[str] = Field(default=None, description="Associated extraction ID")
-    computation_spec: Optional[Dict[str, Any]] = Field(default=None, description="Computation spec used")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Output schema")
-
-
-class HILStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the HIL block")
-    requires_review: bool = Field(default=True, description="Whether human review is required")
-    extracted_data: Optional[Dict[str, Any]] = Field(default=None, description="Data awaiting or completed review")
-    extraction_id: Optional[str] = Field(default=None, description="Associated extraction ID")
-    computation_spec: Optional[Dict[str, Any]] = Field(default=None, description="Computation spec")
-    human_modified: bool = Field(default=False, description="Whether the data was modified by human review")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Schema for review rendering")
-
-
-class ConditionalStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the conditional evaluation")
-    selected_branch: Optional[str] = Field(default=None, description="Selected branch name")
-    matched_condition_id: Optional[str] = Field(default=None, description="Matched condition ID")
-    branch_outputs: Dict[str, Any] = Field(default_factory=dict, description="Data routed to each branch")
-    evaluations: List[Dict[str, Any]] = Field(default_factory=list, description="Individual evaluation results")
-    extracted_data: Optional[Dict[str, Any]] = Field(default=None, description="Evaluated input data")
-    extraction_id: Optional[str] = Field(default=None, description="Associated extraction ID")
-    computation_spec: Optional[Dict[str, Any]] = Field(default=None, description="Passed-through computation spec")
-
-
-class ConditionalCheckStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the conditional check")
-    requires_review: bool = Field(..., description="Whether review is required")
-    matched_conditions: List[str] = Field(default_factory=list, description="Matched condition IDs")
-    evaluations: List[Dict[str, Any]] = Field(default_factory=list, description="Individual evaluation results")
-    extracted_data: Optional[Dict[str, Any]] = Field(default=None, description="Transmitted data")
-    conditional_data: Optional[Dict[str, Any]] = Field(default=None, description="Conditional data used for evaluation")
-    extraction_id: Optional[str] = Field(default=None, description="Associated extraction ID")
-    computation_spec: Optional[Dict[str, Any]] = Field(default=None, description="Passed-through computation spec")
-    human_modified: bool = Field(default=False, description="Whether data was modified by human review")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Schema for review rendering")
-
-
-class APICallStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the API call")
-    url: str = Field(..., description="URL that was called")
-    method: str = Field(..., description="HTTP method used")
-    status_code: int = Field(..., description="HTTP response status code")
-    response_data: Optional[Dict[str, Any]] = Field(default=None, description="Parsed JSON response data")
-    response_text: Optional[str] = Field(default=None, description="Raw response text")
-    request_body: Optional[str] = Field(default=None, description="Request body that was sent")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Output schema for downstream blocks")
-    error: Optional[str] = Field(default=None, description="Error message if the request failed")
-
-
-class FunctionStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the function execution")
-    execution_time_ms: Optional[float] = Field(default=None, description="Execution time in milliseconds")
-    stdout: Optional[str] = Field(default=None, description="Standard output from the sandbox")
-    stderr: Optional[str] = Field(default=None, description="Standard error from the sandbox")
-    error: Optional[str] = Field(default=None, description="Error message if execution failed")
-    traceback_str: Optional[str] = Field(default=None, description="Python traceback if execution failed")
-    json_schema: Optional[Dict[str, Any]] = Field(default=None, description="Output schema for downstream blocks")
-
-
-class EditStepOutput(BaseModel):
-    mode: Literal["template", "document"] = Field(..., description="Edit execution mode")
-    form_fields: List[Dict[str, Any]] = Field(default_factory=list, description="Form fields produced by the edit workflow")
-    filled_count: int = Field(..., description="Number of filled fields")
-    total_fields: int = Field(..., description="Total number of fields")
-    template_id: Optional[str] = Field(default=None, description="Template ID used in template mode")
-
-
-class EndStepOutput(BaseModel):
-    message: str = Field(..., description="Status message for the end block")
-    webhook_sent: bool = Field(default=False, description="Whether a webhook was attempted")
-    webhook_status_code: Optional[int] = Field(default=None, description="HTTP status code from webhook response")
-    webhook_response_text: Optional[str] = Field(default=None, description="Response body text from the webhook")
-    webhook_response_headers: Optional[Dict[str, str]] = Field(default=None, description="Webhook response headers")
-    webhook_request_body: Optional[Dict[str, Any]] = Field(default=None, description="Payload sent to the webhook")
-    webhook_duration_ms: Optional[float] = Field(default=None, description="Webhook round-trip time in milliseconds")
-    webhook_error: Optional[str] = Field(default=None, description="Error message if the webhook failed")
-
-
-class LoopContextStepOutput(BaseModel):
-    iteration: int = Field(..., description="Current iteration number")
-    condition_info: Dict[str, Any] = Field(default_factory=dict, description="Condition evaluation info from the previous iteration")
-    previous_output: Optional[Dict[str, Any]] = Field(default=None, description="Termination data from the previous iteration")
-
-
-class ForEachSentinelStartStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the sentinel start")
-    mr_phase: str = Field(default="processing", description="Current for-each phase")
-    mr_id: str = Field(..., description="ID of the for-each container")
-    current_index: int = Field(..., description="Current item index")
-    total_items: int = Field(..., description="Total number of items to process")
-    max_iterations: int = Field(..., description="Maximum allowed iterations")
-    is_first_iteration: bool = Field(..., description="Whether this is the first iteration")
-    map_method: Optional[str] = Field(default=None, description="Map method used for splitting")
-    current_item_key: Optional[str] = Field(default=None, description="Partition key for the current item")
-    partition_id: Optional[str] = Field(default=None, description="Stored partition resource ID for split_by_key")
-    all_item_keys: Optional[List[str]] = Field(default=None, description="All item keys")
-    all_iteration_context_texts: Optional[List[str]] = Field(default=None, description="All iteration context texts")
-
-
-class ForEachSentinelEndStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the sentinel end")
-    mr_phase: str = Field(default="processing", description="Current for-each phase")
-    mr_id: str = Field(..., description="ID of the for-each container")
-    current_index: int = Field(..., description="Current item index")
-    total_items: int = Field(..., description="Total number of items processed")
-    max_iterations: int = Field(..., description="Maximum allowed iterations")
-    should_continue: bool = Field(..., description="Whether more items remain")
-    is_reduce_phase: bool = Field(..., description="Whether this is the reduce phase")
-    partition_id: Optional[str] = Field(default=None, description="Stored partition resource ID for split_by_key")
-    all_item_keys: Optional[List[str]] = Field(default=None, description="All item keys")
-    output: Optional[Dict[str, Any]] = Field(default=None, description="Reduced output payload")
-
-
-class WhileLoopSentinelStartStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the sentinel start")
-    loop_id: str = Field(..., description="ID of the while-loop container")
-    iteration: int = Field(..., description="Current iteration number")
-    max_iterations: int = Field(..., description="Maximum allowed iterations")
-    passed_through: bool = Field(default=True, description="Whether data was passed through")
-    iteration_context_text: Optional[str] = Field(default=None, description="Iteration context text")
-
-
-class WhileLoopSentinelEndStepOutput(BaseModel):
-    message: str = Field(..., description="Status message about the sentinel end")
-    loop_id: str = Field(..., description="ID of the while-loop container")
-    iteration: int = Field(..., description="Current iteration number")
-    max_iterations: int = Field(..., description="Maximum allowed iterations")
-    should_continue: bool = Field(..., description="Whether the loop should continue")
-    termination_reason: Optional[str] = Field(default=None, description="Reason for termination if the loop exits")
-    evaluations: List[Dict[str, Any]] = Field(default_factory=list, description="Condition evaluation results")
-
-
-WorkflowStepOutputData: TypeAlias = (
-    StartDocumentStepOutput
-    | SkippedStepOutput
-    | ExtractStepOutput
-    | ParseStepOutput
-    | MergePdfStepOutput
-    | MergeDictsStepOutput
-    | SplitStepOutput
-    | ClassifierStepOutput
-    | FormulaStepOutput
-    | HILStepOutput
-    | ConditionalStepOutput
-    | ConditionalCheckStepOutput
-    | APICallStepOutput
-    | FunctionStepOutput
-    | EditStepOutput
-    | EndStepOutput
-    | LoopContextStepOutput
-    | ForEachSentinelStartStepOutput
-    | ForEachSentinelEndStepOutput
-    | WhileLoopSentinelStartStepOutput
-    | WhileLoopSentinelEndStepOutput
-    | Dict[str, Any]
-)
-
-
-_STEP_OUTPUT_MODEL_BY_NODE_TYPE: Dict[str, type[BaseModel]] = {
-    "start": StartDocumentStepOutput,
-    "parse": ParseStepOutput,
-    "edit": EditStepOutput,
-    "extract": ExtractStepOutput,
-    "split": SplitStepOutput,
-    "classifier": ClassifierStepOutput,
-    "conditional": ConditionalStepOutput,
-    "hil": HILStepOutput,
-    "api_call": APICallStepOutput,
-    "function": FunctionStepOutput,
-    "formula": FormulaStepOutput,
-    "merge_pdf": MergePdfStepOutput,
-    "merge_dicts": MergeDictsStepOutput,
-    "end": EndStepOutput,
-    "for_each_sentinel_start": ForEachSentinelStartStepOutput,
-    "for_each_sentinel_end": ForEachSentinelEndStepOutput,
-    "while_loop_sentinel_start": WhileLoopSentinelStartStepOutput,
-    "while_loop_sentinel_end": WhileLoopSentinelEndStepOutput,
-    "loop_context": LoopContextStepOutput,
-}
-
-
-def parse_workflow_step_output(
-    block_type: Optional[str],
-    output: Any,
-) -> Optional[WorkflowStepOutputData]:
-    if output is None:
-        return None
-    if not isinstance(output, dict):
-        return output
-    if block_type is None:
-        return output
-
-    model_cls = _STEP_OUTPUT_MODEL_BY_NODE_TYPE.get(block_type)
-    if model_cls is None:
-        return output
-
-    try:
-        return model_cls.model_validate(output)
-    except Exception:
-        return output
-
 class StepOutputResponse(BaseModel):
     """Step status and handle data for a specific step in a workflow run."""
     block_id: str = Field(..., description="ID of the block")
     block_type: str = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
+    error: Optional[str] = Field(default=None, description="Error message if failed")
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description="Canonical persisted resource produced by this step, if any",

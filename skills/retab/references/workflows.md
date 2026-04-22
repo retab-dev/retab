@@ -196,28 +196,56 @@ curl -X GET "https://api.retab.com/v1/workflows/runs/run_abc123" \
 
 ## Inspecting step outputs
 
-Top-level `final_outputs` is useful for end results, but workflows often need step-level inspection for debugging or partial consumption.
+Top-level `final_outputs` is useful for end results, but workflows often need step-level inspection for debugging or partial consumption. For "give me every step in one call" use `steps.list(run_id)` — it returns the full persisted step list in a single request.
 
 ### Python step inspection
 
 ```python
-step = client.workflows.runs.steps.get(run.id, "extract-block-1")
-print(step.handle_outputs)
-print(step.extracted_data)
+# Batch (one HTTP call for the whole run):
+for step in client.workflows.runs.steps.list(run.id):
+    print(step.block_id, step.status, step.error, step.artifact)
 
-all_outputs = client.workflows.runs.steps.get_all(run)
-print(all_outputs.outputs["extract-block-1"].handle_outputs)
+# Single step:
+step = client.workflows.runs.steps.get(run.id, "extract-block-1")
+print(step.status, step.error)
+print(step.extracted_data)   # handle-derived shortcut
+
+# Jump to the typed underlying resource:
+if step.artifact:
+    extraction = client.extractions.get(step.artifact.id)
+    # equivalents: client.splits.get / classifications.get / parses.get / edits.get / partitions.get
 ```
 
 ### Node step inspection
 
 ```ts
-const step = await client.workflows.runs.steps.get(run.id, "extract-block-1");
-console.log(step.handle_outputs?.["output-json-0"]?.data);
+// Batch:
+for (const step of await client.workflows.runs.steps.list(run.id)) {
+  console.log(step.block_id, step.status, step.error, step.artifact);
+}
 
-const batch = await client.workflows.runs.steps.getAll(run);
-console.log(batch.outputs["extract-block-1"]?.handle_outputs);
+// Single step + typed resource fetch:
+const step = await client.workflows.runs.steps.get(run.id, "extract-block-1");
+if (step.artifact) {
+  const extraction = await client.extractions.get(step.artifact.id);
+  console.log(extraction);
+}
 ```
+
+### `step.artifact`
+
+Inference blocks persist a typed resource; `step.artifact` is a `{operation, id}` pointer you use to fetch the full typed result.
+
+| `step.artifact.operation` | emitted by block type | fetch with |
+|---|---|---|
+| `extraction` | `extract` | `client.extractions.get(id)` |
+| `split` | `split` | `client.splits.get(id)` |
+| `classification` | `classifier` | `client.classifications.get(id)` |
+| `parse` | `parse` | `client.parses.get(id)` |
+| `edit` | `edit` | `client.edits.get(id)` |
+| `partition` | `for_each_sentinel_start` | `client.partitions.get(id)` |
+
+Pass-through blocks (`hil`, `conditional`, `formula`) do not emit a fresh `artifact` — the canonical resource is the upstream inference block's.
 
 Use step inspection when:
 

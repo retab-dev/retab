@@ -7,7 +7,6 @@ import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
 import APIWorkflowEdges from "../src/api/workflows/edges/client";
 import { raiseForStatus, WorkflowRunError } from "../src/types";
 import type { WorkflowRun, WorkflowRunExportResponse } from "../src/types";
-import { ZFunctionStepOutput } from "../src/generated_types";
 
 class MockClient extends AbstractClient {
     public lastFetchParams: Record<string, unknown> | null = null;
@@ -253,30 +252,6 @@ describe("workflows client", () => {
         expect(run.config_snapshot_id).toBe("snap_abc");
         expect(run.cost_summary).toEqual({ total: 0.05 });
         expect(run.human_waiting_duration_ms).toBe(5000);
-    });
-
-    test("function step output schema matches python sdk fields", () => {
-        const parsed = ZFunctionStepOutput.parse({
-            message: "Function executed successfully",
-            execution_time_ms: 12.5,
-            stdout: "hello",
-            stderr: null,
-            error: null,
-            traceback_str: null,
-            json_schema: {
-                type: "object",
-                properties: {
-                    result: { type: "string" },
-                },
-            },
-        });
-
-        expect(parsed.message).toBe("Function executed successfully");
-        expect(parsed.execution_time_ms).toBe(12.5);
-        expect(parsed.stdout).toBe("hello");
-        expect(parsed.json_schema?.properties).toEqual({
-            result: { type: "string" },
-        });
     });
 
     test("runs.list() serializes array and date filters", async () => {
