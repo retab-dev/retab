@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test';
 
 import { AbstractClient } from '../src/client';
 import APIWorkflowRunSteps from '../src/api/workflows/runs/steps/client';
-import { ZExtractStepOutput, ZForEachSentinelStartStepOutput } from '../src/types';
 
 class MockClient extends AbstractClient {
   public lastFetchParams: Record<string, unknown> | null = null;
@@ -209,51 +208,4 @@ describe('workflow run steps client', () => {
     });
   });
 
-  test('extract step output accepts canonical shape', () => {
-    const parsed = ZExtractStepOutput.parse({
-      output: { invoice_number: 'INV-001' },
-      consensus: {
-        choices: [{ invoice_number: 'INV-001' }],
-        likelihoods: { invoice_number: 0.98 },
-      },
-      extraction_id: 'ext_123',
-    });
-
-    expect(parsed.output).toEqual({ invoice_number: 'INV-001' });
-    expect(parsed.consensus).toEqual({
-      choices: [{ invoice_number: 'INV-001' }],
-      likelihoods: { invoice_number: 0.98 },
-    });
-  });
-
-  test('extract step output normalizes legacy shape', () => {
-    const parsed = ZExtractStepOutput.parse({
-      extracted_data: { invoice_number: 'INV-002' },
-      likelihoods: { invoice_number: 0.91 },
-      consensus_details: [{ data: { invoice_number: 'INV-002' } }],
-      extraction_id: 'ext_456',
-    });
-
-    expect(parsed.output).toEqual({ invoice_number: 'INV-002' });
-    expect(parsed.consensus).toEqual({
-      choices: [{ invoice_number: 'INV-002' }],
-      likelihoods: { invoice_number: 0.91 },
-    });
-  });
-
-  test('for_each sentinel start output accepts partition payload', () => {
-    const parsed = ZForEachSentinelStartStepOutput.parse({
-      message: 'Splitting document',
-      mr_id: 'for_each-1',
-      current_index: 0,
-      total_items: 1,
-      max_iterations: 1,
-      is_first_iteration: true,
-      map_method: 'split_by_key',
-      partition_id: 'prtn_123',
-      all_item_keys: ['invoice_1'],
-    });
-
-    expect(parsed.partition_id).toBe('prtn_123');
-  });
 });

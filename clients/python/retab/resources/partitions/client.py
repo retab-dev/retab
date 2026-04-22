@@ -41,6 +41,9 @@ class PartitionsMixin:
             data=partition_request.model_dump(mode="json", exclude_unset=True),
         )
 
+    def _prepare_get(self, partition_id: str) -> PreparedRequest:
+        return PreparedRequest(method="GET", url=f"/partitions/{partition_id}")
+
 
 class Partitions(SyncAPIResource, PartitionsMixin):
     def create(
@@ -62,6 +65,15 @@ class Partitions(SyncAPIResource, PartitionsMixin):
         )
         return Partition.model_validate(self._client._prepared_request(request))
 
+    def get(self, partition_id: str) -> Partition:
+        """Retrieve a persisted partition resource by id.
+
+        Typically used to fetch the partition referenced by a workflow step's
+        ``step.artifact`` (``operation == "partition"``).
+        """
+        request = self._prepare_get(partition_id)
+        return Partition.model_validate(self._client._prepared_request(request))
+
 
 class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
     async def create(
@@ -81,4 +93,9 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
             n_consensus=n_consensus,
             bust_cache=bust_cache,
         )
+        return Partition.model_validate(await self._client._prepared_request(request))
+
+    async def get(self, partition_id: str) -> Partition:
+        """Retrieve a persisted partition resource by id."""
+        request = self._prepare_get(partition_id)
         return Partition.model_validate(await self._client._prepared_request(request))

@@ -529,58 +529,6 @@ export const ZWorkflowRunStep = z
   .passthrough();
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
 
-function isRecord(value: unknown): value is Record<string, any> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function normalizeExtractStepOutputPayload(payload: unknown): unknown {
-  if (!isRecord(payload)) {
-    return payload;
-  }
-
-  const consensusRecord = isRecord(payload.consensus) ? payload.consensus : undefined;
-  const legacyChoices = Array.isArray(payload.consensus_details) ? payload.consensus_details : [];
-  const choices = Array.isArray(consensusRecord?.choices)
-    ? consensusRecord.choices.filter((choice): choice is Record<string, any> => isRecord(choice))
-    : legacyChoices.flatMap((choice) => {
-        if (!isRecord(choice)) {
-          return [];
-        }
-        const data = isRecord(choice.data) ? choice.data : choice;
-        return isRecord(data) ? [data] : [];
-      });
-
-  const likelihoods = isRecord(consensusRecord?.likelihoods)
-    ? consensusRecord.likelihoods
-    : isRecord(payload.likelihoods)
-      ? payload.likelihoods
-      : null;
-
-  return {
-    ...payload,
-    output: isRecord(payload.output)
-      ? payload.output
-      : isRecord(payload.extracted_data)
-        ? payload.extracted_data
-        : {},
-    consensus: {
-      choices,
-      ...(likelihoods ? { likelihoods } : {}),
-    },
-  };
-}
-
-export const ZExtractStepOutput = z.preprocess(
-  (payload) => normalizeExtractStepOutputPayload(payload),
-  z.object({
-    output: z.record(z.string(), z.any()).default({}),
-    consensus: ZExtractionConsensus.default({ choices: [] }),
-    extraction_id: z.string().nullable().optional(),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-  })
-);
-export type ExtractStepOutput = z.infer<typeof ZExtractStepOutput>;
-
 export const ZWorkflow = z
   .object({
     id: z.string(),

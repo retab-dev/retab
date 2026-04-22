@@ -1,14 +1,10 @@
+import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from pydantic import ValidationError
 
 from retab.resources.workflows.runs.steps.client import AsyncWorkflowSteps, WorkflowSteps
-from retab.types.workflows.model import (
-    ExtractStepOutput,
-    ForEachSentinelStartStepOutput,
-    parse_workflow_step_output,
-)
+from retab.types.workflows.model import StepOutputResponse, WorkflowRun
 
 
 def test_workflow_steps_list_uses_full_steps_route() -> None:
@@ -253,57 +249,62 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
     assert step.extracted_data is None
 
 
-def test_parse_workflow_step_output_extract_accepts_canonical_shape() -> None:
-    parsed = parse_workflow_step_output(
-        "extract",
-        {
-            "output": {"invoice_number": "INV-001"},
-            "consensus": {
-                "choices": [{"invoice_number": "INV-001"}],
-                "likelihoods": {"invoice_number": 0.98},
-            },
-            "extraction_id": "ext_123",
-        },
-    )
-
-    assert isinstance(parsed, ExtractStepOutput)
-    assert parsed.output == {"invoice_number": "INV-001"}
-    assert parsed.extracted_data == {"invoice_number": "INV-001"}
-    assert parsed.consensus.likelihoods == {"invoice_number": 0.98}
-    assert parsed.likelihoods == {"invoice_number": 0.98}
-    assert parsed.consensus_details == [{"data": {"invoice_number": "INV-001"}}]
-
-
-def test_parse_workflow_step_output_extract_rejects_legacy_shape() -> None:
-    legacy_payload = {
-        "extracted_data": {"invoice_number": "INV-002"},
-        "likelihoods": {"invoice_number": 0.91},
-        "consensus_details": [{"data": {"invoice_number": "INV-002"}}],
-        "extraction_id": "ext_456",
+def test_step_output_response_carries_error_on_failed_step() -> None:
+    """StepOutputResponse now carries `error` for parity with WorkflowRunStep / StepStatus."""
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "block_id": "extract-1",
+        "block_type": "extract",
+        "block_label": "Extract",
+        "status": "error",
+        "error": "LLM returned malformed JSON",
+        "artifact": None,
+        "handle_outputs": None,
+        "handle_inputs": None,
     }
 
-    with pytest.raises(ValidationError):
-        ExtractStepOutput.model_validate(legacy_payload)
+    step = WorkflowSteps(client=client).get("run_123", "extract-1")
 
-    parsed = parse_workflow_step_output("extract", legacy_payload)
-    assert parsed == legacy_payload
+    assert step.status == "error"
+    assert step.error == "LLM returned malformed JSON"
 
 
-def test_parse_workflow_step_output_for_each_partition_payload() -> None:
-    parsed = parse_workflow_step_output(
-        "for_each_sentinel_start",
+def test_step_output_response_error_defaults_to_none_for_successful_step() -> None:
+    response = StepOutputResponse.model_validate(
         {
-            "message": "Splitting document",
-            "mr_id": "for_each-1",
-            "current_index": 0,
-            "total_items": 1,
-            "max_iterations": 1,
-            "is_first_iteration": True,
-            "map_method": "split_by_key",
-            "partition_id": "prtn_123",
-            "all_item_keys": ["invoice_1"],
-        },
+            "block_id": "extract-1",
+            "block_type": "extract",
+            "block_label": "Extract",
+            "status": "completed",
+        }
     )
+    assert response.error is None
 
-    assert isinstance(parsed, ForEachSentinelStartStepOutput)
-    assert parsed.partition_id == "prtn_123"
+
+def _minimal_run_payload(**overrides) -> dict:
+    now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)
+    payload = {
+        "id": "run_123",
+        "workflow_id": "wf_1",
+        "workflow_name": "Test",
+        "organization_id": "org_1",
+        "status": "completed",
+        "started_at": now,
+        "created_at": now,
+        "updated_at": now,
+        "waiting_for_block_ids": [],
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_workflow_run_is_terminal_true_for_each_terminal_status() -> None:
+    for status in ("completed", "error", "cancelled"):
+        run = WorkflowRun.model_validate(_minimal_run_payload(status=status))
+        assert run.is_terminal, f"{status} should be terminal"
+
+
+def test_workflow_run_is_terminal_false_for_non_terminal_statuses() -> None:
+    for status in ("pending", "running", "waiting_for_human"):
+        run = WorkflowRun.model_validate(_minimal_run_payload(status=status))
+        assert not run.is_terminal, f"{status} should not be terminal"

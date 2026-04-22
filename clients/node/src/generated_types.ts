@@ -1079,53 +1079,6 @@ export const ZWorkflowWithEntities = z.lazy(() => (z.object({
 })));
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
 
-export const ZAPICallStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    url: z.string(),
-    method: z.string(),
-    status_code: z.number(),
-    response_data: z.record(z.string(), z.any()).nullable().optional(),
-    response_text: z.string().nullable().optional(),
-    request_body: z.string().nullable().optional(),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-    error: z.string().nullable().optional(),
-})));
-export type APICallStepOutput = z.infer<typeof ZAPICallStepOutput>;
-
-export const ZClassifierStepOutput = z.lazy(() => (z.object({
-    category: z.string(),
-    reasoning: z.string().nullable().optional(),
-    all_categories: z.array(z.string()),
-    confidence: z.number().nullable().optional(),
-})));
-export type ClassifierStepOutput = z.infer<typeof ZClassifierStepOutput>;
-
-export const ZConditionalCheckStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    requires_review: z.boolean(),
-    matched_conditions: z.array(z.string()),
-    evaluations: z.array(z.record(z.string(), z.any())),
-    extracted_data: z.record(z.string(), z.any()).nullable().optional(),
-    conditional_data: z.record(z.string(), z.any()).nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
-    computation_spec: z.record(z.string(), z.any()).nullable().optional(),
-    human_modified: z.boolean().default(false),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type ConditionalCheckStepOutput = z.infer<typeof ZConditionalCheckStepOutput>;
-
-export const ZConditionalStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    selected_branch: z.string().nullable().optional(),
-    matched_condition_id: z.string().nullable().optional(),
-    branch_outputs: z.record(z.string(), z.any()),
-    evaluations: z.array(z.record(z.string(), z.any())),
-    extracted_data: z.record(z.string(), z.any()).nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
-    computation_spec: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type ConditionalStepOutput = z.infer<typeof ZConditionalStepOutput>;
-
 export const ZDocumentSignedUrlResponse = z.lazy(() => (z.object({
     signed_url: z.string(),
     filename: z.string(),
@@ -1133,130 +1086,11 @@ export const ZDocumentSignedUrlResponse = z.lazy(() => (z.object({
 })));
 export type DocumentSignedUrlResponse = z.infer<typeof ZDocumentSignedUrlResponse>;
 
-export const ZEditStepOutput = z.lazy(() => (z.object({
-    mode: z.union([z.literal("template"), z.literal("document")]),
-    form_fields: z.array(z.record(z.string(), z.any())),
-    filled_count: z.number(),
-    total_fields: z.number(),
-    template_id: z.string().nullable().optional(),
-})));
-export type EditStepOutput = z.infer<typeof ZEditStepOutput>;
-
-export const ZEndStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    webhook_sent: z.boolean().default(false),
-    webhook_status_code: z.number().nullable().optional(),
-    webhook_response_text: z.string().nullable().optional(),
-    webhook_response_headers: z.record(z.string(), z.string()).nullable().optional(),
-    webhook_request_body: z.record(z.string(), z.any()).nullable().optional(),
-    webhook_duration_ms: z.number().nullable().optional(),
-    webhook_error: z.string().nullable().optional(),
-})));
-export type EndStepOutput = z.infer<typeof ZEndStepOutput>;
-
 export const ZExecutionOrderResponse = z.lazy(() => (z.object({
     run_id: z.string(),
     ordered_step_ids: z.array(z.string()),
 })));
 export type ExecutionOrderResponse = z.infer<typeof ZExecutionOrderResponse>;
-
-export const ZExtractStepOutput = z.lazy(() => (z.object({
-    extracted_data: z.record(z.string(), z.any()),
-    likelihoods: z.record(z.string(), z.any()).nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type ExtractStepOutput = z.infer<typeof ZExtractStepOutput>;
-
-export const ZForEachSentinelEndStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    mr_phase: z.string().default("processing"),
-    mr_id: z.string(),
-    current_index: z.number(),
-    total_items: z.number(),
-    max_iterations: z.number(),
-    should_continue: z.boolean(),
-    is_reduce_phase: z.boolean(),
-    partition_id: z.string().nullable().optional(),
-    all_item_keys: z.array(z.string()).nullable().optional(),
-    output: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type ForEachSentinelEndStepOutput = z.infer<typeof ZForEachSentinelEndStepOutput>;
-
-export const ZForEachSentinelStartStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    mr_phase: z.string().default("processing"),
-    mr_id: z.string(),
-    current_index: z.number(),
-    total_items: z.number(),
-    max_iterations: z.number(),
-    is_first_iteration: z.boolean(),
-    map_method: z.string().nullable().optional(),
-    current_item_key: z.string().nullable().optional(),
-    partition_id: z.string().nullable().optional(),
-    all_item_keys: z.array(z.string()).nullable().optional(),
-    all_iteration_context_texts: z.array(z.string()).nullable().optional(),
-})));
-export type ForEachSentinelStartStepOutput = z.infer<typeof ZForEachSentinelStartStepOutput>;
-
-export const ZFormulaStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    computations: z.array(z.string()),
-    extracted_data: z.record(z.string(), z.any()),
-    extraction_id: z.string().nullable().optional(),
-    computation_spec: z.record(z.string(), z.any()).nullable().optional(),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type FormulaStepOutput = z.infer<typeof ZFormulaStepOutput>;
-
-export const ZFunctionStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    execution_time_ms: z.number().nullable().optional(),
-    stdout: z.string().nullable().optional(),
-    stderr: z.string().nullable().optional(),
-    error: z.string().nullable().optional(),
-    traceback_str: z.string().nullable().optional(),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type FunctionStepOutput = z.infer<typeof ZFunctionStepOutput>;
-
-export const ZHILStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    requires_review: z.boolean().default(true),
-    extracted_data: z.record(z.string(), z.any()).nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
-    computation_spec: z.record(z.string(), z.any()).nullable().optional(),
-    human_modified: z.boolean().default(false),
-    json_schema: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type HILStepOutput = z.infer<typeof ZHILStepOutput>;
-
-export const ZLoopContextStepOutput = z.lazy(() => (z.object({
-    iteration: z.number(),
-    condition_info: z.record(z.string(), z.any()),
-    previous_output: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type LoopContextStepOutput = z.infer<typeof ZLoopContextStepOutput>;
-
-export const ZMergeDictsStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    field_count: z.number(),
-    fields: z.array(z.string()),
-    extracted_data: z.record(z.string(), z.any()),
-    merged_schema: z.record(z.string(), z.any()).nullable().optional(),
-})));
-export type MergeDictsStepOutput = z.infer<typeof ZMergeDictsStepOutput>;
-
-export const ZMergePdfStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    document_count: z.number(),
-})));
-export type MergePdfStepOutput = z.infer<typeof ZMergePdfStepOutput>;
-
-export const ZParseStepOutput = z.lazy(() => (z.object({
-    pages: z.array(z.string()),
-})));
-export type ParseStepOutput = z.infer<typeof ZParseStepOutput>;
 
 export const ZRunCountsResponse = z.lazy(() => (z.object({
     total: z.number().default(0),
@@ -1269,47 +1103,12 @@ export const ZRunCountsResponse = z.lazy(() => (z.object({
 })));
 export type RunCountsResponse = z.infer<typeof ZRunCountsResponse>;
 
-export const ZSkippedStepOutput = z.lazy(() => (z.object({
-    skipped: z.boolean().default(true),
-    reason: z.string(),
-    missing_input: z.string(),
-})));
-export type SkippedStepOutput = z.infer<typeof ZSkippedStepOutput>;
-
 export const ZSplitResponse = z.lazy(() => (z.object({
     splits: z.array(ZSplitResult),
     consensus: ZSplitConsensus.nullable().optional(),
     usage: ZRetabUsage,
 })));
 export type SplitResponse = z.infer<typeof ZSplitResponse>;
-
-export const ZStartDocumentStepOutput = z.lazy(() => (z.object({
-    filename: z.string(),
-    mime_type: z.string(),
-    id: z.string().nullable().optional(),
-})));
-export type StartDocumentStepOutput = z.infer<typeof ZStartDocumentStepOutput>;
-
-export const ZWhileLoopSentinelEndStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    loop_id: z.string(),
-    iteration: z.number(),
-    max_iterations: z.number(),
-    should_continue: z.boolean(),
-    termination_reason: z.string().nullable().optional(),
-    evaluations: z.array(z.record(z.string(), z.any())),
-})));
-export type WhileLoopSentinelEndStepOutput = z.infer<typeof ZWhileLoopSentinelEndStepOutput>;
-
-export const ZWhileLoopSentinelStartStepOutput = z.lazy(() => (z.object({
-    message: z.string(),
-    loop_id: z.string(),
-    iteration: z.number(),
-    max_iterations: z.number(),
-    passed_through: z.boolean().default(true),
-    iteration_context_text: z.string().nullable().optional(),
-})));
-export type WhileLoopSentinelStartStepOutput = z.infer<typeof ZWhileLoopSentinelStartStepOutput>;
 
 export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
     documents: z.array(ZMIMEData),
