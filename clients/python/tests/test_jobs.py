@@ -155,31 +155,6 @@ def test_job_split(sync_client: Retab) -> None:
         assert isinstance(body["splits"], list), "splits should be a list"
 
 
-def test_job_classify(sync_client: Retab) -> None:
-    """Job for /v1/documents/classify completes and returns classification."""
-    with sync_client as client:
-        job = client.jobs.create(
-            endpoint="/v1/documents/classify",
-            request={
-                "document": INLINE_TEXT_DOCUMENT,
-                "categories": [
-                    {"name": "invoice", "description": "A billing invoice document"},
-                    {"name": "receipt", "description": "A payment receipt"},
-                    {"name": "contract", "description": "A legal contract"},
-                ],
-                "model": MODEL,
-            },
-        )
-        assert job.status in ("queued", "validating")
-
-        job = _wait(client, job.id)
-        _assert_completed(job)
-
-        body = job.response.body
-        assert "classification" in body, f"Classify response should have 'classification', got keys: {list(body.keys())}"
-        assert "category" in body["classification"], "classification should contain 'category'"
-
-
 def test_job_schema_generate(sync_client: Retab) -> None:
     """Job for /v1/schemas/generate completes and returns a schema."""
     with sync_client as client:

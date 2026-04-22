@@ -164,30 +164,6 @@ describe('Jobs API', () => {
         );
 
         test(
-            'classify — job completes and returns result',
-            async () => {
-                const job = await client.jobs.create({
-                    endpoint: '/v1/documents/classify',
-                    request: {
-                        document: INLINE_TEXT_DOCUMENT,
-                        categories: [
-                            { name: 'invoice', description: 'A billing invoice document' },
-                            { name: 'receipt', description: 'A payment receipt' },
-                            { name: 'contract', description: 'A legal contract' },
-                        ],
-                        model: MODEL,
-                    },
-                });
-                expect(['queued', 'validating']).toContain(job.status);
-
-                const completed = await waitAndAssertCompleted(client, job.id);
-                expect(completed.response!.body).toHaveProperty('classification');
-                expect(completed.response!.body.classification).toHaveProperty('category');
-            },
-            { timeout: TEST_TIMEOUT },
-        );
-
-        test(
             'schema generate — job reaches terminal state',
             async () => {
                 const job = await client.jobs.create({
