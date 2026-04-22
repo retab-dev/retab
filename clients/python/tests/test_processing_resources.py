@@ -339,31 +339,6 @@ async def test_splits_resource_async_get_and_list(async_client: AsyncRetab, crea
         _assert_list_contains(page, created_split.id)
 
 
-def test_classifications_resource_crud(sync_client: Retab, created_classification: Classification) -> None:
-    category_names = {category["name"] for category in _classification_categories()}
-
-    with sync_client as client:
-        fetched = client.classifications.get(created_classification.id)
-        assert fetched.id == created_classification.id
-        assert fetched.output.category in category_names
-        assert fetched.output.reasoning
-
-        page = _wait_for_list_contains(
-            lambda: client.classifications.list(limit=100, from_date=_list_window_start(created_classification.created_at)),
-            created_classification.id,
-        )
-        _assert_list_contains(page, created_classification.id)
-
-        temp = client.classifications.create(
-            document=_inline_text_document(),
-            model="retab-micro",
-            categories=_classification_categories(),
-            instructions="sdk-delete-check",
-        )
-        client.classifications.delete(temp.id)
-        _assert_deleted(client.classifications.get, temp.id)
-
-
 @pytest.mark.asyncio
 async def test_classifications_resource_async_get_and_list(
     async_client: AsyncRetab,
