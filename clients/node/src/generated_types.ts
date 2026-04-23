@@ -680,6 +680,13 @@ export const ZWorkflow = z.lazy(() => (z.object({
 })));
 export type Workflow = z.infer<typeof ZWorkflow>;
 
+export const ZResolvedSchemas = z.lazy(() => (z.object({
+    input_schemas: z.record(z.string(), z.any()).default({}),
+    output_schemas: z.record(z.string(), z.any()).default({}),
+    _field_ref_drift: z.record(z.any()).nullable().optional(),
+})));
+export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
+
 export const ZWorkflowBlock = z.lazy(() => (z.object({
     id: z.string(),
     workflow_id: z.string(),
@@ -693,6 +700,7 @@ export const ZWorkflowBlock = z.lazy(() => (z.object({
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
     parent_id: z.string().nullable().optional(),
+    resolved_schemas: ZResolvedSchemas.nullable().optional(),
     updated_at: z.string().nullable().optional(),
 })));
 export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
@@ -4857,4 +4865,3 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
-

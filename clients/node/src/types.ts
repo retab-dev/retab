@@ -8,6 +8,12 @@ import fs from 'fs';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 //export * from "./schema_types";
 
+// Schemas are accessed via `workflows.blocks.get(block_id).resolved_schemas`,
+// not via step raw outputs. Step outputs only carry data/payload; user-declared
+// block config schemas (`start_json` / `extract` / `function` / `api_call`) live
+// on the block itself, and every other block's input/output schema is inferred
+// and exposed under `resolved_schemas.input_schemas` / `resolved_schemas.output_schemas`.
+
 export function dataArray<Schema extends z.ZodType<any, any, any>>(
   schema: Schema
 ): z.ZodType<z.output<Schema>[], z.ZodTypeDef, { data: z.input<Schema>[] }> {
@@ -559,6 +565,15 @@ export type Workflow = z.infer<typeof ZWorkflow>;
 // Workflow graph types (blocks, edges, subflows)
 // ---------------------------------------------------------------------------
 
+export const ZResolvedSchemas = z
+  .object({
+    input_schemas: z.record(z.string(), z.any()).default({}),
+    output_schemas: z.record(z.string(), z.any()).default({}),
+    _field_ref_drift: z.record(z.any()).nullable().optional(),
+  })
+  .passthrough();
+export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
+
 export const ZWorkflowBlock = z
   .object({
     id: z.string(),
@@ -573,6 +588,7 @@ export const ZWorkflowBlock = z
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
     parent_id: z.string().nullable().optional(),
+    resolved_schemas: ZResolvedSchemas.nullable().optional(),
     updated_at: z.string().nullable().optional(),
   })
   .passthrough();

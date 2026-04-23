@@ -5,7 +5,7 @@ import APIWorkflows from "../src/api/workflows/client";
 import APIWorkflowRuns from "../src/api/workflows/runs/client";
 import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
 import APIWorkflowEdges from "../src/api/workflows/edges/client";
-import { raiseForStatus, WorkflowRunError } from "../src/types";
+import { raiseForStatus, WorkflowRunError, ZStepOutputResponse } from "../src/types";
 import type { WorkflowRun, WorkflowRunExportResponse } from "../src/types";
 
 class MockClient extends AbstractClient {
@@ -329,6 +329,59 @@ describe("workflows client", () => {
 
         expect(block.organization_id).toBe("org_1");
         expect(block.draft_version).toBe("draft_1");
+    });
+
+    test("workflow blocks expose resolved schema sidecars", async () => {
+        const mockClient = new MockClient({
+            id: "extract-1",
+            workflow_id: "wf_1",
+            organization_id: "org_1",
+            draft_version: "draft_1",
+            type: "extract",
+            label: "Extract",
+            resolved_schemas: {
+                input_schemas: {},
+                output_schemas: {
+                    "output-json-0": {
+                        type: "object",
+                        properties: { invoice_number: { type: "string" } },
+                    },
+                },
+            },
+        });
+        const blocksClient = new APIWorkflowBlocks(mockClient);
+
+        const block = await blocksClient.get("wf_1", "extract-1");
+
+        expect(block.resolved_schemas?.output_schemas["output-json-0"]?.properties.invoice_number.type).toBe("string");
+    });
+
+    test("step output responses do not expose raw output schemas", () => {
+        const parsed = ZStepOutputResponse.parse({
+            block_id: "extract-1",
+            block_type: "extract",
+            block_label: "Extract",
+            status: "completed",
+            output: {
+                data: { invoice_number: "INV-001" },
+                json_schema: { type: "object" },
+            },
+            raw_output: {
+                json_schema: { type: "object" },
+            },
+            json_schema: { type: "object" },
+            handle_outputs: {
+                "output-json-0": {
+                    type: "json",
+                    data: { invoice_number: "INV-001" },
+                },
+            },
+        });
+
+        expect("output" in parsed).toBe(false);
+        expect("raw_output" in parsed).toBe(false);
+        expect("json_schema" in parsed).toBe(false);
+        expect(parsed.handle_outputs?.["output-json-0"]?.data?.invoice_number).toBe("INV-001");
     });
 
     test("edges.createBatch() accepts camelCase request objects", async () => {
