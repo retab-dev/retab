@@ -18,6 +18,7 @@ from retab.types.workflows.model import (
     WorkflowBlockCreateRequest,
     WorkflowBlockUpdateRequest,
     WorkflowEdgeCreateRequest,
+    StepOutputResponse,
 )
 
 
@@ -418,6 +419,62 @@ def test_workflow_block_parses_live_editing_metadata() -> None:
 
     assert block.organization_id == "org_1"
     assert block.draft_version == "draft_1"
+
+
+def test_workflow_block_exposes_resolved_schema_sidecar() -> None:
+    block = WorkflowBlock.model_validate(
+        {
+            "id": "extract-1",
+            "workflow_id": "wf_1",
+            "organization_id": "org_1",
+            "draft_version": "draft_1",
+            "type": "extract",
+            "label": "Extract",
+            "resolved_schemas": {
+                "input_schemas": {},
+                "output_schemas": {
+                    "output-json-0": {
+                        "type": "object",
+                        "properties": {"invoice_number": {"type": "string"}},
+                    }
+                },
+            },
+        }
+    )
+
+    assert block.resolved_schemas is not None
+    assert block.resolved_schemas.output_schemas["output-json-0"]["properties"]["invoice_number"]["type"] == "string"
+
+
+def test_step_output_response_ignores_raw_output_schema_fields() -> None:
+    step_output = StepOutputResponse.model_validate(
+        {
+            "block_id": "extract-1",
+            "block_type": "extract",
+            "block_label": "Extract",
+            "status": "completed",
+            "output": {
+                "data": {"invoice_number": "INV-001"},
+                "json_schema": {"type": "object"},
+            },
+            "raw_output": {
+                "json_schema": {"type": "object"},
+            },
+            "json_schema": {"type": "object"},
+            "handle_outputs": {
+                "output-json-0": {
+                    "type": "json",
+                    "data": {"invoice_number": "INV-001"},
+                }
+            },
+        }
+    )
+
+    dumped = step_output.model_dump()
+    assert "output" not in dumped
+    assert "raw_output" not in dumped
+    assert "json_schema" not in dumped
+    assert step_output.get_json_output() == {"invoice_number": "INV-001"}
 
 
 def test_workflow_edges_create_accepts_typed_request() -> None:

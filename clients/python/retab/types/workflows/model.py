@@ -5,6 +5,12 @@ from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 from retab.types.mime import FileRef
 
+# Schemas are accessed via ``workflows.blocks.get(block_id).resolved_schemas``, not
+# via step raw outputs. Step outputs only carry data/payload; user-declared block
+# config schemas (``start_json`` / ``extract`` / ``function`` / ``api_call``) live
+# on the block itself, and every other block's input/output schema is inferred and
+# exposed under ``resolved_schemas.input_schemas`` / ``resolved_schemas.output_schemas``.
+
 
 class HandlePayload(BaseModel):
     """
@@ -442,6 +448,25 @@ class WorkflowEdgeCreateRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class ResolvedSchemas(BaseModel):
+    """Graph-derived schemas attached to workflow blocks in transport responses."""
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    input_schemas: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Input JSON schemas keyed by sidecar slot.",
+    )
+    output_schemas: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Output JSON schemas keyed by output handle.",
+    )
+    field_ref_drift: Optional[dict] = Field(
+        default=None,
+        alias="_field_ref_drift",
+        description="Field reference drift metadata when present.",
+    )
+
+
 class WorkflowBlock(BaseModel):
     """A block in a workflow graph."""
     model_config = ConfigDict(extra="ignore")
@@ -458,6 +483,10 @@ class WorkflowBlock(BaseModel):
     height: Optional[float] = Field(default=None, description="Block height")
     config: Optional[dict] = Field(default=None, description="Block-specific configuration")
     parent_id: Optional[str] = Field(default=None, description="Parent container block ID (while_loop, for_each)")
+    resolved_schemas: Optional[ResolvedSchemas] = Field(
+        default=None,
+        description="Graph-derived schema sidecar. Schemas for block outputs live here, not on raw step outputs.",
+    )
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
 
