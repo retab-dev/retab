@@ -36,17 +36,17 @@ export function mimeToBlob(mime: MIMEData): Blob {
     }
 }
 
-// function passthroughHttpsUrl(url: string): MIMEData {
-//     // Backend (materialize_remote_mime) fetches the URL server-side, sidestepping
-//     // the Cloud Run 32 MiB request cap. Filename is derived from the URL path;
-//     // the backend re-derives the content type after download.
-//     const pathPart = url.split('?')[0];
-//     const lastSegment = pathPart.substring(pathPart.lastIndexOf('/') + 1);
-//     return {
-//         filename: lastSegment || 'remote_file',
-//         url,
-//     };
-// }
+function passthroughHttpsUrl(url: string): MIMEData {
+    // Backend (materialize_remote_mime) fetches the URL server-side, sidestepping
+    // the Cloud Run 32 MiB request cap. Filename is derived from the URL path;
+    // the backend re-derives the content type after download.
+    const pathPart = url.split('?')[0];
+    const lastSegment = pathPart.substring(pathPart.lastIndexOf('/') + 1);
+    return {
+        filename: lastSegment || 'remote_file',
+        url,
+    };
+}
 
 export async function inferFileInfo(input: Buffer | string | Readable): Promise<MIMEData> {
     let buffer: Buffer;
@@ -57,9 +57,9 @@ export async function inferFileInfo(input: Buffer | string | Readable): Promise<
     if (Buffer.isBuffer(input)) {
         buffer = input;
     } else if (typeof input === 'string') {
-        // if (input.startsWith('https://')) {
-        //     return passthroughHttpsUrl(input);
-        // }
+        if (input.startsWith('https://')) {
+            return passthroughHttpsUrl(input);
+        }
         if (await fs.promises.stat(input).then(stat => stat.isFile()).catch(() => false)) {
             filePath = input;
             filename = path.basename(filePath);

@@ -148,13 +148,13 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
     if isinstance(document, MIMEData):
         return document
 
-    # if _is_https_url_string(document):
-    #     return _passthrough_https_url(document)  # type: ignore[arg-type]
+    if _is_https_url_string(document):
+        return _passthrough_https_url(document)  # type: ignore[arg-type]
 
-    # if hasattr(document, "unicode_string") and callable(getattr(document, "unicode_string")):
-    #     url_str: str = document.unicode_string()  # type: ignore[union-attr]
-    #     if url_str.startswith("https://"):
-    #         return _passthrough_https_url(url_str)
+    if hasattr(document, "unicode_string") and callable(getattr(document, "unicode_string")):
+        url_str: str = document.unicode_string()  # type: ignore[union-attr]
+        if url_str.startswith("https://"):
+            return _passthrough_https_url(url_str)
 
     if isinstance(document, bytes):
         # `document` is already the raw bytes
