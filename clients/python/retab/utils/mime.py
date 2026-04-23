@@ -113,6 +113,23 @@ def convert_mime_data_to_pil_image(mime_data: MIMEData) -> PIL.Image.Image:
     return image
 
 
+def _is_https_url_string(value: object) -> bool:
+    return isinstance(value, str) and value.startswith("https://")
+
+
+def _passthrough_https_url(url: str) -> MIMEData:
+    """Build a MIMEData that references a remote https:// URL without fetching it.
+
+    The backend resolves the URL server-side (see materialize_remote_mime) so large
+    files don't traverse the API request body and can bypass the Cloud Run 32 MiB
+    request cap. Filename is derived from the URL path; the backend validates the
+    fetched content type after download.
+    """
+    last_segment = url.split("?", 1)[0].rsplit("/", 1)[-1]
+    filename = last_segment or "remote_file"
+    return MIMEData(filename=filename, url=url)
+
+
 def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | PIL.Image.Image | HttpUrl) -> MIMEData:
     """
     Convert documents (file paths or file-like objects) to MIMEData objects.
@@ -130,6 +147,14 @@ def prepare_mime_document(document: Path | str | bytes | io.IOBase | MIMEData | 
 
     if isinstance(document, MIMEData):
         return document
+
+    # if _is_https_url_string(document):
+    #     return _passthrough_https_url(document)  # type: ignore[arg-type]
+
+    # if hasattr(document, "unicode_string") and callable(getattr(document, "unicode_string")):
+    #     url_str: str = document.unicode_string()  # type: ignore[union-attr]
+    #     if url_str.startswith("https://"):
+    #         return _passthrough_https_url(url_str)
 
     if isinstance(document, bytes):
         # `document` is already the raw bytes
