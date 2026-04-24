@@ -6,7 +6,7 @@ import {
     fileTypeFromFile,
     FileTypeResult
 } from 'file-type';
-import { MIMEData } from '@/types';
+import type { MIMEData } from '@/types';
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
     return new Promise((resolve, reject) => {
@@ -36,6 +36,41 @@ export function mimeToBlob(mime: MIMEData): Blob {
     }
 }
 
+export function retabStorageFileIdFromUrl(url: string): string | undefined {
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch (_) {
+        return undefined;
+    }
+    if (
+        parsed.protocol !== 'https:' ||
+        parsed.hostname !== 'storage.retab.com' ||
+        parsed.search !== '' ||
+        parsed.hash !== ''
+    ) {
+        return undefined;
+    }
+    const suffix = parsed.pathname.replace(/^\/+|\/+$/g, '');
+    if (!suffix || suffix.includes('/')) {
+        return undefined;
+    }
+    return suffix;
+}
+
+export function withMimeDataProperties<T extends MIMEData>(mime: T): T & { readonly id?: string } {
+    const fileId = retabStorageFileIdFromUrl(mime.url);
+    if (!fileId) {
+        return mime;
+    }
+    Object.defineProperty(mime, 'id', {
+        configurable: true,
+        enumerable: false,
+        get: () => fileId,
+    });
+    return mime as T & { readonly id?: string };
+}
+
 function passthroughHttpsUrl(url: string): MIMEData {
     // Backend (materialize_remote_mime) fetches the URL server-side, sidestepping
     // the Cloud Run 32 MiB request cap. Filename is derived from the URL path;
@@ -58,7 +93,7 @@ export async function inferFileInfo(input: Buffer | string | Readable): Promise<
         buffer = input;
     } else if (typeof input === 'string') {
         if (input.startsWith('https://')) {
-            return passthroughHttpsUrl(input);
+            return withMimeDataProperties(passthroughHttpsUrl(input));
         }
         if (await fs.promises.stat(input).then(stat => stat.isFile()).catch(() => false)) {
             filePath = input;
@@ -99,8 +134,8 @@ export async function inferFileInfo(input: Buffer | string | Readable): Promise<
     if (mime === null) mime = inferredMime;
     const base64Data = buffer.toString('base64');
 
-    return {
+    return withMimeDataProperties({
         filename: filename ?? `uploaded_file.${ext}`,
         url: `data:${mime};base64,${base64Data}`,
-    };
+    });
 }

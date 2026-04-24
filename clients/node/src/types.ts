@@ -3,7 +3,7 @@ import * as generated from './generated_types';
 import { ZFieldItem, ZRefObject, ZRowList } from './generated_types';
 export * from './generated_types';
 import * as z from 'zod';
-import { inferFileInfo } from './mime';
+import { inferFileInfo, withMimeDataProperties } from './mime';
 import fs from 'fs';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 //export * from "./schema_types";
@@ -61,9 +61,9 @@ export const ZMIMEData = z
   .transform(async (input, ctx) => {
     try {
       if (typeof input === 'object' && input !== null && 'url' in input && 'filename' in input) {
-        return input as any;
+        return withMimeDataProperties(input as generated.MIMEData);
       }
-      return await inferFileInfo(input as any);
+      return withMimeDataProperties(await inferFileInfo(input as any));
     } catch (error: any) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -74,6 +74,7 @@ export const ZMIMEData = z
     }
   });
 export type MIMEDataInput = z.input<typeof ZMIMEData>;
+export type MIMEData = generated.MIMEData & { readonly id?: string };
 
 export const ZJSONSchema = z
   .union([z.string(), z.record(z.any()), z.instanceof(z.ZodType)])

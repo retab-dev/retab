@@ -4,6 +4,7 @@ import gzip
 import mimetypes
 import re
 from typing import Optional, Self, Sequence
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field
 from ..utils.hashing import generate_blake2b_hash_from_base64
@@ -101,6 +102,16 @@ class MIMEData(BaseModel):
 
     @property
     def id(self) -> str:
+        parsed_url = urlsplit(self.url)
+        if (
+            parsed_url.scheme == "https"
+            and parsed_url.hostname == "storage.retab.com"
+            and not parsed_url.query
+            and not parsed_url.fragment
+        ):
+            suffix = parsed_url.path.strip("/")
+            if suffix and "/" not in suffix:
+                return suffix
         return f"file_{generate_blake2b_hash_from_base64(self.content)}"
 
     @property
@@ -159,11 +170,15 @@ class MIMEData(BaseModel):
 
     def __str__(self) -> str:
         truncated_url = self.url[:50] + "..." if len(self.url) > 50 else self.url
+        try:
+            size: int | str = self.size
+        except ValueError:
+            size = "unavailable"
         return (
             f"MIMEData(filename='{self.filename}', "
             f"url='{truncated_url}', "
             f"mime_type='{self.mime_type}', "
-            f"size='{self.size}', "
+            f"size='{size}', "
             f"extension='{self.extension}')"
         )
 

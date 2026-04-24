@@ -120,8 +120,8 @@ export const ZFileLink = z.lazy(() => (z.object({
 export type FileLink = z.infer<typeof ZFileLink>;
 
 export const ZUploadFileResponse = z.lazy(() => (z.object({
-    file_id: z.string(),
     filename: z.string(),
+    url: z.string(),
 })));
 export type UploadFileResponse = z.infer<typeof ZUploadFileResponse>;
 

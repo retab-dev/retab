@@ -26,17 +26,18 @@ class RecordingClient extends AbstractClient {
     const body = params.url === "/files/upload"
       ? {
         fileId: "file_123",
-        filename: "invoice.pdf",
         uploadUrl: "https://storage.googleapis.com/signed-upload",
         uploadMethod: "PUT",
         uploadHeaders: { "Content-Type": "application/pdf" },
-        storageUrl: "https://storage.retab.com/file_123",
+        mimeData: {
+          filename: "invoice.pdf",
+          url: "https://storage.retab.com/file_123",
+        },
         expiresAt: "2026-04-24T12:00:00Z",
       }
       : {
-        fileId: "file_123",
         filename: "invoice.pdf",
-        storageUrl: "https://storage.retab.com/file_123",
+        url: "https://storage.retab.com/file_123",
       };
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -74,6 +75,31 @@ describe("Node SDK files upload request", () => {
       filename: "invoice.pdf",
       url: signedUrl,
     });
+  });
+
+  test("adds a non-enumerable id property for Retab storage MIME inputs", async () => {
+    const mimeData = await ZMIMEData.parseAsync({
+      filename: "invoice.pdf",
+      url: "https://storage.retab.com/file_123",
+    });
+
+    expect(mimeData.id).toBe("file_123");
+    expect(mimeData).toEqual({
+      filename: "invoice.pdf",
+      url: "https://storage.retab.com/file_123",
+    });
+    expect(JSON.stringify(mimeData)).toBe(
+      '{"filename":"invoice.pdf","url":"https://storage.retab.com/file_123"}',
+    );
+  });
+
+  test("does not infer ids for non-opaque Retab storage URLs", async () => {
+    const mimeData = await ZMIMEData.parseAsync({
+      filename: "invoice.pdf",
+      url: "https://storage.retab.com/org_1/file_123",
+    });
+
+    expect(mimeData.id).toBeUndefined();
   });
 
   test("prepare helpers expose the upload session and completion contracts", async () => {
@@ -120,7 +146,8 @@ describe("Node SDK files upload request", () => {
     try {
       const response = await api.files.upload(filePath);
 
-      expect(response.file_id).toBe("file_123");
+      expect(response).toEqual({ filename: "invoice.pdf", url: "https://storage.retab.com/file_123" });
+      expect(response.id).toBe("file_123");
     } finally {
       globalThis.fetch = originalFetch;
     }
