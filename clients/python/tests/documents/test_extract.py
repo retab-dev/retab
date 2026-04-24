@@ -251,37 +251,41 @@ async def base_test_extract(
     if client_type == "sync":
         with sync_client as client:
             if response_mode == "stream":
-                with client.documents.extract_stream(
-                    json_schema=json_schema,
-                    document=document,
-                    model=model,
-                ) as stream_iterator:
-                    response = stream_iterator.__next__()
-                    for response in stream_iterator:
-                        pass
+                with pytest.warns(DeprecationWarning):
+                    with client.documents.extract_stream(
+                        json_schema=json_schema,
+                        document=document,
+                        model=model,
+                    ) as stream_iterator:
+                        response = stream_iterator.__next__()
+                        for response in stream_iterator:
+                            pass
             else:
-                response = client.documents.extract(
-                    json_schema=json_schema,
-                    document=document,
-                    model=model,
-                )
+                with pytest.warns(DeprecationWarning):
+                    response = client.documents.extract(
+                        json_schema=json_schema,
+                        document=document,
+                        model=model,
+                    )
     if client_type == "async":
         async with async_client:
             if response_mode == "stream":
-                async with async_client.documents.extract_stream(
-                    json_schema=json_schema,
-                    document=document,
-                    model=model,
-                ) as stream_async_iterator:
-                    response = await stream_async_iterator.__anext__()
-                    async for response in stream_async_iterator:
-                        pass
+                with pytest.warns(DeprecationWarning):
+                    async with async_client.documents.extract_stream(
+                        json_schema=json_schema,
+                        document=document,
+                        model=model,
+                    ) as stream_async_iterator:
+                        response = await stream_async_iterator.__anext__()
+                        async for response in stream_async_iterator:
+                            pass
             else:
-                response = await async_client.documents.extract(
-                    json_schema=json_schema,
-                    document=document,
-                    model=model,
-                )
+                with pytest.warns(DeprecationWarning):
+                    response = await async_client.documents.extract(
+                        json_schema=json_schema,
+                        document=document,
+                        model=model,
+                    )
     validate_extraction_response(response)
 
 
@@ -345,12 +349,13 @@ async def test_extract_with_text_additional_message(
     ]
 
     async with async_client:
-        response = await async_client.documents.extract(
-            json_schema=booking_confirmation_json_schema,
-            document=booking_confirmation_file_path_1,
-            model="retab-micro",
-            additional_messages=additional_messages,
-        )
+        with pytest.warns(DeprecationWarning):
+            response = await async_client.documents.extract(
+                json_schema=booking_confirmation_json_schema,
+                document=booking_confirmation_file_path_1,
+                model="retab-micro",
+                additional_messages=additional_messages,
+            )
 
     validate_extraction_response(response)
 
@@ -386,12 +391,13 @@ async def test_extract_with_multipart_additional_message(
     ]
 
     async with async_client:
-        response = await async_client.documents.extract(
-            json_schema=booking_confirmation_json_schema,
-            document=booking_confirmation_file_path_1,
-            model="retab-micro",
-            additional_messages=additional_messages,
-        )
+        with pytest.warns(DeprecationWarning):
+            response = await async_client.documents.extract(
+                json_schema=booking_confirmation_json_schema,
+                document=booking_confirmation_file_path_1,
+                model="retab-micro",
+                additional_messages=additional_messages,
+            )
 
     validate_extraction_response(response)
 
@@ -415,12 +421,13 @@ async def test_extract_with_system_additional_message(
     ]
 
     async with async_client:
-        response = await async_client.documents.extract(
-            json_schema=booking_confirmation_json_schema,
-            document=booking_confirmation_file_path_1,
-            model="retab-micro",
-            additional_messages=additional_messages,
-        )
+        with pytest.warns(DeprecationWarning):
+            response = await async_client.documents.extract(
+                json_schema=booking_confirmation_json_schema,
+                document=booking_confirmation_file_path_1,
+                model="retab-micro",
+                additional_messages=additional_messages,
+            )
 
     validate_extraction_response(response)
 
@@ -448,11 +455,12 @@ async def test_extract_with_multiple_additional_messages(
     ]
 
     async with async_client:
-        response = await async_client.documents.extract(
-            json_schema=booking_confirmation_json_schema,
-            document=booking_confirmation_file_path_1,
-            model="retab-micro",
-            additional_messages=additional_messages,
-        )
+        with pytest.warns(DeprecationWarning):
+            response = await async_client.documents.extract(
+                json_schema=booking_confirmation_json_schema,
+                document=booking_confirmation_file_path_1,
+                model="retab-micro",
+                additional_messages=additional_messages,
+            )
 
     validate_extraction_response(response)
