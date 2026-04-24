@@ -31,13 +31,13 @@ class RecordingClient extends AbstractClient {
         uploadHeaders: { "Content-Type": "application/pdf" },
         mimeData: {
           filename: "invoice.pdf",
-          url: "https://storage.retab.com/file_123",
+          url: "https://storage.retab.com/org_1/file_123.pdf",
         },
         expiresAt: "2026-04-24T12:00:00Z",
       }
       : {
         filename: "invoice.pdf",
-        url: "https://storage.retab.com/file_123",
+        url: "https://storage.retab.com/org_1/file_123.pdf",
       };
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -80,16 +80,16 @@ describe("Node SDK files upload request", () => {
   test("adds a non-enumerable id property for Retab storage MIME inputs", async () => {
     const mimeData = await ZMIMEData.parseAsync({
       filename: "invoice.pdf",
-      url: "https://storage.retab.com/file_123",
+      url: "https://storage.retab.com/org_1/file_123.pdf",
     });
 
     expect(mimeData.id).toBe("file_123");
     expect(mimeData).toEqual({
       filename: "invoice.pdf",
-      url: "https://storage.retab.com/file_123",
+      url: "https://storage.retab.com/org_1/file_123.pdf",
     });
     expect(JSON.stringify(mimeData)).toBe(
-      '{"filename":"invoice.pdf","url":"https://storage.retab.com/file_123"}',
+      '{"filename":"invoice.pdf","url":"https://storage.retab.com/org_1/file_123.pdf"}',
     );
   });
 
@@ -146,7 +146,7 @@ describe("Node SDK files upload request", () => {
     try {
       const response = await api.files.upload(filePath);
 
-      expect(response).toEqual({ filename: "invoice.pdf", url: "https://storage.retab.com/file_123" });
+      expect(response).toEqual({ filename: "invoice.pdf", url: "https://storage.retab.com/org_1/file_123.pdf" });
       expect(response.id).toBe("file_123");
     } finally {
       globalThis.fetch = originalFetch;

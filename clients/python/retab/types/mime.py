@@ -109,9 +109,11 @@ class MIMEData(BaseModel):
             and not parsed_url.query
             and not parsed_url.fragment
         ):
-            suffix = parsed_url.path.strip("/")
-            if suffix and "/" not in suffix:
-                return suffix
+            path_parts = [part for part in parsed_url.path.split("/") if part]
+            if len(path_parts) == 2:
+                file_id, separator, extension = path_parts[1].rpartition(".")
+                if path_parts[0] and file_id and separator == "." and extension:
+                    return file_id
         return f"file_{generate_blake2b_hash_from_base64(self.content)}"
 
     @property
