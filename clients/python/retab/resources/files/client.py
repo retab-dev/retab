@@ -1,27 +1,42 @@
+import hashlib
+import mimetypes
 from io import IOBase
 from pathlib import Path
 from typing import Any, List, Literal, Optional
 
-import PIL.Image
-from pydantic import HttpUrl
-
 from ..._resource import AsyncAPIResource, SyncAPIResource
-from ...types.files import File, FileLink, UploadFileResponse
-from ...types.mime import MIMEData
+from ...types.files import CreateUploadResponse, File, FileLink, UploadFileResponse
 from ...types.standards import PreparedRequest
-from ...utils.mime import prepare_mime_document
 
-FileUploadInput = Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl
+FileUploadInput = Path | str | IOBase
 
 
 class FilesMixin:
-    def prepare_upload(self, mime_data: FileUploadInput) -> PreparedRequest:
-        prepared_mime_data = prepare_mime_document(mime_data)
+    def prepare_upload(
+        self,
+        filename: str,
+        content_type: str,
+        size_bytes: int,
+        sha256: str | None = None,
+    ) -> PreparedRequest:
+        data: dict[str, Any] = {
+            "filename": filename,
+            "content_type": content_type,
+            "size_bytes": size_bytes,
+        }
+        if sha256 is not None:
+            data["sha256"] = sha256
         return PreparedRequest(
             method="POST",
             url="/files/upload",
-            data={"mimeData": prepared_mime_data.model_dump(mode="json")},
+            data=data,
         )
+
+    def prepare_complete_upload(self, file_id: str, sha256: str | None = None) -> PreparedRequest:
+        data: dict[str, Any] = {}
+        if sha256 is not None:
+            data["sha256"] = sha256
+        return PreparedRequest(method="POST", url=f"/files/upload/{file_id}/complete", data=data)
 
     def prepare_list(
         self,
@@ -51,13 +66,89 @@ class FilesMixin:
         return PreparedRequest(method="GET", url=f"/files/{file_id}/download-link")
 
 
+def _is_remote_string(value: object) -> bool:
+    return isinstance(value, str) and (value.startswith("http://") or value.startswith("https://") or value.startswith("data:"))
+
+
+def _filename_for_file_obj(file_obj: IOBase) -> str:
+    name = getattr(file_obj, "name", None)
+    if isinstance(name, str) and name:
+        return Path(name).name
+    return "attachment"
+
+
+def _content_type_for_filename(filename: str) -> str:
+    return mimetypes.guess_type(filename)[0] or "application/octet-stream"
+
+
+def _file_size_and_sha256(file_obj: IOBase) -> tuple[int, str]:
+    if not file_obj.seekable():
+        raise ValueError("files.upload requires a seekable file object so the upload size can be declared")
+    current_position = file_obj.tell()
+    digest = hashlib.sha256()
+    size = 0
+    file_obj.seek(0)
+    while True:
+        chunk = file_obj.read(1024 * 1024)
+        if not chunk:
+            break
+        digest.update(chunk)
+        size += len(chunk)
+    file_obj.seek(current_position)
+    return size, digest.hexdigest()
+
+
+async def _async_file_chunks(file_obj: IOBase):
+    import asyncio
+
+    while True:
+        chunk = await asyncio.to_thread(file_obj.read, 1024 * 1024)
+        if not chunk:
+            break
+        yield chunk
+
+
 
 class Files(SyncAPIResource, FilesMixin):
 
     def upload(self, mime_data: FileUploadInput) -> UploadFileResponse:
-        request = self.prepare_upload(mime_data)
-        response = self._client._prepared_request(request)
-        return UploadFileResponse(**response)
+        if isinstance(mime_data, Path) or (isinstance(mime_data, str) and not _is_remote_string(mime_data)):
+            path = Path(mime_data)
+            with path.open("rb") as file_obj:
+                response = self._upload_file_obj(
+                    file_obj=file_obj,
+                    filename=path.name,
+                    content_type=_content_type_for_filename(path.name),
+                )
+            return UploadFileResponse(**response)
+        if isinstance(mime_data, IOBase):
+            filename = _filename_for_file_obj(mime_data)
+            response = self._upload_file_obj(
+                file_obj=mime_data,
+                filename=filename,
+                content_type=_content_type_for_filename(filename),
+            )
+            return UploadFileResponse(**response)
+        raise ValueError("files.upload only accepts local file paths or seekable file objects")
+
+    def _upload_file_obj(self, file_obj: IOBase, filename: str, content_type: str) -> dict[str, Any]:
+        size_bytes, sha256 = _file_size_and_sha256(file_obj)
+        session = CreateUploadResponse(**self._client._prepared_request(
+            self.prepare_upload(
+                filename=filename,
+                content_type=content_type,
+                size_bytes=size_bytes,
+                sha256=sha256,
+            )
+        ))
+        file_obj.seek(0)
+        upload_response = self._client.client.put(
+            session.upload_url,
+            content=file_obj,
+            headers=session.upload_headers,
+        )
+        upload_response.raise_for_status()
+        return self._client._prepared_request(self.prepare_complete_upload(session.file_id, sha256=sha256))
 
     def list(
         self,
@@ -88,9 +179,45 @@ class Files(SyncAPIResource, FilesMixin):
 class AsyncFiles(AsyncAPIResource, FilesMixin):
 
     async def upload(self, mime_data: FileUploadInput) -> UploadFileResponse:
-        request = self.prepare_upload(mime_data)
-        response = await self._client._prepared_request(request)
-        return UploadFileResponse(**response)
+        if isinstance(mime_data, Path) or (isinstance(mime_data, str) and not _is_remote_string(mime_data)):
+            path = Path(mime_data)
+            with path.open("rb") as file_obj:
+                response = await self._upload_file_obj(
+                    file_obj=file_obj,
+                    filename=path.name,
+                    content_type=_content_type_for_filename(path.name),
+                )
+            return UploadFileResponse(**response)
+        if isinstance(mime_data, IOBase):
+            filename = _filename_for_file_obj(mime_data)
+            response = await self._upload_file_obj(
+                file_obj=mime_data,
+                filename=filename,
+                content_type=_content_type_for_filename(filename),
+            )
+            return UploadFileResponse(**response)
+        raise ValueError("files.upload only accepts local file paths or seekable file objects")
+
+    async def _upload_file_obj(self, file_obj: IOBase, filename: str, content_type: str) -> dict[str, Any]:
+        import asyncio
+
+        size_bytes, sha256 = await asyncio.to_thread(_file_size_and_sha256, file_obj)
+        session = CreateUploadResponse(**await self._client._prepared_request(
+            self.prepare_upload(
+                filename=filename,
+                content_type=content_type,
+                size_bytes=size_bytes,
+                sha256=sha256,
+            )
+        ))
+        file_obj.seek(0)
+        upload_response = await self._client.client.put(
+            session.upload_url,
+            content=_async_file_chunks(file_obj),
+            headers=session.upload_headers,
+        )
+        upload_response.raise_for_status()
+        return await self._client._prepared_request(self.prepare_complete_upload(session.file_id, sha256=sha256))
 
     async def list(
         self,

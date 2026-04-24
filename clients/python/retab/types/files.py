@@ -24,5 +24,13 @@ class FileLink(BaseModel):
 class UploadFileResponse(BaseModel):
     file_id: str = Field(..., description="The ID of the uploaded file", alias="fileId")
     filename: str = Field(..., description="The filename of the uploaded file")
+    storage_url: str | None = Field(default=None, description="Opaque Retab storage URL", alias="storageUrl")
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+class CreateUploadResponse(UploadFileResponse):
+    upload_url: str = Field(..., description="Short-lived signed upload URL", alias="uploadUrl")
+    upload_method: str = Field(default="PUT", description="HTTP method for upload", alias="uploadMethod")
+    upload_headers: dict[str, str] = Field(default_factory=dict, description="Headers required by the signed upload URL", alias="uploadHeaders")
+    expires_at: datetime.datetime = Field(..., description="When the upload URL expires", alias="expiresAt")

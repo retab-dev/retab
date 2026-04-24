@@ -1,6 +1,8 @@
 import pytest
+import httpx
+from io import BytesIO
 
-from retab import Retab
+from retab import AsyncRetab, Retab
 from retab.types.mime import MIMEData
 from retab.types.partitions import Partition
 from retab.types.splits import Split
@@ -27,29 +29,247 @@ def test_extractions_delete_uses_new_resource_route(monkeypatch: pytest.MonkeyPa
     assert getattr(captured["request"], "url") == "/extractions/extr_123"
 
 
-def test_files_upload_accepts_signed_bucket_url(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
+def test_files_upload_rejects_signed_bucket_url() -> None:
     signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
 
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        with pytest.raises(ValueError, match="local file paths"):
+            client.files.upload(signed_url)
+
+
+def test_files_upload_rejects_http_url() -> None:
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        with pytest.raises(ValueError, match="local file paths"):
+            client.files.upload("http://example.com/invoice.pdf")
+
+
+def test_files_upload_uses_direct_storage_upload_for_local_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    captured: dict[str, object] = {}
+    document_path = tmp_path / "invoice.pdf"
+    document_path.write_bytes(b"%PDF-1.4")
+
     def fake_prepared_request(request: object) -> dict[str, object]:
-        captured["request"] = request
+        captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
+        if getattr(request, "url") == "/files/upload":
+            return {
+                "fileId": "file_123",
+                "filename": "invoice.pdf",
+                "uploadUrl": "https://storage.googleapis.com/signed-upload",
+                "uploadMethod": "PUT",
+                "uploadHeaders": {"Content-Type": "application/pdf"},
+                "storageUrl": "https://storage.retab.com/file_123",
+                "expiresAt": "2026-04-24T12:00:00Z",
+            }
         return {
             "fileId": "file_123",
             "filename": "invoice.pdf",
+            "storageUrl": "https://storage.retab.com/file_123",
         }
+
+    class FakeUploadResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+    def fake_put(*args: object, **kwargs: object) -> FakeUploadResponse:
+        captured["put_args"] = args
+        captured["put_kwargs"] = kwargs
+        return FakeUploadResponse()
 
     with Retab(api_key="test", base_url="http://example.com/v1") as client:
         monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
-        result = client.files.upload(signed_url)
+        monkeypatch.setattr(client.client, "put", fake_put)
+        result = client.files.upload(document_path)
 
     assert result.file_id == "file_123"
-    assert getattr(captured["request"], "url") == "/files/upload"
-    assert getattr(captured["request"], "data") == {
-        "mimeData": {
-            "filename": "invoice.pdf",
-            "url": signed_url,
-        },
+    assert result.storage_url == "https://storage.retab.com/file_123"
+    requests = captured["requests"]  # type: ignore[assignment]
+    assert [getattr(request, "url") for request in requests] == [
+        "/files/upload",
+        "/files/upload/file_123/complete",
+    ]
+    assert getattr(requests[0], "data") == {
+        "filename": "invoice.pdf",
+        "content_type": "application/pdf",
+        "size_bytes": 8,
+        "sha256": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
     }
+    assert getattr(requests[1], "data") == {
+        "sha256": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+    }
+    assert captured["put_args"] == ("https://storage.googleapis.com/signed-upload",)
+    assert captured["put_kwargs"]["headers"] == {"Content-Type": "application/pdf"}  # type: ignore[index]
+
+
+def test_files_upload_file_object_streams_from_start_and_uses_object_filename(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+    file_obj = BytesIO(b"hello world")
+    file_obj.name = "/tmp/report.txt"  # type: ignore[attr-defined]
+    file_obj.seek(6)
+
+    def fake_prepared_request(request: object) -> dict[str, object]:
+        captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
+        if getattr(request, "url") == "/files/upload":
+            return {
+                "fileId": "file_123",
+                "filename": "report.txt",
+                "uploadUrl": "https://storage.googleapis.com/signed-upload",
+                "uploadMethod": "PUT",
+                "uploadHeaders": {"Content-Type": "text/plain"},
+                "storageUrl": "https://storage.retab.com/file_123",
+                "expiresAt": "2026-04-24T12:00:00Z",
+            }
+        return {
+            "fileId": "file_123",
+            "filename": "report.txt",
+            "storageUrl": "https://storage.retab.com/file_123",
+        }
+
+    class FakeUploadResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+    def fake_put(*_args: object, **kwargs: object) -> FakeUploadResponse:
+        content = kwargs["content"]
+        captured["uploaded_bytes"] = content.read()  # type: ignore[attr-defined]
+        return FakeUploadResponse()
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+        monkeypatch.setattr(client.client, "put", fake_put)
+        result = client.files.upload(file_obj)
+
+    assert result.file_id == "file_123"
+    requests = captured["requests"]  # type: ignore[assignment]
+    assert getattr(requests[0], "data") == {
+        "filename": "report.txt",
+        "content_type": "text/plain",
+        "size_bytes": 11,
+        "sha256": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+    }
+    assert getattr(requests[1], "data") == {
+        "sha256": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+    }
+    assert captured["uploaded_bytes"] == b"hello world"
+
+
+@pytest.mark.asyncio
+async def test_async_files_upload_uses_direct_storage_upload_for_local_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    captured: dict[str, object] = {}
+    document_path = tmp_path / "invoice.pdf"
+    document_path.write_bytes(b"%PDF-1.4")
+
+    async def fake_prepared_request(request: object) -> dict[str, object]:
+        captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
+        if getattr(request, "url") == "/files/upload":
+            return {
+                "fileId": "file_123",
+                "filename": "invoice.pdf",
+                "uploadUrl": "https://storage.googleapis.com/signed-upload",
+                "uploadMethod": "PUT",
+                "uploadHeaders": {"Content-Type": "application/pdf"},
+                "storageUrl": "https://storage.retab.com/file_123",
+                "expiresAt": "2026-04-24T12:00:00Z",
+            }
+        return {
+            "fileId": "file_123",
+            "filename": "invoice.pdf",
+            "storageUrl": "https://storage.retab.com/file_123",
+        }
+
+    class FakeUploadResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+    async def fake_put(*args: object, **kwargs: object) -> FakeUploadResponse:
+        chunks: list[bytes] = []
+        async for chunk in kwargs["content"]:  # type: ignore[index, union-attr]
+            chunks.append(chunk)
+        captured["put_args"] = args
+        captured["uploaded_bytes"] = b"".join(chunks)
+        captured["put_headers"] = kwargs["headers"]  # type: ignore[index]
+        return FakeUploadResponse()
+
+    async with AsyncRetab(api_key="test", base_url="http://example.com/v1") as client:
+        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+        monkeypatch.setattr(client.client, "put", fake_put)
+        result = await client.files.upload(document_path)
+
+    requests = captured["requests"]  # type: ignore[assignment]
+    assert result.file_id == "file_123"
+    assert result.storage_url == "https://storage.retab.com/file_123"
+    assert [getattr(request, "url") for request in requests] == [
+        "/files/upload",
+        "/files/upload/file_123/complete",
+    ]
+    assert getattr(requests[0], "data") == {
+        "filename": "invoice.pdf",
+        "content_type": "application/pdf",
+        "size_bytes": 8,
+        "sha256": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+    }
+    assert getattr(requests[1], "data") == {
+        "sha256": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+    }
+    assert captured["put_args"] == ("https://storage.googleapis.com/signed-upload",)
+    assert captured["uploaded_bytes"] == b"%PDF-1.4"
+    assert captured["put_headers"] == {"Content-Type": "application/pdf"}
+
+
+def test_files_upload_does_not_complete_when_direct_upload_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    captured: dict[str, object] = {}
+    document_path = tmp_path / "invoice.pdf"
+    document_path.write_bytes(b"%PDF-1.4")
+
+    def fake_prepared_request(request: object) -> dict[str, object]:
+        captured.setdefault("requests", []).append(request)  # type: ignore[union-attr]
+        return {
+            "fileId": "file_123",
+            "filename": "invoice.pdf",
+            "uploadUrl": "https://storage.googleapis.com/signed-upload",
+            "uploadMethod": "PUT",
+            "uploadHeaders": {"Content-Type": "application/pdf"},
+            "storageUrl": "https://storage.retab.com/file_123",
+            "expiresAt": "2026-04-24T12:00:00Z",
+        }
+
+    class FakeUploadResponse:
+        def raise_for_status(self) -> None:
+            request = httpx.Request("PUT", "https://storage.googleapis.com/signed-upload")
+            response = httpx.Response(403, request=request, text="signature mismatch")
+            raise httpx.HTTPStatusError("upload failed", request=request, response=response)
+
+    def fake_put(*_args: object, **_kwargs: object) -> FakeUploadResponse:
+        return FakeUploadResponse()
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+        monkeypatch.setattr(client.client, "put", fake_put)
+        with pytest.raises(httpx.HTTPStatusError):
+            client.files.upload(document_path)
+
+    requests = captured["requests"]  # type: ignore[assignment]
+    assert [getattr(request, "url") for request in requests] == ["/files/upload"]
+
+
+def test_files_upload_rejects_non_seekable_file_objects() -> None:
+    class NonSeekable(BytesIO):
+        def seekable(self) -> bool:
+            return False
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        with pytest.raises(ValueError, match="seekable"):
+            client.files.upload(NonSeekable(b"%PDF-1.4"))
 
 
 def test_extractions_create_accepts_signed_bucket_url(monkeypatch: pytest.MonkeyPatch) -> None:
