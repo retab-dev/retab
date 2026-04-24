@@ -3,6 +3,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .mime import MIMEData
+
 
 class File(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -21,16 +23,16 @@ class FileLink(BaseModel):
     filename: str = Field(..., description="The name of the file")
 
 
-class UploadFileResponse(BaseModel):
-    file_id: str = Field(..., description="The ID of the uploaded file", alias="fileId")
-    filename: str = Field(..., description="The filename of the uploaded file")
-    storage_url: str | None = Field(default=None, description="Opaque Retab storage URL", alias="storageUrl")
-
+class UploadFileResponse(MIMEData):
     model_config = ConfigDict(populate_by_name=True)
 
 
-class CreateUploadResponse(UploadFileResponse):
+class CreateUploadResponse(BaseModel):
+    file_id: str = Field(..., description="The ID of the upload session", alias="fileId")
     upload_url: str = Field(..., description="Short-lived signed upload URL", alias="uploadUrl")
     upload_method: str = Field(default="PUT", description="HTTP method for upload", alias="uploadMethod")
     upload_headers: dict[str, str] = Field(default_factory=dict, description="Headers required by the signed upload URL", alias="uploadHeaders")
+    mime_data: MIMEData = Field(..., description="Durable Retab MIMEData reference", alias="mimeData")
     expires_at: datetime.datetime = Field(..., description="When the upload URL expires", alias="expiresAt")
+
+    model_config = ConfigDict(populate_by_name=True)

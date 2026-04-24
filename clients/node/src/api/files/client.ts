@@ -4,6 +4,7 @@ import * as z from "zod";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import { withMimeDataProperties } from "../../mime.js";
 
 const ZFile = z.object({
     object: z.literal("file").default("file"),
@@ -24,23 +25,17 @@ const ZFileLink = z.object({
 type FileLink = z.infer<typeof ZFileLink>;
 
 const ZUploadFileResponse = z.object({
-    fileId: z.string(),
     filename: z.string(),
-    storageUrl: z.string().optional(),
-}).transform((value) => ({
-    ...value,
-    file_id: value.fileId,
-    storage_url: value.storageUrl,
-}));
+    url: z.string(),
+}).transform(withMimeDataProperties);
 type UploadFileResponse = z.infer<typeof ZUploadFileResponse>;
 
 const ZCreateUploadResponse = z.object({
     fileId: z.string(),
-    filename: z.string(),
     uploadUrl: z.string(),
     uploadMethod: z.string().default("PUT"),
     uploadHeaders: z.record(z.string()).default({}),
-    storageUrl: z.string(),
+    mimeData: ZUploadFileResponse,
     expiresAt: z.string(),
 }).transform((value) => ({
     ...value,
@@ -48,7 +43,7 @@ const ZCreateUploadResponse = z.object({
     upload_url: value.uploadUrl,
     upload_method: value.uploadMethod,
     upload_headers: value.uploadHeaders,
-    storage_url: value.storageUrl,
+    mime_data: value.mimeData,
     expires_at: value.expiresAt,
 }));
 type CreateUploadResponse = z.infer<typeof ZCreateUploadResponse>;

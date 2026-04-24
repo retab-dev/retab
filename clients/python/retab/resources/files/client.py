@@ -148,7 +148,7 @@ class Files(SyncAPIResource, FilesMixin):
             headers=session.upload_headers,
         )
         upload_response.raise_for_status()
-        return self._client._prepared_request(self.prepare_complete_upload(session.file_id, sha256=sha256))
+        return UploadFileResponse(**self._client._prepared_request(self.prepare_complete_upload(session.file_id, sha256=sha256))).model_dump()
 
     def list(
         self,
@@ -217,7 +217,7 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
             headers=session.upload_headers,
         )
         upload_response.raise_for_status()
-        return await self._client._prepared_request(self.prepare_complete_upload(session.file_id, sha256=sha256))
+        return UploadFileResponse(**await self._client._prepared_request(self.prepare_complete_upload(session.file_id, sha256=sha256))).model_dump()
 
     async def list(
         self,
