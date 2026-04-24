@@ -27,6 +27,201 @@ def test_extractions_delete_uses_new_resource_route(monkeypatch: pytest.MonkeyPa
     assert getattr(captured["request"], "url") == "/extractions/extr_123"
 
 
+def test_files_upload_accepts_signed_bucket_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+    signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
+
+    def fake_prepared_request(request: object) -> dict[str, object]:
+        captured["request"] = request
+        return {
+            "fileId": "file_123",
+            "filename": "invoice.pdf",
+        }
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+        result = client.files.upload(signed_url)
+
+    assert result.file_id == "file_123"
+    assert getattr(captured["request"], "url") == "/files/upload"
+    assert getattr(captured["request"], "data") == {
+        "mimeData": {
+            "filename": "invoice.pdf",
+            "url": signed_url,
+        },
+    }
+
+
+def test_extractions_create_accepts_signed_bucket_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+    signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
+
+    def fake_prepared_request(request: object) -> dict[str, object]:
+        captured["request"] = request
+        return {
+            "id": "extr_123",
+            "file": {
+                "id": "file_123",
+                "filename": "invoice.pdf",
+                "mime_type": "application/pdf",
+            },
+            "model": "retab-small",
+            "json_schema": {"type": "object"},
+            "n_consensus": 1,
+            "image_resolution_dpi": 192,
+            "output": {},
+            "consensus": {"choices": []},
+            "metadata": {},
+        }
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+        result = client.extractions.create(
+            document=signed_url,
+            json_schema={"type": "object"},
+            model="retab-small",
+        )
+
+    assert result.id == "extr_123"
+    assert getattr(captured["request"], "url") == "/extractions"
+    assert getattr(captured["request"], "data")["document"] == {
+        "filename": "invoice.pdf",
+        "url": signed_url,
+    }
+
+
+@pytest.mark.parametrize(
+    ("resource_name", "prepare_name", "kwargs"),
+    [
+        (
+            "classifications",
+            "_prepare_create",
+            {
+                "categories": [{"name": "invoice", "description": "Invoice documents"}],
+                "model": "retab-small",
+            },
+        ),
+        (
+            "parses",
+            "_prepare_create",
+            {
+                "model": "retab-small",
+            },
+        ),
+        (
+            "splits",
+            "_prepare_create",
+            {
+                "subdocuments": [{"name": "invoice", "description": "Invoice documents"}],
+                "model": "retab-small",
+            },
+        ),
+        (
+            "partitions",
+            "_prepare_create",
+            {
+                "key": "invoice_number",
+                "instructions": "Split the document into one chunk per invoice number.",
+                "model": "retab-small",
+            },
+        ),
+        (
+            "extractions",
+            "prepare_create",
+            {
+                "json_schema": {"type": "object"},
+                "model": "retab-small",
+            },
+        ),
+    ],
+)
+def test_resource_create_builders_preserve_signed_bucket_urls(
+    resource_name: str,
+    prepare_name: str,
+    kwargs: dict[str, object],
+) -> None:
+    signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        resource = getattr(client, resource_name)
+        request = getattr(resource, prepare_name)(document=signed_url, **kwargs)
+
+    assert request.data["document"] == {
+        "filename": "invoice.pdf",
+        "url": signed_url,
+    }
+
+
+def test_resource_create_builders_include_supported_route_fields() -> None:
+    signed_url = "https://storage.googleapis.com/uiform-eu-multiregion/test/invoice.pdf?X-Goog-Signature=abc"
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        classification = client.classifications._prepare_create(
+            document=signed_url,
+            categories=[{"name": "invoice", "description": "Invoice documents"}],
+            model="retab-small",
+            first_n_pages=1,
+            instructions="Use the cover page.",
+        )
+        parse = client.parses._prepare_create(
+            document=signed_url,
+            model="retab-small",
+            instructions="Keep invoice sections separate.",
+        )
+        split = client.splits._prepare_create(
+            document=signed_url,
+            subdocuments=[{"name": "invoice", "description": "Invoice documents"}],
+            model="retab-small",
+            instructions="Split attachments from invoices.",
+        )
+        extraction = client.extractions.prepare_create(
+            document=signed_url,
+            json_schema={"type": "object"},
+            model="retab-small",
+            additional_messages=[{"role": "user", "content": "Use totals only."}],
+        )
+
+    assert classification.data["first_n_pages"] == 1
+    assert classification.data["instructions"] == "Use the cover page."
+    assert parse.data["instructions"] == "Keep invoice sections separate."
+    assert split.data["instructions"] == "Split attachments from invoices."
+    assert extraction.data["additional_messages"] == [{"role": "user", "content": "Use totals only."}]
+
+
+def test_resource_list_builders_include_filename_filters() -> None:
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        assert client.classifications._prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
+        assert client.parses._prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
+        assert client.splits._prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
+        assert client.partitions._prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
+        assert client.extractions.prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
+
+
+def test_partitions_list_and_delete_use_resource_routes(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: list[object] = []
+
+    def fake_prepared_request(request: object) -> dict[str, object]:
+        captured.append(request)
+        if getattr(request, "method") == "GET":
+            return {"data": [], "list_metadata": {"before": None, "after": None}}
+        return {}
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+        page = client.partitions.list(limit=5, filename="invoice.pdf")
+        client.partitions.delete("prtn_123")
+
+    assert len(page.data) == 0
+    assert getattr(captured[0], "url") == "/partitions"
+    assert getattr(captured[0], "params") == {
+        "limit": 5,
+        "order": "desc",
+        "filename": "invoice.pdf",
+    }
+    assert getattr(captured[1], "url") == "/partitions/prtn_123"
+    assert getattr(captured[1], "method") == "DELETE"
+
+
 def test_splits_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 

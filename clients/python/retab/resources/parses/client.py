@@ -23,6 +23,7 @@ class ParsesMixin:
         model: str,
         table_parsing_format: TableParsingFormat | _Unset = UNSET,
         image_resolution_dpi: int | _Unset = UNSET,
+        instructions: str | None = None,
         bust_cache: bool = False,
         **extra_body: Any,
     ) -> PreparedRequest:
@@ -36,6 +37,8 @@ class ParsesMixin:
             request_dict["table_parsing_format"] = table_parsing_format
         if image_resolution_dpi is not UNSET:
             request_dict["image_resolution_dpi"] = image_resolution_dpi
+        if instructions is not None:
+            request_dict["instructions"] = instructions
         if bust_cache:
             request_dict["bust_cache"] = True
         if extra_body:
@@ -57,6 +60,7 @@ class ParsesMixin:
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
+        filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
     ) -> PreparedRequest:
@@ -65,6 +69,7 @@ class ParsesMixin:
             "after": after,
             "limit": limit,
             "order": order,
+            "filename": filename,
             "from_date": from_date.isoformat() if from_date else None,
             "to_date": to_date.isoformat() if to_date else None,
         }
@@ -83,6 +88,7 @@ class Parses(SyncAPIResource, ParsesMixin):
         model: str,
         table_parsing_format: TableParsingFormat | _Unset = UNSET,
         image_resolution_dpi: int | _Unset = UNSET,
+        instructions: str | None = None,
         bust_cache: bool = False,
         **extra_body: Any,
     ) -> Parse:
@@ -91,6 +97,7 @@ class Parses(SyncAPIResource, ParsesMixin):
             model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
+            instructions=instructions,
             bust_cache=bust_cache,
             **extra_body,
         )
@@ -107,12 +114,13 @@ class Parses(SyncAPIResource, ParsesMixin):
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
+        filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
     ) -> PaginatedList:
         request = self._prepare_list(
             before=before, after=after, limit=limit, order=order,
-            from_date=from_date, to_date=to_date,
+            filename=filename, from_date=from_date, to_date=to_date,
         )
         response = self._client._prepared_request(request)
         result = PaginatedList(**response)
@@ -120,7 +128,7 @@ class Parses(SyncAPIResource, ParsesMixin):
         def fetch_next(after: str) -> PaginatedList:
             return self.list(
                 before=before, after=after, limit=limit, order=order,
-                from_date=from_date, to_date=to_date,
+                filename=filename, from_date=from_date, to_date=to_date,
             )
 
         result._fetch_next_page = fetch_next
@@ -139,6 +147,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         model: str,
         table_parsing_format: TableParsingFormat | _Unset = UNSET,
         image_resolution_dpi: int | _Unset = UNSET,
+        instructions: str | None = None,
         bust_cache: bool = False,
         **extra_body: Any,
     ) -> Parse:
@@ -147,6 +156,7 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
             model=model,
             table_parsing_format=table_parsing_format,
             image_resolution_dpi=image_resolution_dpi,
+            instructions=instructions,
             bust_cache=bust_cache,
             **extra_body,
         )
@@ -163,12 +173,13 @@ class AsyncParses(AsyncAPIResource, ParsesMixin):
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
+        filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
     ) -> PaginatedList:
         request = self._prepare_list(
             before=before, after=after, limit=limit, order=order,
-            from_date=from_date, to_date=to_date,
+            filename=filename, from_date=from_date, to_date=to_date,
         )
         response = await self._client._prepared_request(request)
         return PaginatedList(**response)

@@ -17,6 +17,27 @@ class MockClient extends AbstractClient {
 
     protected async _fetch(params: RecordedRequest): Promise<Response> {
         this.requests.push(params);
+        if (params.url === "/partitions" && params.method === "GET") {
+            return new Response(
+                JSON.stringify({
+                    data: [],
+                    list_metadata: {
+                        before: null,
+                        after: null,
+                    },
+                }),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+        }
+        if (params.method === "DELETE") {
+            return new Response("{}", {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
         return new Response(
             JSON.stringify({
                 id: "prtn_123",
@@ -113,6 +134,32 @@ describe("Node SDK partitions resource", () => {
             usage: {
                 credits: 1.0,
             },
+        });
+    });
+
+    test("partitions.list and delete use resource routes", async () => {
+        const mockClient = new MockClient();
+        const client = new APIV1(mockClient);
+
+        const listed = await client.partitions.list({ limit: 5, filename: "invoice.pdf" });
+        await client.partitions.delete("prtn_123");
+
+        expect(listed.data).toEqual([]);
+        expect(mockClient.requests[0]).toEqual({
+            url: "/partitions",
+            method: "GET",
+            params: {
+                limit: 5,
+                order: "desc",
+                filename: "invoice.pdf",
+            },
+            headers: undefined,
+        });
+        expect(mockClient.requests[1]).toEqual({
+            url: "/partitions/prtn_123",
+            method: "DELETE",
+            params: undefined,
+            headers: undefined,
         });
     });
 });

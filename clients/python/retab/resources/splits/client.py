@@ -22,6 +22,7 @@ class SplitsMixin:
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, Any]],
         model: str,
+        instructions: str | None = None,
         n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
         **extra_body: Any,
@@ -34,6 +35,8 @@ class SplitsMixin:
             ],
             "model": model,
         }
+        if instructions is not None:
+            request_dict["instructions"] = instructions
         if n_consensus is not UNSET:
             request_dict["n_consensus"] = n_consensus
         if bust_cache:
@@ -57,6 +60,7 @@ class SplitsMixin:
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
+        filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
     ) -> PreparedRequest:
@@ -65,6 +69,7 @@ class SplitsMixin:
             "after": after,
             "limit": limit,
             "order": order,
+            "filename": filename,
             "from_date": from_date.isoformat() if from_date else None,
             "to_date": to_date.isoformat() if to_date else None,
         }
@@ -81,6 +86,7 @@ class Splits(SyncAPIResource, SplitsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, Any]],
         model: str,
+        instructions: str | None = None,
         n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
         **extra_body: Any,
@@ -89,6 +95,7 @@ class Splits(SyncAPIResource, SplitsMixin):
             document=document,
             subdocuments=subdocuments,
             model=model,
+            instructions=instructions,
             n_consensus=n_consensus,
             bust_cache=bust_cache,
             **extra_body,
@@ -105,6 +112,7 @@ class Splits(SyncAPIResource, SplitsMixin):
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
+        filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
     ) -> PaginatedList:
@@ -113,6 +121,7 @@ class Splits(SyncAPIResource, SplitsMixin):
             after=after,
             limit=limit,
             order=order,
+            filename=filename,
             from_date=from_date,
             to_date=to_date,
         )
@@ -125,6 +134,7 @@ class Splits(SyncAPIResource, SplitsMixin):
                 after=after_cursor,
                 limit=limit,
                 order=order,
+                filename=filename,
                 from_date=from_date,
                 to_date=to_date,
             )
@@ -143,6 +153,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
         subdocuments: list[Subdocument] | list[dict[str, Any]],
         model: str,
+        instructions: str | None = None,
         n_consensus: int | _Unset = UNSET,
         bust_cache: bool = False,
         **extra_body: Any,
@@ -151,6 +162,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
             document=document,
             subdocuments=subdocuments,
             model=model,
+            instructions=instructions,
             n_consensus=n_consensus,
             bust_cache=bust_cache,
             **extra_body,
@@ -167,6 +179,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
         after: str | None = None,
         limit: int = 10,
         order: PaginationOrder = "desc",
+        filename: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
     ) -> PaginatedList:
@@ -175,6 +188,7 @@ class AsyncSplits(AsyncAPIResource, SplitsMixin):
             after=after,
             limit=limit,
             order=order,
+            filename=filename,
             from_date=from_date,
             to_date=to_date,
         )
