@@ -93,6 +93,21 @@ describe("Node SDK files upload request", () => {
     );
   });
 
+  test("accepts Retab storage URL strings as resource route MIME inputs", async () => {
+    const retabUrl = "https://storage.retab.com/org_1/file_123.pdf";
+
+    const mimeData = await ZMIMEData.parseAsync(retabUrl);
+
+    expect(mimeData.id).toBe("file_123");
+    expect(mimeData).toEqual({
+      filename: "file_123.pdf",
+      url: retabUrl,
+    });
+    expect(JSON.stringify(mimeData)).toBe(
+      '{"filename":"file_123.pdf","url":"https://storage.retab.com/org_1/file_123.pdf"}',
+    );
+  });
+
   test("does not infer ids for non-opaque Retab storage URLs", async () => {
     const mimeData = await ZMIMEData.parseAsync({
       filename: "invoice.pdf",

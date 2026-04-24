@@ -83,6 +83,7 @@ def test_files_upload_uses_direct_storage_upload_for_local_paths(
 
     assert result.filename == "invoice.pdf"
     assert result.url == "https://storage.retab.com/org_1/file_123.pdf"
+    assert result.id == "file_123"
     requests = captured["requests"]  # type: ignore[assignment]
     assert [getattr(request, "url") for request in requests] == [
         "/files/upload",
@@ -303,6 +304,15 @@ def test_extractions_create_accepts_signed_bucket_url(monkeypatch: pytest.Monkey
     }
 
 
+def test_mime_data_id_extracts_file_id_from_canonical_retab_storage_url() -> None:
+    mime = MIMEData(
+        filename="invoice.pdf",
+        url="https://storage.retab.com/org_1/file_123.pdf",
+    )
+
+    assert mime.id == "file_123"
+
+
 @pytest.mark.parametrize(
     ("resource_name", "prepare_name", "kwargs"),
     [
@@ -362,6 +372,133 @@ def test_resource_create_builders_preserve_signed_bucket_urls(
     assert request.data["document"] == {
         "filename": "invoice.pdf",
         "url": signed_url,
+    }
+
+
+@pytest.mark.parametrize(
+    ("resource_name", "prepare_name", "kwargs"),
+    [
+        (
+            "classifications",
+            "_prepare_create",
+            {
+                "categories": [{"name": "invoice", "description": "Invoice documents"}],
+                "model": "retab-small",
+            },
+        ),
+        (
+            "parses",
+            "_prepare_create",
+            {
+                "model": "retab-small",
+            },
+        ),
+        (
+            "splits",
+            "_prepare_create",
+            {
+                "subdocuments": [{"name": "invoice", "description": "Invoice documents"}],
+                "model": "retab-small",
+            },
+        ),
+        (
+            "partitions",
+            "_prepare_create",
+            {
+                "key": "invoice_number",
+                "instructions": "Split the document into one chunk per invoice number.",
+                "model": "retab-small",
+            },
+        ),
+        (
+            "extractions",
+            "prepare_create",
+            {
+                "json_schema": {"type": "object"},
+                "model": "retab-small",
+            },
+        ),
+    ],
+)
+def test_resource_create_builders_accept_retab_storage_url_string(
+    resource_name: str,
+    prepare_name: str,
+    kwargs: dict[str, object],
+) -> None:
+    retab_url = "https://storage.retab.com/org_1/file_123.pdf"
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        resource = getattr(client, resource_name)
+        request = getattr(resource, prepare_name)(document=retab_url, **kwargs)
+
+    assert request.data["document"] == {
+        "filename": "file_123.pdf",
+        "url": retab_url,
+    }
+
+
+@pytest.mark.parametrize(
+    ("resource_name", "prepare_name", "kwargs"),
+    [
+        (
+            "classifications",
+            "_prepare_create",
+            {
+                "categories": [{"name": "invoice", "description": "Invoice documents"}],
+                "model": "retab-small",
+            },
+        ),
+        (
+            "parses",
+            "_prepare_create",
+            {
+                "model": "retab-small",
+            },
+        ),
+        (
+            "splits",
+            "_prepare_create",
+            {
+                "subdocuments": [{"name": "invoice", "description": "Invoice documents"}],
+                "model": "retab-small",
+            },
+        ),
+        (
+            "partitions",
+            "_prepare_create",
+            {
+                "key": "invoice_number",
+                "instructions": "Split the document into one chunk per invoice number.",
+                "model": "retab-small",
+            },
+        ),
+        (
+            "extractions",
+            "prepare_create",
+            {
+                "json_schema": {"type": "object"},
+                "model": "retab-small",
+            },
+        ),
+    ],
+)
+def test_resource_create_builders_accept_uploaded_mime_ref(
+    resource_name: str,
+    prepare_name: str,
+    kwargs: dict[str, object],
+) -> None:
+    mime_ref = MIMEData(
+        filename="invoice.pdf",
+        url="https://storage.retab.com/org_1/file_123.pdf",
+    )
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        resource = getattr(client, resource_name)
+        request = getattr(resource, prepare_name)(document=mime_ref, **kwargs)
+
+    assert request.data["document"] == {
+        "filename": "invoice.pdf",
+        "url": "https://storage.retab.com/org_1/file_123.pdf",
     }
 
 
