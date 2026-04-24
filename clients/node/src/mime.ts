@@ -51,11 +51,15 @@ export function retabStorageFileIdFromUrl(url: string): string | undefined {
     ) {
         return undefined;
     }
-    const suffix = parsed.pathname.replace(/^\/+|\/+$/g, '');
-    if (!suffix || suffix.includes('/')) {
+    const pathParts = parsed.pathname.split('/').filter(Boolean);
+    if (pathParts.length !== 2) {
         return undefined;
     }
-    return suffix;
+    const lastDotIndex = pathParts[1].lastIndexOf('.');
+    if (lastDotIndex <= 0 || lastDotIndex === pathParts[1].length - 1 || pathParts[0] === '') {
+        return undefined;
+    }
+    return pathParts[1].slice(0, lastDotIndex);
 }
 
 export function withMimeDataProperties<T extends MIMEData>(mime: T): T & { readonly id?: string } {

@@ -59,12 +59,12 @@ def test_files_upload_uses_direct_storage_upload_for_local_paths(
                 "uploadUrl": "https://storage.googleapis.com/signed-upload",
                 "uploadMethod": "PUT",
                 "uploadHeaders": {"Content-Type": "application/pdf"},
-                "mimeData": {"filename": "invoice.pdf", "url": "https://storage.retab.com/file_123"},
+                "mimeData": {"filename": "invoice.pdf", "url": "https://storage.retab.com/org_1/file_123.pdf"},
                 "expiresAt": "2026-04-24T12:00:00Z",
             }
         return {
             "filename": "invoice.pdf",
-            "url": "https://storage.retab.com/file_123",
+            "url": "https://storage.retab.com/org_1/file_123.pdf",
         }
 
     class FakeUploadResponse:
@@ -82,7 +82,7 @@ def test_files_upload_uses_direct_storage_upload_for_local_paths(
         result = client.files.upload(document_path)
 
     assert result.filename == "invoice.pdf"
-    assert result.url == "https://storage.retab.com/file_123"
+    assert result.url == "https://storage.retab.com/org_1/file_123.pdf"
     requests = captured["requests"]  # type: ignore[assignment]
     assert [getattr(request, "url") for request in requests] == [
         "/files/upload",
@@ -117,12 +117,12 @@ def test_files_upload_file_object_streams_from_start_and_uses_object_filename(
                 "uploadUrl": "https://storage.googleapis.com/signed-upload",
                 "uploadMethod": "PUT",
                 "uploadHeaders": {"Content-Type": "text/plain"},
-                "mimeData": {"filename": "report.txt", "url": "https://storage.retab.com/file_123"},
+                "mimeData": {"filename": "report.txt", "url": "https://storage.retab.com/org_1/file_123.txt"},
                 "expiresAt": "2026-04-24T12:00:00Z",
             }
         return {
             "filename": "report.txt",
-            "url": "https://storage.retab.com/file_123",
+            "url": "https://storage.retab.com/org_1/file_123.txt",
         }
 
     class FakeUploadResponse:
@@ -170,12 +170,12 @@ async def test_async_files_upload_uses_direct_storage_upload_for_local_paths(
                 "uploadUrl": "https://storage.googleapis.com/signed-upload",
                 "uploadMethod": "PUT",
                 "uploadHeaders": {"Content-Type": "application/pdf"},
-                "mimeData": {"filename": "invoice.pdf", "url": "https://storage.retab.com/file_123"},
+                "mimeData": {"filename": "invoice.pdf", "url": "https://storage.retab.com/org_1/file_123.pdf"},
                 "expiresAt": "2026-04-24T12:00:00Z",
             }
         return {
             "filename": "invoice.pdf",
-            "url": "https://storage.retab.com/file_123",
+            "url": "https://storage.retab.com/org_1/file_123.pdf",
         }
 
     class FakeUploadResponse:
@@ -198,7 +198,7 @@ async def test_async_files_upload_uses_direct_storage_upload_for_local_paths(
 
     requests = captured["requests"]  # type: ignore[assignment]
     assert result.filename == "invoice.pdf"
-    assert result.url == "https://storage.retab.com/file_123"
+    assert result.url == "https://storage.retab.com/org_1/file_123.pdf"
     assert [getattr(request, "url") for request in requests] == [
         "/files/upload",
         "/files/upload/file_123/complete",
@@ -232,7 +232,7 @@ def test_files_upload_does_not_complete_when_direct_upload_fails(
             "uploadUrl": "https://storage.googleapis.com/signed-upload",
             "uploadMethod": "PUT",
             "uploadHeaders": {"Content-Type": "application/pdf"},
-            "mimeData": {"filename": "invoice.pdf", "url": "https://storage.retab.com/file_123"},
+            "mimeData": {"filename": "invoice.pdf", "url": "https://storage.retab.com/org_1/file_123.pdf"},
             "expiresAt": "2026-04-24T12:00:00Z",
         }
 
