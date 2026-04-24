@@ -31,7 +31,7 @@ class BaseDocumentsMixin:
         return PreparedRequest(method="POST", url="/documents/perform_ocr_only", data={"file_id": file_id})
 
     def _prepare_compute_field_locations(self, ocr_file_id: str, ocr_result: OCR | None = None, data: dict[str, Any] = {}) -> PreparedRequest:
-        return PreparedRequest(method="POST", url="/documents/compute_field_locations", data={"ocr_file_id": ocr_file_id, "ocr_result": ocr_result, "data": data})
+        return PreparedRequest(method="POST", url="/documents/compute_field_locations_fast", data={"ocr_file_id": ocr_file_id, "ocr_result": ocr_result, "data": data})
 
     def _prepare_parse(
         self,

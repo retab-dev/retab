@@ -126,7 +126,7 @@ function buildResponse(params: RecordedRequest): unknown {
       },
     };
   }
-  if (params.url === '/documents/compute_field_locations' && params.method === 'POST') {
+  if (params.url === '/documents/compute_field_locations_fast' && params.method === 'POST') {
     return {
       locations: {
         status: [{ page: 1, x: 10, y: 20 }],
@@ -473,7 +473,7 @@ describe('python sdk parity surface', () => {
     expect(mockClient.requests.map((request) => `${request.method} ${request.url}`)).toEqual([
       'GET /extractions/ext-123',
       'POST /documents/perform_ocr_only',
-      'POST /documents/compute_field_locations',
+      'POST /documents/compute_field_locations_fast',
     ]);
     expect(mockClient.requests[1]?.body).toEqual({ file_id: 'file-123' });
     expect(mockClient.requests[2]?.body).toEqual({
