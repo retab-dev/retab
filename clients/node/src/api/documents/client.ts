@@ -137,7 +137,7 @@ export default class APIDocuments extends CompositionClient {
     }
 
     return this._fetchJson(z.record(z.any()), {
-      url: '/documents/compute_field_locations',
+      url: '/documents/compute_field_locations_fast',
       method: 'POST',
       body: {
         ocr_file_id: ocrFileId,
