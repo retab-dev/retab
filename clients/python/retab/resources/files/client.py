@@ -1,17 +1,26 @@
+from io import IOBase
+from pathlib import Path
 from typing import Any, List, Literal, Optional
+
+import PIL.Image
+from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.files import File, FileLink, UploadFileResponse
 from ...types.mime import MIMEData
 from ...types.standards import PreparedRequest
+from ...utils.mime import prepare_mime_document
+
+FileUploadInput = Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl
 
 
 class FilesMixin:
-    def prepare_upload(self, mime_data: MIMEData) -> PreparedRequest:
+    def prepare_upload(self, mime_data: FileUploadInput) -> PreparedRequest:
+        prepared_mime_data = prepare_mime_document(mime_data)
         return PreparedRequest(
             method="POST",
             url="/files/upload",
-            data={"mimeData": mime_data.model_dump(mode="json")},
+            data={"mimeData": prepared_mime_data.model_dump(mode="json")},
         )
 
     def prepare_list(
@@ -45,7 +54,7 @@ class FilesMixin:
 
 class Files(SyncAPIResource, FilesMixin):
 
-    def upload(self, mime_data: MIMEData) -> UploadFileResponse:
+    def upload(self, mime_data: FileUploadInput) -> UploadFileResponse:
         request = self.prepare_upload(mime_data)
         response = self._client._prepared_request(request)
         return UploadFileResponse(**response)
@@ -78,7 +87,7 @@ class Files(SyncAPIResource, FilesMixin):
 
 class AsyncFiles(AsyncAPIResource, FilesMixin):
 
-    async def upload(self, mime_data: MIMEData) -> UploadFileResponse:
+    async def upload(self, mime_data: FileUploadInput) -> UploadFileResponse:
         request = self.prepare_upload(mime_data)
         response = await self._client._prepared_request(request)
         return UploadFileResponse(**response)
@@ -106,4 +115,3 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
         request = self.prepare_get_download_link(file_id)
         response = await self._client._prepared_request(request)
         return FileLink(**response)
-

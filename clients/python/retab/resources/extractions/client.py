@@ -1,15 +1,53 @@
+from __future__ import annotations
+
 import json
 from datetime import datetime
+from io import IOBase
+from pathlib import Path
 from typing import Any, Dict
+
+import PIL.Image
+from pydantic import HttpUrl
 
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.extractions import Extraction, ExtractionRequest, SourcesResponse
+from ...types.mime import MIMEData
 from ...types.pagination import PaginatedList, PaginationOrder
 from ...types.standards import PreparedRequest
+from ...utils.mime import prepare_mime_document
+
+ExtractionDocumentInput = Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl
 
 
 class ExtractionsMixin:
-    def prepare_create(self, payload: ExtractionRequest) -> PreparedRequest:
+    def prepare_create(
+        self,
+        payload: ExtractionRequest | None = None,
+        *,
+        document: ExtractionDocumentInput | None = None,
+        json_schema: dict[str, Any] | None = None,
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+    ) -> PreparedRequest:
+        if payload is None:
+            if document is None or json_schema is None:
+                raise TypeError("Either payload or both document and json_schema must be provided")
+            payload = ExtractionRequest(
+                document=prepare_mime_document(document),
+                json_schema=json_schema,
+                model=model,
+                image_resolution_dpi=image_resolution_dpi,
+                instructions=instructions,
+                n_consensus=n_consensus,
+                metadata=metadata or {},
+                additional_messages=additional_messages,
+                bust_cache=bust_cache,
+            )
         return PreparedRequest(method="POST", url="/extractions", data=payload.model_dump(mode="json", exclude_none=True))
 
     def prepare_list(
@@ -22,6 +60,7 @@ class ExtractionsMixin:
         origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
+        filename: str | None = None,
         metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PreparedRequest:
@@ -35,6 +74,7 @@ class ExtractionsMixin:
             "origin_id": origin_id,
             "from_date": from_date.isoformat() if from_date else None,
             "to_date": to_date.isoformat() if to_date else None,
+            "filename": filename,
             # Note: metadata must be JSON-serialized as the backend expects a JSON string
             "metadata": json.dumps(metadata) if metadata else None,
         }
@@ -70,6 +110,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
+        filename: str | None = None,
         metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PaginatedList:
@@ -83,6 +124,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
             origin_id=origin_id,
             from_date=from_date,
             to_date=to_date,
+            filename=filename,
             metadata=metadata,
             **extra_params,
         )
@@ -100,6 +142,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
                 origin_id=origin_id,
                 from_date=from_date,
                 to_date=to_date,
+                filename=filename,
                 metadata=metadata,
                 **extra_params,
             )
@@ -112,9 +155,33 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         request = self.prepare_get(extraction_id)
         return Extraction.model_validate(self._client._prepared_request(request))
 
-    def create(self, payload: ExtractionRequest) -> Extraction:
+    def create(
+        self,
+        payload: ExtractionRequest | None = None,
+        *,
+        document: ExtractionDocumentInput | None = None,
+        json_schema: dict[str, Any] | None = None,
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+    ) -> Extraction:
         """Create an extraction using the modern /v1/extractions endpoint."""
-        request = self.prepare_create(payload)
+        request = self.prepare_create(
+            payload,
+            document=document,
+            json_schema=json_schema,
+            model=model,
+            image_resolution_dpi=image_resolution_dpi,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            metadata=metadata,
+            additional_messages=additional_messages,
+            bust_cache=bust_cache,
+        )
         return Extraction.model_validate(self._client._prepared_request(request))
 
     def sources(self, extraction_id: str) -> SourcesResponse:
@@ -150,6 +217,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         origin_id: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
+        filename: str | None = None,
         metadata: Dict[str, str] | None = None,
         **extra_params: Any,
     ) -> PaginatedList:
@@ -163,6 +231,7 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
             origin_id=origin_id,
             from_date=from_date,
             to_date=to_date,
+            filename=filename,
             metadata=metadata,
             **extra_params,
         )
@@ -174,9 +243,33 @@ class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
         request = self.prepare_get(extraction_id)
         return Extraction.model_validate(await self._client._prepared_request(request))
 
-    async def create(self, payload: ExtractionRequest) -> Extraction:
+    async def create(
+        self,
+        payload: ExtractionRequest | None = None,
+        *,
+        document: ExtractionDocumentInput | None = None,
+        json_schema: dict[str, Any] | None = None,
+        model: str = "retab-small",
+        image_resolution_dpi: int = 192,
+        instructions: str | None = None,
+        n_consensus: int = 1,
+        metadata: dict[str, str] | None = None,
+        additional_messages: list[dict[str, Any]] | None = None,
+        bust_cache: bool = False,
+    ) -> Extraction:
         """Create an extraction using the modern /v1/extractions endpoint."""
-        request = self.prepare_create(payload)
+        request = self.prepare_create(
+            payload,
+            document=document,
+            json_schema=json_schema,
+            model=model,
+            image_resolution_dpi=image_resolution_dpi,
+            instructions=instructions,
+            n_consensus=n_consensus,
+            metadata=metadata,
+            additional_messages=additional_messages,
+            bust_cache=bust_cache,
+        )
         return Extraction.model_validate(await self._client._prepared_request(request))
 
     async def sources(self, extraction_id: str) -> SourcesResponse:

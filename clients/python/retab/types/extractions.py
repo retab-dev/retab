@@ -33,6 +33,10 @@ class ExtractionRequest(BaseModel):
         default_factory=dict,
         description="User-defined metadata to associate with this extraction",
     )
+    additional_messages: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Additional chat messages forwarded to the extraction model.",
+    )
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 

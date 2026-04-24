@@ -28,6 +28,7 @@ export type SplitListParams = {
     after?: string;
     limit?: number;
     order?: "asc" | "desc";
+    filename?: string;
     from_date?: Date;
     to_date?: Date;
 };
@@ -98,6 +99,7 @@ export default class APISplits extends CompositionClient {
             after,
             limit = 10,
             order = "desc",
+            filename,
             from_date,
             to_date,
         }: SplitListParams = {},
@@ -108,6 +110,7 @@ export default class APISplits extends CompositionClient {
             after,
             limit,
             order,
+            filename,
             from_date: from_date?.toISOString(),
             to_date: to_date?.toISOString(),
         };
