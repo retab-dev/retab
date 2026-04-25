@@ -51,6 +51,7 @@ Prefer the workflow reference over direct document routes when the user already 
 - If a workflow stops at `waiting_for_human`, do not treat that as a generic failure. Surface it explicitly and inspect the relevant step or HIL decision state.
 - When debugging workflow outputs, use `workflows.runs.steps.list(run_id)` as the batch primitive (one HTTP call for the whole run). Use `steps.get(run_id, block_id)` for a single step. Avoid looping `run.steps` with per-step `steps.get()` calls — that creates an N+1 anti-pattern.
 - To retrieve the typed resource produced by an inference step (extract, split, classifier, parse, edit, for-each partition), use `step.artifact` and the matching resource client (`client.extractions.get(step.artifact.id)`, `client.splits.get(...)`, `client.classifications.get(...)`, `client.parses.get(...)`, `client.edits.get(...)`, `client.partitions.get(...)`).
+- To retrieve source provenance for an extraction, use `client.extractions.sources(extraction.id)` or `GET /v1/extractions/{extraction_id}/sources`; the returned `sources` tree mirrors the extraction and wraps leaves as `{ value, source }`.
 - Stay within this skill's scope. It covers the direct document routes plus running existing workflows. If the user asks for workflow design, widgets, projects, or MCP setup, give the simplest useful answer and note that those areas are outside this skill's main coverage.
 
 ## References
