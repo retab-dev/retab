@@ -140,6 +140,37 @@ If a field keeps getting low likelihoods, first improve the schema before just i
 - `consensus.likelihoods`: per-field confidence values
 - `usage`: token and cost-related metadata
 
+## Sources
+
+After creating an extraction, retrieve source provenance with the extraction id:
+
+```python
+sources = client.extractions.sources(response.id)
+
+print(sources.extraction)
+print(sources.sources["invoice_number"]["source"])
+```
+
+```ts
+const sources = await client.extractions.sources(response.id);
+
+console.log(sources.extraction);
+console.log(sources.sources.invoice_number.source);
+```
+
+Raw REST equivalent:
+
+```bash
+curl -X GET "https://api.retab.com/v1/extractions/${EXTRACTION_ID}/sources" \
+  -H "Api-Key: $RETAB_API_KEY"
+```
+
+The sources response includes:
+
+- `extraction`: the original extracted output
+- `sources`: a tree mirroring the extraction where each leaf is wrapped as `{ value, source }`
+- `source`: citation content, surrounding context, and a format-specific anchor when available
+
 ## Guidance
 
 - If no schema exists yet, draft one before implementing `extract`.
