@@ -14,7 +14,7 @@ type FetchParams = {
 const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
   APIModels: ["list"],
   APISchemas: ["generate"],
-  APIExtractions: ["create", "list", "get", "sources", "delete"],
+  APIExtractions: ["create", "createStream", "list", "get", "sources", "delete"],
   APIFiles: ["upload", "list", "get", "get_download_link"],
   APIProjects: ["create", "get", "list", "delete", "publish", "extract", "split"],
   ProjectDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document"],

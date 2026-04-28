@@ -209,11 +209,17 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                     full_parsed=None,
                 )
 
+        def safe_get_finish_reason(chnk: "RetabParsedChatCompletionChunk | None", index: int) -> str | None:
+            if chnk is not None and index < len(chnk.choices):
+                return chnk.choices[index].finish_reason
+            return None
+
         max_choices = max(len(self.choices), len(previous_cumulated_chunk.choices)) if previous_cumulated_chunk is not None else len(self.choices)
 
         # Get the current chunk missing content, flat_deleted_keys and is_valid_json
         acc_flat_deleted_keys = [safe_get_delta(self, i).flat_deleted_keys for i in range(max_choices)]
         acc_is_valid_json = [safe_get_delta(self, i).is_valid_json for i in range(max_choices)]
+        acc_finish_reasons = [safe_get_finish_reason(self, i) or safe_get_finish_reason(previous_cumulated_chunk, i) for i in range(max_choices)]
         # Delete from previous_cumulated_chunk.choices[i].delta.flat_parsed the keys that are in safe_get_delta(self, i).flat_deleted_keys
         for i in range(max_choices):
             previous_delta = safe_get_delta(previous_cumulated_chunk, i)
@@ -248,6 +254,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         full_parsed=acc_full_parsed[i],
                     ),
                     index=i,
+                    finish_reason=acc_finish_reasons[i],
                 )
                 for i in range(max_choices)
             ],
@@ -303,7 +310,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         parsed=final_parsed_list[idx],
                     ),
                     key_mapping=self.choices[idx].delta.key_mapping, # type: ignore[call-arg]
-                    finish_reason="stop",
+                    finish_reason=self.choices[idx].finish_reason or "stop",
                     logprobs=None,
                 )
                 for idx in range(len(self.choices))
