@@ -9,6 +9,8 @@ import {
   JSONSchemaInput,
   ZExtractionV2,
   ExtractionV2,
+  ZRetabParsedChatCompletionChunk,
+  RetabParsedChatCompletionChunk,
 } from '../../types.js';
 
 export type ExtractionCreateParams = {
@@ -36,6 +38,37 @@ export default class APIExtractions extends CompositionClient {
    * @returns Stored `ExtractionV2` resource.
    */
   async create(params: ExtractionCreateParams, options?: RequestOptions): Promise<ExtractionV2> {
+    const body = await this._buildCreateBody(params, options);
+    return this._fetchJson(ZExtractionV2, {
+      url: '/extractions',
+      method: 'POST',
+      body,
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
+
+  /**
+   * Stream an extraction using the modern `/extractions/stream` endpoint.
+   */
+  async createStream(
+    params: ExtractionCreateParams,
+    options?: RequestOptions
+  ): Promise<AsyncGenerator<RetabParsedChatCompletionChunk>> {
+    const body = await this._buildCreateBody(params, options);
+    return this._fetchStream(ZRetabParsedChatCompletionChunk, {
+      url: '/extractions/stream',
+      method: 'POST',
+      body: { ...body, stream: true },
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
+
+  private async _buildCreateBody(
+    params: ExtractionCreateParams,
+    options?: RequestOptions
+  ): Promise<Record<string, unknown>> {
     const document = await ZMIMEData.parseAsync(params.document);
     const json_schema = await ZJSONSchema.parseAsync(params.json_schema);
     const body: Record<string, unknown> = {
@@ -61,13 +94,7 @@ export default class APIExtractions extends CompositionClient {
     if (params.bust_cache) {
       body['bust_cache'] = true;
     }
-    return this._fetchJson(ZExtractionV2, {
-      url: '/extractions',
-      method: 'POST',
-      body: { ...body, ...(options?.body || {}) },
-      params: options?.params,
-      headers: options?.headers,
-    });
+    return { ...body, ...(options?.body || {}) };
   }
 
   /**

@@ -424,16 +424,18 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             ui_parsed_completion.created = ui_parsed_chat_completion_cum_chunk.created
             ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
             # Update the ui_parsed_completion object
-            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
+            chunk_choice = ui_parsed_chat_completion_cum_chunk.choices[0]
+            parsed = chunk_choice.delta.full_parsed or unflatten_dict(chunk_choice.delta.flat_parsed)
             likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
             ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
             ui_parsed_completion.choices[0].message.parsed = parsed
+            ui_parsed_completion.choices[0].finish_reason = chunk_choice.finish_reason
             ui_parsed_completion.likelihoods = likelihoods
 
             yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
 
-        # change the finish_reason to stop
-        ui_parsed_completion.choices[0].finish_reason = "stop"
+        if ui_parsed_completion.choices[0].finish_reason is None:
+            ui_parsed_completion.choices[0].finish_reason = "stop"
         yield maybe_parse_to_pydantic(schema, ui_parsed_completion)
 
     def parse(
@@ -766,16 +768,18 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
             ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
 
             # Update the ui_parsed_completion object
-            parsed = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_parsed)
+            chunk_choice = ui_parsed_chat_completion_cum_chunk.choices[0]
+            parsed = chunk_choice.delta.full_parsed or unflatten_dict(chunk_choice.delta.flat_parsed)
             likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
             ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
             ui_parsed_completion.choices[0].message.parsed = parsed
+            ui_parsed_completion.choices[0].finish_reason = chunk_choice.finish_reason
             ui_parsed_completion.likelihoods = likelihoods
 
             yield maybe_parse_to_pydantic(schema, ui_parsed_completion, allow_partial=True)
 
-        # change the finish_reason to stop
-        ui_parsed_completion.choices[0].finish_reason = "stop"
+        if ui_parsed_completion.choices[0].finish_reason is None:
+            ui_parsed_completion.choices[0].finish_reason = "stop"
         yield maybe_parse_to_pydantic(schema, ui_parsed_completion)
 
     async def parse(

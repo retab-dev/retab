@@ -9,7 +9,9 @@ import pytest
 from pydantic import BaseModel
 
 from retab import AsyncRetab, Retab
-from retab.types.documents.extract import RetabParsedChatCompletion, maybe_parse_to_pydantic
+from retab.resources.documents.client import Documents
+from retab.types.documents.extract import RetabParsedChatCompletion, RetabParsedChatCompletionChunk, maybe_parse_to_pydantic
+from retab.types.standards import PreparedRequest
 from retab.types.chat import ChatCompletionRetabMessage
 # List of AI Providers to test
 AI_MODELS = Literal[
@@ -78,6 +80,73 @@ def test_extract_result_serializes_computed_fields() -> None:
     assert response.model_dump()["text"] == "{\"status\":\"ok\"}"
     assert response.model_dump(mode="json")["data"] == {"status": "ok"}
     assert response.model_dump(mode="json")["text"] == "{\"status\":\"ok\"}"
+
+
+def test_stream_chunk_to_completion_preserves_finish_reason() -> None:
+    chunk = RetabParsedChatCompletionChunk.model_validate(
+        {
+            "id": "chatcmpl_test",
+            "object": "chat.completion.chunk",
+            "created": 1,
+            "model": "retab-large",
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": "length",
+                    "delta": {
+                        "content": "{\"status\":\"partial\"}",
+                        "flat_parsed": {"status": "partial"},
+                        "flat_likelihoods": {},
+                        "flat_deleted_keys": [],
+                        "is_valid_json": True,
+                        "full_parsed": {"status": "partial"},
+                    },
+                }
+            ],
+        }
+    )
+
+    completion = chunk.chunk_accumulator().to_completion()
+
+    assert completion.choices[0].finish_reason == "length"
+
+
+def test_documents_extract_stream_preserves_finish_reason(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeClient:
+        def _prepared_request_stream(self, request: PreparedRequest):
+            assert request.url == "/documents/extractions"
+            yield {
+                "id": "chatcmpl_test",
+                "object": "chat.completion.chunk",
+                "created": 1,
+                "model": "retab-large",
+                "choices": [
+                    {
+                        "index": 0,
+                        "finish_reason": "length",
+                        "delta": {
+                            "content": "{\"status\":\"partial\"}",
+                            "flat_parsed": {"status": "partial"},
+                            "flat_likelihoods": {},
+                            "flat_deleted_keys": [],
+                            "is_valid_json": True,
+                            "full_parsed": {"status": "partial"},
+                        },
+                    }
+                ],
+            }
+
+    def fake_prepare_extract(self: Documents, **_: Any) -> PreparedRequest:
+        return PreparedRequest(method="POST", url="/documents/extractions", data={})
+
+    monkeypatch.setattr(Documents, "_prepare_extract", fake_prepare_extract)
+
+    documents = Documents(FakeClient())
+    with pytest.warns(DeprecationWarning):
+        with documents.extract_stream(SIMPLE_SCHEMA, "retab-large", document="unused.pdf") as stream:
+            responses = list(stream)
+
+    assert responses[-1].choices[0].finish_reason == "length"
 # ---------------------------------------------------------------------------
 # Unit tests for maybe_parse_to_pydantic
 # ---------------------------------------------------------------------------
