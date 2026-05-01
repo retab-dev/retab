@@ -24,6 +24,8 @@ const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
   APIWorkflowEdges: ["list", "get", "create", "create_batch", "delete", "delete_all"],
   APIWorkflowRuns: ["create", "get", "list", "delete", "cancel", "restart", "submit_hil_decision", "get_hil_decision"],
   APIWorkflowRunSteps: ["get", "list", "get_many"],
+  APIWorkflowTests: ["create", "get", "list", "update", "delete", "execute"],
+  APIWorkflowTestRuns: ["list", "get"],
   APIEvalsExtract: ["process", "process_stream"],
   APIEvalsSplit: ["process"],
   APIEvalsClassify: ["process"],
