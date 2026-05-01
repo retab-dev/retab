@@ -425,9 +425,13 @@ class Documents(SyncAPIResource, BaseDocumentsMixin):
             ui_parsed_completion.model = ui_parsed_chat_completion_cum_chunk.model
             # Update the ui_parsed_completion object
             chunk_choice = ui_parsed_chat_completion_cum_chunk.choices[0]
-            parsed = chunk_choice.delta.full_parsed or unflatten_dict(chunk_choice.delta.flat_parsed)
+            parsed = chunk_choice.delta.full_parsed
+            if parsed is None and chunk_choice.delta.flat_parsed:
+                parsed = unflatten_dict(chunk_choice.delta.flat_parsed)
             likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
-            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
+            ui_parsed_completion.choices[0].message.content = (
+                json.dumps(parsed) if parsed is not None else (chunk_choice.delta.content or "")
+            )
             ui_parsed_completion.choices[0].message.parsed = parsed
             ui_parsed_completion.choices[0].finish_reason = chunk_choice.finish_reason
             ui_parsed_completion.likelihoods = likelihoods
@@ -769,9 +773,13 @@ class AsyncDocuments(AsyncAPIResource, BaseDocumentsMixin):
 
             # Update the ui_parsed_completion object
             chunk_choice = ui_parsed_chat_completion_cum_chunk.choices[0]
-            parsed = chunk_choice.delta.full_parsed or unflatten_dict(chunk_choice.delta.flat_parsed)
+            parsed = chunk_choice.delta.full_parsed
+            if parsed is None and chunk_choice.delta.flat_parsed:
+                parsed = unflatten_dict(chunk_choice.delta.flat_parsed)
             likelihoods = unflatten_dict(ui_parsed_chat_completion_cum_chunk.choices[0].delta.flat_likelihoods)
-            ui_parsed_completion.choices[0].message.content = json.dumps(parsed)
+            ui_parsed_completion.choices[0].message.content = (
+                json.dumps(parsed) if parsed is not None else (chunk_choice.delta.content or "")
+            )
             ui_parsed_completion.choices[0].message.parsed = parsed
             ui_parsed_completion.choices[0].finish_reason = chunk_choice.finish_reason
             ui_parsed_completion.likelihoods = likelihoods

@@ -1,8 +1,12 @@
-import pytest
-import httpx
+import inspect
 from io import BytesIO
 
+import pytest
+import httpx
+
+from retab.resources.extractions.client import AsyncExtractions, Extractions
 from retab import AsyncRetab, Retab
+from retab.types.extractions import ExtractionRequest
 from retab.types.mime import MIMEData
 from retab.types.partitions import Partition
 from retab.types.splits import Split
@@ -27,6 +31,27 @@ def test_extractions_delete_uses_new_resource_route(monkeypatch: pytest.MonkeyPa
         client.extractions.delete("extr_123")
 
     assert getattr(captured["request"], "url") == "/extractions/extr_123"
+
+
+def test_extractions_create_has_no_stream_argument() -> None:
+    assert "stream" not in inspect.signature(Extractions.create).parameters
+    assert "stream" not in inspect.signature(AsyncExtractions.create).parameters
+    assert "stream" not in inspect.signature(Extractions.prepare_create).parameters
+    assert "stream" not in ExtractionRequest.model_fields
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'stream'"):
+        Extractions(object()).create(
+            document=_sample_document(),
+            json_schema={"type": "object"},
+            stream=True,
+        )
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'stream'"):
+        AsyncExtractions(object()).create(
+            document=_sample_document(),
+            json_schema={"type": "object"},
+            stream=True,
+        )
 
 
 def test_files_upload_rejects_signed_bucket_url() -> None:

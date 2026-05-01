@@ -9,7 +9,7 @@ import pytest
 from pydantic import BaseModel
 
 from retab import AsyncRetab, Retab
-from retab.resources.documents.client import Documents
+from retab.resources.documents.client import AsyncDocuments, Documents
 from retab.types.documents.extract import RetabParsedChatCompletion, RetabParsedChatCompletionChunk, maybe_parse_to_pydantic
 from retab.types.standards import PreparedRequest
 from retab.types.chat import ChatCompletionRetabMessage
@@ -147,6 +147,115 @@ def test_documents_extract_stream_preserves_finish_reason(monkeypatch: pytest.Mo
             responses = list(stream)
 
     assert responses[-1].choices[0].finish_reason == "length"
+
+
+def test_documents_extract_stream_preserves_token_content_deltas(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeClient:
+        def _prepared_request_stream(self, request: PreparedRequest):
+            assert request.url == "/documents/extractions"
+            for content, full_parsed, finish_reason in [
+                ('{"name":"Ac', None, None),
+                ('me","amount":42', None, None),
+                ('.5}', {"name": "Acme", "amount": 42.5}, "stop"),
+            ]:
+                delta: dict[str, Any] = {
+                    "content": content,
+                    "flat_parsed": {},
+                    "flat_likelihoods": {},
+                    "flat_deleted_keys": [],
+                    "is_valid_json": full_parsed is not None,
+                }
+                if full_parsed is not None:
+                    delta["full_parsed"] = full_parsed
+                yield {
+                    "id": "chatcmpl_stream",
+                    "object": "chat.completion.chunk",
+                    "created": 1,
+                    "model": "retab-large",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "finish_reason": finish_reason,
+                            "delta": delta,
+                        }
+                    ],
+                }
+
+    def fake_prepare_extract(self: Documents, **_: Any) -> PreparedRequest:
+        return PreparedRequest(method="POST", url="/documents/extractions", data={})
+
+    monkeypatch.setattr(Documents, "_prepare_extract", fake_prepare_extract)
+
+    snapshots: list[tuple[str | None, Any]] = []
+    documents = Documents(FakeClient())
+    with pytest.warns(DeprecationWarning):
+        with documents.extract_stream(SIMPLE_SCHEMA, "retab-large", document="unused.pdf") as stream:
+            for response in stream:
+                snapshots.append((response.text, response.data))
+
+    assert [text for text, _data in snapshots[:3]] == [
+        '{"name":"Ac',
+        '{"name":"Acme","amount":42',
+        '{"name": "Acme", "amount": 42.5}',
+    ]
+    assert json.loads(snapshots[-1][0] or "{}") == {"name": "Acme", "amount": 42.5}
+    assert snapshots[-1][1].name == "Acme"
+    assert snapshots[-1][1].amount == 42.5
+
+
+@pytest.mark.asyncio
+async def test_async_documents_extract_stream_preserves_token_content_deltas(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeClient:
+        async def _prepared_request_stream(self, request: PreparedRequest):
+            assert request.url == "/documents/extractions"
+            for content, full_parsed, finish_reason in [
+                ('{"name":"Ac', None, None),
+                ('me","amount":42', None, None),
+                ('.5}', {"name": "Acme", "amount": 42.5}, "stop"),
+            ]:
+                delta: dict[str, Any] = {
+                    "content": content,
+                    "flat_parsed": {},
+                    "flat_likelihoods": {},
+                    "flat_deleted_keys": [],
+                    "is_valid_json": full_parsed is not None,
+                }
+                if full_parsed is not None:
+                    delta["full_parsed"] = full_parsed
+                yield {
+                    "id": "chatcmpl_stream",
+                    "object": "chat.completion.chunk",
+                    "created": 1,
+                    "model": "retab-large",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "finish_reason": finish_reason,
+                            "delta": delta,
+                        }
+                    ],
+                }
+
+    def fake_prepare_extract(self: AsyncDocuments, **_: Any) -> PreparedRequest:
+        return PreparedRequest(method="POST", url="/documents/extractions", data={})
+
+    monkeypatch.setattr(AsyncDocuments, "_prepare_extract", fake_prepare_extract)
+
+    snapshots: list[tuple[str | None, Any]] = []
+    documents = AsyncDocuments(FakeClient())
+    with pytest.warns(DeprecationWarning):
+        async with documents.extract_stream(SIMPLE_SCHEMA, "retab-large", document="unused.pdf") as stream:
+            async for response in stream:
+                snapshots.append((response.text, response.data))
+
+    assert [text for text, _data in snapshots[:3]] == [
+        '{"name":"Ac',
+        '{"name":"Acme","amount":42',
+        '{"name": "Acme", "amount": 42.5}',
+    ]
+    assert json.loads(snapshots[-1][0] or "{}") == {"name": "Acme", "amount": 42.5}
+    assert snapshots[-1][1].name == "Acme"
+    assert snapshots[-1][1].amount == 42.5
 # ---------------------------------------------------------------------------
 # Unit tests for maybe_parse_to_pydantic
 # ---------------------------------------------------------------------------
