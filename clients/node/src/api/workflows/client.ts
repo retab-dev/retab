@@ -3,6 +3,7 @@ import { PaginatedList, Workflow, WorkflowWithEntities, ZPaginatedList, ZWorkflo
 import APIWorkflowRuns from "./runs/client.js";
 import APIWorkflowBlocks from "./blocks/client.js";
 import APIWorkflowEdges from "./edges/client.js";
+import APIWorkflowTests from "./tests/client.js";
 
 /**
  * Workflows API client for workflow operations.
@@ -11,17 +12,20 @@ import APIWorkflowEdges from "./edges/client.js";
  * - runs: Workflow run operations
  * - blocks: Workflow block CRUD
  * - edges: Workflow edge CRUD
+ * - tests: Workflow block-tests CRUD + execution + run history
  */
 export default class APIWorkflows extends CompositionClient {
     public runs: APIWorkflowRuns;
     public blocks: APIWorkflowBlocks;
     public edges: APIWorkflowEdges;
+    public tests: APIWorkflowTests;
 
     constructor(client: CompositionClient) {
         super(client);
         this.runs = new APIWorkflowRuns(this);
         this.blocks = new APIWorkflowBlocks(this);
         this.edges = new APIWorkflowEdges(this);
+        this.tests = new APIWorkflowTests(this);
     }
 
     /**
