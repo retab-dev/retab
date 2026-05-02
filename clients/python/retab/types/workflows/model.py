@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, ConfigDict, model_validator
 from retab.types.mime import FileRef
 
 # Schemas are accessed via ``workflows.blocks.get(block_id).resolved_schemas``, not
-# via step raw outputs. Step outputs only carry data/payload; user-declared block
+# via step artifact view data. Step executions only carry data/payload; user-declared block
 # config schemas (``start_json`` / ``extract`` / ``function`` / ``api_call``) live
 # on the block itself, and every other block's input/output schema is inferred and
 # exposed under ``resolved_schemas.input_schemas`` / ``resolved_schemas.output_schemas``.
@@ -41,14 +41,7 @@ StepExecutionStatus = Literal[
     "waiting_for_human",
     "cancelled",
 ]
-WorkflowArtifactOperation = Literal[
-    "extraction",
-    "split",
-    "classification",
-    "parse",
-    "edit",
-    "partition",
-]
+WorkflowArtifactOperation = str
 
 
 class StepArtifactRef(BaseModel):
@@ -59,6 +52,28 @@ class StepArtifactRef(BaseModel):
         description="Persisted resource operation to use for lookup",
     )
     id: str = Field(..., description="Persisted resource identifier")
+
+
+class StepArtifactView(BaseModel):
+    """Block-specific artifact view data for rendering step results."""
+
+    block_type: str = Field(..., description="Workflow block type that produced the view")
+    artifact: Optional[StepArtifactRef] = Field(
+        default=None,
+        description="Primary artifact backing this view",
+    )
+    artifacts: List[StepArtifactRef] = Field(
+        default_factory=list,
+        description="All artifacts backing this view, primary first",
+    )
+    data: Optional[Any] = Field(
+        default=None,
+        description="Block-specific render data resolved from the step artifact",
+    )
+    source_handle_id: Optional[str] = Field(
+        default=None,
+        description="Handle that supplied the render data when available",
+    )
 
 
 class StepStatus(BaseModel):
@@ -74,6 +89,14 @@ class StepStatus(BaseModel):
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description="Canonical persisted resource produced by this step, if any",
+    )
+    artifacts: List[StepArtifactRef] = Field(
+        default_factory=list,
+        description="All persisted resources produced by this step, primary first",
+    )
+    artifact_view: Optional[StepArtifactView] = Field(
+        default=None,
+        description="Block-specific artifact view model for result rendering",
     )
     handle_outputs: Optional[Dict[str, HandlePayload]] = Field(
         default=None,
@@ -200,7 +223,7 @@ WorkflowRunTriggerType = Literal["manual", "api", "schedule", "webhook", "email"
 TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancelled")
 
 
-class StepOutputResponse(BaseModel):
+class StepExecutionResponse(BaseModel):
     """Step status and handle data for a specific step in a workflow run."""
     block_id: str = Field(..., description="ID of the block")
     block_type: str = Field(..., description="Type of the block")
@@ -211,8 +234,20 @@ class StepOutputResponse(BaseModel):
         default=None,
         description="Canonical persisted resource produced by this step, if any",
     )
+    artifacts: List[StepArtifactRef] = Field(
+        default_factory=list,
+        description="All persisted resources produced by this step, primary first",
+    )
+    artifact_view: Optional[StepArtifactView] = Field(
+        default=None,
+        description="Block-specific artifact view model for result rendering",
+    )
     handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
     handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID (what this block received)")
+    metadata: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Execution metadata for routing, review, container state, consensus, and diagnostics",
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -266,6 +301,14 @@ class WorkflowRunStep(BaseModel):
         default=None,
         description="Canonical persisted resource produced by this step, if any",
     )
+    artifacts: List[StepArtifactRef] = Field(
+        default_factory=list,
+        description="All persisted resources produced by this step, primary first",
+    )
+    artifact_view: Optional[StepArtifactView] = Field(
+        default=None,
+        description="Block-specific artifact view model for result rendering",
+    )
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
     duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
@@ -311,11 +354,11 @@ class WorkflowRunStep(BaseModel):
         return None
 
 
-class StepOutputsBatchResponse(BaseModel):
-    """Response for batch step output retrieval, keyed by block ID."""
-    outputs: Dict[str, StepOutputResponse] = Field(
+class StepExecutionsBatchResponse(BaseModel):
+    """Response for batch step execution retrieval, keyed by block ID."""
+    executions: Dict[str, StepExecutionResponse] = Field(
         default_factory=dict,
-        description="Step outputs keyed by block ID (missing steps are omitted)",
+        description="Step execution records keyed by block ID (missing steps are omitted)",
     )
 
 
@@ -485,7 +528,7 @@ class WorkflowBlock(BaseModel):
     parent_id: Optional[str] = Field(default=None, description="Parent container block ID (while_loop, for_each)")
     resolved_schemas: Optional[ResolvedSchemas] = Field(
         default=None,
-        description="Graph-derived schema sidecar. Schemas for block outputs live here, not on raw step outputs.",
+        description="Graph-derived schema sidecar. Schemas for block outputs live here, not on raw step results.",
     )
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 

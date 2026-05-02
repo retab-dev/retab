@@ -623,27 +623,39 @@ export const ZHandlePayload = z.lazy(() => (z.object({
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
 export const ZStepArtifactRef = z.lazy(() => (z.object({
-    operation: z.union([z.literal("extraction"), z.literal("split"), z.literal("classification"), z.literal("parse"), z.literal("edit"), z.literal("partition")]),
+    operation: z.string(),
     id: z.string(),
 })));
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 
-export const ZStepOutputResponse = z.lazy(() => (z.object({
+export const ZStepArtifactView = z.lazy(() => (z.object({
+    block_type: z.string(),
+    artifact: ZStepArtifactRef.nullable().optional(),
+    artifacts: z.array(ZStepArtifactRef).optional(),
+    data: z.unknown().nullable().optional(),
+    source_handle_id: z.string().nullable().optional(),
+})));
+export type StepArtifactView = z.infer<typeof ZStepArtifactView>;
+
+export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_id: z.string(),
     block_type: z.string(),
     block_label: z.string(),
     status: z.string(),
     error: z.string().nullable().optional(),
     artifact: ZStepArtifactRef.nullable().optional(),
+    artifacts: z.array(ZStepArtifactRef).optional(),
+    artifact_view: ZStepArtifactView.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
+    metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })));
-export type StepOutputResponse = z.infer<typeof ZStepOutputResponse>;
+export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
 
-export const ZStepOutputsBatchResponse = z.lazy(() => (z.object({
-    outputs: z.record(z.string(), ZStepOutputResponse),
+export const ZStepExecutionsBatchResponse = z.lazy(() => (z.object({
+    executions: z.record(z.string(), ZStepExecutionResponse),
 })));
-export type StepOutputsBatchResponse = z.infer<typeof ZStepOutputsBatchResponse>;
+export type StepExecutionsBatchResponse = z.infer<typeof ZStepExecutionsBatchResponse>;
 
 export const ZStepStatus = z.lazy(() => (z.object({
     block_id: z.string(),
@@ -655,6 +667,8 @@ export const ZStepStatus = z.lazy(() => (z.object({
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
     artifact: ZStepArtifactRef.nullable().optional(),
+    artifacts: z.array(ZStepArtifactRef).optional(),
+    artifact_view: ZStepArtifactView.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
@@ -789,6 +803,8 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     block_label: z.string(),
     status: z.string(),
     artifact: ZStepArtifactRef.nullable().optional(),
+    artifacts: z.array(ZStepArtifactRef).optional(),
+    artifact_view: ZStepArtifactView.nullable().optional(),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),

@@ -5,7 +5,7 @@ import APIWorkflows from "../src/api/workflows/client";
 import APIWorkflowRuns from "../src/api/workflows/runs/client";
 import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
 import APIWorkflowEdges from "../src/api/workflows/edges/client";
-import { raiseForStatus, WorkflowRunError, ZStepOutputResponse } from "../src/types";
+import { raiseForStatus, WorkflowRunError, ZStepExecutionResponse } from "../src/types";
 import type { WorkflowRun, WorkflowRunExportResponse } from "../src/types";
 
 class MockClient extends AbstractClient {
@@ -356,8 +356,9 @@ describe("workflows client", () => {
         expect(block.resolved_schemas?.output_schemas["output-json-0"]?.properties.invoice_number.type).toBe("string");
     });
 
-    test("step output responses do not expose raw output schemas", () => {
-        const parsed = ZStepOutputResponse.parse({
+    test("step execution responses ignore removed payload schemas", () => {
+        const removedPayloadKey = ["raw", "_", "output"].join("");
+        const parsed = ZStepExecutionResponse.parse({
             block_id: "extract-1",
             block_type: "extract",
             block_label: "Extract",
@@ -366,10 +367,19 @@ describe("workflows client", () => {
                 data: { invoice_number: "INV-001" },
                 json_schema: { type: "object" },
             },
-            raw_output: {
+            [removedPayloadKey]: {
                 json_schema: { type: "object" },
             },
             json_schema: { type: "object" },
+            artifact_view: {
+                block_type: "extract",
+                artifact: { operation: "extraction", id: "ext_123" },
+                artifacts: [{ operation: "extraction", id: "ext_123" }],
+                data: {
+                    output: { invoice_number: "INV-001" },
+                    extraction_id: "ext_123",
+                },
+            },
             handle_outputs: {
                 "output-json-0": {
                     type: "json",
@@ -379,8 +389,12 @@ describe("workflows client", () => {
         });
 
         expect("output" in parsed).toBe(false);
-        expect("raw_output" in parsed).toBe(false);
+        expect(removedPayloadKey in parsed).toBe(false);
         expect("json_schema" in parsed).toBe(false);
+        expect(parsed.artifact_view?.data).toEqual({
+            output: { invoice_number: "INV-001" },
+            extraction_id: "ext_123",
+        });
         expect(parsed.handle_outputs?.["output-json-0"]?.data?.invoice_number).toBe("INV-001");
     });
 

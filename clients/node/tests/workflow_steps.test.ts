@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import { AbstractClient } from '../src/client';
 import APIWorkflowRunSteps from '../src/api/workflows/runs/steps/client';
+import * as workflowTypes from '../src/types';
 
 class MockClient extends AbstractClient {
   public lastFetchParams: Record<string, unknown> | null = null;
@@ -39,7 +40,7 @@ class MockClient extends AbstractClient {
 }
 
 describe('workflow run steps client', () => {
-  test('get() uses the public step route without raw output', async () => {
+  test('get() uses the public step artifact route', async () => {
     class GetMockClient extends AbstractClient {
       public lastFetchParams: Record<string, unknown> | null = null;
 
@@ -61,6 +62,38 @@ describe('workflow run steps client', () => {
               operation: 'extraction',
               id: 'ext_123',
             },
+            artifacts: [
+              {
+                operation: 'extraction',
+                id: 'ext_123',
+              },
+              {
+                operation: 'extract',
+                id: 'run_123_extract-1',
+              },
+            ],
+            artifact_view: {
+              block_type: 'extract',
+              artifact: {
+                operation: 'extraction',
+                id: 'ext_123',
+              },
+              artifacts: [
+                {
+                  operation: 'extraction',
+                  id: 'ext_123',
+                },
+                {
+                  operation: 'extract',
+                  id: 'run_123_extract-1',
+                },
+              ],
+              data: {
+                output: { invoice_number: 'INV-001' },
+                extraction_id: 'ext_123',
+              },
+            },
+            output: { removed: true },
             handle_outputs: {
               'output-json-0': {
                 type: 'json',
@@ -93,8 +126,34 @@ describe('workflow run steps client', () => {
       operation: 'extraction',
       id: 'ext_123',
     });
+    expect(step.artifacts).toEqual([
+      {
+        operation: 'extraction',
+        id: 'ext_123',
+      },
+      {
+        operation: 'extract',
+        id: 'run_123_extract-1',
+      },
+    ]);
+    expect(step.artifact_view?.data).toEqual({
+      output: { invoice_number: 'INV-001' },
+      extraction_id: 'ext_123',
+    });
     expect('output' in step).toBe(false);
     expect(step.handle_outputs?.['output-json-0']).toBeDefined();
+  });
+
+  test('does not export removed step execution response aliases', () => {
+    const removedNames = [
+      ['ZStep', 'Output', 'Response'].join(''),
+      ['Step', 'Output', 'Response'].join(''),
+      ['ZStep', 'Outputs', 'BatchResponse'].join(''),
+      ['Step', 'Outputs', 'BatchResponse'].join(''),
+    ];
+    for (const removedName of removedNames) {
+      expect(Object.prototype.hasOwnProperty.call(workflowTypes, removedName)).toBe(false);
+    }
   });
 
   test('list() uses the full steps route', async () => {
@@ -136,7 +195,7 @@ describe('workflow run steps client', () => {
         this.lastFetchParams = params;
         return new Response(
           JSON.stringify({
-            outputs: {
+            executions: {
               'extract-1': {
                 block_id: 'extract-1',
                 block_type: 'extract',
@@ -168,8 +227,8 @@ describe('workflow run steps client', () => {
 
     expect(mockClient.lastFetchParams?.url).toBe('/workflows/runs/run_123/steps/batch');
     expect(mockClient.lastFetchParams?.method).toBe('POST');
-    expect(batch.outputs['extract-1']?.block_id).toBe('extract-1');
-    expect(batch.outputs['extract-1']?.artifact).toEqual({
+    expect(batch.executions['extract-1']?.block_id).toBe('extract-1');
+    expect(batch.executions['extract-1']?.artifact).toEqual({
       operation: 'extraction',
       id: 'ext_456',
     });
