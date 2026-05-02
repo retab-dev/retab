@@ -1,6 +1,6 @@
 # Workflows
 
-Use this reference when the user already has a Retab workflow and needs to run it from code, wait for results, inspect step outputs, or handle a paused human-review state.
+Use this reference when the user already has a Retab workflow and needs to run it from code, wait for results, inspect step executions, or handle a paused human-review state.
 
 ## What this covers
 
@@ -8,7 +8,7 @@ Use this reference when the user already has a Retab workflow and needs to run i
 - Pass JSON into `start_json` blocks
 - Wait for a run until it reaches a terminal state
 - Read `final_outputs` from the completed run
-- Inspect `steps` and fetch per-block outputs
+- Inspect `steps` and fetch per-block execution records
 - Handle `waiting_for_human` explicitly
 - Choose between direct-route APIs and workflow execution
 
@@ -194,7 +194,7 @@ curl -X GET "https://api.retab.com/v1/workflows/runs/run_abc123" \
 - `final_outputs`: terminal outputs keyed by end block ID
 - `error`: failure detail when the run does not succeed
 
-## Inspecting step outputs
+## Inspecting Step Executions
 
 Top-level `final_outputs` is useful for end results, but workflows often need step-level inspection for debugging or partial consumption. For "give me every step in one call" use `steps.list(run_id)` — it returns the full persisted step list in a single request.
 
@@ -234,7 +234,7 @@ if (step.artifact) {
 
 ### `step.artifact`
 
-Inference blocks persist a typed resource; `step.artifact` is a `{operation, id}` pointer you use to fetch the full typed result.
+Every executed block exposes a primary `step.artifact` `{operation, id}` pointer. Inference blocks point at their typed resource; other block types point at a workflow-native block artifact.
 
 | `step.artifact.operation` | emitted by block type | fetch with |
 |---|---|---|
@@ -245,7 +245,7 @@ Inference blocks persist a typed resource; `step.artifact` is a `{operation, id}
 | `edit` | `edit` | `client.edits.get(id)` |
 | `partition` | `for_each_sentinel_start` | `client.partitions.get(id)` |
 
-Pass-through blocks (`hil`, `conditional`, `formula`) do not emit a fresh `artifact` — the canonical resource is the upstream inference block's.
+`step.artifacts` contains every artifact ref for the block, primary first. For inference blocks, the first artifact is the typed domain resource.
 
 Use step inspection when:
 
@@ -257,8 +257,8 @@ Use step inspection when:
 ## Debugging guidance
 
 - If run creation fails immediately, check block ID keys first
-- If the run reaches `error`, inspect `run.error`, `run.steps`, and step outputs before changing the input payload
-- If the run reaches `waiting_for_human`, fetch the relevant step output or HIL decision state instead of retrying blindly
+- If the run reaches `error`, inspect `run.error`, `run.steps`, and step executions before changing the input payload
+- If the run reaches `waiting_for_human`, fetch the relevant step execution or HIL decision state instead of retrying blindly
 - If only one block matters, fetch that block directly with `steps.get(...)`
 - If you need a snapshot of the entire execution, use `steps.get_all(...)` / `getAll(...)`
 

@@ -47,7 +47,7 @@ function sleep(ms: number): Promise<void> {
  * Workflow Runs API client for managing workflow executions.
  *
  * Sub-clients:
- * - steps: Step output operations (get, list, getMany, getAll)
+ * - steps: Step execution operations (get, list, getMany, getAll)
  */
 export default class APIWorkflowRuns extends CompositionClient {
     public steps: APIWorkflowRunSteps;
