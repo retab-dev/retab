@@ -216,7 +216,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     """Workflow Runs API wrapper for synchronous operations.
 
     Sub-clients:
-        steps: Step output operations (get, list)
+        steps: Step execution operations (get, list)
 
     Example:
         >>> from retab import Retab
@@ -543,7 +543,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     """Workflow Runs API wrapper for asynchronous operations.
 
     Sub-clients:
-        steps: Step output operations (get, list)
+        steps: Step execution operations (get, list)
 
     Example:
         >>> from retab import AsyncRetab

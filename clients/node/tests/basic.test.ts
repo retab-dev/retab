@@ -1,47 +1,81 @@
-import { randomBytes } from 'crypto';
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 
-// Simple ID generator to replace nanoid
-function generateId(): string {
-    return randomBytes(6).toString('hex');
-}
+import { Retab, ZStepExecutionResponse, ZStepExecutionsBatchResponse } from '../src';
 
-// Basic test to check if missing methods exist without importing the problematic SDK
-describe('Node SDK Missing Methods Analysis', () => {
-
-
-    test('should document TypeScript errors in SDK', () => {
-        const typeScriptErrors = [
-            'ZColumn implicitly has type any (circular reference)',
-            'ZRow implicitly has type any (circular reference)',
-            'dataArray type mismatch in return type',
-            'MIMEData union type incompatibility',
-            'Various Zod schema type mismatches'
-        ];
-
-        console.log('\n⚠️ TYPESCRIPT ERRORS in Node SDK:');
-        typeScriptErrors.forEach((error, index) => {
-            console.log(`  ${index + 1}. ${error}`);
-        });
-
-        console.log('\n📋 These TypeScript errors prevent the tests from running and need to be fixed in the SDK source code.');
-
-        expect(typeScriptErrors.length).toBeGreaterThan(0);
+describe('Node SDK smoke coverage', () => {
+  test('exports workflow artifact execution schemas', () => {
+    const step = ZStepExecutionResponse.parse({
+      block_id: 'extract-1',
+      block_type: 'extract',
+      block_label: 'Extract',
+      status: 'completed',
+      artifact: {
+        operation: 'extraction',
+        id: 'ext_123',
+      },
+      artifacts: [
+        {
+          operation: 'extraction',
+          id: 'ext_123',
+        },
+      ],
+      artifact_view: {
+        block_type: 'extract',
+        artifact: {
+          operation: 'extraction',
+          id: 'ext_123',
+        },
+        artifacts: [
+          {
+            operation: 'extraction',
+            id: 'ext_123',
+          },
+        ],
+        data: {
+          output: { invoice_number: 'INV-001' },
+        },
+      },
+      handle_outputs: {
+        'output-json-0': {
+          type: 'json',
+          data: { invoice_number: 'INV-001' },
+        },
+      },
     });
 
-    test('should provide test implementation guidance', () => {
-        const implementationSteps = [
-            'Fix TypeScript errors in generated_types.ts and types.ts',
-            'Implement missing iteration methods: status, process, process_document',
-            'Add proper type definitions for missing methods',
-            'Test the complete workflow end-to-end'
-        ];
+    expect(step.artifact?.id).toBe('ext_123');
+    expect(step.artifact_view?.data?.output.invoice_number).toBe('INV-001');
 
-        console.log('\n🚀 NEXT STEPS to complete Node SDK:');
-        implementationSteps.forEach((step, index) => {
-            console.log(`  ${index + 1}. ${step}`);
-        });
-
-        expect(implementationSteps.length).toBe(4);
+    const batch = ZStepExecutionsBatchResponse.parse({
+      executions: {
+        'extract-1': step,
+      },
     });
+
+    expect(batch.executions['extract-1']?.artifact?.operation).toBe('extraction');
+  });
+
+  test('exposes project iteration methods on the public client', () => {
+    const client = new Retab({ apiKey: 'test_key' });
+    const iterations = client.projects.datasets.iterations as Record<string, unknown>;
+    const expectedMethods = [
+      'create',
+      'get',
+      'list',
+      'updateDraft',
+      'delete',
+      'finalize',
+      'getSchema',
+      'processDocuments',
+      'getDocument',
+      'listDocuments',
+      'updateDocument',
+      'deleteDocument',
+      'getMetrics',
+    ];
+
+    for (const methodName of expectedMethods) {
+      expect(typeof iterations[methodName]).toBe('function');
+    }
+  });
 });
