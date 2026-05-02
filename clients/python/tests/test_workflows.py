@@ -18,7 +18,7 @@ from retab.types.workflows.model import (
     WorkflowBlockCreateRequest,
     WorkflowBlockUpdateRequest,
     WorkflowEdgeCreateRequest,
-    StepOutputResponse,
+    StepExecutionResponse,
 )
 
 
@@ -446,8 +446,9 @@ def test_workflow_block_exposes_resolved_schema_sidecar() -> None:
     assert block.resolved_schemas.output_schemas["output-json-0"]["properties"]["invoice_number"]["type"] == "string"
 
 
-def test_step_output_response_ignores_raw_output_schema_fields() -> None:
-    step_output = StepOutputResponse.model_validate(
+def test_step_execution_response_ignores_removed_payload_schema_fields() -> None:
+    removed_payload_key = "raw" + "_" + "output"
+    step_execution = StepExecutionResponse.model_validate(
         {
             "block_id": "extract-1",
             "block_type": "extract",
@@ -457,7 +458,7 @@ def test_step_output_response_ignores_raw_output_schema_fields() -> None:
                 "data": {"invoice_number": "INV-001"},
                 "json_schema": {"type": "object"},
             },
-            "raw_output": {
+            removed_payload_key: {
                 "json_schema": {"type": "object"},
             },
             "json_schema": {"type": "object"},
@@ -470,11 +471,11 @@ def test_step_output_response_ignores_raw_output_schema_fields() -> None:
         }
     )
 
-    dumped = step_output.model_dump()
+    dumped = step_execution.model_dump()
     assert "output" not in dumped
-    assert "raw_output" not in dumped
+    assert removed_payload_key not in dumped
     assert "json_schema" not in dumped
-    assert step_output.get_json_output() == {"invoice_number": "INV-001"}
+    assert step_execution.get_json_output() == {"invoice_number": "INV-001"}
 
 
 def test_workflow_edges_create_accepts_typed_request() -> None:

@@ -9,7 +9,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 //export * from "./schema_types";
 
 // Schemas are accessed via `workflows.blocks.get(block_id).resolved_schemas`,
-// not via step raw outputs. Step outputs only carry data/payload; user-declared
+// not via step artifact view data. Step executions only carry data/payload; user-declared
 // block config schemas (`start_json` / `extract` / `function` / `api_call`) live
 // on the block itself, and every other block's input/output schema is inferred
 // and exposed under `resolved_schemas.input_schemas` / `resolved_schemas.output_schemas`.
@@ -520,6 +520,7 @@ export const ZWorkflowRunStep = z
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
     artifact: generated.ZStepArtifactRef.nullable().optional(),
+    artifacts: z.array(generated.ZStepArtifactRef).optional(),
     handle_outputs: z.record(z.string(), z.any()).nullable().optional(),
     handle_inputs: z.record(z.string(), z.any()).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
