@@ -7,6 +7,7 @@ from ...types.workflows import Workflow, WorkflowWithEntities
 from .runs import WorkflowRuns, AsyncWorkflowRuns
 from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
 from .edges import WorkflowEdges, AsyncWorkflowEdges
+from .tests import AsyncWorkflowTests, WorkflowTests
 
 
 class WorkflowsMixin:
@@ -100,6 +101,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self.runs = WorkflowRuns(client=client)
         self.blocks = WorkflowBlocks(client=client)
         self.edges = WorkflowEdges(client=client)
+        self.tests = WorkflowTests(client=client)
 
     def get(self, workflow_id: str) -> Workflow:
         """Get a workflow by ID."""
@@ -229,6 +231,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         self.runs = AsyncWorkflowRuns(client=client)
         self.blocks = AsyncWorkflowBlocks(client=client)
         self.edges = AsyncWorkflowEdges(client=client)
+        self.tests = AsyncWorkflowTests(client=client)
 
     async def get(self, workflow_id: str) -> Workflow:
         """Get a workflow by ID."""
