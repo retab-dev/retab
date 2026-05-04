@@ -9,42 +9,29 @@ describe('Node SDK smoke coverage', () => {
       block_type: 'extract',
       block_label: 'Extract',
       status: 'completed',
-      artifact: {
-        operation: 'extraction',
-        id: 'ext_123',
-      },
-      artifacts: [
-        {
-          operation: 'extraction',
-          id: 'ext_123',
-        },
-      ],
-      artifact_view: {
-        block_type: 'extract',
-        artifact: {
-          operation: 'extraction',
-          id: 'ext_123',
-        },
+      execution: {
         artifacts: [
           {
             operation: 'extraction',
             id: 'ext_123',
           },
         ],
-        data: {
-          output: { invoice_number: 'INV-001' },
+        outputs: {
+          'output-json-0': {
+            type: 'json',
+            data: { invoice_number: 'INV-001' },
+          },
         },
-      },
-      handle_outputs: {
-        'output-json-0': {
-          type: 'json',
-          data: { invoice_number: 'INV-001' },
-        },
+        inputs: {},
+        metadata: {},
       },
     });
 
-    expect(step.artifact?.id).toBe('ext_123');
-    expect(step.artifact_view?.data?.output.invoice_number).toBe('INV-001');
+    expect(step.execution.artifacts).toContainEqual({
+      operation: 'extraction',
+      id: 'ext_123',
+    });
+    expect(step.execution.outputs['output-json-0']?.data?.invoice_number).toBe('INV-001');
 
     const batch = ZStepExecutionsBatchResponse.parse({
       executions: {
@@ -52,7 +39,10 @@ describe('Node SDK smoke coverage', () => {
       },
     });
 
-    expect(batch.executions['extract-1']?.artifact?.operation).toBe('extraction');
+    expect(batch.executions['extract-1']?.execution.artifacts).toContainEqual({
+      operation: 'extraction',
+      id: 'ext_123',
+    });
   });
 
   test('exposes project iteration methods on the public client', () => {

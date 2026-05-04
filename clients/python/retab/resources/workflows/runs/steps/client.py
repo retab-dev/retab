@@ -51,9 +51,7 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
             block_id: The ID of the block/step to inspect
 
         Returns:
-            StepExecutionResponse with artifact, artifacts, artifact_view,
-                handle_outputs, and handle_inputs.
-                Use ``.extracted_data`` for quick access to default JSON handle data.
+            StepExecutionResponse with execution.inputs, execution.outputs, and execution.artifacts.
         """
         request = self.prepare_get(run_id, block_id)
         response = self._client._prepared_request(request)
@@ -121,9 +119,7 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
             block_id: The ID of the block/step to inspect
 
         Returns:
-            StepExecutionResponse with artifact, artifacts, artifact_view,
-                handle_outputs, and handle_inputs.
-                Use ``.extracted_data`` for quick access to default JSON handle data.
+            StepExecutionResponse with execution.inputs, execution.outputs, and execution.artifacts.
         """
         request = self.prepare_get(run_id, block_id)
         response = await self._client._prepared_request(request)

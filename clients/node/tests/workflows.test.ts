@@ -201,12 +201,18 @@ describe("workflows client", () => {
                     block_type: "classifier",
                     block_label: "Classifier",
                     status: "completed",
+                    execution: {
+                        artifacts: [{ operation: "classification", id: "cls_123" }],
+                    },
                 },
                 {
                     block_id: "extract-2",
                     block_type: "extract",
                     block_label: "Skipped branch",
                     status: "skipped",
+                    execution: {
+                        artifacts: [],
+                    },
                 },
             ],
             created_at: "2026-03-13T10:00:00Z",
@@ -224,6 +230,7 @@ describe("workflows client", () => {
             headers: undefined,
         });
         expect(run.steps[0]?.block_type).toBe("classifier");
+        expect(run.steps[0]?.execution.artifacts).toEqual([{ operation: "classification", id: "cls_123" }]);
         expect(run.steps[1]?.status).toBe("skipped");
     });
 
@@ -371,31 +378,23 @@ describe("workflows client", () => {
                 json_schema: { type: "object" },
             },
             json_schema: { type: "object" },
-            artifact_view: {
-                block_type: "extract",
-                artifact: { operation: "extraction", id: "ext_123" },
-                artifacts: [{ operation: "extraction", id: "ext_123" }],
-                data: {
-                    output: { invoice_number: "INV-001" },
-                    extraction_id: "ext_123",
+            execution: {
+                inputs: {},
+                outputs: {
+                    "output-json-0": {
+                        type: "json",
+                        data: ["INV-001"],
+                    },
                 },
-            },
-            handle_outputs: {
-                "output-json-0": {
-                    type: "json",
-                    data: { invoice_number: "INV-001" },
-                },
+                artifacts: [],
+                metadata: {},
             },
         });
 
         expect("output" in parsed).toBe(false);
         expect(removedPayloadKey in parsed).toBe(false);
         expect("json_schema" in parsed).toBe(false);
-        expect(parsed.artifact_view?.data).toEqual({
-            output: { invoice_number: "INV-001" },
-            extraction_id: "ext_123",
-        });
-        expect(parsed.handle_outputs?.["output-json-0"]?.data?.invoice_number).toBe("INV-001");
+        expect(parsed.execution.outputs["output-json-0"]?.data).toEqual(["INV-001"]);
     });
 
     test("edges.createBatch() accepts camelCase request objects", async () => {

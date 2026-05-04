@@ -1,12 +1,12 @@
 import datetime
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict
 
 from retab.types.mime import FileRef
 
-# Schemas are accessed via ``workflows.blocks.get(block_id).resolved_schemas``, not
-# via step artifact view data. Step executions only carry data/payload; user-declared block
+# Schemas are accessed via ``workflows.blocks.get(block_id).resolved_schemas``.
+# Step executions carry artifact refs and handle payloads; user-declared block
 # config schemas (``start_json`` / ``extract`` / ``function`` / ``api_call``) live
 # on the block itself, and every other block's input/output schema is inferred and
 # exposed under ``resolved_schemas.input_schemas`` / ``resolved_schemas.output_schemas``.
@@ -23,7 +23,7 @@ class HandlePayload(BaseModel):
     """
     type: Literal["file", "json", "text"] = Field(..., description="Type of payload")
     document: Optional[FileRef] = Field(default=None, description="For file handles: document reference")
-    data: Optional[dict] = Field(default=None, description="For JSON handles: structured data")
+    data: Optional[Any] = Field(default=None, description="For JSON handles: structured JSON data")
     text: Optional[str] = Field(default=None, description="For text payloads: text content")
 
 
@@ -54,25 +54,33 @@ class StepArtifactRef(BaseModel):
     id: str = Field(..., description="Persisted resource identifier")
 
 
-class StepArtifactView(BaseModel):
-    """Block-specific artifact view data for rendering step results."""
+class StepExecutionRecord(BaseModel):
+    """Canonical full execution payload for a workflow step."""
 
-    block_type: str = Field(..., description="Workflow block type that produced the view")
-    artifact: Optional[StepArtifactRef] = Field(
-        default=None,
-        description="Primary artifact backing this view",
+    inputs: Dict[str, HandlePayload] = Field(
+        default_factory=dict,
+        description="Handle inputs keyed by handle ID",
+    )
+    outputs: Dict[str, HandlePayload] = Field(
+        default_factory=dict,
+        description="Handle outputs keyed by handle ID",
     )
     artifacts: List[StepArtifactRef] = Field(
         default_factory=list,
-        description="All artifacts backing this view, primary first",
+        description="Persisted resources produced by this step",
     )
-    data: Optional[Any] = Field(
-        default=None,
-        description="Block-specific render data resolved from the step artifact",
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Execution metadata for routing, review, container state, schema, evaluations, debug data, and diagnostics",
     )
-    source_handle_id: Optional[str] = Field(
-        default=None,
-        description="Handle that supplied the render data when available",
+
+
+class StepExecutionSummary(BaseModel):
+    """Lightweight execution payload included in workflow run step summaries."""
+
+    artifacts: List[StepArtifactRef] = Field(
+        default_factory=list,
+        description="Persisted resources produced by this step",
     )
 
 
@@ -86,35 +94,13 @@ class StepStatus(BaseModel):
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
     duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
     error: Optional[str] = Field(default=None, description="Error message if failed")
-    artifact: Optional[StepArtifactRef] = Field(
-        default=None,
-        description="Canonical persisted resource produced by this step, if any",
-    )
-    artifacts: List[StepArtifactRef] = Field(
-        default_factory=list,
-        description="All persisted resources produced by this step, primary first",
-    )
-    artifact_view: Optional[StepArtifactView] = Field(
-        default=None,
-        description="Block-specific artifact view model for result rendering",
-    )
-    handle_outputs: Optional[Dict[str, HandlePayload]] = Field(
-        default=None,
-        description="Output payloads keyed by handle ID (e.g., 'output-file-0', 'output-json-0')"
+    execution: StepExecutionSummary = Field(
+        ...,
+        description="Lightweight execution summary for this step",
     )
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review was completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
-
-    @property
-    def extracted_data(self) -> Optional[dict]:
-        """Get the JSON output data from the default handle (``output-json-0``)."""
-        if not self.handle_outputs:
-            return None
-        payload = self.handle_outputs.get("output-json-0")
-        if isinstance(payload, HandlePayload) and payload.type == "json":
-            return payload.data
-        return None
 
 
 class WorkflowRunError(Exception):
@@ -230,60 +216,10 @@ class StepExecutionResponse(BaseModel):
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
     error: Optional[str] = Field(default=None, description="Error message if failed")
-    artifact: Optional[StepArtifactRef] = Field(
-        default=None,
-        description="Canonical persisted resource produced by this step, if any",
+    execution: StepExecutionRecord = Field(
+        ...,
+        description="Canonical step execution inputs, outputs, artifacts, and metadata",
     )
-    artifacts: List[StepArtifactRef] = Field(
-        default_factory=list,
-        description="All persisted resources produced by this step, primary first",
-    )
-    artifact_view: Optional[StepArtifactView] = Field(
-        default=None,
-        description="Block-specific artifact view model for result rendering",
-    )
-    handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
-    handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID (what this block received)")
-    metadata: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="Execution metadata for routing, review, container state, consensus, and diagnostics",
-    )
-
-    @model_validator(mode="before")
-    @classmethod
-    def _parse_handle_payloads(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            for field in ("handle_outputs", "handle_inputs"):
-                raw = data.get(field)
-                if isinstance(raw, dict):
-                    parsed = {}
-                    for k, v in raw.items():
-                        if isinstance(v, dict):
-                            try:
-                                parsed[k] = HandlePayload.model_validate(v)
-                            except Exception:
-                                parsed[k] = v
-                        else:
-                            parsed[k] = v
-                    data[field] = parsed
-        return data
-
-    def get_json_output(self, handle_id: str = "output-json-0") -> Optional[dict]:
-        """Get JSON data from a specific output handle.
-
-        Most extract/formula blocks emit JSON on ``output-json-0``.
-        """
-        if not self.handle_outputs:
-            return None
-        payload = self.handle_outputs.get(handle_id)
-        if isinstance(payload, HandlePayload) and payload.type == "json":
-            return payload.data
-        return None
-
-    @property
-    def extracted_data(self) -> Optional[dict]:
-        """Shorthand for ``get_json_output()`` — the most common access pattern."""
-        return self.get_json_output()
 
 
 class WorkflowRunStep(BaseModel):
@@ -297,24 +233,14 @@ class WorkflowRunStep(BaseModel):
     block_type: str = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
-    artifact: Optional[StepArtifactRef] = Field(
-        default=None,
-        description="Canonical persisted resource produced by this step, if any",
-    )
-    artifacts: List[StepArtifactRef] = Field(
-        default_factory=list,
-        description="All persisted resources produced by this step, primary first",
-    )
-    artifact_view: Optional[StepArtifactView] = Field(
-        default=None,
-        description="Block-specific artifact view model for result rendering",
+    execution: StepExecutionRecord = Field(
+        ...,
+        description="Canonical step execution inputs, outputs, artifacts, and metadata",
     )
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
     duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
     error: Optional[str] = Field(default=None, description="Error message if failed")
-    handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
-    handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID")
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
@@ -323,36 +249,6 @@ class WorkflowRunStep(BaseModel):
     iteration: Optional[int] = Field(default=None, description="Loop iteration number")
     created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
     updated_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was last updated")
-
-    @model_validator(mode="before")
-    @classmethod
-    def _parse_handle_payloads(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            for field in ("handle_outputs", "handle_inputs"):
-                raw = data.get(field)
-                if isinstance(raw, dict):
-                    parsed = {}
-                    for k, v in raw.items():
-                        if isinstance(v, dict):
-                            try:
-                                parsed[k] = HandlePayload.model_validate(v)
-                            except Exception:
-                                parsed[k] = v
-                        else:
-                            parsed[k] = v
-                    data[field] = parsed
-        return data
-
-    @property
-    def extracted_data(self) -> Optional[dict]:
-        """Get the JSON output data from the default handle (``output-json-0``)."""
-        if not self.handle_outputs:
-            return None
-        payload = self.handle_outputs.get("output-json-0")
-        if isinstance(payload, HandlePayload) and payload.type == "json":
-            return payload.data
-        return None
-
 
 class StepExecutionsBatchResponse(BaseModel):
     """Response for batch step execution retrieval, keyed by block ID."""

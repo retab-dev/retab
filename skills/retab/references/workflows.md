@@ -203,16 +203,17 @@ Top-level `final_outputs` is useful for end results, but workflows often need st
 ```python
 # Batch (one HTTP call for the whole run):
 for step in client.workflows.runs.steps.list(run.id):
-    print(step.block_id, step.status, step.error, step.artifact)
+    print(step.block_id, step.status, step.error, step.artifacts)
 
 # Single step:
 step = client.workflows.runs.steps.get(run.id, "extract-block-1")
 print(step.status, step.error)
-print(step.extracted_data)   # handle-derived shortcut
+print(step.artifacts, step.handle_outputs)
 
 # Jump to the typed underlying resource:
-if step.artifact:
-    extraction = client.extractions.get(step.artifact.id)
+extraction_ref = next((artifact for artifact in step.artifacts if artifact.operation == "extraction"), None)
+if extraction_ref:
+    extraction = client.extractions.get(extraction_ref.id)
     # equivalents: client.splits.get / classifications.get / parses.get / edits.get / partitions.get
 ```
 
@@ -221,22 +222,23 @@ if step.artifact:
 ```ts
 // Batch:
 for (const step of await client.workflows.runs.steps.list(run.id)) {
-  console.log(step.block_id, step.status, step.error, step.artifact);
+  console.log(step.block_id, step.status, step.error, step.artifacts);
 }
 
 // Single step + typed resource fetch:
 const step = await client.workflows.runs.steps.get(run.id, "extract-block-1");
-if (step.artifact) {
-  const extraction = await client.extractions.get(step.artifact.id);
+const extractionRef = step.artifacts?.find((artifact) => artifact.operation === "extraction");
+if (extractionRef) {
+  const extraction = await client.extractions.get(extractionRef.id);
   console.log(extraction);
 }
 ```
 
-### `step.artifact`
+### `step.artifacts`
 
-Every executed block exposes a primary `step.artifact` `{operation, id}` pointer. Inference blocks point at their typed resource; other block types point at a workflow-native block artifact.
+Every executed block exposes `step.artifacts` as a list of `{operation, id}` pointers. Select the ref by `operation`; list order has no semantic meaning.
 
-| `step.artifact.operation` | emitted by block type | fetch with |
+| `step.artifacts[].operation` | emitted by block type | fetch with |
 |---|---|---|
 | `extraction` | `extract` | `client.extractions.get(id)` |
 | `split` | `split` | `client.splits.get(id)` |
@@ -244,9 +246,6 @@ Every executed block exposes a primary `step.artifact` `{operation, id}` pointer
 | `parse` | `parse` | `client.parses.get(id)` |
 | `edit` | `edit` | `client.edits.get(id)` |
 | `partition` | `for_each_sentinel_start` | `client.partitions.get(id)` |
-
-`step.artifacts` contains every artifact ref for the block, primary first. For inference blocks, the first artifact is the typed domain resource.
-
 Use step inspection when:
 
 - `final_outputs` is empty or too coarse

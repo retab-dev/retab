@@ -27,7 +27,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      * @example
      * ```typescript
      * const step = await client.workflows.runs.steps.get("run_abc123", "extract-node-1");
-     * const data = step.handle_outputs?.["output-json-0"]?.data;
+     * const data = step.execution.outputs["output-json-0"]?.data;
      * ```
      */
     async get(
@@ -76,7 +76,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      * @example
      * ```typescript
      * const batch = await client.workflows.runs.steps.getMany("run_abc123", ["extract-1", "classifier-1"]);
-     * console.log(batch.executions["extract-1"]?.handle_outputs);
+     * console.log(batch.executions["extract-1"]?.execution.outputs);
      * ```
      */
     async getMany(
@@ -112,7 +112,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      * @example
      * ```typescript
      * const allExecutions = await client.workflows.runs.steps.getAll("run_abc123");
-     * console.log(allExecutions.executions["extract-1"]?.handle_outputs);
+     * console.log(allExecutions.executions["extract-1"]?.execution.outputs);
      * ```
      */
     async getAll(
