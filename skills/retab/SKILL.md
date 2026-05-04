@@ -1,6 +1,6 @@
 ---
 name: retab
-description: Build apps and integrations on top of Retab's core APIs. Use when Codex needs to add document parsing, structured extraction, bundle splitting, form filling or document editing, document classification, or workflow run integration to a codebase through the Retab Python SDK, Node SDK, or direct REST calls. Covers starting workflow runs, waiting for completion, inspecting step outputs, and handling human-review pauses.
+description: Build apps and integrations on top of Retab's core APIs. Use when Codex needs to add document parsing, structured extraction, bundle splitting, form filling or document editing, document classification, or workflow run integration to a codebase through the Retab Python SDK, Node SDK, or direct REST calls. Covers starting workflow runs, waiting for completion, inspecting step executions, and handling human-review pauses.
 ---
 
 # Retab
@@ -10,7 +10,7 @@ Use this skill to implement Retab document API calls and workflow runs without r
 It is especially useful for two kinds of tasks:
 
 - Direct document operations: `parse`, `extract`, `split`, `edit`, `classify`
-- Existing workflow execution: start a run, pass inputs to start blocks, wait for completion, inspect step outputs, and handle `waiting_for_human`
+- Existing workflow execution: start a run, pass inputs to start blocks, wait for completion, inspect step executions, and handle `waiting_for_human`
 
 ## Quick Start
 
