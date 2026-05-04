@@ -25,9 +25,16 @@ class MockClient extends AbstractClient {
           block_type: 'extract',
           block_label: 'Extract',
           status: 'completed',
-          artifact: {
-            operation: 'extraction',
-            id: 'ext_123',
+          execution: {
+            inputs: {},
+            outputs: {},
+            artifacts: [
+              {
+                operation: 'extraction',
+                id: 'ext_123',
+              },
+            ],
+            metadata: {},
           },
         },
       ]),
@@ -58,49 +65,23 @@ describe('workflow run steps client', () => {
             block_type: 'extract',
             block_label: 'Extract',
             status: 'completed',
-            artifact: {
-              operation: 'extraction',
-              id: 'ext_123',
-            },
-            artifacts: [
-              {
-                operation: 'extraction',
-                id: 'ext_123',
-              },
-              {
-                operation: 'extract',
-                id: 'run_123_extract-1',
-              },
-            ],
-            artifact_view: {
-              block_type: 'extract',
-              artifact: {
-                operation: 'extraction',
-                id: 'ext_123',
-              },
+            execution: {
               artifacts: [
                 {
                   operation: 'extraction',
                   id: 'ext_123',
                 },
-                {
-                  operation: 'extract',
-                  id: 'run_123_extract-1',
-                },
               ],
-              data: {
-                output: { invoice_number: 'INV-001' },
-                extraction_id: 'ext_123',
+              outputs: {
+                'output-json-0': {
+                  type: 'json',
+                  data: { invoice_number: 'INV-001' },
+                },
               },
+              inputs: {},
+              metadata: {},
             },
             output: { removed: true },
-            handle_outputs: {
-              'output-json-0': {
-                type: 'json',
-                data: { invoice_number: 'INV-001' },
-              },
-            },
-            handle_inputs: null,
           }),
           {
             status: 200,
@@ -122,26 +103,14 @@ describe('workflow run steps client', () => {
       headers: undefined,
     });
     expect(step.block_id).toBe('extract-1');
-    expect(step.artifact).toEqual({
-      operation: 'extraction',
-      id: 'ext_123',
-    });
-    expect(step.artifacts).toEqual([
+    expect(step.execution.artifacts).toEqual([
       {
         operation: 'extraction',
         id: 'ext_123',
       },
-      {
-        operation: 'extract',
-        id: 'run_123_extract-1',
-      },
     ]);
-    expect(step.artifact_view?.data).toEqual({
-      output: { invoice_number: 'INV-001' },
-      extraction_id: 'ext_123',
-    });
     expect('output' in step).toBe(false);
-    expect(step.handle_outputs?.['output-json-0']).toBeDefined();
+    expect(step.execution.outputs['output-json-0']).toBeDefined();
   });
 
   test('does not export removed step execution response aliases', () => {
@@ -171,7 +140,7 @@ describe('workflow run steps client', () => {
     expect(steps).toHaveLength(1);
     expect(steps[0]?.block_id).toBe('extract-1');
     expect(steps[0]?.status).toBe('completed');
-    expect(steps[0]?.artifact).toEqual({
+    expect(steps[0]?.execution.artifacts).toContainEqual({
       operation: 'extraction',
       id: 'ext_123',
     });
@@ -201,14 +170,19 @@ describe('workflow run steps client', () => {
                 block_type: 'extract',
                 block_label: 'Extract',
                 status: 'completed',
-                artifact: {
-                  operation: 'extraction',
-                  id: 'ext_456',
+                execution: {
+                  artifacts: [
+                    {
+                      operation: 'extraction',
+                      id: 'ext_456',
+                    },
+                  ],
+                  outputs: {
+                    'output-json-0': { type: 'json', data: { field: 'value' } },
+                  },
+                  inputs: {},
+                  metadata: {},
                 },
-                handle_outputs: {
-                  'output-json-0': { type: 'json', data: { field: 'value' } },
-                },
-                handle_inputs: null,
               },
             },
           }),
@@ -228,7 +202,7 @@ describe('workflow run steps client', () => {
     expect(mockClient.lastFetchParams?.url).toBe('/workflows/runs/run_123/steps/batch');
     expect(mockClient.lastFetchParams?.method).toBe('POST');
     expect(batch.executions['extract-1']?.block_id).toBe('extract-1');
-    expect(batch.executions['extract-1']?.artifact).toEqual({
+    expect(batch.executions['extract-1']?.execution.artifacts).toContainEqual({
       operation: 'extraction',
       id: 'ext_456',
     });
@@ -243,12 +217,17 @@ describe('workflow run steps client', () => {
             block_type: 'for_each',
             block_label: 'For Each',
             status: 'completed',
-            artifact: {
-              operation: 'partition',
-              id: 'prtn_123',
+            execution: {
+              inputs: {},
+              outputs: {},
+              artifacts: [
+                {
+                  operation: 'partition',
+                  id: 'prtn_123',
+                },
+              ],
+              metadata: {},
             },
-            handle_outputs: null,
-            handle_inputs: null,
           }),
           {
             status: 200,
@@ -261,7 +240,7 @@ describe('workflow run steps client', () => {
     const stepsClient = new APIWorkflowRunSteps(new GetPartitionMockClient());
     const step = await stepsClient.get('run_123', 'for_each-1');
 
-    expect(step.artifact).toEqual({
+    expect(step.execution.artifacts).toContainEqual({
       operation: 'partition',
       id: 'prtn_123',
     });

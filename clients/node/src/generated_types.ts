@@ -617,7 +617,7 @@ export type HILDecisionResource = z.infer<typeof ZHILDecisionResource>;
 export const ZHandlePayload = z.lazy(() => (z.object({
     type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
     document: ZFileRef.nullable().optional(),
-    data: z.record(z.any()).nullable().optional(),
+    data: z.any().nullable().optional(),
     text: z.string().nullable().optional(),
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
@@ -628,14 +628,18 @@ export const ZStepArtifactRef = z.lazy(() => (z.object({
 })));
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 
-export const ZStepArtifactView = z.lazy(() => (z.object({
-    block_type: z.string(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).optional(),
-    data: z.unknown().nullable().optional(),
-    source_handle_id: z.string().nullable().optional(),
+export const ZStepExecutionRecord = z.lazy(() => (z.object({
+    inputs: z.record(z.string(), ZHandlePayload),
+    outputs: z.record(z.string(), ZHandlePayload),
+    artifacts: z.array(ZStepArtifactRef),
+    metadata: z.record(z.string(), z.unknown()).optional(),
 })));
-export type StepArtifactView = z.infer<typeof ZStepArtifactView>;
+export type StepExecutionRecord = z.infer<typeof ZStepExecutionRecord>;
+
+export const ZStepExecutionSummary = z.lazy(() => (z.object({
+    artifacts: z.array(ZStepArtifactRef),
+})));
+export type StepExecutionSummary = z.infer<typeof ZStepExecutionSummary>;
 
 export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_id: z.string(),
@@ -643,12 +647,7 @@ export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_label: z.string(),
     status: z.string(),
     error: z.string().nullable().optional(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).optional(),
-    artifact_view: ZStepArtifactView.nullable().optional(),
-    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+    execution: ZStepExecutionRecord,
 })));
 export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
 
@@ -666,10 +665,7 @@ export const ZStepStatus = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).optional(),
-    artifact_view: ZStepArtifactView.nullable().optional(),
-    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
+    execution: ZStepExecutionSummary,
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
     human_review_approved: z.boolean().nullable().optional(),
@@ -802,15 +798,11 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     block_type: z.string(),
     block_label: z.string(),
     status: z.string(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).optional(),
-    artifact_view: ZStepArtifactView.nullable().optional(),
+    execution: ZStepExecutionRecord,
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
-    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
     human_review_approved: z.boolean().nullable().optional(),

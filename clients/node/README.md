@@ -73,7 +73,8 @@ const stepExecutions = await retab.workflows.runs.steps.getMany(run.id, ["extrac
 
 console.log(run.final_outputs);
 console.log(steps.map((step) => `${step.block_id}: ${step.status}`));
-console.log(stepExecutions.executions["extract-1"]?.artifact_view);
+console.log(stepExecutions.executions["extract-1"]?.execution.artifacts);
+console.log(stepExecutions.executions["extract-1"]?.execution.outputs);
 ```
 
 ## Support

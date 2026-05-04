@@ -231,7 +231,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         >>>
         >>> # Get outputs from a specific step
         >>> step = client.workflows.runs.steps.get(run.id, "extract-block-1")
-        >>> print(step.handle_outputs)
+        >>> print(step.execution.outputs)
     """
 
     def __init__(self, *args, **kwargs):
@@ -558,7 +558,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         >>>
         >>> # Get outputs from a specific step
         >>> step = await client.workflows.runs.steps.get(run.id, "extract-block-1")
-        >>> print(step.handle_outputs)
+        >>> print(step.execution.outputs)
     """
 
     def __init__(self, *args, **kwargs):

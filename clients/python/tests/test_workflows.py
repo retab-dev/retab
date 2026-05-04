@@ -135,9 +135,13 @@ def test_workflow_run_accepts_newer_step_block_types() -> None:
                     "block_type": "classifier",
                     "block_label": "Classifier",
                     "status": "completed",
-                    "artifact": {
-                        "operation": "classification",
-                        "id": "cls_123",
+                    "execution": {
+                        "artifacts": [
+                            {
+                                "operation": "classification",
+                                "id": "cls_123",
+                            },
+                        ],
                     },
                 }
             ],
@@ -147,8 +151,9 @@ def test_workflow_run_accepts_newer_step_block_types() -> None:
     )
 
     assert run.steps[0].block_type == "classifier"
-    assert run.steps[0].artifact is not None
-    assert run.steps[0].artifact.operation == "classification"
+    assert [artifact.model_dump() for artifact in run.steps[0].execution.artifacts] == [
+        {"operation": "classification", "id": "cls_123"},
+    ]
 
 
 def test_workflow_run_accepts_partition_step_artifact() -> None:
@@ -166,9 +171,13 @@ def test_workflow_run_accepts_partition_step_artifact() -> None:
                     "block_type": "for_each",
                     "block_label": "For Each",
                     "status": "completed",
-                    "artifact": {
-                        "operation": "partition",
-                        "id": "prtn_123",
+                    "execution": {
+                        "artifacts": [
+                            {
+                                "operation": "partition",
+                                "id": "prtn_123",
+                            },
+                        ],
                     },
                 }
             ],
@@ -177,9 +186,9 @@ def test_workflow_run_accepts_partition_step_artifact() -> None:
         }
     )
 
-    assert run.steps[0].artifact is not None
-    assert run.steps[0].artifact.operation == "partition"
-    assert run.steps[0].artifact.id == "prtn_123"
+    assert [artifact.model_dump() for artifact in run.steps[0].execution.artifacts] == [
+        {"operation": "partition", "id": "prtn_123"},
+    ]
 
 
 def test_workflow_run_accepts_skipped_step_statuses() -> None:
@@ -197,12 +206,14 @@ def test_workflow_run_accepts_skipped_step_statuses() -> None:
                     "block_type": "extract",
                     "block_label": "Extract",
                     "status": "completed",
+                    "execution": {"artifacts": []},
                 },
                 {
                     "block_id": "extract-2",
                     "block_type": "extract",
                     "block_label": "Skipped branch",
                     "status": "skipped",
+                    "execution": {"artifacts": []},
                 },
             ],
             "created_at": "2026-03-13T10:00:00Z",
@@ -462,11 +473,16 @@ def test_step_execution_response_ignores_removed_payload_schema_fields() -> None
                 "json_schema": {"type": "object"},
             },
             "json_schema": {"type": "object"},
-            "handle_outputs": {
-                "output-json-0": {
-                    "type": "json",
-                    "data": {"invoice_number": "INV-001"},
-                }
+            "execution": {
+                "inputs": {},
+                "outputs": {
+                    "output-json-0": {
+                        "type": "json",
+                        "data": {"invoice_number": "INV-001"},
+                    }
+                },
+                "artifacts": [],
+                "metadata": {},
             },
         }
     )
@@ -475,7 +491,6 @@ def test_step_execution_response_ignores_removed_payload_schema_fields() -> None
     assert "output" not in dumped
     assert removed_payload_key not in dumped
     assert "json_schema" not in dumped
-    assert step_execution.get_json_output() == {"invoice_number": "INV-001"}
 
 
 def test_workflow_edges_create_accepts_typed_request() -> None:
@@ -967,36 +982,7 @@ async def test_async_wait_for_completion_awaits_async_callback() -> None:
 
 
 
-def test_step_status_extracted_data() -> None:
-    """StepStatus.extracted_data works on inline steps in WorkflowRun."""
-    run = WorkflowRun.model_validate({
-        "id": "run_1", "workflow_id": "wf_1", "workflow_name": "T",
-        "organization_id": "org_1", "status": "completed",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-        "steps": [
-            {
-                "block_id": "extract-1", "block_type": "extract", "block_label": "Extract",
-                "status": "completed",
-                "handle_outputs": {
-                    "output-json-0": {"type": "json", "data": {"invoice": "INV-001"}},
-                },
-            },
-            {
-                "block_id": "parse-1", "block_type": "parse", "block_label": "Parse",
-                "status": "completed",
-                "handle_outputs": {
-                    "output-file-0": {"type": "file"},
-                },
-            },
-        ],
-    })
-    assert run.steps[0].extracted_data == {"invoice": "INV-001"}
-    assert run.steps[1].extracted_data is None
-
-
-def test_workflow_run_step_extracted_data() -> None:
-    """WorkflowRunStep.extracted_data works with typed handle_outputs."""
+def test_workflow_run_step_types_handle_outputs() -> None:
     from retab.types.workflows.model import WorkflowRunStep
 
     step = WorkflowRunStep.model_validate({
@@ -1004,16 +990,27 @@ def test_workflow_run_step_extracted_data() -> None:
         "block_id": "extract-1", "step_id": "extract-1",
         "block_type": "extract", "block_label": "Extract",
         "status": "completed",
-        "handle_outputs": {
-            "output-json-0": {"type": "json", "data": {"total": 1234}},
+        "execution": {
+            "inputs": {},
+            "outputs": {
+                "output-json-0": {"type": "json", "data": {"total": 1234}},
+            },
+            "artifacts": [],
+            "metadata": {},
         },
     })
-    assert step.extracted_data == {"total": 1234}
-    # handle_outputs should be typed as HandlePayload
     from retab.types.workflows.model import HandlePayload
-    payload = step.handle_outputs["output-json-0"]
+    payload = step.execution.outputs["output-json-0"]
     assert isinstance(payload, HandlePayload)
     assert payload.type == "json"
+    assert payload.data == {"total": 1234}
     assert "input_document" not in WorkflowRunStep.model_fields
     assert "output_document" not in WorkflowRunStep.model_fields
     assert "split_documents" not in WorkflowRunStep.model_fields
+
+
+def test_handle_payload_data_accepts_any_json_value() -> None:
+    from retab.types.workflows.model import HandlePayload
+
+    assert HandlePayload.model_validate({"type": "json", "data": ["a", 1]}).data == ["a", 1]
+    assert HandlePayload.model_validate({"type": "json", "data": "raw text"}).data == "raw text"
