@@ -18,7 +18,7 @@ requirements_list = load_requirements()
 
 setup(
     name="retab",
-    version="0.0.134",
+    version="0.0.135",
     author="Retab",
     author_email="contact@retab.com",
     description="Retab official python library",
@@ -28,13 +28,15 @@ setup(
     project_urls={"Team website": "https://retab.com"},
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
         "Intended Audience :: Science/Research",
     ],
     packages=find_packages(),
-    python_requires=">=3.6",
+    python_requires=">=3.11",
     install_requires=requirements_list,
     include_package_data=True,
     package_data={"retab": ["**/*.yaml"]},

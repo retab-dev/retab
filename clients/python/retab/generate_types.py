@@ -94,11 +94,13 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
                 default_str = ""
                 if default is not PydanticUndefined and default is not None:
                     if isinstance(default, BaseModel):
-                        default_str = f".default({json.dumps(default.model_dump(mode="json", exclude_unset=True))})"
+                        default_value = default.model_dump(mode="json", exclude_unset=True)
+                        default_str = f".default({json.dumps(default_value)})"
                     else:
                         default_str = f".default({json.dumps(default)})"
                 typename += f"    {field_name}: {type_to_zod(field)}{default_str},\n"
-                ts_typename += f"    {field_name}{"?" if ts_compiled.endswith(" | undefined") or default is not PydanticUndefined else ""}: {ts_compiled},\n"
+                optional_suffix = "?" if ts_compiled.endswith(" | undefined") or default is not PydanticUndefined else ""
+                ts_typename += f"    {field_name}{optional_suffix}: {ts_compiled},\n"
             typename += "}))"
             ts_typename += "}"
     elif origin is list or origin is typing.List or origin is collections.abc.Sequence or origin is collections.abc.Iterable:

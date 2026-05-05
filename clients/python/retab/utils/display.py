@@ -3,7 +3,8 @@ import json
 from io import BytesIO
 from math import ceil
 from pathlib import Path
-from typing import List, Literal, Optional, TypedDict
+from typing import List, Literal, Optional
+from typing_extensions import TypedDict
 
 import numpy as np
 import requests

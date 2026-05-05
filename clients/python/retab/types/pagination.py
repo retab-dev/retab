@@ -47,4 +47,4 @@ class PaginatedList(BaseModel, Generic[T]):
             page = page._fetch_next_page(after=page.list_metadata.after)
 
 
-type PaginationOrder = Literal["asc", "desc"]
+PaginationOrder = Literal["asc", "desc"]

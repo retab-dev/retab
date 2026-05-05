@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Any, List, Literal, Optional, Tuple, TypeVar, TypedDict
+from typing import Any, List, Literal, Optional, Tuple, TypeVar
+from typing_extensions import TypedDict
 
 from pydantic import BaseModel, Field
 
