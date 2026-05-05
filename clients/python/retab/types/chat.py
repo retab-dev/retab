@@ -1,4 +1,5 @@
-from typing import Literal, TypedDict, Union, Optional, cast, Required
+from typing import Literal, Union, Optional, cast
+from typing_extensions import Required, TypedDict
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
