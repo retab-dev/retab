@@ -132,13 +132,10 @@ def test_workflow_run_accepts_newer_step_block_types() -> None:
             "steps": [
                 {
                     "block_id": "classifier-1",
+                    "step_id": "classifier-1",
                     "block_type": "classifier",
                     "block_label": "Classifier",
                     "status": "completed",
-                    "artifact": {
-                        "operation": "classification",
-                        "id": "cls_123",
-                    },
                 }
             ],
             "created_at": "2026-03-13T10:00:00Z",
@@ -147,39 +144,10 @@ def test_workflow_run_accepts_newer_step_block_types() -> None:
     )
 
     assert run.steps[0].block_type == "classifier"
-    assert run.steps[0].artifact is not None
-    assert run.steps[0].artifact.operation == "classification"
-
-
-def test_workflow_run_accepts_partition_step_artifact() -> None:
-    run = WorkflowRun.model_validate(
-        {
-            "id": "run_124",
-            "workflow_id": "workflow_123",
-            "workflow_name": "Partition Workflow",
-            "organization_id": "org_123",
-            "status": "running",
-            "started_at": "2026-03-13T10:00:00Z",
-            "steps": [
-                {
-                    "block_id": "for_each-1",
-                    "block_type": "for_each",
-                    "block_label": "For Each",
-                    "status": "completed",
-                    "artifact": {
-                        "operation": "partition",
-                        "id": "prtn_123",
-                    },
-                }
-            ],
-            "created_at": "2026-03-13T10:00:00Z",
-            "updated_at": "2026-03-13T10:00:00Z",
-        }
-    )
-
-    assert run.steps[0].artifact is not None
-    assert run.steps[0].artifact.operation == "partition"
-    assert run.steps[0].artifact.id == "prtn_123"
+    # StepStatusSummary intentionally drops artifacts/inputs/outputs/metadata —
+    # fetch the full step via client.workflows.runs.steps.get(...) for those.
+    assert "artifact" not in run.steps[0].model_dump()
+    assert "artifacts" not in run.steps[0].model_dump()
 
 
 def test_workflow_run_accepts_skipped_step_statuses() -> None:
@@ -194,12 +162,14 @@ def test_workflow_run_accepts_skipped_step_statuses() -> None:
             "steps": [
                 {
                     "block_id": "extract-1",
+                    "step_id": "extract-1",
                     "block_type": "extract",
                     "block_label": "Extract",
                     "status": "completed",
                 },
                 {
                     "block_id": "extract-2",
+                    "step_id": "extract-2",
                     "block_type": "extract",
                     "block_label": "Skipped branch",
                     "status": "skipped",
@@ -967,8 +937,11 @@ async def test_async_wait_for_completion_awaits_async_callback() -> None:
 
 
 
-def test_step_status_extracted_data() -> None:
-    """StepStatus.extracted_data works on inline steps in WorkflowRun."""
+def test_step_status_summary_drops_handle_payloads() -> None:
+    """WorkflowRun.steps carries StepStatusSummary rows — handle payloads
+    are not embedded; fetch the full step via client.workflows.runs.steps.get()
+    to read handle_outputs.
+    """
     run = WorkflowRun.model_validate({
         "id": "run_1", "workflow_id": "wf_1", "workflow_name": "T",
         "organization_id": "org_1", "status": "completed",
@@ -976,23 +949,20 @@ def test_step_status_extracted_data() -> None:
         "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
         "steps": [
             {
-                "block_id": "extract-1", "block_type": "extract", "block_label": "Extract",
+                "block_id": "extract-1", "step_id": "extract-1",
+                "block_type": "extract", "block_label": "Extract",
                 "status": "completed",
+                # StepStatusSummary ignores handle_outputs (extra="ignore" applies).
                 "handle_outputs": {
                     "output-json-0": {"type": "json", "data": {"invoice": "INV-001"}},
                 },
             },
-            {
-                "block_id": "parse-1", "block_type": "parse", "block_label": "Parse",
-                "status": "completed",
-                "handle_outputs": {
-                    "output-file-0": {"type": "file"},
-                },
-            },
         ],
     })
-    assert run.steps[0].extracted_data == {"invoice": "INV-001"}
-    assert run.steps[1].extracted_data is None
+    summary = run.steps[0]
+    assert summary.block_id == "extract-1"
+    assert summary.extracted_data is None
+    assert "handle_outputs" not in summary.model_dump()
 
 
 def test_workflow_run_step_extracted_data() -> None:

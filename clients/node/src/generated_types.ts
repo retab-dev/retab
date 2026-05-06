@@ -622,20 +622,89 @@ export const ZHandlePayload = z.lazy(() => (z.object({
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
+export const ZWorkflowArtifactOperation = z.union([
+    z.literal("extraction"),
+    z.literal("split"),
+    z.literal("classification"),
+    z.literal("parse"),
+    z.literal("edit"),
+    z.literal("partition"),
+]);
+export type WorkflowArtifactOperation = z.infer<typeof ZWorkflowArtifactOperation>;
+
 export const ZStepArtifactRef = z.lazy(() => (z.object({
-    operation: z.string(),
+    operation: ZWorkflowArtifactOperation,
     id: z.string(),
 })));
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 
 export const ZStepArtifactView = z.lazy(() => (z.object({
     block_type: z.string(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).optional(),
+    artifacts: z.array(ZStepArtifactRef).default([]),
     data: z.unknown().nullable().optional(),
     source_handle_id: z.string().nullable().optional(),
 })));
 export type StepArtifactView = z.infer<typeof ZStepArtifactView>;
+
+export const ZContainerContextData = z.lazy(() => (z.object({
+    container_id: z.string(),
+    iteration: z.number(),
+    is_parallel: z.boolean().default(false),
+    parallel_item_index: z.number().nullable().optional(),
+})));
+export type ContainerContextData = z.infer<typeof ZContainerContextData>;
+
+export const ZIterationContextData = z.lazy(() => (z.object({
+    containers: z.array(ZContainerContextData).default([]),
+})));
+export type IterationContextData = z.infer<typeof ZIterationContextData>;
+
+export const ZRoutingMetadata = z.lazy(() => (z.object({
+    selected_handles: z.array(z.string()).default([]),
+    matched_branch_id: z.string().nullable().optional(),
+    matched_condition_ids: z.array(z.string()).default([]),
+})));
+export type RoutingMetadata = z.infer<typeof ZRoutingMetadata>;
+
+export const ZContainerMetadata = z.lazy(() => (z.object({
+    phase: z.string().nullable().optional(),
+    current_item_key: z.string().nullable().optional(),
+    current_index: z.number().nullable().optional(),
+    total_items: z.number().nullable().optional(),
+    partition_id: z.string().nullable().optional(),
+    all_item_keys: z.array(z.string()).nullable().optional(),
+    all_iteration_context_texts: z.array(z.string()).nullable().optional(),
+    iteration_context_text: z.string().nullable().optional(),
+    termination_reason: z.string().nullable().optional(),
+})));
+export type ContainerMetadata = z.infer<typeof ZContainerMetadata>;
+
+export const ZEvaluationMetadata = z.lazy(() => (z.object({
+    conditional: z.array(z.record(z.string(), z.any())).nullable().optional(),
+    hil_conditions: z.array(z.record(z.string(), z.any())).nullable().optional(),
+    while_loop_termination: z.array(z.record(z.string(), z.any())).nullable().optional(),
+})));
+export type EvaluationMetadata = z.infer<typeof ZEvaluationMetadata>;
+
+export const ZDebugMetadata = z.lazy(() => (z.object({
+    values: z.record(z.string(), z.any()).default({}),
+})));
+export type DebugMetadata = z.infer<typeof ZDebugMetadata>;
+
+export const ZStepExecutionMetadata = z.lazy(() => (z.object({
+    routing: ZRoutingMetadata.nullable().optional(),
+    container: ZContainerMetadata.nullable().optional(),
+    evaluations: ZEvaluationMetadata.nullable().optional(),
+    debug: ZDebugMetadata.nullable().optional(),
+})));
+export type StepExecutionMetadata = z.infer<typeof ZStepExecutionMetadata>;
+
+// Backend uses non-optional handle dicts; coerce a literal null/undefined to {} so
+// older payloads still parse cleanly.
+const ZHandlePayloadRecord = z.preprocess(
+    (v) => (v == null ? {} : v),
+    z.record(z.string(), ZHandlePayload),
+);
 
 export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_id: z.string(),
@@ -643,12 +712,11 @@ export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_label: z.string(),
     status: z.string(),
     error: z.string().nullable().optional(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).optional(),
+    artifacts: z.array(ZStepArtifactRef).default([]),
     artifact_view: ZStepArtifactView.nullable().optional(),
-    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+    handle_outputs: ZHandlePayloadRecord,
+    handle_inputs: ZHandlePayloadRecord,
+    metadata: ZStepExecutionMetadata.nullable().optional(),
 })));
 export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
 
@@ -658,7 +726,43 @@ export const ZStepExecutionsBatchResponse = z.lazy(() => (z.object({
 export type StepExecutionsBatchResponse = z.infer<typeof ZStepExecutionsBatchResponse>;
 
 export const ZStepStatus = z.lazy(() => (z.object({
+    run_id: z.string().default(""),
+    organization_id: z.string().default(""),
     block_id: z.string(),
+    step_id: z.string().default(""),
+    block_type: z.string(),
+    block_label: z.string(),
+    status: z.union([z.literal("pending"), z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("skipped"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+    created_at: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    error: z.string().nullable().optional(),
+    error_stage: z.string().nullable().optional(),
+    error_category: z.string().nullable().optional(),
+    error_details: z.record(z.string(), z.any()).nullable().optional(),
+    model: z.string().nullable().optional(),
+    cost: z.record(z.string(), z.any()).nullable().optional(),
+    tokens: z.record(z.string(), z.any()).nullable().optional(),
+    trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
+    handle_inputs: ZHandlePayloadRecord,
+    handle_outputs: ZHandlePayloadRecord,
+    artifacts: z.array(ZStepArtifactRef).default([]),
+    metadata: ZStepExecutionMetadata.optional(),
+    requires_human_review: z.boolean().nullable().optional(),
+    human_reviewed_at: z.string().nullable().optional(),
+    human_review_approved: z.boolean().nullable().optional(),
+    retry_count: z.number().nullable().optional(),
+    loop_id: z.string().nullable().optional(),
+    iteration: z.number().nullable().optional(),
+    iteration_context: ZIterationContextData.nullable().optional(),
+})));
+export type StepStatus = z.infer<typeof ZStepStatus>;
+
+export const ZStepStatusSummary = z.lazy(() => (z.object({
+    block_id: z.string(),
+    step_id: z.string(),
     block_type: z.string(),
     block_label: z.string(),
     status: z.union([z.literal("pending"), z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("skipped"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
@@ -666,15 +770,17 @@ export const ZStepStatus = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).optional(),
-    artifact_view: ZStepArtifactView.nullable().optional(),
-    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
+    error_stage: z.string().nullable().optional(),
+    error_category: z.string().nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
-    human_reviewed_at: z.string().nullable().optional(),
-    human_review_approved: z.boolean().nullable().optional(),
+    loop_id: z.string().nullable().optional(),
+    iteration: z.number().nullable().optional(),
+    iteration_context: ZIterationContextData.nullable().optional(),
+    model: z.string().nullable().optional(),
+    cost: z.record(z.string(), z.any()).nullable().optional(),
+    tokens: z.record(z.string(), z.any()).nullable().optional(),
 })));
-export type StepStatus = z.infer<typeof ZStepStatus>;
+export type StepStatusSummary = z.infer<typeof ZStepStatusSummary>;
 
 export const ZSubmitHILDecisionResponse = z.lazy(() => (z.object({
     submission_status: z.union([z.literal("accepted"), z.literal("already_received"), z.literal("already_applied")]),
@@ -775,13 +881,13 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     started_at: z.string(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
-    steps: z.array(ZStepStatus),
+    steps: z.array(ZStepStatusSummary).default([]),
     input_documents: z.record(z.string(), ZFileRef).nullable().optional(),
     final_outputs: z.record(z.any()).nullable().optional(),
     error: z.string().nullable().optional(),
     created_at: z.string(),
     updated_at: z.string(),
-    waiting_for_block_ids: z.array(z.string()),
+    waiting_for_block_ids: z.array(z.string()).default([]),
     pending_block_outputs: z.record(z.any()).nullable().optional(),
     config_snapshot_id: z.string().nullable().optional(),
     trigger_type: z.string().nullable().optional(),
@@ -802,21 +908,28 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     block_type: z.string(),
     block_label: z.string(),
     status: z.string(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).optional(),
-    artifact_view: ZStepArtifactView.nullable().optional(),
+    artifacts: z.array(ZStepArtifactRef).default([]),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
-    handle_outputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
-    handle_inputs: z.record(z.string(), ZHandlePayload).nullable().optional(),
+    error_stage: z.string().nullable().optional(),
+    error_category: z.string().nullable().optional(),
+    error_details: z.record(z.string(), z.any()).nullable().optional(),
+    handle_outputs: ZHandlePayloadRecord,
+    handle_inputs: ZHandlePayloadRecord,
+    metadata: ZStepExecutionMetadata.nullable().optional(),
+    model: z.string().nullable().optional(),
+    cost: z.record(z.string(), z.any()).nullable().optional(),
+    tokens: z.record(z.string(), z.any()).nullable().optional(),
+    trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
     requires_human_review: z.boolean().nullable().optional(),
     human_reviewed_at: z.string().nullable().optional(),
     human_review_approved: z.boolean().nullable().optional(),
     retry_count: z.number().nullable().optional(),
     loop_id: z.string().nullable().optional(),
     iteration: z.number().nullable().optional(),
+    iteration_context: ZIterationContextData.nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
 })));

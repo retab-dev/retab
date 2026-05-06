@@ -41,7 +41,14 @@ StepExecutionStatus = Literal[
     "waiting_for_human",
     "cancelled",
 ]
-WorkflowArtifactOperation = str
+WorkflowArtifactOperation = Literal[
+    "extraction",
+    "split",
+    "classification",
+    "parse",
+    "edit",
+    "partition",
+]
 
 
 class StepArtifactRef(BaseModel):
@@ -58,13 +65,9 @@ class StepArtifactView(BaseModel):
     """Block-specific artifact view data for rendering step results."""
 
     block_type: str = Field(..., description="Workflow block type that produced the view")
-    artifact: Optional[StepArtifactRef] = Field(
-        default=None,
-        description="Primary artifact backing this view",
-    )
     artifacts: List[StepArtifactRef] = Field(
         default_factory=list,
-        description="All artifacts backing this view, primary first",
+        description="All artifacts backing this view",
     )
     data: Optional[Any] = Field(
         default=None,
@@ -76,9 +79,68 @@ class StepArtifactView(BaseModel):
     )
 
 
-class StepStatus(BaseModel):
-    """Status of a single step in workflow execution"""
-    block_id: str = Field(..., description="ID of the block")
+class ContainerContextData(BaseModel):
+    """Structured context for a single container in the hierarchy."""
+    container_id: str = Field(..., description="Container ID (e.g., 'while_loop-abc')")
+    iteration: int = Field(..., description="Iteration index (0-based)")
+    is_parallel: bool = Field(default=False, description="Whether this container represents a parallel item")
+    parallel_item_index: Optional[int] = Field(default=None, description="Parallel item index if is_parallel")
+
+
+class IterationContextData(BaseModel):
+    """Structured container hierarchy for a step."""
+    containers: List[ContainerContextData] = Field(
+        default_factory=list,
+        description="Container hierarchy from outermost to innermost",
+    )
+
+
+class RoutingMetadata(BaseModel):
+    selected_handles: List[str] = Field(default_factory=list)
+    matched_branch_id: Optional[str] = None
+    matched_condition_ids: List[str] = Field(default_factory=list)
+
+
+class ContainerMetadata(BaseModel):
+    phase: Optional[str] = None
+    current_item_key: Optional[str] = None
+    current_index: Optional[int] = None
+    total_items: Optional[int] = None
+    partition_id: Optional[str] = None
+    all_item_keys: Optional[List[str]] = None
+    all_iteration_context_texts: Optional[List[str]] = None
+    iteration_context_text: Optional[str] = None
+    termination_reason: Optional[str] = None
+
+
+class EvaluationMetadata(BaseModel):
+    conditional: Optional[List[Dict[str, Any]]] = None
+    hil_conditions: Optional[List[Dict[str, Any]]] = None
+    while_loop_termination: Optional[List[Dict[str, Any]]] = None
+
+
+class DebugMetadata(BaseModel):
+    values: Dict[str, Any] = Field(default_factory=dict)
+
+
+class StepExecutionMetadata(BaseModel):
+    routing: Optional[RoutingMetadata] = None
+    container: Optional[ContainerMetadata] = None
+    evaluations: Optional[EvaluationMetadata] = None
+    debug: Optional[DebugMetadata] = None
+
+
+class StepStatusSummary(BaseModel):
+    """Lightweight step status embedded in :class:`WorkflowRun`.
+
+    Carries only the row-in-a-list fields needed to display run progress.
+    Full step details (handle payloads, artifacts, metadata) live in the
+    persisted ``WorkflowRunStep`` collection and are fetched on demand.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    block_id: str = Field(..., description="Logical ID of the block")
+    step_id: str = Field(..., description="Full step ID with iteration context")
     block_type: BlockType = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: StepExecutionStatus = Field(..., description="Current status")
@@ -86,25 +148,120 @@ class StepStatus(BaseModel):
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
     duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
     error: Optional[str] = Field(default=None, description="Error message if failed")
-    artifact: Optional[StepArtifactRef] = Field(
+    error_stage: Optional[str] = Field(default=None, description="Which execution stage failed")
+    error_category: Optional[str] = Field(default=None, description="Category of error for retry decisions")
+    requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
+    loop_id: Optional[str] = Field(default=None, description="ID of the containing while_loop (if inside a loop)")
+    iteration: Optional[int] = Field(default=None, description="Iteration number (0-based) if inside a loop")
+    iteration_context: Optional[IterationContextData] = Field(
         default=None,
-        description="Canonical persisted resource produced by this step, if any",
+        description="Structured container hierarchy for this step",
+    )
+    model: Optional[str] = Field(default=None, description="LLM model used")
+    cost: Optional[Dict[str, Any]] = Field(default=None, description="Cost breakdown for this step")
+    tokens: Optional[Dict[str, Any]] = Field(default=None, description="Token usage for this step")
+
+    @property
+    def extracted_data(self) -> Optional[dict]:
+        """StepStatusSummary intentionally omits handle payloads.
+
+        Use ``client.workflows.runs.steps.get(run_id, block_id)`` to fetch the
+        full :class:`WorkflowRunStep` (or :class:`StepExecutionResponse`) and
+        read ``handle_outputs['output-json-0'].data`` from there.
+        """
+        return None
+
+
+class StepStatus(BaseModel):
+    """Full step status with all execution details.
+
+    Mirrors the backend ``StepStatus`` document. ``handle_inputs``,
+    ``handle_outputs``, ``artifacts``, and ``metadata`` are flat, real fields
+    on this model — there is no nested ``StepExecutionRecord`` wrapper.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    # Identity
+    run_id: str = Field(default="", description="Parent workflow run ID")
+    organization_id: str = Field(default="", description="Organization that owns this")
+
+    # Core fields
+    block_id: str = Field(..., description="Logical ID of the block")
+    step_id: str = Field(default="", description="Full step ID with iteration context")
+    block_type: BlockType = Field(..., description="Type of the block")
+    block_label: str = Field(..., description="Label of the block")
+    status: StepExecutionStatus = Field(..., description="Current status")
+    started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
+    completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
+    created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
+    updated_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was last updated")
+    duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
+    error: Optional[str] = Field(default=None, description="Error message if failed")
+    error_stage: Optional[str] = Field(default=None, description="Which execution stage failed")
+    error_category: Optional[str] = Field(default=None, description="Category of error for retry decisions")
+    error_details: Optional[Dict[str, Any]] = Field(default=None, description="Detailed error context including stack trace")
+
+    # Cost and token tracking
+    model: Optional[str] = Field(default=None, description="LLM model used")
+    cost: Optional[Dict[str, Any]] = Field(default=None, description="Cost breakdown for this step")
+    tokens: Optional[Dict[str, Any]] = Field(default=None, description="Token usage for this step")
+    trace_spans: Optional[List[Dict[str, Any]]] = Field(default=None, description="Nested execution trace spans")
+
+    # Flat execution payload — no nested StepExecutionRecord wrapper.
+    handle_inputs: Dict[str, HandlePayload] = Field(
+        default_factory=dict,
+        description="Handle input payloads consumed by this step",
+    )
+    handle_outputs: Dict[str, HandlePayload] = Field(
+        default_factory=dict,
+        description="Handle output payloads produced by this step",
     )
     artifacts: List[StepArtifactRef] = Field(
         default_factory=list,
-        description="All persisted resources produced by this step, primary first",
+        description="Persisted resources produced by this step (unordered)",
     )
-    artifact_view: Optional[StepArtifactView] = Field(
-        default=None,
-        description="Block-specific artifact view model for result rendering",
+    metadata: StepExecutionMetadata = Field(
+        default_factory=StepExecutionMetadata,
+        description="Step-internal state: routing, container, evaluations, debug",
     )
-    handle_outputs: Optional[Dict[str, HandlePayload]] = Field(
-        default=None,
-        description="Output payloads keyed by handle ID (e.g., 'output-file-0', 'output-json-0')"
-    )
+
+    # HIL-specific fields
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review was completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
+
+    # Retry tracking
+    retry_count: Optional[int] = Field(default=None, description="Number of retry attempts for this step execution")
+
+    # Loop iteration tracking
+    loop_id: Optional[str] = Field(default=None, description="ID of the containing while_loop (if inside a loop)")
+    iteration: Optional[int] = Field(default=None, description="Iteration number (0-based) if inside a loop")
+    iteration_context: Optional[IterationContextData] = Field(
+        default=None,
+        description="Structured container hierarchy for this step",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _parse_handle_payloads(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            for field in ("handle_outputs", "handle_inputs"):
+                raw = data.get(field, ...)
+                if raw is None:
+                    # Backend uses non-optional dicts; coerce a literal None to an empty dict.
+                    data[field] = {}
+                elif isinstance(raw, dict):
+                    parsed: Dict[str, Any] = {}
+                    for k, v in raw.items():
+                        if isinstance(v, dict):
+                            try:
+                                parsed[k] = HandlePayload.model_validate(v)
+                            except Exception:
+                                parsed[k] = v
+                        else:
+                            parsed[k] = v
+                    data[field] = parsed
+        return data
 
     @property
     def extracted_data(self) -> Optional[dict]:
@@ -132,7 +289,13 @@ class WorkflowRunError(Exception):
 
 
 class WorkflowRun(BaseModel):
-    """A stored workflow run record"""
+    """A stored workflow run record.
+
+    The embedded ``steps`` list carries only :class:`StepStatusSummary` rows.
+    Full step details (handle payloads, artifacts, metadata) are stored
+    separately in the persisted step collection — fetch them via
+    ``client.workflows.runs.steps.get(...)``.
+    """
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique ID for this run")
@@ -143,7 +306,7 @@ class WorkflowRun(BaseModel):
     started_at: datetime.datetime = Field(..., description="When the workflow started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow completed")
     duration_ms: Optional[int] = Field(default=None, description="Total duration in milliseconds")
-    steps: List[StepStatus] = Field(default_factory=list, description="Status of each step")
+    steps: List[StepStatusSummary] = Field(default_factory=list, description="Lightweight summary of each step")
     input_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="Start block ID -> input document reference")
     final_outputs: Optional[dict] = Field(default=None, description="Final outputs from end blocks")
     error: Optional[str] = Field(default=None, description="Error message if workflow failed")
@@ -225,28 +388,32 @@ TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancel
 
 class StepExecutionResponse(BaseModel):
     """Step status and handle data for a specific step in a workflow run."""
+    model_config = ConfigDict(extra="ignore")
+
     block_id: str = Field(..., description="ID of the block")
     block_type: str = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
     error: Optional[str] = Field(default=None, description="Error message if failed")
-    artifact: Optional[StepArtifactRef] = Field(
-        default=None,
-        description="Canonical persisted resource produced by this step, if any",
-    )
     artifacts: List[StepArtifactRef] = Field(
         default_factory=list,
-        description="All persisted resources produced by this step, primary first",
+        description="Persisted resources produced by this step (unordered)",
     )
     artifact_view: Optional[StepArtifactView] = Field(
         default=None,
         description="Block-specific artifact view model for result rendering",
     )
-    handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
-    handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID (what this block received)")
-    metadata: Optional[Dict[str, Any]] = Field(
+    handle_outputs: Dict[str, HandlePayload] = Field(
+        default_factory=dict,
+        description="Handle outputs keyed by handle ID",
+    )
+    handle_inputs: Dict[str, HandlePayload] = Field(
+        default_factory=dict,
+        description="Handle inputs keyed by handle ID (what this block received)",
+    )
+    metadata: Optional[StepExecutionMetadata] = Field(
         default=None,
-        description="Execution metadata for routing, review, container state, consensus, and diagnostics",
+        description="Execution metadata: routing, container, evaluations, debug",
     )
 
     @model_validator(mode="before")
@@ -254,9 +421,12 @@ class StepExecutionResponse(BaseModel):
     def _parse_handle_payloads(cls, data: Any) -> Any:
         if isinstance(data, dict):
             for field in ("handle_outputs", "handle_inputs"):
-                raw = data.get(field)
-                if isinstance(raw, dict):
-                    parsed = {}
+                raw = data.get(field, ...)
+                if raw is None:
+                    # Backend uses non-optional dicts; coerce a literal None to an empty dict.
+                    data[field] = {}
+                elif isinstance(raw, dict):
+                    parsed: Dict[str, Any] = {}
                     for k, v in raw.items():
                         if isinstance(v, dict):
                             try:
@@ -287,7 +457,12 @@ class StepExecutionResponse(BaseModel):
 
 
 class WorkflowRunStep(BaseModel):
-    """Persisted public step document returned by list workflow run steps."""
+    """Persisted public step document returned by list workflow run steps.
+
+    Backed by the same flattened backend ``StepStatus`` shape — ``handle_inputs``,
+    ``handle_outputs``, ``artifacts``, and ``metadata`` are flat fields, not
+    nested under a ``StepExecutionRecord``.
+    """
     model_config = ConfigDict(extra="ignore")
 
     run_id: str = Field(..., description="Parent workflow run ID")
@@ -297,30 +472,43 @@ class WorkflowRunStep(BaseModel):
     block_type: str = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
-    artifact: Optional[StepArtifactRef] = Field(
-        default=None,
-        description="Canonical persisted resource produced by this step, if any",
-    )
     artifacts: List[StepArtifactRef] = Field(
         default_factory=list,
-        description="All persisted resources produced by this step, primary first",
-    )
-    artifact_view: Optional[StepArtifactView] = Field(
-        default=None,
-        description="Block-specific artifact view model for result rendering",
+        description="Persisted resources produced by this step (unordered)",
     )
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
     duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
     error: Optional[str] = Field(default=None, description="Error message if failed")
-    handle_outputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle outputs keyed by handle ID")
-    handle_inputs: Optional[Dict[str, HandlePayload]] = Field(default=None, description="Handle inputs keyed by handle ID")
+    error_stage: Optional[str] = Field(default=None, description="Which execution stage failed")
+    error_category: Optional[str] = Field(default=None, description="Category of error for retry decisions")
+    error_details: Optional[Dict[str, Any]] = Field(default=None, description="Detailed error context")
+    handle_outputs: Dict[str, HandlePayload] = Field(
+        default_factory=dict,
+        description="Handle outputs keyed by handle ID",
+    )
+    handle_inputs: Dict[str, HandlePayload] = Field(
+        default_factory=dict,
+        description="Handle inputs keyed by handle ID",
+    )
+    metadata: Optional[StepExecutionMetadata] = Field(
+        default=None,
+        description="Execution metadata: routing, container, evaluations, debug",
+    )
+    model: Optional[str] = Field(default=None, description="LLM model used")
+    cost: Optional[Dict[str, Any]] = Field(default=None, description="Cost breakdown for this step")
+    tokens: Optional[Dict[str, Any]] = Field(default=None, description="Token usage for this step")
+    trace_spans: Optional[List[Dict[str, Any]]] = Field(default=None, description="Nested execution trace spans")
     requires_human_review: Optional[bool] = Field(default=None, description="Whether this step requires human review")
     human_reviewed_at: Optional[datetime.datetime] = Field(default=None, description="When human review completed")
     human_review_approved: Optional[bool] = Field(default=None, description="Whether human approved or rejected")
     retry_count: Optional[int] = Field(default=None, description="Retry count for this step")
     loop_id: Optional[str] = Field(default=None, description="Containing while_loop ID")
     iteration: Optional[int] = Field(default=None, description="Loop iteration number")
+    iteration_context: Optional[IterationContextData] = Field(
+        default=None,
+        description="Structured container hierarchy for this step",
+    )
     created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
     updated_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was last updated")
 
@@ -329,9 +517,12 @@ class WorkflowRunStep(BaseModel):
     def _parse_handle_payloads(cls, data: Any) -> Any:
         if isinstance(data, dict):
             for field in ("handle_outputs", "handle_inputs"):
-                raw = data.get(field)
-                if isinstance(raw, dict):
-                    parsed = {}
+                raw = data.get(field, ...)
+                if raw is None:
+                    # Backend uses non-optional dicts; coerce a literal None to an empty dict.
+                    data[field] = {}
+                elif isinstance(raw, dict):
+                    parsed: Dict[str, Any] = {}
                     for k, v in raw.items():
                         if isinstance(v, dict):
                             try:
