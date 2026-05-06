@@ -113,10 +113,99 @@ class ContainerMetadata(BaseModel):
     termination_reason: Optional[str] = None
 
 
+class ConditionEvaluationPerItem(BaseModel):
+    """Per-item evaluation result for wildcard array conditions."""
+    indices: List[int] = Field(
+        default_factory=list,
+        description="Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1])",
+    )
+    actual: Any = Field(default=None, description="Actual value at this index")
+    matched: bool = Field(default=False, description="Whether this item matched the condition")
+
+
+class ConditionEvaluationSubCondition(BaseModel):
+    """Evaluation result for a sub-condition in a compound condition."""
+    sub_condition_id: str = Field(default="", description="Identifier for this sub-condition")
+    path: str = Field(default="", description="JSON path that was evaluated")
+    operator: str = Field(default="", description="Comparison operator used")
+    expected: Any = Field(default=None, description="Expected value")
+    actual: Any = Field(default=None, description="Actual value found")
+    matched: bool = Field(default=False, description="Whether this sub-condition matched")
+    per_item: Optional[List[ConditionEvaluationPerItem]] = Field(
+        default=None,
+        description="Per-item breakdown if this sub-condition used a wildcard path",
+    )
+
+
+class ConditionEvaluationDetails(BaseModel):
+    """Detailed evaluation information for frontend display."""
+    path: str = Field(default="", description="JSON path that was evaluated")
+    operator: str = Field(default="", description="Comparison operator used")
+    expected: Any = Field(default=None, description="Expected value")
+    actual: Any = Field(default=None, description="Actual value found")
+    matched: bool = Field(default=False, description="Whether the condition matched")
+    per_item: Optional[List[ConditionEvaluationPerItem]] = Field(
+        default=None,
+        description="Per-item breakdown for wildcard array conditions",
+    )
+    sub_conditions: Optional[List[ConditionEvaluationSubCondition]] = Field(
+        default=None,
+        description="Sub-condition evaluations for compound conditions",
+    )
+    logical_operator: Optional[Literal["and", "or"]] = Field(
+        default=None,
+        description="Logical operator combining sub-conditions",
+    )
+
+
+class ConditionEvaluationResult(BaseModel):
+    """Complete evaluation result for a routing/termination condition."""
+    condition_id: str = Field(..., description="Unique identifier for this condition")
+    path: str = Field(default="", description="JSON path that was evaluated")
+    operator: str = Field(default="", description="Comparison operator used")
+    expected: Any = Field(default=None, description="Expected value")
+    actual: Any = Field(default=None, description="Actual value found")
+    matched: bool = Field(default=False, description="Whether the condition matched")
+    branch_name: str = Field(default="", description="Branch name selected by this condition")
+    logical_operator: Optional[Literal["and", "or"]] = Field(
+        default=None,
+        description="Logical operator for compound conditions",
+    )
+    per_item: Optional[List[ConditionEvaluationPerItem]] = Field(
+        default=None,
+        description="Per-item breakdown for wildcard array conditions",
+    )
+    sub_evaluations: Optional[List[ConditionEvaluationSubCondition]] = Field(
+        default=None,
+        description="Sub-condition evaluations for compound conditions",
+    )
+    details: ConditionEvaluationDetails = Field(
+        ...,
+        description="Nested details object for frontend compatibility",
+    )
+
+
+class WhileLoopTermination(BaseModel):
+    """Termination outcome for a while_loop block."""
+    termination_reason: Literal["max_iterations_reached", "condition_matched", "error"] = Field(
+        ...,
+        description="Why the while_loop terminated",
+    )
+    evaluations: List[ConditionEvaluationResult] = Field(
+        default_factory=list,
+        description="Termination condition evaluations recorded for the final iteration",
+    )
+
+
 class EvaluationMetadata(BaseModel):
-    conditional: Optional[List[Dict[str, Any]]] = None
-    hil_conditions: Optional[List[Dict[str, Any]]] = None
-    while_loop_termination: Optional[List[Dict[str, Any]]] = None
+    branch_evaluations: Optional[List[ConditionEvaluationResult]] = Field(
+        default=None,
+        description="Evaluations for conditional/HIL branch routing",
+    )
+    while_loop_termination: Optional[WhileLoopTermination] = Field(
+        default=None,
+        description="Termination outcome for a while_loop block",
+    )
 
 
 class DebugMetadata(BaseModel):
