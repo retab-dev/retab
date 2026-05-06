@@ -62,34 +62,18 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
         "block_type": "extract",
         "block_label": "Extract",
         "status": "completed",
-        "artifact": {
-            "operation": "extraction",
-            "id": "ext_123",
-        },
         "artifacts": [
             {
                 "operation": "extraction",
                 "id": "ext_123",
             },
-            {
-                "operation": "extract",
-                "id": "run_123_extract-1",
-            },
         ],
         "artifact_view": {
             "block_type": "extract",
-            "artifact": {
-                "operation": "extraction",
-                "id": "ext_123",
-            },
             "artifacts": [
                 {
                     "operation": "extraction",
                     "id": "ext_123",
-                },
-                {
-                    "operation": "extract",
-                    "id": "run_123_extract-1",
                 },
             ],
             "data": {
@@ -113,12 +97,8 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/runs/run_123/steps/extract-1"
     assert step.handle_outputs is not None
-    assert step.artifact is not None
-    assert step.artifact.operation == "extraction"
-    assert step.artifact.id == "ext_123"
     assert [artifact.model_dump() for artifact in step.artifacts] == [
         {"operation": "extraction", "id": "ext_123"},
-        {"operation": "extract", "id": "run_123_extract-1"},
     ]
     assert step.artifact_view is not None
     assert step.artifact_view.data == {
@@ -126,6 +106,8 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
         "extraction_id": "ext_123",
     }
     assert "output" not in step.model_dump()
+    # The singular artifact field is gone; only `artifacts` (list) remains.
+    assert "artifact" not in step.model_dump()
     # handle_outputs values are now HandlePayload objects
     payload = step.handle_outputs["output-json-0"]
     assert payload.type == "json"
@@ -150,19 +132,21 @@ def test_workflow_steps_get_accepts_partition_artifact() -> None:
         "block_type": "for_each",
         "block_label": "For Each",
         "status": "completed",
-        "artifact": {
-            "operation": "partition",
-            "id": "prtn_123",
-        },
+        "artifacts": [
+            {
+                "operation": "partition",
+                "id": "prtn_123",
+            },
+        ],
         "handle_outputs": None,
         "handle_inputs": None,
     }
 
     step = WorkflowSteps(client=client).get("run_123", "for_each-1")
 
-    assert step.artifact is not None
-    assert step.artifact.operation == "partition"
-    assert step.artifact.id == "prtn_123"
+    assert len(step.artifacts) == 1
+    assert step.artifacts[0].operation == "partition"
+    assert step.artifacts[0].id == "prtn_123"
 
 
 @pytest.mark.asyncio
@@ -203,7 +187,7 @@ def test_workflow_steps_list_with_block_ids() -> None:
             "block_type": "extract",
             "block_label": "Extract",
             "status": "completed",
-            "artifact": {"operation": "extraction", "id": "ext_123"},
+            "artifacts": [{"operation": "extraction", "id": "ext_123"}],
         },
         {
             "run_id": "run_123",
@@ -223,8 +207,8 @@ def test_workflow_steps_list_with_block_ids() -> None:
     assert request.url == "/workflows/runs/run_123/steps"
     assert len(result) == 1
     assert result[0].block_id == "extract-1"
-    assert result[0].artifact is not None
-    assert result[0].artifact.operation == "extraction"
+    assert len(result[0].artifacts) == 1
+    assert result[0].artifacts[0].operation == "extraction"
 
 
 def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
@@ -236,10 +220,12 @@ def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
                 "block_type": "extract",
                 "block_label": "Extract",
                 "status": "completed",
-                "artifact": {
-                    "operation": "extraction",
-                    "id": "ext_789",
-                },
+                "artifacts": [
+                    {
+                        "operation": "extraction",
+                        "id": "ext_789",
+                    },
+                ],
                 "handle_outputs": {
                     "output-json-0": {
                         "type": "json",
@@ -257,8 +243,8 @@ def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/runs/run_123/steps/batch"
     assert "extract-1" in result.executions
-    assert result.executions["extract-1"].artifact is not None
-    assert result.executions["extract-1"].artifact.id == "ext_789"
+    assert len(result.executions["extract-1"].artifacts) == 1
+    assert result.executions["extract-1"].artifacts[0].id == "ext_789"
     assert result.executions["extract-1"].extracted_data == {"field": "value"}
 
 
@@ -309,7 +295,7 @@ def test_step_execution_response_carries_error_on_failed_step() -> None:
         "block_label": "Extract",
         "status": "error",
         "error": "LLM returned malformed JSON",
-        "artifact": None,
+        "artifacts": [],
         "handle_outputs": None,
         "handle_inputs": None,
     }

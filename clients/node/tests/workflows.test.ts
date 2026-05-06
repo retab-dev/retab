@@ -198,12 +198,14 @@ describe("workflows client", () => {
             steps: [
                 {
                     block_id: "classifier-1",
+                    step_id: "classifier-1",
                     block_type: "classifier",
                     block_label: "Classifier",
                     status: "completed",
                 },
                 {
                     block_id: "extract-2",
+                    step_id: "extract-2",
                     block_type: "extract",
                     block_label: "Skipped branch",
                     status: "skipped",
@@ -373,7 +375,6 @@ describe("workflows client", () => {
             json_schema: { type: "object" },
             artifact_view: {
                 block_type: "extract",
-                artifact: { operation: "extraction", id: "ext_123" },
                 artifacts: [{ operation: "extraction", id: "ext_123" }],
                 data: {
                     output: { invoice_number: "INV-001" },
