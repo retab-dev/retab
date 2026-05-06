@@ -63,7 +63,7 @@ export default class APIPartitions extends CompositionClient {
      * Retrieve a persisted partition resource by id.
      *
      * Typically used to fetch the partition referenced by a workflow step's
-     * ``step.artifact`` (``operation === "partition"``).
+     * ``step.artifacts[i]`` whose ``operation === "partition"``.
      */
     async get(
         partitionId: string,
