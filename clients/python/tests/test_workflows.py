@@ -11,8 +11,6 @@ from retab.types.workflows.model import (
     WorkflowRun,
     WorkflowRunError,
     WorkflowBlock,
-    WorkflowEdgeDoc,
-    WorkflowSubflow,
     WorkflowWithEntities,
     Workflow,
     WorkflowBlockCreateRequest,
@@ -815,7 +813,7 @@ def test_workflow_run_has_no_output_property() -> None:
         },
     })
     with pytest.raises(AttributeError):
-        _ = run.output
+        _ = run.output  # type: ignore[attr-defined]
 
 
 def test_workflow_run_raise_for_status_error() -> None:
