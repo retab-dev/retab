@@ -679,10 +679,60 @@ export const ZContainerMetadata = z.lazy(() => (z.object({
 })));
 export type ContainerMetadata = z.infer<typeof ZContainerMetadata>;
 
+export const ZConditionEvaluationPerItem = z.lazy(() => (z.object({
+    indices: z.array(z.number()).default([]),
+    actual: z.any().nullable().optional(),
+    matched: z.boolean().default(false),
+})));
+export type ConditionEvaluationPerItem = z.infer<typeof ZConditionEvaluationPerItem>;
+
+export const ZConditionEvaluationSubCondition = z.lazy(() => (z.object({
+    sub_condition_id: z.string().default(""),
+    path: z.string().default(""),
+    operator: z.string().default(""),
+    expected: z.any().nullable().optional(),
+    actual: z.any().nullable().optional(),
+    matched: z.boolean().default(false),
+    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
+})));
+export type ConditionEvaluationSubCondition = z.infer<typeof ZConditionEvaluationSubCondition>;
+
+export const ZConditionEvaluationDetails = z.lazy(() => (z.object({
+    path: z.string().default(""),
+    operator: z.string().default(""),
+    expected: z.any().nullable().optional(),
+    actual: z.any().nullable().optional(),
+    matched: z.boolean().default(false),
+    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
+    sub_conditions: z.array(ZConditionEvaluationSubCondition).nullable().optional(),
+    logical_operator: z.enum(["and", "or"]).nullable().optional(),
+})));
+export type ConditionEvaluationDetails = z.infer<typeof ZConditionEvaluationDetails>;
+
+export const ZConditionEvaluationResult = z.lazy(() => (z.object({
+    condition_id: z.string(),
+    path: z.string().default(""),
+    operator: z.string().default(""),
+    expected: z.any().nullable().optional(),
+    actual: z.any().nullable().optional(),
+    matched: z.boolean().default(false),
+    branch_name: z.string().default(""),
+    logical_operator: z.enum(["and", "or"]).nullable().optional(),
+    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
+    sub_evaluations: z.array(ZConditionEvaluationSubCondition).nullable().optional(),
+    details: ZConditionEvaluationDetails,
+})));
+export type ConditionEvaluationResult = z.infer<typeof ZConditionEvaluationResult>;
+
+export const ZWhileLoopTermination = z.lazy(() => (z.object({
+    termination_reason: z.enum(["max_iterations_reached", "condition_matched", "error"]),
+    evaluations: z.array(ZConditionEvaluationResult).default([]),
+})));
+export type WhileLoopTermination = z.infer<typeof ZWhileLoopTermination>;
+
 export const ZEvaluationMetadata = z.lazy(() => (z.object({
-    conditional: z.array(z.record(z.string(), z.any())).nullable().optional(),
-    hil_conditions: z.array(z.record(z.string(), z.any())).nullable().optional(),
-    while_loop_termination: z.array(z.record(z.string(), z.any())).nullable().optional(),
+    branch_evaluations: z.array(ZConditionEvaluationResult).nullable().optional(),
+    while_loop_termination: ZWhileLoopTermination.nullable().optional(),
 })));
 export type EvaluationMetadata = z.infer<typeof ZEvaluationMetadata>;
 
