@@ -948,11 +948,11 @@ export const ZResolvedSchemas = z.lazy(() => (z.object({
 })));
 export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
 
-export const ZStepArtifact = z.lazy(() => (z.object({
+export const ZStepArtifactRef = z.lazy(() => (z.object({
     operation: z.union([z.literal("extraction"), z.literal("split"), z.literal("classification"), z.literal("parse"), z.literal("edit"), z.literal("partition"), z.literal("conditional_evaluation"), z.literal("hil_evaluation"), z.literal("while_loop_termination"), z.literal("api_call_invocation"), z.literal("function_invocation"), z.literal("webhook_invocation")]),
     id: z.string(),
 })));
-export type StepArtifact = z.infer<typeof ZStepArtifact>;
+export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 
 export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_id: z.string(),
@@ -960,7 +960,7 @@ export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_label: z.string(),
     status: z.string(),
     error: z.string().nullable().optional(),
-    artifact: ZStepArtifact.nullable().optional(),
+    artifact: ZStepArtifactRef.nullable().optional(),
     skip_reason: z.string().nullable().optional(),
     cancel_reason: z.string().nullable().optional(),
     handle_outputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
@@ -996,7 +996,7 @@ export const ZStepStatus = z.lazy(() => (z.object({
     trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
     handle_inputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
     handle_outputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
-    artifact: ZStepArtifact.nullable().optional(),
+    artifact: ZStepArtifactRef.nullable().optional(),
     skip_reason: z.string().nullable().optional(),
     cancel_reason: z.string().nullable().optional(),
     retry_count: z.number().nullable().optional(),
@@ -1172,7 +1172,7 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     block_type: z.string(),
     block_label: z.string(),
     status: z.string(),
-    artifact: ZStepArtifact.nullable().optional(),
+    artifact: ZStepArtifactRef.nullable().optional(),
     skip_reason: z.string().nullable().optional(),
     cancel_reason: z.string().nullable().optional(),
     started_at: z.string().nullable().optional(),

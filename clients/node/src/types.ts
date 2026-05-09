@@ -509,7 +509,6 @@ export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 // ---------------------------------------------------------------------------
 // BREAKING CHANGES (workflow step artifact cutover)
 // ---------------------------------------------------------------------------
-// - `StepArtifactRef` was renamed to `StepArtifact` (same shape).
 // - `StepArtifactView`, `StepExecutionMetadata`, `RoutingMetadata`,
 //   `ContainerMetadata`, `EvaluationMetadata` and `DebugMetadata` have been
 //   removed entirely. There is no compatibility shim — callers must migrate.
@@ -517,7 +516,7 @@ export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 //   no longer carry `metadata`, `artifacts: list[...]`,
 //   `requires_human_review`, `human_reviewed_at` or `human_review_approved`.
 //   They now expose:
-//     * `artifact: StepArtifact | null` — singular pointer (operation + id)
+//     * `artifact: StepArtifactRef | null` — singular pointer (operation + id)
 //       into the matching backing collection
 //     * `skip_reason: string | null`
 //     * `cancel_reason: string | null`
@@ -547,7 +546,7 @@ export const ZWorkflowRunStep = z
     error_stage: z.string().nullable().optional(),
     error_category: z.string().nullable().optional(),
     error_details: z.record(z.string(), z.any()).nullable().optional(),
-    artifact: generated.ZStepArtifact.nullable().optional(),
+    artifact: generated.ZStepArtifactRef.nullable().optional(),
     skip_reason: z.string().nullable().optional(),
     cancel_reason: z.string().nullable().optional(),
     handle_outputs: z.record(z.string(), z.any()).default({}),
