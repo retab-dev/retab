@@ -8,14 +8,13 @@ from retab.types.mime import FileRef
 # ---------------------------------------------------------------------------
 # BREAKING CHANGES (workflow step artifact cutover)
 # ---------------------------------------------------------------------------
-# - ``StepArtifactRef`` was renamed to :class:`StepArtifact` (same shape).
 # - ``StepArtifactView``, ``StepExecutionMetadata``, ``RoutingMetadata``,
 #   ``ContainerMetadata``, ``EvaluationMetadata`` and ``DebugMetadata`` were
 #   removed entirely. There is no compatibility shim — callers must migrate.
 # - ``StepStatus`` / ``WorkflowRunStep`` / ``StepExecutionResponse`` no longer
 #   carry ``metadata``, ``artifacts: list[...]``, ``requires_human_review``,
 #   ``human_reviewed_at`` or ``human_review_approved``. They now expose:
-#       * ``artifact: StepArtifact | None`` (singular pointer into a backing
+#       * ``artifact: StepArtifactRef | None`` (singular pointer into a backing
 #         collection — fetch the typed record via the matching resource)
 #       * ``skip_reason: str | None``
 #       * ``cancel_reason: str | None``
@@ -91,7 +90,7 @@ WorkflowArtifactOperation = Literal[
 ]
 
 
-class StepArtifact(BaseModel):
+class StepArtifactRef(BaseModel):
     """Canonical persisted resource produced by a workflow step.
 
     Uniformly an ``(operation, id)`` ref into a backing collection. The
@@ -208,7 +207,7 @@ class ConditionEvaluationResult(BaseModel):
 class ConditionalEvaluation(BaseModel):
     """Persisted record of a conditional block's branch evaluation.
 
-    Backing record for :data:`StepArtifact` with
+    Backing record for :data:`StepArtifactRef` with
     ``operation == "conditional_evaluation"``.
     """
     model_config = ConfigDict(extra="ignore")
@@ -228,7 +227,7 @@ class HilEvaluation(BaseModel):
     """Persisted record of a HIL block's branch evaluation.
 
     Same evaluation core as :class:`ConditionalEvaluation`, plus human-review
-    state. Backing record for :data:`StepArtifact` with
+    state. Backing record for :data:`StepArtifactRef` with
     ``operation == "hil_evaluation"``.
     """
     model_config = ConfigDict(extra="ignore")
@@ -252,7 +251,7 @@ class HilEvaluation(BaseModel):
 class WhileLoopTermination(BaseModel):
     """Persisted record of why a while-loop terminated.
 
-    Backing record for :data:`StepArtifact` with
+    Backing record for :data:`StepArtifactRef` with
     ``operation == "while_loop_termination"``.
     """
     model_config = ConfigDict(extra="ignore")
@@ -293,7 +292,7 @@ class ApiCallAttempt(BaseModel):
 class ApiCallInvocation(BaseModel):
     """Persisted record of an api_call block's invocation (with retry trace).
 
-    Backing record for :data:`StepArtifact` with
+    Backing record for :data:`StepArtifactRef` with
     ``operation == "api_call_invocation"``.
     """
     model_config = ConfigDict(extra="ignore")
@@ -313,7 +312,7 @@ class ApiCallInvocation(BaseModel):
 class FunctionInvocation(BaseModel):
     """Persisted record of a function block's invocation.
 
-    Backing record for :data:`StepArtifact` with
+    Backing record for :data:`StepArtifactRef` with
     ``operation == "function_invocation"``.
     """
     model_config = ConfigDict(extra="ignore")
@@ -332,7 +331,7 @@ class FunctionInvocation(BaseModel):
 class WebhookInvocation(BaseModel):
     """Persisted record of an end-block webhook dispatch.
 
-    Backing record for :data:`StepArtifact` with
+    Backing record for :data:`StepArtifactRef` with
     ``operation == "webhook_invocation"``.
     """
     model_config = ConfigDict(extra="ignore")
@@ -446,7 +445,7 @@ class StepStatus(BaseModel):
         default_factory=dict,
         description="Handle output payloads produced by this step",
     )
-    artifact: Optional[StepArtifact] = Field(
+    artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description=(
             "Canonical result of executing this step: a persisted-ref pointer "
@@ -635,7 +634,7 @@ class StepExecutionResponse(BaseModel):
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
     error: Optional[str] = Field(default=None, description="Error message if failed")
-    artifact: Optional[StepArtifact] = Field(
+    artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description=(
             "Canonical persisted-ref pointer (operation + id) for this step. "
@@ -725,7 +724,7 @@ class WorkflowRunStep(BaseModel):
     block_type: str = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: str = Field(..., description="Step status")
-    artifact: Optional[StepArtifact] = Field(
+    artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description=(
             "Canonical persisted-ref pointer (operation + id) for this step. "
