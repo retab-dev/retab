@@ -25,12 +25,10 @@ class MockClient extends AbstractClient {
           block_type: 'extract',
           block_label: 'Extract',
           status: 'completed',
-          artifacts: [
-            {
-              operation: 'extraction',
-              id: 'ext_123',
-            },
-          ],
+          artifact: {
+            operation: 'extraction',
+            id: 'ext_123',
+          },
         },
       ]),
       {
@@ -60,24 +58,9 @@ describe('workflow run steps client', () => {
             block_type: 'extract',
             block_label: 'Extract',
             status: 'completed',
-            artifacts: [
-              {
-                operation: 'extraction',
-                id: 'ext_123',
-              },
-            ],
-            artifact_view: {
-              block_type: 'extract',
-              artifacts: [
-                {
-                  operation: 'extraction',
-                  id: 'ext_123',
-                },
-              ],
-              data: {
-                output: { invoice_number: 'INV-001' },
-                extraction_id: 'ext_123',
-              },
+            artifact: {
+              operation: 'extraction',
+              id: 'ext_123',
             },
             output: { removed: true },
             handle_outputs: {
@@ -108,18 +91,14 @@ describe('workflow run steps client', () => {
       headers: undefined,
     });
     expect(step.block_id).toBe('extract-1');
-    expect(step.artifacts).toEqual([
-      {
-        operation: 'extraction',
-        id: 'ext_123',
-      },
-    ]);
-    expect(step.artifact_view?.data).toEqual({
-      output: { invoice_number: 'INV-001' },
-      extraction_id: 'ext_123',
+    expect(step.artifact).toEqual({
+      operation: 'extraction',
+      id: 'ext_123',
     });
     expect('output' in step).toBe(false);
-    expect('artifact' in step).toBe(false);
+    expect('artifacts' in step).toBe(false);
+    expect('artifact_view' in step).toBe(false);
+    expect('metadata' in step).toBe(false);
     expect(step.handle_outputs?.['output-json-0']).toBeDefined();
   });
 
@@ -150,14 +129,14 @@ describe('workflow run steps client', () => {
     expect(steps).toHaveLength(1);
     expect(steps[0]?.block_id).toBe('extract-1');
     expect(steps[0]?.status).toBe('completed');
-    expect(steps[0]?.artifacts).toEqual([
-      {
-        operation: 'extraction',
-        id: 'ext_123',
-      },
-    ]);
+    expect(steps[0]?.artifact).toEqual({
+      operation: 'extraction',
+      id: 'ext_123',
+    });
     expect(steps[0] && 'output' in steps[0]).toBe(false);
-    expect(steps[0] && 'artifact' in steps[0]).toBe(false);
+    expect(steps[0] && 'artifacts' in steps[0]).toBe(false);
+    expect(steps[0] && 'artifact_view' in steps[0]).toBe(false);
+    expect(steps[0] && 'metadata' in steps[0]).toBe(false);
     expect(steps[0] && 'input_document' in steps[0]).toBe(false);
     expect(steps[0] && 'output_document' in steps[0]).toBe(false);
     expect(steps[0] && 'split_documents' in steps[0]).toBe(false);
@@ -183,12 +162,10 @@ describe('workflow run steps client', () => {
                 block_type: 'extract',
                 block_label: 'Extract',
                 status: 'completed',
-                artifacts: [
-                  {
-                    operation: 'extraction',
-                    id: 'ext_456',
-                  },
-                ],
+                artifact: {
+                  operation: 'extraction',
+                  id: 'ext_456',
+                },
                 handle_outputs: {
                   'output-json-0': { type: 'json', data: { field: 'value' } },
                 },
@@ -212,12 +189,10 @@ describe('workflow run steps client', () => {
     expect(mockClient.lastFetchParams?.url).toBe('/workflows/runs/run_123/steps/batch');
     expect(mockClient.lastFetchParams?.method).toBe('POST');
     expect(batch.executions['extract-1']?.block_id).toBe('extract-1');
-    expect(batch.executions['extract-1']?.artifacts).toEqual([
-      {
-        operation: 'extraction',
-        id: 'ext_456',
-      },
-    ]);
+    expect(batch.executions['extract-1']?.artifact).toEqual({
+      operation: 'extraction',
+      id: 'ext_456',
+    });
   });
 
   test('get() accepts partition artifacts on for_each steps', async () => {
@@ -229,12 +204,10 @@ describe('workflow run steps client', () => {
             block_type: 'for_each',
             block_label: 'For Each',
             status: 'completed',
-            artifacts: [
-              {
-                operation: 'partition',
-                id: 'prtn_123',
-              },
-            ],
+            artifact: {
+              operation: 'partition',
+              id: 'prtn_123',
+            },
             handle_outputs: null,
             handle_inputs: null,
           }),
@@ -249,12 +222,10 @@ describe('workflow run steps client', () => {
     const stepsClient = new APIWorkflowRunSteps(new GetPartitionMockClient());
     const step = await stepsClient.get('run_123', 'for_each-1');
 
-    expect(step.artifacts).toEqual([
-      {
-        operation: 'partition',
-        id: 'prtn_123',
-      },
-    ]);
+    expect(step.artifact).toEqual({
+      operation: 'partition',
+      id: 'prtn_123',
+    });
   });
 
 });

@@ -164,7 +164,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         Args:
             workflow_id: The workflow ID
             id: Client-provided block ID (e.g., "extract-1")
-            type: Block type (start, extract, parse, classifier, hil, conditional, api_call, end, etc.)
+            type: Block type (start, extract, parse, classifier, hil, conditional, api_call, etc.)
             label: Display label
             position_x: X position on canvas
             position_y: Y position on canvas

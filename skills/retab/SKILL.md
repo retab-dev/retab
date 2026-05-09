@@ -876,7 +876,7 @@ if (step.artifact) {
 }
 ```
 
-Every executed block exposes a primary `step.artifact` `{operation, id}` pointer. Inference blocks point at their typed resource; other block types point at a workflow-native block artifact.
+Every executed block exposes a single `step.artifact` `{operation, id}` pointer (or `null` for steps that produce no canonical result, e.g. start/end/note/merge/sentinels). Dispatch on `operation` and fetch the backing record with the matching client.
 
 | `step.artifact.operation` | Emitted by block type | Fetch with |
 |---|---|---|
@@ -886,8 +886,14 @@ Every executed block exposes a primary `step.artifact` `{operation, id}` pointer
 | `parse` | `parse` | `client.parses.get(id)` |
 | `edit` | `edit` | `client.edits.get(id)` |
 | `partition` | `for_each_sentinel_start` | `client.partitions.get(id)` |
+| `conditional_evaluation` | `conditional` | backing `ConditionalEvaluation` record |
+| `hil_evaluation` | `hil` | backing `HilEvaluation` record |
+| `while_loop_termination` | `while_loop_sentinel_end` | backing `WhileLoopTermination` record |
+| `api_call_invocation` | `api_call` | backing `ApiCallInvocation` record |
+| `function_invocation` | `function` | backing `FunctionInvocation` record |
+| `webhook_invocation` | webhook end | backing `WebhookInvocation` record |
 
-`step.artifacts` contains every artifact ref for the block, primary first. For inference blocks, the first artifact is the typed domain resource.
+There is no `step.artifacts` list and no `step.metadata`. HIL state (`requires_human_review`, `reviewed_at`, `review_decision`) lives on the `HilEvaluation` backing record; branch / loop evaluation results live on `ConditionalEvaluation` / `WhileLoopTermination`.
 
 Use step inspection when:
 

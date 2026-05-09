@@ -506,6 +506,31 @@ export type InferFormSchemaRequest = z.input<typeof ZInferFormSchemaRequest>;
 export const ZInferFormSchemaResponse = generated.ZInferFormSchemaResponse;
 export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 
+// ---------------------------------------------------------------------------
+// BREAKING CHANGES (workflow step artifact cutover)
+// ---------------------------------------------------------------------------
+// - `StepArtifactRef` was renamed to `StepArtifact` (same shape).
+// - `StepArtifactView`, `StepExecutionMetadata`, `RoutingMetadata`,
+//   `ContainerMetadata`, `EvaluationMetadata` and `DebugMetadata` have been
+//   removed entirely. There is no compatibility shim — callers must migrate.
+// - Step shapes (`StepStatus` / `WorkflowRunStep` / `StepExecutionResponse`)
+//   no longer carry `metadata`, `artifacts: list[...]`,
+//   `requires_human_review`, `human_reviewed_at` or `human_review_approved`.
+//   They now expose:
+//     * `artifact: StepArtifact | null` — singular pointer (operation + id)
+//       into the matching backing collection
+//     * `skip_reason: string | null`
+//     * `cancel_reason: string | null`
+//   `StepStatusSummary` likewise drops `requires_human_review` (the status
+//   value `"waiting_for_human"` already encodes that signal).
+// - `WorkflowArtifactOperation` is extended with six new operations:
+//   `conditional_evaluation`, `hil_evaluation`, `while_loop_termination`,
+//   `api_call_invocation`, `function_invocation`, `webhook_invocation`.
+// Migration: callers that previously read `step.metadata.evaluations` /
+// `step.requires_human_review` / `step.human_review_approved` should fetch
+// the artifact's backing record (e.g. a `HilEvaluation` /
+// `ConditionalEvaluation` document) and read from there.
+// ---------------------------------------------------------------------------
 export const ZWorkflowRunStep = z
   .object({
     run_id: z.string(),
@@ -522,17 +547,15 @@ export const ZWorkflowRunStep = z
     error_stage: z.string().nullable().optional(),
     error_category: z.string().nullable().optional(),
     error_details: z.record(z.string(), z.any()).nullable().optional(),
-    artifacts: z.array(generated.ZStepArtifactRef).default([]),
+    artifact: generated.ZStepArtifact.nullable().optional(),
+    skip_reason: z.string().nullable().optional(),
+    cancel_reason: z.string().nullable().optional(),
     handle_outputs: z.record(z.string(), z.any()).default({}),
     handle_inputs: z.record(z.string(), z.any()).default({}),
-    metadata: generated.ZStepExecutionMetadata.nullable().optional(),
     model: z.string().nullable().optional(),
     cost: z.record(z.string(), z.any()).nullable().optional(),
     tokens: z.record(z.string(), z.any()).nullable().optional(),
     trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
-    requires_human_review: z.boolean().nullable().optional(),
-    human_reviewed_at: z.string().nullable().optional(),
-    human_review_approved: z.boolean().nullable().optional(),
     retry_count: z.number().nullable().optional(),
     loop_id: z.string().nullable().optional(),
     iteration: z.number().nullable().optional(),

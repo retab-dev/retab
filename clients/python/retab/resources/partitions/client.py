@@ -96,7 +96,7 @@ class Partitions(SyncAPIResource, PartitionsMixin):
         """Retrieve a persisted partition resource by id.
 
         Typically used to fetch the partition referenced by a workflow step's
-        ``step.artifacts[i]`` whose ``operation == "partition"``.
+        ``step.artifact`` whose ``operation == "partition"``.
         """
         request = self._prepare_get(partition_id)
         return Partition.model_validate(self._client._prepared_request(request))

@@ -392,10 +392,7 @@ describe("workflows client", () => {
         expect("output" in parsed).toBe(false);
         expect(removedPayloadKey in parsed).toBe(false);
         expect("json_schema" in parsed).toBe(false);
-        expect(parsed.artifact_view?.data).toEqual({
-            output: { invoice_number: "INV-001" },
-            extraction_id: "ext_123",
-        });
+        expect("artifact_view" in parsed).toBe(false);
         expect(parsed.handle_outputs?.["output-json-0"]?.data?.invoice_number).toBe("INV-001");
     });
 
