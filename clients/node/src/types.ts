@@ -507,60 +507,54 @@ export const ZInferFormSchemaResponse = generated.ZInferFormSchemaResponse;
 export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 
 // ---------------------------------------------------------------------------
-// BREAKING CHANGES (workflow step artifact cutover)
+// BREAKING CHANGES (workflow step artifact + StepStatus shape cutover)
 // ---------------------------------------------------------------------------
-// - `StepArtifactView`, `StepExecutionMetadata`, `RoutingMetadata`,
-//   `ContainerMetadata`, `EvaluationMetadata` and `DebugMetadata` have been
-//   removed entirely. There is no compatibility shim — callers must migrate.
-// - Step shapes (`StepStatus` / `WorkflowRunStep` / `StepExecutionResponse`)
-//   no longer carry `metadata`, `artifacts: list[...]`,
-//   `requires_human_review`, `human_reviewed_at` or `human_review_approved`.
-//   They now expose:
-//     * `artifact: StepArtifactRef | null` — singular pointer (operation + id)
-//       into the matching backing collection
-//     * `skip_reason: string | null`
-//     * `cancel_reason: string | null`
-//   `StepStatusSummary` likewise drops `requires_human_review` (the status
-//   value `"waiting_for_human"` already encodes that signal).
-// - `WorkflowArtifactOperation` is extended with six new operations:
-//   `conditional_evaluation`, `hil_evaluation`, `while_loop_termination`,
-//   `api_call_invocation`, `function_invocation`, `webhook_invocation`.
-// Migration: callers that previously read `step.metadata.evaluations` /
-// `step.requires_human_review` / `step.human_review_approved` should fetch
-// the artifact's backing record (e.g. a `HilEvaluation` /
-// `ConditionalEvaluation` document) and read from there.
+// All step shapes (`StepStatus` / `StepStatusSummary` / `StepExecutionResponse`
+// / `WorkflowRunStep`) now share `StepCore`. The old flat error/lifecycle
+// fields (`error`, `error_stage`, `error_category`, `error_details`,
+// `skip_reason`, `cancel_reason`) are replaced by a single discriminated
+// `terminal: TerminalState | null` payload (`TerminalError` / `TerminalSkipped`
+// / `TerminalCancelled`). The flat observability fields (`model`, `cost`,
+// `tokens`, `trace_spans`) collapse into `observability: StepObservability`.
+// `iteration_context` is replaced by a flat
+// `loop_containers: ContainerContextData[]`; `loop_id` / `iteration` /
+// `duration_ms` are computed (no longer set as flat fields).
+// `StepExecutionResponse` keeps a block-specific `artifact_view` for
+// rendering. Callers that previously read `step.error_stage` / `step.cost`
+// should switch to `step.terminal` and `step.observability`. Callers that
+// read `step.metadata.evaluations` should fetch the backing record via
+// `step.artifact`.
 // ---------------------------------------------------------------------------
 export const ZWorkflowRunStep = z
   .object({
-    run_id: z.string(),
-    organization_id: z.string(),
+    // StepCore fields
     block_id: z.string(),
-    step_id: z.string(),
+    step_id: z.string().default(''),
     block_type: z.string(),
     block_label: z.string(),
-    status: z.string(),
+    status: z.union([
+      z.literal('pending'),
+      z.literal('queued'),
+      z.literal('running'),
+      z.literal('completed'),
+      z.literal('skipped'),
+      z.literal('error'),
+      z.literal('waiting_for_human'),
+      z.literal('cancelled'),
+    ]),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
-    duration_ms: z.number().nullable().optional(),
-    error: z.string().nullable().optional(),
-    error_stage: z.string().nullable().optional(),
-    error_category: z.string().nullable().optional(),
-    error_details: z.record(z.string(), z.any()).nullable().optional(),
+    terminal: generated.ZTerminalState.nullable().optional(),
+    loop_containers: z.array(generated.ZContainerContextData).default([]),
+    observability: generated.ZStepObservability.default(() => ({})),
+    // WorkflowRunStep extras
+    run_id: z.string(),
+    organization_id: z.string(),
     artifact: generated.ZStepArtifactRef.nullable().optional(),
-    skip_reason: z.string().nullable().optional(),
-    cancel_reason: z.string().nullable().optional(),
     handle_outputs: z.record(z.string(), z.any()).default({}),
     handle_inputs: z.record(z.string(), z.any()).default({}),
-    model: z.string().nullable().optional(),
-    cost: z.record(z.string(), z.any()).nullable().optional(),
-    tokens: z.record(z.string(), z.any()).nullable().optional(),
-    trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
-    retry_count: z.number().nullable().optional(),
-    loop_id: z.string().nullable().optional(),
-    iteration: z.number().nullable().optional(),
-    iteration_context: generated.ZIterationContextData.nullable().optional(),
+    retry_count: z.number().default(0),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
   .passthrough();
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;

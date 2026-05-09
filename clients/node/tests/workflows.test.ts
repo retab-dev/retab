@@ -187,7 +187,10 @@ describe("workflows client", () => {
         expect(wf.id).toBe("wf_copy");
     });
 
-    test("runs.get() accepts newer step node types and skipped statuses", async () => {
+    test("runs.get() ignores legacy steps field (now fetched via steps.list())", async () => {
+        // Older servers may still include `steps` in the run payload; the SDK
+        // no longer surfaces it on the WorkflowRun type. Per-step records are
+        // fetched via `client.workflows.runs.steps.list(run_id)`.
         const mockClient = new MockClient({
             id: "run_123",
             workflow_id: "workflow_123",
@@ -202,13 +205,6 @@ describe("workflows client", () => {
                     block_type: "classifier",
                     block_label: "Classifier",
                     status: "completed",
-                },
-                {
-                    block_id: "extract-2",
-                    step_id: "extract-2",
-                    block_type: "extract",
-                    block_label: "Skipped branch",
-                    status: "skipped",
                 },
             ],
             created_at: "2026-03-13T10:00:00Z",
@@ -225,8 +221,11 @@ describe("workflows client", () => {
             params: undefined,
             headers: undefined,
         });
-        expect(run.steps[0]?.block_type).toBe("classifier");
-        expect(run.steps[1]?.status).toBe("skipped");
+        // The legacy `steps` payload is silently dropped by the Zod schema —
+        // it is no longer a property on the parsed WorkflowRun.
+        expect((run as unknown as Record<string, unknown>).steps).toBeUndefined();
+        expect(run.id).toBe("run_123");
+        expect(run.status).toBe("running");
     });
 
     test("runs.enriched fields parse correctly", async () => {
@@ -375,7 +374,7 @@ describe("workflows client", () => {
             json_schema: { type: "object" },
             artifact_view: {
                 block_type: "extract",
-                artifacts: [{ operation: "extraction", id: "ext_123" }],
+                artifact: { operation: "extraction", id: "ext_123" },
                 data: {
                     output: { invoice_number: "INV-001" },
                     extraction_id: "ext_123",
@@ -392,7 +391,9 @@ describe("workflows client", () => {
         expect("output" in parsed).toBe(false);
         expect(removedPayloadKey in parsed).toBe(false);
         expect("json_schema" in parsed).toBe(false);
-        expect("artifact_view" in parsed).toBe(false);
+        // artifact_view is part of StepExecutionResponse (block-specific render data).
+        expect(parsed.artifact_view?.block_type).toBe("extract");
+        expect(parsed.artifact_view?.artifact?.id).toBe("ext_123");
         expect(parsed.handle_outputs?.["output-json-0"]?.data?.invoice_number).toBe("INV-001");
     });
 

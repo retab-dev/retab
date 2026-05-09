@@ -118,7 +118,13 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
     assert result.list_metadata.after == "cursor_1"
 
 
-def test_workflow_run_accepts_newer_step_block_types() -> None:
+def test_workflow_run_ignores_legacy_steps_payload() -> None:
+    """The run object no longer embeds a step roster.
+
+    Older servers may still return a ``steps`` field in the run payload; the
+    SDK must ignore it (extra="ignore" on the model). Steps are fetched
+    separately via ``client.workflows.runs.steps.list(run_id)``.
+    """
     run = WorkflowRun.model_validate(
         {
             "id": "run_123",
@@ -141,44 +147,9 @@ def test_workflow_run_accepts_newer_step_block_types() -> None:
         }
     )
 
-    assert run.steps[0].block_type == "classifier"
-    # StepStatusSummary intentionally drops artifacts/inputs/outputs/metadata —
-    # fetch the full step via client.workflows.runs.steps.get(...) for those.
-    assert "artifact" not in run.steps[0].model_dump()
-    assert "artifacts" not in run.steps[0].model_dump()
-
-
-def test_workflow_run_accepts_skipped_step_statuses() -> None:
-    run = WorkflowRun.model_validate(
-        {
-            "id": "run_456",
-            "workflow_id": "workflow_123",
-            "workflow_name": "Branching Workflow",
-            "organization_id": "org_123",
-            "status": "running",
-            "started_at": "2026-03-13T10:00:00Z",
-            "steps": [
-                {
-                    "block_id": "extract-1",
-                    "step_id": "extract-1",
-                    "block_type": "extract",
-                    "block_label": "Extract",
-                    "status": "completed",
-                },
-                {
-                    "block_id": "extract-2",
-                    "step_id": "extract-2",
-                    "block_type": "extract",
-                    "block_label": "Skipped branch",
-                    "status": "skipped",
-                },
-            ],
-            "created_at": "2026-03-13T10:00:00Z",
-            "updated_at": "2026-03-13T10:00:00Z",
-        }
-    )
-
-    assert [step.status for step in run.steps] == ["completed", "skipped"]
+    # The legacy ``steps`` payload is silently dropped — it is no longer a
+    # field on the model.
+    assert "steps" not in run.model_dump()
 
 
 def test_workflow_run_enriched_fields() -> None:
@@ -935,28 +906,22 @@ async def test_async_wait_for_completion_awaits_async_callback() -> None:
 
 
 def test_step_status_summary_drops_handle_payloads() -> None:
-    """WorkflowRun.steps carries StepStatusSummary rows — handle payloads
-    are not embedded; fetch the full step via client.workflows.runs.steps.get()
-    to read handle_outputs.
+    """StepStatusSummary intentionally drops handle payloads.
+
+    The full step (with handle_outputs/handle_inputs/artifacts) is fetched via
+    ``client.workflows.runs.steps.get(run_id, block_id)``.
     """
-    run = WorkflowRun.model_validate({
-        "id": "run_1", "workflow_id": "wf_1", "workflow_name": "T",
-        "organization_id": "org_1", "status": "completed",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-        "steps": [
-            {
-                "block_id": "extract-1", "step_id": "extract-1",
-                "block_type": "extract", "block_label": "Extract",
-                "status": "completed",
-                # StepStatusSummary ignores handle_outputs (extra="ignore" applies).
-                "handle_outputs": {
-                    "output-json-0": {"type": "json", "data": {"invoice": "INV-001"}},
-                },
-            },
-        ],
+    from retab.types.workflows.model import StepStatusSummary
+
+    summary = StepStatusSummary.model_validate({
+        "block_id": "extract-1", "step_id": "extract-1",
+        "block_type": "extract", "block_label": "Extract",
+        "status": "completed",
+        # StepStatusSummary ignores handle_outputs (extra="ignore" applies).
+        "handle_outputs": {
+            "output-json-0": {"type": "json", "data": {"invoice": "INV-001"}},
+        },
     })
-    summary = run.steps[0]
     assert summary.block_id == "extract-1"
     assert summary.extracted_data is None
     assert "handle_outputs" not in summary.model_dump()

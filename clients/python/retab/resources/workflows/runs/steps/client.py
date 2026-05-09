@@ -87,21 +87,19 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
         """Fetch execution records for all steps in a workflow run in one call.
 
         Args:
-            run: A ``WorkflowRun`` object or a run ID string.
-                If a string is passed, the run is fetched first to discover step block IDs.
+            run: A ``WorkflowRun`` object or a run ID string. Block IDs are
+                discovered via ``self.list(run_id)`` since the run object no
+                longer embeds a step roster.
 
         Returns:
             StepExecutionsBatchResponse with all step execution records keyed by block ID.
         """
-        if isinstance(run, str):
-            from .....types.workflows import WorkflowRun as WR
-            req = PreparedRequest(method="GET", url=f"/workflows/runs/{run}")
-            resp = self._client._prepared_request(req)
-            run = WR.model_validate(resp)
-        block_ids = [s.block_id for s in run.steps]
+        run_id = run if isinstance(run, str) else run.id
+        steps = self.list(run_id)
+        block_ids = [s.block_id for s in steps]
         if not block_ids:
             return StepExecutionsBatchResponse(executions={})
-        return self.get_many(run.id, block_ids=block_ids)
+        return self.get_many(run_id, block_ids=block_ids)
 
 
 class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
@@ -157,17 +155,16 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
         """Fetch execution records for all steps in a workflow run in one call.
 
         Args:
-            run: A ``WorkflowRun`` object or a run ID string.
+            run: A ``WorkflowRun`` object or a run ID string. Block IDs are
+                discovered via ``self.list(run_id)`` since the run object no
+                longer embeds a step roster.
 
         Returns:
             StepExecutionsBatchResponse with all step execution records keyed by block ID.
         """
-        if isinstance(run, str):
-            from .....types.workflows import WorkflowRun as WR
-            req = PreparedRequest(method="GET", url=f"/workflows/runs/{run}")
-            resp = await self._client._prepared_request(req)
-            run = WR.model_validate(resp)
-        block_ids = [s.block_id for s in run.steps]
+        run_id = run if isinstance(run, str) else run.id
+        steps = await self.list(run_id)
+        block_ids = [s.block_id for s in steps]
         if not block_ids:
             return StepExecutionsBatchResponse(executions={})
-        return await self.get_many(run.id, block_ids=block_ids)
+        return await self.get_many(run_id, block_ids=block_ids)
