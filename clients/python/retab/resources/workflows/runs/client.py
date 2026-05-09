@@ -15,8 +15,9 @@ from ....types.standards import PreparedRequest
 from ....types.pagination import PaginatedList, PaginationOrder
 from ....types.workflows import (
     WorkflowRun,
-    TERMINAL_WORKFLOW_RUN_STATUSES,
     CancelWorkflowResponse,
+    CompletedTerminal,
+    HandlePayload,
     HILDecisionResource,
     SubmitHILDecisionResponse,
     ExportResponse,
@@ -267,7 +268,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             ...         "start-block-1": Path("invoice.pdf"),
             ...     },
             ... )
-            >>> print(f"Run started: {run.id}, status: {run.status}")
+            >>> print(f"Run started: {run.id}, status: {run.lifecycle.kind}")
         """
         request = self.prepare_create(
             workflow_id=workflow_id,
@@ -474,7 +475,8 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             run = self.get(run_id)
             if on_status is not None:
                 on_status(run)
-            if run.status in TERMINAL_WORKFLOW_RUN_STATUSES or run.status == "waiting_for_human":
+            kind = run.lifecycle.kind
+            if run.is_terminal or kind == "waiting_for_human":
                 return run
 
             now = time.monotonic()
@@ -484,6 +486,22 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
                 )
             sleep_for = min(poll_interval_seconds, max(deadline - now, 0.0))
             time.sleep(sleep_for)
+
+    def final_outputs(self, run: WorkflowRun) -> Dict[str, Dict[str, HandlePayload]]:
+        """Fetch end-block ``handle_outputs`` for a completed run.
+
+        Replaces the deprecated ``WorkflowRun.final_outputs`` field. Returns
+        an empty dict for non-completed runs. The result is keyed by
+        end-block ID; the value is the end block's ``handle_outputs``.
+        """
+        if not isinstance(run.lifecycle, CompletedTerminal):
+            return {}
+        steps = self.steps.list(run.id)
+        return {
+            step.block_id: step.handle_outputs
+            for step in steps
+            if step.block_type == "end"
+        }
 
     def export(
         self,
@@ -592,7 +610,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             ...     workflow_id="wf_abc123",
             ...     documents={"start-block-1": Path("invoice.pdf")},
             ... )
-            >>> print(f"Run started: {run.id}, status: {run.status}")
+            >>> print(f"Run started: {run.id}, status: {run.lifecycle.kind}")
         """
         request = self.prepare_create(
             workflow_id=workflow_id,
@@ -800,7 +818,8 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
                 callback_result = on_status(run)
                 if inspect.isawaitable(callback_result):
                     await callback_result
-            if run.status in TERMINAL_WORKFLOW_RUN_STATUSES or run.status == "waiting_for_human":
+            kind = run.lifecycle.kind
+            if run.is_terminal or kind == "waiting_for_human":
                 return run
 
             now = time.monotonic()
@@ -810,6 +829,22 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
                 )
             sleep_for = min(poll_interval_seconds, max(deadline - now, 0.0))
             await asyncio.sleep(sleep_for)
+
+    async def final_outputs(self, run: WorkflowRun) -> Dict[str, Dict[str, HandlePayload]]:
+        """Fetch end-block ``handle_outputs`` for a completed run.
+
+        Replaces the deprecated ``WorkflowRun.final_outputs`` field. Returns
+        an empty dict for non-completed runs. The result is keyed by
+        end-block ID; the value is the end block's ``handle_outputs``.
+        """
+        if not isinstance(run.lifecycle, CompletedTerminal):
+            return {}
+        steps = await self.steps.list(run.id)
+        return {
+            step.block_id: step.handle_outputs
+            for step in steps
+            if step.block_type == "end"
+        }
 
     async def export(
         self,

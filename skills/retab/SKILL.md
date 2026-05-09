@@ -692,16 +692,27 @@ Block ID rules:
 
 ### Workflow Status Model
 
-Expect these workflow run statuses most often:
+The run lifecycle is a tagged union under `run.lifecycle`. Read `run.lifecycle.kind`:
 
-- `pending` or `queued`: accepted but not started yet
+- `pending`: accepted but not started yet
 - `running`: actively executing
 - `completed`: finished successfully
-- `error`: failed during execution
-- `cancelled`: stopped before completion
-- `waiting_for_human`: paused and waiting for a human decision
+- `error`: failed during execution; `run.lifecycle.message` carries the human-readable message, plus optional `stage` / `category` / `details` / `failing_step_id`
+- `cancelled`: stopped before completion; optional `run.lifecycle.reason`
+- `waiting_for_human`: paused and waiting for a human decision; `run.lifecycle.waiting_for_block_ids` lists the blocked HIL block IDs
 
 Treat `waiting_for_human` as its own outcome. It is not a generic failure and often requires fetching step or HIL decision details instead of retrying automatically.
+
+There is no `run.final_outputs` field. To read the canonical end-block outputs, list the steps and fetch the `end` block's `handle_outputs`:
+
+```python
+steps = client.workflows.runs.steps.list(run.id)
+end_steps = [s for s in steps if s.block_type == "end"]
+final_outputs = {
+    s.block_id: client.workflows.runs.steps.get(run.id, s.block_id).handle_outputs
+    for s in end_steps
+}
+```
 
 ### Workflow Python
 
@@ -722,13 +733,17 @@ run = client.workflows.runs.create(
     },
 )
 
-while run.status in ["pending", "running"]:
+while run.lifecycle.kind in ["pending", "running"]:
     time.sleep(1)
     run = client.workflows.runs.get(run.id)
 
 run.raise_for_status()
-print(run.status)
-print(run.final_outputs)
+print(run.lifecycle.kind)
+# `final_outputs` is gone — fetch end-block handle_outputs via steps:
+end_steps = [s for s in client.workflows.runs.steps.list(run.id) if s.block_type == "end"]
+for s in end_steps:
+    full = client.workflows.runs.steps.get(run.id, s.block_id)
+    print(s.block_id, full.handle_outputs)
 ```
 
 Python with SDK waiting helper:
@@ -749,11 +764,14 @@ run = client.workflows.runs.wait_for_completion(
     timeout_seconds=600.0,
 )
 
-if run.status == "waiting_for_human":
-    print("Run paused for human review")
+if run.lifecycle.kind == "waiting_for_human":
+    print("Run paused for human review", run.lifecycle.waiting_for_block_ids)
 else:
     run.raise_for_status()
-    print(run.final_outputs)
+    end_steps = [s for s in client.workflows.runs.steps.list(run.id) if s.block_type == "end"]
+    for s in end_steps:
+        full = client.workflows.runs.steps.get(run.id, s.block_id)
+        print(s.block_id, full.handle_outputs)
 ```
 
 ### Workflow Node
@@ -776,11 +794,16 @@ const run = await client.workflows.runs.createAndWait({
   timeoutMs: 600000,
 });
 
-if (run.status === "waiting_for_human") {
-  console.log("Run paused for human review");
+if (run.lifecycle.kind === "waiting_for_human") {
+  console.log("Run paused for human review", run.lifecycle.waiting_for_block_ids);
 } else {
   raiseForStatus(run);
-  console.log(run.finalOutputs);
+  // `final_outputs` is gone — fetch end-block handle_outputs via steps:
+  const steps = await client.workflows.runs.steps.list(run.id);
+  for (const s of steps.filter((x) => x.block_type === "end")) {
+    const full = await client.workflows.runs.steps.get(run.id, s.block_id);
+    console.log(s.block_id, full.handle_outputs);
+  }
 }
 ```
 
@@ -795,7 +818,7 @@ let run = await client.workflows.runs.create({
 run = await client.workflows.runs.waitForCompletion(run.id, {
   pollIntervalMs: 2000,
   timeoutMs: 600000,
-  onStatus: (r) => console.log(`status=${r.status}`),
+  onStatus: (r) => console.log(`lifecycle.kind=${r.lifecycle.kind}`),
 });
 ```
 
@@ -835,14 +858,19 @@ Inputs:
 
 Outputs:
 
-- `status`: usually `pending`, `running`, `completed`, or `failed`
-- `steps`: per-block execution details
-- `final_outputs`: terminal outputs keyed by end block ID
-- `error`: failure detail when the run does not succeed
+- `lifecycle.kind`: one of `pending`, `running`, `completed`, `error`, `cancelled`, `waiting_for_human`
+- `lifecycle.message` / `lifecycle.failing_step_id` / `lifecycle.details`: present when `kind == "error"`
+- `lifecycle.waiting_for_block_ids`: present when `kind == "waiting_for_human"`
+- `workflow`: `{workflow_id, snapshot_id, name_at_run_time}`
+- `trigger`: tagged-union `{type, ...}` (e.g. `{type: "email", sender, subject}`)
+- `timing`: `{created_at, started_at, completed_at, duration_ms, accumulated_human_waiting_ms, ...}`
+- `inputs`: `{documents, json_data}`
+- `observability`: `{total_cost, total_tokens, cost_by_model, tokens_by_model}`
+- `steps` are NOT embedded; fetch via `GET /v1/workflows/runs/{run_id}/steps` and end-block `handle_outputs` for canonical end results
 
 ### Inspecting Step Executions
 
-Top-level `final_outputs` is useful for end results, but workflows often need step-level inspection for debugging or partial consumption. For every step in one call, use `steps.list(run_id)`. It returns the full persisted step list in a single request.
+The canonical end-block outputs live on the `end` block's `handle_outputs` (fetched via `steps.get(run.id, end_block_id)`). For every step in one call, use `steps.list(run_id)`. It returns the full persisted step list in a single request.
 
 Python:
 
@@ -904,7 +932,7 @@ There is no `step.artifacts` list and no `step.metadata`. HIL state (`requires_h
 
 Use step inspection when:
 
-- `final_outputs` is empty or too coarse
+- You need the canonical end-block outputs (there is no top-level `final_outputs` field anymore)
 - One intermediate block is failing or producing bad data
 - You need output from a non-terminal block
 - The workflow paused at `waiting_for_human` and you need the relevant block context
@@ -912,8 +940,8 @@ Use step inspection when:
 Workflow debugging guidance:
 
 - If run creation fails immediately, check block ID keys first.
-- If the run reaches `error`, inspect `run.error`, `run.steps`, and step executions before changing the input payload.
-- If the run reaches `waiting_for_human`, fetch the relevant step execution or HIL decision state instead of retrying blindly.
+- If `run.lifecycle.kind == "error"`, inspect `run.lifecycle.message` (and `run.lifecycle.failing_step_id` / `run.lifecycle.details` when set), plus the per-step records returned by `steps.list(run.id)` before changing the input payload.
+- If `run.lifecycle.kind == "waiting_for_human"`, use `run.lifecycle.waiting_for_block_ids` and fetch the relevant step execution or HIL decision state instead of retrying blindly.
 - If only one block matters, fetch that block directly with `steps.get(...)`.
 - If you need a snapshot of the entire execution, use `steps.list(...)` / `list(...)`.
 - Prefer SDK waiting helpers over handwritten polling loops when they exist.

@@ -5,7 +5,7 @@ import APIWorkflows from "../src/api/workflows/client";
 import APIWorkflowRuns from "../src/api/workflows/runs/client";
 import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
 import APIWorkflowEdges from "../src/api/workflows/edges/client";
-import { raiseForStatus, WorkflowRunError, ZStepExecutionResponse } from "../src/types";
+import { raiseForStatus, WorkflowRunError, ZStepExecutionResponse, ZWorkflowRun } from "../src/types";
 import type { WorkflowRun, WorkflowRunExportResponse } from "../src/types";
 
 class MockClient extends AbstractClient {
@@ -29,6 +29,36 @@ class MockClient extends AbstractClient {
             headers: { "Content-Type": "application/json" },
         });
     }
+}
+
+// Build a minimal v2 WorkflowRun JSON payload for fixtures.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeV2Run(overrides: Record<string, any> = {}): Record<string, any> {
+    const {
+        id = "run_1",
+        organization_id = "org_1",
+        workflow = {
+            workflow_id: "wf_1",
+            snapshot_id: "snap_1",
+            name_at_run_time: "Test",
+        },
+        trigger = { type: "manual" },
+        lifecycle = { kind: "running" },
+        timing = {
+            created_at: "2026-01-01T00:00:00Z",
+            started_at: "2026-01-01T00:00:00Z",
+        },
+        ...rest
+    } = overrides;
+    return {
+        id,
+        organization_id,
+        workflow,
+        trigger,
+        lifecycle,
+        timing,
+        ...rest,
+    };
 }
 
 describe("workflows client", () => {
@@ -193,11 +223,18 @@ describe("workflows client", () => {
         // fetched via `client.workflows.runs.steps.list(run_id)`.
         const mockClient = new MockClient({
             id: "run_123",
-            workflow_id: "workflow_123",
-            workflow_name: "Classifier Workflow",
             organization_id: "org_123",
-            status: "running",
-            started_at: "2026-03-13T10:00:00Z",
+            workflow: {
+                workflow_id: "workflow_123",
+                snapshot_id: "snap_1",
+                name_at_run_time: "Classifier Workflow",
+            },
+            trigger: { type: "manual" },
+            lifecycle: { kind: "running" },
+            timing: {
+                created_at: "2026-03-13T10:00:00Z",
+                started_at: "2026-03-13T10:00:00Z",
+            },
             steps: [
                 {
                     block_id: "classifier-1",
@@ -207,9 +244,6 @@ describe("workflows client", () => {
                     status: "completed",
                 },
             ],
-            created_at: "2026-03-13T10:00:00Z",
-            updated_at: "2026-03-13T10:00:00Z",
-            waiting_for_block_ids: [],
         });
         const runsClient = new APIWorkflowRuns(mockClient);
 
@@ -225,34 +259,43 @@ describe("workflows client", () => {
         // it is no longer a property on the parsed WorkflowRun.
         expect((run as unknown as Record<string, unknown>).steps).toBeUndefined();
         expect(run.id).toBe("run_123");
-        expect(run.status).toBe("running");
+        expect(run.lifecycle.kind).toBe("running");
     });
 
-    test("runs.enriched fields parse correctly", async () => {
+    test("runs.v2 typed fields parse correctly", async () => {
         const mockClient = new MockClient({
             id: "run_789",
-            workflow_id: "wf_1",
-            workflow_name: "Test",
             organization_id: "org_1",
-            status: "completed",
-            started_at: "2026-01-01T00:00:00Z",
-            created_at: "2026-01-01T00:00:00Z",
-            updated_at: "2026-01-01T00:00:00Z",
-            steps: [],
-            waiting_for_block_ids: [],
-            trigger_type: "api",
-            config_snapshot_id: "snap_abc",
-            cost_summary: { total: 0.05 },
-            human_waiting_duration_ms: 5000,
+            workflow: {
+                workflow_id: "wf_1",
+                snapshot_id: "snap_abc",
+                name_at_run_time: "Test",
+            },
+            trigger: { type: "api", api_key_id: "ak_1" },
+            lifecycle: { kind: "completed" },
+            timing: {
+                created_at: "2026-01-01T00:00:00Z",
+                started_at: "2026-01-01T00:00:00Z",
+                completed_at: "2026-01-01T00:00:05Z",
+                accumulated_human_waiting_ms: 5000,
+            },
+            inputs: { documents: {}, json_data: {} },
+            observability: {
+                total_cost: { total: 0.05 },
+                total_tokens: {},
+                cost_by_model: {},
+                tokens_by_model: {},
+            },
         });
         const runsClient = new APIWorkflowRuns(mockClient);
 
         const run = await runsClient.get("run_789");
 
-        expect(run.trigger_type).toBe("api");
-        expect(run.config_snapshot_id).toBe("snap_abc");
-        expect(run.cost_summary).toEqual({ total: 0.05 });
-        expect(run.human_waiting_duration_ms).toBe(5000);
+        expect(run.trigger.type).toBe("api");
+        expect(run.workflow.workflow_id).toBe("wf_1");
+        expect(run.workflow.snapshot_id).toBe("snap_abc");
+        expect(run.observability?.total_cost).toEqual({ total: 0.05 });
+        expect(run.timing.accumulated_human_waiting_ms).toBe(5000);
     });
 
     test("runs.list() serializes array and date filters", async () => {
@@ -428,18 +471,7 @@ describe("workflows client", () => {
 
     test("runs.cancel() sends POST to /cancel", async () => {
         const mockClient = new MockClient({
-            run: {
-                id: "run_1",
-                workflow_id: "wf_1",
-                workflow_name: "Test",
-                organization_id: "org_1",
-                status: "cancelled",
-                started_at: "2026-01-01T00:00:00Z",
-                created_at: "2026-01-01T00:00:00Z",
-                updated_at: "2026-01-01T00:00:00Z",
-                steps: [],
-                waiting_for_block_ids: [],
-            },
+            run: makeV2Run({ lifecycle: { kind: "cancelled" } }),
             cancellation_status: "cancelled",
         });
         const runsClient = new APIWorkflowRuns(mockClient);
@@ -457,18 +489,9 @@ describe("workflows client", () => {
     });
 
     test("runs.restart() sends POST to /restart", async () => {
-        const mockClient = new MockClient({
-            id: "run_2",
-            workflow_id: "wf_1",
-            workflow_name: "Test",
-            organization_id: "org_1",
-            status: "running",
-            started_at: "2026-01-01T00:00:00Z",
-            created_at: "2026-01-01T00:00:00Z",
-            updated_at: "2026-01-01T00:00:00Z",
-            steps: [],
-            waiting_for_block_ids: [],
-        });
+        const mockClient = new MockClient(
+            makeV2Run({ id: "run_2", lifecycle: { kind: "running" } })
+        );
         const runsClient = new APIWorkflowRuns(mockClient);
 
         const run = await runsClient.restart("run_1", { commandId: "cmd_2" });
@@ -619,36 +642,21 @@ describe("workflows client", () => {
 });
 
 describe("workflow run utilities", () => {
-    const makeRun = (overrides: Partial<WorkflowRun>): WorkflowRun => ({
-        id: "run_1",
-        workflow_id: "wf_1",
-        workflow_name: "Test",
-        organization_id: "org_1",
-        status: "completed",
-        started_at: "2026-01-01T00:00:00Z",
-        created_at: "2026-01-01T00:00:00Z",
-        updated_at: "2026-01-01T00:00:00Z",
-        steps: [],
-        waiting_for_block_ids: [],
-        human_waiting_duration_ms: 0,
-        ...overrides,
-    });
+    // Parses a v2 JSON payload into a fully-typed WorkflowRun (so we can
+    // hand `raiseForStatus`/`finalOutputs` real `WorkflowRun` objects).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parseRun = (overrides: Record<string, any> = {}): WorkflowRun =>
+        ZWorkflowRun.parse(makeV2Run(overrides));
 
-    test("final_outputs are preserved as raw backend payload", () => {
-        const run = makeRun({
-            final_outputs: {
-                "end-1": { document: null, data: { invoice: "INV-001" } },
-                "end-2": { document: { id: "file_1", filename: "out.pdf", mime_type: "application/pdf" }, data: { count: 5 } },
+    test("raiseForStatus() throws WorkflowRunError on error lifecycle", () => {
+        const run = parseRun({
+            lifecycle: { kind: "error", message: "Node failed" },
+            timing: {
+                created_at: "2026-01-01T00:00:00Z",
+                started_at: "2026-01-01T00:00:00Z",
+                completed_at: "2026-01-01T00:00:01Z",
             },
         });
-        expect(run.final_outputs).toEqual({
-            "end-1": { document: null, data: { invoice: "INV-001" } },
-            "end-2": { document: { id: "file_1", filename: "out.pdf", mime_type: "application/pdf" }, data: { count: 5 } },
-        });
-    });
-
-    test("raiseForStatus() throws WorkflowRunError on error status", () => {
-        const run = makeRun({ status: "error", error: "Node failed" });
         expect(() => raiseForStatus(run)).toThrow(WorkflowRunError);
         try {
             raiseForStatus(run);
@@ -659,13 +667,27 @@ describe("workflow run utilities", () => {
         }
     });
 
-    test("raiseForStatus() does not throw on completed status", () => {
-        const run = makeRun({ status: "completed" });
+    test("raiseForStatus() does not throw on completed lifecycle", () => {
+        const run = parseRun({
+            lifecycle: { kind: "completed" },
+            timing: {
+                created_at: "2026-01-01T00:00:00Z",
+                started_at: "2026-01-01T00:00:00Z",
+                completed_at: "2026-01-01T00:00:01Z",
+            },
+        });
         expect(() => raiseForStatus(run)).not.toThrow();
     });
 
-    test("raiseForStatus() throws WorkflowRunError on cancelled status", () => {
-        const run = makeRun({ status: "cancelled" });
+    test("raiseForStatus() throws WorkflowRunError on cancelled lifecycle", () => {
+        const run = parseRun({
+            lifecycle: { kind: "cancelled", reason: "user cancelled" },
+            timing: {
+                created_at: "2026-01-01T00:00:00Z",
+                started_at: "2026-01-01T00:00:00Z",
+                completed_at: "2026-01-01T00:00:01Z",
+            },
+        });
         expect(() => raiseForStatus(run)).toThrow(WorkflowRunError);
         try {
             raiseForStatus(run);
@@ -675,34 +697,102 @@ describe("workflow run utilities", () => {
         }
     });
 
+    test("finalOutputs() returns end-block handle_outputs for completed runs", async () => {
+        class StepsMockClient extends AbstractClient {
+            public lastFetchParams: Record<string, unknown> | null = null;
+
+            protected async _fetch(params: {
+                url: string;
+                method: string;
+                params?: Record<string, unknown>;
+                headers?: Record<string, unknown>;
+                body?: unknown;
+            }): Promise<Response> {
+                this.lastFetchParams = params;
+                return new Response(
+                    JSON.stringify([
+                        {
+                            run_id: "run_done",
+                            organization_id: "org_1",
+                            block_id: "end-1",
+                            step_id: "end-1",
+                            block_type: "end",
+                            block_label: "End",
+                            status: "completed",
+                            handle_outputs: {
+                                "output-json-0": {
+                                    type: "json",
+                                    data: { invoice_number: "INV-001" },
+                                },
+                            },
+                            handle_inputs: {},
+                        },
+                        {
+                            run_id: "run_done",
+                            organization_id: "org_1",
+                            block_id: "extract-1",
+                            step_id: "extract-1",
+                            block_type: "extract",
+                            block_label: "Extract",
+                            status: "completed",
+                            handle_outputs: {},
+                            handle_inputs: {},
+                        },
+                    ]),
+                    { status: 200, headers: { "Content-Type": "application/json" } }
+                );
+            }
+        }
+
+        const run = parseRun({
+            id: "run_done",
+            lifecycle: { kind: "completed" },
+            timing: {
+                created_at: "2026-01-01T00:00:00Z",
+                started_at: "2026-01-01T00:00:00Z",
+                completed_at: "2026-01-01T00:00:01Z",
+            },
+        });
+        const runsClient = new APIWorkflowRuns(new StepsMockClient());
+        const outputs = await runsClient.finalOutputs(run);
+
+        expect(Object.keys(outputs)).toEqual(["end-1"]);
+        expect(outputs["end-1"]?.["output-json-0"]?.data).toEqual({
+            invoice_number: "INV-001",
+        });
+    });
+
+    test("finalOutputs() short-circuits to {} for non-completed runs (no fetch)", async () => {
+        class NoOpClient extends AbstractClient {
+            public fetched = false;
+            protected async _fetch(): Promise<Response> {
+                this.fetched = true;
+                return new Response("[]", {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+        }
+
+        const run = parseRun({ lifecycle: { kind: "running" } });
+        const noOp = new NoOpClient();
+        const runsClient = new APIWorkflowRuns(noOp);
+
+        expect(await runsClient.finalOutputs(run)).toEqual({});
+        expect(noOp.fetched).toBe(false);
+    });
+
     test("waitForCompletion() returns waiting_for_human runs", async () => {
         class WaitMockClient extends AbstractClient {
             public lastFetchParams: Record<string, unknown> | null = null;
             private responses = [
-                {
-                    id: "run_1",
-                    workflow_id: "wf_1",
-                    workflow_name: "Test",
-                    organization_id: "org_1",
-                    status: "running",
-                    started_at: "2026-01-01T00:00:00Z",
-                    created_at: "2026-01-01T00:00:00Z",
-                    updated_at: "2026-01-01T00:00:00Z",
-                    steps: [],
-                    waiting_for_block_ids: [],
-                },
-                {
-                    id: "run_1",
-                    workflow_id: "wf_1",
-                    workflow_name: "Test",
-                    organization_id: "org_1",
-                    status: "waiting_for_human",
-                    started_at: "2026-01-01T00:00:00Z",
-                    created_at: "2026-01-01T00:00:00Z",
-                    updated_at: "2026-01-01T00:00:01Z",
-                    steps: [],
-                    waiting_for_block_ids: ["hil-1"],
-                },
+                makeV2Run({ lifecycle: { kind: "running" } }),
+                makeV2Run({
+                    lifecycle: {
+                        kind: "waiting_for_human",
+                        waiting_for_block_ids: ["hil-1"],
+                    },
+                }),
             ];
 
             protected async _fetch(params: {
@@ -723,23 +813,16 @@ describe("workflow run utilities", () => {
         const runsClient = new APIWorkflowRuns(new WaitMockClient());
         const run = await runsClient.waitForCompletion("run_1", { pollIntervalMs: 1 });
 
-        expect(run.status).toBe("waiting_for_human");
-        expect(run.waiting_for_block_ids).toEqual(["hil-1"]);
+        expect(run.lifecycle.kind).toBe("waiting_for_human");
+        if (run.lifecycle.kind === "waiting_for_human") {
+            expect(run.lifecycle.waiting_for_block_ids).toEqual(["hil-1"]);
+        }
     });
 
     test("waitForCompletion() awaits async status callbacks", async () => {
-        const mockClient = new MockClient({
-            id: "run_1",
-            workflow_id: "wf_1",
-            workflow_name: "Test",
-            organization_id: "org_1",
-            status: "completed",
-            started_at: "2026-01-01T00:00:00Z",
-            created_at: "2026-01-01T00:00:00Z",
-            updated_at: "2026-01-01T00:00:00Z",
-            steps: [],
-            waiting_for_block_ids: [],
-        });
+        const mockClient = new MockClient(
+            makeV2Run({ lifecycle: { kind: "completed" } })
+        );
         const runsClient = new APIWorkflowRuns(mockClient);
         const seenRunIds: string[] = [];
 
@@ -749,7 +832,7 @@ describe("workflow run utilities", () => {
             },
         });
 
-        expect(run.status).toBe("completed");
+        expect(run.lifecycle.kind).toBe("completed");
         expect(seenRunIds).toEqual(["run_1"]);
     });
 });

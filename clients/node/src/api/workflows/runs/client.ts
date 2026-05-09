@@ -5,6 +5,7 @@ import {
     ZMIMEData,
     WorkflowRun,
     ZWorkflowRun,
+    WorkflowRunStep,
     PaginatedList,
     ZPaginatedList,
     CancelWorkflowResponse,
@@ -20,7 +21,7 @@ import {
 } from "../../../types.js";
 import APIWorkflowRunSteps from "./steps/client.js";
 
-const TERMINAL_STATUSES = new Set(["completed", "error", "cancelled"]);
+const TERMINAL_LIFECYCLE_KINDS = new Set(["completed", "error", "cancelled"]);
 
 function normalizeCsvParam(value?: string | string[]): string | undefined {
     if (value === undefined) {
@@ -364,7 +365,7 @@ export default class APIWorkflowRuns extends CompositionClient {
      * @example
      * ```typescript
      * const run = await client.workflows.runs.waitForCompletion("run_abc123", {
-     *     onStatus: (r) => console.log(`${r.status}...`),
+     *     onStatus: (r) => console.log(`${r.lifecycle.kind}...`),
      * });
      * ```
      */
@@ -390,13 +391,14 @@ export default class APIWorkflowRuns extends CompositionClient {
 
             if (onStatus) await onStatus(run);
 
-            if (TERMINAL_STATUSES.has(run.status) || run.status === "waiting_for_human") {
+            const kind = run.lifecycle.kind;
+            if (TERMINAL_LIFECYCLE_KINDS.has(kind) || kind === "waiting_for_human") {
                 return run;
             }
 
             if (Date.now() >= deadline) {
                 throw new Error(
-                    `Workflow run ${runId} did not complete within ${timeoutMs}ms (last status: ${run.status})`
+                    `Workflow run ${runId} did not complete within ${timeoutMs}ms (last lifecycle.kind: ${kind})`
                 );
             }
 
@@ -424,6 +426,38 @@ export default class APIWorkflowRuns extends CompositionClient {
     }
 
     /**
+     * Fetch end-block ``handle_outputs`` for a completed run.
+     *
+     * Replaces the deprecated ``WorkflowRun.final_outputs`` field. Returns
+     * an empty object for non-completed runs. The result is keyed by
+     * end-block ID; the value is the end block's ``handle_outputs``.
+     *
+     * @example
+     * ```typescript
+     * import { raiseForStatus } from "retab";
+     *
+     * const run = await client.workflows.runs.createAndWait({ workflowId, documents });
+     * raiseForStatus(run);
+     * const outputs = await client.workflows.runs.finalOutputs(run);
+     * console.log(outputs["end-1"]?.["output-json-0"]?.data);
+     * ```
+     */
+    async finalOutputs(
+        run: WorkflowRun,
+        options?: RequestOptions
+    ): Promise<Record<string, NonNullable<WorkflowRunStep["handle_outputs"]>>> {
+        if (run.lifecycle.kind !== "completed") return {};
+        const steps = await this.steps.list(run.id, options);
+        const result: Record<string, NonNullable<WorkflowRunStep["handle_outputs"]>> = {};
+        for (const step of steps) {
+            if (step.block_type === "end") {
+                result[step.block_id] = step.handle_outputs;
+            }
+        }
+        return result;
+    }
+
+    /**
      * Create a workflow run and wait for it to complete.
      *
      * @example
@@ -433,10 +467,11 @@ export default class APIWorkflowRuns extends CompositionClient {
      * const run = await client.workflows.runs.createAndWait({
      *     workflowId: "wf_abc123",
      *     documents: { "start-block-1": "./invoice.pdf" },
-     *     onStatus: (r) => console.log(`${r.status}...`),
+     *     onStatus: (r) => console.log(`${r.lifecycle.kind}...`),
      * });
      * raiseForStatus(run);
-     * console.log(run.final_outputs);
+     * // `final_outputs` is gone. Fetch end-block `handle_outputs` via:
+     * //   const outputs = await client.workflows.runs.finalOutputs(run);
      * ```
      */
     async createAndWait(
