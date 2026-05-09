@@ -227,7 +227,6 @@ def test_workflow_with_entities_parsing() -> None:
             {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start", "label": "Document Input"},
             {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract", "label": "Extract"},
             {"id": "json-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_json", "label": "JSON Input"},
-            {"id": "end-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "end", "label": "Output"},
         ],
         "edges": [
             {
@@ -245,7 +244,7 @@ def test_workflow_with_entities_parsing() -> None:
     })
 
     assert wfe.workflow.id == "wf_1"
-    assert len(wfe.blocks) == 4
+    assert len(wfe.blocks) == 3
     assert len(wfe.edges) == 1
 
     start_blocks = wfe.start_blocks

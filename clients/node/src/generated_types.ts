@@ -101,6 +101,16 @@ export const ZTextBox = z.lazy(() => (z.object({
 })));
 export type TextBox = z.infer<typeof ZTextBox>;
 
+export const ZCreateUploadResponse = z.lazy(() => (z.object({
+    file_id: z.string(),
+    upload_url: z.string(),
+    upload_method: z.string().default("PUT"),
+    upload_headers: z.record(z.string(), z.string()),
+    mime_data: ZMIMEData,
+    expires_at: z.string(),
+})));
+export type CreateUploadResponse = z.infer<typeof ZCreateUploadResponse>;
+
 export const ZFile = z.lazy(() => (z.object({
     object: z.literal("file").default("file"),
     id: z.string(),
@@ -119,9 +129,7 @@ export const ZFileLink = z.lazy(() => (z.object({
 })));
 export type FileLink = z.infer<typeof ZFileLink>;
 
-export const ZUploadFileResponse = z.lazy(() => (z.object({
-    filename: z.string(),
-    url: z.string(),
+export const ZUploadFileResponse = z.lazy(() => (ZMIMEData.schema).merge(z.object({
 })));
 export type UploadFileResponse = z.infer<typeof ZUploadFileResponse>;
 
@@ -258,6 +266,7 @@ export const ZExtractionRequest = z.lazy(() => (z.object({
     instructions: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
     metadata: z.record(z.string(), z.string()),
+    additional_messages: z.array(z.record(z.string(), z.any())).nullable().optional(),
     bust_cache: z.boolean().default(false),
 })));
 export type ExtractionRequest = z.infer<typeof ZExtractionRequest>;
@@ -587,11 +596,285 @@ export const ZInferenceSettings = z.lazy(() => (z.object({
 })));
 export type InferenceSettings = z.infer<typeof ZInferenceSettings>;
 
+export const ZAssertionFailure = z.lazy(() => (z.object({
+    code: z.string(),
+    message: z.string(),
+    details: z.record(z.string(), z.any()),
+})));
+export type AssertionFailure = z.infer<typeof ZAssertionFailure>;
+
+export const ZAssertionResult = z.lazy(() => (z.object({
+    assertion_id: z.string(),
+    condition_kind: z.string(),
+    status: z.union([z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error")]),
+    actual_value: z.any(),
+    expected_value: z.any(),
+    score: z.number().nullable().optional(),
+    threshold: z.number().nullable().optional(),
+    metric_kind: z.string().nullable().optional(),
+    assertion_label: z.string().nullable().optional(),
+    failure: ZAssertionFailure.nullable().optional(),
+})));
+export type AssertionResult = z.infer<typeof ZAssertionResult>;
+
+export const ZAssertionSchemaDep = z.lazy(() => (z.object({
+    schema_path: z.string(),
+    subtree_hash: z.string(),
+    depends_on_root: z.boolean().default(false),
+})));
+export type AssertionSchemaDep = z.infer<typeof ZAssertionSchemaDep>;
+
+export const ZAssertionSpec = z.lazy(() => (z.object({
+    id: z.string().nullable().optional(),
+    target: ZAssertionTarget,
+    condition: z.record(z.string(), z.any()),
+    label: z.string().nullable().optional(),
+})));
+export type AssertionSpec = z.infer<typeof ZAssertionSpec>;
+
+export const ZAssertionTarget = z.lazy(() => (z.object({
+    output_handle_id: z.string(),
+    path: z.string().default(""),
+})));
+export type AssertionTarget = z.infer<typeof ZAssertionTarget>;
+
+export const ZBlockTestBatchExecutionCounts = z.lazy(() => (z.object({
+    queued: z.number().default(0),
+    running: z.number().default(0),
+    passed: z.number().default(0),
+    failed: z.number().default(0),
+    blocked: z.number().default(0),
+    error: z.number().default(0),
+    cancelled: z.number().default(0),
+})));
+export type BlockTestBatchExecutionCounts = z.infer<typeof ZBlockTestBatchExecutionCounts>;
+
+export const ZBlockTestBatchExecutionItem = z.lazy(() => (z.object({
+    test_id: z.string(),
+    run_record_id: z.string(),
+    status: z.union([z.literal("queued"), z.literal("running"), z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error"), z.literal("cancelled")]),
+    workflow_id: z.string(),
+    target: ZWorkflowTestBlockTarget,
+    duration_ms: z.number().nullable().optional(),
+})));
+export type BlockTestBatchExecutionItem = z.infer<typeof ZBlockTestBatchExecutionItem>;
+
+export const ZBlockTestBatchExecutionResult = z.lazy(() => (z.object({
+    workflow_id: z.string(),
+    target: ZWorkflowTestBlockTarget.nullable().optional(),
+    counts: ZBlockTestBatchExecutionCounts,
+    results: z.array(ZBlockTestBatchExecutionItem),
+})));
+export type BlockTestBatchExecutionResult = z.infer<typeof ZBlockTestBatchExecutionResult>;
+
+export const ZBlockTestListResponse = z.lazy(() => (z.object({
+    tests: z.array(ZWorkflowTest),
+})));
+export type BlockTestListResponse = z.infer<typeof ZBlockTestListResponse>;
+
+export const ZBlockTestRunListResponse = z.lazy(() => (z.object({
+    runs: z.array(ZWorkflowTestRunRecord),
+})));
+export type BlockTestRunListResponse = z.infer<typeof ZBlockTestRunListResponse>;
+
+export const ZExecuteBlockTestsResponse = z.lazy(() => (z.object({
+    batch_id: z.string(),
+    job_id: z.string(),
+    status: z.literal("queued").default("queued"),
+    workflow_id: z.string(),
+    target: ZWorkflowTestBlockTarget.nullable().optional(),
+    test_id: z.string().nullable().optional(),
+    total_tests: z.number(),
+})));
+export type ExecuteBlockTestsResponse = z.infer<typeof ZExecuteBlockTestsResponse>;
+
+export const ZLatestBlockTestRunSummary = z.lazy(() => (z.object({
+    run_record_id: z.string(),
+    status: z.union([z.literal("queued"), z.literal("running"), z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error"), z.literal("cancelled")]),
+    started_at: z.string(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    workflow_draft_fingerprint: z.string().default(""),
+    block_config_fingerprint: z.string().default(""),
+    assertions_passed: z.number().default(0),
+    assertions_failed: z.number().default(0),
+    blocked_assertions: z.number().default(0),
+})));
+export type LatestBlockTestRunSummary = z.infer<typeof ZLatestBlockTestRunSummary>;
+
+export const ZManualWorkflowTestSource = z.lazy(() => (z.object({
+    type: z.literal("manual").default("manual"),
+    handle_inputs: z.record(z.string(), z.any()),
+})));
+export type ManualWorkflowTestSource = z.infer<typeof ZManualWorkflowTestSource>;
+
+export const ZRunStepWorkflowTestSource = z.lazy(() => (z.object({
+    type: z.literal("run_step").default("run_step"),
+    run_id: z.string(),
+    step_id: z.string().nullable().optional(),
+})));
+export type RunStepWorkflowTestSource = z.infer<typeof ZRunStepWorkflowTestSource>;
+
+export const ZVerdictSummary = z.lazy(() => (z.object({
+    result: z.boolean(),
+    assertions_passed: z.number().default(0),
+    assertions_failed: z.number().default(0),
+    blocked_assertions: z.number().default(0),
+    failed_assertion_ids: z.array(z.string()),
+})));
+export type VerdictSummary = z.infer<typeof ZVerdictSummary>;
+
+export const ZWorkflowTest = z.lazy(() => (z.object({
+    id: z.string(),
+    workflow_id: z.string(),
+    organization_id: z.string(),
+    target: ZWorkflowTestBlockTarget,
+    source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
+    name: z.string().nullable().optional(),
+    assertion: ZAssertionSpec.nullable().optional(),
+    assertion_schema_dep: ZAssertionSchemaDep.nullable().optional(),
+    assertion_drift_status: z.union([z.literal("fresh"), z.literal("drifted"), z.literal("unknown")]).nullable().optional(),
+    schema_drift: z.union([z.literal("fresh"), z.literal("partial"), z.literal("drifted"), z.literal("unknown")]).default("unknown"),
+    schema_drift_detail: z.string().nullable().optional(),
+    validation_status: z.string().default("valid"),
+    validation_issues: z.array(z.any()),
+    latest_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
+    latest_passing_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
+    latest_failing_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
+    created_at: z.string(),
+    updated_at: z.string(),
+})));
+export type WorkflowTest = z.infer<typeof ZWorkflowTest>;
+
+export const ZWorkflowTestBlockTarget = z.lazy(() => (z.object({
+    type: z.literal("block").default("block"),
+    block_id: z.string(),
+})));
+export type WorkflowTestBlockTarget = z.infer<typeof ZWorkflowTestBlockTarget>;
+
+export const ZWorkflowTestRunRecord = z.lazy(() => (z.object({
+    id: z.string(),
+    test_id: z.string(),
+    status: z.union([z.literal("queued"), z.literal("running"), z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error"), z.literal("cancelled")]),
+    workflow_id: z.string(),
+    organization_id: z.string(),
+    target: ZWorkflowTestBlockTarget,
+    execution_fingerprint: z.string().default(""),
+    handle_inputs_fingerprint: z.string().default(""),
+    workflow_draft_fingerprint: z.string().default(""),
+    block_config_fingerprint: z.string().default(""),
+    started_at: z.string(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
+    outputs: z.record(z.string(), z.any()).nullable().optional(),
+    routing_decision: z.array(z.string()).nullable().optional(),
+    warnings: z.array(z.string()),
+    error: z.string().nullable().optional(),
+    skipped: z.boolean().default(false),
+    assertion_result: ZAssertionResult.nullable().optional(),
+    verdict_summary: ZVerdictSummary.nullable().optional(),
+})));
+export type WorkflowTestRunRecord = z.infer<typeof ZWorkflowTestRunRecord>;
+
+export const ZApiCallAttempt = z.lazy(() => (z.object({
+    attempt_number: z.number(),
+    request_method: z.string(),
+    request_url: z.string(),
+    request_headers: z.record(z.string(), z.string()),
+    request_body: z.any().nullable().optional(),
+    response_status: z.number().nullable().optional(),
+    response_headers: z.record(z.string(), z.string()),
+    response_body: z.any().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    error: z.string().nullable().optional(),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+})));
+export type ApiCallAttempt = z.infer<typeof ZApiCallAttempt>;
+
+export const ZApiCallInvocation = z.lazy(() => (z.object({
+    id: z.string(),
+    organization_id: z.string(),
+    workflow_run_id: z.string(),
+    step_id: z.string(),
+    attempts: z.array(ZApiCallAttempt),
+    error: z.string().nullable().optional(),
+    created_at: z.string(),
+})));
+export type ApiCallInvocation = z.infer<typeof ZApiCallInvocation>;
+
 export const ZCancelWorkflowResponse = z.lazy(() => (z.object({
     run: ZWorkflowRun,
     cancellation_status: z.union([z.literal("cancelled"), z.literal("cancellation_requested"), z.literal("cancellation_failed")]).default("cancellation_requested"),
 })));
 export type CancelWorkflowResponse = z.infer<typeof ZCancelWorkflowResponse>;
+
+export const ZConditionEvaluationDetails = z.lazy(() => (z.object({
+    path: z.string().default(""),
+    operator: z.string().default(""),
+    expected: z.any(),
+    actual: z.any(),
+    matched: z.boolean().default(false),
+    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
+    sub_conditions: z.array(ZConditionEvaluationSubCondition).nullable().optional(),
+    logical_operator: z.union([z.literal("and"), z.literal("or")]).nullable().optional(),
+})));
+export type ConditionEvaluationDetails = z.infer<typeof ZConditionEvaluationDetails>;
+
+export const ZConditionEvaluationPerItem = z.lazy(() => (z.object({
+    indices: z.array(z.number()),
+    actual: z.any(),
+    matched: z.boolean().default(false),
+})));
+export type ConditionEvaluationPerItem = z.infer<typeof ZConditionEvaluationPerItem>;
+
+export const ZConditionEvaluationResult = z.lazy(() => (z.object({
+    condition_id: z.string(),
+    path: z.string().default(""),
+    operator: z.string().default(""),
+    expected: z.any(),
+    actual: z.any(),
+    matched: z.boolean().default(false),
+    branch_name: z.string().default(""),
+    logical_operator: z.union([z.literal("and"), z.literal("or")]).nullable().optional(),
+    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
+    sub_evaluations: z.array(ZConditionEvaluationSubCondition).nullable().optional(),
+    details: ZConditionEvaluationDetails,
+})));
+export type ConditionEvaluationResult = z.infer<typeof ZConditionEvaluationResult>;
+
+export const ZConditionEvaluationSubCondition = z.lazy(() => (z.object({
+    sub_condition_id: z.string().default(""),
+    path: z.string().default(""),
+    operator: z.string().default(""),
+    expected: z.any(),
+    actual: z.any(),
+    matched: z.boolean().default(false),
+    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
+})));
+export type ConditionEvaluationSubCondition = z.infer<typeof ZConditionEvaluationSubCondition>;
+
+export const ZConditionalEvaluation = z.lazy(() => (z.object({
+    id: z.string(),
+    organization_id: z.string(),
+    workflow_run_id: z.string(),
+    step_id: z.string(),
+    evaluations: z.array(ZConditionEvaluationResult),
+    selected_handles: z.array(z.string()),
+    matched_branch_id: z.string().nullable().optional(),
+    matched_condition_ids: z.array(z.string()),
+    created_at: z.string(),
+})));
+export type ConditionalEvaluation = z.infer<typeof ZConditionalEvaluation>;
+
+export const ZContainerContextData = z.lazy(() => (z.object({
+    container_id: z.string(),
+    iteration: z.number(),
+    is_parallel: z.boolean().default(false),
+    parallel_item_index: z.number().nullable().optional(),
+})));
+export type ContainerContextData = z.infer<typeof ZContainerContextData>;
 
 export const ZModelExportResponse = z.lazy(() => (z.object({
     csv_data: z.string(),
@@ -599,6 +882,19 @@ export const ZModelExportResponse = z.lazy(() => (z.object({
     columns: z.number(),
 })));
 export type ModelExportResponse = z.infer<typeof ZModelExportResponse>;
+
+export const ZFunctionInvocation = z.lazy(() => (z.object({
+    id: z.string(),
+    organization_id: z.string(),
+    workflow_run_id: z.string(),
+    step_id: z.string(),
+    inputs: z.record(z.string(), z.any()),
+    output: z.any().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    error: z.string().nullable().optional(),
+    created_at: z.string(),
+})));
+export type FunctionInvocation = z.infer<typeof ZFunctionInvocation>;
 
 export const ZHILDecisionResource = z.lazy(() => (z.object({
     run_id: z.string(),
@@ -622,139 +918,41 @@ export const ZHandlePayload = z.lazy(() => (z.object({
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
-export const ZWorkflowArtifactOperation = z.union([
-    z.literal("extraction"),
-    z.literal("split"),
-    z.literal("classification"),
-    z.literal("parse"),
-    z.literal("edit"),
-    z.literal("partition"),
-]);
-export type WorkflowArtifactOperation = z.infer<typeof ZWorkflowArtifactOperation>;
-
-export const ZStepArtifactRef = z.lazy(() => (z.object({
-    operation: ZWorkflowArtifactOperation,
+export const ZHilEvaluation = z.lazy(() => (z.object({
     id: z.string(),
+    organization_id: z.string(),
+    workflow_run_id: z.string(),
+    step_id: z.string(),
+    evaluations: z.array(ZConditionEvaluationResult),
+    selected_handles: z.array(z.string()),
+    matched_branch_id: z.string().nullable().optional(),
+    matched_condition_ids: z.array(z.string()),
+    requires_human_review: z.boolean().default(false),
+    reviewer_id: z.string().nullable().optional(),
+    review_decision: z.union([z.literal("approved"), z.literal("rejected"), z.literal("needs_changes")]).nullable().optional(),
+    review_notes: z.string().nullable().optional(),
+    reviewed_at: z.string().nullable().optional(),
+    created_at: z.string(),
 })));
-export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
-
-export const ZStepArtifactView = z.lazy(() => (z.object({
-    block_type: z.string(),
-    artifacts: z.array(ZStepArtifactRef).default([]),
-    data: z.unknown().nullable().optional(),
-    source_handle_id: z.string().nullable().optional(),
-})));
-export type StepArtifactView = z.infer<typeof ZStepArtifactView>;
-
-export const ZContainerContextData = z.lazy(() => (z.object({
-    container_id: z.string(),
-    iteration: z.number(),
-    is_parallel: z.boolean().default(false),
-    parallel_item_index: z.number().nullable().optional(),
-})));
-export type ContainerContextData = z.infer<typeof ZContainerContextData>;
+export type HilEvaluation = z.infer<typeof ZHilEvaluation>;
 
 export const ZIterationContextData = z.lazy(() => (z.object({
-    containers: z.array(ZContainerContextData).default([]),
+    containers: z.array(ZContainerContextData),
 })));
 export type IterationContextData = z.infer<typeof ZIterationContextData>;
 
-export const ZRoutingMetadata = z.lazy(() => (z.object({
-    selected_handles: z.array(z.string()).default([]),
-    matched_branch_id: z.string().nullable().optional(),
-    matched_condition_ids: z.array(z.string()).default([]),
+export const ZResolvedSchemas = z.lazy(() => (z.object({
+    input_schemas: z.record(z.string(), z.any()),
+    output_schemas: z.record(z.string(), z.any()),
+    field_ref_drift: z.record(z.any()).nullable().optional(),
 })));
-export type RoutingMetadata = z.infer<typeof ZRoutingMetadata>;
+export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
 
-export const ZContainerMetadata = z.lazy(() => (z.object({
-    phase: z.string().nullable().optional(),
-    current_item_key: z.string().nullable().optional(),
-    current_index: z.number().nullable().optional(),
-    total_items: z.number().nullable().optional(),
-    partition_id: z.string().nullable().optional(),
-    all_item_keys: z.array(z.string()).nullable().optional(),
-    all_iteration_context_texts: z.array(z.string()).nullable().optional(),
-    iteration_context_text: z.string().nullable().optional(),
-    termination_reason: z.string().nullable().optional(),
+export const ZStepArtifact = z.lazy(() => (z.object({
+    operation: z.union([z.literal("extraction"), z.literal("split"), z.literal("classification"), z.literal("parse"), z.literal("edit"), z.literal("partition"), z.literal("conditional_evaluation"), z.literal("hil_evaluation"), z.literal("while_loop_termination"), z.literal("api_call_invocation"), z.literal("function_invocation"), z.literal("webhook_invocation")]),
+    id: z.string(),
 })));
-export type ContainerMetadata = z.infer<typeof ZContainerMetadata>;
-
-export const ZConditionEvaluationPerItem = z.lazy(() => (z.object({
-    indices: z.array(z.number()).default([]),
-    actual: z.any().nullable().optional(),
-    matched: z.boolean().default(false),
-})));
-export type ConditionEvaluationPerItem = z.infer<typeof ZConditionEvaluationPerItem>;
-
-export const ZConditionEvaluationSubCondition = z.lazy(() => (z.object({
-    sub_condition_id: z.string().default(""),
-    path: z.string().default(""),
-    operator: z.string().default(""),
-    expected: z.any().nullable().optional(),
-    actual: z.any().nullable().optional(),
-    matched: z.boolean().default(false),
-    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
-})));
-export type ConditionEvaluationSubCondition = z.infer<typeof ZConditionEvaluationSubCondition>;
-
-export const ZConditionEvaluationDetails = z.lazy(() => (z.object({
-    path: z.string().default(""),
-    operator: z.string().default(""),
-    expected: z.any().nullable().optional(),
-    actual: z.any().nullable().optional(),
-    matched: z.boolean().default(false),
-    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
-    sub_conditions: z.array(ZConditionEvaluationSubCondition).nullable().optional(),
-    logical_operator: z.enum(["and", "or"]).nullable().optional(),
-})));
-export type ConditionEvaluationDetails = z.infer<typeof ZConditionEvaluationDetails>;
-
-export const ZConditionEvaluationResult = z.lazy(() => (z.object({
-    condition_id: z.string(),
-    path: z.string().default(""),
-    operator: z.string().default(""),
-    expected: z.any().nullable().optional(),
-    actual: z.any().nullable().optional(),
-    matched: z.boolean().default(false),
-    branch_name: z.string().default(""),
-    logical_operator: z.enum(["and", "or"]).nullable().optional(),
-    per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
-    sub_evaluations: z.array(ZConditionEvaluationSubCondition).nullable().optional(),
-    details: ZConditionEvaluationDetails,
-})));
-export type ConditionEvaluationResult = z.infer<typeof ZConditionEvaluationResult>;
-
-export const ZWhileLoopTermination = z.lazy(() => (z.object({
-    termination_reason: z.enum(["max_iterations_reached", "condition_matched", "error"]),
-    evaluations: z.array(ZConditionEvaluationResult).default([]),
-})));
-export type WhileLoopTermination = z.infer<typeof ZWhileLoopTermination>;
-
-export const ZEvaluationMetadata = z.lazy(() => (z.object({
-    branch_evaluations: z.array(ZConditionEvaluationResult).nullable().optional(),
-    while_loop_termination: ZWhileLoopTermination.nullable().optional(),
-})));
-export type EvaluationMetadata = z.infer<typeof ZEvaluationMetadata>;
-
-export const ZDebugMetadata = z.lazy(() => (z.object({
-    values: z.record(z.string(), z.any()).default({}),
-})));
-export type DebugMetadata = z.infer<typeof ZDebugMetadata>;
-
-export const ZStepExecutionMetadata = z.lazy(() => (z.object({
-    routing: ZRoutingMetadata.nullable().optional(),
-    container: ZContainerMetadata.nullable().optional(),
-    evaluations: ZEvaluationMetadata.nullable().optional(),
-    debug: ZDebugMetadata.nullable().optional(),
-})));
-export type StepExecutionMetadata = z.infer<typeof ZStepExecutionMetadata>;
-
-// Backend uses non-optional handle dicts; coerce a literal null/undefined to {} so
-// older payloads still parse cleanly.
-const ZHandlePayloadRecord = z.preprocess(
-    (v) => (v == null ? {} : v),
-    z.record(z.string(), ZHandlePayload),
-);
+export type StepArtifact = z.infer<typeof ZStepArtifact>;
 
 export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_id: z.string(),
@@ -762,11 +960,11 @@ export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_label: z.string(),
     status: z.string(),
     error: z.string().nullable().optional(),
-    artifacts: z.array(ZStepArtifactRef).default([]),
-    artifact_view: ZStepArtifactView.nullable().optional(),
-    handle_outputs: ZHandlePayloadRecord,
-    handle_inputs: ZHandlePayloadRecord,
-    metadata: ZStepExecutionMetadata.nullable().optional(),
+    artifact: ZStepArtifact.nullable().optional(),
+    skip_reason: z.string().nullable().optional(),
+    cancel_reason: z.string().nullable().optional(),
+    handle_outputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
+    handle_inputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
 })));
 export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
 
@@ -796,13 +994,11 @@ export const ZStepStatus = z.lazy(() => (z.object({
     cost: z.record(z.string(), z.any()).nullable().optional(),
     tokens: z.record(z.string(), z.any()).nullable().optional(),
     trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
-    handle_inputs: ZHandlePayloadRecord,
-    handle_outputs: ZHandlePayloadRecord,
-    artifacts: z.array(ZStepArtifactRef).default([]),
-    metadata: ZStepExecutionMetadata.optional(),
-    requires_human_review: z.boolean().nullable().optional(),
-    human_reviewed_at: z.string().nullable().optional(),
-    human_review_approved: z.boolean().nullable().optional(),
+    handle_inputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
+    handle_outputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
+    artifact: ZStepArtifact.nullable().optional(),
+    skip_reason: z.string().nullable().optional(),
+    cancel_reason: z.string().nullable().optional(),
     retry_count: z.number().nullable().optional(),
     loop_id: z.string().nullable().optional(),
     iteration: z.number().nullable().optional(),
@@ -822,7 +1018,6 @@ export const ZStepStatusSummary = z.lazy(() => (z.object({
     error: z.string().nullable().optional(),
     error_stage: z.string().nullable().optional(),
     error_category: z.string().nullable().optional(),
-    requires_human_review: z.boolean().nullable().optional(),
     loop_id: z.string().nullable().optional(),
     iteration: z.number().nullable().optional(),
     iteration_context: ZIterationContextData.nullable().optional(),
@@ -838,6 +1033,32 @@ export const ZSubmitHILDecisionResponse = z.lazy(() => (z.object({
 })));
 export type SubmitHILDecisionResponse = z.infer<typeof ZSubmitHILDecisionResponse>;
 
+export const ZWebhookInvocation = z.lazy(() => (z.object({
+    id: z.string(),
+    organization_id: z.string(),
+    workflow_run_id: z.string(),
+    step_id: z.string(),
+    url: z.string(),
+    request_body: z.any().nullable().optional(),
+    status_code: z.number().nullable().optional(),
+    response_body: z.any().nullable().optional(),
+    delivered_at: z.string().nullable().optional(),
+    error: z.string().nullable().optional(),
+    created_at: z.string(),
+})));
+export type WebhookInvocation = z.infer<typeof ZWebhookInvocation>;
+
+export const ZWhileLoopTermination = z.lazy(() => (z.object({
+    id: z.string(),
+    organization_id: z.string(),
+    workflow_run_id: z.string(),
+    step_id: z.string(),
+    termination_reason: z.union([z.literal("max_iterations_reached"), z.literal("condition_matched"), z.literal("error")]),
+    evaluations: z.array(ZConditionEvaluationResult),
+    created_at: z.string(),
+})));
+export type WhileLoopTermination = z.infer<typeof ZWhileLoopTermination>;
+
 export const ZWorkflow = z.lazy(() => (z.object({
     id: z.string(),
     name: z.string().default("Untitled Workflow"),
@@ -849,13 +1070,6 @@ export const ZWorkflow = z.lazy(() => (z.object({
     updated_at: z.string(),
 })));
 export type Workflow = z.infer<typeof ZWorkflow>;
-
-export const ZResolvedSchemas = z.lazy(() => (z.object({
-    input_schemas: z.record(z.string(), z.any()).default({}),
-    output_schemas: z.record(z.string(), z.any()).default({}),
-    _field_ref_drift: z.record(z.any()).nullable().optional(),
-})));
-export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
 
 export const ZWorkflowBlock = z.lazy(() => (z.object({
     id: z.string(),
@@ -931,13 +1145,13 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     started_at: z.string(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
-    steps: z.array(ZStepStatusSummary).default([]),
+    steps: z.array(ZStepStatusSummary),
     input_documents: z.record(z.string(), ZFileRef).nullable().optional(),
     final_outputs: z.record(z.any()).nullable().optional(),
     error: z.string().nullable().optional(),
     created_at: z.string(),
     updated_at: z.string(),
-    waiting_for_block_ids: z.array(z.string()).default([]),
+    waiting_for_block_ids: z.array(z.string()),
     pending_block_outputs: z.record(z.any()).nullable().optional(),
     config_snapshot_id: z.string().nullable().optional(),
     trigger_type: z.string().nullable().optional(),
@@ -958,7 +1172,9 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     block_type: z.string(),
     block_label: z.string(),
     status: z.string(),
-    artifacts: z.array(ZStepArtifactRef).default([]),
+    artifact: ZStepArtifact.nullable().optional(),
+    skip_reason: z.string().nullable().optional(),
+    cancel_reason: z.string().nullable().optional(),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
@@ -966,16 +1182,12 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     error_stage: z.string().nullable().optional(),
     error_category: z.string().nullable().optional(),
     error_details: z.record(z.string(), z.any()).nullable().optional(),
-    handle_outputs: ZHandlePayloadRecord,
-    handle_inputs: ZHandlePayloadRecord,
-    metadata: ZStepExecutionMetadata.nullable().optional(),
+    handle_outputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
+    handle_inputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
     model: z.string().nullable().optional(),
     cost: z.record(z.string(), z.any()).nullable().optional(),
     tokens: z.record(z.string(), z.any()).nullable().optional(),
     trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
-    requires_human_review: z.boolean().nullable().optional(),
-    human_reviewed_at: z.string().nullable().optional(),
-    human_review_approved: z.boolean().nullable().optional(),
     retry_count: z.number().nullable().optional(),
     loop_id: z.string().nullable().optional(),
     iteration: z.number().nullable().optional(),
@@ -1228,6 +1440,7 @@ export const ZPartDict = z.lazy(() => (z.object({
     video_metadata: ZVideoMetadataDict.nullable().optional(),
     tool_call: ZToolCallDict.nullable().optional(),
     tool_response: ZToolResponseDict.nullable().optional(),
+    part_metadata: z.record(z.string(), z.any()).nullable().optional(),
 })));
 export type PartDict = z.infer<typeof ZPartDict>;
 
@@ -1246,7 +1459,7 @@ export const ZResponse = z.lazy(() => (z.object({
     metadata: z.record(z.string(), z.string()).nullable().optional(),
     model: z.union([z.string(), z.union([z.literal("gpt-5.4"), z.literal("gpt-5.4-mini"), z.literal("gpt-5.4-nano"), z.literal("gpt-5.4-mini-2026-03-17"), z.literal("gpt-5.4-nano-2026-03-17"), z.literal("gpt-5.3-chat-latest"), z.literal("gpt-5.2"), z.literal("gpt-5.2-2025-12-11"), z.literal("gpt-5.2-chat-latest"), z.literal("gpt-5.2-pro"), z.literal("gpt-5.2-pro-2025-12-11"), z.literal("gpt-5.1"), z.literal("gpt-5.1-2025-11-13"), z.literal("gpt-5.1-codex"), z.literal("gpt-5.1-mini"), z.literal("gpt-5.1-chat-latest"), z.literal("gpt-5"), z.literal("gpt-5-mini"), z.literal("gpt-5-nano"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-5-chat-latest"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o3-mini"), z.literal("o3-mini-2025-01-31"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o1-preview"), z.literal("o1-preview-2024-09-12"), z.literal("o1-mini"), z.literal("o1-mini-2024-09-12"), z.literal("gpt-4o"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-audio-preview"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2025-06-03"), z.literal("gpt-4o-mini-audio-preview"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-search-preview"), z.literal("gpt-4o-mini-search-preview"), z.literal("gpt-4o-search-preview-2025-03-11"), z.literal("gpt-4o-mini-search-preview-2025-03-11"), z.literal("chatgpt-4o-latest"), z.literal("codex-mini-latest"), z.literal("gpt-4o-mini"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("gpt-4-turbo"), z.literal("gpt-4-turbo-2024-04-09"), z.literal("gpt-4-0125-preview"), z.literal("gpt-4-turbo-preview"), z.literal("gpt-4-1106-preview"), z.literal("gpt-4-vision-preview"), z.literal("gpt-4"), z.literal("gpt-4-0314"), z.literal("gpt-4-0613"), z.literal("gpt-4-32k"), z.literal("gpt-4-32k-0314"), z.literal("gpt-4-32k-0613"), z.literal("gpt-3.5-turbo"), z.literal("gpt-3.5-turbo-16k"), z.literal("gpt-3.5-turbo-0301"), z.literal("gpt-3.5-turbo-0613"), z.literal("gpt-3.5-turbo-1106"), z.literal("gpt-3.5-turbo-0125"), z.literal("gpt-3.5-turbo-16k-0613")]), z.union([z.literal("o1-pro"), z.literal("o1-pro-2025-03-19"), z.literal("o3-pro"), z.literal("o3-pro-2025-06-10"), z.literal("o3-deep-research"), z.literal("o3-deep-research-2025-06-26"), z.literal("o4-mini-deep-research"), z.literal("o4-mini-deep-research-2025-06-26"), z.literal("computer-use-preview"), z.literal("computer-use-preview-2025-03-11"), z.literal("gpt-5-codex"), z.literal("gpt-5-pro"), z.literal("gpt-5-pro-2025-10-06"), z.literal("gpt-5.1-codex-max")])]),
     object: z.literal("response"),
-    output: z.array(z.union([ZResponseOutputMessage, ZResponseFileSearchToolCall, ZResponseFunctionToolCall, ZResponseFunctionWebSearch, ZResponseComputerToolCall, ZResponseReasoningItem, ZResponseToolSearchCall, ZResponseToolSearchOutputItem, ZResponseCompactionItem, ZResponseOutputItemImageGenerationCall, ZResponseCodeInterpreterToolCall, ZResponseOutputItemLocalShellCall, ZResponseFunctionShellToolCall, ZResponseFunctionShellToolCallOutput, ZResponseApplyPatchToolCall, ZResponseApplyPatchToolCallOutput, ZResponseOutputItemMcpCall, ZResponseOutputItemMcpListTools, ZResponseOutputItemMcpApprovalRequest, ZResponseCustomToolCall])),
+    output: z.array(z.union([ZResponseOutputMessage, ZResponseFileSearchToolCall, ZResponseFunctionToolCall, ZResponseFunctionToolCallOutputItem, ZResponseFunctionWebSearch, ZResponseComputerToolCall, ZResponseComputerToolCallOutputItem, ZResponseReasoningItem, ZResponseToolSearchCall, ZResponseToolSearchOutputItem, ZResponseCompactionItem, ZResponseOutputItemImageGenerationCall, ZResponseCodeInterpreterToolCall, ZResponseOutputItemLocalShellCall, ZResponseOutputItemLocalShellCallOutput, ZResponseFunctionShellToolCall, ZResponseFunctionShellToolCallOutput, ZResponseApplyPatchToolCall, ZResponseApplyPatchToolCallOutput, ZResponseOutputItemMcpCall, ZResponseOutputItemMcpListTools, ZResponseOutputItemMcpApprovalRequest, ZResponseOutputItemMcpApprovalResponse, ZResponseCustomToolCall, ZResponseCustomToolCallOutputItem])),
     parallel_tool_calls: z.boolean(),
     temperature: z.number().nullable().optional(),
     tool_choice: z.union([z.union([z.literal("none"), z.literal("auto"), z.literal("required")]), ZToolChoiceAllowed, ZToolChoiceTypes, ZToolChoiceFunction, ZToolChoiceMcp, ZToolChoiceCustom, ZToolChoiceApplyPatch, ZToolChoiceShell]),
@@ -1260,7 +1473,7 @@ export const ZResponse = z.lazy(() => (z.object({
     previous_response_id: z.string().nullable().optional(),
     prompt: ZResponsePrompt.nullable().optional(),
     prompt_cache_key: z.string().nullable().optional(),
-    prompt_cache_retention: z.union([z.literal("in-memory"), z.literal("24h")]).nullable().optional(),
+    prompt_cache_retention: z.union([z.literal("in_memory"), z.literal("24h")]).nullable().optional(),
     reasoning: ZReasoning.nullable().optional(),
     safety_identifier: z.string().nullable().optional(),
     service_tier: z.union([z.literal("auto"), z.literal("default"), z.literal("flex"), z.literal("scale"), z.literal("priority")]).nullable().optional(),
@@ -2083,6 +2296,7 @@ export type InputAudio = z.infer<typeof ZInputAudio>;
 
 export const ZResponseInputFileParam = z.lazy(() => (z.object({
     type: z.literal("input_file"),
+    detail: z.union([z.literal("low"), z.literal("high")]),
     file_data: z.string(),
     file_id: z.string().nullable().optional(),
     file_url: z.string(),
@@ -2450,6 +2664,27 @@ export const ZItemReference = z.lazy(() => (z.object({
 })));
 export type ItemReference = z.infer<typeof ZItemReference>;
 
+export const ZResponseFunctionToolCallOutputItem = z.lazy(() => (z.object({
+    id: z.string(),
+    call_id: z.string(),
+    output: z.union([z.string(), z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile]))]),
+    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
+    type: z.literal("function_call_output"),
+    created_by: z.string().nullable().optional(),
+})));
+export type ResponseFunctionToolCallOutputItem = z.infer<typeof ZResponseFunctionToolCallOutputItem>;
+
+export const ZResponseComputerToolCallOutputItem = z.lazy(() => (z.object({
+    id: z.string(),
+    call_id: z.string(),
+    output: ZResponseComputerToolCallOutputScreenshot,
+    status: z.union([z.literal("completed"), z.literal("incomplete"), z.literal("failed"), z.literal("in_progress")]),
+    type: z.literal("computer_call_output"),
+    acknowledged_safety_checks: z.array(ZAcknowledgedSafetyCheck).nullable().optional(),
+    created_by: z.string().nullable().optional(),
+})));
+export type ResponseComputerToolCallOutputItem = z.infer<typeof ZResponseComputerToolCallOutputItem>;
+
 export const ZResponseToolSearchCall = z.lazy(() => (z.object({
     id: z.string(),
     arguments: z.object({}).passthrough(),
@@ -2496,6 +2731,14 @@ export const ZResponseOutputItemLocalShellCall = z.lazy(() => (z.object({
     type: z.literal("local_shell_call"),
 })));
 export type ResponseOutputItemLocalShellCall = z.infer<typeof ZResponseOutputItemLocalShellCall>;
+
+export const ZResponseOutputItemLocalShellCallOutput = z.lazy(() => (z.object({
+    id: z.string(),
+    output: z.string(),
+    type: z.literal("local_shell_call_output"),
+    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
+})));
+export type ResponseOutputItemLocalShellCallOutput = z.infer<typeof ZResponseOutputItemLocalShellCallOutput>;
 
 export const ZResponseFunctionShellToolCall = z.lazy(() => (z.object({
     id: z.string(),
@@ -2569,6 +2812,22 @@ export const ZResponseOutputItemMcpApprovalRequest = z.lazy(() => (z.object({
     type: z.literal("mcp_approval_request"),
 })));
 export type ResponseOutputItemMcpApprovalRequest = z.infer<typeof ZResponseOutputItemMcpApprovalRequest>;
+
+export const ZResponseOutputItemMcpApprovalResponse = z.lazy(() => (z.object({
+    id: z.string(),
+    approval_request_id: z.string(),
+    approve: z.boolean(),
+    type: z.literal("mcp_approval_response"),
+    reason: z.string().nullable().optional(),
+})));
+export type ResponseOutputItemMcpApprovalResponse = z.infer<typeof ZResponseOutputItemMcpApprovalResponse>;
+
+export const ZResponseCustomToolCallOutputItem = z.lazy(() => (ZResponseCustomToolCallOutput.schema).merge(z.object({
+    id: z.string(),
+    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
+    created_by: z.string().nullable().optional(),
+})));
+export type ResponseCustomToolCallOutputItem = z.infer<typeof ZResponseCustomToolCallOutputItem>;
 
 export const ZToolChoiceAllowed = z.lazy(() => (z.object({
     mode: z.union([z.literal("auto"), z.literal("required")]),
@@ -3540,6 +3799,7 @@ export type ResponseInputImage = z.infer<typeof ZResponseInputImage>;
 
 export const ZResponseInputFile = z.lazy(() => (z.object({
     type: z.literal("input_file"),
+    detail: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
@@ -3582,10 +3842,12 @@ export const ZActionClick = z.lazy(() => (z.object({
     type: z.literal("click"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ActionClick = z.infer<typeof ZActionClick>;
 
 export const ZActionDoubleClick = z.lazy(() => (z.object({
+    keys: z.array(z.string()).nullable().optional(),
     type: z.literal("double_click"),
     x: z.number(),
     y: z.number(),
@@ -3595,6 +3857,7 @@ export type ActionDoubleClick = z.infer<typeof ZActionDoubleClick>;
 export const ZActionDrag = z.lazy(() => (z.object({
     path: z.array(ZActionDragPath),
     type: z.literal("drag"),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ActionDrag = z.infer<typeof ZActionDrag>;
 
@@ -3608,6 +3871,7 @@ export const ZActionMove = z.lazy(() => (z.object({
     type: z.literal("move"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ActionMove = z.infer<typeof ZActionMove>;
 
@@ -3622,6 +3886,7 @@ export const ZActionScroll = z.lazy(() => (z.object({
     type: z.literal("scroll"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ActionScroll = z.infer<typeof ZActionScroll>;
 
@@ -3641,10 +3906,12 @@ export const ZClick = z.lazy(() => (z.object({
     type: z.literal("click"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type Click = z.infer<typeof ZClick>;
 
 export const ZDoubleClick = z.lazy(() => (z.object({
+    keys: z.array(z.string()).nullable().optional(),
     type: z.literal("double_click"),
     x: z.number(),
     y: z.number(),
@@ -3654,6 +3921,7 @@ export type DoubleClick = z.infer<typeof ZDoubleClick>;
 export const ZDrag = z.lazy(() => (z.object({
     path: z.array(ZDragPath),
     type: z.literal("drag"),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type Drag = z.infer<typeof ZDrag>;
 
@@ -3667,6 +3935,7 @@ export const ZMove = z.lazy(() => (z.object({
     type: z.literal("move"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type Move = z.infer<typeof ZMove>;
 
@@ -3681,6 +3950,7 @@ export const ZScroll = z.lazy(() => (z.object({
     type: z.literal("scroll"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type Scroll = z.infer<typeof ZScroll>;
 
@@ -3746,6 +4016,7 @@ export type ResponseInputImageContent = z.infer<typeof ZResponseInputImageConten
 
 export const ZResponseInputFileContent = z.lazy(() => (z.object({
     type: z.literal("input_file"),
+    detail: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
@@ -3840,6 +4111,13 @@ export const ZMcpListToolsTool = z.lazy(() => (z.object({
     description: z.string().nullable().optional(),
 })));
 export type McpListToolsTool = z.infer<typeof ZMcpListToolsTool>;
+
+export const ZAcknowledgedSafetyCheck = z.lazy(() => (z.object({
+    id: z.string(),
+    code: z.string().nullable().optional(),
+    message: z.string().nullable().optional(),
+})));
+export type AcknowledgedSafetyCheck = z.infer<typeof ZAcknowledgedSafetyCheck>;
 
 export const ZResponseOutputItemLocalShellCallAction = z.lazy(() => (z.object({
     command: z.array(z.string()),
@@ -4124,10 +4402,12 @@ export const ZResponseComputerToolCallParamActionClick = z.lazy(() => (z.object(
     type: z.literal("click"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ResponseComputerToolCallParamActionClick = z.infer<typeof ZResponseComputerToolCallParamActionClick>;
 
 export const ZResponseComputerToolCallParamActionDoubleClick = z.lazy(() => (z.object({
+    keys: z.array(z.string()).nullable().optional(),
     type: z.literal("double_click"),
     x: z.number(),
     y: z.number(),
@@ -4137,6 +4417,7 @@ export type ResponseComputerToolCallParamActionDoubleClick = z.infer<typeof ZRes
 export const ZResponseComputerToolCallParamActionDrag = z.lazy(() => (z.object({
     path: z.array(ZResponseComputerToolCallParamActionDragPath),
     type: z.literal("drag"),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ResponseComputerToolCallParamActionDrag = z.infer<typeof ZResponseComputerToolCallParamActionDrag>;
 
@@ -4150,6 +4431,7 @@ export const ZResponseComputerToolCallParamActionMove = z.lazy(() => (z.object({
     type: z.literal("move"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ResponseComputerToolCallParamActionMove = z.infer<typeof ZResponseComputerToolCallParamActionMove>;
 
@@ -4164,6 +4446,7 @@ export const ZResponseComputerToolCallParamActionScroll = z.lazy(() => (z.object
     type: z.literal("scroll"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ResponseComputerToolCallParamActionScroll = z.infer<typeof ZResponseComputerToolCallParamActionScroll>;
 
@@ -4183,10 +4466,12 @@ export const ZComputerActionListParamClick = z.lazy(() => (z.object({
     type: z.literal("click"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ComputerActionListParamClick = z.infer<typeof ZComputerActionListParamClick>;
 
 export const ZComputerActionListParamDoubleClick = z.lazy(() => (z.object({
+    keys: z.array(z.string()).nullable().optional(),
     type: z.literal("double_click"),
     x: z.number(),
     y: z.number(),
@@ -4196,6 +4481,7 @@ export type ComputerActionListParamDoubleClick = z.infer<typeof ZComputerActionL
 export const ZComputerActionListParamDrag = z.lazy(() => (z.object({
     path: z.array(ZComputerActionListParamDragPath),
     type: z.literal("drag"),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ComputerActionListParamDrag = z.infer<typeof ZComputerActionListParamDrag>;
 
@@ -4209,6 +4495,7 @@ export const ZComputerActionListParamMove = z.lazy(() => (z.object({
     type: z.literal("move"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ComputerActionListParamMove = z.infer<typeof ZComputerActionListParamMove>;
 
@@ -4223,6 +4510,7 @@ export const ZComputerActionListParamScroll = z.lazy(() => (z.object({
     type: z.literal("scroll"),
     x: z.number(),
     y: z.number(),
+    keys: z.array(z.string()).nullable().optional(),
 })));
 export type ComputerActionListParamScroll = z.infer<typeof ZComputerActionListParamScroll>;
 
@@ -4288,6 +4576,7 @@ export type ResponseInputImageContentParam = z.infer<typeof ZResponseInputImageC
 
 export const ZResponseInputFileContentParam = z.lazy(() => (z.object({
     type: z.literal("input_file"),
+    detail: z.union([z.literal("low"), z.literal("high")]),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
@@ -5044,3 +5333,4 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
+
