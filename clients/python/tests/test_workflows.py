@@ -128,11 +128,18 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
     run = WorkflowRun.model_validate(
         {
             "id": "run_123",
-            "workflow_id": "workflow_123",
-            "workflow_name": "Classifier Workflow",
             "organization_id": "org_123",
-            "status": "running",
-            "started_at": "2026-03-13T10:00:00Z",
+            "workflow": {
+                "workflow_id": "workflow_123",
+                "snapshot_id": "snap_1",
+                "name_at_run_time": "Classifier Workflow",
+            },
+            "trigger": {"type": "manual"},
+            "lifecycle": {"kind": "running"},
+            "timing": {
+                "created_at": "2026-03-13T10:00:00Z",
+                "started_at": "2026-03-13T10:00:00Z",
+            },
             "steps": [
                 {
                     "block_id": "classifier-1",
@@ -142,8 +149,6 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
                     "status": "completed",
                 }
             ],
-            "created_at": "2026-03-13T10:00:00Z",
-            "updated_at": "2026-03-13T10:00:00Z",
         }
     )
 
@@ -152,39 +157,56 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
     assert "steps" not in run.model_dump()
 
 
-def test_workflow_run_enriched_fields() -> None:
-    """New fields on WorkflowRun are parsed when present and default when absent."""
+def test_workflow_run_v2_typed_fields() -> None:
+    """v2 nested fields parse and round-trip with the typed sub-models."""
     run = WorkflowRun.model_validate({
         "id": "run_789",
-        "workflow_id": "wf_1",
-        "workflow_name": "Test",
         "organization_id": "org_1",
-        "status": "completed",
-        "started_at": "2026-03-13T10:00:00Z",
-        "created_at": "2026-03-13T10:00:00Z",
-        "updated_at": "2026-03-13T10:00:00Z",
-        "trigger_type": "api",
-        "config_snapshot_id": "snap_abc",
-        "cost_summary": {"total": 0.05, "input_cost": 0.03, "output_cost": 0.02},
-        "input_json_data": {"json-1": {"key": "value"}},
-        "human_waiting_duration_ms": 5000,
+        "workflow": {
+            "workflow_id": "wf_1",
+            "snapshot_id": "snap_abc",
+            "name_at_run_time": "Test",
+        },
+        "trigger": {"type": "api", "api_key_id": "ak_1"},
+        "lifecycle": {"kind": "completed"},
+        "timing": {
+            "created_at": "2026-03-13T10:00:00Z",
+            "started_at": "2026-03-13T10:00:00Z",
+            "completed_at": "2026-03-13T10:00:05Z",
+            "accumulated_human_waiting_ms": 5000,
+        },
+        "inputs": {"documents": {}, "json_data": {"json-1": {"key": "value"}}},
+        "observability": {
+            "total_cost": {"total": 0.05},
+            "total_tokens": {},
+            "cost_by_model": {},
+            "tokens_by_model": {},
+        },
     })
-    assert run.trigger_type == "api"
-    assert run.config_snapshot_id == "snap_abc"
-    assert run.cost_summary == {"total": 0.05, "input_cost": 0.03, "output_cost": 0.02}
-    assert run.input_json_data == {"json-1": {"key": "value"}}
-    assert run.human_waiting_duration_ms == 5000
+    assert run.workflow.workflow_id == "wf_1"
+    assert run.workflow.snapshot_id == "snap_abc"
+    assert run.workflow.name_at_run_time == "Test"
+    assert run.trigger.type == "api"
+    assert run.lifecycle.kind == "completed"
+    assert run.inputs.json_data == {"json-1": {"key": "value"}}
+    assert run.timing.accumulated_human_waiting_ms == 5000
+    assert run.timing.duration_ms == 5000
+    assert run.observability is not None
+    assert run.observability.total_cost == {"total": 0.05}
 
-    # Without the new fields, defaults apply
+    # Defaults: inputs default to empty, observability is None when absent
     run2 = WorkflowRun.model_validate({
-        "id": "run_000", "workflow_id": "wf_1", "workflow_name": "T",
-        "organization_id": "org_1", "status": "pending",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
+        "id": "run_000",
+        "organization_id": "org_1",
+        "workflow": {"workflow_id": "wf_1", "snapshot_id": "snap_1", "name_at_run_time": "T"},
+        "trigger": {"type": "manual"},
+        "lifecycle": {"kind": "pending"},
+        "timing": {"created_at": "2026-01-01T00:00:00Z"},
     })
-    assert run2.trigger_type is None
-    assert run2.cost_summary is None
-    assert run2.human_waiting_duration_ms == 0
+    assert run2.observability is None
+    assert run2.inputs.documents == {}
+    assert run2.inputs.json_data == {}
+    assert run2.timing.accumulated_human_waiting_ms == 0
 
 
 def test_workflow_with_entities_parsing() -> None:
@@ -575,19 +597,34 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
     assert request.params["after"] == "cursor_1"
 
 
+def _v2_run_payload(**overrides) -> dict:
+    """Helper: build a minimal v2 WorkflowRun JSON payload for fixtures."""
+    payload: dict = {
+        "id": overrides.pop("id", "run_1"),
+        "organization_id": "org_1",
+        "workflow": {
+            "workflow_id": "wf_1",
+            "snapshot_id": "snap_1",
+            "name_at_run_time": "Test",
+        },
+        "trigger": overrides.pop("trigger", {"type": "manual"}),
+        "lifecycle": overrides.pop("lifecycle", {"kind": "running"}),
+        "timing": overrides.pop(
+            "timing",
+            {
+                "created_at": "2026-01-01T00:00:00Z",
+                "started_at": "2026-01-01T00:00:00Z",
+            },
+        ),
+    }
+    payload.update(overrides)
+    return payload
+
+
 def test_workflow_runs_cancel_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
-        "run": {
-            "id": "run_1",
-            "workflow_id": "wf_1",
-            "workflow_name": "Test",
-            "organization_id": "org_1",
-            "status": "cancelled",
-            "started_at": "2026-01-01T00:00:00Z",
-            "created_at": "2026-01-01T00:00:00Z",
-            "updated_at": "2026-01-01T00:00:00Z",
-        },
+        "run": _v2_run_payload(lifecycle={"kind": "cancelled"}),
         "cancellation_status": "cancelled",
     }
 
@@ -603,16 +640,9 @@ def test_workflow_runs_cancel_route() -> None:
 
 def test_workflow_runs_restart_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "id": "run_2",
-        "workflow_id": "wf_1",
-        "workflow_name": "Test",
-        "organization_id": "org_1",
-        "status": "running",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z",
-        "updated_at": "2026-01-01T00:00:00Z",
-    }
+    client._prepared_request.return_value = _v2_run_payload(
+        id="run_2", lifecycle={"kind": "running"}
+    )
 
     run = WorkflowRuns(client=client).restart("run_1", command_id="cmd_2")
 
@@ -748,53 +778,77 @@ def test_workflow_runs_export_route() -> None:
     assert result.columns == 2
 
 
-def test_workflow_run_final_outputs_preserved() -> None:
-    """final_outputs stays as the raw backend payload."""
-    run = WorkflowRun.model_validate({
-        "id": "run_1", "workflow_id": "wf_1", "workflow_name": "Test",
-        "organization_id": "org_1", "status": "completed",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-        "final_outputs": {
-            "end-1": {
-                "document": None,
-                "data": {"invoice_number": "INV-001", "total": 1234.56},
+def test_workflow_run_final_outputs_helper(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``WorkflowRuns.final_outputs(run)`` fetches end-block ``handle_outputs``.
+
+    Replaces the deprecated ``WorkflowRun.final_outputs`` field. The helper
+    short-circuits to ``{}`` for non-completed runs and otherwise lists steps
+    and pulls ``handle_outputs`` for blocks with ``block_type == "end"``.
+    """
+    completed_run = WorkflowRun.model_validate(
+        _v2_run_payload(id="run_done", lifecycle={"kind": "completed"})
+    )
+
+    client = MagicMock()
+    client._prepared_request.return_value = [
+        {
+            "run_id": "run_done",
+            "organization_id": "org_1",
+            "block_id": "end-1",
+            "step_id": "end-1",
+            "block_type": "end",
+            "block_label": "End",
+            "status": "completed",
+            "handle_outputs": {
+                "output-json-0": {
+                    "type": "json",
+                    "data": {"invoice_number": "INV-001"},
+                }
             },
         },
-    })
-    assert run.final_outputs == {
-        "end-1": {
-            "document": None,
-            "data": {"invoice_number": "INV-001", "total": 1234.56},
+        {
+            "run_id": "run_done",
+            "organization_id": "org_1",
+            "block_id": "extract-1",
+            "step_id": "extract-1",
+            "block_type": "extract",
+            "block_label": "Extract",
+            "status": "completed",
         },
-    }
+    ]
+
+    runs = WorkflowRuns(client=client)
+    outputs = runs.final_outputs(completed_run)
+
+    assert "end-1" in outputs
+    end_payloads = outputs["end-1"]
+    assert end_payloads["output-json-0"].data == {"invoice_number": "INV-001"}
+    # Non-end steps are excluded
+    assert "extract-1" not in outputs
 
 
-def test_workflow_run_has_no_output_property() -> None:
-    """The deprecated output convenience property is not exposed."""
-    run = WorkflowRun.model_validate({
-        "id": "run_2", "workflow_id": "wf_1", "workflow_name": "Test",
-        "organization_id": "org_1", "status": "completed",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-        "final_outputs": {
-            "end-1": {"document": None, "data": {"count": 3}},
-            "end-2": {"document": {"id": "f1", "filename": "out.pdf", "mime_type": "application/pdf"}, "data": {"count": 5}},
-        },
-    })
-    with pytest.raises(AttributeError):
-        _ = run.output  # type: ignore[attr-defined]
+def test_workflow_run_final_outputs_helper_returns_empty_for_non_completed() -> None:
+    """``final_outputs`` returns ``{}`` when the run isn't completed (no fetch)."""
+    pending_run = WorkflowRun.model_validate(
+        _v2_run_payload(lifecycle={"kind": "running"})
+    )
+    client = MagicMock()
+    runs = WorkflowRuns(client=client)
+    assert runs.final_outputs(pending_run) == {}
+    assert client._prepared_request.call_count == 0
 
 
 def test_workflow_run_raise_for_status_error() -> None:
-    """raise_for_status raises WorkflowRunError on error status."""
-    run = WorkflowRun.model_validate({
-        "id": "run_err", "workflow_id": "wf_1", "workflow_name": "Test",
-        "organization_id": "org_1", "status": "error",
-        "error": "Node extract-1 failed: invalid schema",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-    })
+    """raise_for_status raises WorkflowRunError on error lifecycle."""
+    run = WorkflowRun.model_validate(
+        _v2_run_payload(
+            id="run_err",
+            lifecycle={
+                "kind": "error",
+                "message": "Node extract-1 failed: invalid schema",
+            },
+        )
+    )
     with pytest.raises(WorkflowRunError) as exc_info:
         run.raise_for_status()
     assert "run_err" in str(exc_info.value)
@@ -803,13 +857,12 @@ def test_workflow_run_raise_for_status_error() -> None:
 
 
 def test_workflow_run_raise_for_status_cancelled() -> None:
-    """raise_for_status raises WorkflowRunError on cancelled status."""
-    run = WorkflowRun.model_validate({
-        "id": "run_cancelled", "workflow_id": "wf_1", "workflow_name": "Test",
-        "organization_id": "org_1", "status": "cancelled",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-    })
+    """raise_for_status raises WorkflowRunError on cancelled lifecycle."""
+    run = WorkflowRun.model_validate(
+        _v2_run_payload(
+            id="run_cancelled", lifecycle={"kind": "cancelled", "reason": "user cancelled"}
+        )
+    )
     with pytest.raises(WorkflowRunError) as exc_info:
         run.raise_for_status()
     assert "run_cancelled" in str(exc_info.value)
@@ -818,58 +871,43 @@ def test_workflow_run_raise_for_status_cancelled() -> None:
 
 
 def test_workflow_run_raise_for_status_ok() -> None:
-    """raise_for_status is silent on completed status."""
-    run = WorkflowRun.model_validate({
-        "id": "run_ok", "workflow_id": "wf_1", "workflow_name": "Test",
-        "organization_id": "org_1", "status": "completed",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-    })
+    """raise_for_status is silent on completed lifecycle."""
+    run = WorkflowRun.model_validate(
+        _v2_run_payload(id="run_ok", lifecycle={"kind": "completed"})
+    )
     run.raise_for_status()  # Should not raise
 
 
 def test_wait_for_completion_returns_waiting_for_human(monkeypatch: pytest.MonkeyPatch) -> None:
     client = MagicMock()
     client._prepared_request.side_effect = [
-        {
-            "id": "run_1", "workflow_id": "wf_1", "workflow_name": "Test",
-            "organization_id": "org_1", "status": "running",
-            "started_at": "2026-01-01T00:00:00Z",
-            "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-        },
-        {
-            "id": "run_1", "workflow_id": "wf_1", "workflow_name": "Test",
-            "organization_id": "org_1", "status": "waiting_for_human",
-            "waiting_for_block_ids": ["hil-1"],
-            "started_at": "2026-01-01T00:00:00Z",
-            "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:01Z",
-        },
+        _v2_run_payload(lifecycle={"kind": "running"}),
+        _v2_run_payload(
+            lifecycle={
+                "kind": "waiting_for_human",
+                "waiting_for_block_ids": ["hil-1"],
+            }
+        ),
     ]
     monkeypatch.setattr("retab.resources.workflows.runs.client.time.sleep", lambda _: None)
 
     run = WorkflowRuns(client=client).wait_for_completion("run_1")
 
-    assert run.status == "waiting_for_human"
-    assert run.waiting_for_block_ids == ["hil-1"]
+    assert run.lifecycle.kind == "waiting_for_human"
+    assert run.lifecycle.waiting_for_block_ids == ["hil-1"]
 
 
 @pytest.mark.asyncio
 async def test_async_wait_for_completion_returns_waiting_for_human(monkeypatch: pytest.MonkeyPatch) -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(side_effect=[
-        {
-            "id": "run_1", "workflow_id": "wf_1", "workflow_name": "Test",
-            "organization_id": "org_1", "status": "running",
-            "started_at": "2026-01-01T00:00:00Z",
-            "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-        },
-        {
-            "id": "run_1", "workflow_id": "wf_1", "workflow_name": "Test",
-            "organization_id": "org_1", "status": "waiting_for_human",
-            "waiting_for_block_ids": ["hil-1"],
-            "started_at": "2026-01-01T00:00:00Z",
-            "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:01Z",
-        },
+        _v2_run_payload(lifecycle={"kind": "running"}),
+        _v2_run_payload(
+            lifecycle={
+                "kind": "waiting_for_human",
+                "waiting_for_block_ids": ["hil-1"],
+            }
+        ),
     ])
 
     async def _no_sleep(_: float) -> None:
@@ -879,19 +917,16 @@ async def test_async_wait_for_completion_returns_waiting_for_human(monkeypatch: 
 
     run = await AsyncWorkflowRuns(client=client).wait_for_completion("run_1")
 
-    assert run.status == "waiting_for_human"
-    assert run.waiting_for_block_ids == ["hil-1"]
+    assert run.lifecycle.kind == "waiting_for_human"
+    assert run.lifecycle.waiting_for_block_ids == ["hil-1"]
 
 
 @pytest.mark.asyncio
 async def test_async_wait_for_completion_awaits_async_callback() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value={
-        "id": "run_1", "workflow_id": "wf_1", "workflow_name": "Test",
-        "organization_id": "org_1", "status": "completed",
-        "started_at": "2026-01-01T00:00:00Z",
-        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-    })
+    client._prepared_request = AsyncMock(
+        return_value=_v2_run_payload(lifecycle={"kind": "completed"})
+    )
     seen_run_ids: list[str] = []
 
     async def on_status(run: WorkflowRun) -> None:
@@ -899,32 +934,10 @@ async def test_async_wait_for_completion_awaits_async_callback() -> None:
 
     run = await AsyncWorkflowRuns(client=client).wait_for_completion("run_1", on_status=on_status)
 
-    assert run.status == "completed"
+    assert run.lifecycle.kind == "completed"
     assert seen_run_ids == ["run_1"]
 
 
-
-
-def test_step_status_summary_drops_handle_payloads() -> None:
-    """StepStatusSummary intentionally drops handle payloads.
-
-    The full step (with handle_outputs/handle_inputs/artifacts) is fetched via
-    ``client.workflows.runs.steps.get(run_id, block_id)``.
-    """
-    from retab.types.workflows.model import StepStatusSummary
-
-    summary = StepStatusSummary.model_validate({
-        "block_id": "extract-1", "step_id": "extract-1",
-        "block_type": "extract", "block_label": "Extract",
-        "status": "completed",
-        # StepStatusSummary ignores handle_outputs (extra="ignore" applies).
-        "handle_outputs": {
-            "output-json-0": {"type": "json", "data": {"invoice": "INV-001"}},
-        },
-    })
-    assert summary.block_id == "extract-1"
-    assert summary.extracted_data is None
-    assert "handle_outputs" not in summary.model_dump()
 
 
 def test_workflow_run_step_extracted_data() -> None:

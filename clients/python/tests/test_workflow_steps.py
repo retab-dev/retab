@@ -296,29 +296,41 @@ def test_step_execution_response_error_defaults_to_none_for_successful_step() ->
 
 
 def _minimal_run_payload(**overrides) -> dict:
-    now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)
-    payload = {
+    """Build a minimal v2 ``WorkflowRun`` payload.
+
+    ``overrides`` may set ``lifecycle`` directly; otherwise pass
+    ``lifecycle_kind`` (and any extra lifecycle fields like ``message``)
+    as a convenience.
+    """
+    now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc).isoformat()
+    lifecycle_kind = overrides.pop("lifecycle_kind", "completed")
+    lifecycle: dict = {"kind": lifecycle_kind}
+    if lifecycle_kind == "error":
+        lifecycle.setdefault("message", overrides.pop("error_message", "boom"))
+    payload: dict = {
         "id": "run_123",
-        "workflow_id": "wf_1",
-        "workflow_name": "Test",
         "organization_id": "org_1",
-        "status": "completed",
-        "started_at": now,
-        "created_at": now,
-        "updated_at": now,
-        "waiting_for_block_ids": [],
+        "workflow": {
+            "workflow_id": "wf_1",
+            "snapshot_id": "snap_1",
+            "name_at_run_time": "Test",
+        },
+        "trigger": {"type": "manual"},
+        "lifecycle": overrides.pop("lifecycle", lifecycle),
+        "timing": {"created_at": now, "started_at": now, "completed_at": now},
+        "inputs": {"documents": {}, "json_data": {}},
     }
     payload.update(overrides)
     return payload
 
 
 def test_workflow_run_is_terminal_true_for_each_terminal_status() -> None:
-    for status in ("completed", "error", "cancelled"):
-        run = WorkflowRun.model_validate(_minimal_run_payload(status=status))
-        assert run.is_terminal, f"{status} should be terminal"
+    for kind in ("completed", "error", "cancelled"):
+        run = WorkflowRun.model_validate(_minimal_run_payload(lifecycle_kind=kind))
+        assert run.is_terminal, f"{kind} should be terminal"
 
 
 def test_workflow_run_is_terminal_false_for_non_terminal_statuses() -> None:
-    for status in ("pending", "running", "waiting_for_human"):
-        run = WorkflowRun.model_validate(_minimal_run_payload(status=status))
-        assert not run.is_terminal, f"{status} should not be terminal"
+    for kind in ("pending", "running", "waiting_for_human"):
+        run = WorkflowRun.model_validate(_minimal_run_payload(lifecycle_kind=kind))
+        assert not run.is_terminal, f"{kind} should not be terminal"

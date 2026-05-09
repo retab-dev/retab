@@ -87,13 +87,6 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
             props = [(n, f.annotation, f.default) for n, f in origin.model_fields.items() if not f.exclude] if isinstance(origin, type) and issubclass(origin, BaseModel) else \
                     [(n, f, PydanticUndefined) for n, f in origin.__annotations__.items()]
 
-            # Class-level opt-in for fields that should be null/undefined-coerced
-            # to ``{}`` on parse. Mirrors the Python-side
-            # ``model_validator(mode="before")`` pattern that the schema-only
-            # generator can't introspect from the validator body. Each entry is
-            # a field name on the class.
-            preprocess_null_coerce = getattr(origin, "__zod_preprocess_null_coerce__", set())
-
             for field_name, field, default in props:
                 if field_name not in origin.__annotations__.keys():
                     continue
@@ -106,8 +99,6 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
                     else:
                         default_str = f".default({json.dumps(default)})"
                 field_zod = type_to_zod(field)
-                if field_name in preprocess_null_coerce:
-                    field_zod = f"z.preprocess((v) => (v == null ? {{}} : v), {field_zod})"
                 typename += f"    {field_name}: {field_zod}{default_str},\n"
                 optional_suffix = "?" if ts_compiled.endswith(" | undefined") or default is not PydanticUndefined else ""
                 ts_typename += f"    {field_name}{optional_suffix}: {ts_compiled},\n"

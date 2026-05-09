@@ -509,8 +509,8 @@ export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 // ---------------------------------------------------------------------------
 // BREAKING CHANGES (workflow step artifact + StepStatus shape cutover)
 // ---------------------------------------------------------------------------
-// All step shapes (`StepStatus` / `StepStatusSummary` / `StepExecutionResponse`
-// / `WorkflowRunStep`) now share `StepCore`. The old flat error/lifecycle
+// All step shapes (`StepStatus` / `StepExecutionResponse` /
+// `WorkflowRunStep`) now share `StepCore`. The old flat error/lifecycle
 // fields (`error`, `error_stage`, `error_category`, `error_details`,
 // `skip_reason`, `cancel_reason`) are replaced by a single discriminated
 // `terminal: TerminalState | null` payload (`TerminalError` / `TerminalSkipped`
@@ -729,9 +729,17 @@ export type WorkflowRunExportResponse = z.infer<typeof ZWorkflowRunExportRespons
 export class WorkflowRunError extends Error {
   public readonly run: generated.WorkflowRun;
   constructor(run: generated.WorkflowRun) {
-    super(
-      `Workflow run ${run.id} ${run.status === 'cancelled' ? 'was cancelled' : 'failed'}${run.error ? `: ${run.error}` : ''}`
-    );
+    const lifecycle = run.lifecycle;
+    let msg: string;
+    if (lifecycle.kind === 'cancelled') {
+      msg = `Workflow run ${run.id} was cancelled`;
+      if (lifecycle.reason) msg += `: ${lifecycle.reason}`;
+    } else if (lifecycle.kind === 'error') {
+      msg = `Workflow run ${run.id} failed: ${lifecycle.message}`;
+    } else {
+      msg = `Workflow run ${run.id} did not succeed`;
+    }
+    super(msg);
     this.name = 'WorkflowRunError';
     this.run = run;
   }
@@ -742,7 +750,8 @@ export class WorkflowRunError extends Error {
  * Modelled after `httpx.Response.raise_for_status()`.
  */
 export function raiseForStatus(run: generated.WorkflowRun): void {
-  if (run.status === 'error' || run.status === 'cancelled') throw new WorkflowRunError(run);
+  const kind = run.lifecycle.kind;
+  if (kind === 'error' || kind === 'cancelled') throw new WorkflowRunError(run);
 }
 
 export const ZModel = z.lazy(() =>

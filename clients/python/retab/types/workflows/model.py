@@ -1,7 +1,7 @@
 import datetime
-from typing import Annotated, Any, ClassVar, Dict, List, Literal, Optional, Set
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, computed_field, model_validator
+from pydantic import BaseModel, Field, ConfigDict, computed_field
 
 from retab.types.mime import FileRef
 
@@ -9,8 +9,8 @@ from retab.types.mime import FileRef
 # BREAKING CHANGES (workflow step artifact + StepStatus shape cutover)
 # ---------------------------------------------------------------------------
 # - All step shapes now share :class:`StepCore` — :class:`StepStatus`,
-#   :class:`StepStatusSummary`, :class:`StepExecutionResponse` and
-#   :class:`WorkflowRunStep` inherit from it. ``duration_ms`` / ``loop_id`` /
+#   :class:`StepExecutionResponse` and :class:`WorkflowRunStep` inherit
+#   from it. ``duration_ms`` / ``loop_id`` /
 #   ``iteration`` are computed properties on :class:`StepCore` (derived from
 #   ``started_at`` / ``completed_at`` / ``loop_containers``); they are no
 #   longer flat fields. ``updated_at`` is gone.
@@ -445,13 +445,17 @@ class WebhookInvocation(BaseModel):
 
 
 class StepCore(BaseModel):
-    """Shape shared by full step docs and lightweight summaries.
+    """Shape shared by full step docs and read-projections of them.
 
-    Mirrors the backend ``StepCore`` shape. Both :class:`StepStatus` and
-    :class:`StepStatusSummary` (and the public-API view classes
-    :class:`StepExecutionResponse` / :class:`WorkflowRunStep`) inherit from
-    this. ``duration_ms`` / ``loop_id`` / ``iteration`` are computed from
-    timestamps and ``loop_containers``; do not set them as flat fields.
+    Mirrors the backend ``StepCore`` shape. :class:`StepStatus` and the
+    public-API view classes :class:`StepExecutionResponse` /
+    :class:`WorkflowRunStep` inherit from this. ``duration_ms`` /
+    ``loop_id`` / ``iteration`` are computed from timestamps and
+    ``loop_containers``; do not set them as flat fields.
+
+    Per the WorkflowRun v2 cutover, ``StepStatusSummary`` was removed —
+    listing endpoints return ``StepStatus`` instances with handle payloads
+    projected away server-side via Mongo ``projection``.
     """
     model_config = ConfigDict(extra="ignore")
 
@@ -498,24 +502,6 @@ class StepCore(BaseModel):
         return self.loop_containers[-1].iteration if self.loop_containers else None
 
 
-class StepStatusSummary(StepCore):
-    """Lightweight step status embedded in :class:`WorkflowRun`.
-
-    Strict structural subset of :class:`StepStatus` — all fields inherited
-    from :class:`StepCore`. No payloads, no identity, no artifact pointer.
-    """
-
-    @property
-    def extracted_data(self) -> Optional[dict]:
-        """StepStatusSummary intentionally omits handle payloads.
-
-        Use ``client.workflows.runs.steps.get(run_id, block_id)`` to fetch the
-        full :class:`WorkflowRunStep` (or :class:`StepExecutionResponse`) and
-        read ``handle_outputs['output-json-0'].data`` from there.
-        """
-        return None
-
-
 class StepStatus(StepCore):
     """Full step status with all execution details.
 
@@ -529,10 +515,6 @@ class StepStatus(StepCore):
     backing record.
     """
 
-    # Hint to ``retab.generate_types``: emit ``z.preprocess(null → {})``
-    # around these fields' Zod schemas so the Node SDK mirrors the
-    # ``_parse_handle_payloads`` model_validator below.
-    __zod_preprocess_null_coerce__: ClassVar[Set[str]] = {"handle_inputs", "handle_outputs"}
 
     # Identity — SDK-side relaxed (canonical model requires both).
     run_id: str = Field(default="", description="Parent workflow run ID")
@@ -565,28 +547,6 @@ class StepStatus(StepCore):
     # Retry tracking — int (not Optional[int]); a never-retried step has count 0.
     retry_count: int = Field(default=0, description="Number of retry attempts for this step execution")
 
-    @model_validator(mode="before")
-    @classmethod
-    def _parse_handle_payloads(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            for field in ("handle_outputs", "handle_inputs"):
-                raw = data.get(field, ...)
-                if raw is None:
-                    # Backend uses non-optional dicts; coerce a literal None to an empty dict.
-                    data[field] = {}
-                elif isinstance(raw, dict):
-                    parsed: Dict[str, Any] = {}
-                    for k, v in raw.items():
-                        if isinstance(v, dict):
-                            try:
-                                parsed[k] = HandlePayload.model_validate(v)
-                            except Exception:
-                                parsed[k] = v
-                        else:
-                            parsed[k] = v
-                    data[field] = parsed
-        return data
-
     @property
     def extracted_data(self) -> Optional[dict]:
         """Get the JSON output data from the default handle (``output-json-0``)."""
@@ -598,66 +558,172 @@ class StepStatus(StepCore):
         return None
 
 
+# ---------------------------------------------------------------------------
+# WorkflowRun v2 — typed sub-models
+# ---------------------------------------------------------------------------
+
+
+class WorkflowSnapshotRef(BaseModel):
+    """Reference to the workflow + the immutable snapshot driving the run."""
+    workflow_id: str = Field(..., description="ID of the workflow that was run")
+    snapshot_id: str = Field(..., description="Reference to the config snapshot")
+    name_at_run_time: str = Field(..., description="Workflow name at run-creation time")
+
+
+class ManualTrigger(BaseModel):
+    type: Literal["manual"] = "manual"
+    user_id: Optional[str] = Field(default=None)
+
+
+class ApiTrigger(BaseModel):
+    type: Literal["api"] = "api"
+    api_key_id: Optional[str] = Field(default=None)
+
+
+class ScheduleTrigger(BaseModel):
+    type: Literal["schedule"] = "schedule"
+    schedule_id: str = Field(...)
+
+
+class WebhookTrigger(BaseModel):
+    type: Literal["webhook"] = "webhook"
+    webhook_id: Optional[str] = Field(default=None)
+
+
+class EmailTrigger(BaseModel):
+    type: Literal["email"] = "email"
+    sender: str = Field(...)
+    subject: Optional[str] = Field(default=None)
+
+
+class RestartTrigger(BaseModel):
+    type: Literal["restart"] = "restart"
+    parent_run_id: str = Field(...)
+
+
+Trigger = Annotated[
+    ManualTrigger | ApiTrigger | ScheduleTrigger | WebhookTrigger | EmailTrigger | RestartTrigger,
+    Field(discriminator="type"),
+]
+
+
+class PendingRun(BaseModel):
+    kind: Literal["pending"] = "pending"
+
+
+class RunningRun(BaseModel):
+    kind: Literal["running"] = "running"
+
+
+class WaitingForHumanRun(BaseModel):
+    kind: Literal["waiting_for_human"] = "waiting_for_human"
+    waiting_for_block_ids: List[str] = Field(default_factory=list)
+
+
+class CompletedTerminal(BaseModel):
+    kind: Literal["completed"] = "completed"
+
+
+class ErrorTerminal(BaseModel):
+    kind: Literal["error"] = "error"
+    message: str = Field(...)
+    stage: Optional[str] = Field(default=None)
+    category: Optional[str] = Field(default=None)
+    details: Optional[ErrorDetails] = Field(default=None)
+    failing_step_id: Optional[str] = Field(default=None)
+
+
+class CancelledTerminal(BaseModel):
+    kind: Literal["cancelled"] = "cancelled"
+    reason: Optional[str] = Field(default=None)
+
+
+RunLifecycle = Annotated[
+    PendingRun | RunningRun | WaitingForHumanRun | CompletedTerminal | ErrorTerminal | CancelledTerminal,
+    Field(discriminator="kind"),
+]
+
+
+class RunTiming(BaseModel):
+    """Timing information for a workflow run."""
+    created_at: datetime.datetime = Field(...)
+    started_at: Optional[datetime.datetime] = Field(default=None)
+    completed_at: Optional[datetime.datetime] = Field(default=None)
+    human_waiting_started_at: Optional[datetime.datetime] = Field(default=None)
+    accumulated_human_waiting_ms: int = Field(default=0, ge=0)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def duration_ms(self) -> Optional[int]:
+        if self.started_at and self.completed_at:
+            return int((self.completed_at - self.started_at).total_seconds() * 1000)
+        return None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def active_duration_ms(self) -> Optional[int]:
+        wall = self.duration_ms
+        if wall is None:
+            return None
+        return max(0, wall - self.accumulated_human_waiting_ms)
+
+
+class RunInputs(BaseModel):
+    documents: Dict[str, FileRef] = Field(default_factory=dict)
+    json_data: Dict[str, dict] = Field(default_factory=dict)
+
+
+class RunObservability(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    total_cost: Dict[str, Any] = Field(default_factory=dict)
+    total_tokens: Dict[str, Any] = Field(default_factory=dict)
+    cost_by_model: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    tokens_by_model: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+
+
 class WorkflowRunError(Exception):
-    """Raised by ``WorkflowRun.raise_for_status()`` when the run has failed."""
+    """Raised by :meth:`WorkflowRun.raise_for_status` when a run failed."""
 
     def __init__(self, run: "WorkflowRun") -> None:
         self.run = run
-        if run.status == "cancelled":
+        lifecycle = run.lifecycle
+        if isinstance(lifecycle, CancelledTerminal):
             msg = f"Workflow run {run.id} was cancelled"
+            if lifecycle.reason:
+                msg += f": {lifecycle.reason}"
+        elif isinstance(lifecycle, ErrorTerminal):
+            msg = f"Workflow run {run.id} failed: {lifecycle.message}"
         else:
-            msg = f"Workflow run {run.id} failed"
-        if run.error:
-            msg += f": {run.error}"
+            msg = f"Workflow run {run.id} did not succeed"
         super().__init__(msg)
 
 
 class WorkflowRun(BaseModel):
     """A stored workflow run record.
 
-    The run object no longer embeds a step roster. Fetch the per-step records
-    on demand with ``client.workflows.runs.steps.list(run_id)`` (returns
-    :class:`WorkflowRunStep` documents) or ``client.workflows.runs.steps.get(
-    run_id, block_id)`` for a single step's full execution detail.
+    Slim, typed, discriminated. Engine state is not surfaced; the terminal
+    state is encoded in :attr:`lifecycle`, not loose flat fields.
     """
     model_config = ConfigDict(extra="ignore")
 
-    id: str = Field(..., description="Unique ID for this run")
-    workflow_id: str = Field(..., description="ID of the workflow that was run")
-    workflow_name: str = Field(..., description="Name of the workflow at time of execution")
-    organization_id: str = Field(..., description="Organization that owns this run")
-    status: Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"] = Field(default="pending", description="Overall status")
-    started_at: datetime.datetime = Field(..., description="When the workflow started")
-    completed_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow completed")
-    duration_ms: Optional[int] = Field(default=None, description="Total duration in milliseconds")
-    input_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="Start block ID -> input document reference")
-    final_outputs: Optional[dict] = Field(default=None, description="Final outputs from terminal blocks")
-    error: Optional[str] = Field(default=None, description="Error message if workflow failed")
-    created_at: datetime.datetime = Field(..., description="When the run was created")
-    updated_at: datetime.datetime = Field(..., description="When the run was last updated")
-    waiting_for_block_ids: List[str] = Field(default_factory=list, description="Block IDs that are waiting for human review")
-    pending_block_outputs: Optional[dict] = Field(default=None, description="Serialized block outputs to resume from")
-    config_snapshot_id: Optional[str] = Field(default=None, description="ID of the config snapshot used for this run")
-    trigger_type: Optional[str] = Field(default=None, description="How the run was triggered (manual, api, schedule, webhook, email, restart)")
-    trigger_email: Optional[str] = Field(default=None, description="Email address that triggered the run (for email triggers)")
-    execution_phase: Optional[str] = Field(default=None, description="Current execution phase (created, dispatching, started, running)")
-    input_json_data: Optional[Dict[str, dict]] = Field(default=None, description="Start JSON block ID -> input JSON data")
-    error_details: Optional[dict] = Field(default=None, description="Detailed error information including stack trace and context")
-    cost_summary: Optional[dict] = Field(default=None, description="Aggregate cost and token usage for the run")
-    human_waiting_duration_ms: int = Field(default=0, description="Total time spent waiting for human review in milliseconds")
+    id: str = Field(...)
+    organization_id: str = Field(...)
+    workflow: WorkflowSnapshotRef = Field(...)
+    trigger: Trigger = Field(...)
+    lifecycle: RunLifecycle = Field(...)
+    timing: RunTiming = Field(...)
+    inputs: RunInputs = Field(default_factory=RunInputs)
+    observability: Optional[RunObservability] = Field(default=None)
 
     def raise_for_status(self) -> None:
-        """Raise :class:`WorkflowRunError` if the run did not succeed.
-
-        Modelled after ``httpx.Response.raise_for_status()``.
-        """
-        if self.status in {"error", "cancelled"}:
+        """Raise :class:`WorkflowRunError` if the run did not succeed."""
+        if isinstance(self.lifecycle, (ErrorTerminal, CancelledTerminal)):
             raise WorkflowRunError(self)
 
     @property
     def is_terminal(self) -> bool:
-        """Whether the run has reached a terminal state (``completed``, ``error``, ``cancelled``)."""
-        return self.status in TERMINAL_WORKFLOW_RUN_STATUSES
+        return isinstance(self.lifecycle, (CompletedTerminal, ErrorTerminal, CancelledTerminal))
 
 
 
@@ -669,7 +735,13 @@ class Workflow(BaseModel):
         snapshot_id: Optional[str] = Field(default=None, description="Published snapshot ID")
         published_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow was last published")
 
-    class EmailTrigger(BaseModel):
+    class EmailTriggerPolicy(BaseModel):
+        """Workflow CONFIG for inbound email triggers (allowlist policy).
+
+        Renamed from ``EmailTrigger`` to disambiguate from the run-level
+        :class:`EmailTrigger` discriminated-union variant defined at
+        module top level (``WorkflowRun.trigger`` when triggered by email).
+        """
         allowed_senders: List[str] = Field(default_factory=list, description="Allowed sender email addresses")
         allowed_domains: List[str] = Field(default_factory=list, description="Allowed sender email domains")
 
@@ -678,7 +750,7 @@ class Workflow(BaseModel):
     description: str = Field(default="", description="Workflow description")
     organization_id: Optional[str] = Field(default=None, description="Organization that owns this workflow")
     published: Optional[Published] = Field(default=None, description="Published workflow metadata")
-    email_trigger: EmailTrigger = Field(default_factory=EmailTrigger, description="Email trigger allowlist policy")
+    email_trigger: EmailTriggerPolicy = Field(default_factory=EmailTriggerPolicy, description="Email trigger allowlist policy")
     created_at: datetime.datetime = Field(..., description="When the workflow was created")
     updated_at: datetime.datetime = Field(..., description="When the workflow was last updated")
 
@@ -716,10 +788,6 @@ class StepExecutionResponse(StepCore):
     block-specific :class:`StepArtifactView` for rendering.
     """
 
-    # Hint to ``retab.generate_types``: emit ``z.preprocess(null → {})``
-    # around these fields so the Node SDK mirrors the
-    # ``_parse_handle_payloads`` model_validator below.
-    __zod_preprocess_null_coerce__: ClassVar[Set[str]] = {"handle_inputs", "handle_outputs"}
 
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
@@ -741,28 +809,6 @@ class StepExecutionResponse(StepCore):
         default_factory=dict,
         description="Handle inputs keyed by handle ID (what this block received)",
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def _parse_handle_payloads(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            for field in ("handle_outputs", "handle_inputs"):
-                raw = data.get(field, ...)
-                if raw is None:
-                    # Backend uses non-optional dicts; coerce a literal None to an empty dict.
-                    data[field] = {}
-                elif isinstance(raw, dict):
-                    parsed: Dict[str, Any] = {}
-                    for k, v in raw.items():
-                        if isinstance(v, dict):
-                            try:
-                                parsed[k] = HandlePayload.model_validate(v)
-                            except Exception:
-                                parsed[k] = v
-                        else:
-                            parsed[k] = v
-                    data[field] = parsed
-        return data
 
     def get_json_output(self, handle_id: str = "output-json-0") -> Optional[dict]:
         """Get JSON data from a specific output handle.
@@ -792,10 +838,6 @@ class WorkflowRunStep(StepCore):
     :class:`HilEvaluation`).
     """
 
-    # Hint to ``retab.generate_types``: emit ``z.preprocess(null → {})``
-    # around these fields so the Node SDK mirrors the
-    # ``_parse_handle_payloads`` model_validator below.
-    __zod_preprocess_null_coerce__: ClassVar[Set[str]] = {"handle_inputs", "handle_outputs"}
 
     run_id: str = Field(..., description="Parent workflow run ID")
     organization_id: str = Field(..., description="Organization that owns this run")
@@ -817,28 +859,6 @@ class WorkflowRunStep(StepCore):
     )
     retry_count: int = Field(default=0, description="Retry count for this step")
     created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
-
-    @model_validator(mode="before")
-    @classmethod
-    def _parse_handle_payloads(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            for field in ("handle_outputs", "handle_inputs"):
-                raw = data.get(field, ...)
-                if raw is None:
-                    # Backend uses non-optional dicts; coerce a literal None to an empty dict.
-                    data[field] = {}
-                elif isinstance(raw, dict):
-                    parsed: Dict[str, Any] = {}
-                    for k, v in raw.items():
-                        if isinstance(v, dict):
-                            try:
-                                parsed[k] = HandlePayload.model_validate(v)
-                            except Exception:
-                                parsed[k] = v
-                        else:
-                            parsed[k] = v
-                    data[field] = parsed
-        return data
 
     @property
     def extracted_data(self) -> Optional[dict]:
