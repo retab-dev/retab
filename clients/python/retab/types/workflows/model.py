@@ -1,25 +1,40 @@
 import datetime
-from typing import Any, ClassVar, Dict, List, Literal, Optional, Set
+from typing import Annotated, Any, ClassVar, Dict, List, Literal, Optional, Set
 
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict, computed_field, model_validator
 
 from retab.types.mime import FileRef
 
 # ---------------------------------------------------------------------------
-# BREAKING CHANGES (workflow step artifact cutover)
+# BREAKING CHANGES (workflow step artifact + StepStatus shape cutover)
 # ---------------------------------------------------------------------------
-# - ``StepArtifactView``, ``StepExecutionMetadata``, ``RoutingMetadata``,
-#   ``ContainerMetadata``, ``EvaluationMetadata`` and ``DebugMetadata`` were
-#   removed entirely. There is no compatibility shim — callers must migrate.
-# - ``StepStatus`` / ``WorkflowRunStep`` / ``StepExecutionResponse`` no longer
-#   carry ``metadata``, ``artifacts: list[...]``, ``requires_human_review``,
-#   ``human_reviewed_at`` or ``human_review_approved``. They now expose:
-#       * ``artifact: StepArtifactRef | None`` (singular pointer into a backing
-#         collection — fetch the typed record via the matching resource)
-#       * ``skip_reason: str | None``
-#       * ``cancel_reason: str | None``
-#   ``StepStatusSummary`` likewise drops ``requires_human_review`` (the status
-#   value ``"waiting_for_human"`` already encodes that signal).
+# - All step shapes now share :class:`StepCore` — :class:`StepStatus`,
+#   :class:`StepStatusSummary`, :class:`StepExecutionResponse` and
+#   :class:`WorkflowRunStep` inherit from it. ``duration_ms`` / ``loop_id`` /
+#   ``iteration`` are computed properties on :class:`StepCore` (derived from
+#   ``started_at`` / ``completed_at`` / ``loop_containers``); they are no
+#   longer flat fields. ``updated_at`` is gone.
+# - The old flat error/lifecycle fields (``error``, ``error_stage``,
+#   ``error_category``, ``error_details``, ``skip_reason``, ``cancel_reason``)
+#   are replaced by a single discriminated :data:`TerminalState` payload
+#   under ``terminal`` (``TerminalError`` / ``TerminalSkipped`` /
+#   ``TerminalCancelled``). The ``terminal`` field is present iff ``status``
+#   is one of error/skipped/cancelled.
+# - The old flat observability fields (``model``, ``cost``, ``tokens``,
+#   ``trace_spans``) collapse to a single :class:`StepObservability`
+#   payload under ``observability``.
+# - ``iteration_context`` is replaced by a flat
+#   ``loop_containers: List[ContainerContextData]`` on :class:`StepCore`;
+#   :class:`IterationContextData` is removed.
+# - ``StepStatus.retry_count`` is now ``int`` (default ``0``); a
+#   never-retried step has count ``0`` rather than ``None``.
+# - ``StepStatus`` / ``WorkflowRunStep`` / ``StepExecutionResponse`` no
+#   longer carry ``metadata``, ``artifacts: list[...]``,
+#   ``requires_human_review``, ``human_reviewed_at`` or
+#   ``human_review_approved``. They expose a singular
+#   ``artifact: StepArtifactRef | None`` pointer plus, for
+#   :class:`StepExecutionResponse`, a block-specific
+#   ``artifact_view: StepArtifactView | None`` for rendering.
 # - ``WorkflowArtifactOperation`` is extended with six new operations:
 #   ``conditional_evaluation``, ``hil_evaluation``, ``while_loop_termination``,
 #   ``api_call_invocation``, ``function_invocation``, ``webhook_invocation``.
@@ -28,10 +43,12 @@ from retab.types.mime import FileRef
 #   :class:`WhileLoopTermination`, :class:`ApiCallInvocation`,
 #   :class:`FunctionInvocation`, :class:`WebhookInvocation`.
 #
-# Migration: callers that previously read ``step.metadata.evaluations`` /
-# ``step.requires_human_review`` / ``step.human_review_approved`` should fetch
-# the artifact's backing record (one of the new record types above) and read
-# from there. ``step.artifact`` is the (operation, id) pointer.
+# Migration: callers that previously read ``step.error_stage`` /
+# ``step.skip_reason`` / ``step.cost`` should switch to
+# ``step.terminal`` (a ``TerminalState``) and ``step.observability``.
+# Callers that read ``step.metadata.evaluations`` /
+# ``step.requires_human_review`` should fetch the artifact's backing
+# record (one of the record types above) and read from there.
 # ---------------------------------------------------------------------------
 
 # Schemas are accessed via ``workflows.blocks.get(block_id).resolved_schemas``,
@@ -106,6 +123,25 @@ class StepArtifactRef(BaseModel):
     id: str = Field(..., description="Persisted resource identifier")
 
 
+class StepArtifactView(BaseModel):
+    """Block-specific artifact view data for rendering step results."""
+    model_config = ConfigDict(extra="ignore")
+
+    block_type: str = Field(..., description="Workflow block type that produced the view")
+    artifact: Optional[StepArtifactRef] = Field(
+        default=None,
+        description="Canonical artifact backing this view (operation + id ref), if any",
+    )
+    data: Optional[Any] = Field(
+        default=None,
+        description="Block-specific render data resolved from the step artifact",
+    )
+    source_handle_id: Optional[str] = Field(
+        default=None,
+        description="Handle that supplied the render data when available",
+    )
+
+
 class ContainerContextData(BaseModel):
     """Structured context for a single container in the hierarchy."""
     container_id: str = Field(..., description="Container ID (e.g., 'while_loop-abc')")
@@ -114,11 +150,70 @@ class ContainerContextData(BaseModel):
     parallel_item_index: Optional[int] = Field(default=None, description="Parallel item index if is_parallel")
 
 
-class IterationContextData(BaseModel):
-    """Structured container hierarchy for a step."""
-    containers: List[ContainerContextData] = Field(
-        default_factory=list,
-        description="Container hierarchy from outermost to innermost",
+class ErrorDetails(BaseModel):
+    """Detailed error information for debugging.
+
+    Captures stack traces and context about where and why an error occurred.
+    Mirrors backend ``ErrorDetails`` in ``services/v1/workflows/models.py``.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    stack_trace: Optional[str] = Field(default=None, description="Full Python stack trace")
+    block_id: Optional[str] = Field(default=None, description="ID of the block that failed")
+    block_name: Optional[str] = Field(default=None, description="Name/label of the block that failed")
+    error_code: Optional[str] = Field(default=None, description="Error code if available")
+    context: Optional[dict] = Field(default=None, description="Additional context about the error")
+
+
+# ---------------------------------------------------------------------------
+# Terminal payloads — discriminated union over status in {error, skipped, cancelled}
+# ---------------------------------------------------------------------------
+
+
+class TerminalError(BaseModel):
+    """Terminal payload for ``status="error"``."""
+    kind: Literal["error"] = "error"
+    message: str = Field(..., description="Human-readable error message")
+    # ``stage``/``category`` are typed enums on the canonical model
+    # (``ExecutionStage`` / ``ErrorCategory``); kept as ``str`` here for
+    # SDK-flexibility — the canonical backend is the source of truth.
+    stage: Optional[str] = Field(default=None, description="Which execution stage failed")
+    category: Optional[str] = Field(default=None, description="Category of error for retry decisions")
+    details: Optional[ErrorDetails] = Field(default=None, description="Structured error context")
+
+
+class TerminalSkipped(BaseModel):
+    """Terminal payload for ``status="skipped"``."""
+    kind: Literal["skipped"] = "skipped"
+    reason: str = Field(..., description="Reason the step was skipped")
+
+
+class TerminalCancelled(BaseModel):
+    """Terminal payload for ``status="cancelled"``."""
+    kind: Literal["cancelled"] = "cancelled"
+    reason: str = Field(..., description="Reason the step was cancelled")
+
+
+TerminalState = Annotated[
+    TerminalError | TerminalSkipped | TerminalCancelled,
+    Field(discriminator="kind"),
+]
+
+
+class StepObservability(BaseModel):
+    """Per-step observability bundle: model, cost, token usage, trace spans.
+
+    Cost / tokens / trace_spans use dict shapes here (backend types
+    ``CostBreakdown`` / ``TokenUsage`` / ``TraceSpan``) for SDK-flexibility.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    model: Optional[str] = Field(default=None, description="LLM model used")
+    cost: Optional[Dict[str, Any]] = Field(default=None, description="Cost breakdown (CostBreakdown shape)")
+    tokens: Optional[Dict[str, Any]] = Field(default=None, description="Token usage (TokenUsage shape)")
+    trace_spans: Optional[List[Dict[str, Any]]] = Field(
+        default=None,
+        description="Nested execution trace spans (list[TraceSpan] shape)",
     )
 
 
@@ -349,37 +444,66 @@ class WebhookInvocation(BaseModel):
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
-class StepStatusSummary(BaseModel):
-    """Lightweight step status embedded in :class:`WorkflowRun`.
+class StepCore(BaseModel):
+    """Shape shared by full step docs and lightweight summaries.
 
-    Carries only the row-in-a-list fields needed to display run progress.
-    Full step details (handle payloads, the ``artifact`` pointer) live in the
-    persisted ``WorkflowRunStep`` collection and are fetched on demand.
+    Mirrors the backend ``StepCore`` shape. Both :class:`StepStatus` and
+    :class:`StepStatusSummary` (and the public-API view classes
+    :class:`StepExecutionResponse` / :class:`WorkflowRunStep`) inherit from
+    this. ``duration_ms`` / ``loop_id`` / ``iteration`` are computed from
+    timestamps and ``loop_containers``; do not set them as flat fields.
     """
     model_config = ConfigDict(extra="ignore")
 
     block_id: str = Field(..., description="Logical ID of the block")
-    step_id: str = Field(..., description="Full step ID with iteration context")
+    # SDK-side: tolerate missing ``step_id`` on intermediate construction
+    # paths (canonical model requires it).
+    step_id: str = Field(default="", description="Full step ID with iteration context")
     block_type: BlockType = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
     status: StepExecutionStatus = Field(..., description="Current status")
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
-    duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
-    error: Optional[str] = Field(default=None, description="Error message if failed")
-    error_stage: Optional[str] = Field(default=None, description="Which execution stage failed")
-    error_category: Optional[str] = Field(default=None, description="Category of error for retry decisions")
-    # ``requires_human_review`` is no longer carried — the status value
-    # ``"waiting_for_human"`` already encodes this signal.
-    loop_id: Optional[str] = Field(default=None, description="ID of the containing while_loop (if inside a loop)")
-    iteration: Optional[int] = Field(default=None, description="Iteration number (0-based) if inside a loop")
-    iteration_context: Optional[IterationContextData] = Field(
+    terminal: Optional[TerminalState] = Field(
         default=None,
-        description="Structured container hierarchy for this step",
+        description="Structured terminal payload — present iff status is error/skipped/cancelled",
     )
-    model: Optional[str] = Field(default=None, description="LLM model used")
-    cost: Optional[Dict[str, Any]] = Field(default=None, description="Cost breakdown for this step")
-    tokens: Optional[Dict[str, Any]] = Field(default=None, description="Token usage for this step")
+    loop_containers: List[ContainerContextData] = Field(
+        default_factory=list,
+        description="Container hierarchy from outermost to innermost. Empty when not inside any container.",
+    )
+    observability: StepObservability = Field(
+        default_factory=StepObservability,
+        description="Per-step observability: model/cost/tokens/trace_spans",
+    )
+
+    @computed_field
+    @property
+    def duration_ms(self) -> Optional[int]:
+        """Derived from ``completed_at - started_at``."""
+        if self.started_at and self.completed_at:
+            return int((self.completed_at - self.started_at).total_seconds() * 1000)
+        return None
+
+    @computed_field
+    @property
+    def loop_id(self) -> Optional[str]:
+        """Innermost container's ID. Derived from ``loop_containers[-1]``."""
+        return self.loop_containers[-1].container_id if self.loop_containers else None
+
+    @computed_field
+    @property
+    def iteration(self) -> Optional[int]:
+        """Innermost container's iteration. Derived from ``loop_containers[-1]``."""
+        return self.loop_containers[-1].iteration if self.loop_containers else None
+
+
+class StepStatusSummary(StepCore):
+    """Lightweight step status embedded in :class:`WorkflowRun`.
+
+    Strict structural subset of :class:`StepStatus` — all fields inherited
+    from :class:`StepCore`. No payloads, no identity, no artifact pointer.
+    """
 
     @property
     def extracted_data(self) -> Optional[dict]:
@@ -392,51 +516,33 @@ class StepStatusSummary(BaseModel):
         return None
 
 
-class StepStatus(BaseModel):
+class StepStatus(StepCore):
     """Full step status with all execution details.
 
-    Mirrors the backend ``StepStatus`` document. The canonical persisted
-    result of executing a step is the singular :attr:`artifact` pointer — an
-    ``(operation, id)`` ref into a backing collection. There is no
-    ``artifacts`` list, no ``metadata`` block, and no ``requires_human_review``
-    / ``human_reviewed_at`` / ``human_review_approved`` flags: the
-    ``"waiting_for_human"`` status value plus the artifact's backing record
-    (e.g. :class:`HilEvaluation`) carry that information instead.
+    Mirrors the backend ``StepStatus`` document. ``handle_inputs``,
+    ``handle_outputs``, and the singular :attr:`artifact` ref are flat,
+    real fields on this model. Branch-evaluation / HIL / while-loop
+    termination state lives on the backing record referenced by
+    ``artifact`` (e.g. :class:`HilEvaluation`), not as flat fields here.
+    The ``"waiting_for_human"`` status value encodes the awaiting-review
+    signal; the actual review decision is on the ``HilEvaluation``
+    backing record.
     """
-    model_config = ConfigDict(extra="ignore")
 
     # Hint to ``retab.generate_types``: emit ``z.preprocess(null → {})``
     # around these fields' Zod schemas so the Node SDK mirrors the
     # ``_parse_handle_payloads`` model_validator below.
     __zod_preprocess_null_coerce__: ClassVar[Set[str]] = {"handle_inputs", "handle_outputs"}
 
-    # Identity
+    # Identity — SDK-side relaxed (canonical model requires both).
     run_id: str = Field(default="", description="Parent workflow run ID")
     organization_id: str = Field(default="", description="Organization that owns this")
 
-    # Core fields
-    block_id: str = Field(..., description="Logical ID of the block")
-    step_id: str = Field(default="", description="Full step ID with iteration context")
-    block_type: BlockType = Field(..., description="Type of the block")
-    block_label: str = Field(..., description="Label of the block")
-    status: StepExecutionStatus = Field(..., description="Current status")
-    started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
-    completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
-    created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
-    updated_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was last updated")
-    duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
-    error: Optional[str] = Field(default=None, description="Error message if failed")
-    error_stage: Optional[str] = Field(default=None, description="Which execution stage failed")
-    error_category: Optional[str] = Field(default=None, description="Category of error for retry decisions")
-    error_details: Optional[Dict[str, Any]] = Field(default=None, description="Detailed error context including stack trace")
+    # Persisted-doc-creation timestamp; distinct from ``started_at`` because
+    # the step doc may be created before execution begins (queue time).
+    created_at: Optional[datetime.datetime] = Field(default=None, description="When the step doc was first persisted")
 
-    # Cost and token tracking
-    model: Optional[str] = Field(default=None, description="LLM model used")
-    cost: Optional[Dict[str, Any]] = Field(default=None, description="Cost breakdown for this step")
-    tokens: Optional[Dict[str, Any]] = Field(default=None, description="Token usage for this step")
-    trace_spans: Optional[List[Dict[str, Any]]] = Field(default=None, description="Nested execution trace spans")
-
-    # Flat execution payload.
+    # Flat execution payload — no nested StepExecutionRecord wrapper.
     handle_inputs: Dict[str, HandlePayload] = Field(
         default_factory=dict,
         description="Handle input payloads consumed by this step",
@@ -448,32 +554,16 @@ class StepStatus(BaseModel):
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description=(
-            "Canonical result of executing this step: a persisted-ref pointer "
-            "(operation + id) into the backing collection. None for steps "
-            "that produce no canonical result (start/end/note/merge/sentinels)."
+            "Canonical persisted resource produced by this step — a "
+            "(operation, id) ref into a backing collection. ``None`` for "
+            "steps that produce no canonical result (start/end/note/merge/"
+            "sentinels). Every executed step produces at most one canonical "
+            "artifact, so this is a singular ref, not a list."
         ),
     )
 
-    # Lifecycle reasons (top-level, not block-result):
-    skip_reason: Optional[str] = Field(
-        default=None,
-        description="Reason this step was skipped (set when status='skipped')",
-    )
-    cancel_reason: Optional[str] = Field(
-        default=None,
-        description="Reason this step was cancelled (set when status='cancelled')",
-    )
-
-    # Retry tracking
-    retry_count: Optional[int] = Field(default=None, description="Number of retry attempts for this step execution")
-
-    # Loop iteration tracking
-    loop_id: Optional[str] = Field(default=None, description="ID of the containing while_loop (if inside a loop)")
-    iteration: Optional[int] = Field(default=None, description="Iteration number (0-based) if inside a loop")
-    iteration_context: Optional[IterationContextData] = Field(
-        default=None,
-        description="Structured container hierarchy for this step",
-    )
+    # Retry tracking — int (not Optional[int]); a never-retried step has count 0.
+    retry_count: int = Field(default=0, description="Number of retry attempts for this step execution")
 
     @model_validator(mode="before")
     @classmethod
@@ -525,10 +615,10 @@ class WorkflowRunError(Exception):
 class WorkflowRun(BaseModel):
     """A stored workflow run record.
 
-    The embedded ``steps`` list carries only :class:`StepStatusSummary` rows.
-    Full step details (handle payloads, the ``artifact`` pointer) are stored
-    separately in the persisted step collection — fetch them via
-    ``client.workflows.runs.steps.get(...)``.
+    The run object no longer embeds a step roster. Fetch the per-step records
+    on demand with ``client.workflows.runs.steps.list(run_id)`` (returns
+    :class:`WorkflowRunStep` documents) or ``client.workflows.runs.steps.get(
+    run_id, block_id)`` for a single step's full execution detail.
     """
     model_config = ConfigDict(extra="ignore")
 
@@ -540,7 +630,6 @@ class WorkflowRun(BaseModel):
     started_at: datetime.datetime = Field(..., description="When the workflow started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow completed")
     duration_ms: Optional[int] = Field(default=None, description="Total duration in milliseconds")
-    steps: List[StepStatusSummary] = Field(default_factory=list, description="Lightweight summary of each step")
     input_documents: Optional[Dict[str, FileRef]] = Field(default=None, description="Start block ID -> input document reference")
     final_outputs: Optional[dict] = Field(default=None, description="Final outputs from terminal blocks")
     error: Optional[str] = Field(default=None, description="Error message if workflow failed")
@@ -620,35 +709,29 @@ WorkflowRunTriggerType = Literal["manual", "api", "schedule", "webhook", "email"
 TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancelled")
 
 
-class StepExecutionResponse(BaseModel):
-    """Step status and handle data for a specific step in a workflow run."""
-    model_config = ConfigDict(extra="ignore")
+class StepExecutionResponse(StepCore):
+    """Step status, handle data, and artifact view for a specific step in a workflow run.
+
+    Wraps :class:`StepCore` with handle payloads, an artifact ref, and a
+    block-specific :class:`StepArtifactView` for rendering.
+    """
 
     # Hint to ``retab.generate_types``: emit ``z.preprocess(null → {})``
     # around these fields so the Node SDK mirrors the
     # ``_parse_handle_payloads`` model_validator below.
     __zod_preprocess_null_coerce__: ClassVar[Set[str]] = {"handle_inputs", "handle_outputs"}
 
-    block_id: str = Field(..., description="ID of the block")
-    block_type: str = Field(..., description="Type of the block")
-    block_label: str = Field(..., description="Label of the block")
-    status: str = Field(..., description="Step status")
-    error: Optional[str] = Field(default=None, description="Error message if failed")
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description=(
-            "Canonical persisted-ref pointer (operation + id) for this step. "
-            "Fetch the typed backing record via the matching resource client "
-            "(e.g. ``client.extractions.get`` for ``operation == 'extraction'``)."
+            "Canonical persisted resource produced by this step "
+            "(operation + id ref); None for steps that produce no "
+            "canonical result"
         ),
     )
-    skip_reason: Optional[str] = Field(
+    artifact_view: Optional[StepArtifactView] = Field(
         default=None,
-        description="Reason this step was skipped (set when status='skipped')",
-    )
-    cancel_reason: Optional[str] = Field(
-        default=None,
-        description="Reason this step was cancelled (set when status='cancelled')",
+        description="Block-specific artifact view model for result rendering",
     )
     handle_outputs: Dict[str, HandlePayload] = Field(
         default_factory=dict,
@@ -699,18 +782,15 @@ class StepExecutionResponse(BaseModel):
         return self.get_json_output()
 
 
-class WorkflowRunStep(BaseModel):
+class WorkflowRunStep(StepCore):
     """Persisted public step document returned by list workflow run steps.
 
-    Mirrors the backend ``StepStatus`` shape — ``handle_inputs``,
-    ``handle_outputs`` and the singular :attr:`artifact` pointer are flat
-    fields. There is no ``artifacts`` list, no ``metadata`` block and no
-    ``requires_human_review`` / ``human_reviewed_at`` /
-    ``human_review_approved`` flags. To inspect HIL or evaluation state,
-    fetch the artifact's backing record (e.g. :class:`HilEvaluation`,
-    :class:`ConditionalEvaluation`) instead.
+    Backed by the same flattened backend ``StepStatus`` shape —
+    ``handle_inputs``, ``handle_outputs``, and the singular ``artifact``
+    ref are flat fields. Branch-evaluation / HIL / while-loop-termination
+    state lives on the backing record referenced by ``artifact`` (e.g.
+    :class:`HilEvaluation`).
     """
-    model_config = ConfigDict(extra="ignore")
 
     # Hint to ``retab.generate_types``: emit ``z.preprocess(null → {})``
     # around these fields so the Node SDK mirrors the
@@ -719,34 +799,14 @@ class WorkflowRunStep(BaseModel):
 
     run_id: str = Field(..., description="Parent workflow run ID")
     organization_id: str = Field(..., description="Organization that owns this run")
-    block_id: str = Field(..., description="Logical ID of the block")
-    step_id: str = Field(..., description="Stored step ID")
-    block_type: str = Field(..., description="Type of the block")
-    block_label: str = Field(..., description="Label of the block")
-    status: str = Field(..., description="Step status")
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description=(
-            "Canonical persisted-ref pointer (operation + id) for this step. "
-            "None for steps that produce no canonical result (start/end/note/"
-            "merge/sentinels)."
+            "Canonical persisted resource produced by this step "
+            "(operation + id ref); None for steps that produce no "
+            "canonical result"
         ),
     )
-    skip_reason: Optional[str] = Field(
-        default=None,
-        description="Reason this step was skipped (set when status='skipped')",
-    )
-    cancel_reason: Optional[str] = Field(
-        default=None,
-        description="Reason this step was cancelled (set when status='cancelled')",
-    )
-    started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
-    completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
-    duration_ms: Optional[int] = Field(default=None, description="Duration in milliseconds")
-    error: Optional[str] = Field(default=None, description="Error message if failed")
-    error_stage: Optional[str] = Field(default=None, description="Which execution stage failed")
-    error_category: Optional[str] = Field(default=None, description="Category of error for retry decisions")
-    error_details: Optional[Dict[str, Any]] = Field(default=None, description="Detailed error context")
     handle_outputs: Dict[str, HandlePayload] = Field(
         default_factory=dict,
         description="Handle outputs keyed by handle ID",
@@ -755,19 +815,8 @@ class WorkflowRunStep(BaseModel):
         default_factory=dict,
         description="Handle inputs keyed by handle ID",
     )
-    model: Optional[str] = Field(default=None, description="LLM model used")
-    cost: Optional[Dict[str, Any]] = Field(default=None, description="Cost breakdown for this step")
-    tokens: Optional[Dict[str, Any]] = Field(default=None, description="Token usage for this step")
-    trace_spans: Optional[List[Dict[str, Any]]] = Field(default=None, description="Nested execution trace spans")
-    retry_count: Optional[int] = Field(default=None, description="Retry count for this step")
-    loop_id: Optional[str] = Field(default=None, description="Containing while_loop ID")
-    iteration: Optional[int] = Field(default=None, description="Loop iteration number")
-    iteration_context: Optional[IterationContextData] = Field(
-        default=None,
-        description="Structured container hierarchy for this step",
-    )
+    retry_count: int = Field(default=0, description="Retry count for this step")
     created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
-    updated_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was last updated")
 
     @model_validator(mode="before")
     @classmethod

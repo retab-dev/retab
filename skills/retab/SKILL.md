@@ -849,11 +849,15 @@ Python:
 ```python
 # Batch, one HTTP call for the whole run:
 for step in client.workflows.runs.steps.list(run.id):
-    print(step.block_id, step.status, step.error, step.artifact)
+    print(step.block_id, step.status, step.artifact)
+    if step.terminal and step.terminal.kind == "error":
+        print(step.terminal.message)
 
 # Single step:
 step = client.workflows.runs.steps.get(run.id, "extract-block-1")
-print(step.status, step.error)
+print(step.status)
+if step.terminal and step.terminal.kind == "error":
+    print(step.terminal.message)
 print(step.extracted_data)  # handle-derived shortcut
 
 # Jump to the typed underlying resource:
@@ -866,7 +870,10 @@ Node:
 
 ```ts
 for (const step of await client.workflows.runs.steps.list(run.id)) {
-  console.log(step.block_id, step.status, step.error, step.artifact);
+  console.log(step.block_id, step.status, step.artifact);
+  if (step.terminal && step.terminal.kind === "error") {
+    console.log(step.terminal.message);
+  }
 }
 
 const step = await client.workflows.runs.steps.get(run.id, "extract-block-1");

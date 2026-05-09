@@ -936,10 +936,46 @@ export const ZHilEvaluation = z.lazy(() => (z.object({
 })));
 export type HilEvaluation = z.infer<typeof ZHilEvaluation>;
 
-export const ZIterationContextData = z.lazy(() => (z.object({
-    containers: z.array(ZContainerContextData),
+export const ZErrorDetails = z.lazy(() => (z.object({
+    stack_trace: z.string().nullable().optional(),
+    block_id: z.string().nullable().optional(),
+    block_name: z.string().nullable().optional(),
+    error_code: z.string().nullable().optional(),
+    context: z.record(z.any()).nullable().optional(),
 })));
-export type IterationContextData = z.infer<typeof ZIterationContextData>;
+export type ErrorDetails = z.infer<typeof ZErrorDetails>;
+
+export const ZTerminalError = z.object({
+    kind: z.literal("error").default("error"),
+    message: z.string(),
+    stage: z.string().nullable().optional(),
+    category: z.string().nullable().optional(),
+    details: ZErrorDetails.nullable().optional(),
+});
+export type TerminalError = z.infer<typeof ZTerminalError>;
+
+export const ZTerminalSkipped = z.object({
+    kind: z.literal("skipped").default("skipped"),
+    reason: z.string(),
+});
+export type TerminalSkipped = z.infer<typeof ZTerminalSkipped>;
+
+export const ZTerminalCancelled = z.object({
+    kind: z.literal("cancelled").default("cancelled"),
+    reason: z.string(),
+});
+export type TerminalCancelled = z.infer<typeof ZTerminalCancelled>;
+
+export const ZTerminalState = z.discriminatedUnion("kind", [ZTerminalError, ZTerminalSkipped, ZTerminalCancelled]);
+export type TerminalState = z.infer<typeof ZTerminalState>;
+
+export const ZStepObservability = z.lazy(() => (z.object({
+    model: z.string().nullable().optional(),
+    cost: z.record(z.string(), z.unknown()).nullable().optional(),
+    tokens: z.record(z.string(), z.unknown()).nullable().optional(),
+    trace_spans: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
+})));
+export type StepObservability = z.infer<typeof ZStepObservability>;
 
 export const ZResolvedSchemas = z.lazy(() => (z.object({
     input_schemas: z.record(z.string(), z.any()),
@@ -954,15 +990,27 @@ export const ZStepArtifactRef = z.lazy(() => (z.object({
 })));
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 
+export const ZStepArtifactView = z.lazy(() => (z.object({
+    block_type: z.string(),
+    artifact: ZStepArtifactRef.nullable().optional(),
+    data: z.any().nullable().optional(),
+    source_handle_id: z.string().nullable().optional(),
+})));
+export type StepArtifactView = z.infer<typeof ZStepArtifactView>;
+
 export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_id: z.string(),
+    step_id: z.string().default(""),
     block_type: z.string(),
     block_label: z.string(),
-    status: z.string(),
-    error: z.string().nullable().optional(),
+    status: z.union([z.literal("pending"), z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("skipped"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+    terminal: ZTerminalState.nullable().optional(),
+    loop_containers: z.array(ZContainerContextData).default([]),
+    observability: ZStepObservability.default(() => ({})),
     artifact: ZStepArtifactRef.nullable().optional(),
-    skip_reason: z.string().nullable().optional(),
-    cancel_reason: z.string().nullable().optional(),
+    artifact_view: ZStepArtifactView.nullable().optional(),
     handle_outputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
     handle_inputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
 })));
@@ -974,8 +1022,6 @@ export const ZStepExecutionsBatchResponse = z.lazy(() => (z.object({
 export type StepExecutionsBatchResponse = z.infer<typeof ZStepExecutionsBatchResponse>;
 
 export const ZStepStatus = z.lazy(() => (z.object({
-    run_id: z.string().default(""),
-    organization_id: z.string().default(""),
     block_id: z.string(),
     step_id: z.string().default(""),
     block_type: z.string(),
@@ -983,47 +1029,30 @@ export const ZStepStatus = z.lazy(() => (z.object({
     status: z.union([z.literal("pending"), z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("skipped"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
+    terminal: ZTerminalState.nullable().optional(),
+    loop_containers: z.array(ZContainerContextData).default([]),
+    observability: ZStepObservability.default(() => ({})),
+    run_id: z.string().default(""),
+    organization_id: z.string().default(""),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
-    duration_ms: z.number().nullable().optional(),
-    error: z.string().nullable().optional(),
-    error_stage: z.string().nullable().optional(),
-    error_category: z.string().nullable().optional(),
-    error_details: z.record(z.string(), z.any()).nullable().optional(),
-    model: z.string().nullable().optional(),
-    cost: z.record(z.string(), z.any()).nullable().optional(),
-    tokens: z.record(z.string(), z.any()).nullable().optional(),
-    trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
     handle_inputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
     handle_outputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
     artifact: ZStepArtifactRef.nullable().optional(),
-    skip_reason: z.string().nullable().optional(),
-    cancel_reason: z.string().nullable().optional(),
-    retry_count: z.number().nullable().optional(),
-    loop_id: z.string().nullable().optional(),
-    iteration: z.number().nullable().optional(),
-    iteration_context: ZIterationContextData.nullable().optional(),
+    retry_count: z.number().default(0),
 })));
 export type StepStatus = z.infer<typeof ZStepStatus>;
 
 export const ZStepStatusSummary = z.lazy(() => (z.object({
     block_id: z.string(),
-    step_id: z.string(),
+    step_id: z.string().default(""),
     block_type: z.string(),
     block_label: z.string(),
     status: z.union([z.literal("pending"), z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("skipped"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
-    duration_ms: z.number().nullable().optional(),
-    error: z.string().nullable().optional(),
-    error_stage: z.string().nullable().optional(),
-    error_category: z.string().nullable().optional(),
-    loop_id: z.string().nullable().optional(),
-    iteration: z.number().nullable().optional(),
-    iteration_context: ZIterationContextData.nullable().optional(),
-    model: z.string().nullable().optional(),
-    cost: z.record(z.string(), z.any()).nullable().optional(),
-    tokens: z.record(z.string(), z.any()).nullable().optional(),
+    terminal: ZTerminalState.nullable().optional(),
+    loop_containers: z.array(ZContainerContextData).default([]),
+    observability: ZStepObservability.default(() => ({})),
 })));
 export type StepStatusSummary = z.infer<typeof ZStepStatusSummary>;
 
@@ -1145,7 +1174,6 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     started_at: z.string(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
-    steps: z.array(ZStepStatusSummary),
     input_documents: z.record(z.string(), ZFileRef).nullable().optional(),
     final_outputs: z.record(z.any()).nullable().optional(),
     error: z.string().nullable().optional(),
@@ -1165,35 +1193,23 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
 export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
 
 export const ZWorkflowRunStep = z.lazy(() => (z.object({
-    run_id: z.string(),
-    organization_id: z.string(),
     block_id: z.string(),
-    step_id: z.string(),
+    step_id: z.string().default(""),
     block_type: z.string(),
     block_label: z.string(),
-    status: z.string(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    skip_reason: z.string().nullable().optional(),
-    cancel_reason: z.string().nullable().optional(),
+    status: z.union([z.literal("pending"), z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("skipped"), z.literal("error"), z.literal("waiting_for_human"), z.literal("cancelled")]),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
-    duration_ms: z.number().nullable().optional(),
-    error: z.string().nullable().optional(),
-    error_stage: z.string().nullable().optional(),
-    error_category: z.string().nullable().optional(),
-    error_details: z.record(z.string(), z.any()).nullable().optional(),
+    terminal: ZTerminalState.nullable().optional(),
+    loop_containers: z.array(ZContainerContextData).default([]),
+    observability: ZStepObservability.default(() => ({})),
+    run_id: z.string(),
+    organization_id: z.string(),
+    artifact: ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
     handle_inputs: z.preprocess((v) => (v == null ? {} : v), z.record(z.string(), ZHandlePayload)),
-    model: z.string().nullable().optional(),
-    cost: z.record(z.string(), z.any()).nullable().optional(),
-    tokens: z.record(z.string(), z.any()).nullable().optional(),
-    trace_spans: z.array(z.record(z.string(), z.any())).nullable().optional(),
-    retry_count: z.number().nullable().optional(),
-    loop_id: z.string().nullable().optional(),
-    iteration: z.number().nullable().optional(),
-    iteration_context: ZIterationContextData.nullable().optional(),
+    retry_count: z.number().default(0),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
 })));
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
 

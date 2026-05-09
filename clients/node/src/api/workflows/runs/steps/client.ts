@@ -7,7 +7,6 @@ import {
     WorkflowRunStep,
     ZWorkflowRunStep,
     WorkflowRun,
-    ZWorkflowRun,
 } from "../../../../types.js";
 import * as z from "zod";
 
@@ -104,9 +103,10 @@ export default class APIWorkflowRunSteps extends CompositionClient {
     /**
      * Fetch execution records for all steps in a workflow run in one call.
      *
-     * Internally fetches the run to discover step block IDs, then batch-fetches all execution records.
+     * Internally lists the persisted step documents to discover block IDs,
+     * then batch-fetches all execution records.
      *
-     * @param runId - The workflow run ID
+     * @param run - A `WorkflowRun` object or a run ID string
      * @returns Step execution records keyed by block ID
      *
      * @example
@@ -119,21 +119,13 @@ export default class APIWorkflowRunSteps extends CompositionClient {
         run: WorkflowRun | string,
         options?: RequestOptions
     ): Promise<StepExecutionsBatchResponse> {
-        const workflowRun = typeof run === "string"
-            ? await this._fetchJson(ZWorkflowRun, {
-                url: `/workflows/runs/${run}`,
-                method: "GET",
-                params: options?.params,
-                headers: options?.headers,
-            })
-            : run;
-
-        const blockIds = workflowRun.steps.map((s) => s.block_id);
+        const runId = typeof run === "string" ? run : run.id;
+        const steps = await this.list(runId, options);
+        const blockIds = steps.map((s) => s.block_id);
         if (blockIds.length === 0) {
             return { executions: {} };
         }
-
-        return this.getMany(workflowRun.id, blockIds, options);
+        return this.getMany(runId, blockIds, options);
     }
 
     async get_all(
