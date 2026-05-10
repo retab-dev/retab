@@ -84,9 +84,9 @@ Choose `workflows` instead of the direct routes when:
 - The user already has a workflow ID such as `wf_...`
 - The user already has a dashboard workflow
 - The pipeline involves multiple operations or conditional branching
-- You need end-block `final_outputs` rather than one direct API response
+- You need workflow step outputs rather than one direct API response
 - You need step-by-step inspection, retries, or human-review checkpoints
-- They mention `final_outputs`, `steps`, `waiting_for_human`, or HIL/human review
+- They mention workflow `steps`, `waiting_for_human`, or HIL/human review
 
 Use a direct route when the user only needs one operation and no saved workflow exists.
 
@@ -657,7 +657,7 @@ This covers:
 - Start a workflow run with input documents
 - Pass JSON into `start_json` blocks
 - Wait for a run until it reaches a terminal state
-- Read `final_outputs` from the completed run
+- Read block `handle_outputs` from completed run steps
 - Inspect `steps` and fetch per-block execution records
 - Handle `waiting_for_human` explicitly
 - Choose between direct-route APIs and workflow execution
@@ -703,15 +703,13 @@ The run lifecycle is a tagged union under `run.lifecycle`. Read `run.lifecycle.k
 
 Treat `waiting_for_human` as its own outcome. It is not a generic failure and often requires fetching step or HIL decision details instead of retrying automatically.
 
-There is no `run.final_outputs` field. To read the canonical end-block outputs, list the steps and fetch the `end` block's `handle_outputs`:
+To read workflow outputs, list the steps and inspect each step's `handle_outputs`:
 
 ```python
 steps = client.workflows.runs.steps.list(run.id)
-end_steps = [s for s in steps if s.block_type == "end"]
-final_outputs = {
-    s.block_id: client.workflows.runs.steps.get(run.id, s.block_id).handle_outputs
-    for s in end_steps
-}
+for step in steps:
+    if step.handle_outputs:
+        print(step.block_id, step.handle_outputs)
 ```
 
 ### Workflow Python
@@ -739,11 +737,9 @@ while run.lifecycle.kind in ["pending", "running"]:
 
 run.raise_for_status()
 print(run.lifecycle.kind)
-# `final_outputs` is gone — fetch end-block handle_outputs via steps:
-end_steps = [s for s in client.workflows.runs.steps.list(run.id) if s.block_type == "end"]
-for s in end_steps:
-    full = client.workflows.runs.steps.get(run.id, s.block_id)
-    print(s.block_id, full.handle_outputs)
+for step in client.workflows.runs.steps.list(run.id):
+    if step.handle_outputs:
+        print(step.block_id, step.handle_outputs)
 ```
 
 Python with SDK waiting helper:
@@ -768,10 +764,9 @@ if run.lifecycle.kind == "waiting_for_human":
     print("Run paused for human review", run.lifecycle.waiting_for_block_ids)
 else:
     run.raise_for_status()
-    end_steps = [s for s in client.workflows.runs.steps.list(run.id) if s.block_type == "end"]
-    for s in end_steps:
-        full = client.workflows.runs.steps.get(run.id, s.block_id)
-        print(s.block_id, full.handle_outputs)
+    for step in client.workflows.runs.steps.list(run.id):
+        if step.handle_outputs:
+            print(step.block_id, step.handle_outputs)
 ```
 
 ### Workflow Node
@@ -798,11 +793,11 @@ if (run.lifecycle.kind === "waiting_for_human") {
   console.log("Run paused for human review", run.lifecycle.waiting_for_block_ids);
 } else {
   raiseForStatus(run);
-  // `final_outputs` is gone — fetch end-block handle_outputs via steps:
   const steps = await client.workflows.runs.steps.list(run.id);
-  for (const s of steps.filter((x) => x.block_type === "end")) {
-    const full = await client.workflows.runs.steps.get(run.id, s.block_id);
-    console.log(s.block_id, full.handle_outputs);
+  for (const step of steps) {
+    if (Object.keys(step.handle_outputs).length > 0) {
+      console.log(step.block_id, step.handle_outputs);
+    }
   }
 }
 ```
@@ -865,12 +860,11 @@ Outputs:
 - `trigger`: tagged-union `{type, ...}` (e.g. `{type: "email", sender, subject}`)
 - `timing`: `{created_at, started_at, completed_at, duration_ms, accumulated_human_waiting_ms, ...}`
 - `inputs`: `{documents, json_data}`
-- `observability`: `{total_cost, total_tokens, cost_by_model, tokens_by_model}`
-- `steps` are NOT embedded; fetch via `GET /v1/workflows/runs/{run_id}/steps` and end-block `handle_outputs` for canonical end results
+- `steps` are NOT embedded; fetch via `GET /v1/workflows/runs/{run_id}/steps` and inspect per-step `handle_outputs`
 
 ### Inspecting Step Executions
 
-The canonical end-block outputs live on the `end` block's `handle_outputs` (fetched via `steps.get(run.id, end_block_id)`). For every step in one call, use `steps.list(run_id)`. It returns the full persisted step list in a single request.
+For every step in one call, use `steps.list(run_id)`. It returns the full persisted step list in a single request, including per-step `handle_outputs`.
 
 Python:
 
@@ -911,7 +905,7 @@ if (step.artifact) {
 }
 ```
 
-Every executed block exposes a single `step.artifact` `{operation, id}` pointer (or `null` for steps that produce no canonical result, e.g. start/end/note/merge/sentinels). Dispatch on `operation` and fetch the backing record with the matching client.
+Every executed block exposes a single `step.artifact` `{operation, id}` pointer (or `null` for steps that produce no canonical result, e.g. start/note/merge/sentinels). Dispatch on `operation` and fetch the backing record with the matching client.
 
 | `step.artifact.operation` | Emitted by block type | Fetch with |
 |---|---|---|
@@ -926,13 +920,12 @@ Every executed block exposes a single `step.artifact` `{operation, id}` pointer 
 | `while_loop_termination` | `while_loop_sentinel_end` | backing `WhileLoopTermination` record |
 | `api_call_invocation` | `api_call` | backing `ApiCallInvocation` record |
 | `function_invocation` | `function` | backing `FunctionInvocation` record |
-| `webhook_invocation` | webhook end | backing `WebhookInvocation` record |
 
 There is no `step.artifacts` list and no `step.metadata`. HIL state (`requires_human_review`, `reviewed_at`, `review_decision`) lives on the `HilEvaluation` backing record; branch / loop evaluation results live on `ConditionalEvaluation` / `WhileLoopTermination`.
 
 Use step inspection when:
 
-- You need the canonical end-block outputs (there is no top-level `final_outputs` field anymore)
+- You need block outputs from the run steps
 - One intermediate block is failing or producing bad data
 - You need output from a non-terminal block
 - The workflow paused at `waiting_for_human` and you need the relevant block context

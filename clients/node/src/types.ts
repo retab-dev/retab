@@ -514,16 +514,13 @@ export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 // fields (`error`, `error_stage`, `error_category`, `error_details`,
 // `skip_reason`, `cancel_reason`) are replaced by a single discriminated
 // `terminal: TerminalState | null` payload (`TerminalError` / `TerminalSkipped`
-// / `TerminalCancelled`). The flat observability fields (`model`, `cost`,
-// `tokens`, `trace_spans`) collapse into `observability: StepObservability`.
-// `iteration_context` is replaced by a flat
+// / `TerminalCancelled`). `iteration_context` is replaced by a flat
 // `loop_containers: ContainerContextData[]`; `loop_id` / `iteration` /
 // `duration_ms` are computed (no longer set as flat fields).
 // `StepExecutionResponse` keeps a block-specific `artifact_view` for
 // rendering. Callers that previously read `step.error_stage` / `step.cost`
-// should switch to `step.terminal` and `step.observability`. Callers that
-// read `step.metadata.evaluations` should fetch the backing record via
-// `step.artifact`.
+// should switch to `step.terminal`. Callers that read
+// `step.metadata.evaluations` should fetch the backing record via `step.artifact`.
 // ---------------------------------------------------------------------------
 export const ZWorkflowRunStep = z
   .object({
@@ -546,7 +543,7 @@ export const ZWorkflowRunStep = z
     completed_at: z.string().nullable().optional(),
     terminal: generated.ZTerminalState.nullable().optional(),
     loop_containers: z.array(generated.ZContainerContextData).default([]),
-    observability: generated.ZStepObservability.default(() => ({})),
+    model: z.string().nullable().optional(),
     // WorkflowRunStep extras
     run_id: z.string(),
     organization_id: z.string(),
@@ -555,8 +552,7 @@ export const ZWorkflowRunStep = z
     handle_inputs: z.record(z.string(), z.any()).default({}),
     retry_count: z.number().default(0),
     created_at: z.string().nullable().optional(),
-  })
-  .passthrough();
+  });
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
 
 export const ZWorkflow = z

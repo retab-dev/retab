@@ -5,7 +5,7 @@ import APIWorkflows from "../src/api/workflows/client";
 import APIWorkflowRuns from "../src/api/workflows/runs/client";
 import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
 import APIWorkflowEdges from "../src/api/workflows/edges/client";
-import { raiseForStatus, WorkflowRunError, ZStepExecutionResponse, ZWorkflowRun } from "../src/types";
+import { raiseForStatus, WorkflowRunError, ZStepExecutionResponse, ZWorkflowRun, ZWorkflowRunStep } from "../src/types";
 import type { WorkflowRun, WorkflowRunExportResponse } from "../src/types";
 
 class MockClient extends AbstractClient {
@@ -280,12 +280,6 @@ describe("workflows client", () => {
                 accumulated_human_waiting_ms: 5000,
             },
             inputs: { documents: {}, json_data: {} },
-            observability: {
-                total_cost: { total: 0.05 },
-                total_tokens: {},
-                cost_by_model: {},
-                tokens_by_model: {},
-            },
         });
         const runsClient = new APIWorkflowRuns(mockClient);
 
@@ -294,7 +288,6 @@ describe("workflows client", () => {
         expect(run.trigger.type).toBe("api");
         expect(run.workflow.workflow_id).toBe("wf_1");
         expect(run.workflow.snapshot_id).toBe("snap_abc");
-        expect(run.observability?.total_cost).toEqual({ total: 0.05 });
         expect(run.timing.accumulated_human_waiting_ms).toBe(5000);
     });
 
@@ -429,6 +422,7 @@ describe("workflows client", () => {
                     data: { invoice_number: "INV-001" },
                 },
             },
+            handle_inputs: {},
         });
 
         expect("output" in parsed).toBe(false);
@@ -438,6 +432,23 @@ describe("workflows client", () => {
         expect(parsed.artifact_view?.block_type).toBe("extract");
         expect(parsed.artifact_view?.artifact?.id).toBe("ext_123");
         expect(parsed.handle_outputs?.["output-json-0"]?.data?.invoice_number).toBe("INV-001");
+    });
+
+    test("workflow run steps expose top-level model", () => {
+        const parsed = ZWorkflowRunStep.parse({
+            run_id: "run_123",
+            organization_id: "org_1",
+            block_id: "extract-1",
+            step_id: "extract-1",
+            block_type: "extract",
+            block_label: "Extract",
+            status: "completed",
+            model: "retab-small",
+            handle_outputs: {},
+            handle_inputs: {},
+        });
+
+        expect(parsed.model).toBe("retab-small");
     });
 
     test("edges.createBatch() accepts camelCase request objects", async () => {
@@ -643,7 +654,7 @@ describe("workflows client", () => {
 
 describe("workflow run utilities", () => {
     // Parses a v2 JSON payload into a fully-typed WorkflowRun (so we can
-    // hand `raiseForStatus`/`finalOutputs` real `WorkflowRun` objects).
+    // hand `raiseForStatus` real `WorkflowRun` objects).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parseRun = (overrides: Record<string, any> = {}): WorkflowRun =>
         ZWorkflowRun.parse(makeV2Run(overrides));
@@ -695,91 +706,6 @@ describe("workflow run utilities", () => {
             expect(e).toBeInstanceOf(WorkflowRunError);
             expect((e as WorkflowRunError).message).toContain("cancelled");
         }
-    });
-
-    test("finalOutputs() returns end-block handle_outputs for completed runs", async () => {
-        class StepsMockClient extends AbstractClient {
-            public lastFetchParams: Record<string, unknown> | null = null;
-
-            protected async _fetch(params: {
-                url: string;
-                method: string;
-                params?: Record<string, unknown>;
-                headers?: Record<string, unknown>;
-                body?: unknown;
-            }): Promise<Response> {
-                this.lastFetchParams = params;
-                return new Response(
-                    JSON.stringify([
-                        {
-                            run_id: "run_done",
-                            organization_id: "org_1",
-                            block_id: "end-1",
-                            step_id: "end-1",
-                            block_type: "end",
-                            block_label: "End",
-                            status: "completed",
-                            handle_outputs: {
-                                "output-json-0": {
-                                    type: "json",
-                                    data: { invoice_number: "INV-001" },
-                                },
-                            },
-                            handle_inputs: {},
-                        },
-                        {
-                            run_id: "run_done",
-                            organization_id: "org_1",
-                            block_id: "extract-1",
-                            step_id: "extract-1",
-                            block_type: "extract",
-                            block_label: "Extract",
-                            status: "completed",
-                            handle_outputs: {},
-                            handle_inputs: {},
-                        },
-                    ]),
-                    { status: 200, headers: { "Content-Type": "application/json" } }
-                );
-            }
-        }
-
-        const run = parseRun({
-            id: "run_done",
-            lifecycle: { kind: "completed" },
-            timing: {
-                created_at: "2026-01-01T00:00:00Z",
-                started_at: "2026-01-01T00:00:00Z",
-                completed_at: "2026-01-01T00:00:01Z",
-            },
-        });
-        const runsClient = new APIWorkflowRuns(new StepsMockClient());
-        const outputs = await runsClient.finalOutputs(run);
-
-        expect(Object.keys(outputs)).toEqual(["end-1"]);
-        expect(outputs["end-1"]?.["output-json-0"]?.data).toEqual({
-            invoice_number: "INV-001",
-        });
-    });
-
-    test("finalOutputs() short-circuits to {} for non-completed runs (no fetch)", async () => {
-        class NoOpClient extends AbstractClient {
-            public fetched = false;
-            protected async _fetch(): Promise<Response> {
-                this.fetched = true;
-                return new Response("[]", {
-                    status: 200,
-                    headers: { "Content-Type": "application/json" },
-                });
-            }
-        }
-
-        const run = parseRun({ lifecycle: { kind: "running" } });
-        const noOp = new NoOpClient();
-        const runsClient = new APIWorkflowRuns(noOp);
-
-        expect(await runsClient.finalOutputs(run)).toEqual({});
-        expect(noOp.fetched).toBe(false);
     });
 
     test("waitForCompletion() returns waiting_for_human runs", async () => {

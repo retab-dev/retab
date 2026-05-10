@@ -5,7 +5,6 @@ import {
     ZMIMEData,
     WorkflowRun,
     ZWorkflowRun,
-    WorkflowRunStep,
     PaginatedList,
     ZPaginatedList,
     CancelWorkflowResponse,
@@ -81,7 +80,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         }: {
             workflowId: string;
             documents?: Record<string, MIMEDataInput>;
-            jsonInputs?: Record<string, Record<string, unknown>>;
+            jsonInputs?: Record<string, unknown>;
         },
         options?: RequestOptions
     ): Promise<WorkflowRun> {
@@ -426,38 +425,6 @@ export default class APIWorkflowRuns extends CompositionClient {
     }
 
     /**
-     * Fetch end-block ``handle_outputs`` for a completed run.
-     *
-     * Replaces the deprecated ``WorkflowRun.final_outputs`` field. Returns
-     * an empty object for non-completed runs. The result is keyed by
-     * end-block ID; the value is the end block's ``handle_outputs``.
-     *
-     * @example
-     * ```typescript
-     * import { raiseForStatus } from "retab";
-     *
-     * const run = await client.workflows.runs.createAndWait({ workflowId, documents });
-     * raiseForStatus(run);
-     * const outputs = await client.workflows.runs.finalOutputs(run);
-     * console.log(outputs["end-1"]?.["output-json-0"]?.data);
-     * ```
-     */
-    async finalOutputs(
-        run: WorkflowRun,
-        options?: RequestOptions
-    ): Promise<Record<string, NonNullable<WorkflowRunStep["handle_outputs"]>>> {
-        if (run.lifecycle.kind !== "completed") return {};
-        const steps = await this.steps.list(run.id, options);
-        const result: Record<string, NonNullable<WorkflowRunStep["handle_outputs"]>> = {};
-        for (const step of steps) {
-            if (step.block_type === "end") {
-                result[step.block_id] = step.handle_outputs;
-            }
-        }
-        return result;
-    }
-
-    /**
      * Create a workflow run and wait for it to complete.
      *
      * @example
@@ -470,8 +437,8 @@ export default class APIWorkflowRuns extends CompositionClient {
      *     onStatus: (r) => console.log(`${r.lifecycle.kind}...`),
      * });
      * raiseForStatus(run);
-     * // `final_outputs` is gone. Fetch end-block `handle_outputs` via:
-     * //   const outputs = await client.workflows.runs.finalOutputs(run);
+     * const steps = await client.workflows.runs.steps.list(run.id);
+     * console.log(steps.map((step) => ({ blockId: step.block_id, outputs: step.handle_outputs })));
      * ```
      */
     async createAndWait(
