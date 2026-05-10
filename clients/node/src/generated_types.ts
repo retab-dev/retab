@@ -913,7 +913,7 @@ export type HILDecisionResource = z.infer<typeof ZHILDecisionResource>;
 export const ZHandlePayload = z.lazy(() => (z.object({
     type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
     document: ZFileRef.nullable().optional(),
-    data: z.record(z.any()).nullable().optional(),
+    data: z.unknown().nullable().optional(),
     text: z.string().nullable().optional(),
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
@@ -969,14 +969,6 @@ export type TerminalCancelled = z.infer<typeof ZTerminalCancelled>;
 export const ZTerminalState = z.discriminatedUnion("kind", [ZTerminalError, ZTerminalSkipped, ZTerminalCancelled]);
 export type TerminalState = z.infer<typeof ZTerminalState>;
 
-export const ZStepObservability = z.lazy(() => (z.object({
-    model: z.string().nullable().optional(),
-    cost: z.record(z.string(), z.unknown()).nullable().optional(),
-    tokens: z.record(z.string(), z.unknown()).nullable().optional(),
-    trace_spans: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
-})));
-export type StepObservability = z.infer<typeof ZStepObservability>;
-
 export const ZResolvedSchemas = z.lazy(() => (z.object({
     input_schemas: z.record(z.string(), z.any()),
     output_schemas: z.record(z.string(), z.any()),
@@ -985,7 +977,7 @@ export const ZResolvedSchemas = z.lazy(() => (z.object({
 export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
 
 export const ZStepArtifactRef = z.lazy(() => (z.object({
-    operation: z.union([z.literal("extraction"), z.literal("split"), z.literal("classification"), z.literal("parse"), z.literal("edit"), z.literal("partition"), z.literal("conditional_evaluation"), z.literal("hil_evaluation"), z.literal("while_loop_termination"), z.literal("api_call_invocation"), z.literal("function_invocation"), z.literal("webhook_invocation")]),
+    operation: z.union([z.literal("extraction"), z.literal("split"), z.literal("classification"), z.literal("parse"), z.literal("edit"), z.literal("partition"), z.literal("conditional_evaluation"), z.literal("hil_evaluation"), z.literal("while_loop_termination"), z.literal("api_call_invocation"), z.literal("function_invocation")]),
     id: z.string(),
 })));
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
@@ -1007,8 +999,8 @@ export const ZStepExecutionResponse = z.lazy(() => (z.object({
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     terminal: ZTerminalState.nullable().optional(),
+    model: z.string().nullable().optional(),
     loop_containers: z.array(ZContainerContextData).default([]),
-    observability: ZStepObservability.default(() => ({})),
     artifact: ZStepArtifactRef.nullable().optional(),
     artifact_view: ZStepArtifactView.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload),
@@ -1030,8 +1022,8 @@ export const ZStepStatus = z.lazy(() => (z.object({
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     terminal: ZTerminalState.nullable().optional(),
+    model: z.string().nullable().optional(),
     loop_containers: z.array(ZContainerContextData).default([]),
-    observability: ZStepObservability.default(() => ({})),
     run_id: z.string().default(""),
     organization_id: z.string().default(""),
     created_at: z.string().nullable().optional(),
@@ -1051,21 +1043,6 @@ export const ZSubmitHILDecisionResponse = z.lazy(() => (z.object({
     decision: ZHILDecisionResource,
 })));
 export type SubmitHILDecisionResponse = z.infer<typeof ZSubmitHILDecisionResponse>;
-
-export const ZWebhookInvocation = z.lazy(() => (z.object({
-    id: z.string(),
-    organization_id: z.string(),
-    workflow_run_id: z.string(),
-    step_id: z.string(),
-    url: z.string(),
-    request_body: z.any().nullable().optional(),
-    status_code: z.number().nullable().optional(),
-    response_body: z.any().nullable().optional(),
-    delivered_at: z.string().nullable().optional(),
-    error: z.string().nullable().optional(),
-    created_at: z.string(),
-})));
-export type WebhookInvocation = z.infer<typeof ZWebhookInvocation>;
 
 export const ZWhileLoopTermination = z.lazy(() => (z.object({
     id: z.string(),
@@ -1273,17 +1250,9 @@ export type RunTiming = z.infer<typeof ZRunTiming>;
 
 export const ZRunInputs = z.lazy(() => (z.object({
     documents: z.record(z.string(), ZFileRef).default({}),
-    json_data: z.record(z.string(), z.record(z.any())).default({}),
+    json_data: z.record(z.string(), z.unknown()).default({}),
 })));
 export type RunInputs = z.infer<typeof ZRunInputs>;
-
-export const ZRunObservability = z.lazy(() => (z.object({
-    total_cost: z.record(z.string(), z.any()).default({}),
-    total_tokens: z.record(z.string(), z.any()).default({}),
-    cost_by_model: z.record(z.string(), z.record(z.string(), z.any())).default({}),
-    tokens_by_model: z.record(z.string(), z.record(z.string(), z.any())).default({}),
-})));
-export type RunObservability = z.infer<typeof ZRunObservability>;
 
 export const ZWorkflowRun = z.lazy(() => (z.object({
     id: z.string(),
@@ -1293,7 +1262,6 @@ export const ZWorkflowRun = z.lazy(() => (z.object({
     lifecycle: ZRunLifecycle,
     timing: ZRunTiming,
     inputs: ZRunInputs.default(() => ({ documents: {}, json_data: {} })),
-    observability: ZRunObservability.nullable().optional(),
 })));
 export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
 
@@ -1307,7 +1275,7 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     terminal: ZTerminalState.nullable().optional(),
     loop_containers: z.array(ZContainerContextData).default([]),
-    observability: ZStepObservability.default(() => ({})),
+    model: z.string().nullable().optional(),
     run_id: z.string(),
     organization_id: z.string(),
     artifact: ZStepArtifactRef.nullable().optional(),
@@ -5454,4 +5422,3 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
-

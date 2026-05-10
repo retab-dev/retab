@@ -16,8 +16,6 @@ from ....types.pagination import PaginatedList, PaginationOrder
 from ....types.workflows import (
     WorkflowRun,
     CancelWorkflowResponse,
-    CompletedTerminal,
-    HandlePayload,
     HILDecisionResource,
     SubmitHILDecisionResponse,
     ExportResponse,
@@ -230,9 +228,10 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         ... )
         >>> run = client.workflows.runs.wait_for_completion(run.id)
         >>>
-        >>> # Get outputs from a specific step
-        >>> step = client.workflows.runs.steps.get(run.id, "extract-block-1")
-        >>> print(step.handle_outputs)
+        >>> # Get outputs from persisted steps
+        >>> steps = client.workflows.runs.steps.list(run.id)
+        >>> outputs_by_step = {step.block_id: step.handle_outputs for step in steps}
+        >>> print(outputs_by_step)
     """
 
     def __init__(self, *args, **kwargs):
@@ -487,22 +486,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             sleep_for = min(poll_interval_seconds, max(deadline - now, 0.0))
             time.sleep(sleep_for)
 
-    def final_outputs(self, run: WorkflowRun) -> Dict[str, Dict[str, HandlePayload]]:
-        """Fetch end-block ``handle_outputs`` for a completed run.
-
-        Replaces the deprecated ``WorkflowRun.final_outputs`` field. Returns
-        an empty dict for non-completed runs. The result is keyed by
-        end-block ID; the value is the end block's ``handle_outputs``.
-        """
-        if not isinstance(run.lifecycle, CompletedTerminal):
-            return {}
-        steps = self.steps.list(run.id)
-        return {
-            step.block_id: step.handle_outputs
-            for step in steps
-            if step.block_type == "end"
-        }
-
     def export(
         self,
         workflow_id: str,
@@ -574,9 +557,10 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         ... )
         >>> run = await client.workflows.runs.wait_for_completion(run.id)
         >>>
-        >>> # Get outputs from a specific step
-        >>> step = await client.workflows.runs.steps.get(run.id, "extract-block-1")
-        >>> print(step.handle_outputs)
+        >>> # Get outputs from persisted steps
+        >>> steps = await client.workflows.runs.steps.list(run.id)
+        >>> outputs_by_step = {step.block_id: step.handle_outputs for step in steps}
+        >>> print(outputs_by_step)
     """
 
     def __init__(self, *args, **kwargs):
@@ -829,22 +813,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
                 )
             sleep_for = min(poll_interval_seconds, max(deadline - now, 0.0))
             await asyncio.sleep(sleep_for)
-
-    async def final_outputs(self, run: WorkflowRun) -> Dict[str, Dict[str, HandlePayload]]:
-        """Fetch end-block ``handle_outputs`` for a completed run.
-
-        Replaces the deprecated ``WorkflowRun.final_outputs`` field. Returns
-        an empty dict for non-completed runs. The result is keyed by
-        end-block ID; the value is the end block's ``handle_outputs``.
-        """
-        if not isinstance(run.lifecycle, CompletedTerminal):
-            return {}
-        steps = await self.steps.list(run.id)
-        return {
-            step.block_id: step.handle_outputs
-            for step in steps
-            if step.block_type == "end"
-        }
 
     async def export(
         self,

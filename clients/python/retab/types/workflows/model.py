@@ -20,9 +20,6 @@ from retab.types.mime import FileRef
 #   under ``terminal`` (``TerminalError`` / ``TerminalSkipped`` /
 #   ``TerminalCancelled``). The ``terminal`` field is present iff ``status``
 #   is one of error/skipped/cancelled.
-# - The old flat observability fields (``model``, ``cost``, ``tokens``,
-#   ``trace_spans``) collapse to a single :class:`StepObservability`
-#   payload under ``observability``.
 # - ``iteration_context`` is replaced by a flat
 #   ``loop_containers: List[ContainerContextData]`` on :class:`StepCore`;
 #   :class:`IterationContextData` is removed.
@@ -35,17 +32,17 @@ from retab.types.mime import FileRef
 #   ``artifact: StepArtifactRef | None`` pointer plus, for
 #   :class:`StepExecutionResponse`, a block-specific
 #   ``artifact_view: StepArtifactView | None`` for rendering.
-# - ``WorkflowArtifactOperation`` is extended with six new operations:
+# - ``WorkflowArtifactOperation`` is extended with five new operations:
 #   ``conditional_evaluation``, ``hil_evaluation``, ``while_loop_termination``,
-#   ``api_call_invocation``, ``function_invocation``, ``webhook_invocation``.
+#   ``api_call_invocation``, ``function_invocation``.
 #   Each points at a dedicated backing-collection record:
 #   :class:`ConditionalEvaluation`, :class:`HilEvaluation`,
 #   :class:`WhileLoopTermination`, :class:`ApiCallInvocation`,
-#   :class:`FunctionInvocation`, :class:`WebhookInvocation`.
+#   :class:`FunctionInvocation`.
 #
 # Migration: callers that previously read ``step.error_stage`` /
-# ``step.skip_reason`` / ``step.cost`` should switch to
-# ``step.terminal`` (a ``TerminalState``) and ``step.observability``.
+# ``step.skip_reason`` should switch to ``step.terminal`` (a
+# ``TerminalState``).
 # Callers that read ``step.metadata.evaluations`` /
 # ``step.requires_human_review`` should fetch the artifact's backing
 # record (one of the record types above) and read from there.
@@ -70,7 +67,7 @@ class HandlePayload(BaseModel):
     """
     type: Literal["file", "json", "text"] = Field(..., description="Type of payload")
     document: Optional[FileRef] = Field(default=None, description="For file handles: document reference")
-    data: Optional[dict] = Field(default=None, description="For JSON handles: structured data")
+    data: Any | None = Field(default=None, description="For JSON handles: structured data")
     text: Optional[str] = Field(default=None, description="For text payloads: text content")
 
 
@@ -103,7 +100,6 @@ WorkflowArtifactOperation = Literal[
     "while_loop_termination",
     "api_call_invocation",
     "function_invocation",
-    "webhook_invocation",
 ]
 
 
@@ -198,23 +194,6 @@ TerminalState = Annotated[
     TerminalError | TerminalSkipped | TerminalCancelled,
     Field(discriminator="kind"),
 ]
-
-
-class StepObservability(BaseModel):
-    """Per-step observability bundle: model, cost, token usage, trace spans.
-
-    Cost / tokens / trace_spans use dict shapes here (backend types
-    ``CostBreakdown`` / ``TokenUsage`` / ``TraceSpan``) for SDK-flexibility.
-    """
-    model_config = ConfigDict(extra="ignore")
-
-    model: Optional[str] = Field(default=None, description="LLM model used")
-    cost: Optional[Dict[str, Any]] = Field(default=None, description="Cost breakdown (CostBreakdown shape)")
-    tokens: Optional[Dict[str, Any]] = Field(default=None, description="Token usage (TokenUsage shape)")
-    trace_spans: Optional[List[Dict[str, Any]]] = Field(
-        default=None,
-        description="Nested execution trace spans (list[TraceSpan] shape)",
-    )
 
 
 class ConditionEvaluationPerItem(BaseModel):
@@ -423,27 +402,6 @@ class FunctionInvocation(BaseModel):
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
-class WebhookInvocation(BaseModel):
-    """Persisted record of an end-block webhook dispatch.
-
-    Backing record for :data:`StepArtifactRef` with
-    ``operation == "webhook_invocation"``.
-    """
-    model_config = ConfigDict(extra="ignore")
-
-    id: str = Field(..., description="Unique identifier")
-    organization_id: str = Field(..., description="Owning organization")
-    workflow_run_id: str = Field(..., description="Parent workflow run ID")
-    step_id: str = Field(..., description="Producing step ID")
-    url: str = Field(...)
-    request_body: Optional[Any] = Field(default=None)
-    status_code: Optional[int] = Field(default=None)
-    response_body: Optional[Any] = Field(default=None)
-    delivered_at: Optional[datetime.datetime] = Field(default=None)
-    error: Optional[str] = Field(default=None)
-    created_at: datetime.datetime = Field(..., description="When the record was created")
-
-
 class StepCore(BaseModel):
     """Shape shared by full step docs and read-projections of them.
 
@@ -472,13 +430,10 @@ class StepCore(BaseModel):
         default=None,
         description="Structured terminal payload — present iff status is error/skipped/cancelled",
     )
+    model: Optional[str] = Field(default=None, description="LLM model used by this step, when applicable")
     loop_containers: List[ContainerContextData] = Field(
         default_factory=list,
         description="Container hierarchy from outermost to innermost. Empty when not inside any container.",
-    )
-    observability: StepObservability = Field(
-        default_factory=StepObservability,
-        description="Per-step observability: model/cost/tokens/trace_spans",
     )
 
     @computed_field
@@ -538,7 +493,7 @@ class StepStatus(StepCore):
         description=(
             "Canonical persisted resource produced by this step — a "
             "(operation, id) ref into a backing collection. ``None`` for "
-            "steps that produce no canonical result (start/end/note/merge/"
+            "steps that produce no canonical result (start/note/merge/"
             "sentinels). Every executed step produces at most one canonical "
             "artifact, so this is a singular ref, not a list."
         ),
@@ -670,16 +625,7 @@ class RunTiming(BaseModel):
 
 class RunInputs(BaseModel):
     documents: Dict[str, FileRef] = Field(default_factory=dict)
-    json_data: Dict[str, dict] = Field(default_factory=dict)
-
-
-class RunObservability(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    total_cost: Dict[str, Any] = Field(default_factory=dict)
-    total_tokens: Dict[str, Any] = Field(default_factory=dict)
-    cost_by_model: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-    tokens_by_model: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    json_data: Dict[str, Any] = Field(default_factory=dict)
 
 
 class WorkflowRunError(Exception):
@@ -714,7 +660,6 @@ class WorkflowRun(BaseModel):
     lifecycle: RunLifecycle = Field(...)
     timing: RunTiming = Field(...)
     inputs: RunInputs = Field(default_factory=RunInputs)
-    observability: Optional[RunObservability] = Field(default=None)
 
     def raise_for_status(self) -> None:
         """Raise :class:`WorkflowRunError` if the run did not succeed."""

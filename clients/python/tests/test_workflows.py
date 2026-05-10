@@ -176,12 +176,6 @@ def test_workflow_run_v2_typed_fields() -> None:
             "accumulated_human_waiting_ms": 5000,
         },
         "inputs": {"documents": {}, "json_data": {"json-1": {"key": "value"}}},
-        "observability": {
-            "total_cost": {"total": 0.05},
-            "total_tokens": {},
-            "cost_by_model": {},
-            "tokens_by_model": {},
-        },
     })
     assert run.workflow.workflow_id == "wf_1"
     assert run.workflow.snapshot_id == "snap_abc"
@@ -191,10 +185,8 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run.inputs.json_data == {"json-1": {"key": "value"}}
     assert run.timing.accumulated_human_waiting_ms == 5000
     assert run.timing.duration_ms == 5000
-    assert run.observability is not None
-    assert run.observability.total_cost == {"total": 0.05}
 
-    # Defaults: inputs default to empty, observability is None when absent
+    # Defaults: inputs default to empty
     run2 = WorkflowRun.model_validate({
         "id": "run_000",
         "organization_id": "org_1",
@@ -203,7 +195,6 @@ def test_workflow_run_v2_typed_fields() -> None:
         "lifecycle": {"kind": "pending"},
         "timing": {"created_at": "2026-01-01T00:00:00Z"},
     })
-    assert run2.observability is None
     assert run2.inputs.documents == {}
     assert run2.inputs.json_data == {}
     assert run2.timing.accumulated_human_waiting_ms == 0
@@ -776,66 +767,6 @@ def test_workflow_runs_export_route() -> None:
     }
     assert result.rows == 1
     assert result.columns == 2
-
-
-def test_workflow_run_final_outputs_helper(monkeypatch: pytest.MonkeyPatch) -> None:
-    """``WorkflowRuns.final_outputs(run)`` fetches end-block ``handle_outputs``.
-
-    Replaces the deprecated ``WorkflowRun.final_outputs`` field. The helper
-    short-circuits to ``{}`` for non-completed runs and otherwise lists steps
-    and pulls ``handle_outputs`` for blocks with ``block_type == "end"``.
-    """
-    completed_run = WorkflowRun.model_validate(
-        _v2_run_payload(id="run_done", lifecycle={"kind": "completed"})
-    )
-
-    client = MagicMock()
-    client._prepared_request.return_value = [
-        {
-            "run_id": "run_done",
-            "organization_id": "org_1",
-            "block_id": "end-1",
-            "step_id": "end-1",
-            "block_type": "end",
-            "block_label": "End",
-            "status": "completed",
-            "handle_outputs": {
-                "output-json-0": {
-                    "type": "json",
-                    "data": {"invoice_number": "INV-001"},
-                }
-            },
-        },
-        {
-            "run_id": "run_done",
-            "organization_id": "org_1",
-            "block_id": "extract-1",
-            "step_id": "extract-1",
-            "block_type": "extract",
-            "block_label": "Extract",
-            "status": "completed",
-        },
-    ]
-
-    runs = WorkflowRuns(client=client)
-    outputs = runs.final_outputs(completed_run)
-
-    assert "end-1" in outputs
-    end_payloads = outputs["end-1"]
-    assert end_payloads["output-json-0"].data == {"invoice_number": "INV-001"}
-    # Non-end steps are excluded
-    assert "extract-1" not in outputs
-
-
-def test_workflow_run_final_outputs_helper_returns_empty_for_non_completed() -> None:
-    """``final_outputs`` returns ``{}`` when the run isn't completed (no fetch)."""
-    pending_run = WorkflowRun.model_validate(
-        _v2_run_payload(lifecycle={"kind": "running"})
-    )
-    client = MagicMock()
-    runs = WorkflowRuns(client=client)
-    assert runs.final_outputs(pending_run) == {}
-    assert client._prepared_request.call_count == 0
 
 
 def test_workflow_run_raise_for_status_error() -> None:
