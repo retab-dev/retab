@@ -982,14 +982,6 @@ export const ZStepArtifactRef = z.lazy(() => (z.object({
 })));
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 
-export const ZStepArtifactView = z.lazy(() => (z.object({
-    block_type: z.string(),
-    artifact: ZStepArtifactRef.nullable().optional(),
-    data: z.any().nullable().optional(),
-    source_handle_id: z.string().nullable().optional(),
-})));
-export type StepArtifactView = z.infer<typeof ZStepArtifactView>;
-
 export const ZStepExecutionResponse = z.lazy(() => (z.object({
     block_id: z.string(),
     step_id: z.string().default(""),
@@ -1002,16 +994,10 @@ export const ZStepExecutionResponse = z.lazy(() => (z.object({
     model: z.string().nullable().optional(),
     loop_containers: z.array(ZContainerContextData).default([]),
     artifact: ZStepArtifactRef.nullable().optional(),
-    artifact_view: ZStepArtifactView.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload),
     handle_inputs: z.record(z.string(), ZHandlePayload),
 })));
 export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
-
-export const ZStepExecutionsBatchResponse = z.lazy(() => (z.object({
-    executions: z.record(z.string(), ZStepExecutionResponse),
-})));
-export type StepExecutionsBatchResponse = z.infer<typeof ZStepExecutionsBatchResponse>;
 
 export const ZStepStatus = z.lazy(() => (z.object({
     block_id: z.string(),

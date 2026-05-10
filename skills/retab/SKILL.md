@@ -1,6 +1,6 @@
 ---
 name: retab
-description: Build apps and integrations on top of Retab's core APIs. Use when Codex needs to add document parsing, structured extraction, bundle splitting, form filling or document editing, document classification, or workflow run integration to a codebase through the Retab Python SDK, Node SDK, or direct REST calls. Covers starting workflow runs, waiting for completion, inspecting step executions, and handling human-review pauses.
+description: Build apps and integrations on top of Retab's core APIs. Use when Codex needs to add document parsing, structured extraction, bundle splitting, form filling or document editing, document classification, or workflow run integration to a codebase through the Retab Python SDK, Node SDK, Go SDK, or direct REST calls. Covers starting workflow runs, waiting for completion, inspecting step executions, and handling human-review pauses.
 ---
 
 # Retab
@@ -30,6 +30,7 @@ It covers:
 
 - Python SDK: `pip install retab`
 - Node SDK: `npm install @retab/node`
+- Go SDK: `go get github.com/retab-dev/retab/clients/go`
 - REST base URL: `https://api.retab.com`
 - Auth header for REST: `Api-Key: $RETAB_API_KEY`
 

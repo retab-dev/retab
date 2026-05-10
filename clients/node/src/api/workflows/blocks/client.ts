@@ -1,9 +1,11 @@
 import * as z from "zod";
 import { CompositionClient, RequestOptions } from "../../../client.js";
 import {
+    BlockSimulation,
     WorkflowBlock,
     WorkflowBlockCreateRequest,
     WorkflowBlockUpdateRequest,
+    ZBlockSimulation,
     ZWorkflowBlock,
 } from "../../../types.js";
 
@@ -153,6 +155,55 @@ export default class APIWorkflowBlocks extends CompositionClient {
             url: `/workflows/${workflowId}/blocks/${blockId}`,
             method: "DELETE",
             params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    /**
+     * Replay one block using inputs from a previous run + the current
+     * draft config.
+     *
+     * Note: this is keyed by `runId` (the workflow run whose inputs are
+     * replayed), NOT by `workflowId` — the backend route lives under
+     * `/v1/workflows/runs/{run_id}/steps/{block_id}/simulate`.
+     *
+     * @example
+     * ```typescript
+     * const sim = await client.workflows.blocks.simulate({
+     *     runId: "run_abc123",
+     *     blockId: "extract-1",
+     *     nConsensus: 5,
+     * });
+     * console.log(sim.success, sim.handle_outputs);
+     * ```
+     */
+    async simulate(
+        {
+            runId,
+            blockId,
+            nConsensus,
+            stepId,
+            checkEligibility = true,
+        }: {
+            runId: string;
+            blockId: string;
+            nConsensus?: 3 | 5 | 7;
+            stepId?: string;
+            checkEligibility?: boolean;
+        },
+        options?: RequestOptions
+    ): Promise<BlockSimulation> {
+        const params: Record<string, unknown> = {};
+        if (nConsensus !== undefined) params.n_consensus = nConsensus;
+        if (stepId !== undefined) params.step_id = stepId;
+        // Only send when overriding the default — the backend defaults to
+        // true and `?check_eligibility=true` would be redundant.
+        if (!checkEligibility) params.check_eligibility = false;
+
+        return this._fetchJson(ZBlockSimulation, {
+            url: `/workflows/runs/${runId}/steps/${blockId}/simulate`,
+            method: "POST",
+            params: { ...params, ...(options?.params || {}) },
             headers: options?.headers,
         });
     }

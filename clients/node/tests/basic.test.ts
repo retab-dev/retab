@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { Retab, ZStepExecutionResponse, ZStepExecutionsBatchResponse } from '../src';
+import { Retab, ZStepExecutionResponse } from '../src';
 
 describe('Node SDK smoke coverage', () => {
   test('exports workflow artifact execution schemas', () => {
@@ -23,37 +23,13 @@ describe('Node SDK smoke coverage', () => {
 
     expect(step.artifact?.id).toBe('ext_123');
     expect(step.artifact?.operation).toBe('extraction');
-
-    const batch = ZStepExecutionsBatchResponse.parse({
-      executions: {
-        'extract-1': step,
-      },
-    });
-
-    expect(batch.executions['extract-1']?.artifact?.operation).toBe('extraction');
   });
 
-  test('exposes project iteration methods on the public client', () => {
+  test('does not expose projects or evals on the public client', () => {
     const client = new Retab({ apiKey: 'test_key' });
-    const iterations = client.projects.datasets.iterations as Record<string, unknown>;
-    const expectedMethods = [
-      'create',
-      'get',
-      'list',
-      'updateDraft',
-      'delete',
-      'finalize',
-      'getSchema',
-      'processDocuments',
-      'getDocument',
-      'listDocuments',
-      'updateDocument',
-      'deleteDocument',
-      'getMetrics',
-    ];
+    const publicClient = client as unknown as Record<string, unknown>;
 
-    for (const methodName of expectedMethods) {
-      expect(typeof iterations[methodName]).toBe('function');
-    }
+    expect(publicClient.projects).toBeUndefined();
+    expect(publicClient.evals).toBeUndefined();
   });
 });

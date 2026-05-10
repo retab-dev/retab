@@ -85,7 +85,7 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
     assert step.artifact is not None
     assert step.artifact.model_dump() == {"operation": "extraction", "id": "ext_123"}
     assert "output" not in step.model_dump()
-    # The plural artifacts list and artifact_view are both gone.
+    # The plural artifacts list and API-specific artifact_view are gone.
     assert "artifacts" not in step.model_dump()
     assert "artifact_view" not in step.model_dump()
     assert "metadata" not in step.model_dump()
@@ -104,6 +104,7 @@ def test_workflow_step_sdk_does_not_export_removed_payload_response_names() -> N
 
     assert not hasattr(workflow_model, response_name)
     assert not hasattr(workflow_model, batch_response_name)
+    assert not hasattr(workflow_model, "StepExecutionsBatchResponse")
 
 
 def test_workflow_steps_get_accepts_partition_artifact() -> None:
@@ -190,39 +191,24 @@ def test_workflow_steps_list_with_block_ids() -> None:
     assert result[0].artifact.operation == "extraction"
 
 
-def test_workflow_steps_get_many_uses_batch_endpoint() -> None:
+def test_workflow_steps_get_requires_block_id() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "executions": {
-            "extract-1": {
-                "block_id": "extract-1",
-                "block_type": "extract",
-                "block_label": "Extract",
-                "status": "completed",
-                "artifact": {
-                    "operation": "extraction",
-                    "id": "ext_789",
-                },
-                "handle_outputs": {
-                    "output-json-0": {
-                        "type": "json",
-                        "data": {"field": "value"},
-                    },
-                },
-                "handle_inputs": None,
-            },
-        },
-    }
+    steps = WorkflowSteps(client=client)
 
-    result = WorkflowSteps(client=client).get_many("run_123", ["extract-1"])
+    with pytest.raises(TypeError):
+        steps.get("run_123")  # type: ignore[call-arg]
+    with pytest.raises(TypeError, match="block_id is required"):
+        steps.get("run_123", "")  # type: ignore[arg-type]
 
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/workflows/runs/run_123/steps/batch"
-    assert "extract-1" in result.executions
-    assert result.executions["extract-1"].artifact is not None
-    assert result.executions["extract-1"].artifact.id == "ext_789"
-    assert result.executions["extract-1"].extracted_data == {"field": "value"}
+    client._prepared_request.assert_not_called()
+
+
+def test_workflow_steps_only_exposes_get_for_full_execution_fetches() -> None:
+    steps = WorkflowSteps(client=MagicMock())
+    assert not hasattr(steps, "get_all")
+    assert not hasattr(steps, "get_many")
+    assert not hasattr(steps, "getAll")
+    assert not hasattr(steps, "getMany")
 
 
 def test_workflow_steps_get_no_json_output() -> None:
@@ -263,15 +249,18 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
     assert step.extracted_data is None
 
 
-def test_step_execution_response_carries_error_on_failed_step() -> None:
-    """StepExecutionResponse now carries `error` for parity with WorkflowRunStep / StepStatus."""
+def test_step_execution_response_uses_terminal_for_failed_step() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "block_id": "extract-1",
         "block_type": "extract",
         "block_label": "Extract",
         "status": "error",
-        "error": "LLM returned malformed JSON",
+        "terminal": {
+            "kind": "error",
+            "message": "LLM returned malformed JSON",
+            "stage": "execution",
+        },
         "artifact": None,
         "handle_outputs": None,
         "handle_inputs": None,
@@ -280,10 +269,13 @@ def test_step_execution_response_carries_error_on_failed_step() -> None:
     step = WorkflowSteps(client=client).get("run_123", "extract-1")
 
     assert step.status == "error"
-    assert step.error == "LLM returned malformed JSON"
+    assert step.terminal is not None
+    assert step.terminal.kind == "error"
+    assert step.terminal.message == "LLM returned malformed JSON"
+    assert "error" not in step.model_dump()
 
 
-def test_step_execution_response_error_defaults_to_none_for_successful_step() -> None:
+def test_step_execution_response_has_no_compatibility_error_field() -> None:
     response = StepExecutionResponse.model_validate(
         {
             "block_id": "extract-1",
@@ -292,7 +284,7 @@ def test_step_execution_response_error_defaults_to_none_for_successful_step() ->
             "status": "completed",
         }
     )
-    assert response.error is None
+    assert "error" not in response.model_dump()
 
 
 def _minimal_run_payload(**overrides) -> dict:

@@ -80,7 +80,7 @@ class WorkflowRunsMixin:
             ...         "start-json-block-1": {"key": "value"},
             ...     },            ... )
         """
-        data: Dict[str, Any] = {}
+        data: Dict[str, Any] = {"documents": {}, "json_inputs": {}}
 
         # Convert each document to MIMEData and then to the format expected by the backend
         if documents:
@@ -229,8 +229,14 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         >>> run = client.workflows.runs.wait_for_completion(run.id)
         >>>
         >>> # Get outputs from persisted steps
-        >>> steps = client.workflows.runs.steps.list(run.id)
-        >>> outputs_by_step = {step.block_id: step.handle_outputs for step in steps}
+        >>> step_summaries = client.workflows.runs.steps.list(run.id)
+        >>> outputs_by_step = {
+        ...     step.block_id: step.handle_outputs
+        ...     for step in (
+        ...         client.workflows.runs.steps.get(run.id, summary.block_id)
+        ...         for summary in step_summaries
+        ...     )
+        ... }
         >>> print(outputs_by_step)
     """
 
@@ -558,8 +564,11 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         >>> run = await client.workflows.runs.wait_for_completion(run.id)
         >>>
         >>> # Get outputs from persisted steps
-        >>> steps = await client.workflows.runs.steps.list(run.id)
-        >>> outputs_by_step = {step.block_id: step.handle_outputs for step in steps}
+        >>> step_summaries = await client.workflows.runs.steps.list(run.id)
+        >>> outputs_by_step = {}
+        >>> for summary in step_summaries:
+        ...     step = await client.workflows.runs.steps.get(run.id, summary.block_id)
+        ...     outputs_by_step[step.block_id] = step.handle_outputs
         >>> print(outputs_by_step)
     """
 

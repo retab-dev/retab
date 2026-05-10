@@ -7,7 +7,12 @@ from retab.resources.workflows.blocks.client import WorkflowBlocks
 from retab.resources.workflows.client import AsyncWorkflows, Workflows
 from retab.resources.workflows.edges.client import WorkflowEdges
 from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
+from retab.resources.workflows.specs.client import AsyncWorkflowSpecs, WorkflowSpecs
 from retab.types.workflows.model import (
+    DeclarativeApplyResponse,
+    DeclarativeExportResponse,
+    DeclarativePlanResponse,
+    DeclarativeValidationResponse,
     WorkflowRun,
     WorkflowRunError,
     WorkflowBlock,
@@ -116,6 +121,116 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
         "after": "cursor_0",
     }
     assert result.list_metadata.after == "cursor_1"
+
+
+def test_workflows_exposes_specs_subresource() -> None:
+    workflows = Workflows(client=MagicMock())
+
+    assert isinstance(workflows.specs, WorkflowSpecs)
+
+
+def test_async_workflows_exposes_specs_subresource() -> None:
+    workflows = AsyncWorkflows(client=MagicMock())
+
+    assert isinstance(workflows.specs, AsyncWorkflowSpecs)
+
+
+def test_workflow_specs_validate_uses_yaml_validate_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "workflow_id": "wf_1",
+        "block_count": 2,
+        "edge_count": 1,
+        "is_valid": True,
+        "diagnostics": {"issues": []},
+    }
+
+    response = WorkflowSpecs(client=client).validate("apiVersion: workflows.retab.com/v1alpha2\n")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/yaml/validate"
+    assert request.data == {"yaml_definition": "apiVersion: workflows.retab.com/v1alpha2\n"}
+    assert isinstance(response, DeclarativeValidationResponse)
+    assert response.is_valid is True
+
+
+def test_workflow_specs_plan_uses_yaml_plan_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "workflow_id": "wf_1",
+        "action": "noop",
+        "block_count": 2,
+        "edge_count": 1,
+        "diagnostics": {"issues": []},
+        "operations": [{"action": "noop", "target": "workflow", "target_id": "wf_1", "summary": "No changes"}],
+    }
+
+    response = WorkflowSpecs(client=client).plan("spec: {}\n")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/yaml/plan"
+    assert request.data == {"yaml_definition": "spec: {}\n"}
+    assert isinstance(response, DeclarativePlanResponse)
+    assert response.operations[0].action == "noop"
+
+
+def test_workflow_specs_apply_uses_yaml_apply_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "workflow_id": "wf_1",
+        "created": False,
+        "published": True,
+        "block_count": 2,
+        "edge_count": 1,
+        "diagnostics": {"issues": []},
+        "operations": [{"action": "noop", "target": "workflow", "target_id": "wf_1", "summary": "No changes"}],
+    }
+
+    response = WorkflowSpecs(client=client).apply("spec: {}\n", publish=True)
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/yaml/apply"
+    assert request.data == {"yaml_definition": "spec: {}\n", "publish": True}
+    assert isinstance(response, DeclarativeApplyResponse)
+    assert response.published is True
+
+
+def test_workflow_specs_export_uses_workflow_yaml_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "workflow_id": "wf_1",
+        "yaml_definition": "apiVersion: workflows.retab.com/v1alpha2\n",
+    }
+
+    response = WorkflowSpecs(client=client).export("wf_1")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/wf_1/yaml"
+    assert isinstance(response, DeclarativeExportResponse)
+    assert response.yaml_definition.startswith("apiVersion:")
+
+
+@pytest.mark.asyncio
+async def test_async_workflow_specs_validate_uses_yaml_validate_route() -> None:
+    client = MagicMock()
+    client._prepared_request = AsyncMock(return_value={
+        "workflow_id": "wf_1",
+        "block_count": 2,
+        "edge_count": 1,
+        "is_valid": True,
+        "diagnostics": {"issues": []},
+    })
+
+    response = await AsyncWorkflowSpecs(client=client).validate("spec: {}\n")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/yaml/validate"
+    assert response.workflow_id == "wf_1"
 
 
 def test_workflow_run_ignores_legacy_steps_payload() -> None:
@@ -584,6 +699,14 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
     assert request.params["to_date"] == "2026-01-31"
     assert request.params["fields"] == "id,status"
     assert request.params["after"] == "cursor_1"
+
+
+def test_workflow_runs_create_without_inputs_sends_json_body() -> None:
+    request = WorkflowRuns(client=MagicMock()).prepare_create(workflow_id="wf_1")
+
+    assert request.method == "POST"
+    assert request.url == "/workflows/wf_1/run"
+    assert request.data == {"documents": {}, "json_inputs": {}}
 
 
 def _v2_run_payload(**overrides) -> dict:

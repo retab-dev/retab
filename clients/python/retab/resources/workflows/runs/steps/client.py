@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from ....._resource import AsyncAPIResource, SyncAPIResource
 from .....types.standards import PreparedRequest
 from .....types.workflows import (
     StepExecutionResponse,
-    StepExecutionsBatchResponse,
     WorkflowRunStep,
 )
-
-if TYPE_CHECKING:
-    from .....types.workflows import WorkflowRun
 
 
 class WorkflowStepsMixin:
@@ -25,36 +21,30 @@ class WorkflowStepsMixin:
         """Prepare a request to list all persisted step documents for a run."""
         return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}/steps")
 
-    def prepare_get_many(self, run_id: str, block_ids: List[str]) -> PreparedRequest:
-        """Prepare a request to fetch step execution records for a subset of blocks."""
-        return PreparedRequest(
-            method="POST",
-            url=f"/workflows/runs/{run_id}/steps/batch",
-            data={"block_ids": block_ids},
-        )
-
 
 class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
     """Workflow Run Steps API wrapper for synchronous operations.
 
-    Usage: ``client.workflows.runs.steps.get(run_id, block_id)``
+    Usage:
+    - ``client.workflows.runs.steps.get(run_id, block_id)`` for one step.
+    - ``client.workflows.runs.steps.list(run_id)`` for step summaries.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def get(self, run_id: str, block_id: str) -> StepExecutionResponse:
-        """Get step status, artifacts, and handle data for a specific step in a workflow run.
+        """Get the full execution record for one step.
 
         Args:
-            run_id: The ID of the workflow run
-            block_id: The ID of the block/step to inspect
+            run_id: The ID of the workflow run.
+            block_id: The ID of the block/step to fetch.
 
         Returns:
-            StepExecutionResponse with artifacts, artifact_view, handle_outputs,
-                and handle_inputs. Use ``.extracted_data`` for quick access to
-                default JSON handle data.
+            ``StepExecutionResponse`` for the requested block.
         """
+        if not isinstance(block_id, str) or not block_id:
+            raise TypeError("block_id is required")
         request = self.prepare_get(run_id, block_id)
         response = self._client._prepared_request(request)
         return StepExecutionResponse.model_validate(response)
@@ -77,52 +67,30 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
         requested_block_ids = set(block_ids)
         return [step for step in steps if step.block_id in requested_block_ids]
 
-    def get_many(self, run_id: str, block_ids: List[str]) -> StepExecutionsBatchResponse:
-        """Fetch step execution records for a subset of blocks in a workflow run."""
-        request = self.prepare_get_many(run_id, block_ids)
-        response = self._client._prepared_request(request)
-        return StepExecutionsBatchResponse.model_validate(response)
-
-    def get_all(self, run: WorkflowRun | str) -> StepExecutionsBatchResponse:
-        """Fetch execution records for all steps in a workflow run in one call.
-
-        Args:
-            run: A ``WorkflowRun`` object or a run ID string. Block IDs are
-                discovered via ``self.list(run_id)`` since the run object no
-                longer embeds a step roster.
-
-        Returns:
-            StepExecutionsBatchResponse with all step execution records keyed by block ID.
-        """
-        run_id = run if isinstance(run, str) else run.id
-        steps = self.list(run_id)
-        block_ids = [s.block_id for s in steps]
-        if not block_ids:
-            return StepExecutionsBatchResponse(executions={})
-        return self.get_many(run_id, block_ids=block_ids)
-
 
 class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
     """Workflow Run Steps API wrapper for asynchronous operations.
 
-    Usage: ``await client.workflows.runs.steps.get(run_id, block_id)``
+    Usage:
+    - ``await client.workflows.runs.steps.get(run_id, block_id)`` for one step.
+    - ``await client.workflows.runs.steps.list(run_id)`` for step summaries.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     async def get(self, run_id: str, block_id: str) -> StepExecutionResponse:
-        """Get step status, artifacts, and handle data for a specific step in a workflow run.
+        """Get the full execution record for one step.
 
         Args:
-            run_id: The ID of the workflow run
-            block_id: The ID of the block/step to inspect
+            run_id: The ID of the workflow run.
+            block_id: The ID of the block/step to fetch.
 
         Returns:
-            StepExecutionResponse with artifacts, artifact_view, handle_outputs,
-                and handle_inputs. Use ``.extracted_data`` for quick access to
-                default JSON handle data.
+            ``StepExecutionResponse`` for the requested block.
         """
+        if not isinstance(block_id, str) or not block_id:
+            raise TypeError("block_id is required")
         request = self.prepare_get(run_id, block_id)
         response = await self._client._prepared_request(request)
         return StepExecutionResponse.model_validate(response)
@@ -144,27 +112,3 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
             return steps
         requested_block_ids = set(block_ids)
         return [step for step in steps if step.block_id in requested_block_ids]
-
-    async def get_many(self, run_id: str, block_ids: List[str]) -> StepExecutionsBatchResponse:
-        """Fetch step execution records for a subset of blocks in a workflow run."""
-        request = self.prepare_get_many(run_id, block_ids)
-        response = await self._client._prepared_request(request)
-        return StepExecutionsBatchResponse.model_validate(response)
-
-    async def get_all(self, run: WorkflowRun | str) -> StepExecutionsBatchResponse:
-        """Fetch execution records for all steps in a workflow run in one call.
-
-        Args:
-            run: A ``WorkflowRun`` object or a run ID string. Block IDs are
-                discovered via ``self.list(run_id)`` since the run object no
-                longer embeds a step roster.
-
-        Returns:
-            StepExecutionsBatchResponse with all step execution records keyed by block ID.
-        """
-        run_id = run if isinstance(run, str) else run.id
-        steps = await self.list(run_id)
-        block_ids = [s.block_id for s in steps]
-        if not block_ids:
-            return StepExecutionsBatchResponse(executions={})
-        return await self.get_many(run_id, block_ids=block_ids)

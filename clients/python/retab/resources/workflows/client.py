@@ -3,10 +3,16 @@ from typing import Any, Dict, List, Optional
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ...types.pagination import PaginatedList, PaginationOrder
 from ...types.standards import PreparedRequest
-from ...types.workflows import Workflow, WorkflowWithEntities
+from ...types.workflows import (
+    Workflow,
+    WorkflowDiagnosisResponse,
+    WorkflowWithEntities,
+)
 from .runs import WorkflowRuns, AsyncWorkflowRuns
 from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
 from .edges import WorkflowEdges, AsyncWorkflowEdges
+from .experiments import AsyncWorkflowExperiments, WorkflowExperiments
+from .specs import AsyncWorkflowSpecs, WorkflowSpecs
 from .tests import AsyncWorkflowTests, WorkflowTests
 
 
@@ -86,6 +92,30 @@ class WorkflowsMixin:
         """Prepare a request to get a workflow with all its entities (blocks and edges)."""
         return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/entities")
 
+    def prepare_diagnose(
+        self,
+        workflow_id: str,
+        blocks: List[Dict[str, Any]],
+        edges: List[Dict[str, Any]],
+        re_propagate: bool = True,
+    ) -> PreparedRequest:
+        """Prepare a request to diagnose a workflow's graph structure.
+
+        ``blocks`` and ``edges`` are the in-memory graph payload — for
+        diagnosing the persisted draft state, fetch with ``get_entities()``
+        first and pass the results.
+        """
+        data: Dict[str, Any] = {
+            "blocks": blocks,
+            "edges": edges,
+            "re_propagate": re_propagate,
+        }
+        return PreparedRequest(
+            method="POST",
+            url=f"/workflows/{workflow_id}/diagnose-graph",
+            data=data,
+        )
+
 
 class Workflows(SyncAPIResource, WorkflowsMixin):
     """Workflows API wrapper for synchronous operations.
@@ -94,6 +124,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
+        specs: Declarative workflow YAML validation, planning, apply, and export
     """
 
     def __init__(self, client: Any) -> None:
@@ -102,6 +133,8 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self.blocks = WorkflowBlocks(client=client)
         self.edges = WorkflowEdges(client=client)
         self.tests = WorkflowTests(client=client)
+        self.experiments = WorkflowExperiments(client=client)
+        self.specs = WorkflowSpecs(client=client)
 
     def get(self, workflow_id: str) -> Workflow:
         """Get a workflow by ID."""
@@ -216,6 +249,49 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         response = self._client._prepared_request(request)
         return WorkflowWithEntities.model_validate(response)
 
+    def diagnose(
+        self,
+        workflow_id: str,
+        re_propagate: bool = True,
+    ) -> WorkflowDiagnosisResponse:
+        """Diagnose the workflow's draft graph for structural issues.
+
+        Fetches the persisted draft entities first, then POSTs them to the
+        diagnose-graph endpoint. Returns a list of ``issues`` (errors must
+        be fixed before publish; warnings are advisory) and ``stats``.
+
+        For diagnosing an in-memory editor graph that hasn't been saved
+        yet, build the request directly with :meth:`prepare_diagnose` and
+        pass your own ``blocks`` / ``edges`` payloads.
+        """
+        entities = self.get_entities(workflow_id)
+        blocks = [
+            {
+                "id": block.id,
+                "type": block.type,
+                "label": block.label,
+                "config": block.config,
+                "position": {"x": block.position_x, "y": block.position_y},
+                "width": block.width,
+                "height": block.height,
+                "parent_id": block.parent_id,
+            }
+            for block in entities.blocks
+        ]
+        edges = [
+            {
+                "id": edge.id,
+                "source": edge.source_block,
+                "target": edge.target_block,
+                "source_handle": edge.source_handle,
+                "target_handle": edge.target_handle,
+            }
+            for edge in entities.edges
+        ]
+        request = self.prepare_diagnose(workflow_id, blocks, edges, re_propagate=re_propagate)
+        response = self._client._prepared_request(request)
+        return WorkflowDiagnosisResponse.model_validate(response)
+
 
 class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
     """Workflows API wrapper for asynchronous operations.
@@ -224,6 +300,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
+        specs: Declarative workflow YAML validation, planning, apply, and export
     """
 
     def __init__(self, client: Any) -> None:
@@ -232,6 +309,8 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         self.blocks = AsyncWorkflowBlocks(client=client)
         self.edges = AsyncWorkflowEdges(client=client)
         self.tests = AsyncWorkflowTests(client=client)
+        self.experiments = AsyncWorkflowExperiments(client=client)
+        self.specs = AsyncWorkflowSpecs(client=client)
 
     async def get(self, workflow_id: str) -> Workflow:
         """Get a workflow by ID."""
@@ -309,3 +388,37 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         request = self.prepare_get_entities(workflow_id)
         response = await self._client._prepared_request(request)
         return WorkflowWithEntities.model_validate(response)
+
+    async def diagnose(
+        self,
+        workflow_id: str,
+        re_propagate: bool = True,
+    ) -> WorkflowDiagnosisResponse:
+        """Diagnose the workflow's draft graph for structural issues."""
+        entities = await self.get_entities(workflow_id)
+        blocks = [
+            {
+                "id": block.id,
+                "type": block.type,
+                "label": block.label,
+                "config": block.config,
+                "position": {"x": block.position_x, "y": block.position_y},
+                "width": block.width,
+                "height": block.height,
+                "parent_id": block.parent_id,
+            }
+            for block in entities.blocks
+        ]
+        edges = [
+            {
+                "id": edge.id,
+                "source": edge.source_block,
+                "target": edge.target_block,
+                "source_handle": edge.source_handle,
+                "target_handle": edge.target_handle,
+            }
+            for edge in entities.edges
+        ]
+        request = self.prepare_diagnose(workflow_id, blocks, edges, re_propagate=re_propagate)
+        response = await self._client._prepared_request(request)
+        return WorkflowDiagnosisResponse.model_validate(response)

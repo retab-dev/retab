@@ -2,18 +2,15 @@ import { CompositionClient, RequestOptions } from "../../../../client.js";
 import {
     StepExecutionResponse,
     ZStepExecutionResponse,
-    StepExecutionsBatchResponse,
-    ZStepExecutionsBatchResponse,
     WorkflowRunStep,
     ZWorkflowRunStep,
-    WorkflowRun,
 } from "../../../../types.js";
 import * as z from "zod";
 
 /**
  * Workflow Run Steps API client for accessing step-level execution artifacts.
  *
- * Usage: `client.workflows.runs.steps.get(runId, blockId)` or `client.workflows.runs.steps.getMany(runId, blockIds)`
+ * Usage: `client.workflows.runs.steps.get(runId, blockId)`
  */
 export default class APIWorkflowRunSteps extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -21,7 +18,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
     }
 
     /**
-     * Get step status and handle data for a specific step in a workflow run.
+     * Get full step execution records with handle inputs and outputs.
      *
      * @example
      * ```typescript
@@ -34,6 +31,9 @@ export default class APIWorkflowRunSteps extends CompositionClient {
         blockId: string,
         options?: RequestOptions
     ): Promise<StepExecutionResponse> {
+        if (typeof blockId !== "string" || blockId.length === 0) {
+            throw new TypeError("blockId is required");
+        }
         return this._fetchJson(ZStepExecutionResponse, {
             url: `/workflows/runs/${runId}/steps/${blockId}`,
             method: "GET",
@@ -65,73 +65,4 @@ export default class APIWorkflowRunSteps extends CompositionClient {
         });
     }
 
-    /**
-     * Batch-get step execution records for multiple blocks in a single request.
-     *
-     * @param runId - The workflow run ID
-     * @param blockIds - List of block IDs to fetch execution records for
-     * @returns Step execution records keyed by block ID
-     *
-     * @example
-     * ```typescript
-     * const batch = await client.workflows.runs.steps.getMany("run_abc123", ["extract-1", "classifier-1"]);
-     * console.log(batch.executions["extract-1"]?.handle_outputs);
-     * ```
-     */
-    async getMany(
-        runId: string,
-        blockIds: string[],
-        options?: RequestOptions
-    ): Promise<StepExecutionsBatchResponse> {
-        return this._fetchJson(ZStepExecutionsBatchResponse, {
-            url: `/workflows/runs/${runId}/steps/batch`,
-            method: "POST",
-            body: { block_ids: blockIds, ...(options?.body || {}) },
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    async get_many(
-        runId: string,
-        blockIds: string[],
-        options?: RequestOptions
-    ): Promise<StepExecutionsBatchResponse> {
-        return this.getMany(runId, blockIds, options);
-    }
-
-    /**
-     * Fetch execution records for all steps in a workflow run in one call.
-     *
-     * Internally lists the persisted step documents to discover block IDs,
-     * then batch-fetches all execution records.
-     *
-     * @param run - A `WorkflowRun` object or a run ID string
-     * @returns Step execution records keyed by block ID
-     *
-     * @example
-     * ```typescript
-     * const allExecutions = await client.workflows.runs.steps.getAll("run_abc123");
-     * console.log(allExecutions.executions["extract-1"]?.handle_outputs);
-     * ```
-     */
-    async getAll(
-        run: WorkflowRun | string,
-        options?: RequestOptions
-    ): Promise<StepExecutionsBatchResponse> {
-        const runId = typeof run === "string" ? run : run.id;
-        const steps = await this.list(runId, options);
-        const blockIds = steps.map((s) => s.block_id);
-        if (blockIds.length === 0) {
-            return { executions: {} };
-        }
-        return this.getMany(runId, blockIds, options);
-    }
-
-    async get_all(
-        run: WorkflowRun | string,
-        options?: RequestOptions
-    ): Promise<StepExecutionsBatchResponse> {
-        return this.getAll(run, options);
-    }
 }

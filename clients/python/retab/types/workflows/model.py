@@ -1,7 +1,7 @@
 import datetime
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, computed_field
+from pydantic import BaseModel, Field, ConfigDict, computed_field, field_validator
 
 from retab.types.mime import FileRef
 
@@ -14,12 +14,11 @@ from retab.types.mime import FileRef
 #   ``iteration`` are computed properties on :class:`StepCore` (derived from
 #   ``started_at`` / ``completed_at`` / ``loop_containers``); they are no
 #   longer flat fields. ``updated_at`` is gone.
-# - The old flat error/lifecycle fields (``error``, ``error_stage``,
-#   ``error_category``, ``error_details``, ``skip_reason``, ``cancel_reason``)
-#   are replaced by a single discriminated :data:`TerminalState` payload
-#   under ``terminal`` (``TerminalError`` / ``TerminalSkipped`` /
-#   ``TerminalCancelled``). The ``terminal`` field is present iff ``status``
-#   is one of error/skipped/cancelled.
+# - The old flat error/lifecycle fields are replaced by a single
+#   discriminated :data:`TerminalState` payload under ``terminal``
+#   (``TerminalError`` / ``TerminalSkipped`` / ``TerminalCancelled``). The
+#   ``terminal`` field is present iff ``status`` is one of
+#   error/skipped/cancelled.
 # - ``iteration_context`` is replaced by a flat
 #   ``loop_containers: List[ContainerContextData]`` on :class:`StepCore`;
 #   :class:`IterationContextData` is removed.
@@ -29,9 +28,7 @@ from retab.types.mime import FileRef
 #   longer carry ``metadata``, ``artifacts: list[...]``,
 #   ``requires_human_review``, ``human_reviewed_at`` or
 #   ``human_review_approved``. They expose a singular
-#   ``artifact: StepArtifactRef | None`` pointer plus, for
-#   :class:`StepExecutionResponse`, a block-specific
-#   ``artifact_view: StepArtifactView | None`` for rendering.
+#   ``artifact: StepArtifactRef | None`` pointer.
 # - ``WorkflowArtifactOperation`` is extended with five new operations:
 #   ``conditional_evaluation``, ``hil_evaluation``, ``while_loop_termination``,
 #   ``api_call_invocation``, ``function_invocation``.
@@ -40,16 +37,15 @@ from retab.types.mime import FileRef
 #   :class:`WhileLoopTermination`, :class:`ApiCallInvocation`,
 #   :class:`FunctionInvocation`.
 #
-# Migration: callers that previously read ``step.error_stage`` /
-# ``step.skip_reason`` should switch to ``step.terminal`` (a
-# ``TerminalState``).
+# Migration: callers that previously read flat terminal details should switch
+# to ``step.terminal`` (a ``TerminalState``).
 # Callers that read ``step.metadata.evaluations`` /
 # ``step.requires_human_review`` should fetch the artifact's backing
 # record (one of the record types above) and read from there.
 # ---------------------------------------------------------------------------
 
 # Schemas are accessed via ``workflows.blocks.get(block_id).resolved_schemas``,
-# not via step artifact view data. Step executions only carry data/payload;
+# not via step payload data. Step executions only carry data/payload;
 # user-declared block config schemas (``start_json`` / ``extract`` /
 # ``function`` / ``api_call``) live on the block itself, and every other
 # block's input/output schema is inferred and exposed under
@@ -69,6 +65,12 @@ class HandlePayload(BaseModel):
     document: Optional[FileRef] = Field(default=None, description="For file handles: document reference")
     data: Any | None = Field(default=None, description="For JSON handles: structured data")
     text: Optional[str] = Field(default=None, description="For text payloads: text content")
+
+
+def _normalize_handle_payloads(value: Any) -> Any:
+    if value is None:
+        return {}
+    return value
 
 
 # Workflow run payloads can contain newer backend block types before the SDK is
@@ -117,25 +119,6 @@ class StepArtifactRef(BaseModel):
         description="Persisted resource operation; identifies the backing collection",
     )
     id: str = Field(..., description="Persisted resource identifier")
-
-
-class StepArtifactView(BaseModel):
-    """Block-specific artifact view data for rendering step results."""
-    model_config = ConfigDict(extra="ignore")
-
-    block_type: str = Field(..., description="Workflow block type that produced the view")
-    artifact: Optional[StepArtifactRef] = Field(
-        default=None,
-        description="Canonical artifact backing this view (operation + id ref), if any",
-    )
-    data: Optional[Any] = Field(
-        default=None,
-        description="Block-specific render data resolved from the step artifact",
-    )
-    source_handle_id: Optional[str] = Field(
-        default=None,
-        description="Handle that supplied the render data when available",
-    )
 
 
 class ContainerContextData(BaseModel):
@@ -502,6 +485,11 @@ class StepStatus(StepCore):
     # Retry tracking — int (not Optional[int]); a never-retried step has count 0.
     retry_count: int = Field(default=0, description="Number of retry attempts for this step execution")
 
+    @field_validator("handle_inputs", "handle_outputs", mode="before")
+    @classmethod
+    def _handle_payloads_default_to_dict(cls, value: Any) -> Any:
+        return _normalize_handle_payloads(value)
+
     @property
     def extracted_data(self) -> Optional[dict]:
         """Get the JSON output data from the default handle (``output-json-0``)."""
@@ -727,11 +715,7 @@ TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancel
 
 
 class StepExecutionResponse(StepCore):
-    """Step status, handle data, and artifact view for a specific step in a workflow run.
-
-    Wraps :class:`StepCore` with handle payloads, an artifact ref, and a
-    block-specific :class:`StepArtifactView` for rendering.
-    """
+    """Step status, handle data, and artifact ref for a specific workflow step."""
 
 
     artifact: Optional[StepArtifactRef] = Field(
@@ -742,10 +726,6 @@ class StepExecutionResponse(StepCore):
             "canonical result"
         ),
     )
-    artifact_view: Optional[StepArtifactView] = Field(
-        default=None,
-        description="Block-specific artifact view model for result rendering",
-    )
     handle_outputs: Dict[str, HandlePayload] = Field(
         default_factory=dict,
         description="Handle outputs keyed by handle ID",
@@ -754,6 +734,11 @@ class StepExecutionResponse(StepCore):
         default_factory=dict,
         description="Handle inputs keyed by handle ID (what this block received)",
     )
+
+    @field_validator("handle_inputs", "handle_outputs", mode="before")
+    @classmethod
+    def _handle_payloads_default_to_dict(cls, value: Any) -> Any:
+        return _normalize_handle_payloads(value)
 
     def get_json_output(self, handle_id: str = "output-json-0") -> Optional[dict]:
         """Get JSON data from a specific output handle.
@@ -805,6 +790,11 @@ class WorkflowRunStep(StepCore):
     retry_count: int = Field(default=0, description="Retry count for this step")
     created_at: Optional[datetime.datetime] = Field(default=None, description="When the step document was created")
 
+    @field_validator("handle_inputs", "handle_outputs", mode="before")
+    @classmethod
+    def _handle_payloads_default_to_dict(cls, value: Any) -> Any:
+        return _normalize_handle_payloads(value)
+
     @property
     def extracted_data(self) -> Optional[dict]:
         """Get the JSON output data from the default handle (``output-json-0``)."""
@@ -814,14 +804,6 @@ class WorkflowRunStep(StepCore):
         if isinstance(payload, HandlePayload) and payload.type == "json":
             return payload.data
         return None
-
-
-class StepExecutionsBatchResponse(BaseModel):
-    """Response for batch step execution retrieval, keyed by block ID."""
-    executions: Dict[str, StepExecutionResponse] = Field(
-        default_factory=dict,
-        description="Step execution records keyed by block ID (missing steps are omitted)",
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -1027,3 +1009,137 @@ class WorkflowWithEntities(BaseModel):
     def start_json_blocks(self) -> List[WorkflowBlock]:
         """JSON input start blocks."""
         return [b for b in self.blocks if b.type == "start_json"]
+
+
+class DeclarativePlanOperation(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    action: str
+    target: str
+    target_id: str
+    summary: str
+
+
+class DeclarativeValidationResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    workflow_id: str
+    block_count: int
+    edge_count: int
+    is_valid: bool
+    diagnostics: Dict[str, Any]
+
+
+class DeclarativePlanResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    workflow_id: str
+    action: str
+    block_count: int
+    edge_count: int
+    diagnostics: Dict[str, Any]
+    operations: List[DeclarativePlanOperation]
+
+
+class DeclarativeApplyResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    workflow_id: str
+    created: bool
+    published: bool = False
+    block_count: int
+    edge_count: int
+    diagnostics: Dict[str, Any]
+    operations: List[DeclarativePlanOperation]
+
+
+class DeclarativeExportResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    workflow_id: str
+    yaml_definition: str
+
+
+# ---------------------------------------------------------------------------
+# Diagnose response (POST /workflows/{id}/diagnose-graph)
+# ---------------------------------------------------------------------------
+
+
+class WorkflowDiagnosisIssue(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    severity: Literal["error", "warning", "info"]
+    code: str = Field(..., description="Stable issue code")
+    message: str = Field(..., description="Human-readable issue description")
+    block_id: Optional[str] = Field(default=None, description="Related block when applicable")
+
+
+class WorkflowDiagnosisStats(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    total_blocks: int = 0
+    total_edges: int = 0
+    block_types: Dict[str, int] = Field(default_factory=dict)
+    start_blocks: int = 0
+
+
+class WorkflowDiagnosisResponse(BaseModel):
+    """Result of ``POST /workflows/{id}/diagnose-graph``."""
+    model_config = ConfigDict(extra="ignore")
+
+    is_valid: bool
+    issues: List[WorkflowDiagnosisIssue] = Field(default_factory=list)
+    suggestions: List[str] = Field(default_factory=list)
+    stats: WorkflowDiagnosisStats = Field(default_factory=WorkflowDiagnosisStats)
+
+
+# ---------------------------------------------------------------------------
+# Block simulation (POST /workflows/runs/{run_id}/steps/{block_id}/simulate)
+# ---------------------------------------------------------------------------
+
+
+class BlockSimulationIteration(BaseModel):
+    """One available iteration step exposed to simulate."""
+    model_config = ConfigDict(extra="ignore")
+
+    step_id: Optional[str] = None
+    iteration_index: Optional[int] = None
+    label: Optional[str] = None
+
+
+class BlockSimulation(BaseModel):
+    """Result of replaying one block with the current draft config.
+
+    Returned by ``client.workflows.blocks.simulate(...)``. Contains the
+    inputs used, the produced outputs, and a canonical ``artifact`` ref
+    when the block produces a persisted resource.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(..., description="Unique simulation ID")
+    organization_id: str
+    workflow_id: str
+    run_id: str
+    block_id: str
+    block_type: str
+    success: bool
+    handle_inputs: Optional[Dict[str, Any]] = None
+    artifact: Optional[StepArtifactRef] = None
+    handle_outputs: Optional[Dict[str, Any]] = None
+    routing_decision: Optional[List[str]] = Field(
+        default=None,
+        description="Active output handles for routing decisions (conditional/classifier).",
+    )
+    error: Optional[str] = None
+    duration_ms: Optional[float] = None
+    skipped: bool = False
+    created_at: Optional[datetime.datetime] = None
+    block_config: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="The draft block config used for this simulation.",
+    )
+    step_id: Optional[str] = Field(
+        default=None,
+        description="Step ID whose inputs were used (carries iteration prefix when applicable).",
+    )
+    available_iterations: Optional[List[BlockSimulationIteration]] = None

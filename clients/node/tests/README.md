@@ -52,46 +52,21 @@ npm run test:coverage
 npm run test:watch
 ```
 
-### Run a specific test:
-```bash
-npm test -- --testNamePattern="test_evaluation_crud_basic"
-```
-
 ## Test Structure
 
 The test suite covers the following functionality:
 
-1. **Basic Project CRUD Operations**
-   - Create, read, update, delete projects
-   - List projects
+1. **Document APIs**
+   - Parse, extract, classify, split, partition, and edit documents
+   - Upload and retrieve files
 
-2. **Document Management**
-   - Add documents to projects
-   - Update document annotations
-   - List and delete documents
+2. **Workflow APIs**
+   - Create, update, publish, run, and inspect workflows
+   - Manage workflow blocks, edges, tests, runs, and run steps
 
-3. **Iteration Management**
-   - Create iterations with inference settings
-   - List and delete iterations
-   - Check iteration status *(may not be implemented yet)*
-
-4. **Document Processing**
-   - Bulk processing via `process` method *(may not be implemented yet)*
-   - Individual document processing via `process_document` method *(may not be implemented yet)*
-
-5. **Complete Workflows**
-   - End-to-end testing with multiple documents and iterations
-   - Selective processing scenarios
-
-## Missing Functionality
-
-The tests use `(client.projects.iterations as any)` for the following methods that may not be implemented in the Node SDK yet:
-
-- `status(projectId, iterationId)` - Check status of documents in an iteration
-- `process(projectId, iterationId, options)` - Bulk process documents in an iteration  
-- `process_document(projectId, iterationId, documentId)` - Process a single document
-
-When these methods are missing, the tests will fail and clearly indicate what needs to be implemented.
+3. **Operational APIs**
+   - List models and jobs
+   - Validate response contracts and error handling
 
 ## Test Data
 

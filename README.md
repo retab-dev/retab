@@ -141,7 +141,7 @@ We can't wait to see how you'll use Retab.
 ## Useful Links
 
 * [x] **API**: [Documentation](https://docs.retab.com/api-reference/introduction)
-* [x] **SDKs**: [Python & JavaScript SDK](https://docs.retab.com/overview/quickstart)
+* [x] **SDKs**: [Python, JavaScript, and Go SDK](https://docs.retab.com/overview/quickstart)
 
 * [OpenAI](https://platform.openai.com/docs/guides/structured-outputs), [Google](https://ai.google.dev/gemini-api/docs/structured-output), [xAI](https://docs.x.ai/docs/guides/structured-outputs), [Outlines](https://dottxt-ai.github.io/outlines/latest/reference/generation/structured_generation_explanation/) on structured generation
 * [Structured generation Starter Pack](https://github.com/retab-dev/structured-generation-starter-pack)

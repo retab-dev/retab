@@ -1,4 +1,5 @@
 import inspect
+import importlib
 from io import BytesIO
 
 import pytest
@@ -10,6 +11,26 @@ from retab.types.extractions import ExtractionRequest
 from retab.types.mime import MIMEData
 from retab.types.partitions import Partition
 from retab.types.splits import Split
+
+
+def test_projects_and_evals_surfaces_are_not_exposed() -> None:
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        assert not hasattr(client, "projects")
+        assert not hasattr(client, "evals")
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    [
+        "retab.resources.projects",
+        "retab.resources.evals",
+        "retab.types.projects",
+        "retab.types.evals",
+    ],
+)
+def test_projects_and_evals_modules_are_removed(module_name: str) -> None:
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module(module_name)
 
 
 def _sample_document() -> MIMEData:

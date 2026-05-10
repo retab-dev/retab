@@ -69,11 +69,10 @@ const run = await retab.workflows.runs.createAndWait({
 raiseForStatus(run);
 
 const steps = await retab.workflows.runs.steps.list(run.id);
-const stepExecutions = await retab.workflows.runs.steps.getMany(run.id, ["extract-1"]);
+const extractStep = await retab.workflows.runs.steps.get(run.id, "extract-1");
 
 console.log(steps.map((step) => `${step.block_id}: ${step.status}`));
-console.log(steps.map((step) => ({ blockId: step.block_id, outputs: step.handle_outputs })));
-console.log(stepExecutions.executions["extract-1"]?.artifact_view);
+console.log(extractStep.handle_outputs["output-json-0"]?.data);
 ```
 
 ## Support
