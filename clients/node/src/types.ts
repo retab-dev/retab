@@ -9,7 +9,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 //export * from "./schema_types";
 
 // Schemas are accessed via `workflows.blocks.get(block_id).resolved_schemas`,
-// not via step artifact view data. Step executions only carry data/payload; user-declared
+// not via step payload data. Step executions only carry data/payload; user-declared
 // block config schemas (`start_json` / `extract` / `function` / `api_call`) live
 // on the block itself, and every other block's input/output schema is inferred
 // and exposed under `resolved_schemas.input_schemas` / `resolved_schemas.output_schemas`.
@@ -510,18 +510,21 @@ export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 // BREAKING CHANGES (workflow step artifact + StepStatus shape cutover)
 // ---------------------------------------------------------------------------
 // All step shapes (`StepStatus` / `StepExecutionResponse` /
-// `WorkflowRunStep`) now share `StepCore`. The old flat error/lifecycle
-// fields (`error`, `error_stage`, `error_category`, `error_details`,
-// `skip_reason`, `cancel_reason`) are replaced by a single discriminated
-// `terminal: TerminalState | null` payload (`TerminalError` / `TerminalSkipped`
-// / `TerminalCancelled`). `iteration_context` is replaced by a flat
-// `loop_containers: ContainerContextData[]`; `loop_id` / `iteration` /
-// `duration_ms` are computed (no longer set as flat fields).
-// `StepExecutionResponse` keeps a block-specific `artifact_view` for
-// rendering. Callers that previously read `step.error_stage` / `step.cost`
-// should switch to `step.terminal`. Callers that read
+// `WorkflowRunStep`) now share `StepCore`. The old flat terminal fields are
+// replaced by a single discriminated `terminal: TerminalState | null` payload
+// (`TerminalError` / `TerminalSkipped` / `TerminalCancelled`).
+// `iteration_context` is replaced by a flat `loop_containers:
+// ContainerContextData[]`; `loop_id` / `iteration` / `duration_ms` are
+// computed (no longer set as flat fields).
+// Callers that previously read flat terminal details should switch to
+// `step.terminal`. Callers that read
 // `step.metadata.evaluations` should fetch the backing record via `step.artifact`.
 // ---------------------------------------------------------------------------
+const ZHandlePayloadRecord = z.preprocess(
+  (value) => (value === null ? {} : value),
+  z.record(z.string(), generated.ZHandlePayload).default({})
+);
+
 export const ZWorkflowRunStep = z
   .object({
     // StepCore fields
@@ -548,12 +551,38 @@ export const ZWorkflowRunStep = z
     run_id: z.string(),
     organization_id: z.string(),
     artifact: generated.ZStepArtifactRef.nullable().optional(),
-    handle_outputs: z.record(z.string(), z.any()).default({}),
-    handle_inputs: z.record(z.string(), z.any()).default({}),
+    handle_outputs: ZHandlePayloadRecord,
+    handle_inputs: ZHandlePayloadRecord,
     retry_count: z.number().default(0),
     created_at: z.string().nullable().optional(),
   });
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
+
+export const ZStepExecutionResponse = z.object({
+  block_id: z.string(),
+  step_id: z.string().default(''),
+  block_type: z.string(),
+  block_label: z.string(),
+  status: z.union([
+    z.literal('pending'),
+    z.literal('queued'),
+    z.literal('running'),
+    z.literal('completed'),
+    z.literal('skipped'),
+    z.literal('error'),
+    z.literal('waiting_for_human'),
+    z.literal('cancelled'),
+  ]),
+  started_at: z.string().nullable().optional(),
+  completed_at: z.string().nullable().optional(),
+  terminal: generated.ZTerminalState.nullable().optional(),
+  model: z.string().nullable().optional(),
+  loop_containers: z.array(generated.ZContainerContextData).default([]),
+  artifact: generated.ZStepArtifactRef.nullable().optional(),
+  handle_outputs: ZHandlePayloadRecord,
+  handle_inputs: ZHandlePayloadRecord,
+});
+export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
 
 export const ZWorkflow = z
   .object({
@@ -640,6 +669,60 @@ export const ZWorkflowWithEntities = z
   .passthrough();
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
 
+export const ZDeclarativePlanOperation = z
+  .object({
+    action: z.string(),
+    target: z.string(),
+    target_id: z.string(),
+    summary: z.string(),
+  })
+  .passthrough();
+export type DeclarativePlanOperation = z.infer<typeof ZDeclarativePlanOperation>;
+
+export const ZDeclarativeValidationResponse = z
+  .object({
+    workflow_id: z.string(),
+    block_count: z.number(),
+    edge_count: z.number(),
+    is_valid: z.boolean(),
+    diagnostics: z.record(z.any()),
+  })
+  .passthrough();
+export type DeclarativeValidationResponse = z.infer<typeof ZDeclarativeValidationResponse>;
+
+export const ZDeclarativePlanResponse = z
+  .object({
+    workflow_id: z.string(),
+    action: z.string(),
+    block_count: z.number(),
+    edge_count: z.number(),
+    diagnostics: z.record(z.any()),
+    operations: z.array(ZDeclarativePlanOperation),
+  })
+  .passthrough();
+export type DeclarativePlanResponse = z.infer<typeof ZDeclarativePlanResponse>;
+
+export const ZDeclarativeApplyResponse = z
+  .object({
+    workflow_id: z.string(),
+    created: z.boolean(),
+    published: z.boolean().default(false),
+    block_count: z.number(),
+    edge_count: z.number(),
+    diagnostics: z.record(z.any()),
+    operations: z.array(ZDeclarativePlanOperation),
+  })
+  .passthrough();
+export type DeclarativeApplyResponse = z.infer<typeof ZDeclarativeApplyResponse>;
+
+export const ZDeclarativeExportResponse = z
+  .object({
+    workflow_id: z.string(),
+    yaml_definition: z.string(),
+  })
+  .passthrough();
+export type DeclarativeExportResponse = z.infer<typeof ZDeclarativeExportResponse>;
+
 export type WorkflowRunStatus =
   | 'pending'
   | 'running'
@@ -694,6 +777,81 @@ export const ZWorkflowRunExportResponse = z
   })
   .passthrough();
 export type WorkflowRunExportResponse = z.infer<typeof ZWorkflowRunExportResponse>;
+
+// ---------------------------------------------------------------------------
+// Workflow diagnose-graph response (POST /workflows/{id}/diagnose-graph)
+// ---------------------------------------------------------------------------
+
+export const ZWorkflowDiagnosisIssue = z
+  .object({
+    severity: z.enum(['error', 'warning', 'info']),
+    code: z.string(),
+    message: z.string(),
+    block_id: z.string().nullable().optional(),
+  })
+  .passthrough();
+export type WorkflowDiagnosisIssue = z.infer<typeof ZWorkflowDiagnosisIssue>;
+
+export const ZWorkflowDiagnosisStats = z
+  .object({
+    total_blocks: z.number().default(0),
+    total_edges: z.number().default(0),
+    block_types: z.record(z.number()).default({}),
+    start_blocks: z.number().default(0),
+  })
+  .passthrough();
+export type WorkflowDiagnosisStats = z.infer<typeof ZWorkflowDiagnosisStats>;
+
+export const ZWorkflowDiagnosisResponse = z
+  .object({
+    is_valid: z.boolean(),
+    issues: z.array(ZWorkflowDiagnosisIssue).default([]),
+    suggestions: z.array(z.string()).default([]),
+    stats: ZWorkflowDiagnosisStats.default({
+      total_blocks: 0,
+      total_edges: 0,
+      block_types: {},
+      start_blocks: 0,
+    }),
+  })
+  .passthrough();
+export type WorkflowDiagnosisResponse = z.infer<typeof ZWorkflowDiagnosisResponse>;
+
+// ---------------------------------------------------------------------------
+// Block simulation (POST /workflows/runs/{run_id}/steps/{block_id}/simulate)
+// ---------------------------------------------------------------------------
+
+export const ZStepArtifactRef = z
+  .object({
+    operation: z.string(),
+    id: z.string(),
+  })
+  .passthrough();
+export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
+
+export const ZBlockSimulation = z
+  .object({
+    id: z.string(),
+    organization_id: z.string(),
+    workflow_id: z.string(),
+    run_id: z.string(),
+    block_id: z.string(),
+    block_type: z.string(),
+    success: z.boolean(),
+    handle_inputs: z.record(z.any()).nullable().optional(),
+    artifact: ZStepArtifactRef.nullable().optional(),
+    handle_outputs: z.record(z.any()).nullable().optional(),
+    routing_decision: z.array(z.string()).nullable().optional(),
+    error: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    skipped: z.boolean().default(false),
+    created_at: z.string().nullable().optional(),
+    block_config: z.record(z.any()).nullable().optional(),
+    step_id: z.string().nullable().optional(),
+    available_iterations: z.array(z.record(z.any())).nullable().optional(),
+  })
+  .passthrough();
+export type BlockSimulation = z.infer<typeof ZBlockSimulation>;
 
 // ---------------------------------------------------------------------------
 // Workflow run utility functions

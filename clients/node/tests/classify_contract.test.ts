@@ -65,19 +65,4 @@ describe("Node SDK classify response normalization", () => {
             "receipt",
         ]);
     });
-
-    test("evals.classify.process accepts legacy classify envelopes", async () => {
-        const api = new APIV1(new MockClient(LEGACY_CLASSIFY_PAYLOAD));
-
-        const response = await api.evals.classify.process({
-            eval_id: "eval_123",
-            document: {
-                filename: "invoice.txt",
-                url: "data:text/plain;base64,SW52b2ljZQ==",
-            },
-        });
-
-        expect(response.classification.category).toBe("invoice");
-        expect(response.consensus.choices).toHaveLength(2);
-    });
 });

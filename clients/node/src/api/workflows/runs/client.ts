@@ -47,7 +47,7 @@ function sleep(ms: number): Promise<void> {
  * Workflow Runs API client for managing workflow executions.
  *
  * Sub-clients:
- * - steps: Step execution operations (get, list, getMany, getAll)
+ * - steps: Step execution operations (get, list)
  */
 export default class APIWorkflowRuns extends CompositionClient {
     public steps: APIWorkflowRunSteps;
@@ -437,8 +437,11 @@ export default class APIWorkflowRuns extends CompositionClient {
      *     onStatus: (r) => console.log(`${r.lifecycle.kind}...`),
      * });
      * raiseForStatus(run);
-     * const steps = await client.workflows.runs.steps.list(run.id);
-     * console.log(steps.map((step) => ({ blockId: step.block_id, outputs: step.handle_outputs })));
+     * const stepSummaries = await client.workflows.runs.steps.list(run.id);
+     * for (const summary of stepSummaries) {
+     *     const step = await client.workflows.runs.steps.get(run.id, summary.block_id);
+     *     console.log({ blockId: step.block_id, outputs: step.handle_outputs });
+     * }
      * ```
      */
     async createAndWait(

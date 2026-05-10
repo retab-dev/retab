@@ -10,11 +10,12 @@ import (
 )
 
 type WorkflowsService struct {
-	client *Client
-	Runs   *WorkflowRunsService
-	Blocks *WorkflowBlocksService
-	Edges  *WorkflowEdgesService
-	Tests  *WorkflowTestsService
+	client      *Client
+	Runs        *WorkflowRunsService
+	Blocks      *WorkflowBlocksService
+	Edges       *WorkflowEdgesService
+	Tests       *WorkflowTestsService
+	Experiments *WorkflowExperimentsService
 }
 
 func newWorkflowsService(client *Client) *WorkflowsService {
@@ -26,6 +27,7 @@ func newWorkflowsService(client *Client) *WorkflowsService {
 	service.Blocks = &WorkflowBlocksService{client: client}
 	service.Edges = &WorkflowEdgesService{client: client}
 	service.Tests = newWorkflowTestsService(client)
+	service.Experiments = newWorkflowExperimentsService(client)
 	return service
 }
 
@@ -157,6 +159,92 @@ func (s *WorkflowsService) GetEntities(ctx context.Context, workflowID string, o
 	return &result, err
 }
 
+// WorkflowDiagnosisIssue is one issue found by Diagnose.
+type WorkflowDiagnosisIssue struct {
+	Severity string  `json:"severity"`
+	Code     string  `json:"code"`
+	Message  string  `json:"message"`
+	BlockID  *string `json:"block_id,omitempty"`
+}
+
+// WorkflowDiagnosisStats summarises the inspected graph.
+type WorkflowDiagnosisStats struct {
+	TotalBlocks int            `json:"total_blocks"`
+	TotalEdges  int            `json:"total_edges"`
+	BlockTypes  map[string]int `json:"block_types"`
+	StartBlocks int            `json:"start_blocks"`
+}
+
+// WorkflowDiagnosisResponse is the result of POST /workflows/{id}/diagnose-graph.
+type WorkflowDiagnosisResponse struct {
+	IsValid     bool                     `json:"is_valid"`
+	Issues      []WorkflowDiagnosisIssue `json:"issues"`
+	Suggestions []string                 `json:"suggestions"`
+	Stats       WorkflowDiagnosisStats   `json:"stats"`
+}
+
+// DiagnoseWorkflowGraphRequest is the lower-level body shape if you want to
+// diagnose an in-memory editor graph that hasn't been saved yet.
+type DiagnoseWorkflowGraphRequest struct {
+	Blocks       []map[string]any `json:"blocks"`
+	Edges        []map[string]any `json:"edges"`
+	RePropagate  bool             `json:"re_propagate"`
+}
+
+// Diagnose runs the structural diagnosis on the persisted draft graph.
+// It fetches workflow entities first, then POSTs them to diagnose-graph.
+//
+// To diagnose an in-memory graph that hasn't been saved, call DiagnoseGraph
+// directly with your own blocks/edges payload.
+func (s *WorkflowsService) Diagnose(ctx context.Context, workflowID string, opts ...RequestOption) (*WorkflowDiagnosisResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	entities, err := s.GetEntities(ctx, workflowID, opts...)
+	if err != nil {
+		return nil, err
+	}
+	blocks := make([]map[string]any, 0, len(entities.Blocks))
+	for _, block := range entities.Blocks {
+		blocks = append(blocks, map[string]any{
+			"id":        block.ID,
+			"type":      block.Type,
+			"label":     block.Label,
+			"config":    block.Config,
+			"position":  map[string]any{"x": block.PositionX, "y": block.PositionY},
+			"width":     block.Width,
+			"height":    block.Height,
+			"parent_id": block.ParentID,
+		})
+	}
+	edges := make([]map[string]any, 0, len(entities.Edges))
+	for _, edge := range entities.Edges {
+		edges = append(edges, map[string]any{
+			"id":            edge.ID,
+			"source":        edge.SourceBlock,
+			"target":        edge.TargetBlock,
+			"source_handle": edge.SourceHandle,
+			"target_handle": edge.TargetHandle,
+		})
+	}
+	return s.DiagnoseGraph(ctx, workflowID, DiagnoseWorkflowGraphRequest{
+		Blocks:      blocks,
+		Edges:       edges,
+		RePropagate: true,
+	}, opts...)
+}
+
+// DiagnoseGraph posts an arbitrary graph to the diagnose-graph endpoint.
+// Use this when the graph is in-memory and not yet persisted.
+func (s *WorkflowsService) DiagnoseGraph(ctx context.Context, workflowID string, request DiagnoseWorkflowGraphRequest, opts ...RequestOption) (*WorkflowDiagnosisResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	var result WorkflowDiagnosisResponse
+	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(workflowID)+"/diagnose-graph", nil, request, &result, opts...)
+	return &result, err
+}
+
 type WorkflowBlocksService struct {
 	client *Client
 }
@@ -242,6 +330,66 @@ func (s *WorkflowBlocksService) Delete(ctx context.Context, workflowID string, b
 		return fmt.Errorf("retab: blockID is required")
 	}
 	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID), nil, nil, nil, opts...)
+}
+
+// SimulateBlockRequest replays one block using inputs from a previous run
+// plus the current draft block config. Note that the route is keyed by
+// run_id, NOT workflow_id — the backend lives at
+// /v1/workflows/runs/{run_id}/steps/{block_id}/simulate.
+type SimulateBlockRequest struct {
+	RunID            string `json:"-"`
+	BlockID          string `json:"-"`
+	NConsensus       int    `json:"-"`
+	StepID           string `json:"-"`
+	CheckEligibility *bool  `json:"-"`
+}
+
+// BlockSimulation is the result of replaying one block.
+type BlockSimulation struct {
+	ID                  string           `json:"id"`
+	OrganizationID      string           `json:"organization_id"`
+	WorkflowID          string           `json:"workflow_id"`
+	RunID               string           `json:"run_id"`
+	BlockID             string           `json:"block_id"`
+	BlockType           string           `json:"block_type"`
+	Success             bool             `json:"success"`
+	HandleInputs        map[string]any   `json:"handle_inputs,omitempty"`
+	Artifact            *StepArtifactRef `json:"artifact,omitempty"`
+	HandleOutputs       map[string]any   `json:"handle_outputs,omitempty"`
+	RoutingDecision     []string         `json:"routing_decision,omitempty"`
+	Error               string           `json:"error,omitempty"`
+	DurationMs          *float64         `json:"duration_ms,omitempty"`
+	Skipped             bool             `json:"skipped,omitempty"`
+	CreatedAt           *time.Time       `json:"created_at,omitempty"`
+	BlockConfig         map[string]any   `json:"block_config,omitempty"`
+	StepID              string           `json:"step_id,omitempty"`
+	AvailableIterations []map[string]any `json:"available_iterations,omitempty"`
+}
+
+// Simulate replays one block with the current draft config and returns the
+// produced outputs without persisting them.
+func (s *WorkflowBlocksService) Simulate(ctx context.Context, request SimulateBlockRequest, opts ...RequestOption) (*BlockSimulation, error) {
+	if request.RunID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	if request.BlockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	query := url.Values{}
+	if request.NConsensus != 0 {
+		query.Set("n_consensus", fmt.Sprintf("%d", request.NConsensus))
+	}
+	addQuery(query, "step_id", request.StepID)
+	// Only send when overriding the default — the backend already defaults
+	// to true and `?check_eligibility=true` would be redundant.
+	if request.CheckEligibility != nil && !*request.CheckEligibility {
+		query.Set("check_eligibility", "false")
+	}
+	var result BlockSimulation
+	err := s.client.do(ctx, http.MethodPost,
+		"/workflows/runs/"+url.PathEscape(request.RunID)+"/steps/"+url.PathEscape(request.BlockID)+"/simulate",
+		query, nil, &result, opts...)
+	return &result, err
 }
 
 type WorkflowEdgesService struct {
@@ -938,5 +1086,550 @@ func addQuery(values url.Values, key string, value string) {
 func addCSVQuery(values url.Values, key string, value []string) {
 	if len(value) > 0 {
 		values.Set(key, strings.Join(value, ","))
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Workflow experiments (consensus evaluation)
+// Mirrors /v1/workflows/{workflow_id}/experiments — see the Python SDK at
+// retab/resources/workflows/experiments/client.py for the canonical surface.
+// ---------------------------------------------------------------------------
+
+// WorkflowExperimentsService gives access to experiments and per-experiment runs.
+type WorkflowExperimentsService struct {
+	client *Client
+	Runs   *WorkflowExperimentRunsService
+}
+
+// WorkflowExperimentRunsService lists per-experiment runs and per-document jobs.
+type WorkflowExperimentRunsService struct {
+	client *Client
+}
+
+func newWorkflowExperimentsService(client *Client) *WorkflowExperimentsService {
+	return &WorkflowExperimentsService{
+		client: client,
+		Runs:   &WorkflowExperimentRunsService{client: client},
+	}
+}
+
+// ExperimentDocumentProvenance attaches workflow-execution metadata to a
+// captured experiment document.
+type ExperimentDocumentProvenance struct {
+	WorkflowRunID string `json:"workflow_run_id,omitempty"`
+	StepID        string `json:"step_id,omitempty"`
+}
+
+// ExperimentDocumentCaptureRequest captures one document from a workflow
+// run's recorded inputs.
+type ExperimentDocumentCaptureRequest struct {
+	WorkflowRunID string `json:"workflow_run_id"`
+	StepID        string `json:"step_id,omitempty"`
+}
+
+// ExplicitExperimentDocumentRequest carries inlined handle_inputs.
+type ExplicitExperimentDocumentRequest struct {
+	HandleInputs map[string]any                `json:"handle_inputs"`
+	Provenance   *ExperimentDocumentProvenance `json:"provenance,omitempty"`
+}
+
+// ExperimentResponse is one experiment row returned by create/list/get/update/duplicate.
+type ExperimentResponse struct {
+	ID                string    `json:"id"`
+	WorkflowID        string    `json:"workflow_id"`
+	BlockID           string    `json:"block_id"`
+	NConsensus        int       `json:"n_consensus"`
+	DocumentCount     int       `json:"document_count"`
+	Name              string    `json:"name"`
+	LastRunID         string    `json:"last_run_id,omitempty"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	Status            string    `json:"status"`
+	BlockKind         string    `json:"block_kind"`
+	Score             *float64  `json:"score,omitempty"`
+	JobID             string    `json:"job_id,omitempty"`
+	IsStale           bool      `json:"is_stale,omitempty"`
+	SchemaDrift       string    `json:"schema_drift,omitempty"`
+	SchemaDriftDetail string    `json:"schema_drift_detail,omitempty"`
+}
+
+// PreviousRunSummary is a slim summary of the previous completed run.
+type PreviousRunSummary struct {
+	RunID                 string   `json:"run_id"`
+	DefinitionFingerprint string   `json:"definition_fingerprint,omitempty"`
+	Score                 *float64 `json:"score,omitempty"`
+}
+
+// RunExperimentResponse is returned by POST /experiments/{id}/run.
+type RunExperimentResponse struct {
+	ExperimentID          string              `json:"experiment_id"`
+	RunID                 string              `json:"run_id"`
+	JobID                 string              `json:"job_id"`
+	Status                string              `json:"status"`
+	DefinitionFingerprint string              `json:"definition_fingerprint"`
+	DocumentCount         int                 `json:"document_count"`
+	NConsensus            int                 `json:"n_consensus"`
+	PreviousRun           *PreviousRunSummary `json:"previous_run,omitempty"`
+}
+
+// CancelExperimentResponse is returned by POST /experiments/{id}/cancel.
+type CancelExperimentResponse struct {
+	Status string `json:"status"`
+	RunID  string `json:"run_id"`
+}
+
+// ExperimentRunSummary is one row of GET /experiments/{id}/runs.
+type ExperimentRunSummary struct {
+	ID                    string         `json:"id"`
+	ParentRunID           string         `json:"parent_run_id,omitempty"`
+	BlockConfig           map[string]any `json:"block_config,omitempty"`
+	DefinitionFingerprint string         `json:"definition_fingerprint"`
+	DocumentsFingerprint  string         `json:"documents_fingerprint"`
+	Status                string         `json:"status"`
+	BlockKind             string         `json:"block_kind"`
+	Score                 *float64       `json:"score,omitempty"`
+	DocumentCount         int            `json:"document_count"`
+	ErrorCount            int            `json:"error_count"`
+	NConsensus            int            `json:"n_consensus"`
+	CreatedAt             time.Time      `json:"created_at"`
+	CompletedAt           *time.Time     `json:"completed_at,omitempty"`
+	DurationMs            *int           `json:"duration_ms,omitempty"`
+	JobID                 string         `json:"job_id,omitempty"`
+}
+
+// ExperimentRunListResponse is the GET /experiments/{id}/runs envelope.
+type ExperimentRunListResponse struct {
+	Runs []ExperimentRunSummary `json:"runs"`
+}
+
+// ExperimentJobResponse is the per-document execution record inside a run.
+type ExperimentJobResponse struct {
+	ID            string           `json:"id"`
+	RunID         string           `json:"run_id"`
+	ExperimentID  string           `json:"experiment_id"`
+	DocumentID    string           `json:"document_id"`
+	Status        string           `json:"status"`
+	BlockKind     string           `json:"block_kind"`
+	HandleInputs  map[string]any   `json:"handle_inputs"`
+	Artifact      *StepArtifactRef `json:"artifact,omitempty"`
+	Error         string           `json:"error,omitempty"`
+	DurationMs    *int             `json:"duration_ms,omitempty"`
+	CreatedAt     *time.Time       `json:"created_at,omitempty"`
+	StartedAt     *time.Time       `json:"started_at,omitempty"`
+	CompletedAt   *time.Time       `json:"completed_at,omitempty"`
+	Attempt       int              `json:"attempt"`
+	IsPlaceholder bool             `json:"is_placeholder"`
+}
+
+// ExperimentContent wraps the per-job execution payload for one run.
+type ExperimentContent struct {
+	Jobs []ExperimentJobResponse `json:"jobs"`
+}
+
+// ExperimentContentResponse is the GET /experiments/{id}/content envelope.
+type ExperimentContentResponse struct {
+	ExperimentID string            `json:"experiment_id"`
+	RunID        string            `json:"run_id"`
+	Content      ExperimentContent `json:"content"`
+}
+
+// EligibleBlockSummary describes a block that supports experiments.
+type EligibleBlockSummary struct {
+	BlockID                string     `json:"block_id"`
+	BlockLabel             string     `json:"block_label"`
+	BlockType              string     `json:"block_type"`
+	ExperimentCount        int        `json:"experiment_count"`
+	DriftedExperimentCount int        `json:"drifted_experiment_count"`
+	StaleExperimentCount   int        `json:"stale_experiment_count"`
+	LatestRunAt            *time.Time `json:"latest_run_at,omitempty"`
+	MeanScore              *float64   `json:"mean_score,omitempty"`
+}
+
+// EligibleBlockListResponse is GET /experiments/eligible-blocks.
+type EligibleBlockListResponse struct {
+	Blocks []EligibleBlockSummary `json:"blocks"`
+}
+
+// RunBatchResponse is POST /experiments/run-batch.
+type RunBatchResponse struct {
+	BlockID         string                  `json:"block_id"`
+	ExperimentCount int                     `json:"experiment_count"`
+	Runs            []RunExperimentResponse `json:"runs"`
+}
+
+// ExperimentMetricsResponse is the GET /experiments/{id}/metrics payload.
+//
+// Modelling the discriminated union (four "view" shapes plus two error
+// envelopes) here would couple the SDK to internal structural details. We
+// expose it as Resource — callers branch on the "view" or "error" key.
+type ExperimentMetricsResponse = Resource
+
+// CreateExperimentRequest is the body for POST /experiments.
+type CreateExperimentRequest struct {
+	WorkflowID        string                              `json:"-"`
+	BlockID           string                              `json:"block_id"`
+	Name              string                              `json:"name"`
+	DocumentCaptures  []ExperimentDocumentCaptureRequest  `json:"document_captures,omitempty"`
+	Documents         []ExplicitExperimentDocumentRequest `json:"documents,omitempty"`
+	NConsensus        int                                 `json:"n_consensus,omitempty"`
+}
+
+// UpdateExperimentRequest is the body for PATCH /experiments/{id}. Only
+// fields you set are forwarded. Use NConsensusPtr to disambiguate the zero
+// value from "leave unchanged".
+type UpdateExperimentRequest struct {
+	Name             string                              `json:"-"`
+	NConsensus       *int                                `json:"-"`
+	DocumentCaptures []ExperimentDocumentCaptureRequest  `json:"-"`
+	Documents        []ExplicitExperimentDocumentRequest `json:"-"`
+}
+
+// RunExperimentOptions tunes POST /experiments/{id}/run.
+type RunExperimentOptions struct {
+	NConsensus      int
+	RetryFailedOnly bool
+}
+
+// RunBatchExperimentsRequest is the body for POST /experiments/run-batch.
+type RunBatchExperimentsRequest struct {
+	WorkflowID string `json:"-"`
+	BlockID    string `json:"block_id"`
+	NConsensus int    `json:"n_consensus,omitempty"`
+}
+
+// GetExperimentMetricsParams gathers the GET /experiments/{id}/metrics
+// query params.
+type GetExperimentMetricsParams struct {
+	View          string
+	RunID         string
+	DocumentID    string
+	TargetPath    string
+	IncludePrior  *bool
+	PriorRunID    string
+}
+
+// Create posts a new experiment definition. Use Runs.Create afterwards to
+// trigger an actual evaluation.
+func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateExperimentRequest, opts ...RequestOption) (*ExperimentResponse, error) {
+	if request.WorkflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if request.BlockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	if request.Name == "" {
+		return nil, fmt.Errorf("retab: name is required")
+	}
+	body := map[string]any{
+		"block_id": request.BlockID,
+		"name":     request.Name,
+	}
+	if request.NConsensus != 0 {
+		body["n_consensus"] = request.NConsensus
+	}
+	if request.DocumentCaptures != nil {
+		body["document_captures"] = request.DocumentCaptures
+	}
+	if request.Documents != nil {
+		body["documents"] = request.Documents
+	}
+	var result ExperimentResponse
+	err := s.client.do(ctx, http.MethodPost,
+		"/workflows/"+url.PathEscape(request.WorkflowID)+"/experiments",
+		nil, body, &result, opts...)
+	return &result, err
+}
+
+// List returns every experiment attached to the workflow, newest first.
+func (s *WorkflowExperimentsService) List(ctx context.Context, workflowID string, opts ...RequestOption) ([]ExperimentResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	var result []ExperimentResponse
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/experiments", nil, nil, &result, opts...)
+	return result, err
+}
+
+// Get fetches one experiment by ID.
+func (s *WorkflowExperimentsService) Get(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*ExperimentResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	var result ExperimentResponse
+	err := s.client.do(ctx, http.MethodGet,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID),
+		nil, nil, &result, opts...)
+	return &result, err
+}
+
+// Update patches the experiment. Only fields you set are forwarded.
+func (s *WorkflowExperimentsService) Update(ctx context.Context, workflowID, experimentID string, request UpdateExperimentRequest, opts ...RequestOption) (*ExperimentResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	body := map[string]any{}
+	if request.Name != "" {
+		body["name"] = request.Name
+	}
+	if request.NConsensus != nil {
+		body["n_consensus"] = *request.NConsensus
+	}
+	if request.DocumentCaptures != nil {
+		body["document_captures"] = request.DocumentCaptures
+	}
+	if request.Documents != nil {
+		body["documents"] = request.Documents
+	}
+	var result ExperimentResponse
+	err := s.client.do(ctx, http.MethodPatch,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID),
+		nil, body, &result, opts...)
+	return &result, err
+}
+
+// Delete removes the experiment and its runs.
+func (s *WorkflowExperimentsService) Delete(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) error {
+	if workflowID == "" {
+		return fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return fmt.Errorf("retab: experimentID is required")
+	}
+	return s.client.do(ctx, http.MethodDelete,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID),
+		nil, nil, nil, opts...)
+}
+
+// Duplicate copies an experiment definition. The duplicate has no runs.
+func (s *WorkflowExperimentsService) Duplicate(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*ExperimentResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	var result ExperimentResponse
+	err := s.client.do(ctx, http.MethodPost,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/duplicate",
+		nil, map[string]any{}, &result, opts...)
+	return &result, err
+}
+
+// Cancel stops the latest pending or running run for this experiment.
+// Returns 404 if no in-flight run exists.
+func (s *WorkflowExperimentsService) Cancel(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*CancelExperimentResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	var result CancelExperimentResponse
+	err := s.client.do(ctx, http.MethodPost,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/cancel",
+		nil, map[string]any{}, &result, opts...)
+	return &result, err
+}
+
+// GetContent returns per-document execution content for one run.
+// runID defaults to the latest run when empty.
+func (s *WorkflowExperimentsService) GetContent(ctx context.Context, workflowID, experimentID, runID string, opts ...RequestOption) (*ExperimentContentResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	query := url.Values{}
+	addQuery(query, "run_id", runID)
+	var result ExperimentContentResponse
+	err := s.client.do(ctx, http.MethodGet,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/content",
+		query, nil, &result, opts...)
+	return &result, err
+}
+
+// GetMetrics returns experiment metrics for one of the four views.
+//
+// The response is shape-agnostic: callers branch on result["view"] or
+// result["error"] to interpret the payload.
+func (s *WorkflowExperimentsService) GetMetrics(ctx context.Context, workflowID, experimentID string, params *GetExperimentMetricsParams, opts ...RequestOption) (ExperimentMetricsResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	query := url.Values{}
+	view := "summary"
+	includePrior := true
+	if params != nil {
+		if params.View != "" {
+			view = params.View
+		}
+		addQuery(query, "run_id", params.RunID)
+		addQuery(query, "document_id", params.DocumentID)
+		addQuery(query, "target_path", params.TargetPath)
+		addQuery(query, "prior_run_id", params.PriorRunID)
+		if params.IncludePrior != nil {
+			includePrior = *params.IncludePrior
+		}
+	}
+	query.Set("view", view)
+	query.Set("include_prior", fmt.Sprintf("%t", includePrior))
+	var result ExperimentMetricsResponse
+	err := s.client.do(ctx, http.MethodGet,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/metrics",
+		query, nil, &result, opts...)
+	return result, err
+}
+
+// ListEligibleBlocks returns blocks in the workflow that support experiments,
+// with rolled-up counts of how many experiments are attached / drifted / stale.
+func (s *WorkflowExperimentsService) ListEligibleBlocks(ctx context.Context, workflowID string, opts ...RequestOption) (*EligibleBlockListResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	var result EligibleBlockListResponse
+	err := s.client.do(ctx, http.MethodGet,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/eligible-blocks",
+		nil, nil, &result, opts...)
+	return &result, err
+}
+
+// RunBatch triggers one new run for every experiment attached to a block.
+// Returns 404 if no experiments are attached to that block.
+func (s *WorkflowExperimentsService) RunBatch(ctx context.Context, request RunBatchExperimentsRequest, opts ...RequestOption) (*RunBatchResponse, error) {
+	if request.WorkflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if request.BlockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	body := map[string]any{"block_id": request.BlockID}
+	if request.NConsensus != 0 {
+		body["n_consensus"] = request.NConsensus
+	}
+	var result RunBatchResponse
+	err := s.client.do(ctx, http.MethodPost,
+		"/workflows/"+url.PathEscape(request.WorkflowID)+"/experiments/run-batch",
+		nil, body, &result, opts...)
+	return &result, err
+}
+
+// Create triggers an experiment run with the current draft block config.
+// Async — returns a job_id; poll with client.Jobs.Retrieve(jobID) or call
+// WaitForCompletion.
+func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, experimentID string, params *RunExperimentOptions, opts ...RequestOption) (*RunExperimentResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	body := map[string]any{}
+	if params != nil {
+		if params.NConsensus != 0 {
+			body["n_consensus"] = params.NConsensus
+		}
+		if params.RetryFailedOnly {
+			body["retry_failed_only"] = true
+		}
+	}
+	var result RunExperimentResponse
+	err := s.client.do(ctx, http.MethodPost,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/run",
+		nil, body, &result, opts...)
+	return &result, err
+}
+
+// List returns the run history for one experiment, newest first.
+func (s *WorkflowExperimentRunsService) List(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*ExperimentRunListResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	var result ExperimentRunListResponse
+	err := s.client.do(ctx, http.MethodGet,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs",
+		nil, nil, &result, opts...)
+	return &result, err
+}
+
+// GetJob returns one document's job within a specific run.
+func (s *WorkflowExperimentRunsService) GetJob(ctx context.Context, workflowID, experimentID, runID, documentID string, opts ...RequestOption) (*ExperimentJobResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	if documentID == "" {
+		return nil, fmt.Errorf("retab: documentID is required")
+	}
+	var result ExperimentJobResponse
+	err := s.client.do(ctx, http.MethodGet,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs/"+url.PathEscape(runID)+"/documents/"+url.PathEscape(documentID),
+		nil, nil, &result, opts...)
+	return &result, err
+}
+
+// WaitForExperimentRunParams tunes the polling loop in WaitForCompletion.
+type WaitForExperimentRunParams struct {
+	PollInterval time.Duration
+	Timeout      time.Duration
+}
+
+// WaitForCompletion polls an experiment-run job until it reaches a terminal
+// state. Returns the underlying Job; throws on failed/cancelled/expired or
+// after Timeout. Mirrors WorkflowTestsService.WaitForCompletion.
+func (s *WorkflowExperimentRunsService) WaitForCompletion(ctx context.Context, jobID string, params *WaitForExperimentRunParams, opts ...RequestOption) (*Job, error) {
+	if jobID == "" {
+		return nil, fmt.Errorf("retab: jobID is required")
+	}
+	pollInterval := 2 * time.Second
+	timeout := 30 * time.Minute
+	if params != nil {
+		if params.PollInterval > 0 {
+			pollInterval = params.PollInterval
+		}
+		if params.Timeout > 0 {
+			timeout = params.Timeout
+		}
+	}
+	deadline := time.Now().Add(timeout)
+	for {
+		job, err := s.client.Jobs.Retrieve(ctx, jobID, nil, opts...)
+		if err != nil {
+			return nil, err
+		}
+		status, _ := (*job)["status"].(string)
+		if isTerminalJobStatus(status) {
+			if status != string(JobStatusCompleted) {
+				return nil, fmt.Errorf("retab: experiment run job %s ended in status %q: %v", jobID, status, (*job)["error"])
+			}
+			return job, nil
+		}
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("retab: experiment run job %s did not complete within %s", jobID, timeout)
+		}
+		timer := time.NewTimer(pollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, ctx.Err()
+		case <-timer.C:
+		}
 	}
 }

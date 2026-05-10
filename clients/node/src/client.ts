@@ -16,19 +16,14 @@ const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
   APISchemas: ["generate"],
   APIExtractions: ["create", "createStream", "list", "get", "sources", "delete"],
   APIFiles: ["upload", "list", "get", "get_download_link"],
-  APIProjects: ["create", "get", "list", "delete", "publish", "extract", "split"],
-  ProjectDatasets: ["create", "get", "list", "update", "delete", "duplicate", "add_document", "get_document", "list_documents", "update_document", "delete_document"],
-  ProjectIterations: ["create", "get", "list", "update_draft", "delete", "finalize", "get_schema", "process_documents", "get_document", "list_documents", "update_document", "delete_document", "get_metrics"],
   APIWorkflows: ["get", "list", "create", "update", "delete", "publish", "duplicate", "get_entities"],
   APIWorkflowBlocks: ["list", "get", "create", "create_batch", "update", "delete"],
   APIWorkflowEdges: ["list", "get", "create", "create_batch", "delete", "delete_all"],
+  APIWorkflowSpecs: ["validate", "plan", "apply", "export"],
   APIWorkflowRuns: ["create", "get", "list", "delete", "cancel", "restart", "submit_hil_decision", "get_hil_decision"],
-  APIWorkflowRunSteps: ["get", "list", "get_many"],
+  APIWorkflowRunSteps: ["get", "list"],
   APIWorkflowTests: ["create", "get", "list", "update", "delete", "execute"],
   APIWorkflowTestRuns: ["list", "get"],
-  APIEvalsExtract: ["process", "process_stream"],
-  APIEvalsSplit: ["process"],
-  APIEvalsClassify: ["process"],
 };
 
 async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, response: Response): AsyncGenerator<z.output<ZodSchema>> {

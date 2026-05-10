@@ -108,6 +108,8 @@ describe('workflow run steps client', () => {
       ['Step', 'Output', 'Response'].join(''),
       ['ZStep', 'Outputs', 'BatchResponse'].join(''),
       ['Step', 'Outputs', 'BatchResponse'].join(''),
+      'ZStepExecutionsBatchResponse',
+      'StepExecutionsBatchResponse',
     ];
     for (const removedName of removedNames) {
       expect(Object.prototype.hasOwnProperty.call(workflowTypes, removedName)).toBe(false);
@@ -142,57 +144,21 @@ describe('workflow run steps client', () => {
     expect(steps[0] && 'split_documents' in steps[0]).toBe(false);
   });
 
-  test('getMany() sends POST to /steps/batch', async () => {
-    class BatchMockClient extends AbstractClient {
-      public lastFetchParams: Record<string, unknown> | null = null;
+  test('get() is the single-step execution fetch', async () => {
+    const stepsClient = new APIWorkflowRunSteps(new MockClient());
 
-      protected async _fetch(params: {
-        url: string;
-        method: string;
-        params?: Record<string, unknown>;
-        headers?: Record<string, unknown>;
-        body?: unknown;
-      }): Promise<Response> {
-        this.lastFetchParams = params;
-        return new Response(
-          JSON.stringify({
-            executions: {
-              'extract-1': {
-                block_id: 'extract-1',
-                block_type: 'extract',
-                block_label: 'Extract',
-                status: 'completed',
-                artifact: {
-                  operation: 'extraction',
-                  id: 'ext_456',
-                },
-                handle_outputs: {
-                  'output-json-0': { type: 'json', data: { field: 'value' } },
-                },
-                handle_inputs: null,
-              },
-            },
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-    }
+    expect(stepsClient.get.length).toBe(3);
+    await expect((stepsClient.get as unknown as (runId: string) => Promise<unknown>)('run_123')).rejects.toThrow(
+      'blockId is required'
+    );
+  });
 
-    const mockClient = new BatchMockClient();
-    const stepsClient = new APIWorkflowRunSteps(mockClient);
-
-    const batch = await stepsClient.getMany('run_123', ['extract-1']);
-
-    expect(mockClient.lastFetchParams?.url).toBe('/workflows/runs/run_123/steps/batch');
-    expect(mockClient.lastFetchParams?.method).toBe('POST');
-    expect(batch.executions['extract-1']?.block_id).toBe('extract-1');
-    expect(batch.executions['extract-1']?.artifact).toEqual({
-      operation: 'extraction',
-      id: 'ext_456',
-    });
+  test('only exposes get for full execution fetches', () => {
+    const stepsClient = new APIWorkflowRunSteps(new MockClient());
+    expect('getAll' in stepsClient).toBe(false);
+    expect('get_all' in stepsClient).toBe(false);
+    expect('getMany' in stepsClient).toBe(false);
+    expect('get_many' in stepsClient).toBe(false);
   });
 
   test('get() accepts partition artifacts on for_each steps', async () => {

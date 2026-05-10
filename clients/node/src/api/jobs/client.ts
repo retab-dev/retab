@@ -3,7 +3,7 @@ import * as z from "zod";
 
 // Job status type
 type JobStatus = "validating" | "queued" | "in_progress" | "completed" | "failed" | "cancelled" | "expired";
-type JobListSource = "api" | "project" | "workflow";
+type JobListSource = "api" | "workflow";
 type JobListOrder = "asc" | "desc";
 
 // Supported endpoints
@@ -222,7 +222,6 @@ export default class APIJobs extends CompositionClient {
         status,
         endpoint,
         source,
-        project_id,
         workflow_id,
         workflow_block_id,
         model,
@@ -243,7 +242,6 @@ export default class APIJobs extends CompositionClient {
         status?: JobStatus;
         endpoint?: SupportedEndpoint;
         source?: JobListSource;
-        project_id?: string;
         workflow_id?: string;
         workflow_block_id?: string;
         model?: string;
@@ -265,7 +263,6 @@ export default class APIJobs extends CompositionClient {
             status,
             endpoint,
             source,
-            project_id,
             workflow_id,
             workflow_block_id,
             model,

@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Sequence
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.standards import PreparedRequest
 from ....types.workflows import (
+    BlockSimulation,
     WorkflowBlock,
     WorkflowBlockCreateRequest,
     WorkflowBlockUpdateRequest,
@@ -53,6 +54,36 @@ class WorkflowBlocksMixin:
     def prepare_delete(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to delete a block (also deletes connected edges)."""
         return PreparedRequest(method="DELETE", url=f"/workflows/{workflow_id}/blocks/{block_id}")
+
+    def prepare_simulate(
+        self,
+        run_id: str,
+        block_id: str,
+        n_consensus: int | None = None,
+        step_id: str | None = None,
+        check_eligibility: bool = True,
+    ) -> PreparedRequest:
+        """Prepare a request to replay one block with the current draft config.
+
+        Note: this is keyed by ``run_id`` (the workflow run whose inputs are
+        replayed), NOT by ``workflow_id`` — the backend route lives under
+        ``/v1/workflows/runs/{run_id}/steps/{block_id}/simulate``.
+        """
+        params: Dict[str, Any] = {}
+        if n_consensus is not None:
+            params["n_consensus"] = n_consensus
+        if step_id is not None:
+            params["step_id"] = step_id
+        # Only send when overriding the default — the backend defaults to
+        # ``True``, and sending ``check_eligibility=true`` redundantly would
+        # be noise.
+        if not check_eligibility:
+            params["check_eligibility"] = False
+        return PreparedRequest(
+            method="POST",
+            url=f"/workflows/runs/{run_id}/steps/{block_id}/simulate",
+            params=params or None,
+        )
 
 
 class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
@@ -250,6 +281,51 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         request = self.prepare_delete(workflow_id, block_id)
         self._client._prepared_request(request)
 
+    def simulate(
+        self,
+        run_id: str,
+        block_id: str,
+        n_consensus: int | None = None,
+        step_id: str | None = None,
+        check_eligibility: bool = True,
+    ) -> BlockSimulation:
+        """Replay one block using inputs from a previous run + current draft config.
+
+        Args:
+            run_id: ID of the workflow run whose recorded inputs feed this
+                block. The endpoint optionally verifies the upstream
+                subgraph hasn't drifted since this run executed (see
+                ``check_eligibility``).
+            block_id: ID of the block to simulate.
+            n_consensus: Override the block's ``n_consensus`` for this run
+                only. Allowed values: 3, 5, 7. Only meaningful for
+                ``extract`` / ``split`` / ``classifier`` blocks.
+            step_id: For blocks inside a ``for_each`` / ``while_loop``,
+                pick a specific iteration. Defaults to the base/first
+                available step.
+            check_eligibility: When ``True`` (default), the backend
+                rejects the request with 409 if the upstream subgraph has
+                changed since ``run_id`` executed. Pass ``False`` to skip
+                the check.
+
+        Returns:
+            ``BlockSimulation`` with handle inputs/outputs, optional
+            ``artifact`` ref to the persisted result, and timing info.
+
+        Raises:
+            APIError: 409 if the run is no longer eligible (drift), 400 if
+                ``n_consensus`` isn't 3/5/7, 404 if the run or block is gone.
+        """
+        request = self.prepare_simulate(
+            run_id,
+            block_id,
+            n_consensus=n_consensus,
+            step_id=step_id,
+            check_eligibility=check_eligibility,
+        )
+        response = self._client._prepared_request(request)
+        return BlockSimulation.model_validate(response)
+
 
 class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
     """Workflow Blocks API wrapper for asynchronous operations.
@@ -344,6 +420,26 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         """Delete a block and any edges connected to it."""
         request = self.prepare_delete(workflow_id, block_id)
         await self._client._prepared_request(request)
+
+    async def simulate(
+        self,
+        run_id: str,
+        block_id: str,
+        n_consensus: int | None = None,
+        step_id: str | None = None,
+        check_eligibility: bool = True,
+    ) -> BlockSimulation:
+        """Replay one block using inputs from a previous run + current draft config."""
+        request = self.prepare_simulate(
+            run_id,
+            block_id,
+            n_consensus=n_consensus,
+            step_id=step_id,
+            check_eligibility=check_eligibility,
+        )
+        response = await self._client._prepared_request(request)
+        return BlockSimulation.model_validate(response)
+
     _coerce_create_request = WorkflowBlocks._coerce_create_request
     _coerce_update_request = WorkflowBlocks._coerce_update_request
     _coerce_batch_requests = WorkflowBlocks._coerce_batch_requests
