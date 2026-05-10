@@ -48,6 +48,56 @@ Many people haven't yet realized how powerful LLMs have become at document proce
 
 You can check our Github repository to see code examples: [python examples](https://github.com/retab-dev/retab/tree/main/examples) and [jupyter notebooks](https://github.com/retab-dev/retab-nodejs/tree/main/notebooks).
 
+## Workflow Specs
+
+Use `client.workflows.specs` to validate, plan, apply, and export declarative workflow YAML.
+
+```python
+from retab import Retab
+
+client = Retab()
+
+validation = client.workflows.specs.validate(yaml_definition)
+plan = client.workflows.specs.plan(yaml_definition)
+result = client.workflows.specs.apply(yaml_definition, publish=False)
+exported = client.workflows.specs.export(result.workflow_id)
+```
+
+Declarative specs use `apiVersion: workflows.retab.com/v1alpha2` and explicit edge handles:
+
+```yaml
+edges:
+  - from:
+      block: start-node
+      handle: output-file-0
+    to:
+      block: extract-node
+      handle: input-file-source_doc
+```
+
+## Workflow Artifacts
+
+Workflow steps expose `artifact` as a stable `{operation, id}` pointer. Use
+`client.workflows.artifacts` to fetch the persisted record behind that pointer,
+including HIL evaluations, conditional matches, function outputs, and API-call
+attempts.
+
+```python
+run = client.workflows.runs.create_and_wait(
+    workflow_id="workflow_abc123",
+    documents={"start-node": "invoice.pdf"},
+)
+
+step = client.workflows.runs.steps.get(run.id, "hil-node")
+if step.artifact:
+    artifact = client.workflows.artifacts.get(step.artifact)
+    print(artifact.operation)
+    print(artifact.requires_human_review)
+    print(artifact.evaluations)
+
+all_artifacts = client.workflows.artifacts.list(run.id)
+```
+
 ## Community
 
 Let's create the future of document processing together!

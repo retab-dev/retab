@@ -12,6 +12,7 @@ import {
 import APIWorkflowRuns from "./runs/client.js";
 import APIWorkflowBlocks from "./blocks/client.js";
 import APIWorkflowEdges from "./edges/client.js";
+import APIWorkflowArtifacts from "./artifacts/client.js";
 import APIWorkflowSpecs from "./specs/client.js";
 import APIWorkflowTests from "./tests/client.js";
 import APIWorkflowExperiments from "./experiments/client.js";
@@ -23,6 +24,7 @@ import APIWorkflowExperiments from "./experiments/client.js";
  * - runs: Workflow run operations
  * - blocks: Workflow block CRUD + simulate
  * - edges: Workflow edge CRUD
+ * - artifacts: Workflow artifact dereference operations
  * - specs: Declarative workflow YAML validation, planning, apply, and export
  * - tests: Workflow block-tests CRUD + execution + run history
  * - experiments: Consensus-experiments CRUD + per-run + metrics
@@ -31,6 +33,7 @@ export default class APIWorkflows extends CompositionClient {
     public runs: APIWorkflowRuns;
     public blocks: APIWorkflowBlocks;
     public edges: APIWorkflowEdges;
+    public artifacts: APIWorkflowArtifacts;
     public specs: APIWorkflowSpecs;
     public tests: APIWorkflowTests;
     public experiments: APIWorkflowExperiments;
@@ -40,6 +43,7 @@ export default class APIWorkflows extends CompositionClient {
         this.runs = new APIWorkflowRuns(this);
         this.blocks = new APIWorkflowBlocks(this);
         this.edges = new APIWorkflowEdges(this);
+        this.artifacts = new APIWorkflowArtifacts(this);
         this.specs = new APIWorkflowSpecs(this);
         this.tests = new APIWorkflowTests(this);
         this.experiments = new APIWorkflowExperiments(this);
