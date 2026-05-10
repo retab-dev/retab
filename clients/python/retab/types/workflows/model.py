@@ -949,7 +949,7 @@ class WorkflowEdgeCreateRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Workflow graph response models (blocks, edges, subflows)
+# Workflow graph response models (blocks, edges)
 # ---------------------------------------------------------------------------
 
 
@@ -1010,33 +1010,13 @@ class WorkflowEdgeDoc(BaseModel):
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
 
-class WorkflowSubflow(BaseModel):
-    """A subflow container (loop or parallel execution group)."""
-    model_config = ConfigDict(extra="ignore")
-
-    id: str = Field(..., description="Subflow ID")
-    workflow_id: str = Field(..., description="Parent workflow ID")
-    organization_id: str = Field(..., description="Organization ID")
-    draft_version: Optional[str] = Field(default=None, description="Draft version for the live entity")
-    type: str = Field(..., description="Subflow type (while, parallel)")
-    label: str = Field(default="", description="Display label")
-    position_x: float = Field(default=0, description="X position on canvas")
-    position_y: float = Field(default=0, description="Y position on canvas")
-    width: float = Field(default=400, description="Container width")
-    height: float = Field(default=300, description="Container height")
-    config: Optional[dict] = Field(default=None, description="Subflow configuration")
-    child_block_ids: List[str] = Field(default_factory=list, description="Block IDs inside this subflow")
-    updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
-
-
 class WorkflowWithEntities(BaseModel):
-    """Complete workflow with its graph structure (blocks, edges, subflows)."""
+    """Complete workflow with its graph structure (blocks and edges)."""
     model_config = ConfigDict(extra="ignore")
 
     workflow: Workflow
     blocks: List[WorkflowBlock] = Field(default_factory=list)
     edges: List[WorkflowEdgeDoc] = Field(default_factory=list)
-    subflows: List[WorkflowSubflow] = Field(default_factory=list)
 
     @property
     def start_blocks(self) -> List[WorkflowBlock]:

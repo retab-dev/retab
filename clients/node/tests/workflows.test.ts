@@ -156,7 +156,7 @@ describe("workflows client", () => {
         expect(wf.published?.snapshot_id).toBe("snap_1");
     });
 
-    test("getEntities() returns blocks, edges, subflows", async () => {
+    test("getEntities() returns blocks and edges", async () => {
         const mockClient = new MockClient({
             workflow: {
                 id: "wf_1", name: "Test",
@@ -176,7 +176,6 @@ describe("workflows client", () => {
                     target_block: "extract-1",
                 },
             ],
-            subflows: [],
         });
         const workflowsClient = new APIWorkflows(mockClient);
 

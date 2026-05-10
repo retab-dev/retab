@@ -201,7 +201,7 @@ def test_workflow_run_v2_typed_fields() -> None:
 
 
 def test_workflow_with_entities_parsing() -> None:
-    """WorkflowWithEntities parses blocks, edges, subflows and exposes start_blocks."""
+    """WorkflowWithEntities parses blocks and edges and exposes start_blocks."""
     wfe = WorkflowWithEntities.model_validate({
         "workflow": {
             "id": "wf_1", "name": "Test Workflow",
@@ -224,7 +224,6 @@ def test_workflow_with_entities_parsing() -> None:
                 "target_handle": "input-file-0",
             },
         ],
-        "subflows": [],
     })
 
     assert wfe.workflow.id == "wf_1"
@@ -524,7 +523,6 @@ def test_workflows_get_entities_route() -> None:
         },
         "blocks": [{"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start"}],
         "edges": [],
-        "subflows": [],
     }
 
     wfe = Workflows(client=client).get_entities("wf_1")

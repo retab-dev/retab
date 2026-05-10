@@ -326,27 +326,10 @@ type WorkflowEdgeDoc struct {
 	UpdatedAt      *time.Time `json:"updated_at,omitempty"`
 }
 
-type WorkflowSubflow struct {
-	ID             string         `json:"id"`
-	WorkflowID     string         `json:"workflow_id"`
-	OrganizationID string         `json:"organization_id"`
-	DraftVersion   string         `json:"draft_version,omitempty"`
-	Type           string         `json:"type"`
-	Label          string         `json:"label"`
-	PositionX      float64        `json:"position_x"`
-	PositionY      float64        `json:"position_y"`
-	Width          float64        `json:"width"`
-	Height         float64        `json:"height"`
-	Config         map[string]any `json:"config,omitempty"`
-	ChildBlockIDs  []string       `json:"child_block_ids"`
-	UpdatedAt      *time.Time     `json:"updated_at,omitempty"`
-}
-
 type WorkflowWithEntities struct {
 	Workflow Workflow          `json:"workflow"`
 	Blocks   []WorkflowBlock   `json:"blocks"`
 	Edges    []WorkflowEdgeDoc `json:"edges"`
-	Subflows []WorkflowSubflow `json:"subflows"`
 }
 
 func (w *WorkflowWithEntities) UnmarshalJSON(data []byte) error {
@@ -360,9 +343,6 @@ func (w *WorkflowWithEntities) UnmarshalJSON(data []byte) error {
 	}
 	if w.Edges == nil {
 		w.Edges = []WorkflowEdgeDoc{}
-	}
-	if w.Subflows == nil {
-		w.Subflows = []WorkflowSubflow{}
 	}
 	return nil
 }
