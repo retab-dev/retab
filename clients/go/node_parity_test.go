@@ -1,0 +1,312 @@
+package retab
+
+import (
+	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+)
+
+func TestNodeParityRootNamespacesAreInstalled(t *testing.T) {
+	client, err := NewClient("test-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.Partitions == nil {
+		t.Fatalf("missing root namespaces: partitions=%v", client.Partitions)
+	}
+	if client.Edits.Templates == nil {
+		t.Fatalf("missing edits.templates namespace")
+	}
+	if client.Workflows.Blocks == nil || client.Workflows.Edges == nil || client.Workflows.Tests == nil || client.Workflows.Tests.Runs == nil {
+		t.Fatalf("missing workflow nested namespaces")
+	}
+}
+
+func TestRequestOptionsMergeParamsHeadersAndBody(t *testing.T) {
+	var header string
+	var rawQuery string
+	var body Resource
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		header = r.Header.Get("X-Test")
+		rawQuery = r.URL.RawQuery
+		defer r.Body.Close()
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(Resource{"id": "partition_123"})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	params := url.Values{}
+	params.Set("debug", "1")
+	_, err := client.Partitions.Create(context.Background(), PartitionCreateRequest{
+		Document:     MIMEData{Filename: "invoice.pdf", URL: "data:application/pdf;base64,AAAA"},
+		Key:          "vendor",
+		Instructions: "partition by vendor",
+		Model:        "retab-small",
+	}, WithRequestParams(params), WithRequestHeader("X-Test", "yes"), WithRequestBody(map[string]any{"model": "retab-large"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if header != "yes" {
+		t.Fatalf("header = %q", header)
+	}
+	if rawQuery != "debug=1" {
+		t.Fatalf("rawQuery = %q", rawQuery)
+	}
+	if body["model"] != "retab-large" {
+		t.Fatalf("body = %#v", body)
+	}
+}
+
+func TestNodePaginationEnvelope(t *testing.T) {
+	var list PaginatedList[Resource]
+	if err := json.Unmarshal([]byte(`{"data":[{"id":"x"}],"list_metadata":{"before":"b","after":"a"}}`), &list); err != nil {
+		t.Fatal(err)
+	}
+	if len(list.Data) != 1 || list.ListMetadata.Before != "b" || list.ListMetadata.After != "a" {
+		t.Fatalf("list = %#v", list)
+	}
+}
+
+func TestMIMEDataMatchesNodeJSONAndStorageID(t *testing.T) {
+	mimeData := MIMEData{
+		Filename: "invoice.pdf",
+		URL:      "https://storage.retab.com/org_123/file_123.pdf",
+		Content:  "not-serialized",
+		MIMEType: "application/pdf",
+	}
+	encoded, err := json.Marshal(mimeData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(encoded) != `{"filename":"invoice.pdf","url":"https://storage.retab.com/org_123/file_123.pdf"}` {
+		t.Fatalf("encoded = %s", encoded)
+	}
+	if mimeData.ID() != "file_123" {
+		t.Fatalf("id = %q", mimeData.ID())
+	}
+	if (MIMEData{URL: "https://storage.retab.com/org_123/file_123.pdf?x=1"}).ID() != "" {
+		t.Fatalf("storage URLs with query params must not infer an id")
+	}
+}
+
+func TestInferMIMEDataRejectsUnknownBytesLikeNode(t *testing.T) {
+	if _, err := InferMIMEData([]byte("plain text is not detected by file-type")); err == nil {
+		t.Fatalf("expected unknown bytes to fail MIME inference")
+	}
+}
+
+func TestFilesUploadRejectsNonLocalPaths(t *testing.T) {
+	client, err := NewClient("test-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Files.Upload(context.Background(), "https://example.com/invoice.pdf"); err == nil {
+		t.Fatalf("expected URL upload rejection")
+	}
+	if _, err := client.Files.Upload(context.Background(), "data:application/pdf;base64,AAAA"); err == nil {
+		t.Fatalf("expected data URI upload rejection")
+	}
+}
+
+func TestFileUploadContentTypeMatchesNode(t *testing.T) {
+	cases := map[string]string{
+		"file.pdf":  "application/pdf",
+		"file.png":  "image/png",
+		"file.jpg":  "image/jpeg",
+		"file.jpeg": "image/jpeg",
+		"file.txt":  "text/plain",
+		"file.csv":  "application/octet-stream",
+	}
+	for filename, want := range cases {
+		if got := contentTypeForFilename(filename); got != want {
+			t.Fatalf("%s content type = %q, want %q", filename, got, want)
+		}
+	}
+}
+
+func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
+	var body Resource
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		defer r.Body.Close()
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(workflowRunResponse("run_123", "wf_123", "running"))
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	_, err := client.Workflows.Runs.Create(context.Background(), CreateWorkflowRunRequest{
+		WorkflowID: "wf_123",
+		Documents: map[string]any{
+			"start-1": MIMEData{Filename: "invoice.pdf", URL: "data:application/pdf;base64,AAAA"},
+		},
+		JSONInputs: map[string]any{"vendor": "Retab"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	documents, ok := body["documents"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents = %#v", body["documents"])
+	}
+	startDocument, ok := documents["start-1"].(map[string]any)
+	if !ok {
+		t.Fatalf("start document = %#v", documents["start-1"])
+	}
+	if startDocument["filename"] != "invoice.pdf" || startDocument["content"] != "AAAA" || startDocument["mime_type"] != "application/pdf" {
+		t.Fatalf("start document = %#v", startDocument)
+	}
+}
+
+func TestListDefaultsMatchNode(t *testing.T) {
+	requests := map[string]string{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests[r.URL.Path] = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{}})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	if _, err := client.Workflows.List(context.Background(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Workflows.Runs.List(context.Background(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Jobs.List(context.Background(), nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if requests["/workflows"] != "limit=10&order=desc" {
+		t.Fatalf("workflow defaults = %q", requests["/workflows"])
+	}
+	if requests["/workflows/runs"] != "limit=20&order=desc" {
+		t.Fatalf("workflow run defaults = %q", requests["/workflows/runs"])
+	}
+	if requests["/jobs"] != "limit=20&order=desc" {
+		t.Fatalf("job defaults = %q", requests["/jobs"])
+	}
+}
+
+func TestModelsListDoesNotDoublePrefixV1BaseURL(t *testing.T) {
+	var path string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		if r.URL.Path != "/v1/models" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{}})
+	}))
+	defer server.Close()
+	client, err := NewClient("test-key", WithBaseURL(server.URL+"/v1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Models.List(context.Background(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if path != "/v1/models" {
+		t.Fatalf("path = %q", path)
+	}
+}
+
+func TestFetchJSONRequiresJSONContentType(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte(`{"id":"file_123"}`))
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	_, err := client.Files.Get(context.Background(), "file_123")
+	if err == nil {
+		t.Fatalf("expected content-type error")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok || apiErr.Message != "Response is not JSON" {
+		t.Fatalf("err = %#v", err)
+	}
+}
+
+func TestVerifyEvent(t *testing.T) {
+	body := []byte(`{"type":"workflow.run.completed"}`)
+	mac := hmac.New(sha256.New, []byte("secret"))
+	_, _ = mac.Write(body)
+	signature := hex.EncodeToString(mac.Sum(nil))
+
+	event, err := VerifyEvent[Resource](body, signature, "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if (*event)["type"] != "workflow.run.completed" {
+		t.Fatalf("event = %#v", event)
+	}
+	if _, err := VerifyEvent[Resource](body, "bad", "secret"); err == nil {
+		t.Fatalf("expected invalid signature error")
+	}
+}
+
+func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/workflows/wf_123/blocks":
+			_ = json.NewEncoder(w).Encode([]Resource{{"id": "block_1", "workflow_id": "wf_123", "organization_id": "org", "type": "start"}})
+		case "/workflows/wf_123/edges":
+			if r.Method == http.MethodDelete {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			_ = json.NewEncoder(w).Encode([]Resource{})
+		case "/workflows/wf_123/block-tests":
+			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "test_1"}}})
+		case "/workflows/wf_123/block-tests/test_1/runs":
+			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "testrun_1"}}})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	if _, err := client.Workflows.Blocks.List(context.Background(), "wf_123"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Workflows.Edges.List(context.Background(), "wf_123", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Workflows.Edges.DeleteAll(context.Background(), "wf_123"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Workflows.Tests.List(context.Background(), ListWorkflowTestsRequest{WorkflowID: "wf_123"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Workflows.Tests.Runs.List(context.Background(), "wf_123", "test_1", 10); err != nil {
+		t.Fatal(err)
+	}
+
+	want := "GET /workflows/wf_123/blocks,GET /workflows/wf_123/edges,DELETE /workflows/wf_123/edges,GET /workflows/wf_123/block-tests,GET /workflows/wf_123/block-tests/test_1/runs"
+	if strings.Join(requests, ",") != want {
+		t.Fatalf("requests = %s", strings.Join(requests, ","))
+	}
+}
