@@ -48,12 +48,22 @@ To use the API, you need to sign up on [Retab](https://www.retab.com/).
 
 ## SDK
 
-1. Install the SDK
+Python:
 ```python
 pip install retab
 ```
 
-2. Generate a Schema
+Node:
+```bash
+npm install retab
+```
+
+Go:
+```bash
+go get github.com/retab-dev/retab/clients/go
+```
+
+Generate a Schema:
 ```python
 from pathlib import Path
 from retab import Retab
@@ -65,7 +75,7 @@ response = client.schemas.generate(
 )
 ```
 
-3. Extract Data
+Extract Data:
 ```python
 from pathlib import Path
 from retab import Retab
