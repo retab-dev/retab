@@ -61,8 +61,7 @@ func TestWorkflowsCreateUpdatePublishDuplicateGetEntitiesAndDelete(t *testing.T)
 					"organization_id": "org_123",
 					"type":            "start",
 				}},
-				"edges":    []map[string]any{},
-				"subflows": []map[string]any{},
+				"edges": []map[string]any{},
 			})
 		case r.Method == http.MethodDelete && r.URL.Path == "/workflows/wf_123":
 			w.WriteHeader(http.StatusNoContent)

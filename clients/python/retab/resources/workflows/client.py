@@ -83,7 +83,7 @@ class WorkflowsMixin:
         return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/duplicate", data={})
 
     def prepare_get_entities(self, workflow_id: str) -> PreparedRequest:
-        """Prepare a request to get a workflow with all its entities (blocks, edges, subflows)."""
+        """Prepare a request to get a workflow with all its entities (blocks and edges)."""
         return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/entities")
 
 
@@ -206,7 +206,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         return Workflow.model_validate(response)
 
     def get_entities(self, workflow_id: str) -> WorkflowWithEntities:
-        """Get a workflow with all its entities (blocks, edges, subflows).
+        """Get a workflow with all its entities (blocks and edges).
 
         Returns:
             WorkflowWithEntities: The workflow with its full graph structure.
@@ -305,7 +305,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         return Workflow.model_validate(response)
 
     async def get_entities(self, workflow_id: str) -> WorkflowWithEntities:
-        """Get a workflow with all its entities (blocks, edges, subflows)."""
+        """Get a workflow with all its entities (blocks and edges)."""
         request = self.prepare_get_entities(workflow_id)
         response = await self._client._prepared_request(request)
         return WorkflowWithEntities.model_validate(response)

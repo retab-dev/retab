@@ -1286,28 +1286,10 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
 })));
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
 
-export const ZWorkflowSubflow = z.lazy(() => (z.object({
-    id: z.string(),
-    workflow_id: z.string(),
-    organization_id: z.string(),
-    draft_version: z.string().nullable().optional(),
-    type: z.string(),
-    label: z.string().default(""),
-    position_x: z.number().default(0),
-    position_y: z.number().default(0),
-    width: z.number().default(400),
-    height: z.number().default(300),
-    config: z.record(z.any()).nullable().optional(),
-    child_block_ids: z.array(z.string()),
-    updated_at: z.string().nullable().optional(),
-})));
-export type WorkflowSubflow = z.infer<typeof ZWorkflowSubflow>;
-
 export const ZWorkflowWithEntities = z.lazy(() => (z.object({
     workflow: ZWorkflow,
     blocks: z.array(ZWorkflowBlock),
     edges: z.array(ZWorkflowEdgeDoc),
-    subflows: z.array(ZWorkflowSubflow),
 })));
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
 

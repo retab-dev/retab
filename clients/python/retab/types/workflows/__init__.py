@@ -86,7 +86,6 @@ from .model import (
     ResolvedSchemas,
     WorkflowBlock,
     WorkflowEdgeDoc,
-    WorkflowSubflow,
     WorkflowWithEntities,
     WorkflowRunError,
 )
@@ -177,7 +176,6 @@ __all__ = [
     "ResolvedSchemas",
     "WorkflowBlock",
     "WorkflowEdgeDoc",
-    "WorkflowSubflow",
     "WorkflowWithEntities",
     "WorkflowRunError",
 ]

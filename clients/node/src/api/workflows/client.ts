@@ -208,7 +208,7 @@ export default class APIWorkflows extends CompositionClient {
     }
 
     /**
-     * Get a workflow with all its entities (blocks, edges, subflows).
+     * Get a workflow with all its entities (blocks and edges).
      *
      * Use the returned `blocks` array to discover start blocks:
      * ```typescript

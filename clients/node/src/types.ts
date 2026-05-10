@@ -584,7 +584,7 @@ export const ZWorkflow = z
 export type Workflow = z.infer<typeof ZWorkflow>;
 
 // ---------------------------------------------------------------------------
-// Workflow graph types (blocks, edges, subflows)
+// Workflow graph types (blocks, edges)
 // ---------------------------------------------------------------------------
 
 export const ZResolvedSchemas = z
@@ -631,31 +631,11 @@ export const ZWorkflowEdgeDoc = z
   .passthrough();
 export type WorkflowEdgeDoc = z.infer<typeof ZWorkflowEdgeDoc>;
 
-export const ZWorkflowSubflow = z
-  .object({
-    id: z.string(),
-    workflow_id: z.string(),
-    organization_id: z.string(),
-    draft_version: z.string().nullable().optional(),
-    type: z.string(),
-    label: z.string().default(''),
-    position_x: z.number().default(0),
-    position_y: z.number().default(0),
-    width: z.number().default(400),
-    height: z.number().default(300),
-    config: z.record(z.any()).nullable().optional(),
-    child_block_ids: z.array(z.string()).default([]),
-    updated_at: z.string().nullable().optional(),
-  })
-  .passthrough();
-export type WorkflowSubflow = z.infer<typeof ZWorkflowSubflow>;
-
 export const ZWorkflowWithEntities = z
   .object({
     workflow: ZWorkflow,
     blocks: z.array(ZWorkflowBlock).default([]),
     edges: z.array(ZWorkflowEdgeDoc).default([]),
-    subflows: z.array(ZWorkflowSubflow).default([]),
   })
   .passthrough();
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
