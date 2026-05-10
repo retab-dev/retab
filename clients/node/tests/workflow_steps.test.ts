@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { AbstractClient } from '../src/client';
+import APIWorkflowArtifacts from '../src/api/workflows/artifacts/client';
 import APIWorkflowRunSteps from '../src/api/workflows/runs/steps/client';
 import * as workflowTypes from '../src/types';
 
@@ -40,6 +41,94 @@ class MockClient extends AbstractClient {
 }
 
 describe('workflow run steps client', () => {
+  test('artifacts.get() accepts a step artifact ref', async () => {
+    class ArtifactMockClient extends AbstractClient {
+      public lastFetchParams: Record<string, unknown> | null = null;
+
+      protected async _fetch(params: {
+        url: string;
+        method: string;
+        params?: Record<string, unknown>;
+        headers?: Record<string, unknown>;
+        body?: Record<string, unknown>;
+      }): Promise<Response> {
+        this.lastFetchParams = params;
+        return new Response(
+          JSON.stringify({
+            operation: 'hil_evaluation',
+            id: 'heval_123',
+            requires_human_review: true,
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    const mockClient = new ArtifactMockClient();
+    const artifactsClient = new APIWorkflowArtifacts(mockClient);
+    const artifact = await artifactsClient.get({
+      operation: 'hil_evaluation',
+      id: 'heval_123',
+    });
+
+    expect(mockClient.lastFetchParams).toEqual({
+      url: '/workflows/artifacts/hil_evaluation/heval_123',
+      method: 'GET',
+      params: undefined,
+      headers: undefined,
+    });
+    expect(artifact.operation).toBe('hil_evaluation');
+    expect(artifact.id).toBe('heval_123');
+    expect(artifact.requires_human_review).toBe(true);
+  });
+
+  test('artifacts.list() uses run scoped artifact route', async () => {
+    class ArtifactListMockClient extends AbstractClient {
+      public lastFetchParams: Record<string, unknown> | null = null;
+
+      protected async _fetch(params: {
+        url: string;
+        method: string;
+        params?: Record<string, unknown>;
+        headers?: Record<string, unknown>;
+        body?: Record<string, unknown>;
+      }): Promise<Response> {
+        this.lastFetchParams = params;
+        return new Response(
+          JSON.stringify([{ operation: 'conditional_evaluation', id: 'ceval_123' }]),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    const mockClient = new ArtifactListMockClient();
+    const artifactsClient = new APIWorkflowArtifacts(mockClient);
+    const artifacts = await artifactsClient.list({
+      runId: 'run_123',
+      operation: 'conditional_evaluation',
+      blockId: 'conditional-1',
+    });
+
+    expect(mockClient.lastFetchParams).toEqual({
+      url: '/workflows/artifacts',
+      method: 'GET',
+      params: {
+        run_id: 'run_123',
+        operation: 'conditional_evaluation',
+        block_id: 'conditional-1',
+      },
+      headers: undefined,
+    });
+    expect(artifacts).toHaveLength(1);
+    expect(artifacts[0]?.operation).toBe('conditional_evaluation');
+  });
+
   test('get() uses the public step artifact route', async () => {
     class GetMockClient extends AbstractClient {
       public lastFetchParams: Record<string, unknown> | null = null;

@@ -70,9 +70,42 @@ raiseForStatus(run);
 
 const steps = await retab.workflows.runs.steps.list(run.id);
 const extractStep = await retab.workflows.runs.steps.get(run.id, "extract-1");
+const artifact = extractStep.artifact
+  ? await retab.workflows.artifacts.get(extractStep.artifact)
+  : null;
+const runArtifacts = await retab.workflows.artifacts.list({
+  runId: run.id,
+});
 
 console.log(steps.map((step) => `${step.block_id}: ${step.status}`));
 console.log(extractStep.handle_outputs["output-json-0"]?.data);
+console.log(artifact);
+console.log(runArtifacts);
+```
+
+### Workflow Specs
+
+Use `client.workflows.specs` to validate, plan, apply, and export declarative workflow YAML.
+
+```typescript
+const validation = await retab.workflows.specs.validate(yamlDefinition);
+const plan = await retab.workflows.specs.plan(yamlDefinition);
+const result = await retab.workflows.specs.apply(yamlDefinition, {
+  publish: false,
+});
+const exported = await retab.workflows.specs.export(result.workflow_id);
+```
+
+Declarative specs use `apiVersion: workflows.retab.com/v1alpha2` and explicit edge handles:
+
+```yaml
+edges:
+  - from:
+      block: start-node
+      handle: output-file-0
+    to:
+      block: extract-node
+      handle: input-file-source_doc
 ```
 
 ## Support

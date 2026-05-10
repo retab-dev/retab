@@ -584,6 +584,14 @@ export const ZStepExecutionResponse = z.object({
 });
 export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
 
+export const ZWorkflowArtifact = z
+  .object({
+    operation: z.string(),
+    id: z.string(),
+  })
+  .passthrough();
+export type WorkflowArtifact = z.infer<typeof ZWorkflowArtifact>;
+
 export const ZWorkflow = z
   .object({
     id: z.string(),

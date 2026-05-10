@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from retab.resources.workflows.runs.steps.client import AsyncWorkflowSteps, WorkflowSteps
+from retab.resources.workflows.artifacts.client import AsyncWorkflowArtifacts, WorkflowArtifacts
 from retab.types.workflows import model as workflow_model
 from retab.types.workflows.model import StepExecutionResponse, WorkflowRun
 
@@ -31,6 +32,52 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
     assert steps[0].block_id == "extract-1"
 
 
+def test_workflow_artifacts_get_accepts_ref_and_returns_flattened_record() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "operation": "hil_evaluation",
+        "id": "heval_123",
+        "requires_human_review": True,
+    }
+    artifact_ref = workflow_model.StepArtifactRef(
+        operation="hil_evaluation",
+        id="heval_123",
+    )
+
+    artifact = WorkflowArtifacts(client=client).get(artifact_ref)
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/artifacts/hil_evaluation/heval_123"
+    assert artifact.operation == "hil_evaluation"
+    assert artifact.id == "heval_123"
+    assert artifact.requires_human_review is True
+
+
+def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = [
+        {"operation": "conditional_evaluation", "id": "ceval_123"},
+    ]
+
+    artifacts = WorkflowArtifacts(client=client).list(
+        "run_123",
+        operation="conditional_evaluation",
+        block_id="conditional-1",
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/artifacts"
+    assert request.params == {
+        "run_id": "run_123",
+        "operation": "conditional_evaluation",
+        "block_id": "conditional-1",
+    }
+    assert len(artifacts) == 1
+    assert artifacts[0].operation == "conditional_evaluation"
+
+
 @pytest.mark.asyncio
 async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     client = MagicMock()
@@ -53,6 +100,29 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     assert request.url == "/workflows/runs/run_123/steps"
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
+
+
+@pytest.mark.asyncio
+async def test_async_workflow_artifacts_get_accepts_operation_and_id() -> None:
+    client = MagicMock()
+    client._prepared_request = AsyncMock(
+        return_value={
+            "operation": "function_invocation",
+            "id": "fninv_123",
+            "output": {"ok": True},
+        }
+    )
+
+    artifact = await AsyncWorkflowArtifacts(client=client).get(
+        "function_invocation",
+        "fninv_123",
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/artifacts/function_invocation/fninv_123"
+    assert artifact.operation == "function_invocation"
+    assert artifact.output == {"ok": True}
 
 
 def test_workflow_steps_get_handle_outputs_typed() -> None:

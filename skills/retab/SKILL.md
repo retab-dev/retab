@@ -67,7 +67,7 @@ const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 - If a workflow run must finish before downstream code proceeds, use SDK waiting helpers instead of hand-writing ad hoc polling when the SDK provides one.
 - If a workflow stops at `waiting_for_human`, do not treat that as a generic failure. Surface it explicitly and inspect the relevant step or HIL decision state.
 - When debugging workflow outputs, use `workflows.runs.steps.list(run_id)` as the batch primitive. Use `steps.get(run_id, block_id)` for a single step. Avoid looping `run.steps` with per-step `steps.get()` calls because that creates an N+1 anti-pattern.
-- To retrieve the typed resource produced by an inference step, use `step.artifact` and the matching resource client: `client.extractions.get(step.artifact.id)`, `client.splits.get(...)`, `client.classifications.get(...)`, `client.parses.get(...)`, `client.edits.get(...)`, or `client.partitions.get(...)`.
+- To retrieve the persisted resource produced by a workflow step, pass `step.artifact` to `client.workflows.artifacts.get(step.artifact)`. This returns the flattened artifact record with `operation` injected at top level.
 - To retrieve source provenance for an extraction, use `client.extractions.sources(extraction.id)` or `GET /v1/extractions/{extraction_id}/sources`; the returned `sources` tree mirrors the extraction and wraps leaves as `{ value, source }`.
 - Stay within this skill's scope. It covers direct document routes plus running existing workflows. If the user asks for workflow design, widgets, projects, or MCP setup, give the simplest useful answer and note that those areas are outside this skill's main coverage.
 
@@ -883,10 +883,10 @@ if step.terminal and step.terminal.kind == "error":
     print(step.terminal.message)
 print(step.extracted_data)  # handle-derived shortcut
 
-# Jump to the typed underlying resource:
+# Jump to the persisted underlying artifact:
 if step.artifact:
-    extraction = client.extractions.get(step.artifact.id)
-    # equivalents: client.splits.get / classifications.get / parses.get / edits.get / partitions.get
+    artifact = client.workflows.artifacts.get(step.artifact)
+    print(artifact.operation, artifact.id)
 ```
 
 Node:
@@ -901,26 +901,26 @@ for (const step of await client.workflows.runs.steps.list(run.id)) {
 
 const step = await client.workflows.runs.steps.get(run.id, "extract-block-1");
 if (step.artifact) {
-  const extraction = await client.extractions.get(step.artifact.id);
-  console.log(extraction);
+  const artifact = await client.workflows.artifacts.get(step.artifact);
+  console.log(artifact.operation, artifact.id);
 }
 ```
 
-Every executed block exposes a single `step.artifact` `{operation, id}` pointer (or `null` for steps that produce no canonical result, e.g. start/note/merge/sentinels). Dispatch on `operation` and fetch the backing record with the matching client.
+Every executed block exposes a single `step.artifact` `{operation, id}` pointer (or `null` for steps that produce no canonical result, e.g. start/note/merge/sentinels). Pass that ref to `client.workflows.artifacts.get(step.artifact)` to fetch the backing record. Use `client.workflows.artifacts.list(run.id)` when you want all artifacts from a run.
 
-| `step.artifact.operation` | Emitted by block type | Fetch with |
+| `step.artifact.operation` | Emitted by block type | Artifact fields to inspect |
 |---|---|---|
-| `extraction` | `extract` | `client.extractions.get(id)` |
-| `split` | `split` | `client.splits.get(id)` |
-| `classification` | `classifier` | `client.classifications.get(id)` |
-| `parse` | `parse` | `client.parses.get(id)` |
-| `edit` | `edit` | `client.edits.get(id)` |
-| `partition` | `for_each_sentinel_start` | `client.partitions.get(id)` |
-| `conditional_evaluation` | `conditional` | backing `ConditionalEvaluation` record |
-| `hil_evaluation` | `hil` | backing `HilEvaluation` record |
-| `while_loop_termination` | `while_loop_sentinel_end` | backing `WhileLoopTermination` record |
-| `api_call_invocation` | `api_call` | backing `ApiCallInvocation` record |
-| `function_invocation` | `function` | backing `FunctionInvocation` record |
+| `extraction` | `extract` | extracted output, consensus/source metadata |
+| `split` | `split` | split output and consensus |
+| `classification` | `classifier` | selected category and consensus |
+| `parse` | `parse` | parsed document content |
+| `edit` | `edit` | edited document data |
+| `partition` | `for_each_sentinel_start` | partition route data |
+| `conditional_evaluation` | `conditional` | `evaluations`, `matched_condition_ids`, `selected_handles` |
+| `hil_evaluation` | `hil` | `requires_human_review`, `evaluations`, review state |
+| `while_loop_termination` | `while_loop_sentinel_end` | `termination_reason`, `evaluations` |
+| `api_call_invocation` | `api_call` | request/response attempts |
+| `function_invocation` | `function` | function inputs/output/error |
 
 There is no `step.artifacts` list and no `step.metadata`. HIL state (`requires_human_review`, `reviewed_at`, `review_decision`) lives on the `HilEvaluation` backing record; branch / loop evaluation results live on `ConditionalEvaluation` / `WhileLoopTermination`.
 

@@ -9,6 +9,7 @@ from ...types.workflows import (
     WorkflowWithEntities,
 )
 from .runs import WorkflowRuns, AsyncWorkflowRuns
+from .artifacts import AsyncWorkflowArtifacts, WorkflowArtifacts
 from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
 from .edges import WorkflowEdges, AsyncWorkflowEdges
 from .experiments import AsyncWorkflowExperiments, WorkflowExperiments
@@ -124,12 +125,14 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
+        artifacts: Workflow artifact dereference operations
         specs: Declarative workflow YAML validation, planning, apply, and export
     """
 
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.runs = WorkflowRuns(client=client)
+        self.artifacts = WorkflowArtifacts(client=client)
         self.blocks = WorkflowBlocks(client=client)
         self.edges = WorkflowEdges(client=client)
         self.tests = WorkflowTests(client=client)
@@ -306,6 +309,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.runs = AsyncWorkflowRuns(client=client)
+        self.artifacts = AsyncWorkflowArtifacts(client=client)
         self.blocks = AsyncWorkflowBlocks(client=client)
         self.edges = AsyncWorkflowEdges(client=client)
         self.tests = AsyncWorkflowTests(client=client)

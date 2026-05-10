@@ -121,6 +121,24 @@ class StepArtifactRef(BaseModel):
     id: str = Field(..., description="Persisted resource identifier")
 
 
+class WorkflowArtifact(BaseModel):
+    """Dereferenced workflow artifact record.
+
+    Returned by ``client.workflows.artifacts.get(...)`` and
+    ``client.workflows.artifacts.list(...)``. It is the persisted artifact
+    record flattened with the ref's ``operation`` injected at top level.
+    Operation-specific fields are preserved as extra attributes.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    operation: WorkflowArtifactOperation = Field(
+        ...,
+        description="Persisted resource operation; identifies the backing collection",
+    )
+    id: str = Field(..., description="Persisted resource identifier")
+
+
 class ContainerContextData(BaseModel):
     """Structured context for a single container in the hierarchy."""
     container_id: str = Field(..., description="Container ID (e.g., 'while_loop-abc')")
