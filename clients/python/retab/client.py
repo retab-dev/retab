@@ -22,7 +22,7 @@ from .exceptions import (
     RateLimitError,
     ValidationError,
 )
-from .resources import documents, files, models, schemas, extractions, classifications, parses, splits, partitions, edits, workflows, jobs
+from .resources import files, schemas, extractions, classifications, parses, splits, partitions, edits, workflows, jobs
 from .types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
 
 logger = logging.getLogger("retab")
@@ -187,8 +187,8 @@ class BaseRetab:
 class Retab(BaseRetab):
     """Synchronous client for interacting with the Retab API.
 
-    This client provides synchronous access to all Retab API resources including files, fine-tuning,
-    prompt optimization, documents, models, processors, deployments, and schemas.
+    This client provides synchronous access to all Retab API resources including files, extractions,
+    parses, splits, classifications, partitions, edits, schemas, workflows, and jobs.
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
@@ -198,14 +198,7 @@ class Retab(BaseRetab):
 
     Attributes:
         files: Access to file operations
-        fine_tuning: Access to model fine-tuning operations
-        prompt_optimization: Access to prompt optimization operations
-        documents: Access to document operations
-        models: Access to model operations
-        processors: Access to processor operations
-        deployments: Access to deployment operations
         schemas: Access to schema operations
-        responses: Access to responses API (OpenAI Responses API compatible interface)
     """
 
     def __init__(
@@ -229,8 +222,6 @@ class Retab(BaseRetab):
         self.parses = parses.Parses(client=self)
         self.splits = splits.Splits(client=self)
         self.partitions = partitions.Partitions(client=self)
-        self.documents = documents.Documents(client=self)
-        self.models = models.Models(client=self)
         self.schemas = schemas.Schemas(client=self)
         self.edits = edits.Edits(client=self)
         self.workflows = workflows.Workflows(client=self)
@@ -501,8 +492,8 @@ class Retab(BaseRetab):
 class AsyncRetab(BaseRetab):
     """Asynchronous client for interacting with the Retab API.
 
-    This client provides asynchronous access to all Retab API resources including files, fine-tuning,
-    prompt optimization, documents, models, processors, deployments, and schemas.
+    This client provides asynchronous access to all Retab API resources including files, extractions,
+    parses, splits, classifications, partitions, edits, schemas, workflows, and jobs.
 
     Args:
         api_key (str, optional): Retab API key. If not provided, will look for RETAB_API_KEY env variable.
@@ -512,14 +503,7 @@ class AsyncRetab(BaseRetab):
 
     Attributes:
         files: Access to asynchronous file operations
-        fine_tuning: Access to asynchronous model fine-tuning operations
-        prompt_optimization: Access to asynchronous prompt optimization operations
-        documents: Access to asynchronous document operations
-        models: Access to asynchronous model operations
-        processors: Access to asynchronous processor operations
-        deployments: Access to asynchronous deployment operations
         schemas: Access to asynchronous schema operations
-        responses: Access to responses API (OpenAI Responses API compatible interface)
     """
 
     def __init__(
@@ -544,8 +528,6 @@ class AsyncRetab(BaseRetab):
         self.parses = parses.AsyncParses(client=self)
         self.splits = splits.AsyncSplits(client=self)
         self.partitions = partitions.AsyncPartitions(client=self)
-        self.documents = documents.AsyncDocuments(client=self)
-        self.models = models.AsyncModels(client=self)
         self.schemas = schemas.AsyncSchemas(client=self)
         self.edits = edits.AsyncEdits(client=self)
         self.workflows = workflows.AsyncWorkflows(client=self)

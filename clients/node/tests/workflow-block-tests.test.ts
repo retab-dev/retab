@@ -94,6 +94,13 @@ describe("workflows.tests wiring", () => {
         const tests = new APIWorkflowTests(new MockClient({}));
         expect(tests.runs).toBeInstanceOf(APIWorkflowTestRuns);
     });
+
+    test("APIWorkflowTests does not expose wait helpers", () => {
+        const tests = new APIWorkflowTests(new MockClient({}));
+
+        expect("waitForCompletion" in tests).toBe(false);
+        expect("wait_for_completion" in tests).toBe(false);
+    });
 });
 
 describe("workflows.tests.create()", () => {

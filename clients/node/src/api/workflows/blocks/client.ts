@@ -159,6 +159,29 @@ export default class APIWorkflowBlocks extends CompositionClient {
         });
     }
 
+    prepare_simulate(
+        runId: string,
+        blockId: string,
+        nConsensus?: number | null,
+        stepId?: string | null,
+        checkEligibility = true
+    ): {
+        url: string;
+        method: string;
+        params?: Record<string, unknown>;
+    } {
+        const params: Record<string, unknown> = {};
+        if (nConsensus !== undefined && nConsensus !== null) params.n_consensus = nConsensus;
+        if (stepId !== undefined && stepId !== null) params.step_id = stepId;
+        if (!checkEligibility) params.check_eligibility = false;
+
+        return {
+            url: `/workflows/runs/${runId}/steps/${blockId}/simulate`,
+            method: "POST",
+            ...(Object.keys(params).length > 0 ? { params } : {}),
+        };
+    }
+
     /**
      * Replay one block using inputs from a previous run + the current
      * draft config.
@@ -193,17 +216,12 @@ export default class APIWorkflowBlocks extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<BlockSimulation> {
-        const params: Record<string, unknown> = {};
-        if (nConsensus !== undefined) params.n_consensus = nConsensus;
-        if (stepId !== undefined) params.step_id = stepId;
-        // Only send when overriding the default — the backend defaults to
-        // true and `?check_eligibility=true` would be redundant.
-        if (!checkEligibility) params.check_eligibility = false;
+        const request = this.prepare_simulate(runId, blockId, nConsensus, stepId, checkEligibility);
 
         return this._fetchJson(ZBlockSimulation, {
-            url: `/workflows/runs/${runId}/steps/${blockId}/simulate`,
-            method: "POST",
-            params: { ...params, ...(options?.params || {}) },
+            url: request.url,
+            method: request.method,
+            params: { ...(request.params || {}), ...(options?.params || {}) },
             headers: options?.headers,
         });
     }

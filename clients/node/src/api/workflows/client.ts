@@ -250,6 +250,31 @@ export default class APIWorkflows extends CompositionClient {
         return this.getEntities(workflowId, options);
     }
 
+    prepare_diagnose(
+        workflowId: string,
+        blocks: Array<Record<string, unknown>>,
+        edges: Array<Record<string, unknown>>,
+        rePropagate = true
+    ): {
+        url: string;
+        method: string;
+        body: {
+            blocks: Array<Record<string, unknown>>;
+            edges: Array<Record<string, unknown>>;
+            re_propagate: boolean;
+        };
+    } {
+        return {
+            url: `/workflows/${workflowId}/diagnose-graph`,
+            method: "POST",
+            body: {
+                blocks,
+                edges,
+                re_propagate: rePropagate,
+            },
+        };
+    }
+
     /**
      * Diagnose the workflow's draft graph for structural issues.
      *

@@ -118,21 +118,6 @@ function buildResponse(params: RecordedRequest): unknown {
       file_ids: ['file-123'],
     };
   }
-  if (params.url === '/documents/perform_ocr_only' && params.method === 'POST') {
-    return {
-      ocr_file_id: 'ocr-123',
-      ocr_result: {
-        pages: [],
-      },
-    };
-  }
-  if (params.url === '/documents/compute_field_locations_fast' && params.method === 'POST') {
-    return {
-      locations: {
-        status: [{ page: 1, x: 10, y: 20 }],
-      },
-    };
-  }
   return {};
 }
 
@@ -457,33 +442,5 @@ describe('python sdk parity surface', () => {
         `unexpected python-style methods on ${resource}: ${extraMethods.join(', ')}`
       ).toEqual([]);
     }
-  });
-
-  test('documents.sources follows the same extraction -> ocr -> field-locations flow', async () => {
-    const mockClient = new MockClient();
-    const api = new APIV1(mockClient);
-
-    const result = await api.documents.sources('ext-123');
-
-    expect(result).toEqual({
-      locations: {
-        status: [{ page: 1, x: 10, y: 20 }],
-      },
-    });
-    expect(mockClient.requests.map((request) => `${request.method} ${request.url}`)).toEqual([
-      'GET /extractions/ext-123',
-      'POST /documents/perform_ocr_only',
-      'POST /documents/compute_field_locations_fast',
-    ]);
-    expect(mockClient.requests[1]?.body).toEqual({ file_id: 'file-123' });
-    expect(mockClient.requests[2]?.body).toEqual({
-      ocr_file_id: 'ocr-123',
-      ocr_result: {
-        pages: [],
-      },
-      data: {
-        status: 'approved',
-      },
-    });
   });
 });

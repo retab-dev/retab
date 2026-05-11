@@ -23,8 +23,6 @@ type Client struct {
 	headers    map[string]string
 
 	Files           *FilesService
-	Documents       *DocumentsService
-	Models          *ModelsService
 	Schemas         *SchemasService
 	Extractions     *ExtractionsService
 	Partitions      *PartitionsService
@@ -83,8 +81,6 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 		opt(client)
 	}
 	client.Files = &FilesService{client: client}
-	client.Documents = &DocumentsService{client: client}
-	client.Models = &ModelsService{client: client}
 	client.Schemas = &SchemasService{client: client}
 	client.Extractions = &ExtractionsService{client: client}
 	client.Partitions = &PartitionsService{client: client}

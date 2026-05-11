@@ -29,6 +29,8 @@ describe('Node SDK smoke coverage', () => {
     const client = new Retab({ apiKey: 'test_key' });
     const publicClient = client as unknown as Record<string, unknown>;
 
+    expect(publicClient.documents).toBeUndefined();
+    expect(publicClient.models).toBeUndefined();
     expect(publicClient.projects).toBeUndefined();
     expect(publicClient.evals).toBeUndefined();
   });

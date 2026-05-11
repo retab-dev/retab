@@ -13,10 +13,6 @@ from .exceptions import (
     RetabError,
     ValidationError,
 )
-from .types.documents.extract import ExtractResponse, ExtractionResult, RetabParsedChatCompletion
-from .types.documents.parse import ParseResponse
-from .types.documents.classify import ClassifyResponse
-from .types.documents.split import SplitResponse
 from .types.extractions import Extraction, ExtractionRequest, SourcesResponse
 from .types.classifications import Classification
 from .types.partitions import Partition
@@ -47,12 +43,6 @@ __all__ = [
     "Split",
     "Extraction",
     "ExtractionRequest",
-    "ExtractResponse",
-    "ExtractionResult",
-    "RetabParsedChatCompletion",
-    "ParseResponse",
-    "ClassifyResponse",
-    "SplitResponse",
     "SourcesResponse",
     # Core types
     "MIMEData",

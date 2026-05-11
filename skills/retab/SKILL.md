@@ -743,33 +743,6 @@ for step in client.workflows.runs.steps.list(run.id):
         print(step.block_id, step.handle_outputs)
 ```
 
-Python with SDK waiting helper:
-
-```python
-from pathlib import Path
-from retab import Retab
-
-client = Retab()
-
-run = client.workflows.runs.create(
-    workflow_id="wf_abc123",
-    documents={"document-block-id": Path("invoice.pdf")},
-)
-run = client.workflows.runs.wait_for_completion(
-    run.id,
-    poll_interval_seconds=2.0,
-    timeout_seconds=600.0,
-)
-
-if run.lifecycle.kind == "waiting_for_human":
-    print("Run paused for human review", run.lifecycle.waiting_for_block_ids)
-else:
-    run.raise_for_status()
-    for step in client.workflows.runs.steps.list(run.id):
-        if step.handle_outputs:
-            print(step.block_id, step.handle_outputs)
-```
-
 ### Workflow Node
 
 ```ts
@@ -778,7 +751,7 @@ import { raiseForStatus } from "retab";
 
 const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 
-const run = await client.workflows.runs.createAndWait({
+let run = await client.workflows.runs.create({
   workflowId: "wf_abc123",
   documents: {
     "document-block-id": "./invoice.pdf",
@@ -786,9 +759,16 @@ const run = await client.workflows.runs.createAndWait({
   jsonInputs: {
     "json-block-id": { customerId: "cust_123" },
   },
-  pollIntervalMs: 2000,
-  timeoutMs: 600000,
 });
+
+const deadline = Date.now() + 600000;
+while (run.lifecycle.kind === "pending" || run.lifecycle.kind === "running") {
+  if (Date.now() >= deadline) {
+    throw new Error(`Timed out waiting for workflow run ${run.id}`);
+  }
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  run = await client.workflows.runs.get(run.id);
+}
 
 if (run.lifecycle.kind === "waiting_for_human") {
   console.log("Run paused for human review", run.lifecycle.waiting_for_block_ids);
@@ -801,21 +781,6 @@ if (run.lifecycle.kind === "waiting_for_human") {
     }
   }
 }
-```
-
-Node manual polling:
-
-```ts
-let run = await client.workflows.runs.create({
-  workflowId: "wf_abc123",
-  documents: { "document-block-id": "./invoice.pdf" },
-});
-
-run = await client.workflows.runs.waitForCompletion(run.id, {
-  pollIntervalMs: 2000,
-  timeoutMs: 600000,
-  onStatus: (r) => console.log(`lifecycle.kind=${r.lifecycle.kind}`),
-});
 ```
 
 ### Workflow REST

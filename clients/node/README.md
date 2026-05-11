@@ -60,21 +60,21 @@ const retab = new Retab({
   apiKey: "your-api-key",
 });
 
-const run = await retab.workflows.runs.createAndWait({
+const run = await retab.workflows.runs.create({
   workflowId: "wf_abc123",
   documents: { "start-node-1": "invoice.pdf" },
-  onStatus: (currentRun) => console.log(currentRun.status),
 });
 
-raiseForStatus(run);
+const currentRun = await retab.workflows.runs.get(run.id);
+raiseForStatus(currentRun);
 
-const steps = await retab.workflows.runs.steps.list(run.id);
-const extractStep = await retab.workflows.runs.steps.get(run.id, "extract-1");
+const steps = await retab.workflows.runs.steps.list(currentRun.id);
+const extractStep = await retab.workflows.runs.steps.get(currentRun.id, "extract-1");
 const artifact = extractStep.artifact
   ? await retab.workflows.artifacts.get(extractStep.artifact)
   : null;
 const runArtifacts = await retab.workflows.artifacts.list({
-  runId: run.id,
+  runId: currentRun.id,
 });
 
 console.log(steps.map((step) => `${step.block_id}: ${step.status}`));
@@ -90,9 +90,7 @@ Use `client.workflows.specs` to validate, plan, apply, and export declarative wo
 ```typescript
 const validation = await retab.workflows.specs.validate(yamlDefinition);
 const plan = await retab.workflows.specs.plan(yamlDefinition);
-const result = await retab.workflows.specs.apply(yamlDefinition, {
-  publish: false,
-});
+const result = await retab.workflows.specs.apply(yamlDefinition);
 const exported = await retab.workflows.specs.export(result.workflow_id);
 ```
 

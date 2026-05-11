@@ -1,37 +1,57 @@
-import * as z from "zod";
-import * as crypto from "crypto";
+import * as z from 'zod';
+import * as crypto from 'crypto';
 
 type FetchParams = {
-  url: string,
-  method: string,
-  params?: Record<string, any>,
-  headers?: Record<string, any>,
-  bodyMime?: "application/json" | "multipart/form-data",
-  body?: Record<string, any> | unknown[],
-  auth?: string[],
+  url: string;
+  method: string;
+  params?: Record<string, any>;
+  headers?: Record<string, any>;
+  bodyMime?: 'application/json' | 'multipart/form-data';
+  body?: Record<string, any> | unknown[];
+  auth?: string[];
 };
 
 const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
-  APIModels: ["list"],
-  APISchemas: ["generate"],
-  APIExtractions: ["create", "createStream", "list", "get", "sources", "delete"],
-  APIFiles: ["upload", "list", "get", "get_download_link"],
-  APIWorkflows: ["get", "list", "create", "update", "delete", "publish", "duplicate", "get_entities"],
-  APIWorkflowBlocks: ["list", "get", "create", "create_batch", "update", "delete"],
-  APIWorkflowEdges: ["list", "get", "create", "create_batch", "delete", "delete_all"],
-  APIWorkflowSpecs: ["validate", "plan", "apply", "export"],
-  APIWorkflowRuns: ["create", "get", "list", "delete", "cancel", "restart", "submit_hil_decision", "get_hil_decision"],
-  APIWorkflowRunSteps: ["get", "list"],
-  APIWorkflowTests: ["create", "get", "list", "update", "delete", "execute"],
-  APIWorkflowTestRuns: ["list", "get"],
+  APISchemas: ['generate'],
+  APIExtractions: ['create', 'createStream', 'list', 'get', 'sources', 'delete'],
+  APIFiles: ['upload', 'list', 'get', 'get_download_link'],
+  APIWorkflows: [
+    'get',
+    'list',
+    'create',
+    'update',
+    'delete',
+    'publish',
+    'duplicate',
+    'get_entities',
+  ],
+  APIWorkflowBlocks: ['list', 'get', 'create', 'create_batch', 'update', 'delete'],
+  APIWorkflowEdges: ['list', 'get', 'create', 'create_batch', 'delete', 'delete_all'],
+  APIWorkflowSpecs: ['validate', 'plan', 'apply', 'export'],
+  APIWorkflowRuns: [
+    'create',
+    'get',
+    'list',
+    'delete',
+    'cancel',
+    'restart',
+    'submit_hil_decision',
+    'get_hil_decision',
+  ],
+  APIWorkflowRunSteps: ['get', 'list'],
+  APIWorkflowTests: ['create', 'get', 'list', 'update', 'delete', 'execute'],
+  APIWorkflowTestRuns: ['list', 'get'],
 };
 
-async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, response: Response): AsyncGenerator<z.output<ZodSchema>> {
-  let body = "";
+async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(
+  schema: ZodSchema,
+  response: Response
+): AsyncGenerator<z.output<ZodSchema>> {
+  let body = '';
   let depth = 0;
   let inString = false;
   if (!response.body) {
-    throw new APIError(response.status, "Response body is empty");
+    throw new APIError(response.status, 'Response body is empty');
   }
   let reader = response.body.getReader();
   while (true) {
@@ -46,13 +66,13 @@ async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(schem
         inString = !inString;
       }
       if (inString) {
-        if (char === "\\") {
+        if (char === '\\') {
           i++;
         }
       } else {
-        if (char === "{") {
+        if (char === '{') {
           depth++;
-        } else if (char === "}") {
+        } else if (char === '}') {
           depth--;
           if (depth === 0) {
             yield schema.parseAsync(JSON.parse(body.slice(0, prevBodyLength + i + 1)));
@@ -67,13 +87,19 @@ async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(schem
 }
 export class AbstractClient {
   protected _fetch(_: FetchParams): Promise<Response> {
-    throw new Error("Method not implemented");
+    throw new Error('Method not implemented');
   }
   protected async _fetchJson(params: FetchParams): Promise<void>;
-  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(bodyType: ZodSchema, params: FetchParams): Promise<z.output<ZodSchema>>;
-  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(_bodyType: ZodSchema | FetchParams, _params?: FetchParams): Promise<z.output<ZodSchema> | void> {
+  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(
+    bodyType: ZodSchema,
+    params: FetchParams
+  ): Promise<z.output<ZodSchema>>;
+  protected async _fetchJson<ZodSchema extends z.ZodType<any, any, any>>(
+    _bodyType: ZodSchema | FetchParams,
+    _params?: FetchParams
+  ): Promise<z.output<ZodSchema> | void> {
     let params = _params || (_bodyType as FetchParams);
-    let bodyType = _params ? _bodyType as ZodSchema : undefined;
+    let bodyType = _params ? (_bodyType as ZodSchema) : undefined;
     let response = await this._fetch(params);
     if (!response.ok) {
       throw await buildAPIError(response, params.method, params.url);
@@ -81,15 +107,20 @@ export class AbstractClient {
     if (!bodyType) {
       return;
     }
-    if (!response.headers.get("Content-Type")?.startsWith("application/json")) throw new APIError(response.status, "Response is not JSON");
+    if (!response.headers.get('Content-Type')?.startsWith('application/json'))
+      throw new APIError(response.status, 'Response is not JSON');
     return bodyType.parseAsync(await response.json());
   }
-  protected async _fetchStream<ZodSchema extends z.ZodType<any, any, any>>(schema: ZodSchema, params: FetchParams): Promise<AsyncGenerator<z.output<ZodSchema>>> {
+  protected async _fetchStream<ZodSchema extends z.ZodType<any, any, any>>(
+    schema: ZodSchema,
+    params: FetchParams
+  ): Promise<AsyncGenerator<z.output<ZodSchema>>> {
     let response = await this._fetch(params);
     if (!response.ok) {
       throw await buildAPIError(response, params.method, params.url);
     }
-    if (!response.headers.get("Content-Type")?.startsWith("application/stream+json")) throw new APIError(response.status, "Response is not stream JSON");
+    if (!response.headers.get('Content-Type')?.startsWith('application/stream+json'))
+      throw new APIError(response.status, 'Response is not stream JSON');
     return streamResponse(schema, response);
   }
 }
@@ -102,7 +133,7 @@ export class CompositionClient extends AbstractClient {
     this._installPrepareMethods();
   }
   protected _fetch(params: FetchParams): Promise<Response> {
-    return this._client["_fetch"](params);
+    return this._client['_fetch'](params);
   }
 
   private _installPrepareMethods(): void {
@@ -114,7 +145,7 @@ export class CompositionClient extends AbstractClient {
     for (const methodName of allowedMethods) {
       const method = (this as Record<string, unknown>)[methodName];
       const prepareMethodName = `prepare_${methodName}`;
-      if (typeof method !== "function" || prepareMethodName in this) {
+      if (typeof method !== 'function' || prepareMethodName in this) {
         continue;
       }
 
@@ -127,7 +158,10 @@ export class CompositionClient extends AbstractClient {
     }
   }
 
-  protected async _capturePreparedRequest(methodName: string, args: unknown[]): Promise<FetchParams> {
+  protected async _capturePreparedRequest(
+    methodName: string,
+    args: unknown[]
+  ): Promise<FetchParams> {
     let capturedRequest: FetchParams | undefined;
     const self = this as Record<string, any>;
     const originalFetch = self._fetch;
@@ -136,10 +170,10 @@ export class CompositionClient extends AbstractClient {
 
     self._fetch = async (params: FetchParams) => {
       capturedRequest = params;
-      return new Response("{}", {
+      return new Response('{}', {
         status: 200,
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
     };
@@ -191,15 +225,15 @@ export class APIError extends Error {
       requestId?: string | null;
       method?: string | null;
       url?: string | null;
-    },
+    }
   ) {
     super(info);
-    this.name = "APIError";
+    this.name = 'APIError';
     this.status = status;
     this.info = info;
     this.code = options?.code ?? null;
     this.details = options?.details ?? null;
-    this.body = options?.body ?? "";
+    this.body = options?.body ?? '';
     this.requestId = options?.requestId ?? null;
     this.method = options?.method ?? null;
     this.url = options?.url ?? null;
@@ -221,19 +255,19 @@ export class APIError extends Error {
       lines.push(`  Details:    ${JSON.stringify(this.details)}`);
     }
     if (this.body) {
-      const truncated = this.body.length > 500 ? this.body.slice(0, 500) + "..." : this.body;
+      const truncated = this.body.length > 500 ? this.body.slice(0, 500) + '...' : this.body;
       lines.push(`  Body:       ${truncated}`);
     }
     if (this.retries > 0) {
       lines.push(`  Retries:    ${this.retries}`);
     }
-    return lines.join("\n");
+    return lines.join('\n');
   }
 }
 
 async function buildAPIError(response: Response, method?: string, url?: string): Promise<APIError> {
   const body = await response.text();
-  const requestId = response.headers.get("x-request-id") ?? null;
+  const requestId = response.headers.get('x-request-id') ?? null;
 
   let code: string | null = null;
   let message = `Request failed (${response.status})`;
@@ -241,13 +275,13 @@ async function buildAPIError(response: Response, method?: string, url?: string):
 
   try {
     const errorBody = JSON.parse(body);
-    if (typeof errorBody === "object" && errorBody !== null && !Array.isArray(errorBody)) {
+    if (typeof errorBody === 'object' && errorBody !== null && !Array.isArray(errorBody)) {
       const detail = errorBody.detail;
-      if (typeof detail === "object" && detail !== null && !Array.isArray(detail)) {
+      if (typeof detail === 'object' && detail !== null && !Array.isArray(detail)) {
         code = detail.code ?? null;
         message = detail.message ?? message;
         details = detail.details ?? null;
-      } else if (typeof detail === "string") {
+      } else if (typeof detail === 'string') {
         message = detail;
       }
     }
@@ -268,27 +302,30 @@ async function buildAPIError(response: Response, method?: string, url?: string):
 export class SignatureVerificationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "SignatureVerificationError";
+    this.name = 'SignatureVerificationError';
   }
 }
 
 export const DateOrISO = z.union([
   z.date(),
-  z.string().refine(val => !isNaN(Date.parse(val)), {
-    message: "Invalid date string",
-  }).transform(val => new Date(val)),
+  z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), {
+      message: 'Invalid date string',
+    })
+    .transform((val) => new Date(val)),
 ]);
 
 type AuthTypes = { apiKey: string } | {};
 export type ClientOptions = {
-  baseUrl?: string,
-  timeout?: number,
+  baseUrl?: string;
+  timeout?: number;
 } & AuthTypes;
 
 export type RequestOptions = {
-  params?: Record<string, any>,
-  headers?: Record<string, any>,
-  body?: Record<string, any>,
+  params?: Record<string, any>;
+  headers?: Record<string, any>;
+  body?: Record<string, any>;
 };
 
 export class FetcherClient extends AbstractClient {
@@ -300,12 +337,12 @@ export class FetcherClient extends AbstractClient {
     this.timeout = this.options.timeout ?? 1800000; // Default 1800 seconds (30 minutes) (in milliseconds)
 
     // Validate that at least one authentication method is provided
-    const apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
+    const apiKey = 'apiKey' in this.options ? this.options.apiKey : process.env['RETAB_API_KEY'];
 
     if (!apiKey) {
       throw new Error(
-        "Authentication required: Please provide an API key. " +
-        "You can pass it in the constructor options or set the RETAB_API_KEY environment variable."
+        'Authentication required: Please provide an API key. ' +
+          'You can pass it in the constructor options or set the RETAB_API_KEY environment variable.'
       );
     }
   }
@@ -315,24 +352,24 @@ export class FetcherClient extends AbstractClient {
     method: string;
     params?: Record<string, any>;
     headers?: Record<string, any>;
-    bodyMime?: "application/json" | "multipart/form-data";
+    bodyMime?: 'application/json' | 'multipart/form-data';
     body?: Record<string, any> | unknown[];
   }): Promise<Response> {
-    let query = "";
+    let query = '';
     if (params.params) {
-      query = "?" + new URLSearchParams(
-        Object.fromEntries(
-          Object.entries(params.params).filter(([_, v]) => v !== undefined)
-        )
-      ).toString();
+      query =
+        '?' +
+        new URLSearchParams(
+          Object.fromEntries(Object.entries(params.params).filter(([_, v]) => v !== undefined))
+        ).toString();
     }
-    let url = (this.options.baseUrl || "https://api.retab.com/v1") + params.url + query;
+    let url = (this.options.baseUrl || 'https://api.retab.com/v1') + params.url + query;
     let headers = params.headers || {};
     let init: RequestInit = {
       method: params.method,
     };
-    if (params.method !== "GET") {
-      if (params.bodyMime === "multipart/form-data") {
+    if (params.method !== 'GET') {
+      if (params.bodyMime === 'multipart/form-data') {
         let formData: FormData = new FormData();
         const multipartBody = (params.body || {}) as Record<string, any>;
         for (const key of Object.keys(multipartBody)) {
@@ -348,13 +385,13 @@ export class FetcherClient extends AbstractClient {
         init.body = formData;
         // Don't set Content-Type for multipart/form-data - let FormData set it with boundary
       } else {
-        headers["Content-Type"] = params.bodyMime || "application/json";
+        headers['Content-Type'] = params.bodyMime || 'application/json';
         // Default to empty object if body is undefined to ensure valid JSON is sent
         init.body = JSON.stringify(params.body ?? {});
       }
     }
-    const apiKey = "apiKey" in this.options ? this.options.apiKey : process.env["RETAB_API_KEY"];
-    headers["Api-Key"] = apiKey;
+    const apiKey = 'apiKey' in this.options ? this.options.apiKey : process.env['RETAB_API_KEY'];
+    headers['Api-Key'] = apiKey;
     init.headers = headers;
     init.signal = AbortSignal.timeout(this.timeout);
     let res = await fetch(url, init);
@@ -366,22 +403,22 @@ export class FetcherClient extends AbstractClient {
 
   /**
    * Verify the signature of a webhook event.
-   * 
+   *
    * @param eventBody - The raw request body as a string or Buffer
    * @param eventSignature - The signature from the request header (x-retab-signature)
    * @param secret - The webhook secret key used for signing
    * @returns The parsed event payload (JSON)
    * @throws {SignatureVerificationError} If the signature verification fails
-   * 
+   *
    * @example
    * ```typescript
    * import { FetcherClient } from './client';
-   * 
+   *
    * // In your webhook handler
    * const secret = "your_webhook_secret";
    * const body = req.body; // Raw string or Buffer
    * const signature = req.headers['x-retab-signature'];
-   * 
+   *
    * try {
    *   const event = FetcherClient.verifyEvent(body, signature, secret);
    *   console.log(`Verified event: ${event}`);
@@ -392,14 +429,11 @@ export class FetcherClient extends AbstractClient {
    */
   static verifyEvent(eventBody: string | Buffer, eventSignature: string, secret: string): any {
     const bodyBuffer = typeof eventBody === 'string' ? Buffer.from(eventBody, 'utf-8') : eventBody;
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(bodyBuffer)
-      .digest('hex');
+    const expectedSignature = crypto.createHmac('sha256', secret).update(bodyBuffer).digest('hex');
 
     // Use constant-time comparison to prevent timing attacks
     if (!crypto.timingSafeEqual(Buffer.from(eventSignature), Buffer.from(expectedSignature))) {
-      throw new SignatureVerificationError("Invalid signature");
+      throw new SignatureVerificationError('Invalid signature');
     }
 
     return JSON.parse(bodyBuffer.toString('utf-8'));

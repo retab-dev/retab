@@ -171,7 +171,6 @@ describe("workflows client", () => {
         const mockClient = new MockClient({
             workflow_id: "wf_1",
             created: false,
-            published: true,
             block_count: 2,
             edge_count: 1,
             diagnostics: { issues: [] },
@@ -179,16 +178,16 @@ describe("workflows client", () => {
         });
         const specsClient = new APIWorkflowSpecs(mockClient);
 
-        const response = await specsClient.apply("spec: {}\n", { publish: true });
+        const response = await specsClient.apply("spec: {}\n");
 
         expect(mockClient.lastFetchParams).toEqual({
             url: "/workflows/yaml/apply",
             method: "POST",
-            body: { yaml_definition: "spec: {}\n", publish: true },
+            body: { yaml_definition: "spec: {}\n" },
             params: undefined,
             headers: undefined,
         });
-        expect(response.published).toBe(true);
+        expect(response.workflow_id).toBe("wf_1");
     });
 
     test("specs.export() uses the workflow YAML route", async () => {
@@ -281,6 +280,71 @@ describe("workflows client", () => {
         expect(entities.edges[0]?.organization_id).toBe("org_1");
         expect(entities.edges[0]?.draft_version).toBe("draft_1");
         expect(entities.blocks.filter(b => b.type === "start")).toHaveLength(1);
+    });
+
+    test("prepare_diagnose exposes the Python prepared-request surface", () => {
+        const workflowsClient = new APIWorkflows(new MockClient({}));
+        const blocks = [{ id: "start-1", type: "start" }];
+        const edges = [{ id: "edge-1", source: "start-1", target: "extract-1" }];
+
+        expect(workflowsClient.prepare_diagnose("wf_1", blocks, edges, false)).toEqual({
+            url: "/workflows/wf_1/diagnose-graph",
+            method: "POST",
+            body: {
+                blocks,
+                edges,
+                re_propagate: false,
+            },
+        });
+        expect(workflowsClient.prepare_diagnose("wf_1", blocks, edges).body.re_propagate).toBe(true);
+    });
+
+    test("artifacts prepare helpers expose the Python prepared-request surface", () => {
+        const workflowsClient = new APIWorkflows(new MockClient({}));
+
+        expect(workflowsClient.artifacts.prepare_get("hil_evaluation", "artifact_1")).toEqual({
+            url: "/workflows/artifacts/hil_evaluation/artifact_1",
+            method: "GET",
+        });
+        expect(workflowsClient.artifacts.prepare_get({ operation: "extraction", id: "ext_1" })).toEqual({
+            url: "/workflows/artifacts/extraction/ext_1",
+            method: "GET",
+        });
+        expect(workflowsClient.artifacts.prepare_list("run_1", "extraction", "extract-1")).toEqual({
+            url: "/workflows/artifacts",
+            method: "GET",
+            params: {
+                run_id: "run_1",
+                operation: "extraction",
+                block_id: "extract-1",
+            },
+        });
+    });
+
+    test("experiments expose Python snake_case and prepare helpers", () => {
+        const workflowsClient = new APIWorkflows(new MockClient({}));
+
+        expect("get_content" in workflowsClient.experiments).toBe(false);
+        expect("getContent" in workflowsClient.experiments).toBe(false);
+        expect(typeof workflowsClient.experiments.get_metrics).toBe("function");
+        expect(typeof workflowsClient.experiments.list_eligible_blocks).toBe("function");
+        expect(typeof workflowsClient.experiments.run_batch).toBe("function");
+        expect(typeof workflowsClient.experiments.runs.get).toBe("function");
+        expect("get_content" in workflowsClient.experiments.runs).toBe(false);
+        expect("getContent" in workflowsClient.experiments.runs).toBe(false);
+        expect("get_job" in workflowsClient.experiments.runs).toBe(false);
+        expect("getJob" in workflowsClient.experiments.runs).toBe(false);
+        expect("wait_for_completion" in workflowsClient.experiments.runs).toBe(false);
+        expect("waitForCompletion" in workflowsClient.experiments.runs).toBe(false);
+        expect(workflowsClient.experiments.runs.prepare_get("wf_1", "exp_1", { runId: "run_1" })).toEqual({
+            url: "/workflows/wf_1/experiments/exp_1/content",
+            method: "GET",
+            params: { run_id: "run_1" },
+        });
+        expect(workflowsClient.experiments.prepare_get_metrics("wf_1", "exp_1").params).toEqual({
+            view: "summary",
+            include_prior: true,
+        });
     });
 
     test("delete() sends DELETE to /workflows/{id}", async () => {
@@ -442,6 +506,24 @@ describe("workflows client", () => {
             headers: undefined,
         });
         expect(blocks.map((block) => block.id)).toEqual(["start-1", "extract-1"]);
+    });
+
+    test("blocks.prepare_simulate exposes the Python prepared-request surface", () => {
+        const blocksClient = new APIWorkflowBlocks(new MockClient({}));
+
+        expect(blocksClient.prepare_simulate("run_1", "extract-1", 5, "step_1", false)).toEqual({
+            url: "/workflows/runs/run_1/steps/extract-1/simulate",
+            method: "POST",
+            params: {
+                n_consensus: 5,
+                step_id: "step_1",
+                check_eligibility: false,
+            },
+        });
+        expect(blocksClient.prepare_simulate("run_1", "extract-1")).toEqual({
+            url: "/workflows/runs/run_1/steps/extract-1/simulate",
+            method: "POST",
+        });
     });
 
     test("workflow blocks expose live-editing metadata", async () => {
@@ -791,57 +873,11 @@ describe("workflow run utilities", () => {
         }
     });
 
-    test("waitForCompletion() returns waiting_for_human runs", async () => {
-        class WaitMockClient extends AbstractClient {
-            public lastFetchParams: Record<string, unknown> | null = null;
-            private responses = [
-                makeV2Run({ lifecycle: { kind: "running" } }),
-                makeV2Run({
-                    lifecycle: {
-                        kind: "waiting_for_human",
-                        waiting_for_block_ids: ["hil-1"],
-                    },
-                }),
-            ];
+    test("workflow runs do not expose wait helpers", () => {
+        const runsClient = new APIWorkflowRuns(new MockClient({}));
 
-            protected async _fetch(params: {
-                url: string;
-                method: string;
-                params?: Record<string, unknown>;
-                headers?: Record<string, unknown>;
-                body?: unknown;
-            }): Promise<Response> {
-                this.lastFetchParams = params;
-                return new Response(JSON.stringify(this.responses.shift()), {
-                    status: 200,
-                    headers: { "Content-Type": "application/json" },
-                });
-            }
-        }
-
-        const runsClient = new APIWorkflowRuns(new WaitMockClient());
-        const run = await runsClient.waitForCompletion("run_1", { pollIntervalMs: 1 });
-
-        expect(run.lifecycle.kind).toBe("waiting_for_human");
-        if (run.lifecycle.kind === "waiting_for_human") {
-            expect(run.lifecycle.waiting_for_block_ids).toEqual(["hil-1"]);
-        }
-    });
-
-    test("waitForCompletion() awaits async status callbacks", async () => {
-        const mockClient = new MockClient(
-            makeV2Run({ lifecycle: { kind: "completed" } })
-        );
-        const runsClient = new APIWorkflowRuns(mockClient);
-        const seenRunIds: string[] = [];
-
-        const run = await runsClient.waitForCompletion("run_1", {
-            onStatus: async (workflowRun) => {
-                seenRunIds.push(workflowRun.id);
-            },
-        });
-
-        expect(run.lifecycle.kind).toBe("completed");
-        expect(seenRunIds).toEqual(["run_1"]);
+        expect("waitForCompletion" in runsClient).toBe(false);
+        expect("wait_for_completion" in runsClient).toBe(false);
+        expect("createAndWait" in runsClient).toBe(false);
     });
 });

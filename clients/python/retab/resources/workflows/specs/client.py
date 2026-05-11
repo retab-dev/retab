@@ -21,8 +21,8 @@ class WorkflowSpecsMixin:
         data: Dict[str, Any] = {"yaml_definition": yaml_definition}
         return PreparedRequest(method="POST", url="/workflows/yaml/plan", data=data)
 
-    def prepare_apply(self, yaml_definition: str, publish: bool = False) -> PreparedRequest:
-        data: Dict[str, Any] = {"yaml_definition": yaml_definition, "publish": publish}
+    def prepare_apply(self, yaml_definition: str) -> PreparedRequest:
+        data: Dict[str, Any] = {"yaml_definition": yaml_definition}
         return PreparedRequest(method="POST", url="/workflows/yaml/apply", data=data)
 
     def prepare_export(self, workflow_id: str) -> PreparedRequest:
@@ -42,8 +42,8 @@ class WorkflowSpecs(SyncAPIResource, WorkflowSpecsMixin):
         response = self._client._prepared_request(request)
         return DeclarativePlanResponse.model_validate(response)
 
-    def apply(self, yaml_definition: str, publish: bool = False) -> DeclarativeApplyResponse:
-        request = self.prepare_apply(yaml_definition, publish=publish)
+    def apply(self, yaml_definition: str) -> DeclarativeApplyResponse:
+        request = self.prepare_apply(yaml_definition)
         response = self._client._prepared_request(request)
         return DeclarativeApplyResponse.model_validate(response)
 
@@ -66,8 +66,8 @@ class AsyncWorkflowSpecs(AsyncAPIResource, WorkflowSpecsMixin):
         response = await self._client._prepared_request(request)
         return DeclarativePlanResponse.model_validate(response)
 
-    async def apply(self, yaml_definition: str, publish: bool = False) -> DeclarativeApplyResponse:
-        request = self.prepare_apply(yaml_definition, publish=publish)
+    async def apply(self, yaml_definition: str) -> DeclarativeApplyResponse:
+        request = self.prepare_apply(yaml_definition)
         response = await self._client._prepared_request(request)
         return DeclarativeApplyResponse.model_validate(response)
 

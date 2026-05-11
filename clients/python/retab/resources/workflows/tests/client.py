@@ -14,8 +14,6 @@ instances.
 
 from __future__ import annotations
 
-import asyncio
-import time
 from typing import Any, Dict, Mapping, Union
 
 from pydantic import TypeAdapter
@@ -24,7 +22,6 @@ from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.standards import PreparedRequest
 from ....types.workflows.block_tests import (
     AssertionSpec,
-    BlockTestBatchExecutionResult,
     BlockTestListResponse,
     BlockTestRunListResponse,
     ExecuteBlockTestsResponse,
@@ -36,14 +33,6 @@ from ....types.workflows.block_tests import (
     WorkflowTestSource,
 )
 
-
-# Job statuses that indicate the runner is done — terminal in the same sense
-# as `TERMINAL_WORKFLOW_RUN_STATUSES` for workflow runs. Mirrors the backend's
-# `JobStatus` literal in `retab/types/jobs.py`. Failed/cancelled/expired make
-# the wait raise; only `completed` returns the parsed payload.
-_TERMINAL_JOB_STATUSES: frozenset[str] = frozenset(
-    {"completed", "failed", "cancelled", "expired"}
-)
 
 # Module-level TypeAdapters — building one per call would re-introspect the
 # model's schema on every SDK call. With `Annotated[Union, discriminator]`
@@ -380,8 +369,7 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         ``n_consensus`` is optional; allowed values are 3, 5, or 7.
 
         Execution is asynchronous: the response carries a ``batch_id`` +
-        ``job_id``. Either poll ``client.jobs.retrieve(job_id)`` directly,
-        or call :meth:`wait_for_completion` for a typed convenience.
+        ``job_id``. Poll ``client.jobs.retrieve(job_id)`` directly.
         """
         request = self.prepare_execute(
             workflow_id,
@@ -391,59 +379,6 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         )
         response = self._client._prepared_request(request)
         return ExecuteBlockTestsResponse.model_validate(response)
-
-    def wait_for_completion(
-        self,
-        job_id: str,
-        *,
-        poll_interval_seconds: float = 2.0,
-        timeout_seconds: float = 600.0,
-    ) -> BlockTestBatchExecutionResult:
-        """Poll the test-batch job until it reaches a terminal state and
-        return the parsed result.
-
-        Args:
-            job_id: The ``job_id`` returned by :meth:`execute`.
-            poll_interval_seconds: Seconds between polls (default 2.0).
-            timeout_seconds: Maximum time to wait (default 600.0).
-
-        Returns:
-            ``BlockTestBatchExecutionResult`` parsed from the completed
-            job's response body.
-
-        Raises:
-            RuntimeError: if the job ends in ``failed`` / ``cancelled`` /
-                ``expired``. The message includes the backend's error
-                payload when available.
-            TimeoutError: if the job doesn't reach terminal within
-                ``timeout_seconds``.
-            ValueError: on invalid ``poll_interval_seconds`` /
-                ``timeout_seconds``.
-        """
-        if poll_interval_seconds <= 0:
-            raise ValueError("poll_interval_seconds must be > 0")
-        if timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be > 0")
-
-        deadline = time.monotonic() + timeout_seconds
-        while True:
-            job = self._client.jobs.retrieve(job_id)
-            if job.status in _TERMINAL_JOB_STATUSES:
-                if job.status != "completed":
-                    raise RuntimeError(
-                        f"Test batch job {job_id} ended in status "
-                        f"{job.status!r}: {job.error!r}"
-                    )
-                payload = job.response.body if job.response is not None else {}
-                return BlockTestBatchExecutionResult.model_validate(payload)
-            now = time.monotonic()
-            if now >= deadline:
-                raise TimeoutError(
-                    f"Test batch job {job_id} did not complete within "
-                    f"{timeout_seconds}s"
-                )
-            time.sleep(min(poll_interval_seconds, max(deadline - now, 0.0)))
-
 
 class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
     """Workflow block-tests API client (asynchronous)."""
@@ -530,35 +465,3 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         )
         response = await self._client._prepared_request(request)
         return ExecuteBlockTestsResponse.model_validate(response)
-
-    async def wait_for_completion(
-        self,
-        job_id: str,
-        *,
-        poll_interval_seconds: float = 2.0,
-        timeout_seconds: float = 600.0,
-    ) -> BlockTestBatchExecutionResult:
-        """Async equivalent of :meth:`WorkflowTests.wait_for_completion`."""
-        if poll_interval_seconds <= 0:
-            raise ValueError("poll_interval_seconds must be > 0")
-        if timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be > 0")
-
-        deadline = time.monotonic() + timeout_seconds
-        while True:
-            job = await self._client.jobs.retrieve(job_id)
-            if job.status in _TERMINAL_JOB_STATUSES:
-                if job.status != "completed":
-                    raise RuntimeError(
-                        f"Test batch job {job_id} ended in status "
-                        f"{job.status!r}: {job.error!r}"
-                    )
-                payload = job.response.body if job.response is not None else {}
-                return BlockTestBatchExecutionResult.model_validate(payload)
-            now = time.monotonic()
-            if now >= deadline:
-                raise TimeoutError(
-                    f"Test batch job {job_id} did not complete within "
-                    f"{timeout_seconds}s"
-                )
-            await asyncio.sleep(min(poll_interval_seconds, max(deadline - now, 0.0)))

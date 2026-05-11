@@ -24,7 +24,7 @@ func TestNodeParityRootNamespacesAreInstalled(t *testing.T) {
 	if client.Edits.Templates == nil {
 		t.Fatalf("missing edits.templates namespace")
 	}
-	if client.Workflows.Blocks == nil || client.Workflows.Edges == nil || client.Workflows.Tests == nil || client.Workflows.Tests.Runs == nil {
+	if client.Workflows.Artifacts == nil || client.Workflows.Blocks == nil || client.Workflows.Edges == nil || client.Workflows.Tests == nil || client.Workflows.Tests.Runs == nil {
 		t.Fatalf("missing workflow nested namespaces")
 	}
 }
@@ -202,29 +202,6 @@ func TestListDefaultsMatchNode(t *testing.T) {
 	}
 	if requests["/jobs"] != "limit=20&order=desc" {
 		t.Fatalf("job defaults = %q", requests["/jobs"])
-	}
-}
-
-func TestModelsListDoesNotDoublePrefixV1BaseURL(t *testing.T) {
-	var path string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path = r.URL.Path
-		if r.URL.Path != "/v1/models" {
-			t.Fatalf("unexpected path: %s", r.URL.Path)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{}})
-	}))
-	defer server.Close()
-	client, err := NewClient("test-key", WithBaseURL(server.URL+"/v1"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.Models.List(context.Background(), nil); err != nil {
-		t.Fatal(err)
-	}
-	if path != "/v1/models" {
-		t.Fatalf("path = %q", path)
 	}
 }
 

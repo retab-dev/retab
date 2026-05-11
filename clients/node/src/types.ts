@@ -99,20 +99,6 @@ export const ZJSONSchema = z
 export type JSONSchemaInput = z.input<typeof ZJSONSchema>;
 export type JSONSchema = z.output<typeof ZJSONSchema>;
 
-export const ZDocumentExtractRequest = z.object({
-  // Keep everything except stream and document from generated types
-  ...(({ stream, document, metadata, ...rest }) => rest)(
-    generated.ZDocumentExtractRequest.schema.shape
-  ),
-  // Accept a single document (required)
-  document: ZMIMEData,
-  // Normalize json_schema inputs (paths/zod instances)
-  json_schema: ZJSONSchema,
-  // Make metadata optional with empty object default
-  metadata: z.record(z.string(), z.string()).default({}),
-});
-export type DocumentExtractRequest = z.input<typeof ZDocumentExtractRequest>;
-
 export const ZExtractionRequest = z.object({
   document: ZMIMEData,
   json_schema: ZJSONSchema,
@@ -145,8 +131,7 @@ export const ZLegacyExtractionRecord = generated.ZExtraction.transform((raw) => 
   return {
     ...raw,
     model: legacyRaw.model ?? inferenceSettings.model,
-    image_resolution_dpi:
-      legacyRaw.image_resolution_dpi ?? inferenceSettings.image_resolution_dpi,
+    image_resolution_dpi: legacyRaw.image_resolution_dpi ?? inferenceSettings.image_resolution_dpi,
     n_consensus: legacyRaw.n_consensus ?? inferenceSettings.n_consensus,
     chunking_keys: legacyRaw.chunking_keys ?? inferenceSettings.chunking_keys,
     output: legacyRaw.output ?? legacyRaw.predictions ?? {},
@@ -171,12 +156,6 @@ export const ZRetabParsedChatCompletion = generated.ZRetabParsedChatCompletion.t
   })
 );
 export type RetabParsedChatCompletion = z.output<typeof ZRetabParsedChatCompletion>;
-
-export const ZParseRequest = z.object({
-  ...generated.ZParseRequest.schema.shape,
-  document: ZMIMEData,
-});
-export type ParseRequest = z.input<typeof ZParseRequest>;
 
 // Parse resource (stored document parse record returned by /v1/parses).
 // Mirrors retab/types/parses.py on the Python SDK.
@@ -246,7 +225,7 @@ export type Classification = z.infer<typeof ZClassification>;
 // Split resource
 export const ZSplitSubdocument = z.object({
   name: z.string(),
-  description: z.string().default(""),
+  description: z.string().default(''),
   allow_multiple_instances: z.boolean().default(false),
 });
 export type SplitSubdocument = z.infer<typeof ZSplitSubdocument>;
@@ -317,7 +296,7 @@ export const ZPartition = z
     file: generated.ZFileRef,
     model: z.string(),
     key: z.string(),
-    instructions: z.string().default(""),
+    instructions: z.string().default(''),
     n_consensus: z.number().default(1),
     output: z.array(ZPartitionChunk).default([]),
     consensus: ZPartitionConsensus.default({ choices: [] }),
@@ -392,18 +371,6 @@ export const ZGenerateSchemaRequest = z.object({
 });
 export type GenerateSchemaRequest = z.input<typeof ZGenerateSchemaRequest>;
 
-export const ZSplitRequest = z.object({
-  ...generated.ZSplitRequest.schema.shape,
-  document: ZMIMEData,
-});
-export type SplitRequest = z.input<typeof ZSplitRequest>;
-
-export const ZClassifyRequest = z.object({
-  ...generated.ZClassifyRequest.schema.shape,
-  document: ZMIMEData,
-});
-export type ClassifyRequest = z.input<typeof ZClassifyRequest>;
-
 function normalizeClassifyDecision(
   value: unknown
 ): z.input<typeof generated.ZClassifyDecision> | undefined {
@@ -433,9 +400,7 @@ function normalizeClassifyDecision(
   return undefined;
 }
 
-function normalizeClassifyChoices(
-  value: unknown
-): z.input<typeof generated.ZClassifyChoice>[] {
+function normalizeClassifyChoices(value: unknown): z.input<typeof generated.ZClassifyChoice>[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -525,37 +490,36 @@ const ZHandlePayloadRecord = z.preprocess(
   z.record(z.string(), generated.ZHandlePayload).default({})
 );
 
-export const ZWorkflowRunStep = z
-  .object({
-    // StepCore fields
-    block_id: z.string(),
-    step_id: z.string().default(''),
-    block_type: z.string(),
-    block_label: z.string(),
-    status: z.union([
-      z.literal('pending'),
-      z.literal('queued'),
-      z.literal('running'),
-      z.literal('completed'),
-      z.literal('skipped'),
-      z.literal('error'),
-      z.literal('waiting_for_human'),
-      z.literal('cancelled'),
-    ]),
-    started_at: z.string().nullable().optional(),
-    completed_at: z.string().nullable().optional(),
-    terminal: generated.ZTerminalState.nullable().optional(),
-    loop_containers: z.array(generated.ZContainerContextData).default([]),
-    model: z.string().nullable().optional(),
-    // WorkflowRunStep extras
-    run_id: z.string(),
-    organization_id: z.string(),
-    artifact: generated.ZStepArtifactRef.nullable().optional(),
-    handle_outputs: ZHandlePayloadRecord,
-    handle_inputs: ZHandlePayloadRecord,
-    retry_count: z.number().default(0),
-    created_at: z.string().nullable().optional(),
-  });
+export const ZWorkflowRunStep = z.object({
+  // StepCore fields
+  block_id: z.string(),
+  step_id: z.string().default(''),
+  block_type: z.string(),
+  block_label: z.string(),
+  status: z.union([
+    z.literal('pending'),
+    z.literal('queued'),
+    z.literal('running'),
+    z.literal('completed'),
+    z.literal('skipped'),
+    z.literal('error'),
+    z.literal('waiting_for_human'),
+    z.literal('cancelled'),
+  ]),
+  started_at: z.string().nullable().optional(),
+  completed_at: z.string().nullable().optional(),
+  terminal: generated.ZTerminalState.nullable().optional(),
+  loop_containers: z.array(generated.ZContainerContextData).default([]),
+  model: z.string().nullable().optional(),
+  // WorkflowRunStep extras
+  run_id: z.string(),
+  organization_id: z.string(),
+  artifact: generated.ZStepArtifactRef.nullable().optional(),
+  handle_outputs: ZHandlePayloadRecord,
+  handle_inputs: ZHandlePayloadRecord,
+  retry_count: z.number().default(0),
+  created_at: z.string().nullable().optional(),
+});
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
 
 export const ZStepExecutionResponse = z.object({
@@ -714,7 +678,6 @@ export const ZDeclarativeApplyResponse = z
   .object({
     workflow_id: z.string(),
     created: z.boolean(),
-    published: z.boolean().default(false),
     block_count: z.number(),
     edge_count: z.number(),
     diagnostics: z.record(z.any()),
@@ -895,13 +858,3 @@ export function raiseForStatus(run: generated.WorkflowRun): void {
   const kind = run.lifecycle.kind;
   if (kind === 'error' || kind === 'cancelled') throw new WorkflowRunError(run);
 }
-
-export const ZModel = z.lazy(() =>
-  z.object({
-    id: z.string(),
-    created: z.number(),
-    object: z.literal('model'),
-    owned_by: z.string(),
-  })
-);
-export type Model = z.infer<typeof ZModel>;

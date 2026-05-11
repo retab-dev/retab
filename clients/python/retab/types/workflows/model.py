@@ -1064,7 +1064,6 @@ class DeclarativeApplyResponse(BaseModel):
 
     workflow_id: str
     created: bool
-    published: bool = False
     block_count: int
     edge_count: int
     diagnostics: Dict[str, Any]

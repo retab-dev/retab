@@ -239,7 +239,7 @@ def test_experiments_cancel_posts_to_cancel_subroute() -> None:
 
 
 # ---------------------------------------------------------------------------
-# runs — create, list, get_content
+# runs — create, list, get
 # ---------------------------------------------------------------------------
 
 
@@ -328,7 +328,17 @@ def test_experiments_runs_list_uses_runs_route() -> None:
     assert request.url == "/workflows/wf_abc123/experiments/exp_abc/runs"
 
 
-def test_experiments_runs_get_content_with_run_id_passes_query_param() -> None:
+def test_experiment_content_is_only_on_runs_get() -> None:
+    experiments = Workflows(client=MagicMock()).experiments
+
+    assert "get_content" not in dir(experiments)
+    assert "get_content" not in dir(experiments.runs)
+    assert "get_job" not in dir(experiments.runs)
+    assert "wait_for_completion" not in dir(experiments.runs)
+    assert "get" in dir(experiments.runs)
+
+
+def test_experiments_runs_get_with_run_id_passes_query_param() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "experiment_id": "exp_abc",
@@ -336,7 +346,7 @@ def test_experiments_runs_get_content_with_run_id_passes_query_param() -> None:
         "content": {"jobs": []},
     }
 
-    Workflows(client=client).experiments.runs.get_content(
+    Workflows(client=client).experiments.runs.get(
         workflow_id="wf_abc123",
         experiment_id="exp_abc",
         run_id="exprun_1",
@@ -348,7 +358,7 @@ def test_experiments_runs_get_content_with_run_id_passes_query_param() -> None:
     assert request.params == {"run_id": "exprun_1"}
 
 
-def test_experiments_runs_get_content_without_run_id_omits_param() -> None:
+def test_experiments_runs_get_without_run_id_omits_param() -> None:
     """``run_id=None`` → no query param at all (server falls back to latest)."""
     client = MagicMock()
     client._prepared_request.return_value = {
@@ -357,42 +367,13 @@ def test_experiments_runs_get_content_without_run_id_omits_param() -> None:
         "content": {"jobs": []},
     }
 
-    Workflows(client=client).experiments.runs.get_content(
+    Workflows(client=client).experiments.runs.get(
         workflow_id="wf_abc123",
         experiment_id="exp_abc",
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.params is None
-
-
-def test_experiments_runs_get_job_uses_documents_subroute() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {
-        "id": "expjob_1",
-        "run_id": "exprun_1",
-        "experiment_id": "exp_abc",
-        "document_id": "expdoc_1",
-        "status": "completed",
-        "block_kind": "extract",
-        "handle_inputs": {},
-        "is_placeholder": False,
-        "attempt": 0,
-    }
-
-    Workflows(client=client).experiments.runs.get_job(
-        workflow_id="wf_abc123",
-        experiment_id="exp_abc",
-        run_id="exprun_1",
-        document_id="expdoc_1",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "GET"
-    assert (
-        request.url
-        == "/workflows/wf_abc123/experiments/exp_abc/runs/exprun_1/documents/expdoc_1"
-    )
 
 
 # ---------------------------------------------------------------------------
