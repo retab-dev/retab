@@ -42,8 +42,6 @@ export const ZExperimentJobStatus = z.enum([
     "running",
     "completed",
     "error",
-    "cancelled",
-    "skipped",
 ]);
 export type ExperimentJobStatus = z.infer<typeof ZExperimentJobStatus>;
 
@@ -132,12 +130,15 @@ export const ZRunExperimentResponse = z
     .object({
         experiment_id: z.string(),
         run_id: z.string(),
-        job_id: z.string(),
+        job_id: z.string().nullable(),
         status: z.string(),
         definition_fingerprint: z.string(),
+        total_document_count: z.number().default(0),
+        completed_document_count: z.number().default(0),
         document_count: z.number(),
         n_consensus: ZNConsensusValue,
         previous_run: ZPreviousRunSummary.nullable().optional(),
+        noop: z.boolean().default(false),
     })
     .passthrough();
 export type RunExperimentResponse = z.infer<typeof ZRunExperimentResponse>;
@@ -160,6 +161,8 @@ export const ZExperimentRunSummary = z
         status: ZExperimentRunStatus,
         block_kind: ZExperimentBlockKind,
         score: z.number().nullable().optional(),
+        total_document_count: z.number().default(0),
+        completed_document_count: z.number().default(0),
         document_count: z.number().default(0),
         error_count: z.number().default(0),
         n_consensus: ZNConsensusValue,

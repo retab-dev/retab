@@ -1,9 +1,10 @@
 import { CompositionClient, RequestOptions } from "../../../../client.js";
 import {
+    CancelExperimentResponse,
     ExperimentContentResponse,
     ExperimentRunListResponse,
-    NConsensusValue,
     RunExperimentResponse,
+    ZCancelExperimentResponse,
     ZExperimentContentResponse,
     ZExperimentRunListResponse,
     ZRunExperimentResponse,
@@ -19,16 +20,12 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
 
     prepare_create(
         workflowId: string,
-        experimentId: string,
-        { nConsensus, retryFailedOnly = false }: { nConsensus?: NConsensusValue; retryFailedOnly?: boolean } = {}
+        experimentId: string
     ): { url: string; method: string; body: Record<string, unknown> } {
-        const body: Record<string, unknown> = {};
-        if (nConsensus !== undefined) body.n_consensus = nConsensus;
-        if (retryFailedOnly) body.retry_failed_only = true;
         return {
             url: `/workflows/${workflowId}/experiments/${experimentId}/run`,
             method: "POST",
-            body,
+            body: {},
         };
     }
 
@@ -36,6 +33,18 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
         return {
             url: `/workflows/${workflowId}/experiments/${experimentId}/runs`,
             method: "GET",
+        };
+    }
+
+    prepare_cancel_document(
+        workflowId: string,
+        experimentId: string,
+        documentId: string
+    ): { url: string; method: string; body: Record<string, never> } {
+        return {
+            url: `/workflows/${workflowId}/experiments/${experimentId}/documents/${documentId}/cancel`,
+            method: "POST",
+            body: {},
         };
     }
 
@@ -54,16 +63,16 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
     }
 
     /**
-     * Trigger an experiment run with the current draft block config.
+     * Ensure an experiment has fresh results for the current draft block config.
      *
-     * Async — returns a `job_id` immediately. Poll the job with `client.jobs`.
+     * Async when work is needed — poll `job_id` with `client.jobs` unless
+     * `noop` is true.
      *
      * @example
      * ```typescript
      * const run = await client.workflows.experiments.runs.create({
      *     workflowId: "wf_abc123",
      *     experimentId: "exp_xyz",
-     *     nConsensus: 5,
      * });
      * await client.jobs.waitForCompletion(run.job_id);
      * ```
@@ -72,19 +81,37 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
         {
             workflowId,
             experimentId,
-            nConsensus,
-            retryFailedOnly = false,
         }: {
             workflowId: string;
             experimentId: string;
-            nConsensus?: NConsensusValue;
-            retryFailedOnly?: boolean;
         },
         options?: RequestOptions
     ): Promise<RunExperimentResponse> {
-        const request = this.prepare_create(workflowId, experimentId, { nConsensus, retryFailedOnly });
+        const request = this.prepare_create(workflowId, experimentId);
 
         return this._fetchJson(ZRunExperimentResponse, {
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    async cancel_document(
+        {
+            workflowId,
+            experimentId,
+            documentId,
+        }: {
+            workflowId: string;
+            experimentId: string;
+            documentId: string;
+        },
+        options?: RequestOptions
+    ): Promise<CancelExperimentResponse> {
+        const request = this.prepare_cancel_document(workflowId, experimentId, documentId);
+        return this._fetchJson(ZCancelExperimentResponse, {
             url: request.url,
             method: request.method,
             body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },

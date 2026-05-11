@@ -6,6 +6,7 @@ import APIWorkflowRuns from "../src/api/workflows/runs/client";
 import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
 import APIWorkflowEdges from "../src/api/workflows/edges/client";
 import APIWorkflowSpecs from "../src/api/workflows/specs/client";
+import { ZExperimentJobStatus } from "../src/api/workflows/experiments/types";
 import { raiseForStatus, WorkflowRunError, ZStepExecutionResponse, ZWorkflowRun, ZWorkflowRunStep } from "../src/types";
 import type { WorkflowRun, WorkflowRunExportResponse } from "../src/types";
 
@@ -122,7 +123,7 @@ describe("workflows client", () => {
         expect(workflowsClient.specs).toBeInstanceOf(APIWorkflowSpecs);
     });
 
-    test("specs.validate() uses the YAML validate route", async () => {
+    test("specs.validate() uses the spec validate route", async () => {
         const mockClient = new MockClient({
             workflow_id: "wf_1",
             block_count: 2,
@@ -135,7 +136,7 @@ describe("workflows client", () => {
         const response = await specsClient.validate("spec: {}\n");
 
         expect(mockClient.lastFetchParams).toEqual({
-            url: "/workflows/yaml/validate",
+            url: "/workflows/spec/validate",
             method: "POST",
             body: { yaml_definition: "spec: {}\n" },
             params: undefined,
@@ -144,53 +145,88 @@ describe("workflows client", () => {
         expect(response.is_valid).toBe(true);
     });
 
-    test("specs.plan() uses the YAML plan route", async () => {
+    test("specs.plan() uses the spec plan route", async () => {
         const mockClient = new MockClient({
             workflow_id: "wf_1",
             action: "noop",
             block_count: 2,
             edge_count: 1,
             diagnostics: { issues: [] },
-            operations: [{ action: "noop", target: "workflow", target_id: "wf_1", summary: "No changes" }],
+            format_version: "workflows-plan/v1",
+            summary: { add: 0, change: 1, destroy: 0, replace: 0, noop: 0, total: 1, has_changes: true },
+            resource_changes: [
+                {
+                    address: "workflow.wf_1.block.block_extract",
+                    target: "block",
+                    target_id: "block_extract",
+                    name: "Extract",
+                    type: "extract",
+                    actions: ["update"],
+                    summary: "Update block 'Extract'",
+                    change: {
+                        before: { config: { model: "old" } },
+                        after: { config: { model: "new" } },
+                        before_sensitive: {},
+                        after_sensitive: {},
+                        field_changes: [
+                            {
+                                path: ["config", "model"],
+                                path_display: "config.model",
+                                action: "update",
+                                before: "old",
+                                after: "new",
+                            },
+                        ],
+                    },
+                },
+            ],
+            rendered_plan: "Plan: 0 to add, 1 to change, 0 to destroy.",
         });
         const specsClient = new APIWorkflowSpecs(mockClient);
 
         const response = await specsClient.plan("spec: {}\n");
 
         expect(mockClient.lastFetchParams).toEqual({
-            url: "/workflows/yaml/plan",
+            url: "/workflows/spec/plan",
             method: "POST",
             body: { yaml_definition: "spec: {}\n" },
             params: undefined,
             headers: undefined,
         });
-        expect(response.operations[0].action).toBe("noop");
+        expect(response.summary.change).toBe(1);
+        expect(response.resource_changes[0].change.field_changes[0].path_display).toBe("config.model");
+        expect(response.rendered_plan).toContain("1 to change");
     });
 
-    test("specs.apply() uses the YAML apply route", async () => {
+    test("specs.apply() uses the spec apply route", async () => {
         const mockClient = new MockClient({
             workflow_id: "wf_1",
             created: false,
             block_count: 2,
             edge_count: 1,
             diagnostics: { issues: [] },
-            operations: [{ action: "noop", target: "workflow", target_id: "wf_1", summary: "No changes" }],
+            format_version: "workflows-plan/v1",
+            summary: { add: 0, change: 0, destroy: 0, replace: 0, noop: 1, total: 0, has_changes: false },
+            resource_changes: [],
+            rendered_plan: "No changes. Infrastructure is up-to-date.",
         });
         const specsClient = new APIWorkflowSpecs(mockClient);
 
         const response = await specsClient.apply("spec: {}\n");
 
         expect(mockClient.lastFetchParams).toEqual({
-            url: "/workflows/yaml/apply",
+            url: "/workflows/spec/apply",
             method: "POST",
             body: { yaml_definition: "spec: {}\n" },
             params: undefined,
             headers: undefined,
         });
         expect(response.workflow_id).toBe("wf_1");
+        expect(response.summary.noop).toBe(1);
+        expect(response.resource_changes).toEqual([]);
     });
 
-    test("specs.export() uses the workflow YAML route", async () => {
+    test("specs.export() uses the spec export route", async () => {
         const mockClient = new MockClient({
             workflow_id: "wf_1",
             yaml_definition: "apiVersion: workflows.retab.com/v1alpha2\n",
@@ -200,7 +236,7 @@ describe("workflows client", () => {
         const response = await specsClient.export("wf_1");
 
         expect(mockClient.lastFetchParams).toEqual({
-            url: "/workflows/wf_1/yaml",
+            url: "/workflows/spec/wf_1",
             method: "GET",
             params: undefined,
             headers: undefined,
@@ -341,10 +377,24 @@ describe("workflows client", () => {
             method: "GET",
             params: { run_id: "run_1" },
         });
+        expect(workflowsClient.experiments.runs.prepare_create("wf_1", "exp_1")).toEqual({
+            url: "/workflows/wf_1/experiments/exp_1/run",
+            method: "POST",
+            body: {},
+        });
+        expect("prepare_run_document" in workflowsClient.experiments.runs).toBe(false);
+        expect("run_document" in workflowsClient.experiments.runs).toBe(false);
+        expect(workflowsClient.experiments.runs.prepare_cancel_document("wf_1", "exp_1", "expdoc_1")).toEqual({
+            url: "/workflows/wf_1/experiments/exp_1/documents/expdoc_1/cancel",
+            method: "POST",
+            body: {},
+        });
         expect(workflowsClient.experiments.prepare_get_metrics("wf_1", "exp_1").params).toEqual({
             view: "summary",
             include_prior: true,
         });
+        expect(ZExperimentJobStatus.safeParse("completed").success).toBe(true);
+        expect(ZExperimentJobStatus.safeParse("cancelled").success).toBe(false);
     });
 
     test("delete() sends DELETE to /workflows/{id}", async () => {

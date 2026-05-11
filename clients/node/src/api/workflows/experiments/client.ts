@@ -199,10 +199,9 @@ export default class APIWorkflowExperiments extends CompositionClient {
 
     prepare_run_batch(
         workflowId: string,
-        { blockId, nConsensus }: { blockId: string; nConsensus?: NConsensusValue }
+        { blockId }: { blockId: string }
     ): { url: string; method: string; body: Record<string, unknown> } {
         const body: Record<string, unknown> = { block_id: blockId };
-        if (nConsensus !== undefined) body.n_consensus = nConsensus;
         return {
             url: `/workflows/${workflowId}/experiments/run-batch`,
             method: "POST",
@@ -485,15 +484,13 @@ export default class APIWorkflowExperiments extends CompositionClient {
         {
             workflowId,
             blockId,
-            nConsensus,
         }: {
             workflowId: string;
             blockId: string;
-            nConsensus?: NConsensusValue;
         },
         options?: RequestOptions
     ): Promise<RunBatchResponse> {
-        const request = this.prepare_run_batch(workflowId, { blockId, nConsensus });
+        const request = this.prepare_run_batch(workflowId, { blockId });
         return this._fetchJson(ZRunBatchResponse, {
             url: request.url,
             method: request.method,
@@ -505,9 +502,9 @@ export default class APIWorkflowExperiments extends CompositionClient {
 
     async run_batch(
         workflowId: string,
-        { blockId, nConsensus }: { blockId: string; nConsensus?: NConsensusValue },
+        { blockId }: { blockId: string },
         options?: RequestOptions
     ): Promise<RunBatchResponse> {
-        return this.runBatch({ workflowId, blockId, nConsensus }, options);
+        return this.runBatch({ workflowId, blockId }, options);
     }
 }

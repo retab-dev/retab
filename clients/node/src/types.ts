@@ -641,15 +641,58 @@ export const ZWorkflowWithEntities = z
   .passthrough();
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
 
-export const ZDeclarativePlanOperation = z
+export const ZDeclarativePlanSummary = z
   .object({
-    action: z.string(),
-    target: z.string(),
-    target_id: z.string(),
-    summary: z.string(),
+    add: z.number().default(0),
+    change: z.number().default(0),
+    destroy: z.number().default(0),
+    replace: z.number().default(0),
+    noop: z.number().default(0),
+    total: z.number().default(0),
+    has_changes: z.boolean().default(false),
   })
   .passthrough();
-export type DeclarativePlanOperation = z.infer<typeof ZDeclarativePlanOperation>;
+export type DeclarativePlanSummary = z.infer<typeof ZDeclarativePlanSummary>;
+
+export const ZDeclarativePlanFieldChange = z
+  .object({
+    path: z.array(z.union([z.string(), z.number()])),
+    path_display: z.string(),
+    action: z.string(),
+    before: z.any().optional().nullable(),
+    after: z.any().optional().nullable(),
+    before_sensitive: z.boolean().default(false),
+    after_sensitive: z.boolean().default(false),
+    unified_diff: z.string().optional().nullable(),
+  })
+  .passthrough();
+export type DeclarativePlanFieldChange = z.infer<typeof ZDeclarativePlanFieldChange>;
+
+export const ZDeclarativePlanChange = z
+  .object({
+    before: z.any().optional().nullable(),
+    after: z.any().optional().nullable(),
+    before_sensitive: z.any().default({}),
+    after_sensitive: z.any().default({}),
+    field_changes: z.array(ZDeclarativePlanFieldChange).default([]),
+  })
+  .passthrough();
+export type DeclarativePlanChange = z.infer<typeof ZDeclarativePlanChange>;
+
+export const ZDeclarativePlanResourceChange = z
+  .object({
+    address: z.string(),
+    target: z.string(),
+    target_id: z.string(),
+    name: z.string(),
+    type: z.string(),
+    actions: z.array(z.string()),
+    summary: z.string(),
+    change: ZDeclarativePlanChange,
+    path: z.string().optional().nullable(),
+  })
+  .passthrough();
+export type DeclarativePlanResourceChange = z.infer<typeof ZDeclarativePlanResourceChange>;
 
 export const ZDeclarativeValidationResponse = z
   .object({
@@ -669,7 +712,18 @@ export const ZDeclarativePlanResponse = z
     block_count: z.number(),
     edge_count: z.number(),
     diagnostics: z.record(z.any()),
-    operations: z.array(ZDeclarativePlanOperation),
+    format_version: z.string().default("workflows-plan/v1"),
+    summary: ZDeclarativePlanSummary.default({
+      add: 0,
+      change: 0,
+      destroy: 0,
+      replace: 0,
+      noop: 0,
+      total: 0,
+      has_changes: false,
+    }),
+    resource_changes: z.array(ZDeclarativePlanResourceChange).default([]),
+    rendered_plan: z.string().default("No changes. Infrastructure is up-to-date."),
   })
   .passthrough();
 export type DeclarativePlanResponse = z.infer<typeof ZDeclarativePlanResponse>;
@@ -681,7 +735,18 @@ export const ZDeclarativeApplyResponse = z
     block_count: z.number(),
     edge_count: z.number(),
     diagnostics: z.record(z.any()),
-    operations: z.array(ZDeclarativePlanOperation),
+    format_version: z.string().default("workflows-plan/v1"),
+    summary: ZDeclarativePlanSummary.default({
+      add: 0,
+      change: 0,
+      destroy: 0,
+      replace: 0,
+      noop: 0,
+      total: 0,
+      has_changes: false,
+    }),
+    resource_changes: z.array(ZDeclarativePlanResourceChange).default([]),
+    rendered_plan: z.string().default("No changes. Infrastructure is up-to-date."),
   })
   .passthrough();
 export type DeclarativeApplyResponse = z.infer<typeof ZDeclarativeApplyResponse>;
