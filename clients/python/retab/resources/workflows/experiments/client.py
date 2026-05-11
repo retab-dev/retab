@@ -216,11 +216,8 @@ class WorkflowExperimentsMixin:
         workflow_id: str,
         *,
         block_id: str,
-        n_consensus: NConsensusValue | None = None,
     ) -> PreparedRequest:
         data: Dict[str, Any] = {"block_id": block_id}
-        if n_consensus is not None:
-            data["n_consensus"] = n_consensus
         return PreparedRequest(
             method="POST",
             url=f"/workflows/{workflow_id}/experiments/run-batch",
@@ -235,18 +232,11 @@ class ExperimentRunsMixin:
         self,
         workflow_id: str,
         experiment_id: str,
-        *,
-        n_consensus: NConsensusValue | None = None,
-        retry_failed_only: bool = False,
     ) -> PreparedRequest:
         # Empty-bodied ``{}`` POST is what the backend expects when no
         # overrides are passed — the route validates the request as
         # ``RunExperimentRequest`` which has all-optional fields.
         data: Dict[str, Any] = {}
-        if n_consensus is not None:
-            data["n_consensus"] = n_consensus
-        if retry_failed_only:
-            data["retry_failed_only"] = True
         return PreparedRequest(
             method="POST",
             url=f"/workflows/{workflow_id}/experiments/{experiment_id}/run",
@@ -275,6 +265,21 @@ class ExperimentRunsMixin:
             params=params or None,
         )
 
+    def prepare_cancel_document(
+        self,
+        workflow_id: str,
+        experiment_id: str,
+        document_id: str,
+    ) -> PreparedRequest:
+        return PreparedRequest(
+            method="POST",
+            url=(
+                f"/workflows/{workflow_id}/experiments/{experiment_id}"
+                f"/documents/{document_id}/cancel"
+            ),
+            data={},
+        )
+
 
 # ---------------------------------------------------------------------------
 # Sync
@@ -288,29 +293,21 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         self,
         workflow_id: str,
         experiment_id: str,
-        *,
-        n_consensus: NConsensusValue | None = None,
-        retry_failed_only: bool = False,
     ) -> RunExperimentResponse:
-        """Trigger an experiment run with the current draft block config.
+        """Ensure the experiment has fresh results for the current draft config.
 
         Args:
             workflow_id: Workflow ID
             experiment_id: Experiment to run
-            n_consensus: Override the experiment's stored ``n_consensus`` for
-                this run only (must be 3, 5, or 7)
-            retry_failed_only: When ``True``, re-runs only the documents that
-                failed in the latest run (errors with no successful execution).
 
         Returns:
-            ``RunExperimentResponse`` carrying the new ``run_id`` and
-            ``job_id``. Poll the job with ``client.jobs``.
+            ``RunExperimentResponse``. Fresh completed jobs are reused, failed
+            or stale jobs are queued, and ``noop`` is true when no work was
+            needed.
         """
         request = self.prepare_create(
             workflow_id,
             experiment_id,
-            n_consensus=n_consensus,
-            retry_failed_only=retry_failed_only,
         )
         response = self._client._prepared_request(request)
         return RunExperimentResponse.model_validate(response)
@@ -339,6 +336,17 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         request = self.prepare_get(workflow_id, experiment_id, run_id=run_id)
         response = self._client._prepared_request(request)
         return ExperimentContentResponse.model_validate(response)
+
+    def cancel_document(
+        self,
+        workflow_id: str,
+        experiment_id: str,
+        document_id: str,
+    ) -> Dict[str, str]:
+        """Cancel one pending/running document job in the latest active run."""
+        request = self.prepare_cancel_document(workflow_id, experiment_id, document_id)
+        response = self._client._prepared_request(request)
+        return dict(response) if isinstance(response, dict) else {"status": str(response)}
 
 
 class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
@@ -521,13 +529,11 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         workflow_id: str,
         *,
         block_id: str,
-        n_consensus: NConsensusValue | None = None,
     ) -> RunBatchResponse:
         """Trigger a run for every experiment attached to one block."""
         request = self.prepare_run_batch(
             workflow_id,
             block_id=block_id,
-            n_consensus=n_consensus,
         )
         response = self._client._prepared_request(request)
         return RunBatchResponse.model_validate(response)
@@ -545,15 +551,10 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         self,
         workflow_id: str,
         experiment_id: str,
-        *,
-        n_consensus: NConsensusValue | None = None,
-        retry_failed_only: bool = False,
     ) -> RunExperimentResponse:
         request = self.prepare_create(
             workflow_id,
             experiment_id,
-            n_consensus=n_consensus,
-            retry_failed_only=retry_failed_only,
         )
         response = await self._client._prepared_request(request)
         return RunExperimentResponse.model_validate(response)
@@ -577,6 +578,16 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         request = self.prepare_get(workflow_id, experiment_id, run_id=run_id)
         response = await self._client._prepared_request(request)
         return ExperimentContentResponse.model_validate(response)
+
+    async def cancel_document(
+        self,
+        workflow_id: str,
+        experiment_id: str,
+        document_id: str,
+    ) -> Dict[str, str]:
+        request = self.prepare_cancel_document(workflow_id, experiment_id, document_id)
+        response = await self._client._prepared_request(request)
+        return dict(response) if isinstance(response, dict) else {"status": str(response)}
 
 
 class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
@@ -693,12 +704,10 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         workflow_id: str,
         *,
         block_id: str,
-        n_consensus: NConsensusValue | None = None,
     ) -> RunBatchResponse:
         request = self.prepare_run_batch(
             workflow_id,
             block_id=block_id,
-            n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(request)
         return RunBatchResponse.model_validate(response)

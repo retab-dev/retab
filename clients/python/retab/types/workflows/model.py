@@ -1029,13 +1029,53 @@ class WorkflowWithEntities(BaseModel):
         return [b for b in self.blocks if b.type == "start_json"]
 
 
-class DeclarativePlanOperation(BaseModel):
+class DeclarativePlanSummary(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
+    add: int = 0
+    change: int = 0
+    destroy: int = 0
+    replace: int = 0
+    noop: int = 0
+    total: int = 0
+    has_changes: bool = False
+
+
+class DeclarativePlanFieldChange(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    path: List[str | int]
+    path_display: str
     action: str
+    before: Any | None = None
+    after: Any | None = None
+    before_sensitive: bool = False
+    after_sensitive: bool = False
+    unified_diff: str | None = None
+
+
+class DeclarativePlanChange(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    before: Any | None = None
+    after: Any | None = None
+    before_sensitive: Any = Field(default_factory=dict)
+    after_sensitive: Any = Field(default_factory=dict)
+    field_changes: List[DeclarativePlanFieldChange] = Field(default_factory=list)
+
+
+class DeclarativePlanResourceChange(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    address: str
     target: str
     target_id: str
+    name: str
+    type: str
+    actions: List[str]
     summary: str
+    change: DeclarativePlanChange
+    path: str | None = None
 
 
 class DeclarativeValidationResponse(BaseModel):
@@ -1056,7 +1096,10 @@ class DeclarativePlanResponse(BaseModel):
     block_count: int
     edge_count: int
     diagnostics: Dict[str, Any]
-    operations: List[DeclarativePlanOperation]
+    format_version: str = "workflows-plan/v1"
+    summary: DeclarativePlanSummary = Field(default_factory=DeclarativePlanSummary)
+    resource_changes: List[DeclarativePlanResourceChange] = Field(default_factory=list)
+    rendered_plan: str = "No changes. Infrastructure is up-to-date."
 
 
 class DeclarativeApplyResponse(BaseModel):
@@ -1067,7 +1110,10 @@ class DeclarativeApplyResponse(BaseModel):
     block_count: int
     edge_count: int
     diagnostics: Dict[str, Any]
-    operations: List[DeclarativePlanOperation]
+    format_version: str = "workflows-plan/v1"
+    summary: DeclarativePlanSummary = Field(default_factory=DeclarativePlanSummary)
+    resource_changes: List[DeclarativePlanResourceChange] = Field(default_factory=list)
+    rendered_plan: str = "No changes. Infrastructure is up-to-date."
 
 
 class DeclarativeExportResponse(BaseModel):

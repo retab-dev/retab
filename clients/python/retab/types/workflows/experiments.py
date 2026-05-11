@@ -164,12 +164,15 @@ class RunExperimentResponse(BaseModel):
 
     experiment_id: str
     run_id: str
-    job_id: str
+    job_id: str | None
     status: str
     definition_fingerprint: str
+    total_document_count: int = 0
+    completed_document_count: int = 0
     document_count: int
     n_consensus: NConsensusValue
     previous_run: PreviousRunSummary | None = None
+    noop: bool = False
 
 
 class ExperimentRunSummary(BaseModel):
@@ -185,6 +188,8 @@ class ExperimentRunSummary(BaseModel):
     status: ExperimentRunStatus
     block_kind: ExperimentBlockKind
     score: float | None = None
+    total_document_count: int = 0
+    completed_document_count: int = 0
     document_count: int = 0
     error_count: int = 0
     n_consensus: NConsensusValue

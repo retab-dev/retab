@@ -259,13 +259,12 @@ def test_experiments_runs_create_posts_to_run_subroute() -> None:
     Workflows(client=client).experiments.runs.create(
         workflow_id="wf_abc123",
         experiment_id="exp_abc",
-        n_consensus=7,
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/workflows/wf_abc123/experiments/exp_abc/run"
-    assert request.data == {"n_consensus": 7}
+    assert request.data == {}
 
 
 def test_experiments_runs_create_default_body_is_empty_dict() -> None:
@@ -292,27 +291,48 @@ def test_experiments_runs_create_default_body_is_empty_dict() -> None:
     assert request.data == {}
 
 
-def test_experiments_runs_create_retry_failed_only_serializes_flag() -> None:
+def test_experiments_runs_create_does_not_expose_retry_or_stale_flags() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "experiment_id": "exp_abc",
         "run_id": "exprun_2",
-        "job_id": "job_2",
-        "status": "pending",
+        "job_id": None,
+        "status": "completed",
         "definition_fingerprint": "deadbeef",
-        "document_count": 1,
+        "document_count": 3,
         "n_consensus": 5,
         "previous_run": None,
+        "noop": True,
     }
 
     Workflows(client=client).experiments.runs.create(
         workflow_id="wf_abc123",
         experiment_id="exp_abc",
-        retry_failed_only=True,
     )
 
     request = client._prepared_request.call_args.args[0]
-    assert request.data == {"retry_failed_only": True}
+    assert request.data == {}
+    assert not hasattr(Workflows(client=client).experiments.runs, "run_document")
+
+
+def test_experiments_runs_cancel_document_uses_document_cancel_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "status": "cancelled",
+        "run_id": "exprun_1",
+        "document_id": "expdoc_1",
+    }
+
+    Workflows(client=client).experiments.runs.cancel_document(
+        workflow_id="wf_abc123",
+        experiment_id="exp_abc",
+        document_id="expdoc_1",
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/documents/expdoc_1/cancel"
+    assert request.data == {}
 
 
 def test_experiments_runs_list_uses_runs_route() -> None:
@@ -484,13 +504,12 @@ def test_experiments_run_batch_posts_to_run_batch_subroute() -> None:
     Workflows(client=client).experiments.run_batch(
         workflow_id="wf_abc123",
         block_id="block_extract",
-        n_consensus=5,
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/workflows/wf_abc123/experiments/run-batch"
-    assert request.data == {"block_id": "block_extract", "n_consensus": 5}
+    assert request.data == {"block_id": "block_extract"}
 
 
 # ---------------------------------------------------------------------------

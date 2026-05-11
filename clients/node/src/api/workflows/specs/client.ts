@@ -19,7 +19,7 @@ export default class APIWorkflowSpecs extends CompositionClient {
      */
     async validate(yamlDefinition: string, options?: RequestOptions): Promise<DeclarativeValidationResponse> {
         return this._fetchJson(ZDeclarativeValidationResponse, {
-            url: "/workflows/yaml/validate",
+            url: "/workflows/spec/validate",
             method: "POST",
             body: { yaml_definition: yamlDefinition, ...(options?.body || {}) },
             params: options?.params,
@@ -32,7 +32,7 @@ export default class APIWorkflowSpecs extends CompositionClient {
      */
     async plan(yamlDefinition: string, options?: RequestOptions): Promise<DeclarativePlanResponse> {
         return this._fetchJson(ZDeclarativePlanResponse, {
-            url: "/workflows/yaml/plan",
+            url: "/workflows/spec/plan",
             method: "POST",
             body: { yaml_definition: yamlDefinition, ...(options?.body || {}) },
             params: options?.params,
@@ -45,7 +45,7 @@ export default class APIWorkflowSpecs extends CompositionClient {
      */
     async apply(yamlDefinition: string, options?: RequestOptions): Promise<DeclarativeApplyResponse> {
         return this._fetchJson(ZDeclarativeApplyResponse, {
-            url: "/workflows/yaml/apply",
+            url: "/workflows/spec/apply",
             method: "POST",
             body: { yaml_definition: yamlDefinition, ...(options?.body || {}) },
             params: options?.params,
@@ -58,7 +58,7 @@ export default class APIWorkflowSpecs extends CompositionClient {
      */
     async export(workflowId: string, options?: RequestOptions): Promise<DeclarativeExportResponse> {
         return this._fetchJson(ZDeclarativeExportResponse, {
-            url: `/workflows/${workflowId}/yaml`,
+            url: `/workflows/spec/${workflowId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,

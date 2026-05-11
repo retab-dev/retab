@@ -135,7 +135,7 @@ def test_async_workflows_exposes_specs_subresource() -> None:
     assert isinstance(workflows.specs, AsyncWorkflowSpecs)
 
 
-def test_workflow_specs_validate_uses_yaml_validate_route() -> None:
+def test_workflow_specs_validate_uses_spec_validate_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
@@ -149,13 +149,13 @@ def test_workflow_specs_validate_uses_yaml_validate_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/yaml/validate"
+    assert request.url == "/workflows/spec/validate"
     assert request.data == {"yaml_definition": "apiVersion: workflows.retab.com/v1alpha2\n"}
     assert isinstance(response, DeclarativeValidationResponse)
     assert response.is_valid is True
 
 
-def test_workflow_specs_plan_uses_yaml_plan_route() -> None:
+def test_workflow_specs_plan_uses_spec_plan_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
@@ -163,20 +163,50 @@ def test_workflow_specs_plan_uses_yaml_plan_route() -> None:
         "block_count": 2,
         "edge_count": 1,
         "diagnostics": {"issues": []},
-        "operations": [{"action": "noop", "target": "workflow", "target_id": "wf_1", "summary": "No changes"}],
+        "format_version": "workflows-plan/v1",
+        "summary": {"add": 0, "change": 1, "destroy": 0, "replace": 0, "noop": 0, "total": 1, "has_changes": True},
+        "resource_changes": [
+            {
+                "address": "workflow.wf_1.block.block_extract",
+                "target": "block",
+                "target_id": "block_extract",
+                "name": "Extract",
+                "type": "extract",
+                "actions": ["update"],
+                "summary": "Update block 'Extract'",
+                "change": {
+                    "before": {"config": {"model": "old"}},
+                    "after": {"config": {"model": "new"}},
+                    "before_sensitive": {},
+                    "after_sensitive": {},
+                    "field_changes": [
+                        {
+                            "path": ["config", "model"],
+                            "path_display": "config.model",
+                            "action": "update",
+                            "before": "old",
+                            "after": "new",
+                        }
+                    ],
+                },
+            }
+        ],
+        "rendered_plan": "Plan: 0 to add, 1 to change, 0 to destroy.",
     }
 
     response = WorkflowSpecs(client=client).plan("spec: {}\n")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/yaml/plan"
+    assert request.url == "/workflows/spec/plan"
     assert request.data == {"yaml_definition": "spec: {}\n"}
     assert isinstance(response, DeclarativePlanResponse)
-    assert response.operations[0].action == "noop"
+    assert response.summary.change == 1
+    assert response.resource_changes[0].change.field_changes[0].path_display == "config.model"
+    assert "1 to change" in response.rendered_plan
 
 
-def test_workflow_specs_apply_uses_yaml_apply_route() -> None:
+def test_workflow_specs_apply_uses_spec_apply_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
@@ -184,19 +214,24 @@ def test_workflow_specs_apply_uses_yaml_apply_route() -> None:
         "block_count": 2,
         "edge_count": 1,
         "diagnostics": {"issues": []},
-        "operations": [{"action": "noop", "target": "workflow", "target_id": "wf_1", "summary": "No changes"}],
+        "format_version": "workflows-plan/v1",
+        "summary": {"add": 0, "change": 0, "destroy": 0, "replace": 0, "noop": 1, "total": 0, "has_changes": False},
+        "resource_changes": [],
+        "rendered_plan": "No changes. Infrastructure is up-to-date.",
     }
 
     response = WorkflowSpecs(client=client).apply("spec: {}\n")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/yaml/apply"
+    assert request.url == "/workflows/spec/apply"
     assert request.data == {"yaml_definition": "spec: {}\n"}
     assert isinstance(response, DeclarativeApplyResponse)
+    assert response.summary.noop == 1
+    assert response.resource_changes == []
 
 
-def test_workflow_specs_export_uses_workflow_yaml_route() -> None:
+def test_workflow_specs_export_uses_spec_export_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
@@ -207,13 +242,13 @@ def test_workflow_specs_export_uses_workflow_yaml_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_1/yaml"
+    assert request.url == "/workflows/spec/wf_1"
     assert isinstance(response, DeclarativeExportResponse)
     assert response.yaml_definition.startswith("apiVersion:")
 
 
 @pytest.mark.asyncio
-async def test_async_workflow_specs_validate_uses_yaml_validate_route() -> None:
+async def test_async_workflow_specs_validate_uses_spec_validate_route() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(return_value={
         "workflow_id": "wf_1",
@@ -227,7 +262,7 @@ async def test_async_workflow_specs_validate_uses_yaml_validate_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/yaml/validate"
+    assert request.url == "/workflows/spec/validate"
     assert response.workflow_id == "wf_1"
 
 
