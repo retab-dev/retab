@@ -175,22 +175,6 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 			},
 		},
 		{
-			name: "documents extract",
-			call: func(ctx context.Context, client *Client) error {
-				_, err := client.Documents.Extract(ctx, DocumentExtractRequest{
-					Document:   document,
-					JSONSchema: Resource{"type": "object"},
-					Model:      "retab-small",
-				})
-				return err
-			},
-			wantMethod: http.MethodPost,
-			wantPath:   "/documents/extract",
-			assertBody: func(t *testing.T, body Resource) {
-				assertNestedString(t, body, "json_schema", "type", "object")
-			},
-		},
-		{
 			name: "schemas generate",
 			call: func(ctx context.Context, client *Client) error {
 				_, err := client.Schemas.Generate(ctx, GenerateSchemaRequest{
@@ -469,24 +453,6 @@ func TestListQueryShapes(t *testing.T) {
 				assertQuery(t, query, "filename", "invoice.pdf")
 				assertQuery(t, query, "from_date", "2026-01-02T03:04:05Z")
 				assertQuery(t, query, "metadata", `{"tenant":"acme"}`)
-			},
-		},
-		{
-			name: "models list",
-			call: func(ctx context.Context, client *Client) error {
-				include := false
-				_, err := client.Models.List(ctx, &ListModelsParams{
-					SupportsFinetuning:     true,
-					SupportsImage:          true,
-					IncludeFinetunedModels: &include,
-				})
-				return err
-			},
-			wantPath: "/models",
-			assert: func(t *testing.T, query map[string][]string) {
-				assertQuery(t, query, "supports_finetuning", "true")
-				assertQuery(t, query, "supports_image", "true")
-				assertQuery(t, query, "include_finetuned_models", "false")
 			},
 		},
 		{

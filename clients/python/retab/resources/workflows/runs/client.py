@@ -1,10 +1,7 @@
-import asyncio
-import inspect
-import time
 from datetime import date
 from io import IOBase
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, Sequence, TypeAlias
+from typing import Any, Dict, List, Literal, Optional, Sequence, TypeAlias
 
 import PIL.Image
 from pydantic import HttpUrl
@@ -28,8 +25,6 @@ from .steps import WorkflowSteps, AsyncWorkflowSteps
 # Type alias for document inputs
 DocumentInput = Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl
 DateInput: TypeAlias = str | date
-ProgressCallback: TypeAlias = Callable[[WorkflowRun], Any]
-AsyncProgressCallback: TypeAlias = Callable[[WorkflowRun], Any | Awaitable[Any]]
 
 
 def _normalize_csv_param(value: str | Sequence[str] | None) -> str | None:
@@ -221,12 +216,12 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         >>> from retab import Retab
         >>> client = Retab(api_key="your-api-key")
         >>>
-        >>> # Run a workflow and wait for completion
+        >>> # Run a workflow and inspect its status
         >>> run = client.workflows.runs.create(
         ...     workflow_id="wf_abc123",
         ...     documents={"start-block-1": Path("invoice.pdf")},
         ... )
-        >>> run = client.workflows.runs.wait_for_completion(run.id)
+        >>> run = client.workflows.runs.get(run.id)
         >>>
         >>> # Get outputs from persisted steps
         >>> step_summaries = client.workflows.runs.steps.list(run.id)
@@ -253,8 +248,8 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         """Run a workflow with the provided inputs.
 
         This creates a workflow run and starts execution in the background.
-        The returned WorkflowRun will have status "running" - use get()
-        to check for updates on the run status.
+        The returned WorkflowRun will have lifecycle.kind "running" or
+        "pending" - use get() to check for updates on the run lifecycle.
 
         Args:
             workflow_id: The ID of the workflow to run
@@ -264,7 +259,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             json_inputs: Mapping of start_json block IDs to their input JSON data.
 
         Returns:
-            WorkflowRun: The created workflow run with status "running"
+            WorkflowRun: The created workflow run
 
         Example:
             >>> run = client.workflows.runs.create(
@@ -401,7 +396,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             command_id: Optional idempotency key for deduplicating restart commands
 
         Returns:
-            WorkflowRun: The newly created run with status "running"
+            WorkflowRun: The newly created run
         """
         request = self.prepare_restart(run_id, command_id=command_id)
         response = self._client._prepared_request(request)
@@ -442,55 +437,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         request = self.prepare_get_hil_decision(run_id, block_id)
         response = self._client._prepared_request(request)
         return HILDecisionResource.model_validate(response)
-
-    def wait_for_completion(
-        self,
-        run_id: str,
-
-        poll_interval_seconds: float = 2.0,
-        timeout_seconds: float = 600.0,
-        on_status: ProgressCallback | None = None,
-    ) -> WorkflowRun:
-        """Poll a workflow run until it reaches a terminal state.
-
-        Stops when the run completes, fails, is cancelled, or pauses for human review.
-
-        Args:
-            run_id: The ID of the workflow run to wait for
-            poll_interval_seconds: Seconds between polls (default 2.0)
-            timeout_seconds: Maximum time to wait (default 600.0)
-            on_status: Optional callback invoked with the ``WorkflowRun`` on each poll.
-                Useful for logging progress or updating a progress bar.
-
-        Returns:
-            WorkflowRun: The completed, cancelled, failed, or waiting-for-human workflow run
-
-        Raises:
-            TimeoutError: If the run doesn't complete within timeout_seconds
-            ValueError: If poll_interval_seconds or timeout_seconds are <= 0
-        """
-        if poll_interval_seconds <= 0:
-            raise ValueError("poll_interval_seconds must be > 0")
-        if timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be > 0")
-
-        started_at = time.monotonic()
-        deadline = started_at + timeout_seconds
-        while True:
-            run = self.get(run_id)
-            if on_status is not None:
-                on_status(run)
-            kind = run.lifecycle.kind
-            if run.is_terminal or kind == "waiting_for_human":
-                return run
-
-            now = time.monotonic()
-            if now >= deadline:
-                raise TimeoutError(
-                    f"Timed out waiting for workflow run {run_id} after {timeout_seconds}s"
-                )
-            sleep_for = min(poll_interval_seconds, max(deadline - now, 0.0))
-            time.sleep(sleep_for)
 
     def export(
         self,
@@ -556,12 +502,12 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         >>> from retab import AsyncRetab
         >>> client = AsyncRetab(api_key="your-api-key")
         >>>
-        >>> # Run a workflow and wait for completion
+        >>> # Run a workflow and inspect its status
         >>> run = await client.workflows.runs.create(
         ...     workflow_id="wf_abc123",
         ...     documents={"start-block-1": Path("invoice.pdf")},
         ... )
-        >>> run = await client.workflows.runs.wait_for_completion(run.id)
+        >>> run = await client.workflows.runs.get(run.id)
         >>>
         >>> # Get outputs from persisted steps
         >>> step_summaries = await client.workflows.runs.steps.list(run.id)
@@ -585,8 +531,8 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         """Run a workflow with the provided inputs.
 
         This creates a workflow run and starts execution in the background.
-        The returned WorkflowRun will have status "running" - use get()
-        to check for updates on the run status.
+        The returned WorkflowRun will have lifecycle.kind "running" or
+        "pending" - use get() to check for updates on the run lifecycle.
 
         Args:
             workflow_id: The ID of the workflow to run
@@ -596,7 +542,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             json_inputs: Mapping of start_json block IDs to their input JSON data.
 
         Returns:
-            WorkflowRun: The created workflow run with status "running"
+            WorkflowRun: The created workflow run
 
         Example:
             >>> run = await client.workflows.runs.create(
@@ -731,7 +677,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             command_id: Optional idempotency key for deduplicating restart commands
 
         Returns:
-            WorkflowRun: The newly created run with status "running"
+            WorkflowRun: The newly created run
         """
         request = self.prepare_restart(run_id, command_id=command_id)
         response = await self._client._prepared_request(request)
@@ -772,56 +718,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         request = self.prepare_get_hil_decision(run_id, block_id)
         response = await self._client._prepared_request(request)
         return HILDecisionResource.model_validate(response)
-
-    async def wait_for_completion(
-        self,
-        run_id: str,
-
-        poll_interval_seconds: float = 2.0,
-        timeout_seconds: float = 600.0,
-        on_status: AsyncProgressCallback | None = None,
-    ) -> WorkflowRun:
-        """Poll a workflow run until it reaches a terminal state.
-
-        Stops when the run completes, fails, is cancelled, or pauses for human review.
-
-        Args:
-            run_id: The ID of the workflow run to wait for
-            poll_interval_seconds: Seconds between polls (default 2.0)
-            timeout_seconds: Maximum time to wait (default 600.0)
-            on_status: Optional callback invoked with the ``WorkflowRun`` on each poll.
-
-        Returns:
-            WorkflowRun: The completed, cancelled, failed, or waiting-for-human workflow run
-
-        Raises:
-            TimeoutError: If the run doesn't complete within timeout_seconds
-            ValueError: If poll_interval_seconds or timeout_seconds are <= 0
-        """
-        if poll_interval_seconds <= 0:
-            raise ValueError("poll_interval_seconds must be > 0")
-        if timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be > 0")
-
-        started_at = time.monotonic()
-        deadline = started_at + timeout_seconds
-        while True:
-            run = await self.get(run_id)
-            if on_status is not None:
-                callback_result = on_status(run)
-                if inspect.isawaitable(callback_result):
-                    await callback_result
-            kind = run.lifecycle.kind
-            if run.is_terminal or kind == "waiting_for_human":
-                return run
-
-            now = time.monotonic()
-            if now >= deadline:
-                raise TimeoutError(
-                    f"Timed out waiting for workflow run {run_id} after {timeout_seconds}s"
-                )
-            sleep_for = min(poll_interval_seconds, max(deadline - now, 0.0))
-            await asyncio.sleep(sleep_for)
 
     async def export(
         self,

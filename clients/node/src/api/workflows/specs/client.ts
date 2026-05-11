@@ -43,15 +43,11 @@ export default class APIWorkflowSpecs extends CompositionClient {
     /**
      * Apply declarative workflow YAML to draft workflow state.
      */
-    async apply(
-        yamlDefinition: string,
-        { publish = false }: { publish?: boolean } = {},
-        options?: RequestOptions
-    ): Promise<DeclarativeApplyResponse> {
+    async apply(yamlDefinition: string, options?: RequestOptions): Promise<DeclarativeApplyResponse> {
         return this._fetchJson(ZDeclarativeApplyResponse, {
             url: "/workflows/yaml/apply",
             method: "POST",
-            body: { yaml_definition: yamlDefinition, publish, ...(options?.body || {}) },
+            body: { yaml_definition: yamlDefinition, ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });

@@ -4,7 +4,7 @@ Official Go client for the Retab API.
 
 This Go SDK mirrors the Node SDK service tree:
 
-- `client.Files`, `client.Documents`, `client.Schemas`, `client.Models`
+- `client.Files`, `client.Schemas`
 - `client.Extractions`, `client.Parses`, `client.Splits`, `client.Classifications`, `client.Partitions`
 - `client.Edits` and `client.Edits.Templates`
 - `client.Jobs`
@@ -76,7 +76,7 @@ client, err := retab.NewClient(
 )
 ```
 
-## Documents
+## Processing Documents
 
 ```go
 document, err := retab.InferMIMEData("invoice.pdf")

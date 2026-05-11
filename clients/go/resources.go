@@ -229,151 +229,6 @@ func (s *FilesService) GetDownloadLink(ctx context.Context, fileID string, opts 
 	return &link, err
 }
 
-type DocumentsService struct {
-	client *Client
-}
-
-type DocumentExtractRequest struct {
-	Document           any               `json:"document"`
-	JSONSchema         any               `json:"json_schema"`
-	Model              string            `json:"model,omitempty"`
-	ImageResolutionDPI int               `json:"image_resolution_dpi,omitempty"`
-	NConsensus         int               `json:"n_consensus,omitempty"`
-	Instructions       string            `json:"instructions,omitempty"`
-	Metadata           map[string]string `json:"metadata,omitempty"`
-	BustCache          bool              `json:"bust_cache,omitempty"`
-}
-
-type ParseRequest struct {
-	Document           any    `json:"document"`
-	Model              string `json:"model,omitempty"`
-	TableParsingFormat string `json:"table_parsing_format,omitempty"`
-	ImageResolutionDPI int    `json:"image_resolution_dpi,omitempty"`
-	Instructions       string `json:"instructions,omitempty"`
-	BustCache          bool   `json:"bust_cache,omitempty"`
-}
-
-type DocumentSourcesParams struct {
-	File   any
-	FileID string
-}
-
-func (s *DocumentsService) Extract(ctx context.Context, request DocumentExtractRequest, opts ...RequestOption) (*Resource, error) {
-	if request.Document == nil {
-		return nil, fmt.Errorf("retab: document is required")
-	}
-	if request.JSONSchema == nil {
-		return nil, fmt.Errorf("retab: jsonSchema is required")
-	}
-	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/documents/extract", nil, request, &result, opts...)
-	return &result, err
-}
-
-func (s *DocumentsService) Parse(ctx context.Context, request ParseRequest, opts ...RequestOption) (*Resource, error) {
-	if request.Document == nil {
-		return nil, fmt.Errorf("retab: document is required")
-	}
-	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/documents/parse", nil, request, &result, opts...)
-	return &result, err
-}
-
-func (s *DocumentsService) Split(ctx context.Context, request SplitCreateRequest, opts ...RequestOption) (*Resource, error) {
-	if request.Document == nil {
-		return nil, fmt.Errorf("retab: document is required")
-	}
-	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/documents/split", nil, request, &result, opts...)
-	return &result, err
-}
-
-func (s *DocumentsService) Classify(ctx context.Context, request ClassificationCreateRequest, opts ...RequestOption) (*Resource, error) {
-	if request.Document == nil {
-		return nil, fmt.Errorf("retab: document is required")
-	}
-	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/documents/classify", nil, request, &result, opts...)
-	return &result, err
-}
-
-func (s *DocumentsService) Sources(ctx context.Context, extractionID string, params *DocumentSourcesParams, opts ...RequestOption) (*Resource, error) {
-	if extractionID == "" {
-		return nil, fmt.Errorf("retab: extractionID is required")
-	}
-	fileID := ""
-	if params != nil {
-		fileID = params.FileID
-		if fileID == "" {
-			fileID = fileIDFromDocument(params.File)
-		}
-	}
-
-	var extraction Resource
-	if err := s.client.do(ctx, http.MethodGet, "/extractions/"+url.PathEscape(extractionID), nil, nil, &extraction, opts...); err != nil {
-		return nil, err
-	}
-	if fileID == "" {
-		fileID = fileIDFromExtraction(extraction)
-	}
-	if fileID == "" {
-		return nil, fmt.Errorf("retab: unable to infer fileID")
-	}
-
-	var ocr Resource
-	if err := s.client.do(ctx, http.MethodPost, "/documents/perform_ocr_only", nil, map[string]string{"file_id": fileID}, &ocr, opts...); err != nil {
-		return nil, err
-	}
-	ocrFileID, _ := ocr["ocr_file_id"].(string)
-	if ocrFileID == "" {
-		return nil, fmt.Errorf("retab: perform_ocr_only did not return a valid ocr_file_id")
-	}
-	body := Resource{
-		"ocr_file_id": ocrFileID,
-		"ocr_result":  ocr["ocr_result"],
-		"data":        extractionData(extraction),
-	}
-	var result Resource
-	err := s.client.do(ctx, http.MethodPost, "/documents/compute_field_locations_fast", nil, body, &result, opts...)
-	return &result, err
-}
-
-type ModelsService struct {
-	client *Client
-}
-
-type Model struct {
-	ID      string `json:"id"`
-	Created int64  `json:"created"`
-	Object  string `json:"object"`
-	OwnedBy string `json:"owned_by"`
-}
-
-type ListModelsParams struct {
-	SupportsFinetuning     bool
-	SupportsImage          bool
-	IncludeFinetunedModels *bool
-}
-
-func (s *ModelsService) List(ctx context.Context, params *ListModelsParams, opts ...RequestOption) ([]Model, error) {
-	query := url.Values{}
-	query.Set("supports_finetuning", "false")
-	query.Set("supports_image", "false")
-	query.Set("include_finetuned_models", "true")
-	if params != nil {
-		query.Set("supports_finetuning", strconv.FormatBool(params.SupportsFinetuning))
-		query.Set("supports_image", strconv.FormatBool(params.SupportsImage))
-		if params.IncludeFinetunedModels != nil {
-			query.Set("include_finetuned_models", strconv.FormatBool(*params.IncludeFinetunedModels))
-		}
-	}
-	var envelope struct {
-		Data []Model `json:"data"`
-	}
-	err := s.client.do(ctx, http.MethodGet, "/models", query, nil, &envelope, opts...)
-	return envelope.Data, err
-}
-
 type SchemasService struct {
 	client *Client
 }
@@ -594,7 +449,14 @@ type ParsesService struct {
 
 type Parse = Resource
 
-type ParseCreateRequest = ParseRequest
+type ParseCreateRequest struct {
+	Document           any    `json:"document"`
+	Model              string `json:"model"`
+	TableParsingFormat string `json:"table_parsing_format,omitempty"`
+	ImageResolutionDPI int    `json:"image_resolution_dpi,omitempty"`
+	Instructions       string `json:"instructions,omitempty"`
+	BustCache          bool   `json:"bust_cache,omitempty"`
+}
 
 func (s *ParsesService) Create(ctx context.Context, request ParseCreateRequest, opts ...RequestOption) (*Parse, error) {
 	if request.Document == nil {
@@ -930,69 +792,6 @@ func resourceFromJSON(value any) Resource {
 		return Resource{}
 	}
 	return resource
-}
-
-func fileIDFromDocument(document any) string {
-	if document == nil {
-		return ""
-	}
-	if mimeData, ok := document.(MIMEData); ok {
-		return mimeData.ID()
-	}
-	body := resourceFromJSON(document)
-	id, _ := body["id"].(string)
-	return id
-}
-
-func fileIDFromExtraction(extraction Resource) string {
-	if file, ok := extraction["file"].(map[string]any); ok {
-		if id, ok := file["id"].(string); ok && id != "" {
-			return id
-		}
-	}
-	if fileIDs, ok := extraction["file_ids"].([]any); ok && len(fileIDs) == 1 {
-		if id, ok := fileIDs[0].(string); ok {
-			return id
-		}
-	}
-	if fileID, ok := extraction["file_id"].(string); ok {
-		return fileID
-	}
-	return ""
-}
-
-func extractionData(extraction Resource) Resource {
-	if output, ok := extraction["output"].(map[string]any); ok {
-		return output
-	}
-	completion, ok := extraction["completion"].(map[string]any)
-	if !ok {
-		return Resource{}
-	}
-	choices, ok := completion["choices"].([]any)
-	if !ok || len(choices) == 0 {
-		return Resource{}
-	}
-	choice, ok := choices[0].(map[string]any)
-	if !ok {
-		return Resource{}
-	}
-	message, ok := choice["message"].(map[string]any)
-	if !ok {
-		return Resource{}
-	}
-	if parsed, ok := message["parsed"].(map[string]any); ok {
-		return parsed
-	}
-	content, ok := message["content"].(string)
-	if !ok {
-		return Resource{}
-	}
-	var parsed Resource
-	if err := json.Unmarshal([]byte(content), &parsed); err != nil {
-		return Resource{}
-	}
-	return parsed
 }
 
 func isTerminalJobStatus(status any) bool {

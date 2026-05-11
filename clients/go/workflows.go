@@ -12,6 +12,7 @@ import (
 type WorkflowsService struct {
 	client      *Client
 	Runs        *WorkflowRunsService
+	Artifacts   *WorkflowArtifactsService
 	Blocks      *WorkflowBlocksService
 	Edges       *WorkflowEdgesService
 	Tests       *WorkflowTestsService
@@ -24,6 +25,7 @@ func newWorkflowsService(client *Client) *WorkflowsService {
 		client: client,
 		Steps:  &WorkflowRunStepsService{client: client},
 	}
+	service.Artifacts = &WorkflowArtifactsService{client: client}
 	service.Blocks = &WorkflowBlocksService{client: client}
 	service.Edges = &WorkflowEdgesService{client: client}
 	service.Tests = newWorkflowTestsService(client)
@@ -186,9 +188,31 @@ type WorkflowDiagnosisResponse struct {
 // DiagnoseWorkflowGraphRequest is the lower-level body shape if you want to
 // diagnose an in-memory editor graph that hasn't been saved yet.
 type DiagnoseWorkflowGraphRequest struct {
-	Blocks       []map[string]any `json:"blocks"`
-	Edges        []map[string]any `json:"edges"`
-	RePropagate  bool             `json:"re_propagate"`
+	Blocks      []map[string]any `json:"blocks"`
+	Edges       []map[string]any `json:"edges"`
+	RePropagate bool             `json:"re_propagate"`
+}
+
+func prepareDiagnoseRequest(workflowID string, request DiagnoseWorkflowGraphRequest) PreparedRequest {
+	return PreparedRequest{
+		URL:    "/workflows/" + url.PathEscape(workflowID) + "/diagnose-graph",
+		Method: http.MethodPost,
+		Body:   request,
+	}
+}
+
+// PrepareDiagnose returns the request descriptor for diagnosing an arbitrary
+// workflow graph without executing it.
+func (s *WorkflowsService) PrepareDiagnose(workflowID string, blocks []map[string]any, edges []map[string]any, rePropagate ...bool) PreparedRequest {
+	shouldRePropagate := true
+	if len(rePropagate) > 0 {
+		shouldRePropagate = rePropagate[0]
+	}
+	return prepareDiagnoseRequest(workflowID, DiagnoseWorkflowGraphRequest{
+		Blocks:      blocks,
+		Edges:       edges,
+		RePropagate: shouldRePropagate,
+	})
 }
 
 // Diagnose runs the structural diagnosis on the persisted draft graph.
@@ -241,8 +265,67 @@ func (s *WorkflowsService) DiagnoseGraph(ctx context.Context, workflowID string,
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var result WorkflowDiagnosisResponse
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(workflowID)+"/diagnose-graph", nil, request, &result, opts...)
+	prepared := prepareDiagnoseRequest(workflowID, request)
+	err := s.client.do(ctx, prepared.Method, prepared.URL, nil, prepared.Body, &result, opts...)
 	return &result, err
+}
+
+type WorkflowArtifact = Resource
+
+type WorkflowArtifactsService struct {
+	client *Client
+}
+
+type ListWorkflowArtifactsParams struct {
+	RunID     string
+	Operation string
+	BlockID   string
+}
+
+func (s *WorkflowArtifactsService) PrepareGet(operation string, artifactID string) PreparedRequest {
+	return PreparedRequest{
+		URL:    "/workflows/artifacts/" + url.PathEscape(operation) + "/" + url.PathEscape(artifactID),
+		Method: http.MethodGet,
+	}
+}
+
+func (s *WorkflowArtifactsService) PrepareList(params ListWorkflowArtifactsParams) PreparedRequest {
+	query := url.Values{}
+	addQuery(query, "run_id", params.RunID)
+	addQuery(query, "operation", params.Operation)
+	addQuery(query, "block_id", params.BlockID)
+	return PreparedRequest{
+		URL:    "/workflows/artifacts",
+		Method: http.MethodGet,
+		Params: query,
+	}
+}
+
+func (s *WorkflowArtifactsService) Get(ctx context.Context, operation string, artifactID string, opts ...RequestOption) (*WorkflowArtifact, error) {
+	if operation == "" {
+		return nil, fmt.Errorf("retab: operation is required")
+	}
+	if artifactID == "" {
+		return nil, fmt.Errorf("retab: artifactID is required")
+	}
+	var result WorkflowArtifact
+	prepared := s.PrepareGet(operation, artifactID)
+	err := s.client.do(ctx, prepared.Method, prepared.URL, nil, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowArtifactsService) GetRef(ctx context.Context, ref StepArtifactRef, opts ...RequestOption) (*WorkflowArtifact, error) {
+	return s.Get(ctx, ref.Operation, ref.ID, opts...)
+}
+
+func (s *WorkflowArtifactsService) List(ctx context.Context, params ListWorkflowArtifactsParams, opts ...RequestOption) ([]WorkflowArtifact, error) {
+	if params.RunID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	var result []WorkflowArtifact
+	prepared := s.PrepareList(params)
+	err := s.client.do(ctx, prepared.Method, prepared.URL, prepared.Params, nil, &result, opts...)
+	return result, err
 }
 
 type WorkflowBlocksService struct {
@@ -366,15 +449,7 @@ type BlockSimulation struct {
 	AvailableIterations []map[string]any `json:"available_iterations,omitempty"`
 }
 
-// Simulate replays one block with the current draft config and returns the
-// produced outputs without persisting them.
-func (s *WorkflowBlocksService) Simulate(ctx context.Context, request SimulateBlockRequest, opts ...RequestOption) (*BlockSimulation, error) {
-	if request.RunID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if request.BlockID == "" {
-		return nil, fmt.Errorf("retab: blockID is required")
-	}
+func prepareSimulateBlockRequest(request SimulateBlockRequest) PreparedRequest {
 	query := url.Values{}
 	if request.NConsensus != 0 {
 		query.Set("n_consensus", fmt.Sprintf("%d", request.NConsensus))
@@ -385,10 +460,31 @@ func (s *WorkflowBlocksService) Simulate(ctx context.Context, request SimulateBl
 	if request.CheckEligibility != nil && !*request.CheckEligibility {
 		query.Set("check_eligibility", "false")
 	}
+	return PreparedRequest{
+		URL:    "/workflows/runs/" + url.PathEscape(request.RunID) + "/steps/" + url.PathEscape(request.BlockID) + "/simulate",
+		Method: http.MethodPost,
+		Params: query,
+	}
+}
+
+// PrepareSimulate returns the request descriptor for replaying one block with
+// inputs from a previous run.
+func (s *WorkflowBlocksService) PrepareSimulate(request SimulateBlockRequest) PreparedRequest {
+	return prepareSimulateBlockRequest(request)
+}
+
+// Simulate replays one block with the current draft config and returns the
+// produced outputs without persisting them.
+func (s *WorkflowBlocksService) Simulate(ctx context.Context, request SimulateBlockRequest, opts ...RequestOption) (*BlockSimulation, error) {
+	if request.RunID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	if request.BlockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
 	var result BlockSimulation
-	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/runs/"+url.PathEscape(request.RunID)+"/steps/"+url.PathEscape(request.BlockID)+"/simulate",
-		query, nil, &result, opts...)
+	prepared := prepareSimulateBlockRequest(request)
+	err := s.client.do(ctx, prepared.Method, prepared.URL, prepared.Params, nil, &result, opts...)
 	return &result, err
 }
 
@@ -640,80 +736,6 @@ func (s *WorkflowRunsService) Restart(ctx context.Context, runID string, request
 	return &run, err
 }
 
-type WaitForCompletionParams struct {
-	PollInterval time.Duration
-	Timeout      time.Duration
-	OnStatus     func(*WorkflowRun)
-}
-
-func (s *WorkflowRunsService) WaitForCompletion(ctx context.Context, runID string, params *WaitForCompletionParams, opts ...RequestOption) (*WorkflowRun, error) {
-	pollInterval := 2 * time.Second
-	timeout := 10 * time.Minute
-	var onStatus func(*WorkflowRun)
-	if params != nil {
-		if params.PollInterval > 0 {
-			pollInterval = params.PollInterval
-		}
-		if params.Timeout > 0 {
-			timeout = params.Timeout
-		}
-		onStatus = params.OnStatus
-	}
-
-	deadline := time.Now().Add(timeout)
-	for {
-		run, err := s.Get(ctx, runID, opts...)
-		if err != nil {
-			return nil, err
-		}
-		if onStatus != nil {
-			onStatus(run)
-		}
-		if run.Terminal() || run.Lifecycle.Kind == "waiting_for_human" {
-			return run, nil
-		}
-		if time.Now().After(deadline) {
-			return nil, fmt.Errorf("retab: workflow run %s did not complete within %s (last lifecycle.kind: %s)", runID, timeout, run.Lifecycle.Kind)
-		}
-		timer := time.NewTimer(pollInterval)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return nil, ctx.Err()
-		case <-timer.C:
-		}
-	}
-}
-
-func (s *WorkflowRunsService) Wait(ctx context.Context, runID string, params *WaitForCompletionParams, opts ...RequestOption) (*WorkflowRun, error) {
-	return s.WaitForCompletion(ctx, runID, params, opts...)
-}
-
-type CreateAndWaitWorkflowRunRequest struct {
-	WorkflowID   string
-	Documents    map[string]any
-	JSONInputs   map[string]any
-	PollInterval time.Duration
-	Timeout      time.Duration
-	OnStatus     func(*WorkflowRun)
-}
-
-func (s *WorkflowRunsService) CreateAndWait(ctx context.Context, request CreateAndWaitWorkflowRunRequest, opts ...RequestOption) (*WorkflowRun, error) {
-	run, err := s.Create(ctx, CreateWorkflowRunRequest{
-		WorkflowID: request.WorkflowID,
-		Documents:  request.Documents,
-		JSONInputs: request.JSONInputs,
-	}, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return s.WaitForCompletion(ctx, run.ID, &WaitForCompletionParams{
-		PollInterval: request.PollInterval,
-		Timeout:      request.Timeout,
-		OnStatus:     request.OnStatus,
-	}, opts...)
-}
-
 type SubmitHILDecisionRequest struct {
 	BlockID      string         `json:"-"`
 	Approved     bool           `json:"-"`
@@ -917,11 +939,6 @@ type ExecuteBlockTestsResponse struct {
 	JobID   string `json:"job_id"`
 }
 
-type WaitForBlockTestsParams struct {
-	PollInterval time.Duration
-	Timeout      time.Duration
-}
-
 func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestCreateRequest, opts ...RequestOption) (*WorkflowTest, error) {
 	if request.WorkflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
@@ -994,49 +1011,6 @@ func (s *WorkflowTestsService) Execute(ctx context.Context, request ExecuteBlock
 	return &result, err
 }
 
-func (s *WorkflowTestsService) WaitForCompletion(ctx context.Context, jobID string, params *WaitForBlockTestsParams, opts ...RequestOption) (*BlockTestBatchExecutionResult, error) {
-	if jobID == "" {
-		return nil, fmt.Errorf("retab: jobID is required")
-	}
-	pollInterval := 2 * time.Second
-	timeout := 10 * time.Minute
-	if params != nil {
-		if params.PollInterval > 0 {
-			pollInterval = params.PollInterval
-		}
-		if params.Timeout > 0 {
-			timeout = params.Timeout
-		}
-	}
-	deadline := time.Now().Add(timeout)
-	for {
-		job, err := s.client.Jobs.Retrieve(ctx, jobID, nil)
-		if err != nil {
-			return nil, err
-		}
-		status, _ := (*job)["status"].(string)
-		if isTerminalJobStatus(status) {
-			if status != string(JobStatusCompleted) {
-				return nil, fmt.Errorf("retab: test batch job %s ended in status %q: %v", jobID, status, (*job)["error"])
-			}
-			response, _ := (*job)["response"].(map[string]any)
-			body, _ := response["body"].(map[string]any)
-			result := BlockTestBatchExecutionResult(body)
-			return &result, nil
-		}
-		if time.Now().After(deadline) {
-			return nil, fmt.Errorf("retab: test batch job %s did not complete within %s", jobID, timeout)
-		}
-		timer := time.NewTimer(pollInterval)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return nil, ctx.Err()
-		case <-timer.C:
-		}
-	}
-}
-
 type WorkflowTestRunsService struct {
 	client *Client
 }
@@ -1101,7 +1075,7 @@ type WorkflowExperimentsService struct {
 	Runs   *WorkflowExperimentRunsService
 }
 
-// WorkflowExperimentRunsService lists per-experiment runs and per-document jobs.
+// WorkflowExperimentRunsService lists per-experiment runs and run content.
 type WorkflowExperimentRunsService struct {
 	client *Client
 }
@@ -1266,12 +1240,12 @@ type ExperimentMetricsResponse = Resource
 
 // CreateExperimentRequest is the body for POST /experiments.
 type CreateExperimentRequest struct {
-	WorkflowID        string                              `json:"-"`
-	BlockID           string                              `json:"block_id"`
-	Name              string                              `json:"name"`
-	DocumentCaptures  []ExperimentDocumentCaptureRequest  `json:"document_captures,omitempty"`
-	Documents         []ExplicitExperimentDocumentRequest `json:"documents,omitempty"`
-	NConsensus        int                                 `json:"n_consensus,omitempty"`
+	WorkflowID       string                              `json:"-"`
+	BlockID          string                              `json:"block_id"`
+	Name             string                              `json:"name"`
+	DocumentCaptures []ExperimentDocumentCaptureRequest  `json:"document_captures,omitempty"`
+	Documents        []ExplicitExperimentDocumentRequest `json:"documents,omitempty"`
+	NConsensus       int                                 `json:"n_consensus,omitempty"`
 }
 
 // UpdateExperimentRequest is the body for PATCH /experiments/{id}. Only
@@ -1300,12 +1274,12 @@ type RunBatchExperimentsRequest struct {
 // GetExperimentMetricsParams gathers the GET /experiments/{id}/metrics
 // query params.
 type GetExperimentMetricsParams struct {
-	View          string
-	RunID         string
-	DocumentID    string
-	TargetPath    string
-	IncludePrior  *bool
-	PriorRunID    string
+	View         string
+	RunID        string
+	DocumentID   string
+	TargetPath   string
+	IncludePrior *bool
+	PriorRunID   string
 }
 
 // Create posts a new experiment definition. Use Runs.Create afterwards to
@@ -1437,24 +1411,6 @@ func (s *WorkflowExperimentsService) Cancel(ctx context.Context, workflowID, exp
 	return &result, err
 }
 
-// GetContent returns per-document execution content for one run.
-// runID defaults to the latest run when empty.
-func (s *WorkflowExperimentsService) GetContent(ctx context.Context, workflowID, experimentID, runID string, opts ...RequestOption) (*ExperimentContentResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if experimentID == "" {
-		return nil, fmt.Errorf("retab: experimentID is required")
-	}
-	query := url.Values{}
-	addQuery(query, "run_id", runID)
-	var result ExperimentContentResponse
-	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/content",
-		query, nil, &result, opts...)
-	return &result, err
-}
-
 // GetMetrics returns experiment metrics for one of the four views.
 //
 // The response is shape-agnostic: callers branch on result["view"] or
@@ -1524,8 +1480,7 @@ func (s *WorkflowExperimentsService) RunBatch(ctx context.Context, request RunBa
 }
 
 // Create triggers an experiment run with the current draft block config.
-// Async — returns a job_id; poll with client.Jobs.Retrieve(jobID) or call
-// WaitForCompletion.
+// Async — returns a job_id; poll with client.Jobs.
 func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, experimentID string, params *RunExperimentOptions, opts ...RequestOption) (*RunExperimentResponse, error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
@@ -1564,72 +1519,20 @@ func (s *WorkflowExperimentRunsService) List(ctx context.Context, workflowID, ex
 	return &result, err
 }
 
-// GetJob returns one document's job within a specific run.
-func (s *WorkflowExperimentRunsService) GetJob(ctx context.Context, workflowID, experimentID, runID, documentID string, opts ...RequestOption) (*ExperimentJobResponse, error) {
+// Get returns per-document execution content for one run.
+// runID defaults to the latest run when empty.
+func (s *WorkflowExperimentRunsService) Get(ctx context.Context, workflowID, experimentID, runID string, opts ...RequestOption) (*ExperimentContentResponse, error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	if experimentID == "" {
 		return nil, fmt.Errorf("retab: experimentID is required")
 	}
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if documentID == "" {
-		return nil, fmt.Errorf("retab: documentID is required")
-	}
-	var result ExperimentJobResponse
+	query := url.Values{}
+	addQuery(query, "run_id", runID)
+	var result ExperimentContentResponse
 	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs/"+url.PathEscape(runID)+"/documents/"+url.PathEscape(documentID),
-		nil, nil, &result, opts...)
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/content",
+		query, nil, &result, opts...)
 	return &result, err
-}
-
-// WaitForExperimentRunParams tunes the polling loop in WaitForCompletion.
-type WaitForExperimentRunParams struct {
-	PollInterval time.Duration
-	Timeout      time.Duration
-}
-
-// WaitForCompletion polls an experiment-run job until it reaches a terminal
-// state. Returns the underlying Job; throws on failed/cancelled/expired or
-// after Timeout. Mirrors WorkflowTestsService.WaitForCompletion.
-func (s *WorkflowExperimentRunsService) WaitForCompletion(ctx context.Context, jobID string, params *WaitForExperimentRunParams, opts ...RequestOption) (*Job, error) {
-	if jobID == "" {
-		return nil, fmt.Errorf("retab: jobID is required")
-	}
-	pollInterval := 2 * time.Second
-	timeout := 30 * time.Minute
-	if params != nil {
-		if params.PollInterval > 0 {
-			pollInterval = params.PollInterval
-		}
-		if params.Timeout > 0 {
-			timeout = params.Timeout
-		}
-	}
-	deadline := time.Now().Add(timeout)
-	for {
-		job, err := s.client.Jobs.Retrieve(ctx, jobID, nil, opts...)
-		if err != nil {
-			return nil, err
-		}
-		status, _ := (*job)["status"].(string)
-		if isTerminalJobStatus(status) {
-			if status != string(JobStatusCompleted) {
-				return nil, fmt.Errorf("retab: experiment run job %s ended in status %q: %v", jobID, status, (*job)["error"])
-			}
-			return job, nil
-		}
-		if time.Now().After(deadline) {
-			return nil, fmt.Errorf("retab: experiment run job %s did not complete within %s", jobID, timeout)
-		}
-		timer := time.NewTimer(pollInterval)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return nil, ctx.Err()
-		case <-timer.C:
-		}
-	}
 }

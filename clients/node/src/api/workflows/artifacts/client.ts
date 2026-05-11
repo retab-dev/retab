@@ -16,6 +16,60 @@ export default class APIWorkflowArtifacts extends CompositionClient {
         super(client);
     }
 
+    prepare_get(operation: StepArtifactRef, artifactId?: string | null): {
+        url: string;
+        method: string;
+    };
+    prepare_get(operation: string, artifactId: string): {
+        url: string;
+        method: string;
+    };
+    prepare_get(operationOrArtifact: string | StepArtifactRef, artifactId?: string | null): {
+        url: string;
+        method: string;
+    } {
+        const operation =
+            typeof operationOrArtifact === "string"
+                ? operationOrArtifact
+                : operationOrArtifact.operation;
+        const id =
+            typeof operationOrArtifact === "string"
+                ? artifactId
+                : operationOrArtifact.id;
+
+        if (typeof id !== "string" || id.length === 0) {
+            throw new TypeError("artifact_id is required");
+        }
+        return {
+            url: `/workflows/artifacts/${operation}/${id}`,
+            method: "GET",
+        };
+    }
+
+    prepare_list(
+        runId: string,
+        operation?: string | null,
+        blockId?: string | null
+    ): {
+        url: string;
+        method: string;
+        params: Record<string, string>;
+    } {
+        const params = Object.fromEntries(
+            Object.entries({
+                run_id: runId,
+                operation,
+                block_id: blockId,
+            }).filter(([, value]) => value !== undefined && value !== null)
+        ) as Record<string, string>;
+
+        return {
+            url: "/workflows/artifacts",
+            method: "GET",
+            params,
+        };
+    }
+
     /**
      * Dereference a workflow step artifact ref into its persisted record.
      *
@@ -58,9 +112,10 @@ export default class APIWorkflowArtifacts extends CompositionClient {
         if (typeof id !== "string" || id.length === 0) {
             throw new TypeError("artifact id is required");
         }
+        const request = this.prepare_get(operation, id);
         return this._fetchJson(ZWorkflowArtifact, {
-            url: `/workflows/artifacts/${operation}/${id}`,
-            method: "GET",
+            url: request.url,
+            method: request.method,
             params: options?.params,
             headers: options?.headers,
         });
@@ -81,18 +136,15 @@ export default class APIWorkflowArtifacts extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<WorkflowArtifact[]> {
-        const params = Object.fromEntries(
-            Object.entries({
-                run_id: runId,
-                operation,
-                block_id: blockId,
-                ...(options?.params || {}),
-            }).filter(([, value]) => value !== undefined)
-        );
+        const request = this.prepare_list(runId, operation, blockId);
+        const params = {
+            ...request.params,
+            ...(options?.params || {}),
+        };
 
         return this._fetchJson(z.array(ZWorkflowArtifact), {
-            url: "/workflows/artifacts",
-            method: "GET",
+            url: request.url,
+            method: request.method,
             params,
             headers: options?.headers,
         });

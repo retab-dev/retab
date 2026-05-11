@@ -70,10 +70,10 @@ def _assert_completed(job: Job) -> None:
 
 
 def test_job_extract(sync_client: Retab) -> None:
-    """Job for /v1/documents/extract completes and returns extracted data."""
+    """Job for /v1/extractions completes and returns stored extracted data."""
     with sync_client as client:
         job = client.jobs.create(
-            endpoint="/v1/documents/extract",
+            endpoint="/v1/extractions",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "json_schema": SIMPLE_EXTRACT_SCHEMA,
@@ -86,7 +86,8 @@ def test_job_extract(sync_client: Retab) -> None:
         _assert_completed(job)
 
         body = job.response.body
-        assert "choices" in body, f"Extract response should have 'choices', got keys: {list(body.keys())}"
+        assert "id" in body, f"Extraction response should have 'id', got keys: {list(body.keys())}"
+        assert "output" in body, f"Extraction response should have 'output', got keys: {list(body.keys())}"
 
 
 def test_job_parse(sync_client: Retab) -> None:
@@ -132,10 +133,10 @@ def test_job_parses_resource(sync_client: Retab) -> None:
 
 
 def test_job_split(sync_client: Retab) -> None:
-    """Job for /v1/documents/split completes and returns split result."""
+    """Job for /v1/splits completes and returns stored split result."""
     with sync_client as client:
         job = client.jobs.create(
-            endpoint="/v1/documents/split",
+            endpoint="/v1/splits",
             request={
                 "document": INLINE_TEXT_DOCUMENT,
                 "subdocuments": [
@@ -151,8 +152,9 @@ def test_job_split(sync_client: Retab) -> None:
         _assert_completed(job)
 
         body = job.response.body
-        assert "splits" in body, f"Split response should have 'splits', got keys: {list(body.keys())}"
-        assert isinstance(body["splits"], list), "splits should be a list"
+        assert "id" in body, f"Split response should have 'id', got keys: {list(body.keys())}"
+        assert "output" in body, f"Split response should have 'output', got keys: {list(body.keys())}"
+        assert isinstance(body["output"], list), "split output should be a list"
 
 
 def test_job_schema_generate(sync_client: Retab) -> None:
@@ -322,7 +324,7 @@ def test_job_invalid_request_body(sync_client: Retab) -> None:
     with sync_client as client:
         with pytest.raises(Exception):
             client.jobs.create(
-                endpoint="/v1/documents/extract",
+                endpoint="/v1/extractions",
                 request={
                     # Missing required 'document' and 'json_schema'
                     "model": MODEL,

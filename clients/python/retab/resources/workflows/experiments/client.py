@@ -11,7 +11,7 @@ the API docs work without import gymnastics, and callers who want type
 checking can pass model instances.
 
 Sub-resource:
-    runs: per-experiment run history + per-document job inspection.
+    runs: per-experiment run history + run content inspection.
 
 Layout follows the sibling ``WorkflowTests`` resource (mixin → sync → async)
 so anyone reading this code recognizes the pattern.
@@ -19,8 +19,6 @@ so anyone reading this code recognizes the pattern.
 
 from __future__ import annotations
 
-import asyncio
-import time
 from typing import Any, Dict, List, Mapping, Sequence, Union
 
 from pydantic import TypeAdapter
@@ -31,7 +29,6 @@ from ....types.workflows.experiments import (
     EligibleBlockListResponse,
     ExperimentContentResponse,
     ExperimentDocumentCaptureRequest,
-    ExperimentJobResponse,
     ExperimentMetricsResponse,
     ExperimentMetricView,
     ExperimentResponse,
@@ -47,11 +44,6 @@ from ....types.workflows.experiments import (
 # the discriminated-union schema on each request.
 _METRICS_RESPONSE_ADAPTER: TypeAdapter[ExperimentMetricsResponse] = TypeAdapter(
     ExperimentMetricsResponse
-)
-
-
-_TERMINAL_JOB_STATUSES: frozenset[str] = frozenset(
-    {"completed", "failed", "cancelled", "expired"}
 )
 
 
@@ -183,22 +175,6 @@ class WorkflowExperimentsMixin:
             data={},
         )
 
-    def prepare_get_content(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        *,
-        run_id: str | None = None,
-    ) -> PreparedRequest:
-        params: Dict[str, Any] = {}
-        if run_id is not None:
-            params["run_id"] = run_id
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/content",
-            params=params or None,
-        )
-
     def prepare_get_metrics(
         self,
         workflow_id: str,
@@ -283,7 +259,7 @@ class ExperimentRunsMixin:
             url=f"/workflows/{workflow_id}/experiments/{experiment_id}/runs",
         )
 
-    def prepare_get_content(
+    def prepare_get(
         self,
         workflow_id: str,
         experiment_id: str,
@@ -297,21 +273,6 @@ class ExperimentRunsMixin:
             method="GET",
             url=f"/workflows/{workflow_id}/experiments/{experiment_id}/content",
             params=params or None,
-        )
-
-    def prepare_get_job(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        run_id: str,
-        document_id: str,
-    ) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=(
-                f"/workflows/{workflow_id}/experiments/{experiment_id}"
-                f"/runs/{run_id}/documents/{document_id}"
-            ),
         )
 
 
@@ -343,8 +304,7 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
 
         Returns:
             ``RunExperimentResponse`` carrying the new ``run_id`` and
-            ``job_id``. Poll the job with ``client.jobs.retrieve(job_id)``
-            or call :meth:`wait_for_completion`.
+            ``job_id``. Poll the job with ``client.jobs``.
         """
         request = self.prepare_create(
             workflow_id,
@@ -365,7 +325,7 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         response = self._client._prepared_request(request)
         return ExperimentRunListResponse.model_validate(response)
 
-    def get_content(
+    def get(
         self,
         workflow_id: str,
         experiment_id: str,
@@ -376,57 +336,9 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
 
         ``run_id`` defaults to the latest run when omitted.
         """
-        request = self.prepare_get_content(workflow_id, experiment_id, run_id=run_id)
+        request = self.prepare_get(workflow_id, experiment_id, run_id=run_id)
         response = self._client._prepared_request(request)
         return ExperimentContentResponse.model_validate(response)
-
-    def get_job(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        run_id: str,
-        document_id: str,
-    ) -> ExperimentJobResponse:
-        """Get one document's job within a specific run."""
-        request = self.prepare_get_job(workflow_id, experiment_id, run_id, document_id)
-        response = self._client._prepared_request(request)
-        return ExperimentJobResponse.model_validate(response)
-
-    def wait_for_completion(
-        self,
-        job_id: str,
-        *,
-        poll_interval_seconds: float = 2.0,
-        timeout_seconds: float = 1800.0,
-    ) -> Any:
-        """Poll the experiment-run job until it reaches a terminal state.
-
-        Returns the underlying ``Job`` object. Raises ``RuntimeError`` if the
-        job ends in ``failed`` / ``cancelled`` / ``expired``, ``TimeoutError``
-        if the job doesn't terminate within ``timeout_seconds``.
-        """
-        if poll_interval_seconds <= 0:
-            raise ValueError("poll_interval_seconds must be > 0")
-        if timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be > 0")
-
-        deadline = time.monotonic() + timeout_seconds
-        while True:
-            job = self._client.jobs.retrieve(job_id)
-            if job.status in _TERMINAL_JOB_STATUSES:
-                if job.status != "completed":
-                    raise RuntimeError(
-                        f"Experiment run job {job_id} ended in status "
-                        f"{job.status!r}: {getattr(job, 'error', None)!r}"
-                    )
-                return job
-            now = time.monotonic()
-            if now >= deadline:
-                raise TimeoutError(
-                    f"Experiment run job {job_id} did not complete within "
-                    f"{timeout_seconds}s"
-                )
-            time.sleep(min(poll_interval_seconds, max(deadline - now, 0.0)))
 
 
 class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
@@ -452,7 +364,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         >>> run = client.workflows.experiments.runs.create(
         ...     workflow_id="wf_abc123", experiment_id=exp.id,
         ... )
-        >>> client.workflows.experiments.runs.wait_for_completion(run.job_id)
+        >>> client.jobs.wait_for_completion(run.job_id)
         >>>
         >>> metrics = client.workflows.experiments.get_metrics(
         ...     workflow_id="wf_abc123",
@@ -557,22 +469,6 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         response = self._client._prepared_request(request)
         return dict(response) if isinstance(response, dict) else {"status": str(response)}
 
-    def get_content(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        *,
-        run_id: str | None = None,
-    ) -> ExperimentContentResponse:
-        """Get the per-document execution content of a run.
-
-        Convenience alias of ``experiments.runs.get_content`` so callers
-        can stay on the experiment object.
-        """
-        request = self.prepare_get_content(workflow_id, experiment_id, run_id=run_id)
-        response = self._client._prepared_request(request)
-        return ExperimentContentResponse.model_validate(response)
-
     def get_metrics(
         self,
         workflow_id: str,
@@ -671,57 +567,16 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         response = await self._client._prepared_request(request)
         return ExperimentRunListResponse.model_validate(response)
 
-    async def get_content(
+    async def get(
         self,
         workflow_id: str,
         experiment_id: str,
         *,
         run_id: str | None = None,
     ) -> ExperimentContentResponse:
-        request = self.prepare_get_content(workflow_id, experiment_id, run_id=run_id)
+        request = self.prepare_get(workflow_id, experiment_id, run_id=run_id)
         response = await self._client._prepared_request(request)
         return ExperimentContentResponse.model_validate(response)
-
-    async def get_job(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        run_id: str,
-        document_id: str,
-    ) -> ExperimentJobResponse:
-        request = self.prepare_get_job(workflow_id, experiment_id, run_id, document_id)
-        response = await self._client._prepared_request(request)
-        return ExperimentJobResponse.model_validate(response)
-
-    async def wait_for_completion(
-        self,
-        job_id: str,
-        *,
-        poll_interval_seconds: float = 2.0,
-        timeout_seconds: float = 1800.0,
-    ) -> Any:
-        if poll_interval_seconds <= 0:
-            raise ValueError("poll_interval_seconds must be > 0")
-        if timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be > 0")
-
-        deadline = time.monotonic() + timeout_seconds
-        while True:
-            job = await self._client.jobs.retrieve(job_id)
-            if job.status in _TERMINAL_JOB_STATUSES:
-                if job.status != "completed":
-                    raise RuntimeError(
-                        f"Experiment run job {job_id} ended in status "
-                        f"{job.status!r}: {getattr(job, 'error', None)!r}"
-                    )
-                return job
-            now = time.monotonic()
-            if now >= deadline:
-                raise TimeoutError(
-                    f"Experiment run job {job_id} did not complete within "
-                    f"{timeout_seconds}s"
-                )
-            await asyncio.sleep(min(poll_interval_seconds, max(deadline - now, 0.0)))
 
 
 class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
@@ -800,17 +655,6 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         request = self.prepare_cancel(workflow_id, experiment_id)
         response = await self._client._prepared_request(request)
         return dict(response) if isinstance(response, dict) else {"status": str(response)}
-
-    async def get_content(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        *,
-        run_id: str | None = None,
-    ) -> ExperimentContentResponse:
-        request = self.prepare_get_content(workflow_id, experiment_id, run_id=run_id)
-        response = await self._client._prepared_request(request)
-        return ExperimentContentResponse.model_validate(response)
 
     async def get_metrics(
         self,

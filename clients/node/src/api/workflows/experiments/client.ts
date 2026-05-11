@@ -3,7 +3,6 @@ import APIWorkflowExperimentRuns from "./runs/client.js";
 import {
     CancelExperimentResponse,
     EligibleBlockListResponse,
-    ExperimentContentResponse,
     ExperimentDocumentCaptureRequest,
     ExperimentList,
     ExperimentMetricView,
@@ -14,7 +13,6 @@ import {
     RunBatchResponse,
     ZCancelExperimentResponse,
     ZEligibleBlockListResponse,
-    ZExperimentContentResponse,
     ZExperimentList,
     ZExperimentMetricsResponse,
     ZExperimentResponse,
@@ -31,7 +29,7 @@ import {
  * the SDK-side equivalent.
  *
  * Sub-clients:
- * - runs: per-experiment run history + per-document job inspection.
+ * - runs: per-experiment run history + run content inspection.
  *
  * @example
  * ```typescript
@@ -47,7 +45,7 @@ import {
  *     workflowId: "wf_abc123",
  *     experimentId: exp.id,
  * });
- * await client.workflows.experiments.runs.waitForCompletion({ jobId: run.job_id });
+ * await client.jobs.waitForCompletion(run.job_id);
  *
  * const metrics = await client.workflows.experiments.getMetrics({
  *     workflowId: "wf_abc123",
@@ -62,6 +60,154 @@ export default class APIWorkflowExperiments extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
         this.runs = new APIWorkflowExperimentRuns(this);
+    }
+
+    prepare_create(
+        workflowId: string,
+        {
+            blockId,
+            name,
+            documentCaptures,
+            documents,
+            nConsensus = 5,
+        }: {
+            blockId: string;
+            name: string;
+            documentCaptures?: ExperimentDocumentCaptureRequest[];
+            documents?: ExplicitExperimentDocumentRequest[];
+            nConsensus?: NConsensusValue;
+        }
+    ): { url: string; method: string; body: Record<string, unknown> } {
+        const body: Record<string, unknown> = {
+            block_id: blockId,
+            name,
+            n_consensus: nConsensus,
+        };
+        if (documentCaptures !== undefined) body.document_captures = documentCaptures;
+        if (documents !== undefined) body.documents = documents;
+        return {
+            url: `/workflows/${workflowId}/experiments`,
+            method: "POST",
+            body,
+        };
+    }
+
+    prepare_list(workflowId: string): { url: string; method: string } {
+        return {
+            url: `/workflows/${workflowId}/experiments`,
+            method: "GET",
+        };
+    }
+
+    prepare_get(workflowId: string, experimentId: string): { url: string; method: string } {
+        return {
+            url: `/workflows/${workflowId}/experiments/${experimentId}`,
+            method: "GET",
+        };
+    }
+
+    prepare_update(
+        workflowId: string,
+        experimentId: string,
+        {
+            name,
+            documentCaptures,
+            documents,
+            nConsensus,
+        }: {
+            name?: string;
+            documentCaptures?: ExperimentDocumentCaptureRequest[];
+            documents?: ExplicitExperimentDocumentRequest[];
+            nConsensus?: NConsensusValue;
+        } = {}
+    ): { url: string; method: string; body: Record<string, unknown> } {
+        const body: Record<string, unknown> = {};
+        if (name !== undefined) body.name = name;
+        if (documentCaptures !== undefined) body.document_captures = documentCaptures;
+        if (documents !== undefined) body.documents = documents;
+        if (nConsensus !== undefined) body.n_consensus = nConsensus;
+        return {
+            url: `/workflows/${workflowId}/experiments/${experimentId}`,
+            method: "PATCH",
+            body,
+        };
+    }
+
+    prepare_delete(workflowId: string, experimentId: string): { url: string; method: string } {
+        return {
+            url: `/workflows/${workflowId}/experiments/${experimentId}`,
+            method: "DELETE",
+        };
+    }
+
+    prepare_duplicate(workflowId: string, experimentId: string): { url: string; method: string; body: Record<string, never> } {
+        return {
+            url: `/workflows/${workflowId}/experiments/${experimentId}/duplicate`,
+            method: "POST",
+            body: {},
+        };
+    }
+
+    prepare_cancel(workflowId: string, experimentId: string): { url: string; method: string; body: Record<string, never> } {
+        return {
+            url: `/workflows/${workflowId}/experiments/${experimentId}/cancel`,
+            method: "POST",
+            body: {},
+        };
+    }
+
+    prepare_get_metrics(
+        workflowId: string,
+        experimentId: string,
+        {
+            view = "summary",
+            runId,
+            documentId,
+            targetPath,
+            includePrior = true,
+            priorRunId,
+        }: {
+            view?: ExperimentMetricView;
+            runId?: string;
+            documentId?: string;
+            targetPath?: string;
+            includePrior?: boolean;
+            priorRunId?: string;
+        } = {}
+    ): { url: string; method: string; params: Record<string, unknown> } {
+        const params: Record<string, unknown> = {
+            view,
+            include_prior: includePrior,
+        };
+        if (runId !== undefined) params.run_id = runId;
+        if (documentId !== undefined) params.document_id = documentId;
+        if (targetPath !== undefined) params.target_path = targetPath;
+        if (priorRunId !== undefined) params.prior_run_id = priorRunId;
+        return {
+            url: `/workflows/${workflowId}/experiments/${experimentId}/metrics`,
+            method: "GET",
+            params,
+        };
+    }
+
+    prepare_list_eligible_blocks(workflowId: string): { url: string; method: string } {
+        return {
+            url: `/workflows/${workflowId}/experiments/eligible-blocks`,
+            method: "GET",
+        };
+    }
+
+    prepare_run_batch(
+        workflowId: string,
+        { blockId, nConsensus }: { blockId: string; nConsensus?: NConsensusValue }
+    ): { url: string; method: string; body: Record<string, unknown> } {
+        const body: Record<string, unknown> = { block_id: blockId };
+        if (nConsensus !== undefined) body.n_consensus = nConsensus;
+        return {
+            url: `/workflows/${workflowId}/experiments/run-batch`,
+            method: "POST",
+            body,
+        };
     }
 
     /**
@@ -95,18 +241,18 @@ export default class APIWorkflowExperiments extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<ExperimentResponse> {
-        const body: Record<string, unknown> = {
-            block_id: blockId,
+        const request = this.prepare_create(workflowId, {
+            blockId,
             name,
-            n_consensus: nConsensus,
-        };
-        if (documentCaptures !== undefined) body.document_captures = documentCaptures;
-        if (documents !== undefined) body.documents = documents;
+            documentCaptures,
+            documents,
+            nConsensus,
+        });
 
         return this._fetchJson(ZExperimentResponse, {
-            url: `/workflows/${workflowId}/experiments`,
-            method: "POST",
-            body: { ...body, ...((options?.body as Record<string, unknown>) || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -116,9 +262,10 @@ export default class APIWorkflowExperiments extends CompositionClient {
      * List experiments for a workflow.
      */
     async list(workflowId: string, options?: RequestOptions): Promise<ExperimentList> {
+        const request = this.prepare_list(workflowId);
         return this._fetchJson(ZExperimentList, {
-            url: `/workflows/${workflowId}/experiments`,
-            method: "GET",
+            url: request.url,
+            method: request.method,
             params: options?.params,
             headers: options?.headers,
         });
@@ -132,9 +279,10 @@ export default class APIWorkflowExperiments extends CompositionClient {
         experimentId: string,
         options?: RequestOptions
     ): Promise<ExperimentResponse> {
+        const request = this.prepare_get(workflowId, experimentId);
         return this._fetchJson(ZExperimentResponse, {
-            url: `/workflows/${workflowId}/experiments/${experimentId}`,
-            method: "GET",
+            url: request.url,
+            method: request.method,
             params: options?.params,
             headers: options?.headers,
         });
@@ -163,16 +311,17 @@ export default class APIWorkflowExperiments extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<ExperimentResponse> {
-        const body: Record<string, unknown> = {};
-        if (name !== undefined) body.name = name;
-        if (documentCaptures !== undefined) body.document_captures = documentCaptures;
-        if (documents !== undefined) body.documents = documents;
-        if (nConsensus !== undefined) body.n_consensus = nConsensus;
+        const request = this.prepare_update(workflowId, experimentId, {
+            name,
+            documentCaptures,
+            documents,
+            nConsensus,
+        });
 
         return this._fetchJson(ZExperimentResponse, {
-            url: `/workflows/${workflowId}/experiments/${experimentId}`,
-            method: "PATCH",
-            body: { ...body, ...((options?.body as Record<string, unknown>) || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -186,9 +335,10 @@ export default class APIWorkflowExperiments extends CompositionClient {
         experimentId: string,
         options?: RequestOptions
     ): Promise<void> {
+        const request = this.prepare_delete(workflowId, experimentId);
         return this._fetchJson({
-            url: `/workflows/${workflowId}/experiments/${experimentId}`,
-            method: "DELETE",
+            url: request.url,
+            method: request.method,
             params: options?.params,
             headers: options?.headers,
         });
@@ -203,10 +353,11 @@ export default class APIWorkflowExperiments extends CompositionClient {
         experimentId: string,
         options?: RequestOptions
     ): Promise<ExperimentResponse> {
+        const request = this.prepare_duplicate(workflowId, experimentId);
         return this._fetchJson(ZExperimentResponse, {
-            url: `/workflows/${workflowId}/experiments/${experimentId}/duplicate`,
-            method: "POST",
-            body: { ...((options?.body as Record<string, unknown>) || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -222,38 +373,12 @@ export default class APIWorkflowExperiments extends CompositionClient {
         experimentId: string,
         options?: RequestOptions
     ): Promise<CancelExperimentResponse> {
+        const request = this.prepare_cancel(workflowId, experimentId);
         return this._fetchJson(ZCancelExperimentResponse, {
-            url: `/workflows/${workflowId}/experiments/${experimentId}/cancel`,
-            method: "POST",
-            body: { ...((options?.body as Record<string, unknown>) || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },
             params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Get the per-document execution content of a run.
-     *
-     * `runId` defaults to the latest run when omitted.
-     */
-    async getContent(
-        {
-            workflowId,
-            experimentId,
-            runId,
-        }: {
-            workflowId: string;
-            experimentId: string;
-            runId?: string;
-        },
-        options?: RequestOptions
-    ): Promise<ExperimentContentResponse> {
-        const params: Record<string, unknown> = {};
-        if (runId !== undefined) params.run_id = runId;
-        return this._fetchJson(ZExperimentContentResponse, {
-            url: `/workflows/${workflowId}/experiments/${experimentId}/content`,
-            method: "GET",
-            params: { ...params, ...(options?.params || {}) },
             headers: options?.headers,
         });
     }
@@ -295,20 +420,36 @@ export default class APIWorkflowExperiments extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<ExperimentMetricsResponse> {
-        const params: Record<string, unknown> = {
+        const request = this.prepare_get_metrics(workflowId, experimentId, {
             view,
-            include_prior: includePrior,
-        };
-        if (runId !== undefined) params.run_id = runId;
-        if (documentId !== undefined) params.document_id = documentId;
-        if (targetPath !== undefined) params.target_path = targetPath;
-        if (priorRunId !== undefined) params.prior_run_id = priorRunId;
+            runId,
+            documentId,
+            targetPath,
+            includePrior,
+            priorRunId,
+        });
         return this._fetchJson(ZExperimentMetricsResponse, {
-            url: `/workflows/${workflowId}/experiments/${experimentId}/metrics`,
-            method: "GET",
-            params: { ...params, ...(options?.params || {}) },
+            url: request.url,
+            method: request.method,
+            params: { ...request.params, ...(options?.params || {}) },
             headers: options?.headers,
         });
+    }
+
+    async get_metrics(
+        workflowId: string,
+        experimentId: string,
+        args: {
+            view?: ExperimentMetricView;
+            runId?: string;
+            documentId?: string;
+            targetPath?: string;
+            includePrior?: boolean;
+            priorRunId?: string;
+        } = {},
+        options?: RequestOptions
+    ): Promise<ExperimentMetricsResponse> {
+        return this.getMetrics({ workflowId, experimentId, ...args }, options);
     }
 
     /**
@@ -319,12 +460,20 @@ export default class APIWorkflowExperiments extends CompositionClient {
         workflowId: string,
         options?: RequestOptions
     ): Promise<EligibleBlockListResponse> {
+        const request = this.prepare_list_eligible_blocks(workflowId);
         return this._fetchJson(ZEligibleBlockListResponse, {
-            url: `/workflows/${workflowId}/experiments/eligible-blocks`,
-            method: "GET",
+            url: request.url,
+            method: request.method,
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async list_eligible_blocks(
+        workflowId: string,
+        options?: RequestOptions
+    ): Promise<EligibleBlockListResponse> {
+        return this.listEligibleBlocks(workflowId, options);
     }
 
     /**
@@ -344,14 +493,21 @@ export default class APIWorkflowExperiments extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<RunBatchResponse> {
-        const body: Record<string, unknown> = { block_id: blockId };
-        if (nConsensus !== undefined) body.n_consensus = nConsensus;
+        const request = this.prepare_run_batch(workflowId, { blockId, nConsensus });
         return this._fetchJson(ZRunBatchResponse, {
-            url: `/workflows/${workflowId}/experiments/run-batch`,
-            method: "POST",
-            body: { ...body, ...((options?.body as Record<string, unknown>) || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    async run_batch(
+        workflowId: string,
+        { blockId, nConsensus }: { blockId: string; nConsensus?: NConsensusValue },
+        options?: RequestOptions
+    ): Promise<RunBatchResponse> {
+        return this.runBatch({ workflowId, blockId, nConsensus }, options);
     }
 }

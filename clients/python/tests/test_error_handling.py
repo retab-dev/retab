@@ -43,14 +43,14 @@ def test_api_error_all_fields():
         body='{"detail": {"code": "INVALID_SCHEMA"}}',
         request_id="req_abc123",
         method="POST",
-        url="http://localhost:4000/v1/documents/extract",
+        url="http://localhost:4000/v1/extractions",
     )
     assert err.status_code == 400
     assert err.code == "INVALID_SCHEMA"
     assert err.details == {"field": "json_schema", "reason": "missing required property"}
     assert err.request_id == "req_abc123"
     assert err.method == "POST"
-    assert err.url == "http://localhost:4000/v1/documents/extract"
+    assert err.url == "http://localhost:4000/v1/extractions"
     assert err.retries == 0
 
 
@@ -81,10 +81,10 @@ def test_str_with_url():
         "Request failed (502)",
         status_code=502,
         method="POST",
-        url="http://localhost:4000/v1/documents/extract",
+        url="http://localhost:4000/v1/extractions",
     )
     s = str(err)
-    assert "POST http://localhost:4000/v1/documents/extract" in s
+    assert "POST http://localhost:4000/v1/extractions" in s
 
 
 def test_str_with_request_id():
@@ -156,14 +156,14 @@ def test_str_full_output():
         body='{"error": "upstream timeout from preprocessing_server"}',
         request_id="req_abc123",
         method="POST",
-        url="http://localhost:4000/v1/documents/extract",
+        url="http://localhost:4000/v1/extractions",
     )
     err.retries = 3
     s = str(err)
     lines = s.split("\n")
     assert "502" in lines[0]
     assert "upstream timeout" in lines[0]
-    assert any("POST http://localhost:4000/v1/documents/extract" in l for l in lines)
+    assert any("POST http://localhost:4000/v1/extractions" in l for l in lines)
     assert any("req_abc123" in l for l in lines)
     assert any("GATEWAY_ERROR" in l for l in lines)
     assert any("preprocessing_server" in l for l in lines)
@@ -433,7 +433,7 @@ def test_error_str_in_except_block():
         status_code=502,
         body='{"error": "preprocessing_server unreachable"}',
         method="POST",
-        url="http://localhost:4000/v1/documents/extract",
+        url="http://localhost:4000/v1/extractions",
         request_id="req_999",
     )
     err.retries = 3
@@ -441,7 +441,7 @@ def test_error_str_in_except_block():
     output = str(err)
     assert "502" in output
     assert "upstream timeout" in output
-    assert "POST http://localhost:4000/v1/documents/extract" in output
+    assert "POST http://localhost:4000/v1/extractions" in output
     assert "req_999" in output
     assert "preprocessing_server unreachable" in output
     assert "3" in output

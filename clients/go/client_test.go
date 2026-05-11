@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
-	"time"
 )
 
 func TestWorkflowsCreateUpdatePublishDuplicateGetEntitiesAndDelete(t *testing.T) {
@@ -142,6 +142,165 @@ func TestWorkflowsCreateUpdatePublishDuplicateGetEntitiesAndDelete(t *testing.T)
 	}
 	if strings.Join(requests, ",") != strings.Join(expected, ",") {
 		t.Fatalf("requests = %#v", requests)
+	}
+}
+
+func TestWorkflowsPrepareDiagnoseMatchesPythonSurface(t *testing.T) {
+	client, err := NewClient("test-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	blocks := []map[string]any{{"id": "start-1", "type": "start"}}
+	edges := []map[string]any{{"id": "edge-1", "source": "start-1", "target": "extract-1"}}
+
+	prepared := client.Workflows.PrepareDiagnose("wf_123", blocks, edges)
+	if prepared.URL != "/workflows/wf_123/diagnose-graph" || prepared.Method != http.MethodPost {
+		t.Fatalf("prepared diagnose = %#v", prepared)
+	}
+	body, ok := prepared.Body.(DiagnoseWorkflowGraphRequest)
+	if !ok {
+		t.Fatalf("prepared diagnose body = %#v", prepared.Body)
+	}
+	if !body.RePropagate || body.Blocks[0]["id"] != "start-1" || body.Edges[0]["id"] != "edge-1" {
+		t.Fatalf("prepared diagnose body = %#v", body)
+	}
+
+	prepared = client.Workflows.PrepareDiagnose("wf_123", blocks, edges, false)
+	body = prepared.Body.(DiagnoseWorkflowGraphRequest)
+	if body.RePropagate {
+		t.Fatalf("expected re-propagate override to be false: %#v", body)
+	}
+}
+
+func TestWorkflowArtifactsGetListAndPrepare(t *testing.T) {
+	var requests []string
+	var listQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/artifacts/extraction/ext_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"operation": "extraction",
+				"id":        "ext_123",
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/artifacts":
+			listQuery = r.URL.RawQuery
+			_ = json.NewEncoder(w).Encode([]map[string]any{{
+				"operation": "extraction",
+				"id":        "ext_123",
+			}})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	preparedGet := client.Workflows.Artifacts.PrepareGet("extraction", "ext_123")
+	if preparedGet.URL != "/workflows/artifacts/extraction/ext_123" || preparedGet.Method != http.MethodGet {
+		t.Fatalf("prepared artifact get = %#v", preparedGet)
+	}
+	preparedList := client.Workflows.Artifacts.PrepareList(ListWorkflowArtifactsParams{
+		RunID:     "run_123",
+		Operation: "extraction",
+		BlockID:   "extract-1",
+	})
+	if preparedList.URL != "/workflows/artifacts" || preparedList.Method != http.MethodGet || preparedList.Params.Get("run_id") != "run_123" {
+		t.Fatalf("prepared artifact list = %#v", preparedList)
+	}
+
+	artifact, err := client.Workflows.Artifacts.GetRef(context.Background(), StepArtifactRef{
+		Operation: "extraction",
+		ID:        "ext_123",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if (*artifact)["id"] != "ext_123" {
+		t.Fatalf("artifact = %#v", artifact)
+	}
+
+	artifacts, err := client.Workflows.Artifacts.List(context.Background(), ListWorkflowArtifactsParams{
+		RunID:     "run_123",
+		Operation: "extraction",
+		BlockID:   "extract-1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(artifacts) != 1 || artifacts[0]["id"] != "ext_123" {
+		t.Fatalf("artifacts = %#v", artifacts)
+	}
+	if !strings.Contains(listQuery, "run_id=run_123") || !strings.Contains(listQuery, "operation=extraction") || !strings.Contains(listQuery, "block_id=extract-1") {
+		t.Fatalf("list query = %s", listQuery)
+	}
+	if strings.Join(requests, ",") != "GET /workflows/artifacts/extraction/ext_123,GET /workflows/artifacts" {
+		t.Fatalf("requests = %#v", requests)
+	}
+}
+
+func TestWorkflowBlocksPrepareSimulateMatchesPythonSurface(t *testing.T) {
+	client, err := NewClient("test-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkEligibility := false
+
+	prepared := client.Workflows.Blocks.PrepareSimulate(SimulateBlockRequest{
+		RunID:            "run_123",
+		BlockID:          "extract-1",
+		NConsensus:       5,
+		StepID:           "step_123",
+		CheckEligibility: &checkEligibility,
+	})
+	if prepared.URL != "/workflows/runs/run_123/steps/extract-1/simulate" || prepared.Method != http.MethodPost {
+		t.Fatalf("prepared simulate = %#v", prepared)
+	}
+	if prepared.Params.Get("n_consensus") != "5" || prepared.Params.Get("step_id") != "step_123" || prepared.Params.Get("check_eligibility") != "false" {
+		t.Fatalf("prepared simulate params = %#v", prepared.Params)
+	}
+
+	prepared = client.Workflows.Blocks.PrepareSimulate(SimulateBlockRequest{
+		RunID:   "run_123",
+		BlockID: "extract-1",
+	})
+	if len(prepared.Params) != 0 {
+		t.Fatalf("expected default simulate params to be empty: %#v", prepared.Params)
+	}
+}
+
+func TestWorkflowExperimentRunsGetUsesContentRoute(t *testing.T) {
+	var rawQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/wf_123/experiments/exp_123/content" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		rawQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"experiment_id": "exp_123",
+			"run_id":        "exprun_123",
+			"content":       map[string]any{"jobs": []map[string]any{}},
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := client.Workflows.Experiments.Runs.Get(context.Background(), "wf_123", "exp_123", "exprun_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.RunID != "exprun_123" || rawQuery != "run_id=exprun_123" {
+		t.Fatalf("result = %#v rawQuery = %q", result, rawQuery)
 	}
 }
 
@@ -310,38 +469,19 @@ func TestWorkflowRunsListDeleteCancelRestartHILAndExport(t *testing.T) {
 	}
 }
 
-func TestWorkflowRunsCreateAndWait(t *testing.T) {
-	var getCount int
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		switch {
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/run":
-			_ = json.NewEncoder(w).Encode(workflowRunResponse("run_123", "wf_123", "running"))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_123":
-			getCount++
-			_ = json.NewEncoder(w).Encode(workflowRunResponse("run_123", "wf_123", "completed"))
-		default:
-			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+func TestWorkflowRunsDoNotExposeWaitHelpers(t *testing.T) {
+	runServiceType := reflect.TypeOf(&WorkflowRunsService{})
+	for _, methodName := range []string{"WaitForCompletion", "Wait", "CreateAndWait"} {
+		if _, ok := runServiceType.MethodByName(methodName); ok {
+			t.Fatalf("WorkflowRunsService still exposes %s", methodName)
 		}
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
 	}
+}
 
-	run, err := client.Workflows.Runs.CreateAndWait(context.Background(), CreateAndWaitWorkflowRunRequest{
-		WorkflowID:   "wf_123",
-		PollInterval: time.Millisecond,
-		Timeout:      time.Second,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if run.ID != "run_123" || !run.Completed() || getCount != 1 {
-		t.Fatalf("run = %#v getCount = %d", run, getCount)
+func TestWorkflowTestsDoNotExposeWaitForCompletion(t *testing.T) {
+	testServiceType := reflect.TypeOf(&WorkflowTestsService{})
+	if _, ok := testServiceType.MethodByName("WaitForCompletion"); ok {
+		t.Fatal("WorkflowTestsService still exposes WaitForCompletion")
 	}
 }
 

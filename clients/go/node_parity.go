@@ -365,15 +365,3 @@ func (s *ExtractionsService) CreateStream(ctx context.Context, request Extractio
 	body["stream"] = true
 	return s.client.doStream(ctx, http.MethodPost, "/extractions/stream", nil, body, opts...)
 }
-
-func (s *DocumentsService) ExtractStream(ctx context.Context, request DocumentExtractRequest, opts ...RequestOption) (*Stream[Resource], error) {
-	if request.Document == nil {
-		return nil, fmt.Errorf("retab: document is required")
-	}
-	if request.JSONSchema == nil {
-		return nil, fmt.Errorf("retab: jsonSchema is required")
-	}
-	body := resourceFromJSON(request)
-	body["stream"] = true
-	return s.client.doStream(ctx, http.MethodPost, "/documents/extractions", nil, body, opts...)
-}

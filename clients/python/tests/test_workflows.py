@@ -181,21 +181,19 @@ def test_workflow_specs_apply_uses_yaml_apply_route() -> None:
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
         "created": False,
-        "published": True,
         "block_count": 2,
         "edge_count": 1,
         "diagnostics": {"issues": []},
         "operations": [{"action": "noop", "target": "workflow", "target_id": "wf_1", "summary": "No changes"}],
     }
 
-    response = WorkflowSpecs(client=client).apply("spec: {}\n", publish=True)
+    response = WorkflowSpecs(client=client).apply("spec: {}\n")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/workflows/yaml/apply"
-    assert request.data == {"yaml_definition": "spec: {}\n", "publish": True}
+    assert request.data == {"yaml_definition": "spec: {}\n"}
     assert isinstance(response, DeclarativeApplyResponse)
-    assert response.published is True
 
 
 def test_workflow_specs_export_uses_workflow_yaml_route() -> None:
@@ -930,66 +928,9 @@ def test_workflow_run_raise_for_status_ok() -> None:
     run.raise_for_status()  # Should not raise
 
 
-def test_wait_for_completion_returns_waiting_for_human(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = MagicMock()
-    client._prepared_request.side_effect = [
-        _v2_run_payload(lifecycle={"kind": "running"}),
-        _v2_run_payload(
-            lifecycle={
-                "kind": "waiting_for_human",
-                "waiting_for_block_ids": ["hil-1"],
-            }
-        ),
-    ]
-    monkeypatch.setattr("retab.resources.workflows.runs.client.time.sleep", lambda _: None)
-
-    run = WorkflowRuns(client=client).wait_for_completion("run_1")
-
-    assert run.lifecycle.kind == "waiting_for_human"
-    assert run.lifecycle.waiting_for_block_ids == ["hil-1"]
-
-
-@pytest.mark.asyncio
-async def test_async_wait_for_completion_returns_waiting_for_human(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = MagicMock()
-    client._prepared_request = AsyncMock(side_effect=[
-        _v2_run_payload(lifecycle={"kind": "running"}),
-        _v2_run_payload(
-            lifecycle={
-                "kind": "waiting_for_human",
-                "waiting_for_block_ids": ["hil-1"],
-            }
-        ),
-    ])
-
-    async def _no_sleep(_: float) -> None:
-        return None
-
-    monkeypatch.setattr("retab.resources.workflows.runs.client.asyncio.sleep", _no_sleep)
-
-    run = await AsyncWorkflowRuns(client=client).wait_for_completion("run_1")
-
-    assert run.lifecycle.kind == "waiting_for_human"
-    assert run.lifecycle.waiting_for_block_ids == ["hil-1"]
-
-
-@pytest.mark.asyncio
-async def test_async_wait_for_completion_awaits_async_callback() -> None:
-    client = MagicMock()
-    client._prepared_request = AsyncMock(
-        return_value=_v2_run_payload(lifecycle={"kind": "completed"})
-    )
-    seen_run_ids: list[str] = []
-
-    async def on_status(run: WorkflowRun) -> None:
-        seen_run_ids.append(run.id)
-
-    run = await AsyncWorkflowRuns(client=client).wait_for_completion("run_1", on_status=on_status)
-
-    assert run.lifecycle.kind == "completed"
-    assert seen_run_ids == ["run_1"]
-
-
+def test_workflow_runs_do_not_expose_wait_for_completion() -> None:
+    assert not hasattr(WorkflowRuns(client=MagicMock()), "wait_for_completion")
+    assert not hasattr(AsyncWorkflowRuns(client=MagicMock()), "wait_for_completion")
 
 
 def test_workflow_run_step_extracted_data() -> None:

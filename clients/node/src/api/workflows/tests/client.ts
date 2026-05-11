@@ -1,32 +1,16 @@
 import { CompositionClient, RequestOptions } from "../../../client.js";
-import { ZJob } from "../../../types.js";
 import APIWorkflowTestRuns from "./runs/client.js";
 import {
     AssertionSpec,
-    BlockTestBatchExecutionResult,
     BlockTestListResponse,
     ExecuteBlockTestsResponse,
     WorkflowTest,
     WorkflowTestBlockTarget,
     WorkflowTestSource,
-    ZBlockTestBatchExecutionResult,
     ZBlockTestListResponse,
     ZExecuteBlockTestsResponse,
     ZWorkflowTest,
 } from "./types.js";
-
-/**
- * Job statuses that indicate the runner is done. Mirrors the Python
- * `_TERMINAL_JOB_STATUSES` set in `retab/resources/workflows/tests/client.py`.
- * Failed/cancelled/expired make `waitForCompletion` throw; only `completed`
- * returns the parsed payload.
- */
-const TERMINAL_JOB_STATUSES: ReadonlySet<string> = new Set([
-    "completed",
-    "failed",
-    "cancelled",
-    "expired",
-]);
 
 /**
  * Workflow block-tests API client. Mirrors the eight backend endpoints
@@ -268,83 +252,4 @@ export default class APIWorkflowTests extends CompositionClient {
         });
     }
 
-    /**
-     * Poll the test-batch job until it reaches a terminal state and
-     * return the parsed result.
-     *
-     * Mirrors the Python SDK's `WorkflowTests.wait_for_completion`. Both
-     * the Python helper and this one fetch `/jobs/{job_id}` directly
-     * rather than going through a separate jobs sub-client, to keep the
-     * tests resource self-contained (no cross-resource coupling).
-     *
-     * @param jobId - The `job_id` returned by `execute()`.
-     * @param pollIntervalMs - Milliseconds between polls (default 2000).
-     * @param timeoutMs - Maximum time to wait (default 600000 = 10 min).
-     *
-     * @throws if the job ends in `failed` / `cancelled` / `expired` (the
-     *   error message includes the backend's error payload when available),
-     *   or if the deadline is reached before the job terminates.
-     *
-     * @example
-     * ```typescript
-     * const batch = await client.workflows.tests.execute({
-     *     workflowId: "wf_abc123",
-     * });
-     * const result = await client.workflows.tests.waitForCompletion(batch.job_id);
-     * console.log(result.counts.passed, "tests passed");
-     * ```
-     */
-    async waitForCompletion(
-        jobId: string,
-        {
-            pollIntervalMs = 2000,
-            timeoutMs = 600000,
-        }: {
-            pollIntervalMs?: number;
-            timeoutMs?: number;
-        } = {},
-        options?: RequestOptions
-    ): Promise<BlockTestBatchExecutionResult> {
-        if (pollIntervalMs <= 0) throw new Error("pollIntervalMs must be > 0");
-        if (timeoutMs <= 0) throw new Error("timeoutMs must be > 0");
-
-        const deadlineMs = Date.now() + timeoutMs;
-        // Loop body fetches the job, dispatches on terminal status. Same
-        // structure as `APIJobs.waitForCompletion` (jobs/client.ts:142-180).
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-            const job = await this._fetchJson(ZJob, {
-                url: `/jobs/${jobId}`,
-                method: "GET",
-                params: options?.params,
-                headers: options?.headers,
-            });
-            if (TERMINAL_JOB_STATUSES.has(job.status)) {
-                if (job.status !== "completed") {
-                    throw new Error(
-                        `Test batch job ${jobId} ended in status '${job.status}': ${JSON.stringify(job.error)}`,
-                    );
-                }
-                const payload = job.response?.body ?? {};
-                return ZBlockTestBatchExecutionResult.parse(payload);
-            }
-            const nowMs = Date.now();
-            if (nowMs >= deadlineMs) {
-                throw new Error(
-                    `Test batch job ${jobId} did not complete within ${timeoutMs}ms`,
-                );
-            }
-            const sleepMs = Math.min(pollIntervalMs, Math.max(deadlineMs - nowMs, 0));
-            await new Promise((resolve) => setTimeout(resolve, sleepMs));
-        }
-    }
-
-    /** snake_case alias matching the Python SDK method name. */
-    async wait_for_completion(
-        jobId: string,
-        opts?: { pollIntervalMs?: number; timeoutMs?: number },
-        options?: RequestOptions
-    ): Promise<BlockTestBatchExecutionResult> {
-        return this.waitForCompletion(jobId, opts, options);
-    }
 }

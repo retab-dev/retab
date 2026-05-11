@@ -13,8 +13,10 @@ from retab.types.partitions import Partition
 from retab.types.splits import Split
 
 
-def test_projects_and_evals_surfaces_are_not_exposed() -> None:
+def test_removed_surfaces_are_not_exposed() -> None:
     with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        assert not hasattr(client, "documents")
+        assert not hasattr(client, "models")
         assert not hasattr(client, "projects")
         assert not hasattr(client, "evals")
 
@@ -22,6 +24,8 @@ def test_projects_and_evals_surfaces_are_not_exposed() -> None:
 @pytest.mark.parametrize(
     "module_name",
     [
+        "retab.resources.documents.client",
+        "retab.resources.models",
         "retab.resources.projects",
         "retab.resources.evals",
         "retab.types.projects",
@@ -718,87 +722,3 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
         "model": "retab-small",
         "n_consensus": 3,
     }
-
-
-@pytest.mark.parametrize(
-    ("method_name", "kwargs", "response_payload", "expected_url"),
-    [
-        (
-            "extract",
-            {
-                "document": _sample_document(),
-                "model": "retab-small",
-                "json_schema": {"type": "object", "properties": {"invoice_number": {"type": "string"}}},
-            },
-            {
-                "id": "chatcmpl_123",
-                "object": "chat.completion",
-                "created": 1710000000,
-                "model": "retab-small",
-                "choices": [
-                    {
-                        "index": 0,
-                        "message": {
-                            "role": "assistant",
-                            "content": "{\"invoice_number\":\"INV-001\"}",
-                            "parsed": {"invoice_number": "INV-001"},
-                        },
-                        "finish_reason": "stop",
-                    }
-                ],
-            },
-            "/documents/extract",
-        ),
-        (
-            "split",
-            {
-                "document": _sample_document(),
-                "model": "retab-small",
-                "subdocuments": [{"name": "invoice", "description": "Invoice documents"}],
-            },
-            {
-                "splits": [{"name": "invoice", "pages": [1], "partitions": []}],
-                "consensus": {"choices": [], "likelihoods": None},
-                "usage": {"page_count": 1, "credits": 1.0},
-            },
-            "/documents/split",
-        ),
-        (
-            "classify",
-            {
-                "document": _sample_document(),
-                "model": "retab-small",
-                "categories": [{"name": "invoice", "description": "Invoice documents"}],
-            },
-            {
-                "classification": {
-                    "category": "invoice",
-                    "reasoning": "Detected invoice markers.",
-                },
-                "consensus": {"choices": [], "likelihood": 1.0},
-                "usage": {"page_count": 1, "credits": 1.0},
-            },
-            "/documents/classify",
-        ),
-    ],
-)
-def test_legacy_document_methods_warn_and_keep_compat_routes(
-    monkeypatch: pytest.MonkeyPatch,
-    method_name: str,
-    kwargs: dict[str, object],
-    response_payload: dict[str, object],
-    expected_url: str,
-) -> None:
-    captured: dict[str, object] = {}
-
-    def fake_prepared_request(request: object) -> dict[str, object]:
-        captured["request"] = request
-        return response_payload
-
-    with Retab(api_key="test", base_url="http://example.com/v1") as client:
-        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
-        method = getattr(client.documents, method_name)
-        with pytest.warns(DeprecationWarning):
-            method(**kwargs)
-
-    assert getattr(captured["request"], "url") == expected_url

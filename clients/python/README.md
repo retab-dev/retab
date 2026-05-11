@@ -59,7 +59,7 @@ client = Retab()
 
 validation = client.workflows.specs.validate(yaml_definition)
 plan = client.workflows.specs.plan(yaml_definition)
-result = client.workflows.specs.apply(yaml_definition, publish=False)
+result = client.workflows.specs.apply(yaml_definition)
 exported = client.workflows.specs.export(result.workflow_id)
 ```
 

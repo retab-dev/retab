@@ -20,8 +20,6 @@ import {
 } from "../../../types.js";
 import APIWorkflowRunSteps from "./steps/client.js";
 
-const TERMINAL_LIFECYCLE_KINDS = new Set(["completed", "error", "cancelled"]);
-
 function normalizeCsvParam(value?: string | string[]): string | undefined {
     if (value === undefined) {
         return undefined;
@@ -37,10 +35,6 @@ function normalizeDateParam(value?: string | Date): string | undefined {
         return value.toISOString().slice(0, 10);
     }
     return value;
-}
-
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -61,8 +55,8 @@ export default class APIWorkflowRuns extends CompositionClient {
      * Run a workflow with the provided inputs.
      *
      * This creates a workflow run and starts execution in the background.
-     * The returned WorkflowRun will have status "running" - use get()
-     * to check for updates on the run status.
+     * The returned WorkflowRun will have lifecycle.kind "running" or
+     * "pending" - use get() to check for updates on the run lifecycle.
      *
      * @example
      * ```typescript
@@ -349,124 +343,6 @@ export default class APIWorkflowRuns extends CompositionClient {
         options?: RequestOptions
     ): Promise<HILDecisionResource> {
         return this.getHilDecision(runId, blockId, options);
-    }
-
-    /**
-     * Poll a workflow run until it reaches a terminal state.
-     *
-     * Terminal states: "completed", "error", "cancelled", "waiting_for_human".
-     *
-     * @param runId - The ID of the workflow run to wait for
-     * @param pollIntervalMs - Milliseconds between polls (default: 2000)
-     * @param timeoutMs - Maximum time to wait in milliseconds (default: 600000 = 10 minutes)
-     * @param onStatus - Optional callback invoked with the WorkflowRun on each poll
-     *
-     * @example
-     * ```typescript
-     * const run = await client.workflows.runs.waitForCompletion("run_abc123", {
-     *     onStatus: (r) => console.log(`${r.lifecycle.kind}...`),
-     * });
-     * ```
-     */
-    async waitForCompletion(
-        runId: string,
-        {
-            pollIntervalMs = 2000,
-            timeoutMs = 600000,
-            onStatus,
-        }: {
-            pollIntervalMs?: number;
-            timeoutMs?: number;
-            onStatus?: (run: WorkflowRun) => void | Promise<void>;
-        } = {}
-    ): Promise<WorkflowRun> {
-        if (pollIntervalMs <= 0) throw new Error("pollIntervalMs must be positive");
-        if (timeoutMs <= 0) throw new Error("timeoutMs must be positive");
-
-        const deadline = Date.now() + timeoutMs;
-
-        while (true) {
-            const run = await this.get(runId);
-
-            if (onStatus) await onStatus(run);
-
-            const kind = run.lifecycle.kind;
-            if (TERMINAL_LIFECYCLE_KINDS.has(kind) || kind === "waiting_for_human") {
-                return run;
-            }
-
-            if (Date.now() >= deadline) {
-                throw new Error(
-                    `Workflow run ${runId} did not complete within ${timeoutMs}ms (last lifecycle.kind: ${kind})`
-                );
-            }
-
-            await sleep(pollIntervalMs);
-        }
-    }
-
-    async wait_for_completion(
-        runId: string,
-        {
-            poll_interval_ms = 2000,
-            timeout_ms = 600000,
-            on_status,
-        }: {
-            poll_interval_ms?: number;
-            timeout_ms?: number;
-            on_status?: (run: WorkflowRun) => void | Promise<void>;
-        } = {}
-    ): Promise<WorkflowRun> {
-        return this.waitForCompletion(runId, {
-            pollIntervalMs: poll_interval_ms,
-            timeoutMs: timeout_ms,
-            onStatus: on_status,
-        });
-    }
-
-    /**
-     * Create a workflow run and wait for it to complete.
-     *
-     * @example
-     * ```typescript
-     * import { raiseForStatus } from "retab";
-     *
-     * const run = await client.workflows.runs.createAndWait({
-     *     workflowId: "wf_abc123",
-     *     documents: { "start-block-1": "./invoice.pdf" },
-     *     onStatus: (r) => console.log(`${r.lifecycle.kind}...`),
-     * });
-     * raiseForStatus(run);
-     * const stepSummaries = await client.workflows.runs.steps.list(run.id);
-     * for (const summary of stepSummaries) {
-     *     const step = await client.workflows.runs.steps.get(run.id, summary.block_id);
-     *     console.log({ blockId: step.block_id, outputs: step.handle_outputs });
-     * }
-     * ```
-     */
-    async createAndWait(
-        {
-            workflowId,
-            documents,
-            jsonInputs,
-            pollIntervalMs = 2000,
-            timeoutMs = 600000,
-            onStatus,
-        }: {
-            workflowId: string;
-            documents?: Record<string, MIMEDataInput>;
-            jsonInputs?: Record<string, Record<string, unknown>>;
-            pollIntervalMs?: number;
-            timeoutMs?: number;
-            onStatus?: (run: WorkflowRun) => void | Promise<void>;
-        },
-        options?: RequestOptions
-    ): Promise<WorkflowRun> {
-        const run = await this.create(
-            { workflowId, documents, jsonInputs },
-            options
-        );
-        return this.waitForCompletion(run.id, { pollIntervalMs, timeoutMs, onStatus });
     }
 
     /**
