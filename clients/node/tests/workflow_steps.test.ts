@@ -20,7 +20,6 @@ class MockClient extends AbstractClient {
       JSON.stringify([
         {
           run_id: 'run_123',
-          organization_id: 'org_123',
           block_id: 'extract-1',
           step_id: 'extract-1',
           block_type: 'extract',

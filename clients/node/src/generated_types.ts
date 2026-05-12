@@ -115,7 +115,6 @@ export const ZFile = z.lazy(() => (z.object({
     object: z.literal("file").default("file"),
     id: z.string(),
     filename: z.string(),
-    organization_id: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
     page_count: z.number().nullable().optional(),
@@ -248,7 +247,6 @@ export const ZExtraction = z.lazy(() => (z.object({
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-    organization_id: z.string().nullable().optional(),
 })));
 export type Extraction = z.infer<typeof ZExtraction>;
 
@@ -350,7 +348,6 @@ export const ZJob = z.lazy(() => (z.object({
     started_at: z.number().nullable().optional(),
     completed_at: z.number().nullable().optional(),
     expires_at: z.number(),
-    organization_id: z.string(),
     metadata: z.record(z.string(), z.string()).nullable().optional(),
 })));
 export type Job = z.infer<typeof ZJob>;
@@ -458,7 +455,6 @@ export const ZEditTemplate = z.lazy(() => (z.object({
     file: ZFileRef,
     form_fields: z.array(ZFormField),
     field_count: z.number().default(0),
-    organization_id: z.string().nullable().optional(),
     created_at: z.string(),
     updated_at: z.string(),
 })));
@@ -727,7 +723,6 @@ export type VerdictSummary = z.infer<typeof ZVerdictSummary>;
 export const ZWorkflowTest = z.lazy(() => (z.object({
     id: z.string(),
     workflow_id: z.string(),
-    organization_id: z.string(),
     target: ZWorkflowTestBlockTarget,
     source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
     name: z.string().nullable().optional(),
@@ -757,7 +752,6 @@ export const ZWorkflowTestRunRecord = z.lazy(() => (z.object({
     test_id: z.string(),
     status: z.union([z.literal("queued"), z.literal("running"), z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error"), z.literal("cancelled")]),
     workflow_id: z.string(),
-    organization_id: z.string(),
     target: ZWorkflowTestBlockTarget,
     execution_fingerprint: z.string().default(""),
     handle_inputs_fingerprint: z.string().default(""),
@@ -795,7 +789,6 @@ export type ApiCallAttempt = z.infer<typeof ZApiCallAttempt>;
 
 export const ZApiCallInvocation = z.lazy(() => (z.object({
     id: z.string(),
-    organization_id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
     attempts: z.array(ZApiCallAttempt),
@@ -857,7 +850,6 @@ export type ConditionEvaluationSubCondition = z.infer<typeof ZConditionEvaluatio
 
 export const ZConditionalEvaluation = z.lazy(() => (z.object({
     id: z.string(),
-    organization_id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
     evaluations: z.array(ZConditionEvaluationResult),
@@ -885,7 +877,6 @@ export type ModelExportResponse = z.infer<typeof ZModelExportResponse>;
 
 export const ZFunctionInvocation = z.lazy(() => (z.object({
     id: z.string(),
-    organization_id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
     inputs: z.record(z.string(), z.any()),
@@ -920,7 +911,6 @@ export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
 export const ZHilEvaluation = z.lazy(() => (z.object({
     id: z.string(),
-    organization_id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
     evaluations: z.array(ZConditionEvaluationResult),
@@ -1011,7 +1001,6 @@ export const ZStepStatus = z.lazy(() => (z.object({
     model: z.string().nullable().optional(),
     loop_containers: z.array(ZContainerContextData).default([]),
     run_id: z.string().default(""),
-    organization_id: z.string().default(""),
     created_at: z.string().nullable().optional(),
     handle_inputs: z.record(z.string(), ZHandlePayload),
     handle_outputs: z.record(z.string(), ZHandlePayload),
@@ -1032,7 +1021,6 @@ export type SubmitHILDecisionResponse = z.infer<typeof ZSubmitHILDecisionRespons
 
 export const ZWhileLoopTermination = z.lazy(() => (z.object({
     id: z.string(),
-    organization_id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
     termination_reason: z.union([z.literal("max_iterations_reached"), z.literal("condition_matched"), z.literal("error")]),
@@ -1045,7 +1033,6 @@ export const ZWorkflow = z.lazy(() => (z.object({
     id: z.string(),
     name: z.string().default("Untitled Workflow"),
     description: z.string().default(""),
-    organization_id: z.string().nullable().optional(),
     published: ZPublished.nullable().optional(),
     email_trigger: ZEmailTrigger,
     created_at: z.string(),
@@ -1056,7 +1043,6 @@ export type Workflow = z.infer<typeof ZWorkflow>;
 export const ZWorkflowBlock = z.lazy(() => (z.object({
     id: z.string(),
     workflow_id: z.string(),
-    organization_id: z.string(),
     draft_version: z.string().nullable().optional(),
     type: z.string(),
     label: z.string().default(""),
@@ -1108,7 +1094,6 @@ export type WorkflowEdgeCreateRequest = z.infer<typeof ZWorkflowEdgeCreateReques
 export const ZWorkflowEdgeDoc = z.lazy(() => (z.object({
     id: z.string(),
     workflow_id: z.string(),
-    organization_id: z.string(),
     draft_version: z.string().nullable().optional(),
     source_block: z.string(),
     target_block: z.string(),
@@ -1124,8 +1109,9 @@ export type WorkflowEdgeDoc = z.infer<typeof ZWorkflowEdgeDoc>;
 
 export const ZWorkflowSnapshotRef = z.lazy(() => (z.object({
     workflow_id: z.string(),
-    snapshot_id: z.string(),
+    version_id: z.string(),
     name_at_run_time: z.string(),
+    requested_version: z.string().default("production"),
 })));
 export type WorkflowSnapshotRef = z.infer<typeof ZWorkflowSnapshotRef>;
 
@@ -1242,7 +1228,6 @@ export type RunInputs = z.infer<typeof ZRunInputs>;
 
 export const ZWorkflowRun = z.lazy(() => (z.object({
     id: z.string(),
-    organization_id: z.string(),
     workflow: ZWorkflowSnapshotRef,
     trigger: ZTrigger,
     lifecycle: ZRunLifecycle,
@@ -1263,7 +1248,6 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     loop_containers: z.array(ZContainerContextData).default([]),
     model: z.string().nullable().optional(),
     run_id: z.string(),
-    organization_id: z.string(),
     artifact: ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload),
     handle_inputs: z.record(z.string(), ZHandlePayload),
@@ -1600,7 +1584,6 @@ export const ZTemplatesEditTemplate = z.lazy(() => (z.object({
     file: ZFileRef,
     form_fields: z.array(ZEditFormField),
     field_count: z.number().default(0),
-    organization_id: z.string().nullable().optional(),
     created_at: z.string(),
     updated_at: z.string(),
 })));
@@ -2127,7 +2110,7 @@ export const ZChatCompletionContentPartParamFile = z.lazy(() => (z.object({
 export type ChatCompletionContentPartParamFile = z.infer<typeof ZChatCompletionContentPartParamFile>;
 
 export const ZPublished = z.lazy(() => (z.object({
-    snapshot_id: z.string().nullable().optional(),
+    version_id: z.string().nullable().optional(),
     published_at: z.string().nullable().optional(),
 })));
 export type Published = z.infer<typeof ZPublished>;

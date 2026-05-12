@@ -10,7 +10,6 @@ const ZFile = z.object({
     object: z.literal("file").default("file"),
     id: z.string(),
     filename: z.string(),
-    organization_id: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
     page_count: z.number().nullable().optional(),

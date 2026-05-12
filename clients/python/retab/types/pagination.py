@@ -1,17 +1,18 @@
 from typing import Any, Callable, Generic, Iterator, List, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import ConfigDict, PrivateAttr
+from retab.types.base import RetabBaseModel
 
 
 T = TypeVar("T")
 
 
-class ListMetadata(BaseModel):
+class ListMetadata(RetabBaseModel):
     before: str | None
     after: str | None
 
 
-class PaginatedList(BaseModel, Generic[T]):
+class PaginatedList(RetabBaseModel, Generic[T]):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     data: list[T]

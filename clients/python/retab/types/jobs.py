@@ -6,7 +6,8 @@ Pydantic models for the asynchronous Jobs API.
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 
 
 JobStatus = Literal[
@@ -33,20 +34,20 @@ JobListOrder = Literal[
 SupportedEndpoint = str
 
 
-class JobResponse(BaseModel):
+class JobResponse(RetabBaseModel):
     """Response stored when job completes successfully."""
     status_code: int
     body: dict[str, Any]
 
 
-class JobError(BaseModel):
+class JobError(RetabBaseModel):
     """Error details when job fails."""
     code: str
     message: str
     details: dict[str, Any] | None = None
 
 
-class Job(BaseModel):
+class Job(RetabBaseModel):
     """
     Job object representing an asynchronous operation.
 
@@ -67,12 +68,10 @@ class Job(BaseModel):
     completed_at: int | None = None
     expires_at: int
 
-    # User context
-    organization_id: str
     metadata: dict[str, str] | None = None
 
 
-class CreateJobRequest(BaseModel):
+class CreateJobRequest(RetabBaseModel):
     """Request body for creating a new job."""
     endpoint: SupportedEndpoint
     request: dict[str, Any]
@@ -82,7 +81,7 @@ class CreateJobRequest(BaseModel):
     )
 
 
-class JobListResponse(BaseModel):
+class JobListResponse(RetabBaseModel):
     """Response for listing jobs."""
     object: Literal["list"] = "list"
     data: list[Job]

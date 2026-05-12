@@ -3,11 +3,12 @@ from typing import Any, Literal, Optional
 
 import nanoid  # type: ignore
 from pydantic import BaseModel, Field, PrivateAttr
+from retab.types.base import RetabBaseModel
 
 from ...types.mime import MIMEData
 
 
-class TemplateSchema(BaseModel):
+class TemplateSchema(RetabBaseModel):
     """A full Schema object with validation."""
 
     id: str = Field(default_factory=lambda: f"tplt_{nanoid.generate()}")
@@ -38,7 +39,7 @@ class TemplateSchema(BaseModel):
     """The Pydantic model to use for loading."""
 
 
-class UpdateTemplateRequest(BaseModel):
+class UpdateTemplateRequest(RetabBaseModel):
     """Request model for updating a template."""
 
     id: str

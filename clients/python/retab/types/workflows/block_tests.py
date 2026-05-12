@@ -9,7 +9,8 @@ from __future__ import annotations
 import datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+from retab.types.base import RetabBaseModel
 
 # ---------------------------------------------------------------------------
 # Status enums
@@ -46,7 +47,7 @@ TerminalBlockTestRunStatus = Literal[
 # ---------------------------------------------------------------------------
 
 
-class WorkflowTestBlockTarget(BaseModel):
+class WorkflowTestBlockTarget(RetabBaseModel):
     """Run the test against a single block in the workflow.
 
     The shape is a discriminated union by `type` so workflow-level targets
@@ -54,29 +55,29 @@ class WorkflowTestBlockTarget(BaseModel):
     at every callsite. Today `block` is the only variant.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     type: Literal["block"] = "block"
     block_id: str
 
 
-class ManualWorkflowTestSource(BaseModel):
+class ManualWorkflowTestSource(RetabBaseModel):
     """Hand-written inputs. Use for synthetic test cases."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     type: Literal["manual"] = "manual"
     handle_inputs: dict[str, Any] = Field(default_factory=dict)
 
 
-class RunStepWorkflowTestSource(BaseModel):
+class RunStepWorkflowTestSource(RetabBaseModel):
     """Replay the inputs the block received during a previous workflow run.
 
     `step_id` is required for blocks executed inside a `for_each` (each
     iteration is its own step).
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     type: Literal["run_step"] = "run_step"
     run_id: str
@@ -94,18 +95,18 @@ WorkflowTestSource = Annotated[
 # ---------------------------------------------------------------------------
 
 
-class AssertionTarget(BaseModel):
+class AssertionTarget(RetabBaseModel):
     """Names a declared output handle and an optional dotted path inside
     that handle's payload (e.g. ``output-json-0``, path ``vendor.name``).
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     output_handle_id: str
     path: str = ""
 
 
-class AssertionSpec(BaseModel):
+class AssertionSpec(RetabBaseModel):
     """One assertion against one declared output handle.
 
     Block tests intentionally normalize to one assertion per test —
@@ -116,14 +117,13 @@ class AssertionSpec(BaseModel):
     ``matches_regex``, ``similarity_gte``, ``llm_judged_as``, ``split_iou_gte``,
     etc.). See `workflows/block-tests.mdx` in the docs for the catalog.
 
-    `extra="allow"` (vs `WorkflowTestBlockTarget`'s strict `extra="forbid"`)
-    because `AssertionSpec` is used in BOTH directions — request body on
-    create/update AND response body on `WorkflowTest.assertion`. Forbidding
-    extras would crash on a backend that adds a new optional field before
-    the SDK ships an update.
+    `extra="ignore"` because `AssertionSpec` is used in BOTH directions —
+    request body on create/update AND response body on `WorkflowTest.assertion`.
+    Forbidding extras would crash on a backend that adds a new optional field
+    before the SDK ships an update.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     id: str | None = None
     target: AssertionTarget
@@ -131,16 +131,16 @@ class AssertionSpec(BaseModel):
     label: str | None = None
 
 
-class AssertionFailure(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class AssertionFailure(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
 
     code: str
     message: str
     details: dict[str, Any] = Field(default_factory=dict)
 
 
-class AssertionResult(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class AssertionResult(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
 
     assertion_id: str
     condition_kind: str
@@ -154,8 +154,8 @@ class AssertionResult(BaseModel):
     failure: AssertionFailure | None = None
 
 
-class VerdictSummary(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class VerdictSummary(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
 
     result: bool
     assertions_passed: int = 0
@@ -164,12 +164,12 @@ class VerdictSummary(BaseModel):
     failed_assertion_ids: list[str] = Field(default_factory=list)
 
 
-class LatestBlockTestRunSummary(BaseModel):
+class LatestBlockTestRunSummary(RetabBaseModel):
     """Compact summary attached to a `WorkflowTest` so list / get responses
     can show the most recent run state without a second fetch.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     run_record_id: str
     # Typed as the wider `BlockTestRunStatus` for back-compat with stored
@@ -192,8 +192,8 @@ class LatestBlockTestRunSummary(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class AssertionSchemaDep(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class AssertionSchemaDep(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
 
     schema_path: str
     subtree_hash: str
@@ -209,14 +209,13 @@ SchemaDriftStatus = Literal["fresh", "partial", "drifted", "unknown"]
 # ---------------------------------------------------------------------------
 
 
-class WorkflowTest(BaseModel):
+class WorkflowTest(RetabBaseModel):
     """Public response shape for a single test."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     id: str
     workflow_id: str
-    organization_id: str
     target: WorkflowTestBlockTarget
     source: WorkflowTestSource
     name: str | None = None
@@ -238,16 +237,15 @@ class WorkflowTest(BaseModel):
     updated_at: datetime.datetime
 
 
-class WorkflowTestRunRecord(BaseModel):
+class WorkflowTestRunRecord(RetabBaseModel):
     """Public response shape for a single run record."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     id: str
     test_id: str
     status: BlockTestRunStatus
     workflow_id: str
-    organization_id: str
     target: WorkflowTestBlockTarget
     execution_fingerprint: str = ""
     handle_inputs_fingerprint: str = ""
@@ -266,13 +264,13 @@ class WorkflowTestRunRecord(BaseModel):
     verdict_summary: VerdictSummary | None = None
 
 
-class BlockTestBatchExecutionCounts(BaseModel):
+class BlockTestBatchExecutionCounts(RetabBaseModel):
     """One bucket per `BlockTestRunStatus` value. Today only terminal
     buckets are populated by the runner; transient ones are declared for
     forward-compat with any future code path that persists transient state.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     queued: int = 0
     running: int = 0
@@ -283,8 +281,8 @@ class BlockTestBatchExecutionCounts(BaseModel):
     cancelled: int = 0
 
 
-class BlockTestBatchExecutionItem(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class BlockTestBatchExecutionItem(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
 
     test_id: str
     run_record_id: str
@@ -294,10 +292,10 @@ class BlockTestBatchExecutionItem(BaseModel):
     duration_ms: int | None = None
 
 
-class BlockTestBatchExecutionResult(BaseModel):
+class BlockTestBatchExecutionResult(RetabBaseModel):
     """The payload that lands on `Job.result` after `tests.execute(...)`."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
     target: WorkflowTestBlockTarget | None = None
@@ -307,13 +305,13 @@ class BlockTestBatchExecutionResult(BaseModel):
     results: list[BlockTestBatchExecutionItem] = Field(default_factory=list)
 
 
-class ExecuteBlockTestsResponse(BaseModel):
+class ExecuteBlockTestsResponse(RetabBaseModel):
     """Synchronous response from `tests.execute(...)`. Poll
     `client.jobs.retrieve(job_id)` until terminal to fetch the
     `BlockTestBatchExecutionResult`.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     batch_id: str
     job_id: str
@@ -324,18 +322,18 @@ class ExecuteBlockTestsResponse(BaseModel):
     total_tests: int
 
 
-class BlockTestListResponse(BaseModel):
+class BlockTestListResponse(RetabBaseModel):
     """Response shape for `tests.list(...)`."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     tests: list[WorkflowTest] = Field(default_factory=list)
 
 
-class BlockTestRunListResponse(BaseModel):
+class BlockTestRunListResponse(RetabBaseModel):
     """Response shape for `tests.runs.list(...)`."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     runs: list[WorkflowTestRunRecord] = Field(default_factory=list)
 

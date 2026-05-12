@@ -18,7 +18,8 @@ from __future__ import annotations
 import datetime
 from typing import Annotated, Any, Literal, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+from retab.types.base import RetabBaseModel
 
 
 # ---------------------------------------------------------------------------
@@ -42,7 +43,7 @@ ExperimentSchemaDriftStatus = Literal["none", "drifted", "unknown"]
 # ---------------------------------------------------------------------------
 
 
-class ExperimentDocumentProvenance(BaseModel):
+class ExperimentDocumentProvenance(RetabBaseModel):
     """Workflow execution metadata attached to a captured document."""
 
     model_config = ConfigDict(extra="ignore")
@@ -51,27 +52,27 @@ class ExperimentDocumentProvenance(BaseModel):
     step_id: str | None = None
 
 
-class ExperimentDocumentCaptureRequest(BaseModel):
+class ExperimentDocumentCaptureRequest(RetabBaseModel):
     """One document captured from workflow execution provenance.
 
     ``step_id`` selects a specific iteration when the source block lives
     inside a ``for_each`` container.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     workflow_run_id: str
     step_id: str | None = None
 
 
-class ExplicitExperimentDocumentRequest(BaseModel):
+class ExplicitExperimentDocumentRequest(RetabBaseModel):
     """A document with inlined ``handle_inputs`` and optional provenance.
 
     Use this when you want to drive an experiment with hand-crafted inputs
     or with inputs not derivable from a workflow run.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     handle_inputs: dict[str, Any]
     provenance: ExperimentDocumentProvenance | None = None
@@ -82,7 +83,7 @@ class ExplicitExperimentDocumentRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ExperimentDocument(BaseModel):
+class ExperimentDocument(RetabBaseModel):
     """A single experiment document, defined by its materialized inputs.
 
     Returned in nested experiment payloads (e.g. ``GET /experiments/{id}``).
@@ -96,7 +97,7 @@ class ExperimentDocument(BaseModel):
     provenance: ExperimentDocumentProvenance | None = None
 
 
-class StepArtifactRefMini(BaseModel):
+class StepArtifactRefMini(RetabBaseModel):
     """``(operation, id)`` pointer to a persisted backing record.
 
     Mirrors the backend's ``StepArtifactRef`` for experiment job content;
@@ -115,7 +116,7 @@ class StepArtifactRefMini(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ExperimentResponse(BaseModel):
+class ExperimentResponse(RetabBaseModel):
     """One row of the ``GET /experiments`` listing or single-experiment fetch."""
 
     model_config = ConfigDict(extra="ignore")
@@ -143,7 +144,7 @@ class ExperimentResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class PreviousRunSummary(BaseModel):
+class PreviousRunSummary(RetabBaseModel):
     """Slim summary of the previous completed run."""
 
     model_config = ConfigDict(extra="ignore")
@@ -153,7 +154,7 @@ class PreviousRunSummary(BaseModel):
     score: float | None = None
 
 
-class RunExperimentResponse(BaseModel):
+class RunExperimentResponse(RetabBaseModel):
     """Response from ``POST /experiments/{id}/run``.
 
     Async — execution proceeds in the background; poll
@@ -175,7 +176,7 @@ class RunExperimentResponse(BaseModel):
     noop: bool = False
 
 
-class ExperimentRunSummary(BaseModel):
+class ExperimentRunSummary(RetabBaseModel):
     """One row of ``GET /experiments/{id}/runs``."""
 
     model_config = ConfigDict(extra="ignore")
@@ -199,7 +200,7 @@ class ExperimentRunSummary(BaseModel):
     job_id: str | None = None
 
 
-class ExperimentRunListResponse(BaseModel):
+class ExperimentRunListResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     runs: list[ExperimentRunSummary] = Field(default_factory=list)
@@ -210,7 +211,7 @@ class ExperimentRunListResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ExperimentJobResponse(BaseModel):
+class ExperimentJobResponse(RetabBaseModel):
     """Execution content for one document job inside an experiment run."""
 
     model_config = ConfigDict(extra="ignore")
@@ -232,13 +233,13 @@ class ExperimentJobResponse(BaseModel):
     is_placeholder: bool = False
 
 
-class ExperimentContent(BaseModel):
+class ExperimentContent(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     jobs: list[ExperimentJobResponse] = Field(default_factory=list)
 
 
-class ExperimentContentResponse(BaseModel):
+class ExperimentContentResponse(RetabBaseModel):
     """``GET /experiments/{id}/content`` — execution content for one run."""
 
     model_config = ConfigDict(extra="ignore")
@@ -253,7 +254,7 @@ class ExperimentContentResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ExperimentSummaryMetricDocument(BaseModel):
+class ExperimentSummaryMetricDocument(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
@@ -262,7 +263,7 @@ class ExperimentSummaryMetricDocument(BaseModel):
     prior_score: float | None = None
 
 
-class ExperimentConfusionFlowMetric(BaseModel):
+class ExperimentConfusionFlowMetric(RetabBaseModel):
     model_config = ConfigDict(
         extra="ignore",
         populate_by_name=True,
@@ -274,13 +275,13 @@ class ExperimentConfusionFlowMetric(BaseModel):
     score: float
 
 
-class ExperimentExtractSummaryAggregate(BaseModel):
+class ExperimentExtractSummaryAggregate(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     likelihoods: dict[str, float] = Field(default_factory=dict)
 
 
-class ExperimentConfusionSummaryAggregate(BaseModel):
+class ExperimentConfusionSummaryAggregate(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     diag: dict[str, float] = Field(default_factory=dict)
@@ -292,7 +293,7 @@ ExperimentSummaryAggregate = (
 )
 
 
-class ExperimentSummaryMetricsResponse(BaseModel):
+class ExperimentSummaryMetricsResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     experiment_id: str
@@ -307,14 +308,14 @@ class ExperimentSummaryMetricsResponse(BaseModel):
     prior_run_id: str | None = None
 
 
-class ExperimentMetricDocumentRef(BaseModel):
+class ExperimentMetricDocumentRef(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
     filename: str
 
 
-class ExperimentByDocumentTargetMetric(BaseModel):
+class ExperimentByDocumentTargetMetric(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     path: str
@@ -323,14 +324,14 @@ class ExperimentByDocumentTargetMetric(BaseModel):
     value: Any | None = None
 
 
-class ExperimentDocumentConfusionMetric(BaseModel):
+class ExperimentDocumentConfusionMetric(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     diag: dict[str, float] = Field(default_factory=dict)
     flows: list[ExperimentConfusionFlowMetric] = Field(default_factory=list)
 
 
-class ExperimentByDocumentMetricsResponse(BaseModel):
+class ExperimentByDocumentMetricsResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_id: str
@@ -342,7 +343,7 @@ class ExperimentByDocumentMetricsResponse(BaseModel):
     targets: list[ExperimentByDocumentTargetMetric] = Field(default_factory=list)
 
 
-class ExperimentByTargetDocumentMetric(BaseModel):
+class ExperimentByTargetDocumentMetric(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
@@ -352,7 +353,7 @@ class ExperimentByTargetDocumentMetric(BaseModel):
     value: Any | None = None
 
 
-class ExperimentTargetConfusionMetric(BaseModel):
+class ExperimentTargetConfusionMetric(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     self: float | None = None
@@ -360,7 +361,7 @@ class ExperimentTargetConfusionMetric(BaseModel):
     flow_to: dict[str, float] = Field(default_factory=dict)
 
 
-class ExperimentByTargetMetricsResponse(BaseModel):
+class ExperimentByTargetMetricsResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_id: str
@@ -372,21 +373,21 @@ class ExperimentByTargetMetricsResponse(BaseModel):
     documents: list[ExperimentByTargetDocumentMetric] = Field(default_factory=list)
 
 
-class ExperimentVotesMetricDocument(BaseModel):
+class ExperimentVotesMetricDocument(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
     filename: str
 
 
-class ExperimentVoteRow(BaseModel):
+class ExperimentVoteRow(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     consensus: Any | None = None
     votes: list[Any] = Field(default_factory=list)
 
 
-class ExperimentVotesMetricsResponse(BaseModel):
+class ExperimentVotesMetricsResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_id: str
@@ -409,7 +410,7 @@ ExperimentMetricsViewResponse = Annotated[
 ]
 
 
-class _MetricsStaleErrorLastRun(BaseModel):
+class _MetricsStaleErrorLastRun(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_id: str
@@ -418,7 +419,7 @@ class _MetricsStaleErrorLastRun(BaseModel):
     created_at: datetime.datetime | None = None
 
 
-class ExperimentMetricsStaleError(BaseModel):
+class ExperimentMetricsStaleError(RetabBaseModel):
     """Returned when the last run is stale vs the current draft config or
     document set. Recompute by calling ``experiments.runs.create(...)``.
     """
@@ -433,7 +434,7 @@ class ExperimentMetricsStaleError(BaseModel):
     message: str
 
 
-class ExperimentMetricsMissingError(BaseModel):
+class ExperimentMetricsMissingError(RetabBaseModel):
     """Returned when the experiment has no runs at all."""
 
     model_config = ConfigDict(extra="ignore")
@@ -456,7 +457,7 @@ ExperimentMetricsResponse = Union[
 # ---------------------------------------------------------------------------
 
 
-class EligibleBlockSummary(BaseModel):
+class EligibleBlockSummary(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     block_id: str
@@ -469,13 +470,13 @@ class EligibleBlockSummary(BaseModel):
     mean_score: float | None = None
 
 
-class EligibleBlockListResponse(BaseModel):
+class EligibleBlockListResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     blocks: list[EligibleBlockSummary] = Field(default_factory=list)
 
 
-class RunBatchResponse(BaseModel):
+class RunBatchResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     block_id: str

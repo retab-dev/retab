@@ -3,13 +3,14 @@ from __future__ import annotations
 import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
 from .mime import FileRef, MIMEData
 
 
-class ExtractionRequest(BaseModel):
+class ExtractionRequest(RetabBaseModel):
     document: MIMEData = Field(..., description="The document to extract from")
     json_schema: dict[str, Any] = Field(..., description="JSON schema describing the structured output")
     model: str = Field(default="retab-small", description="The model to use for the extraction")
@@ -40,14 +41,14 @@ class ExtractionRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class ProcessingRequestOrigin(BaseModel):
+class ProcessingRequestOrigin(RetabBaseModel):
     """Origin of the extraction request (extract-specific)."""
 
     type: str
     id: Optional[str] = None
 
 
-class ExtractionConsensus(BaseModel):
+class ExtractionConsensus(RetabBaseModel):
     choices: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Alternative extraction vote outputs used to build the consolidated result.",
@@ -62,10 +63,10 @@ class ExtractionConsensus(BaseModel):
     )
 
 
-class Extraction(BaseModel):
+class Extraction(RetabBaseModel):
     """A stored extraction record from the Retab API."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier of the extraction")
     file: FileRef = Field(..., description="Information about the extracted file")
@@ -95,13 +96,12 @@ class Extraction(BaseModel):
     usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the extraction")
     created_at: Optional[datetime.datetime] = None
     updated_at: Optional[datetime.datetime] = None
-    organization_id: Optional[str] = None
 
 
-class SourcesResponse(BaseModel):
+class SourcesResponse(RetabBaseModel):
     """Response from the extraction sources endpoint."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     object: Literal["extraction.sources"] = "extraction.sources"
     extraction_id: str

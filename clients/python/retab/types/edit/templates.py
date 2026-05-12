@@ -1,14 +1,15 @@
 """Types for edit templates."""
 
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 import datetime
 
 from ..mime import FileRef, MIMEData
 from ..documents.edit import FormField, EditConfig
 
 
-class EditTemplate(BaseModel):
+class EditTemplate(RetabBaseModel):
     """An edit template with pre-defined form fields."""
 
     id: str = Field(..., description="Unique identifier of the template")
@@ -16,12 +17,11 @@ class EditTemplate(BaseModel):
     file: FileRef = Field(..., description="File information for the empty PDF template")
     form_fields: list[FormField] = Field(default_factory=list, description="List of form fields in the template")
     field_count: int = Field(default=0, description="Number of form fields in the template")
-    organization_id: Optional[str] = Field(default=None, description="Organization that owns this template")
     created_at: datetime.datetime = Field(..., description="Timestamp of creation")
     updated_at: datetime.datetime = Field(..., description="Timestamp of last update")
 
 
-class CreateEditTemplateRequest(BaseModel):
+class CreateEditTemplateRequest(RetabBaseModel):
     """Request model for creating an edit template."""
     
     name: str = Field(..., description="Name of the template")
@@ -29,20 +29,20 @@ class CreateEditTemplateRequest(BaseModel):
     form_fields: list[FormField] = Field(..., description="List of form fields in the template")
 
 
-class UpdateEditTemplateRequest(BaseModel):
+class UpdateEditTemplateRequest(RetabBaseModel):
     """Request model for updating an edit template."""
     
     name: Optional[str] = Field(default=None, description="Name of the template")
     form_fields: Optional[list[FormField]] = Field(default=None, description="List of form fields")
 
 
-class DuplicateEditTemplateRequest(BaseModel):
+class DuplicateEditTemplateRequest(RetabBaseModel):
     """Request model for duplicating an edit template."""
     
     name: Optional[str] = Field(default=None, description="Name for the duplicated template")
 
 
-class FillTemplateRequest(BaseModel):
+class FillTemplateRequest(RetabBaseModel):
     """Request for the fill endpoint.
     Uses pre-defined form fields from the template (PDF only)
     """

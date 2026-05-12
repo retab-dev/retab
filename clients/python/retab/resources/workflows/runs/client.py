@@ -51,6 +51,7 @@ class WorkflowRunsMixin:
         workflow_id: str,
         documents: Optional[Dict[str, DocumentInput]] = None,
         json_inputs: Optional[Dict[str, Dict[str, Any]]] = None,
+        version: str = "production",
     ) -> PreparedRequest:
         """Prepare a request to run a workflow with input documents, JSON data, and/or text data.
 
@@ -60,6 +61,7 @@ class WorkflowRunsMixin:
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
             json_inputs: Mapping of start_json block IDs to their input JSON data.
+            version: Workflow version selector: "production", "draft", or a pinned "ver_..." id.
 
         Returns:
             PreparedRequest: The prepared request
@@ -92,6 +94,7 @@ class WorkflowRunsMixin:
         # Add JSON inputs directly
         if json_inputs:
             data["json_inputs"] = json_inputs
+        data["version"] = version
         return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/run", data=data)
 
     def prepare_get(self, run_id: str) -> PreparedRequest:
@@ -244,6 +247,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         workflow_id: str,
         documents: Optional[Dict[str, DocumentInput]] = None,
         json_inputs: Optional[Dict[str, Dict[str, Any]]] = None,
+        version: str = "production",
     ) -> WorkflowRun:
         """Run a workflow with the provided inputs.
 
@@ -257,6 +261,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
             json_inputs: Mapping of start_json block IDs to their input JSON data.
+            version: Workflow version selector: "production", "draft", or a pinned "ver_..." id.
 
         Returns:
             WorkflowRun: The created workflow run
@@ -274,6 +279,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             workflow_id=workflow_id,
             documents=documents,
             json_inputs=json_inputs,
+            version=version,
         )
         response = self._client._prepared_request(request)
         return WorkflowRun.model_validate(response)
@@ -527,6 +533,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         workflow_id: str,
         documents: Optional[Dict[str, DocumentInput]] = None,
         json_inputs: Optional[Dict[str, Dict[str, Any]]] = None,
+        version: str = "production",
     ) -> WorkflowRun:
         """Run a workflow with the provided inputs.
 
@@ -540,6 +547,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
             json_inputs: Mapping of start_json block IDs to their input JSON data.
+            version: Workflow version selector: "production", "draft", or a pinned "ver_..." id.
 
         Returns:
             WorkflowRun: The created workflow run
@@ -555,6 +563,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             workflow_id=workflow_id,
             documents=documents,
             json_inputs=json_inputs,
+            version=version,
         )
         response = await self._client._prepared_request(request)
         return WorkflowRun.model_validate(response)

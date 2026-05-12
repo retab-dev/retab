@@ -71,10 +71,12 @@ export default class APIWorkflowRuns extends CompositionClient {
             workflowId,
             documents,
             jsonInputs,
+            version = "production",
         }: {
             workflowId: string;
             documents?: Record<string, MIMEDataInput>;
             jsonInputs?: Record<string, unknown>;
+            version?: string;
         },
         options?: RequestOptions
     ): Promise<WorkflowRun> {
@@ -101,6 +103,7 @@ export default class APIWorkflowRuns extends CompositionClient {
         if (jsonInputs) {
             body.json_inputs = jsonInputs;
         }
+        body.version = version;
 
         return this._fetchJson(ZWorkflowRun, {
             url: `/workflows/${workflowId}/run`,

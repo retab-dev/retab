@@ -3,7 +3,8 @@ from __future__ import annotations
 import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
 from .mime import FileRef, MIMEData
@@ -11,7 +12,7 @@ from .mime import FileRef, MIMEData
 TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 
 
-class ParseRequest(BaseModel):
+class ParseRequest(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     document: MIMEData = Field(..., description="The document to parse")
@@ -33,12 +34,12 @@ class ParseRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class ParseOutput(BaseModel):
+class ParseOutput(RetabBaseModel):
     pages: list[str] = Field(..., description="Text content of each page (1-indexed order)")
     text: str = Field(..., description="Concatenated text content of the full document")
 
 
-class Parse(BaseModel):
+class Parse(RetabBaseModel):
     id: str = Field(..., description="Unique identifier of the parse")
     file: FileRef = Field(..., description="Information about the parsed file")
     model: str = Field(..., description="Model used for parsing")

@@ -3,14 +3,15 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
 from .extractions import ProcessingRequestOrigin
 from .mime import FileRef, MIMEData
 
 
-class Subdocument(BaseModel):
+class Subdocument(RetabBaseModel):
     name: str = Field(..., description="The name of the subdocument")
     description: str = Field(default="", description="The description of the subdocument")
     allow_multiple_instances: bool = Field(
@@ -19,7 +20,7 @@ class Subdocument(BaseModel):
     )
 
 
-class SplitRequest(BaseModel):
+class SplitRequest(RetabBaseModel):
     document: MIMEData = Field(..., description="The document to split")
     subdocuments: list[Subdocument] = Field(
         ...,
@@ -40,11 +41,11 @@ class SplitRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class SplitResult(BaseModel):
+class SplitResult(RetabBaseModel):
     name: str = Field(..., description="The name of the subdocument")
     pages: list[int] = Field(..., description="The pages of the subdocument (1-indexed)")
 
-class SplitSubdocumentLikelihood(BaseModel):
+class SplitSubdocumentLikelihood(RetabBaseModel):
     name: float | None = Field(default=None, description="Confidence that this split label is correct")
     pages: list[float] = Field(
         default_factory=list,
@@ -52,7 +53,7 @@ class SplitSubdocumentLikelihood(BaseModel):
     )
 
 
-class SplitConsensus(BaseModel):
+class SplitConsensus(RetabBaseModel):
     likelihoods: list[SplitSubdocumentLikelihood] | None = Field(
         default=None,
         description="Consensus likelihood tree mirroring the split output",
@@ -63,7 +64,7 @@ class SplitConsensus(BaseModel):
     )
 
 
-class Split(BaseModel):
+class Split(RetabBaseModel):
     id: str = Field(..., description="Unique identifier of the split result")
     file: FileRef = Field(..., description="Information about the split file")
     model: str = Field(..., description="Model used for the split operation")

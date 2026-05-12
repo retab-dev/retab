@@ -2,7 +2,8 @@ from enum import Enum
 from typing import Any, List, Literal, Optional, Tuple, TypeVar
 from typing_extensions import TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 
 # API Standards
 
@@ -22,26 +23,26 @@ FieldUnset: Any = UNSET
 
 
 # Define the ErrorDetail model
-class ErrorDetail(BaseModel):
+class ErrorDetail(RetabBaseModel):
     code: str
     message: str
     details: Optional[dict] = None
 
 
-class StandardErrorResponse(BaseModel):
+class StandardErrorResponse(RetabBaseModel):
     detail: ErrorDetail
 
 
-class StreamingBaseModel(BaseModel):
+class StreamingBaseModel(RetabBaseModel):
     streaming_error: ErrorDetail | None = None
 
 
-class DocumentPreprocessResponseContent(BaseModel):
+class DocumentPreprocessResponseContent(RetabBaseModel):
     messages: list[dict[str, Any]] = Field(..., description="Messages generated during the preprocessing of the document")
     json_schema: dict[str, Any] = Field(..., description="Generated JSON Schema for Structured Output OpenAI Completions")
 
 
-class PreparedRequest(BaseModel):
+class PreparedRequest(RetabBaseModel):
     method: Literal["POST", "GET", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "CONNECT", "TRACE"]
     url: str
     data: Any = None

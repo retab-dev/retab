@@ -51,7 +51,7 @@ def test_workflow_artifacts_get_accepts_ref_and_returns_flattened_record() -> No
     assert request.url == "/workflows/artifacts/hil_evaluation/heval_123"
     assert artifact.operation == "hil_evaluation"
     assert artifact.id == "heval_123"
-    assert artifact.requires_human_review is True
+    assert artifact.model_dump() == {"operation": "hil_evaluation", "id": "heval_123"}
 
 
 def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
@@ -122,7 +122,7 @@ async def test_async_workflow_artifacts_get_accepts_operation_and_id() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/artifacts/function_invocation/fninv_123"
     assert artifact.operation == "function_invocation"
-    assert artifact.output == {"ok": True}
+    assert artifact.model_dump() == {"operation": "function_invocation", "id": "fninv_123"}
 
 
 def test_workflow_steps_get_handle_outputs_typed() -> None:
@@ -374,7 +374,7 @@ def _minimal_run_payload(**overrides) -> dict:
         "organization_id": "org_1",
         "workflow": {
             "workflow_id": "wf_1",
-            "snapshot_id": "snap_1",
+            "version_id": "wv_1",
             "name_at_run_time": "Test",
         },
         "trigger": {"type": "manual"},

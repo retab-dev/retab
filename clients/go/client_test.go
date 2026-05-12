@@ -44,7 +44,7 @@ func TestWorkflowsCreateUpdatePublishDuplicateGetEntitiesAndDelete(t *testing.T)
 				"id":          "wf_123",
 				"name":        "Renamed",
 				"description": "Updated",
-				"published":   map[string]any{"snapshot_id": "snap_123"},
+				"published":   map[string]any{"version_id": "ver_0123456789abcdef0123456789abcdef"},
 			})
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/duplicate":
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -87,9 +87,11 @@ func TestWorkflowsCreateUpdatePublishDuplicateGetEntitiesAndDelete(t *testing.T)
 	name := "Renamed"
 	description := "Updated"
 	_, err = client.Workflows.Update(context.Background(), "wf_123", UpdateWorkflowRequest{
-		Name:                  &name,
-		Description:           &description,
-		EmailSendersWhitelist: []string{"ops@example.com"},
+		Name:        &name,
+		Description: &description,
+		EmailTrigger: &WorkflowEmailTrigger{
+			AllowedSenders: []string{"ops@example.com"},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -106,7 +108,7 @@ func TestWorkflowsCreateUpdatePublishDuplicateGetEntitiesAndDelete(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if published.Published == nil || published.Published.SnapshotID != "snap_123" {
+	if published.Published == nil || published.Published.VersionID != "ver_0123456789abcdef0123456789abcdef" {
 		t.Fatalf("published = %#v", published.Published)
 	}
 	if publishBody["description"] != "v1" {
@@ -490,9 +492,10 @@ func workflowRunResponse(runID string, workflowID string, lifecycleKind string) 
 		"id":              runID,
 		"organization_id": "org_123",
 		"workflow": map[string]any{
-			"workflow_id":      workflowID,
-			"snapshot_id":      "snap_123",
-			"name_at_run_time": "Workflow",
+			"workflow_id":       workflowID,
+			"version_id":        "ver_0123456789abcdef0123456789abcdef",
+			"name_at_run_time":  "Workflow",
+			"requested_version": "production",
 		},
 		"trigger": map[string]any{"type": "api"},
 		"lifecycle": map[string]any{

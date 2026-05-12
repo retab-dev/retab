@@ -172,6 +172,9 @@ func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 	if startDocument["filename"] != "invoice.pdf" || startDocument["content"] != "AAAA" || startDocument["mime_type"] != "application/pdf" {
 		t.Fatalf("start document = %#v", startDocument)
 	}
+	if body["version"] != "production" {
+		t.Fatalf("version = %#v", body["version"])
+	}
 }
 
 func TestListDefaultsMatchNode(t *testing.T) {

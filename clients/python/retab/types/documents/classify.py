@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 
 from ..mime import MIMEData
 from .usage import RetabUsage
 
 
-class Category(BaseModel):
+class Category(RetabBaseModel):
     name: str = Field(..., description="The name of the category")
     description: str = Field(default="", description="The description of the category")
 
 
-class ClassifyRequest(BaseModel):
+class ClassifyRequest(RetabBaseModel):
     document: MIMEData = Field(..., description="The document to classify")
     categories: list[Category] = Field(..., description="The categories to classify the document into")
     model: str = Field(default="retab-small", description="The model to use for classification")
@@ -32,16 +33,16 @@ class ClassifyRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class ClassifyDecision(BaseModel):
+class ClassifyDecision(RetabBaseModel):
     reasoning: str = Field(..., description="The reasoning for the classification decision")
     category: str = Field(..., description="The category name that the document belongs to")
 
 
-class ClassifyChoice(BaseModel):
+class ClassifyChoice(RetabBaseModel):
     classification: ClassifyDecision = Field(..., description="One alternative classification vote output")
 
 
-class ClassifyConsensus(BaseModel):
+class ClassifyConsensus(RetabBaseModel):
     choices: list[ClassifyChoice] = Field(
         default_factory=list,
         description="Alternative classification vote outputs used to build the consolidated result.",
@@ -52,7 +53,7 @@ class ClassifyConsensus(BaseModel):
     )
 
 
-class ClassifyResponse(BaseModel):
+class ClassifyResponse(RetabBaseModel):
     classification: ClassifyDecision = Field(..., description="The classification result with reasoning")
     consensus: ClassifyConsensus = Field(
         default_factory=ClassifyConsensus,
