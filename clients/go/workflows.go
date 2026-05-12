@@ -160,6 +160,15 @@ func (s *WorkflowsService) GetEntities(ctx context.Context, workflowID string, o
 	return &result, err
 }
 
+func (s *WorkflowsService) GetResolvedSchemas(ctx context.Context, workflowID string, opts ...RequestOption) (*WorkflowResolvedSchemasResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	var result WorkflowResolvedSchemasResponse
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/resolved-schemas", nil, nil, &result, opts...)
+	return &result, err
+}
+
 // WorkflowDiagnosisIssue is one issue found by Diagnose.
 type WorkflowDiagnosisIssue struct {
 	Severity string  `json:"severity"`
@@ -372,6 +381,18 @@ func (s *WorkflowBlocksService) Get(ctx context.Context, workflowID string, bloc
 	var block WorkflowBlock
 	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID), nil, nil, &block, opts...)
 	return &block, err
+}
+
+func (s *WorkflowBlocksService) GetResolvedSchemas(ctx context.Context, workflowID string, blockID string, opts ...RequestOption) (*BlockResolvedSchemasResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if blockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	var result BlockResolvedSchemasResponse
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID)+"/resolved-schemas", nil, nil, &result, opts...)
+	return &result, err
 }
 
 func (s *WorkflowBlocksService) Create(ctx context.Context, workflowID string, request WorkflowBlockCreateRequest, opts ...RequestOption) (*WorkflowBlock, error) {

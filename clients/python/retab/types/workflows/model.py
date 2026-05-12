@@ -45,12 +45,10 @@ from retab.types.mime import FileRef
 # record (one of the record types above) and read from there.
 # ---------------------------------------------------------------------------
 
-# Schemas are accessed via ``workflows.blocks.get(block_id).resolved_schemas``,
-# not via step payload data. Step executions only carry data/payload;
-# user-declared block config schemas (``start_json`` / ``extract`` /
-# ``function`` / ``api_call``) live on the block itself, and every other
-# block's input/output schema is inferred and exposed under
-# ``resolved_schemas.input_schemas`` / ``resolved_schemas.output_schemas``.
+# Graph-derived block schemas are exposed through
+# ``workflows.get_resolved_schemas(workflow_id)`` and
+# ``workflows.blocks.get_resolved_schemas(workflow_id, block_id)``. They are
+# not embedded in public block objects.
 
 
 class HandlePayload(RetabBaseModel):
@@ -938,8 +936,8 @@ class WorkflowEdgeCreateRequest(RetabBaseModel):
 
 
 class ResolvedSchemas(RetabBaseModel):
-    """Graph-derived schemas attached to workflow blocks in transport responses."""
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    """Graph-derived schemas for a workflow block."""
+    model_config = ConfigDict(extra="ignore")
 
     input_schemas: Dict[str, Any] = Field(
         default_factory=dict,
@@ -951,7 +949,6 @@ class ResolvedSchemas(RetabBaseModel):
     )
     field_ref_drift: Optional[dict] = Field(
         default=None,
-        alias="_field_ref_drift",
         description="Field reference drift metadata when present.",
     )
 
@@ -970,11 +967,8 @@ class WorkflowBlock(RetabBaseModel):
     width: Optional[float] = Field(default=None, description="Block width")
     height: Optional[float] = Field(default=None, description="Block height")
     config: Optional[dict] = Field(default=None, description="Block-specific configuration")
+    field_ref_snapshot: Optional[Dict[str, str]] = Field(default=None, description="Authored field reference snapshot metadata")
     parent_id: Optional[str] = Field(default=None, description="Parent container block ID (while_loop, for_each)")
-    resolved_schemas: Optional[ResolvedSchemas] = Field(
-        default=None,
-        description="Graph-derived schema sidecar. Schemas for block outputs live here, not on raw step results.",
-    )
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
 
@@ -1009,6 +1003,25 @@ class WorkflowWithEntities(RetabBaseModel):
     def start_json_blocks(self) -> List[WorkflowBlock]:
         """JSON input start blocks."""
         return [b for b in self.blocks if b.type == "start_json"]
+
+
+class WorkflowResolvedSchemasResponse(RetabBaseModel):
+    """Graph-derived schemas for all current-draft blocks in a workflow."""
+    model_config = ConfigDict(extra="ignore")
+
+    workflow_id: str
+    draft_version: Optional[str] = None
+    schemas: Dict[str, ResolvedSchemas] = Field(default_factory=dict)
+
+
+class BlockResolvedSchemasResponse(RetabBaseModel):
+    """Graph-derived schemas for one current-draft block."""
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    workflow_id: str
+    block_id: str
+    draft_version: Optional[str] = None
+    block_schema: ResolvedSchemas = Field(default_factory=ResolvedSchemas, alias="schema")
 
 
 class DeclarativePlanSummary(RetabBaseModel):

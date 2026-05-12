@@ -6,6 +6,7 @@ from ...types.standards import PreparedRequest
 from ...types.workflows import (
     Workflow,
     WorkflowDiagnosisResponse,
+    WorkflowResolvedSchemasResponse,
     WorkflowWithEntities,
 )
 from .runs import WorkflowRuns, AsyncWorkflowRuns
@@ -87,6 +88,10 @@ class WorkflowsMixin:
     def prepare_get_entities(self, workflow_id: str) -> PreparedRequest:
         """Prepare a request to get a workflow with all its entities (blocks and edges)."""
         return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/entities")
+
+    def prepare_get_resolved_schemas(self, workflow_id: str) -> PreparedRequest:
+        """Prepare a request to get graph-derived schemas for all current-draft blocks."""
+        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/resolved-schemas")
 
     def prepare_diagnose(
         self,
@@ -244,6 +249,12 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         response = self._client._prepared_request(request)
         return WorkflowWithEntities.model_validate(response)
 
+    def get_resolved_schemas(self, workflow_id: str) -> WorkflowResolvedSchemasResponse:
+        """Get graph-derived schemas for all current-draft blocks in a workflow."""
+        request = self.prepare_get_resolved_schemas(workflow_id)
+        response = self._client._prepared_request(request)
+        return WorkflowResolvedSchemasResponse.model_validate(response)
+
     def diagnose(
         self,
         workflow_id: str,
@@ -382,6 +393,12 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         request = self.prepare_get_entities(workflow_id)
         response = await self._client._prepared_request(request)
         return WorkflowWithEntities.model_validate(response)
+
+    async def get_resolved_schemas(self, workflow_id: str) -> WorkflowResolvedSchemasResponse:
+        """Get graph-derived schemas for all current-draft blocks in a workflow."""
+        request = self.prepare_get_resolved_schemas(workflow_id)
+        response = await self._client._prepared_request(request)
+        return WorkflowResolvedSchemasResponse.model_validate(response)
 
     async def diagnose(
         self,

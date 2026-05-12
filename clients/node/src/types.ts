@@ -8,11 +8,10 @@ import fs from 'fs';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 //export * from "./schema_types";
 
-// Schemas are accessed via `workflows.blocks.get(block_id).resolved_schemas`,
-// not via step payload data. Step executions only carry data/payload; user-declared
-// block config schemas (`start_json` / `extract` / `function` / `api_call`) live
-// on the block itself, and every other block's input/output schema is inferred
-// and exposed under `resolved_schemas.input_schemas` / `resolved_schemas.output_schemas`.
+// Graph-derived block schemas are exposed through
+// `workflows.getResolvedSchemas(workflowId)` and
+// `workflows.blocks.getResolvedSchemas(workflowId, blockId)`. They are not
+// embedded in public block objects.
 
 export function dataArray<Schema extends z.ZodType<any, any, any>>(
   schema: Schema
@@ -589,7 +588,7 @@ export const ZResolvedSchemas = z
   .object({
     input_schemas: z.record(z.string(), z.any()).default({}),
     output_schemas: z.record(z.string(), z.any()).default({}),
-    _field_ref_drift: z.record(z.any()).nullable().optional(),
+    field_ref_drift: z.record(z.any()).nullable().optional(),
   })
   .passthrough();
 export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
@@ -606,11 +605,10 @@ export const ZWorkflowBlock = z
     width: z.number().nullable().optional(),
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
+    field_ref_snapshot: z.record(z.string(), z.string()).nullable().optional(),
     parent_id: z.string().nullable().optional(),
-    resolved_schemas: ZResolvedSchemas.nullable().optional(),
     updated_at: z.string().nullable().optional(),
-  })
-  .passthrough();
+  });
 export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
 
 export const ZWorkflowEdgeDoc = z
@@ -635,6 +633,25 @@ export const ZWorkflowWithEntities = z
   })
   .passthrough();
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
+
+export const ZWorkflowResolvedSchemasResponse = z
+  .object({
+    workflow_id: z.string(),
+    draft_version: z.string().nullable().optional(),
+    schemas: z.record(z.string(), ZResolvedSchemas).default({}),
+  })
+  .passthrough();
+export type WorkflowResolvedSchemasResponse = z.infer<typeof ZWorkflowResolvedSchemasResponse>;
+
+export const ZBlockResolvedSchemasResponse = z
+  .object({
+    workflow_id: z.string(),
+    block_id: z.string(),
+    draft_version: z.string().nullable().optional(),
+    schema: ZResolvedSchemas,
+  })
+  .passthrough();
+export type BlockResolvedSchemasResponse = z.infer<typeof ZBlockResolvedSchemasResponse>;
 
 export const ZDeclarativePlanSummary = z
   .object({

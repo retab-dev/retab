@@ -623,7 +623,7 @@ describe("workflows client", () => {
         expect(block.draft_version).toBe("draft_1");
     });
 
-    test("workflow blocks expose resolved schema sidecars", async () => {
+    test("workflow block objects ignore resolved schema sidecars", async () => {
         const mockClient = new MockClient({
             id: "extract-1",
             workflow_id: "wf_1",
@@ -644,7 +644,48 @@ describe("workflows client", () => {
 
         const block = await blocksClient.get("wf_1", "extract-1");
 
-        expect(block.resolved_schemas?.output_schemas["output-json-0"]?.properties.invoice_number.type).toBe("string");
+        expect("resolved_schemas" in block).toBe(false);
+    });
+
+    test("workflow resolved schema endpoints parse public field_ref_drift", async () => {
+        const workflowSchemasClient = new MockClient({
+            workflow_id: "wf_1",
+            draft_version: "draft_1",
+            schemas: {
+                "extract-1": {
+                    input_schemas: {},
+                    output_schemas: {
+                        "output-json-0": {
+                            type: "object",
+                            properties: { invoice_number: { type: "string" } },
+                        },
+                    },
+                    field_ref_drift: { stale: true },
+                },
+            },
+        });
+        const workflowsClient = new APIWorkflows(workflowSchemasClient);
+        const workflowSchemas = await workflowsClient.getResolvedSchemas("wf_1");
+
+        expect(workflowSchemasClient.lastFetchParams?.url).toBe("/workflows/wf_1/resolved-schemas");
+        expect(workflowSchemas.schemas["extract-1"].field_ref_drift?.stale).toBe(true);
+        expect(workflowSchemas.schemas["extract-1"].output_schemas["output-json-0"]?.properties.invoice_number.type).toBe("string");
+
+        const blockSchemasClient = new MockClient({
+            workflow_id: "wf_1",
+            block_id: "extract-1",
+            draft_version: "draft_1",
+            schema: {
+                input_schemas: {},
+                output_schemas: {"output-json-0": {type: "object"}},
+                field_ref_drift: null,
+            },
+        });
+        const blocksClient = new APIWorkflowBlocks(blockSchemasClient);
+        const blockSchemas = await blocksClient.getResolvedSchemas("wf_1", "extract-1");
+
+        expect(blockSchemasClient.lastFetchParams?.url).toBe("/workflows/wf_1/blocks/extract-1/resolved-schemas");
+        expect(blockSchemas.schema.field_ref_drift).toBeNull();
     });
 
     test("step execution responses ignore removed payload schemas", () => {
