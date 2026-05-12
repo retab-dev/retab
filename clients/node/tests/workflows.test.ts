@@ -38,10 +38,9 @@ class MockClient extends AbstractClient {
 function makeV2Run(overrides: Record<string, any> = {}): Record<string, any> {
     const {
         id = "run_1",
-        organization_id = "org_1",
         workflow = {
             workflow_id: "wf_1",
-            snapshot_id: "snap_1",
+            version_id: "ver_0123456789abcdef0123456789abcdef",
             name_at_run_time: "Test",
         },
         trigger = { type: "manual" },
@@ -54,7 +53,6 @@ function makeV2Run(overrides: Record<string, any> = {}): Record<string, any> {
     } = overrides;
     return {
         id,
-        organization_id,
         workflow,
         trigger,
         lifecycle,
@@ -115,6 +113,43 @@ describe("workflows client", () => {
             headers: undefined,
         });
         expect(result.list_metadata.after).toBe("cursor_1");
+    });
+
+    test("update() accepts an email trigger policy", async () => {
+        const mockClient = new MockClient({
+            id: "workflow_123",
+            name: "Test Workflow",
+            description: "",
+            published: null,
+            email_trigger: {
+                allowed_senders: ["ops@example.com"],
+                allowed_domains: ["example.com"],
+            },
+            created_at: "2026-03-12T10:00:00Z",
+            updated_at: "2026-03-12T10:00:00Z",
+        });
+        const workflowsClient = new APIWorkflows(mockClient);
+
+        const workflow = await workflowsClient.update("workflow_123", {
+            emailTrigger: {
+                allowedSenders: ["ops@example.com"],
+                allowedDomains: ["example.com"],
+            },
+        });
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/workflow_123",
+            method: "PATCH",
+            body: {
+                email_trigger: {
+                    allowed_senders: ["ops@example.com"],
+                    allowed_domains: ["example.com"],
+                },
+            },
+            params: undefined,
+            headers: undefined,
+        });
+        expect(workflow.email_trigger.allowed_senders).toEqual(["ops@example.com"]);
     });
 
     test("exposes specs subresource", () => {
@@ -269,7 +304,7 @@ describe("workflows client", () => {
             id: "wf_1",
             name: "Test",
             published: {
-                snapshot_id: "snap_1",
+                version_id: "ver_0123456789abcdef0123456789abcdef",
                 published_at: "2026-03-12T10:00:00Z",
             },
             email_trigger: { allowed_senders: [], allowed_domains: [] },
@@ -282,7 +317,7 @@ describe("workflows client", () => {
 
         expect(mockClient.lastFetchParams?.url).toBe("/workflows/wf_1/publish");
         expect(mockClient.lastFetchParams?.method).toBe("POST");
-        expect(wf.published?.snapshot_id).toBe("snap_1");
+        expect(wf.published?.version_id).toBe("ver_0123456789abcdef0123456789abcdef");
     });
 
     test("getEntities() returns blocks and edges", async () => {
@@ -292,14 +327,13 @@ describe("workflows client", () => {
                 created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z",
             },
             blocks: [
-                { id: "start-1", workflow_id: "wf_1", organization_id: "org_1", draft_version: "draft_1", type: "start", label: "Doc Input" },
-                { id: "extract-1", workflow_id: "wf_1", organization_id: "org_1", draft_version: "draft_1", type: "extract", label: "Extract" },
+                { id: "start-1", workflow_id: "wf_1", draft_version: "draft_1", type: "start", label: "Doc Input" },
+                { id: "extract-1", workflow_id: "wf_1", draft_version: "draft_1", type: "extract", label: "Extract" },
             ],
             edges: [
                 {
                     id: "edge-1",
                     workflow_id: "wf_1",
-                    organization_id: "org_1",
                     draft_version: "draft_1",
                     source_block: "start-1",
                     target_block: "extract-1",
@@ -313,7 +347,6 @@ describe("workflows client", () => {
         expect(mockClient.lastFetchParams?.url).toBe("/workflows/wf_1/entities");
         expect(entities.blocks).toHaveLength(2);
         expect(entities.edges).toHaveLength(1);
-        expect(entities.edges[0]?.organization_id).toBe("org_1");
         expect(entities.edges[0]?.draft_version).toBe("draft_1");
         expect(entities.blocks.filter(b => b.type === "start")).toHaveLength(1);
     });
@@ -430,10 +463,9 @@ describe("workflows client", () => {
         // fetched via `client.workflows.runs.steps.list(run_id)`.
         const mockClient = new MockClient({
             id: "run_123",
-            organization_id: "org_123",
             workflow: {
                 workflow_id: "workflow_123",
-                snapshot_id: "snap_1",
+                version_id: "ver_0123456789abcdef0123456789abcdef",
                 name_at_run_time: "Classifier Workflow",
             },
             trigger: { type: "manual" },
@@ -472,11 +504,11 @@ describe("workflows client", () => {
     test("runs.v2 typed fields parse correctly", async () => {
         const mockClient = new MockClient({
             id: "run_789",
-            organization_id: "org_1",
             workflow: {
                 workflow_id: "wf_1",
-                snapshot_id: "snap_abc",
+                version_id: "ver_abcdef0123456789abcdef0123456789",
                 name_at_run_time: "Test",
+                requested_version: "ver_abcdef0123456789abcdef0123456789",
             },
             trigger: { type: "api", api_key_id: "ak_1" },
             lifecycle: { kind: "completed" },
@@ -494,7 +526,7 @@ describe("workflows client", () => {
 
         expect(run.trigger.type).toBe("api");
         expect(run.workflow.workflow_id).toBe("wf_1");
-        expect(run.workflow.snapshot_id).toBe("snap_abc");
+        expect(run.workflow.version_id).toBe("ver_abcdef0123456789abcdef0123456789");
         expect(run.timing.accumulated_human_waiting_ms).toBe(5000);
     });
 
@@ -535,8 +567,8 @@ describe("workflows client", () => {
 
     test("blocks.createBatch() accepts camelCase request objects", async () => {
         const mockClient = new MockClient([
-            { id: "start-1", workflow_id: "wf_1", organization_id: "org_1", draft_version: "draft_1", type: "start" },
-            { id: "extract-1", workflow_id: "wf_1", organization_id: "org_1", draft_version: "draft_1", type: "extract" },
+            { id: "start-1", workflow_id: "wf_1", draft_version: "draft_1", type: "start" },
+            { id: "extract-1", workflow_id: "wf_1", draft_version: "draft_1", type: "extract" },
         ]);
         const blocksClient = new APIWorkflowBlocks(mockClient);
 
@@ -580,7 +612,6 @@ describe("workflows client", () => {
         const mockClient = new MockClient({
             id: "extract-1",
             workflow_id: "wf_1",
-            organization_id: "org_1",
             draft_version: "draft_1",
             type: "extract",
             label: "Extract",
@@ -589,7 +620,6 @@ describe("workflows client", () => {
 
         const block = await blocksClient.get("wf_1", "extract-1");
 
-        expect(block.organization_id).toBe("org_1");
         expect(block.draft_version).toBe("draft_1");
     });
 
@@ -597,7 +627,6 @@ describe("workflows client", () => {
         const mockClient = new MockClient({
             id: "extract-1",
             workflow_id: "wf_1",
-            organization_id: "org_1",
             draft_version: "draft_1",
             type: "extract",
             label: "Extract",
@@ -652,7 +681,6 @@ describe("workflows client", () => {
     test("workflow run steps expose top-level model", () => {
         const parsed = ZWorkflowRunStep.parse({
             run_id: "run_123",
-            organization_id: "org_1",
             block_id: "extract-1",
             step_id: "extract-1",
             block_type: "extract",
@@ -671,7 +699,6 @@ describe("workflows client", () => {
             {
                 id: "edge-1",
                 workflow_id: "wf_1",
-                organization_id: "org_1",
                 draft_version: "draft_1",
                 source_block: "start-1",
                 target_block: "extract-1",

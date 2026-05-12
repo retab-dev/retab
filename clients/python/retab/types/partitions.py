@@ -3,14 +3,15 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
 from .extractions import ProcessingRequestOrigin
 from .mime import FileRef, MIMEData
 
 
-class PartitionRequest(BaseModel):
+class PartitionRequest(RetabBaseModel):
     document: MIMEData = Field(..., description="The document to partition")
     key: str = Field(..., description="The key to partition the document by")
     instructions: str = Field(..., description="Instructions describing how the document should be partitioned")
@@ -24,12 +25,12 @@ class PartitionRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class PartitionChunk(BaseModel):
+class PartitionChunk(RetabBaseModel):
     key: str = Field(..., description="The partition key value for this chunk")
     pages: list[int] = Field(default_factory=list, description="The pages assigned to this partition chunk (1-indexed)")
 
 
-class PartitionChunkLikelihood(BaseModel):
+class PartitionChunkLikelihood(RetabBaseModel):
     key: float | None = Field(default=None, description="Confidence that this partition key value is correct")
     pages: list[float] = Field(
         default_factory=list,
@@ -37,7 +38,7 @@ class PartitionChunkLikelihood(BaseModel):
     )
 
 
-class PartitionConsensus(BaseModel):
+class PartitionConsensus(RetabBaseModel):
     choices: list[list[PartitionChunk]] = Field(
         default_factory=list,
         description="Alternative partition vote outputs used to build the consolidated result.",
@@ -48,7 +49,7 @@ class PartitionConsensus(BaseModel):
     )
 
 
-class Partition(BaseModel):
+class Partition(RetabBaseModel):
     id: str = Field(..., description="Unique identifier of the partition")
     file: FileRef = Field(..., description="Information about the partitioned file")
     model: str = Field(..., description="Model used for the partition operation")

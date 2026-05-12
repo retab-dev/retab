@@ -59,8 +59,7 @@ class WorkflowsMixin:
         workflow_id: str,
         name: str | None = None,
         description: str | None = None,
-        email_senders_whitelist: List[str] | None = None,
-        email_domains_whitelist: List[str] | None = None,
+        email_trigger: Dict[str, List[str]] | None = None,
     ) -> PreparedRequest:
         """Prepare a request to update a workflow."""
         data: Dict[str, Any] = {}
@@ -68,12 +67,8 @@ class WorkflowsMixin:
             data["name"] = name
         if description is not None:
             data["description"] = description
-        if email_senders_whitelist is not None or email_domains_whitelist is not None:
-            data["email_trigger"] = {}
-            if email_senders_whitelist is not None:
-                data["email_trigger"]["allowed_senders"] = email_senders_whitelist
-            if email_domains_whitelist is not None:
-                data["email_trigger"]["allowed_domains"] = email_domains_whitelist
+        if email_trigger is not None:
+            data["email_trigger"] = email_trigger
         return PreparedRequest(method="PATCH", url=f"/workflows/{workflow_id}", data=data)
 
     def prepare_delete(self, workflow_id: str) -> PreparedRequest:
@@ -189,8 +184,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
 
         name: str | None = None,
         description: str | None = None,
-        email_senders_whitelist: List[str] | None = None,
-        email_domains_whitelist: List[str] | None = None,
+        email_trigger: Dict[str, List[str]] | None = None,
     ) -> Workflow:
         """Update a workflow's metadata.
 
@@ -198,16 +192,14 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
             workflow_id: The workflow ID
             name: New name (optional)
             description: New description (optional)
-            email_senders_whitelist: Allowed sender emails for email triggers (optional)
-            email_domains_whitelist: Allowed sender domains for email triggers (optional)
+            email_trigger: Email trigger allowlist policy (optional)
 
         Returns:
             Workflow: The updated workflow
         """
         request = self.prepare_update(
             workflow_id, name=name, description=description,
-            email_senders_whitelist=email_senders_whitelist,
-            email_domains_whitelist=email_domains_whitelist,
+            email_trigger=email_trigger,
         )
         response = self._client._prepared_request(request)
         return Workflow.model_validate(response)
@@ -358,14 +350,12 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
 
         name: str | None = None,
         description: str | None = None,
-        email_senders_whitelist: List[str] | None = None,
-        email_domains_whitelist: List[str] | None = None,
+        email_trigger: Dict[str, List[str]] | None = None,
     ) -> Workflow:
         """Update a workflow's metadata."""
         request = self.prepare_update(
             workflow_id, name=name, description=description,
-            email_senders_whitelist=email_senders_whitelist,
-            email_domains_whitelist=email_domains_whitelist,
+            email_trigger=email_trigger,
         )
         response = await self._client._prepared_request(request)
         return Workflow.model_validate(response)

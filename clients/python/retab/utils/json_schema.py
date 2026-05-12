@@ -255,7 +255,7 @@ def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
 
     # 3) Collect any X-* keys for model config
     x_keys = {k: v for k, v in schema_expanded.items() if k.startswith("X-")}
-    model_config = ConfigDict(extra="forbid", json_schema_extra=x_keys) if x_keys else ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore", json_schema_extra=x_keys) if x_keys else ConfigDict(extra="ignore")
 
     # 4) Build up the field definitions
     properties = schema_expanded.get("properties", {})

@@ -86,7 +86,6 @@ type TerminalState map[string]any
 // WorkflowRunStep is a persisted step summary for a workflow run.
 type WorkflowRunStep struct {
 	RunID          string                   `json:"run_id"`
-	OrganizationID string                   `json:"organization_id"`
 	BlockID        string                   `json:"block_id"`
 	StepID         string                   `json:"step_id"`
 	BlockType      string                   `json:"block_type"`
@@ -190,9 +189,10 @@ type RunTiming struct {
 }
 
 type WorkflowSnapshotRef struct {
-	WorkflowID    string `json:"workflow_id"`
-	SnapshotID    string `json:"snapshot_id"`
-	NameAtRunTime string `json:"name_at_run_time"`
+	WorkflowID       string `json:"workflow_id"`
+	VersionID        string `json:"version_id"`
+	NameAtRunTime    string `json:"name_at_run_time"`
+	RequestedVersion string `json:"requested_version,omitempty"`
 }
 
 type RunTrigger struct {
@@ -215,7 +215,6 @@ type RunInputs struct {
 type WorkflowRun struct {
 	ID             string              `json:"id"`
 	WorkflowID     string              `json:"workflow_id,omitempty"`
-	OrganizationID string              `json:"organization_id,omitempty"`
 	Workflow       WorkflowSnapshotRef `json:"workflow"`
 	Trigger        RunTrigger          `json:"trigger"`
 	Lifecycle      RunLifecycle        `json:"lifecycle"`
@@ -263,7 +262,6 @@ type Workflow struct {
 	ID             string               `json:"id"`
 	Name           string               `json:"name"`
 	Description    string               `json:"description"`
-	OrganizationID string               `json:"organization_id,omitempty"`
 	Published      *WorkflowPublished   `json:"published,omitempty"`
 	EmailTrigger   WorkflowEmailTrigger `json:"email_trigger"`
 	CreatedAt      *time.Time           `json:"created_at,omitempty"`
@@ -282,7 +280,7 @@ func (w *Workflow) UnmarshalJSON(data []byte) error {
 }
 
 type WorkflowPublished struct {
-	SnapshotID  string     `json:"snapshot_id,omitempty"`
+	VersionID   string     `json:"version_id,omitempty"`
 	PublishedAt *time.Time `json:"published_at,omitempty"`
 }
 
@@ -300,7 +298,6 @@ type ResolvedSchemas struct {
 type WorkflowBlock struct {
 	ID              string           `json:"id"`
 	WorkflowID      string           `json:"workflow_id"`
-	OrganizationID  string           `json:"organization_id"`
 	DraftVersion    string           `json:"draft_version,omitempty"`
 	Type            string           `json:"type"`
 	Label           string           `json:"label"`
@@ -317,7 +314,6 @@ type WorkflowBlock struct {
 type WorkflowEdgeDoc struct {
 	ID             string     `json:"id"`
 	WorkflowID     string     `json:"workflow_id"`
-	OrganizationID string     `json:"organization_id"`
 	DraftVersion   string     `json:"draft_version,omitempty"`
 	SourceBlock    string     `json:"source_block"`
 	TargetBlock    string     `json:"target_block"`

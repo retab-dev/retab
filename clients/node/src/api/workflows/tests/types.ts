@@ -198,7 +198,6 @@ export const ZWorkflowTest = z
     .object({
         id: z.string(),
         workflow_id: z.string(),
-        organization_id: z.string(),
         target: ZWorkflowTestBlockTarget,
         source: ZWorkflowTestSource,
         name: z.string().nullable().optional(),
@@ -228,7 +227,6 @@ export const ZWorkflowTestRunRecord = z
         test_id: z.string(),
         status: ZBlockTestRunStatus,
         workflow_id: z.string(),
-        organization_id: z.string(),
         target: ZWorkflowTestBlockTarget,
         execution_fingerprint: z.string().default(""),
         handle_inputs_fingerprint: z.string().default(""),

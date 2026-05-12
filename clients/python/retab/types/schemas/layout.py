@@ -1,17 +1,17 @@
 from typing import Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel
 from pydantic import Field as PydanticField
+from retab.types.base import RetabBaseModel
 
 
 # Terminal items
-class FieldItem(BaseModel):
+class FieldItem(RetabBaseModel):
     type: Literal["field"]
     name: str
     size: Optional[int] = None
 
 
-class RefObject(BaseModel):
+class RefObject(RetabBaseModel):
     type: Literal["object"]
     size: Optional[int] = None
     name: Optional[str] = None
@@ -19,7 +19,7 @@ class RefObject(BaseModel):
 
 
 # Recursive items
-class Column(BaseModel):
+class Column(RetabBaseModel):
     type: Literal["column"]
     size: int
     items: List[Union["Row", FieldItem, RefObject, "RowList"]] = PydanticField(default_factory=list)
@@ -28,7 +28,7 @@ class Column(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
 
-class Row(BaseModel):
+class Row(RetabBaseModel):
     type: Literal["row"]
     name: Optional[str] = None
     items: List[Column | FieldItem | RefObject]
@@ -36,7 +36,7 @@ class Row(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
 
-class RowList(BaseModel):
+class RowList(RetabBaseModel):
     type: Literal["rowList"]
     name: Optional[str] = None
     items: List[Column | FieldItem | RefObject] = PydanticField(default_factory=list)
@@ -45,7 +45,7 @@ class RowList(BaseModel):
 
 
 # Root Layout type
-class Layout(BaseModel):
+class Layout(RetabBaseModel):
     # Use alias "$defs" for the definitions
     defs: Dict[str, Column] = PydanticField(default_factory=dict, alias="$defs")
     type: Literal["column"]

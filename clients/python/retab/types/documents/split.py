@@ -1,10 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 
 from ..mime import MIMEData
 from .usage import RetabUsage
 
 
-class Subdocument(BaseModel):
+class Subdocument(RetabBaseModel):
     name: str = Field(..., description="The name of the subdocument")
     description: str = Field(default="", description="The description of the subdocument")
     partition_key: str | None = Field(default=None, description="The key to partition the subdocument")
@@ -14,7 +15,7 @@ class Subdocument(BaseModel):
     )
 
 
-class SplitRequest(BaseModel):
+class SplitRequest(RetabBaseModel):
     document: MIMEData = Field(..., description="The document to split")
     subdocuments: list[Subdocument] = Field(
         ...,
@@ -35,7 +36,7 @@ class SplitRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class GenerateSplitConfigRequest(BaseModel):
+class GenerateSplitConfigRequest(RetabBaseModel):
     document: MIMEData = Field(
         ...,
         description="The document to analyze for automatic split configuration generation",
@@ -43,29 +44,29 @@ class GenerateSplitConfigRequest(BaseModel):
     model: str = Field(default="retab-small", description="The model to use for document analysis")
 
 
-class GenerateSplitConfigResponse(BaseModel):
+class GenerateSplitConfigResponse(RetabBaseModel):
     subdocuments: list[Subdocument] = Field(
         ...,
         description="The auto-generated subdocument definitions with optional partition keys",
     )
 
 
-class Partition(BaseModel):
+class Partition(RetabBaseModel):
     key: str = Field(..., description="The partition key value (e.g., property ID, invoice number)")
     pages: list[int] = Field(..., description="The pages of the partition (1-indexed)")
 
 
-class SplitResult(BaseModel):
+class SplitResult(RetabBaseModel):
     name: str = Field(..., description="The name of the subdocument")
     pages: list[int] = Field(..., description="The pages of the subdocument (1-indexed)")
     partitions: list[Partition] = Field(default_factory=list, description="The partitions of the subdocument")
 
 
-class SplitChoice(BaseModel):
+class SplitChoice(RetabBaseModel):
     splits: list[SplitResult] = Field(default_factory=list, description="One alternative split vote output")
 
 
-class PartitionLikelihood(BaseModel):
+class PartitionLikelihood(RetabBaseModel):
     likelihood: float | None = Field(default=None, description="Aggregate confidence for this partition node")
     key: float | None = Field(default=None, description="Confidence that this partition key is correct")
     pages: list[float] = Field(
@@ -74,7 +75,7 @@ class PartitionLikelihood(BaseModel):
     )
 
 
-class SplitSubdocumentLikelihood(BaseModel):
+class SplitSubdocumentLikelihood(RetabBaseModel):
     likelihood: float | None = Field(default=None, description="Aggregate confidence for this split node")
     name: float | None = Field(default=None, description="Confidence that this split label is correct")
     pages: list[float] = Field(
@@ -87,14 +88,14 @@ class SplitSubdocumentLikelihood(BaseModel):
     )
 
 
-class SplitLikelihoodTree(BaseModel):
+class SplitLikelihoodTree(RetabBaseModel):
     splits: list[SplitSubdocumentLikelihood] = Field(
         default_factory=list,
         description="Likelihood tree aligned with the top-level splits array",
     )
 
 
-class SplitConsensus(BaseModel):
+class SplitConsensus(RetabBaseModel):
     likelihoods: SplitLikelihoodTree | None = Field(
         default=None,
         description="Consensus likelihood tree mirroring the split output",
@@ -105,7 +106,7 @@ class SplitConsensus(BaseModel):
     )
 
 
-class SplitResponse(BaseModel):
+class SplitResponse(RetabBaseModel):
     splits: list[SplitResult] = Field(
         ...,
         description="The list of document splits with their assigned pages",

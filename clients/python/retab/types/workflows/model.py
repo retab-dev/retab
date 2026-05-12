@@ -1,7 +1,8 @@
 import datetime
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, computed_field, field_validator
+from pydantic import Field, ConfigDict, computed_field, field_validator
+from retab.types.base import RetabBaseModel
 
 from retab.types.mime import FileRef
 
@@ -52,7 +53,7 @@ from retab.types.mime import FileRef
 # ``resolved_schemas.input_schemas`` / ``resolved_schemas.output_schemas``.
 
 
-class HandlePayload(BaseModel):
+class HandlePayload(RetabBaseModel):
     """
     Payload for a single output handle.
 
@@ -105,7 +106,7 @@ WorkflowArtifactOperation = Literal[
 ]
 
 
-class StepArtifactRef(BaseModel):
+class StepArtifactRef(RetabBaseModel):
     """Canonical persisted resource produced by a workflow step.
 
     Uniformly an ``(operation, id)`` ref into a backing collection. The
@@ -121,16 +122,16 @@ class StepArtifactRef(BaseModel):
     id: str = Field(..., description="Persisted resource identifier")
 
 
-class WorkflowArtifact(BaseModel):
+class WorkflowArtifact(RetabBaseModel):
     """Dereferenced workflow artifact record.
 
     Returned by ``client.workflows.artifacts.get(...)`` and
     ``client.workflows.artifacts.list(...)``. It is the persisted artifact
-    record flattened with the ref's ``operation`` injected at top level.
-    Operation-specific fields are preserved as extra attributes.
+    record flattened with the ref's ``operation`` injected at top level. New
+    operation-specific fields are ignored until the SDK types them explicitly.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     operation: WorkflowArtifactOperation = Field(
         ...,
@@ -139,7 +140,7 @@ class WorkflowArtifact(BaseModel):
     id: str = Field(..., description="Persisted resource identifier")
 
 
-class ContainerContextData(BaseModel):
+class ContainerContextData(RetabBaseModel):
     """Structured context for a single container in the hierarchy."""
     container_id: str = Field(..., description="Container ID (e.g., 'while_loop-abc')")
     iteration: int = Field(..., description="Iteration index (0-based)")
@@ -147,7 +148,7 @@ class ContainerContextData(BaseModel):
     parallel_item_index: Optional[int] = Field(default=None, description="Parallel item index if is_parallel")
 
 
-class ErrorDetails(BaseModel):
+class ErrorDetails(RetabBaseModel):
     """Detailed error information for debugging.
 
     Captures stack traces and context about where and why an error occurred.
@@ -167,7 +168,7 @@ class ErrorDetails(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class TerminalError(BaseModel):
+class TerminalError(RetabBaseModel):
     """Terminal payload for ``status="error"``."""
     kind: Literal["error"] = "error"
     message: str = Field(..., description="Human-readable error message")
@@ -179,13 +180,13 @@ class TerminalError(BaseModel):
     details: Optional[ErrorDetails] = Field(default=None, description="Structured error context")
 
 
-class TerminalSkipped(BaseModel):
+class TerminalSkipped(RetabBaseModel):
     """Terminal payload for ``status="skipped"``."""
     kind: Literal["skipped"] = "skipped"
     reason: str = Field(..., description="Reason the step was skipped")
 
 
-class TerminalCancelled(BaseModel):
+class TerminalCancelled(RetabBaseModel):
     """Terminal payload for ``status="cancelled"``."""
     kind: Literal["cancelled"] = "cancelled"
     reason: str = Field(..., description="Reason the step was cancelled")
@@ -197,7 +198,7 @@ TerminalState = Annotated[
 ]
 
 
-class ConditionEvaluationPerItem(BaseModel):
+class ConditionEvaluationPerItem(RetabBaseModel):
     """Per-item evaluation result for wildcard array conditions."""
     indices: List[int] = Field(
         default_factory=list,
@@ -207,7 +208,7 @@ class ConditionEvaluationPerItem(BaseModel):
     matched: bool = Field(default=False, description="Whether this item matched the condition")
 
 
-class ConditionEvaluationSubCondition(BaseModel):
+class ConditionEvaluationSubCondition(RetabBaseModel):
     """Evaluation result for a sub-condition in a compound condition."""
     sub_condition_id: str = Field(default="", description="Identifier for this sub-condition")
     path: str = Field(default="", description="JSON path that was evaluated")
@@ -221,7 +222,7 @@ class ConditionEvaluationSubCondition(BaseModel):
     )
 
 
-class ConditionEvaluationDetails(BaseModel):
+class ConditionEvaluationDetails(RetabBaseModel):
     """Detailed evaluation information for frontend display."""
     path: str = Field(default="", description="JSON path that was evaluated")
     operator: str = Field(default="", description="Comparison operator used")
@@ -242,7 +243,7 @@ class ConditionEvaluationDetails(BaseModel):
     )
 
 
-class ConditionEvaluationResult(BaseModel):
+class ConditionEvaluationResult(RetabBaseModel):
     """Complete evaluation result for a routing/termination condition."""
     condition_id: str = Field(..., description="Unique identifier for this condition")
     path: str = Field(default="", description="JSON path that was evaluated")
@@ -279,7 +280,7 @@ class ConditionEvaluationResult(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ConditionalEvaluation(BaseModel):
+class ConditionalEvaluation(RetabBaseModel):
     """Persisted record of a conditional block's branch evaluation.
 
     Backing record for :data:`StepArtifactRef` with
@@ -288,7 +289,6 @@ class ConditionalEvaluation(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
-    organization_id: str = Field(..., description="Owning organization")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
     evaluations: List[ConditionEvaluationResult] = Field(default_factory=list)
@@ -298,7 +298,7 @@ class ConditionalEvaluation(BaseModel):
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
-class HilEvaluation(BaseModel):
+class HilEvaluation(RetabBaseModel):
     """Persisted record of a HIL block's branch evaluation.
 
     Same evaluation core as :class:`ConditionalEvaluation`, plus human-review
@@ -308,7 +308,6 @@ class HilEvaluation(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
-    organization_id: str = Field(..., description="Owning organization")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
     evaluations: List[ConditionEvaluationResult] = Field(default_factory=list)
@@ -323,7 +322,7 @@ class HilEvaluation(BaseModel):
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
-class WhileLoopTermination(BaseModel):
+class WhileLoopTermination(RetabBaseModel):
     """Persisted record of why a while-loop terminated.
 
     Backing record for :data:`StepArtifactRef` with
@@ -332,7 +331,6 @@ class WhileLoopTermination(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
-    organization_id: str = Field(..., description="Owning organization")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
     termination_reason: Literal["max_iterations_reached", "condition_matched", "error"] = Field(
@@ -346,7 +344,7 @@ class WhileLoopTermination(BaseModel):
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
-class ApiCallAttempt(BaseModel):
+class ApiCallAttempt(RetabBaseModel):
     """One attempt of an api_call (initial + retries)."""
     model_config = ConfigDict(extra="ignore")
 
@@ -364,7 +362,7 @@ class ApiCallAttempt(BaseModel):
     completed_at: Optional[datetime.datetime] = Field(default=None)
 
 
-class ApiCallInvocation(BaseModel):
+class ApiCallInvocation(RetabBaseModel):
     """Persisted record of an api_call block's invocation (with retry trace).
 
     Backing record for :data:`StepArtifactRef` with
@@ -373,7 +371,6 @@ class ApiCallInvocation(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
-    organization_id: str = Field(..., description="Owning organization")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
     attempts: List[ApiCallAttempt] = Field(
@@ -384,7 +381,7 @@ class ApiCallInvocation(BaseModel):
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
-class FunctionInvocation(BaseModel):
+class FunctionInvocation(RetabBaseModel):
     """Persisted record of a function block's invocation.
 
     Backing record for :data:`StepArtifactRef` with
@@ -393,7 +390,6 @@ class FunctionInvocation(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
-    organization_id: str = Field(..., description="Owning organization")
     workflow_run_id: str = Field(..., description="Parent workflow run ID")
     step_id: str = Field(..., description="Producing step ID")
     inputs: Dict[str, Any] = Field(default_factory=dict)
@@ -403,7 +399,7 @@ class FunctionInvocation(BaseModel):
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
-class StepCore(BaseModel):
+class StepCore(RetabBaseModel):
     """Shape shared by full step docs and read-projections of them.
 
     Mirrors the backend ``StepCore`` shape. :class:`StepStatus` and the
@@ -474,7 +470,6 @@ class StepStatus(StepCore):
 
     # Identity — SDK-side relaxed (canonical model requires both).
     run_id: str = Field(default="", description="Parent workflow run ID")
-    organization_id: str = Field(default="", description="Organization that owns this")
 
     # Persisted-doc-creation timestamp; distinct from ``started_at`` because
     # the step doc may be created before execution begins (queue time).
@@ -524,40 +519,41 @@ class StepStatus(StepCore):
 # ---------------------------------------------------------------------------
 
 
-class WorkflowSnapshotRef(BaseModel):
-    """Reference to the workflow + the immutable snapshot driving the run."""
+class WorkflowSnapshotRef(RetabBaseModel):
+    """Reference to the workflow + immutable version driving the run."""
     workflow_id: str = Field(..., description="ID of the workflow that was run")
-    snapshot_id: str = Field(..., description="Reference to the config snapshot")
+    version_id: str = Field(..., description="Content-addressed workflow version used for this run")
     name_at_run_time: str = Field(..., description="Workflow name at run-creation time")
+    requested_version: str = Field(default="production", description="Raw version selector requested for this run")
 
 
-class ManualTrigger(BaseModel):
+class ManualTrigger(RetabBaseModel):
     type: Literal["manual"] = "manual"
     user_id: Optional[str] = Field(default=None)
 
 
-class ApiTrigger(BaseModel):
+class ApiTrigger(RetabBaseModel):
     type: Literal["api"] = "api"
     api_key_id: Optional[str] = Field(default=None)
 
 
-class ScheduleTrigger(BaseModel):
+class ScheduleTrigger(RetabBaseModel):
     type: Literal["schedule"] = "schedule"
     schedule_id: str = Field(...)
 
 
-class WebhookTrigger(BaseModel):
+class WebhookTrigger(RetabBaseModel):
     type: Literal["webhook"] = "webhook"
     webhook_id: Optional[str] = Field(default=None)
 
 
-class EmailTrigger(BaseModel):
+class EmailTrigger(RetabBaseModel):
     type: Literal["email"] = "email"
     sender: str = Field(...)
     subject: Optional[str] = Field(default=None)
 
 
-class RestartTrigger(BaseModel):
+class RestartTrigger(RetabBaseModel):
     type: Literal["restart"] = "restart"
     parent_run_id: str = Field(...)
 
@@ -568,24 +564,24 @@ Trigger = Annotated[
 ]
 
 
-class PendingRun(BaseModel):
+class PendingRun(RetabBaseModel):
     kind: Literal["pending"] = "pending"
 
 
-class RunningRun(BaseModel):
+class RunningRun(RetabBaseModel):
     kind: Literal["running"] = "running"
 
 
-class WaitingForHumanRun(BaseModel):
+class WaitingForHumanRun(RetabBaseModel):
     kind: Literal["waiting_for_human"] = "waiting_for_human"
     waiting_for_block_ids: List[str] = Field(default_factory=list)
 
 
-class CompletedTerminal(BaseModel):
+class CompletedTerminal(RetabBaseModel):
     kind: Literal["completed"] = "completed"
 
 
-class ErrorTerminal(BaseModel):
+class ErrorTerminal(RetabBaseModel):
     kind: Literal["error"] = "error"
     message: str = Field(...)
     stage: Optional[str] = Field(default=None)
@@ -594,7 +590,7 @@ class ErrorTerminal(BaseModel):
     failing_step_id: Optional[str] = Field(default=None)
 
 
-class CancelledTerminal(BaseModel):
+class CancelledTerminal(RetabBaseModel):
     kind: Literal["cancelled"] = "cancelled"
     reason: Optional[str] = Field(default=None)
 
@@ -605,7 +601,7 @@ RunLifecycle = Annotated[
 ]
 
 
-class RunTiming(BaseModel):
+class RunTiming(RetabBaseModel):
     """Timing information for a workflow run."""
     created_at: datetime.datetime = Field(...)
     started_at: Optional[datetime.datetime] = Field(default=None)
@@ -629,7 +625,7 @@ class RunTiming(BaseModel):
         return max(0, wall - self.accumulated_human_waiting_ms)
 
 
-class RunInputs(BaseModel):
+class RunInputs(RetabBaseModel):
     documents: Dict[str, FileRef] = Field(default_factory=dict)
     json_data: Dict[str, Any] = Field(default_factory=dict)
 
@@ -651,7 +647,7 @@ class WorkflowRunError(Exception):
         super().__init__(msg)
 
 
-class WorkflowRun(BaseModel):
+class WorkflowRun(RetabBaseModel):
     """A stored workflow run record.
 
     Slim, typed, discriminated. Engine state is not surfaced; the terminal
@@ -660,7 +656,6 @@ class WorkflowRun(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(...)
-    organization_id: str = Field(...)
     workflow: WorkflowSnapshotRef = Field(...)
     trigger: Trigger = Field(...)
     lifecycle: RunLifecycle = Field(...)
@@ -678,15 +673,15 @@ class WorkflowRun(BaseModel):
 
 
 
-class Workflow(BaseModel):
+class Workflow(RetabBaseModel):
     """A stored workflow record."""
     model_config = ConfigDict(extra="ignore")
 
-    class Published(BaseModel):
-        snapshot_id: Optional[str] = Field(default=None, description="Published snapshot ID")
+    class Published(RetabBaseModel):
+        version_id: Optional[str] = Field(default=None, description="Published workflow version ID")
         published_at: Optional[datetime.datetime] = Field(default=None, description="When the workflow was last published")
 
-    class EmailTriggerPolicy(BaseModel):
+    class EmailTriggerPolicy(RetabBaseModel):
         """Workflow CONFIG for inbound email triggers (allowlist policy).
 
         Renamed from ``EmailTrigger`` to disambiguate from the run-level
@@ -699,28 +694,18 @@ class Workflow(BaseModel):
     id: str = Field(..., description="Unique ID for this workflow")
     name: str = Field(default="Untitled Workflow", description="Workflow name")
     description: str = Field(default="", description="Workflow description")
-    organization_id: Optional[str] = Field(default=None, description="Organization that owns this workflow")
     published: Optional[Published] = Field(default=None, description="Published workflow metadata")
     email_trigger: EmailTriggerPolicy = Field(default_factory=EmailTriggerPolicy, description="Email trigger allowlist policy")
     created_at: datetime.datetime = Field(..., description="When the workflow was created")
     updated_at: datetime.datetime = Field(..., description="When the workflow was last updated")
 
     @property
-    def published_snapshot_id(self) -> Optional[str]:
-        return self.published.snapshot_id if self.published is not None else None
+    def published_version_id(self) -> Optional[str]:
+        return self.published.version_id if self.published is not None else None
 
     @property
     def published_at(self) -> Optional[datetime.datetime]:
         return self.published.published_at if self.published is not None else None
-
-    @property
-    def email_senders_whitelist(self) -> List[str]:
-        return list(self.email_trigger.allowed_senders)
-
-    @property
-    def email_domains_whitelist(self) -> List[str]:
-        return list(self.email_trigger.allowed_domains)
-
 
 # ---------------------------------------------------------------------------
 # Type aliases
@@ -788,7 +773,6 @@ class WorkflowRunStep(StepCore):
 
 
     run_id: str = Field(..., description="Parent workflow run ID")
-    organization_id: str = Field(..., description="Organization that owns this run")
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
         description=(
@@ -828,7 +812,7 @@ class WorkflowRunStep(StepCore):
 # Cancel / Restart / HIL decision response types
 # ---------------------------------------------------------------------------
 
-class CancelWorkflowResponse(BaseModel):
+class CancelWorkflowResponse(RetabBaseModel):
     """Response from cancelling a workflow run."""
     run: WorkflowRun
     cancellation_status: Literal["cancelled", "cancellation_requested", "cancellation_failed"] = Field(
@@ -837,7 +821,7 @@ class CancelWorkflowResponse(BaseModel):
     )
 
 
-class HILDecisionResource(BaseModel):
+class HILDecisionResource(RetabBaseModel):
     """Temporal-owned decision state for a workflow HIL block."""
     run_id: str = Field(..., description="Workflow run ID")
     block_id: str = Field(..., description="HIL block ID")
@@ -860,7 +844,7 @@ class HILDecisionResource(BaseModel):
     )
 
 
-class SubmitHILDecisionResponse(BaseModel):
+class SubmitHILDecisionResponse(RetabBaseModel):
     """Response from submitting a HIL decision."""
     submission_status: Literal["accepted", "already_received", "already_applied"] = Field(
         ...,
@@ -872,7 +856,7 @@ class SubmitHILDecisionResponse(BaseModel):
     )
 
 
-class RunCountsResponse(BaseModel):
+class RunCountsResponse(RetabBaseModel):
     """Run counts grouped by status."""
     total: int = 0
     completed: int = 0
@@ -883,20 +867,20 @@ class RunCountsResponse(BaseModel):
     cancelled: int = 0
 
 
-class ExecutionOrderResponse(BaseModel):
+class ExecutionOrderResponse(RetabBaseModel):
     """DAG-ordered step IDs for a workflow run."""
     run_id: str = Field(..., description="Workflow run ID")
     ordered_step_ids: List[str] = Field(default_factory=list, description="Step IDs in DAG execution order")
 
 
-class DocumentSignedUrlResponse(BaseModel):
+class DocumentSignedUrlResponse(RetabBaseModel):
     """Signed URL for downloading a document from a run step."""
     signed_url: str = Field(..., description="Signed download URL")
     filename: str = Field(..., description="Original filename")
     mime_type: Optional[str] = Field(default=None, description="MIME type")
 
 
-class ExportResponse(BaseModel):
+class ExportResponse(RetabBaseModel):
     """Export payload containing CSV data."""
     csv_data: str = Field(..., description="CSV content as string")
     rows: int = Field(..., description="Number of data rows")
@@ -908,9 +892,9 @@ class ExportResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class WorkflowBlockCreateRequest(BaseModel):
+class WorkflowBlockCreateRequest(RetabBaseModel):
     """Typed request payload for creating a workflow block."""
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     id: str
     type: str
@@ -923,9 +907,9 @@ class WorkflowBlockCreateRequest(BaseModel):
     parent_id: Optional[str] = None
 
 
-class WorkflowBlockUpdateRequest(BaseModel):
+class WorkflowBlockUpdateRequest(RetabBaseModel):
     """Typed request payload for updating a workflow block."""
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     block_id: str
     label: Optional[str] = None
@@ -937,9 +921,9 @@ class WorkflowBlockUpdateRequest(BaseModel):
     parent_id: Optional[str] = None
 
 
-class WorkflowEdgeCreateRequest(BaseModel):
+class WorkflowEdgeCreateRequest(RetabBaseModel):
     """Typed request payload for creating a workflow edge."""
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     id: str
     source_block: str
@@ -953,7 +937,7 @@ class WorkflowEdgeCreateRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ResolvedSchemas(BaseModel):
+class ResolvedSchemas(RetabBaseModel):
     """Graph-derived schemas attached to workflow blocks in transport responses."""
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
@@ -972,13 +956,12 @@ class ResolvedSchemas(BaseModel):
     )
 
 
-class WorkflowBlock(BaseModel):
+class WorkflowBlock(RetabBaseModel):
     """A block in a workflow graph."""
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Block ID")
     workflow_id: str = Field(..., description="Parent workflow ID")
-    organization_id: str = Field(..., description="Organization ID")
     draft_version: Optional[str] = Field(default=None, description="Draft version for the live entity")
     type: str = Field(..., description="Block type (start, extract, parse, classifier, etc.)")
     label: str = Field(default="", description="Display label")
@@ -995,13 +978,12 @@ class WorkflowBlock(BaseModel):
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
 
-class WorkflowEdgeDoc(BaseModel):
+class WorkflowEdgeDoc(RetabBaseModel):
     """A persisted edge document connecting two blocks in a workflow graph."""
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Edge ID")
     workflow_id: str = Field(..., description="Parent workflow ID")
-    organization_id: str = Field(..., description="Organization ID")
     draft_version: Optional[str] = Field(default=None, description="Draft version for the live entity")
     source_block: str = Field(..., description="Source block ID")
     target_block: str = Field(..., description="Target block ID")
@@ -1010,7 +992,7 @@ class WorkflowEdgeDoc(BaseModel):
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
 
-class WorkflowWithEntities(BaseModel):
+class WorkflowWithEntities(RetabBaseModel):
     """Complete workflow with its graph structure (blocks and edges)."""
     model_config = ConfigDict(extra="ignore")
 
@@ -1029,7 +1011,7 @@ class WorkflowWithEntities(BaseModel):
         return [b for b in self.blocks if b.type == "start_json"]
 
 
-class DeclarativePlanSummary(BaseModel):
+class DeclarativePlanSummary(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     add: int = 0
@@ -1041,7 +1023,7 @@ class DeclarativePlanSummary(BaseModel):
     has_changes: bool = False
 
 
-class DeclarativePlanFieldChange(BaseModel):
+class DeclarativePlanFieldChange(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     path: List[str | int]
@@ -1054,7 +1036,7 @@ class DeclarativePlanFieldChange(BaseModel):
     unified_diff: str | None = None
 
 
-class DeclarativePlanChange(BaseModel):
+class DeclarativePlanChange(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     before: Any | None = None
@@ -1064,7 +1046,7 @@ class DeclarativePlanChange(BaseModel):
     field_changes: List[DeclarativePlanFieldChange] = Field(default_factory=list)
 
 
-class DeclarativePlanResourceChange(BaseModel):
+class DeclarativePlanResourceChange(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     address: str
@@ -1078,7 +1060,7 @@ class DeclarativePlanResourceChange(BaseModel):
     path: str | None = None
 
 
-class DeclarativeValidationResponse(BaseModel):
+class DeclarativeValidationResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
@@ -1088,7 +1070,7 @@ class DeclarativeValidationResponse(BaseModel):
     diagnostics: Dict[str, Any]
 
 
-class DeclarativePlanResponse(BaseModel):
+class DeclarativePlanResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
@@ -1102,7 +1084,7 @@ class DeclarativePlanResponse(BaseModel):
     rendered_plan: str = "No changes. Infrastructure is up-to-date."
 
 
-class DeclarativeApplyResponse(BaseModel):
+class DeclarativeApplyResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
@@ -1116,7 +1098,7 @@ class DeclarativeApplyResponse(BaseModel):
     rendered_plan: str = "No changes. Infrastructure is up-to-date."
 
 
-class DeclarativeExportResponse(BaseModel):
+class DeclarativeExportResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
@@ -1128,7 +1110,7 @@ class DeclarativeExportResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class WorkflowDiagnosisIssue(BaseModel):
+class WorkflowDiagnosisIssue(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     severity: Literal["error", "warning", "info"]
@@ -1137,7 +1119,7 @@ class WorkflowDiagnosisIssue(BaseModel):
     block_id: Optional[str] = Field(default=None, description="Related block when applicable")
 
 
-class WorkflowDiagnosisStats(BaseModel):
+class WorkflowDiagnosisStats(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     total_blocks: int = 0
@@ -1146,7 +1128,7 @@ class WorkflowDiagnosisStats(BaseModel):
     start_blocks: int = 0
 
 
-class WorkflowDiagnosisResponse(BaseModel):
+class WorkflowDiagnosisResponse(RetabBaseModel):
     """Result of ``POST /workflows/{id}/diagnose-graph``."""
     model_config = ConfigDict(extra="ignore")
 
@@ -1161,7 +1143,7 @@ class WorkflowDiagnosisResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class BlockSimulationIteration(BaseModel):
+class BlockSimulationIteration(RetabBaseModel):
     """One available iteration step exposed to simulate."""
     model_config = ConfigDict(extra="ignore")
 
@@ -1170,7 +1152,7 @@ class BlockSimulationIteration(BaseModel):
     label: Optional[str] = None
 
 
-class BlockSimulation(BaseModel):
+class BlockSimulation(RetabBaseModel):
     """Result of replaying one block with the current draft config.
 
     Returned by ``client.workflows.blocks.simulate(...)``. Contains the
@@ -1180,7 +1162,6 @@ class BlockSimulation(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique simulation ID")
-    organization_id: str
     workflow_id: str
     run_id: str
     block_id: str

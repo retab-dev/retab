@@ -149,13 +149,14 @@ export default class APIWorkflows extends CompositionClient {
         {
             name,
             description,
-            emailSendersWhitelist,
-            emailDomainsWhitelist,
+            emailTrigger,
         }: {
             name?: string;
             description?: string;
-            emailSendersWhitelist?: string[];
-            emailDomainsWhitelist?: string[];
+            emailTrigger?: {
+                allowedSenders?: string[];
+                allowedDomains?: string[];
+            };
         },
         options?: RequestOptions
     ): Promise<Workflow> {
@@ -163,10 +164,10 @@ export default class APIWorkflows extends CompositionClient {
         const body: Record<string, any> = {};
         if (name !== undefined) body.name = name;
         if (description !== undefined) body.description = description;
-        if (emailSendersWhitelist !== undefined || emailDomainsWhitelist !== undefined) {
+        if (emailTrigger !== undefined) {
             body.email_trigger = {};
-            if (emailSendersWhitelist !== undefined) body.email_trigger.allowed_senders = emailSendersWhitelist;
-            if (emailDomainsWhitelist !== undefined) body.email_trigger.allowed_domains = emailDomainsWhitelist;
+            if (emailTrigger.allowedSenders !== undefined) body.email_trigger.allowed_senders = emailTrigger.allowedSenders;
+            if (emailTrigger.allowedDomains !== undefined) body.email_trigger.allowed_domains = emailTrigger.allowedDomains;
         }
 
         return this._fetchJson(ZWorkflow, {
@@ -196,7 +197,7 @@ export default class APIWorkflows extends CompositionClient {
      * @example
      * ```typescript
      * const wf = await client.workflows.publish("wf_abc123", { description: "v1" });
-     * console.log(wf.published?.snapshot_id);
+     * console.log(wf.published?.version_id);
      * ```
      */
     async publish(

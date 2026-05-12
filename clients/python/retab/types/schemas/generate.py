@@ -1,10 +1,11 @@
 from openai.types.chat.chat_completion_reasoning_effort import ChatCompletionReasoningEffort
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+from retab.types.base import RetabBaseModel
 
 from ..mime import MIMEData
 
 
-class GenerateSchemaRequest(BaseModel):
+class GenerateSchemaRequest(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
     documents: list[MIMEData]
     model: str = "retab-small"

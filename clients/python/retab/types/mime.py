@@ -6,7 +6,8 @@ import re
 from typing import Optional, Self, Sequence
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 from ..utils.hashing import generate_blake2b_hash_from_base64
 
 import io
@@ -17,12 +18,12 @@ mimetypes.add_type("image/heic", ".heic")
 mimetypes.add_type("image/heif", ".heif")
 
 # **** OCR DATACLASSES (DocumentAI-compatible) ****
-class Point(BaseModel):
+class Point(RetabBaseModel):
     x: int
     y: int
 
 
-class Matrix(BaseModel):
+class Matrix(RetabBaseModel):
     """Representation for transformation matrix, compatible with OpenCV format.
 
     This represents transformation matrices that were applied to the original
@@ -50,7 +51,7 @@ class Matrix(BaseModel):
         return cls(rows=rows, cols=cols, type_=type_, data=encoded_data)
 
 
-class TextBox(BaseModel):
+class TextBox(RetabBaseModel):
     width: int
     height: int
     center: Point
@@ -65,7 +66,7 @@ class TextBox(BaseModel):
     #     return v
 
 
-class Page(BaseModel):
+class Page(RetabBaseModel):
     page_number: int
     width: int
     height: int
@@ -83,11 +84,11 @@ class Page(BaseModel):
     #     return v
 
 
-class OCR(BaseModel):
+class OCR(RetabBaseModel):
     pages: list[Page]
 
 
-class MIMEData(BaseModel):
+class MIMEData(RetabBaseModel):
     filename: str = Field(
         description="The filename of the file",
         examples=["file.pdf", "image.png", "data.txt"]
@@ -188,7 +189,7 @@ class MIMEData(BaseModel):
         return self.__str__()
 
 
-class FileRef(BaseModel):
+class FileRef(RetabBaseModel):
     """Public/shared file reference used across SDK and customer-facing APIs."""
 
     id: str = Field(..., description="ID of the file")
@@ -197,7 +198,7 @@ class FileRef(BaseModel):
 
 
 # **** MIME DATACLASSES ****
-class AttachmentMetadata(BaseModel):
+class AttachmentMetadata(RetabBaseModel):
     is_inline: bool = Field(default=False, description="Whether the attachment is inline or not.")
     inline_cid: Optional[str] = Field(default=None, description="CID reference for inline attachments.")
     source: Optional[str] = Field(
@@ -217,7 +218,7 @@ class AttachmentMIMEData(MIMEData):
 # **** EMAIL DATACLASSES ****
 
 
-class EmailAddressData(BaseModel):
+class EmailAddressData(RetabBaseModel):
     email: str = Field(..., description="The email address")
     display_name: Optional[str] = Field(default=None, description="The display name associated with the email address")
 
@@ -229,7 +230,7 @@ class EmailAddressData(BaseModel):
 
 
 # Light EmailData object that can conveniently be stored in mongoDB for search
-class BaseEmailData(BaseModel):
+class BaseEmailData(RetabBaseModel):
     id: str = Field(..., description="The Message-ID header of the email")
     tree_id: str = Field(..., description="The root email ID, which is references[0] if it exists, otherwise the email's ID")
 

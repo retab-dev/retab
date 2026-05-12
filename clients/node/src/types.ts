@@ -360,7 +360,6 @@ export const ZExtractionV2 = z
     usage: generated.ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-    organization_id: z.string().nullable().optional(),
   })
   .passthrough();
 export type ExtractionV2 = z.infer<typeof ZExtractionV2>;
@@ -513,7 +512,6 @@ export const ZWorkflowRunStep = z.object({
   model: z.string().nullable().optional(),
   // WorkflowRunStep extras
   run_id: z.string(),
-  organization_id: z.string(),
   artifact: generated.ZStepArtifactRef.nullable().optional(),
   handle_outputs: ZHandlePayloadRecord,
   handle_inputs: ZHandlePayloadRecord,
@@ -561,10 +559,9 @@ export const ZWorkflow = z
     id: z.string(),
     name: z.string().default('Untitled Workflow'),
     description: z.string().default(''),
-    organization_id: z.string().nullable().optional(),
     published: z
       .object({
-        snapshot_id: z.string().nullable().optional(),
+        version_id: z.string().nullable().optional(),
         published_at: z.string().nullable().optional(),
       })
       .nullable()
@@ -601,7 +598,6 @@ export const ZWorkflowBlock = z
   .object({
     id: z.string(),
     workflow_id: z.string(),
-    organization_id: z.string(),
     draft_version: z.string().nullable().optional(),
     type: z.string(),
     label: z.string().default(''),
@@ -621,7 +617,6 @@ export const ZWorkflowEdgeDoc = z
   .object({
     id: z.string(),
     workflow_id: z.string(),
-    organization_id: z.string(),
     draft_version: z.string().nullable().optional(),
     source_block: z.string(),
     target_block: z.string(),
@@ -868,7 +863,6 @@ export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 export const ZBlockSimulation = z
   .object({
     id: z.string(),
-    organization_id: z.string(),
     workflow_id: z.string(),
     run_id: z.string(),
     block_id: z.string(),

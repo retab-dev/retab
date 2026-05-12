@@ -12,6 +12,7 @@ from google.genai.types import ContentUnionDict  # type: ignore
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from pydantic import BaseModel, Field, PrivateAttr, computed_field, model_validator
+from retab.types.base import RetabBaseModel
 
 from .chat import convert_to_anthropic_format, convert_to_google_genai_format
 from .chat import convert_to_openai_completions_api_format
@@ -887,7 +888,7 @@ def has_cyclic_refs(schema: dict[str, Any]) -> bool:
     return False
 
 
-class SchemaGenerationResponse(BaseModel):
+class SchemaGenerationResponse(RetabBaseModel):
     """Response from the Generate Schema API."""
 
     object: Literal["schema"] = "schema"

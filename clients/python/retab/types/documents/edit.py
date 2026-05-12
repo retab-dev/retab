@@ -1,12 +1,13 @@
 from enum import Enum
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 
 from ..mime import MIMEData
 from .usage import RetabUsage
 
 
-class BBox(BaseModel):
+class BBox(RetabBaseModel):
     """Bounding box of a field, in normalized coordinates."""
 
     left: float = Field(
@@ -43,7 +44,7 @@ class FieldType(str, Enum):
     CHECKBOX = "checkbox"
 
 
-class BaseFormField(BaseModel):
+class BaseFormField(RetabBaseModel):
     """Single field in the form schema (string input, checkbox, etc.)."""
 
     bbox: BBox = Field(
@@ -78,7 +79,7 @@ class FormField(BaseFormField):
         ),
     )
 
-class FormSchema(BaseModel):
+class FormSchema(RetabBaseModel):
     """Top-level object holding the list of fields for a given form template."""
 
     form_fields: List[FormField] = Field(
@@ -89,7 +90,7 @@ class FormSchema(BaseModel):
         ),
     )
 
-class OCRTextElement(BaseModel):
+class OCRTextElement(RetabBaseModel):
     """A single OCR-detected text element with its bounding box."""
     
     text: str = Field(..., description="The detected text content")
@@ -97,7 +98,7 @@ class OCRTextElement(BaseModel):
     element_type: str = Field(..., description="Type of element: 'block', 'line', or 'token'")
 
 
-class OCRResult(BaseModel):
+class OCRResult(RetabBaseModel):
     """Result of OCR processing on a document."""
     
     elements: list[OCRTextElement] = Field(default_factory=list, description="All detected text elements")
@@ -105,19 +106,19 @@ class OCRResult(BaseModel):
     annotated_pdf: MIMEData = Field(..., description="PDF with bbox annotations")
 
 
-class InferFormSchemaRequest(BaseModel):
+class InferFormSchemaRequest(RetabBaseModel):
     """Request to infer form schema from a PDF or DOCX document."""
     
     document: MIMEData = Field(..., description="Input document (PDF, DOCX, XLSX or PPTX).")
     model: str = Field(default="retab-small", description="LLM model to use for inference")
 
 
-class EditConfig(BaseModel):
+class EditConfig(RetabBaseModel):
     """Configuration for edit requests."""
     color: str = Field(default="#000080", description="Hex code of the color to use for the filled text")
 
 
-class EditRequest(BaseModel):
+class EditRequest(RetabBaseModel):
     """Request for the infer_and_fill_schema endpoint.
     
     Either `document` OR `template_id` must be provided, but not both.
@@ -131,7 +132,7 @@ class EditRequest(BaseModel):
     config: EditConfig = Field(default_factory=EditConfig, description="Configuration for the edit request")
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
-class EditResponse(BaseModel):
+class EditResponse(RetabBaseModel):
     """Response from the fill_form endpoint.
     """
     form_data: list[FormField] = Field(
@@ -145,13 +146,13 @@ class EditResponse(BaseModel):
     usage: RetabUsage = Field(..., description="Usage information for the edit operation")
 
 
-class ProcessOCRRequest(BaseModel):
+class ProcessOCRRequest(RetabBaseModel):
     """Request to process a PDF with OCR only (step 1)."""
     
     document: MIMEData = Field(..., description="Input document (PDF)")
 
 
-class InferFormSchemaResponse(BaseModel):
+class InferFormSchemaResponse(RetabBaseModel):
     """Response from form schema inference."""
     
     form_schema: FormSchema = Field(..., description="Form schema with detected bounding boxes and field names")

@@ -37,7 +37,6 @@ const ZJob = z.object({
     started_at: z.number().nullable().optional(),
     completed_at: z.number().nullable().optional(),
     expires_at: z.number(),
-    organization_id: z.string(),
     metadata: z.record(z.string()).nullable().optional(),
 });
 type Job = z.infer<typeof ZJob>;

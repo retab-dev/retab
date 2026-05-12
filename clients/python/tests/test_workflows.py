@@ -279,7 +279,7 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
             "organization_id": "org_123",
             "workflow": {
                 "workflow_id": "workflow_123",
-                "snapshot_id": "snap_1",
+                "version_id": "ver_0123456789abcdef0123456789abcdef",
                 "name_at_run_time": "Classifier Workflow",
             },
             "trigger": {"type": "manual"},
@@ -312,8 +312,9 @@ def test_workflow_run_v2_typed_fields() -> None:
         "organization_id": "org_1",
         "workflow": {
             "workflow_id": "wf_1",
-            "snapshot_id": "snap_abc",
+            "version_id": "ver_abcdef0123456789abcdef0123456789",
             "name_at_run_time": "Test",
+            "requested_version": "ver_abcdef0123456789abcdef0123456789",
         },
         "trigger": {"type": "api", "api_key_id": "ak_1"},
         "lifecycle": {"kind": "completed"},
@@ -326,7 +327,7 @@ def test_workflow_run_v2_typed_fields() -> None:
         "inputs": {"documents": {}, "json_data": {"json-1": {"key": "value"}}},
     })
     assert run.workflow.workflow_id == "wf_1"
-    assert run.workflow.snapshot_id == "snap_abc"
+    assert run.workflow.version_id == "ver_abcdef0123456789abcdef0123456789"
     assert run.workflow.name_at_run_time == "Test"
     assert run.trigger.type == "api"
     assert run.lifecycle.kind == "completed"
@@ -338,7 +339,11 @@ def test_workflow_run_v2_typed_fields() -> None:
     run2 = WorkflowRun.model_validate({
         "id": "run_000",
         "organization_id": "org_1",
-        "workflow": {"workflow_id": "wf_1", "snapshot_id": "snap_1", "name_at_run_time": "T"},
+        "workflow": {
+            "workflow_id": "wf_1",
+            "version_id": "ver_0123456789abcdef0123456789abcdef",
+            "name_at_run_time": "T",
+        },
         "trigger": {"type": "manual"},
         "lifecycle": {"kind": "pending"},
         "timing": {"created_at": "2026-01-01T00:00:00Z"},
@@ -387,7 +392,6 @@ def test_workflow_with_entities_parsing() -> None:
     assert json_blocks[0].id == "json-1"
 
     edge = wfe.edges[0]
-    assert edge.organization_id == "org_1"
     assert edge.draft_version == "draft_1"
     assert edge.source_block == "start-1"
     assert edge.target_block == "extract-1"
@@ -412,6 +416,41 @@ def test_workflows_create_route() -> None:
     assert request.url == "/workflows"
     assert request.data == {"name": "My Workflow", "description": "A test"}
     assert wf.id == "wf_new"
+
+
+def test_workflows_update_accepts_email_trigger_policy() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "id": "workflow_123",
+        "name": "Test Workflow",
+        "description": "",
+        "published": None,
+        "email_trigger": {
+            "allowed_senders": ["ops@example.com"],
+            "allowed_domains": ["example.com"],
+        },
+        "created_at": "2026-03-12T10:00:00Z",
+        "updated_at": "2026-03-12T10:00:00Z",
+    }
+
+    workflow = Workflows(client=client).update(
+        "workflow_123",
+        email_trigger={
+            "allowed_senders": ["ops@example.com"],
+            "allowed_domains": ["example.com"],
+        },
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "PATCH"
+    assert request.url == "/workflows/workflow_123"
+    assert request.data == {
+        "email_trigger": {
+            "allowed_senders": ["ops@example.com"],
+            "allowed_domains": ["example.com"],
+        }
+    }
+    assert workflow.email_trigger.allowed_senders == ["ops@example.com"]
 
 
 def test_workflow_blocks_create_accepts_typed_request() -> None:
@@ -515,7 +554,6 @@ def test_workflow_block_parses_live_editing_metadata() -> None:
         }
     )
 
-    assert block.organization_id == "org_1"
     assert block.draft_version == "draft_1"
 
 
@@ -646,7 +684,7 @@ def test_workflows_publish_route() -> None:
         "id": "wf_1",
         "name": "Test",
         "published": {
-            "snapshot_id": "snap_1",
+            "version_id": "ver_0123456789abcdef0123456789abcdef",
             "published_at": "2026-03-12T10:00:00Z",
         },
         "email_trigger": {"allowed_senders": [], "allowed_domains": []},
@@ -659,7 +697,7 @@ def test_workflows_publish_route() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
     assert request.url == "/workflows/wf_1/publish"
-    assert wf.published_snapshot_id == "snap_1"
+    assert wf.published_version_id == "ver_0123456789abcdef0123456789abcdef"
 
 
 def test_workflows_get_entities_route() -> None:
@@ -689,7 +727,7 @@ def test_workflows_list_returns_typed_items() -> None:
             {
                 "id": "wf_1", "name": "Workflow A",
                 "published": {
-                    "snapshot_id": "snap_1",
+                    "version_id": "ver_0123456789abcdef0123456789abcdef",
                     "published_at": "2026-01-01T00:00:00Z",
                 },
                 "email_trigger": {"allowed_senders": [], "allowed_domains": []},
@@ -739,7 +777,7 @@ def test_workflow_runs_create_without_inputs_sends_json_body() -> None:
 
     assert request.method == "POST"
     assert request.url == "/workflows/wf_1/run"
-    assert request.data == {"documents": {}, "json_inputs": {}}
+    assert request.data == {"documents": {}, "json_inputs": {}, "version": "production"}
 
 
 def _v2_run_payload(**overrides) -> dict:
@@ -749,7 +787,7 @@ def _v2_run_payload(**overrides) -> dict:
         "organization_id": "org_1",
         "workflow": {
             "workflow_id": "wf_1",
-            "snapshot_id": "snap_1",
+            "version_id": "ver_0123456789abcdef0123456789abcdef",
             "name_at_run_time": "Test",
         },
         "trigger": overrides.pop("trigger", {"type": "manual"}),

@@ -13,13 +13,14 @@ from openai.types.completion_usage import CompletionUsage
 from openai.types.responses.response import Response
 from openai.types.responses.response_input_param import ResponseInputItemParam
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
+from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
+from retab.types.base import RetabBaseModel
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
 from ..standards import StreamingBaseModel
 from .usage import RetabUsage
 from ...utils.json_schema import filter_auxiliary_fields_json, convert_basemodel_to_partial_basemodel, convert_json_schema_to_basemodel, unflatten_dict
-class DocumentExtractRequest(BaseModel):
+class DocumentExtractRequest(RetabBaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
     document: MIMEData = Field(..., description="Document to be analyzed")
     image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM", ge=96, le=300)
@@ -35,11 +36,13 @@ class DocumentExtractRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class ConsensusModel(BaseModel):
+class ConsensusModel(RetabBaseModel):
     model: str = Field(description="Model name")
     temperature: float = Field(default=0.0, description="Temperature for consensus")
 
-class RetabParsedChoice(ParsedChoice):
+class RetabParsedChoice(RetabBaseModel, ParsedChoice):
+    model_config = ConfigDict(extra="ignore")
+
     # Adaptable ParsedChoice that allows None for the finish_reason
     finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None = None  # type: ignore
     key_mapping: dict[str, Optional[str]] | None = Field(default=None, description="Mapping of consensus keys to original model keys")
@@ -54,7 +57,7 @@ class RetabParsedChoice(ParsedChoice):
 
 LikelihoodsSource = Literal["consensus", "log_probs"]
 
-class RetabParsedChatCompletion(ParsedChatCompletion):
+class RetabParsedChatCompletion(RetabBaseModel, ParsedChatCompletion):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
     extraction_id: str | None = None
     choices: list[RetabParsedChoice]  # type: ignore
@@ -100,7 +103,7 @@ class RetabParsedChatCompletion(ParsedChatCompletion):
         return f"ExtractionResult({', '.join(parts)})"
 
 
-class LogExtractionRequest(BaseModel):
+class LogExtractionRequest(RetabBaseModel):
     messages: list[ChatCompletionRetabMessage] | None = None  # TODO: compatibility with Anthropic
     openai_messages: list[ChatCompletionMessageParam] | None = None
     openai_responses_input: list[ResponseInputItemParam] | None = None
@@ -152,7 +155,7 @@ class LogExtractionRequest(BaseModel):
         return data
 
 
-class LogExtractionResponse(BaseModel):
+class LogExtractionResponse(RetabBaseModel):
     status: Literal["success", "error"]
     error_message: str | None = None
 
@@ -169,7 +172,9 @@ class LogExtractionResponse(BaseModel):
 # - schema_validation_error: ErrorDetail | None = None #  The error in the schema validation of the total accumulated content
 
 
-class RetabParsedChoiceDeltaChunk(ChoiceDeltaChunk):
+class RetabParsedChoiceDeltaChunk(RetabBaseModel, ChoiceDeltaChunk):
+    model_config = ConfigDict(extra="ignore")
+
     flat_likelihoods: dict[str, float] = {}
     flat_parsed: dict[str, Any] = {}
     flat_deleted_keys: list[str] = []
@@ -180,11 +185,15 @@ class RetabParsedChoiceDeltaChunk(ChoiceDeltaChunk):
     full_parsed: dict[str, Any] | None = Field(default=None, description="Complete parsed object from LLM, used instead of unflatten_dict when available")
 
 
-class RetabParsedChoiceChunk(ChoiceChunk):
+class RetabParsedChoiceChunk(RetabBaseModel, ChoiceChunk):
+    model_config = ConfigDict(extra="ignore")
+
     delta: RetabParsedChoiceDeltaChunk  # type: ignore
 
 
 class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
+    model_config = ConfigDict(extra="ignore")
+
     choices: list[RetabParsedChoiceChunk]  # type: ignore
 
     extraction_id: str | None = None

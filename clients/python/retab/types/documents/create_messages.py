@@ -4,7 +4,8 @@ from typing import Any, List, Literal
 
 import PIL.Image
 import requests
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import ConfigDict, Field, computed_field
+from retab.types.base import RetabBaseModel
 
 from ...utils.display import count_image_tokens, count_text_tokens
 from ..chat import ChatCompletionRetabMessage
@@ -12,13 +13,13 @@ from ..mime import MIMEData
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 
-class TokenCount(BaseModel):
+class TokenCount(RetabBaseModel):
     total_tokens: int = 0
     developer_tokens: int = 0
     user_tokens: int = 0
 
 
-class DocumentCreateMessageRequest(BaseModel):
+class DocumentCreateMessageRequest(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
     document: MIMEData = Field(description="The document to load.")
     image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM")
@@ -28,7 +29,7 @@ class DocumentCreateInputRequest(DocumentCreateMessageRequest):
     json_schema: dict[str, Any] = Field(description="The json schema to use for the document.")
 
 
-class DocumentMessage(BaseModel):
+class DocumentMessage(RetabBaseModel):
     id: str = Field(description="A unique identifier for the document loading.")
     object: Literal["document_message"] = Field(default="document_message", description="The type of object being loaded.")
     messages: List[ChatCompletionRetabMessage] = Field(description="A list of messages containing the document content and metadata.")

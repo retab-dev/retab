@@ -48,10 +48,9 @@ type CreateWorkflowRequest struct {
 }
 
 type UpdateWorkflowRequest struct {
-	Name                  *string  `json:"-"`
-	Description           *string  `json:"-"`
-	EmailSendersWhitelist []string `json:"-"`
-	EmailDomainsWhitelist []string `json:"-"`
+	Name         *string               `json:"-"`
+	Description  *string               `json:"-"`
+	EmailTrigger *WorkflowEmailTrigger `json:"-"`
 }
 
 type PublishWorkflowRequest struct {
@@ -111,13 +110,13 @@ func (s *WorkflowsService) Update(ctx context.Context, workflowID string, reques
 	if request.Description != nil {
 		body["description"] = *request.Description
 	}
-	if request.EmailSendersWhitelist != nil || request.EmailDomainsWhitelist != nil {
+	if request.EmailTrigger != nil {
 		emailTrigger := map[string]any{}
-		if request.EmailSendersWhitelist != nil {
-			emailTrigger["allowed_senders"] = request.EmailSendersWhitelist
+		if request.EmailTrigger.AllowedSenders != nil {
+			emailTrigger["allowed_senders"] = request.EmailTrigger.AllowedSenders
 		}
-		if request.EmailDomainsWhitelist != nil {
-			emailTrigger["allowed_domains"] = request.EmailDomainsWhitelist
+		if request.EmailTrigger.AllowedDomains != nil {
+			emailTrigger["allowed_domains"] = request.EmailTrigger.AllowedDomains
 		}
 		body["email_trigger"] = emailTrigger
 	}
@@ -430,7 +429,6 @@ type SimulateBlockRequest struct {
 // BlockSimulation is the result of replaying one block.
 type BlockSimulation struct {
 	ID                  string           `json:"id"`
-	OrganizationID      string           `json:"organization_id"`
 	WorkflowID          string           `json:"workflow_id"`
 	RunID               string           `json:"run_id"`
 	BlockID             string           `json:"block_id"`
@@ -575,6 +573,7 @@ type CreateWorkflowRunRequest struct {
 	WorkflowID string         `json:"-"`
 	Documents  map[string]any `json:"documents,omitempty"`
 	JSONInputs map[string]any `json:"json_inputs,omitempty"`
+	Version    string         `json:"version,omitempty"`
 }
 
 func (s *WorkflowRunsService) Create(ctx context.Context, request CreateWorkflowRunRequest, opts ...RequestOption) (*WorkflowRun, error) {
@@ -591,6 +590,11 @@ func (s *WorkflowRunsService) Create(ctx context.Context, request CreateWorkflow
 	}
 	if request.JSONInputs != nil {
 		body["json_inputs"] = request.JSONInputs
+	}
+	if request.Version == "" {
+		body["version"] = "production"
+	} else {
+		body["version"] = request.Version
 	}
 	var run WorkflowRun
 	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(request.WorkflowID)+"/run", nil, body, &run, opts...)

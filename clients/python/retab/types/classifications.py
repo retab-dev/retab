@@ -3,19 +3,20 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
 from .extractions import ProcessingRequestOrigin
 from .mime import FileRef, MIMEData
 
 
-class Category(BaseModel):
+class Category(RetabBaseModel):
     name: str = Field(..., description="The name of the category")
     description: str = Field(default="", description="The description of the category")
 
 
-class ClassificationRequest(BaseModel):
+class ClassificationRequest(RetabBaseModel):
     document: MIMEData = Field(..., description="The document to classify")
     categories: list[Category] = Field(..., description="The categories to classify the document into")
     model: str = Field(default="retab-small", description="The model to use for classification")
@@ -36,12 +37,12 @@ class ClassificationRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class ClassificationDecision(BaseModel):
+class ClassificationDecision(RetabBaseModel):
     reasoning: str = Field(..., description="The reasoning for the classification decision")
     category: str = Field(..., description="The category name that the document belongs to")
 
 
-class ClassificationConsensus(BaseModel):
+class ClassificationConsensus(RetabBaseModel):
     choices: list[ClassificationDecision] = Field(
         default_factory=list,
         description="Alternative classification vote outputs used to build the consolidated result.",
@@ -52,7 +53,7 @@ class ClassificationConsensus(BaseModel):
     )
 
 
-class Classification(BaseModel):
+class Classification(RetabBaseModel):
     id: str = Field(..., description="Unique identifier of the classification")
     file: FileRef = Field(..., description="Information about the classified file")
     model: str = Field(..., description="Model used for classification")

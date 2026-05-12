@@ -1,5 +1,6 @@
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+from retab.types.base import RetabBaseModel
 
 from ..mime import MIMEData, FileRef
 from .usage import RetabUsage
@@ -8,7 +9,7 @@ TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 
 
 
-class ParseRequest(BaseModel):
+class ParseRequest(RetabBaseModel):
     """Request model for document parsing."""
     model_config = ConfigDict(extra="ignore")
 
@@ -19,7 +20,7 @@ class ParseRequest(BaseModel):
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
 
 
-class ParseResponse(BaseModel):
+class ParseResponse(RetabBaseModel):
     """Result of document parsing."""
 
     document: FileRef = Field(..., description="Processed document metadata")

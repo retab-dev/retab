@@ -33,7 +33,6 @@ const NOW = "2026-05-01T14:30:00Z";
 const TEST_RESPONSE = {
     id: "wfnodetest_abc",
     workflow_id: "wf_abc123",
-    organization_id: "org_x",
     target: { type: "block", block_id: "block_extract" },
     source: { type: "manual", handle_inputs: {} },
     name: "Q1 invoice total",
@@ -57,7 +56,6 @@ const RUN_RESPONSE = {
     id: "wfnodetestrun_abc",
     test_id: "wfnodetest_abc",
     workflow_id: "wf_abc123",
-    organization_id: "org_x",
     target: { type: "block", block_id: "block_extract" },
     source: { type: "manual", handle_inputs: {} },
     status: "passed",
