@@ -1051,8 +1051,8 @@ export const ZWorkflowBlock = z.lazy(() => (z.object({
     width: z.number().nullable().optional(),
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
+    field_ref_snapshot: z.record(z.string(), z.string()).nullable().optional(),
     parent_id: z.string().nullable().optional(),
-    resolved_schemas: ZResolvedSchemas.nullable().optional(),
     updated_at: z.string().nullable().optional(),
 })));
 export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
@@ -1262,6 +1262,21 @@ export const ZWorkflowWithEntities = z.lazy(() => (z.object({
     edges: z.array(ZWorkflowEdgeDoc),
 })));
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
+
+export const ZWorkflowResolvedSchemasResponse = z.lazy(() => (z.object({
+    workflow_id: z.string(),
+    draft_version: z.string().nullable().optional(),
+    schemas: z.record(z.string(), ZResolvedSchemas),
+})));
+export type WorkflowResolvedSchemasResponse = z.infer<typeof ZWorkflowResolvedSchemasResponse>;
+
+export const ZBlockResolvedSchemasResponse = z.lazy(() => (z.object({
+    workflow_id: z.string(),
+    block_id: z.string(),
+    draft_version: z.string().nullable().optional(),
+    schema: ZResolvedSchemas,
+})));
+export type BlockResolvedSchemasResponse = z.infer<typeof ZBlockResolvedSchemasResponse>;
 
 export const ZDocumentSignedUrlResponse = z.lazy(() => (z.object({
     signed_url: z.string(),

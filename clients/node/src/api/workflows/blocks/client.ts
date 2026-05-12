@@ -1,10 +1,12 @@
 import * as z from "zod";
 import { CompositionClient, RequestOptions } from "../../../client.js";
 import {
+    BlockResolvedSchemasResponse,
     BlockSimulation,
     WorkflowBlock,
     WorkflowBlockCreateRequest,
     WorkflowBlockUpdateRequest,
+    ZBlockResolvedSchemasResponse,
     ZBlockSimulation,
     ZWorkflowBlock,
 } from "../../../types.js";
@@ -72,6 +74,37 @@ export default class APIWorkflowBlocks extends CompositionClient {
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    prepare_get_resolved_schemas(workflowId: string, blockId: string): { url: string; method: string } {
+        return {
+            url: `/workflows/${workflowId}/blocks/${blockId}/resolved-schemas`,
+            method: "GET",
+        };
+    }
+
+    /**
+     * Get graph-derived schemas for one current-draft block.
+     */
+    async getResolvedSchemas(
+        workflowId: string,
+        blockId: string,
+        options?: RequestOptions
+    ): Promise<BlockResolvedSchemasResponse> {
+        return this._fetchJson(ZBlockResolvedSchemasResponse, {
+            url: `/workflows/${workflowId}/blocks/${blockId}/resolved-schemas`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    async get_resolved_schemas(
+        workflowId: string,
+        blockId: string,
+        options?: RequestOptions
+    ): Promise<BlockResolvedSchemasResponse> {
+        return this.getResolvedSchemas(workflowId, blockId, options);
     }
 
     /**

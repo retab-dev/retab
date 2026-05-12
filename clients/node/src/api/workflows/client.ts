@@ -3,10 +3,12 @@ import {
     PaginatedList,
     Workflow,
     WorkflowDiagnosisResponse,
+    WorkflowResolvedSchemasResponse,
     WorkflowWithEntities,
     ZPaginatedList,
     ZWorkflow,
     ZWorkflowDiagnosisResponse,
+    ZWorkflowResolvedSchemasResponse,
     ZWorkflowWithEntities,
 } from "../../types.js";
 import APIWorkflowRuns from "./runs/client.js";
@@ -249,6 +251,35 @@ export default class APIWorkflows extends CompositionClient {
 
     async get_entities(workflowId: string, options?: RequestOptions): Promise<WorkflowWithEntities> {
         return this.getEntities(workflowId, options);
+    }
+
+    prepare_get_resolved_schemas(workflowId: string): { url: string; method: string } {
+        return {
+            url: `/workflows/${workflowId}/resolved-schemas`,
+            method: "GET",
+        };
+    }
+
+    /**
+     * Get graph-derived schemas for all current-draft blocks in a workflow.
+     */
+    async getResolvedSchemas(
+        workflowId: string,
+        options?: RequestOptions
+    ): Promise<WorkflowResolvedSchemasResponse> {
+        return this._fetchJson(ZWorkflowResolvedSchemasResponse, {
+            url: `/workflows/${workflowId}/resolved-schemas`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    async get_resolved_schemas(
+        workflowId: string,
+        options?: RequestOptions
+    ): Promise<WorkflowResolvedSchemasResponse> {
+        return this.getResolvedSchemas(workflowId, options);
     }
 
     prepare_diagnose(

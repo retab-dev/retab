@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Sequence
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.standards import PreparedRequest
 from ....types.workflows import (
+    BlockResolvedSchemasResponse,
     BlockSimulation,
     WorkflowBlock,
     WorkflowBlockCreateRequest,
@@ -20,6 +21,10 @@ class WorkflowBlocksMixin:
     def prepare_get(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to get a single block."""
         return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/blocks/{block_id}")
+
+    def prepare_get_resolved_schemas(self, workflow_id: str, block_id: str) -> PreparedRequest:
+        """Prepare a request to get graph-derived schemas for one block."""
+        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/blocks/{block_id}/resolved-schemas")
 
     def prepare_create(
         self,
@@ -175,6 +180,12 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         request = self.prepare_get(workflow_id, block_id)
         response = self._client._prepared_request(request)
         return WorkflowBlock.model_validate(response)
+
+    def get_resolved_schemas(self, workflow_id: str, block_id: str) -> BlockResolvedSchemasResponse:
+        """Get graph-derived schemas for one current-draft block."""
+        request = self.prepare_get_resolved_schemas(workflow_id, block_id)
+        response = self._client._prepared_request(request)
+        return BlockResolvedSchemasResponse.model_validate(response)
 
     def create(
         self,
@@ -344,6 +355,12 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         request = self.prepare_get(workflow_id, block_id)
         response = await self._client._prepared_request(request)
         return WorkflowBlock.model_validate(response)
+
+    async def get_resolved_schemas(self, workflow_id: str, block_id: str) -> BlockResolvedSchemasResponse:
+        """Get graph-derived schemas for one current-draft block."""
+        request = self.prepare_get_resolved_schemas(workflow_id, block_id)
+        response = await self._client._prepared_request(request)
+        return BlockResolvedSchemasResponse.model_validate(response)
 
     async def create(
         self,

@@ -213,14 +213,14 @@ type RunInputs struct {
 
 // WorkflowRun is a workflow execution.
 type WorkflowRun struct {
-	ID             string              `json:"id"`
-	WorkflowID     string              `json:"workflow_id,omitempty"`
-	Workflow       WorkflowSnapshotRef `json:"workflow"`
-	Trigger        RunTrigger          `json:"trigger"`
-	Lifecycle      RunLifecycle        `json:"lifecycle"`
-	Timing         RunTiming           `json:"timing"`
-	Inputs         RunInputs           `json:"inputs"`
-	Raw            json.RawMessage     `json:"-"`
+	ID         string              `json:"id"`
+	WorkflowID string              `json:"workflow_id,omitempty"`
+	Workflow   WorkflowSnapshotRef `json:"workflow"`
+	Trigger    RunTrigger          `json:"trigger"`
+	Lifecycle  RunLifecycle        `json:"lifecycle"`
+	Timing     RunTiming           `json:"timing"`
+	Inputs     RunInputs           `json:"inputs"`
+	Raw        json.RawMessage     `json:"-"`
 }
 
 func (r *WorkflowRun) UnmarshalJSON(data []byte) error {
@@ -259,14 +259,14 @@ func (r WorkflowRun) Terminal() bool {
 
 // Workflow is the top-level workflow resource.
 type Workflow struct {
-	ID             string               `json:"id"`
-	Name           string               `json:"name"`
-	Description    string               `json:"description"`
-	Published      *WorkflowPublished   `json:"published,omitempty"`
-	EmailTrigger   WorkflowEmailTrigger `json:"email_trigger"`
-	CreatedAt      *time.Time           `json:"created_at,omitempty"`
-	UpdatedAt      *time.Time           `json:"updated_at,omitempty"`
-	Raw            json.RawMessage      `json:"-"`
+	ID           string               `json:"id"`
+	Name         string               `json:"name"`
+	Description  string               `json:"description"`
+	Published    *WorkflowPublished   `json:"published,omitempty"`
+	EmailTrigger WorkflowEmailTrigger `json:"email_trigger"`
+	CreatedAt    *time.Time           `json:"created_at,omitempty"`
+	UpdatedAt    *time.Time           `json:"updated_at,omitempty"`
+	Raw          json.RawMessage      `json:"-"`
 }
 
 func (w *Workflow) UnmarshalJSON(data []byte) error {
@@ -292,40 +292,53 @@ type WorkflowEmailTrigger struct {
 type ResolvedSchemas struct {
 	InputSchemas  map[string]any `json:"input_schemas"`
 	OutputSchemas map[string]any `json:"output_schemas"`
-	FieldRefDrift map[string]any `json:"_field_ref_drift,omitempty"`
+	FieldRefDrift map[string]any `json:"field_ref_drift,omitempty"`
 }
 
 type WorkflowBlock struct {
-	ID              string           `json:"id"`
-	WorkflowID      string           `json:"workflow_id"`
-	DraftVersion    string           `json:"draft_version,omitempty"`
-	Type            string           `json:"type"`
-	Label           string           `json:"label"`
-	PositionX       float64          `json:"position_x"`
-	PositionY       float64          `json:"position_y"`
-	Width           *float64         `json:"width,omitempty"`
-	Height          *float64         `json:"height,omitempty"`
-	Config          map[string]any   `json:"config,omitempty"`
-	ParentID        string           `json:"parent_id,omitempty"`
-	ResolvedSchemas *ResolvedSchemas `json:"resolved_schemas,omitempty"`
-	UpdatedAt       *time.Time       `json:"updated_at,omitempty"`
+	ID               string            `json:"id"`
+	WorkflowID       string            `json:"workflow_id"`
+	DraftVersion     string            `json:"draft_version,omitempty"`
+	Type             string            `json:"type"`
+	Label            string            `json:"label"`
+	PositionX        float64           `json:"position_x"`
+	PositionY        float64           `json:"position_y"`
+	Width            *float64          `json:"width,omitempty"`
+	Height           *float64          `json:"height,omitempty"`
+	Config           map[string]any    `json:"config,omitempty"`
+	FieldRefSnapshot map[string]string `json:"field_ref_snapshot,omitempty"`
+	ParentID         string            `json:"parent_id,omitempty"`
+	UpdatedAt        *time.Time        `json:"updated_at,omitempty"`
 }
 
 type WorkflowEdgeDoc struct {
-	ID             string     `json:"id"`
-	WorkflowID     string     `json:"workflow_id"`
-	DraftVersion   string     `json:"draft_version,omitempty"`
-	SourceBlock    string     `json:"source_block"`
-	TargetBlock    string     `json:"target_block"`
-	SourceHandle   string     `json:"source_handle,omitempty"`
-	TargetHandle   string     `json:"target_handle,omitempty"`
-	UpdatedAt      *time.Time `json:"updated_at,omitempty"`
+	ID           string     `json:"id"`
+	WorkflowID   string     `json:"workflow_id"`
+	DraftVersion string     `json:"draft_version,omitempty"`
+	SourceBlock  string     `json:"source_block"`
+	TargetBlock  string     `json:"target_block"`
+	SourceHandle string     `json:"source_handle,omitempty"`
+	TargetHandle string     `json:"target_handle,omitempty"`
+	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
 }
 
 type WorkflowWithEntities struct {
 	Workflow Workflow          `json:"workflow"`
 	Blocks   []WorkflowBlock   `json:"blocks"`
 	Edges    []WorkflowEdgeDoc `json:"edges"`
+}
+
+type WorkflowResolvedSchemasResponse struct {
+	WorkflowID   string                     `json:"workflow_id"`
+	DraftVersion string                     `json:"draft_version,omitempty"`
+	Schemas      map[string]ResolvedSchemas `json:"schemas"`
+}
+
+type BlockResolvedSchemasResponse struct {
+	WorkflowID   string          `json:"workflow_id"`
+	BlockID      string          `json:"block_id"`
+	DraftVersion string          `json:"draft_version,omitempty"`
+	Schema       ResolvedSchemas `json:"schema"`
 }
 
 func (w *WorkflowWithEntities) UnmarshalJSON(data []byte) error {
