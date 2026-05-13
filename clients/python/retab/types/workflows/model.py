@@ -792,6 +792,103 @@ class SubmitHILDecisionResponse(RetabBaseModel):
     )
 
 
+# --- Managed-agent HIL review (agent_in_the_loop) ----------------------------
+#
+# Mirrors backend types in
+# ``main_server/services/v1/workflows/agent_review/models.py``. An agent review
+# is spawned per HIL block when its ``agent_in_the_loop`` config is one of
+# ``"pre_review"`` / ``"review"`` / ``"auto"``; the agent inspects the source
+# document, grounds each flagged field, and emits a structured proposal.
+
+AgentReviewMode = Literal["pre_review", "review", "auto"]
+"""Dispatch mode for an agent's HIL proposal, snapshotted at spawn time."""
+
+AgentReviewStatus = Literal[
+    "queued",
+    "running",
+    "proposed",
+    "submitted",
+    "escalated",
+    "failed",
+    "superseded_by_human",
+]
+"""Lifecycle of one agent review attempt.
+
+``queued`` / ``running`` are in-flight. ``proposed`` / ``submitted`` /
+``escalated`` / ``failed`` / ``superseded_by_human`` are terminal — the
+``status`` field stops changing once it reaches one of those.
+"""
+
+AgentEvidenceAction = Literal["approved_unchanged", "modified", "rejected"]
+
+
+class AgentEvidenceSource(RetabBaseModel):
+    """Pointer into a source document for a single piece of evidence.
+
+    Mirrors the Anthropic Citations shape: ``page_number`` for PDFs,
+    ``char_range`` for plain text. At least one of the two is always set.
+    """
+    document_index: int = Field(..., ge=0, description="Zero-indexed position in the agent's reading list.")
+    document_title: Optional[str] = Field(default=None, description="Human-readable title of the source document.")
+    page_number: Optional[int] = Field(default=None, ge=1, description="One-indexed page number for PDF / image sources.")
+    char_range: Optional[tuple[int, int]] = Field(default=None, description="Half-open [start, end) char span in the source text.")
+
+
+class AgentEvidenceItem(RetabBaseModel):
+    """One field-level justification cited from a source document."""
+    field_path: str = Field(..., description="Dotted path of the field this evidence justifies, e.g. 'invoice.total'.")
+    action: AgentEvidenceAction = Field(..., description="What the agent did with this field.")
+    quote: str = Field(..., description="Literal text quoted from the source document.")
+    source: AgentEvidenceSource = Field(..., description="Pointer back into the source for clickable verification.")
+    from_value: Any = Field(default=None, description="Pre-modification value (only for action='modified').")
+    to_value: Any = Field(default=None, description="Post-modification value (only for action='modified').")
+    reasoning_brief: Optional[str] = Field(default=None, description="One-line rationale; surfaced verbatim to the reviewer.")
+
+
+class AgentProposedDecision(RetabBaseModel):
+    """Structured proposal the agent submits through its ``retab_hil_review_proposal`` custom tool.
+
+    ``escalate=True`` means "I can't decide, hand off to a human" — in that
+    case ``approved`` / ``modified_data`` / ``changed_paths`` are empty and
+    ``escalation_reason`` is set. Otherwise ``approved`` is a bool, and if
+    the agent modified the data ``modified_data`` carries the replacement.
+    """
+    approved: Optional[bool] = Field(default=None, description="True / False; None when escalate=True.")
+    modified_data: Optional[Dict[str, Any]] = Field(default=None, description="Replacement payload (only when approved=True with corrections).")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Self-reported confidence in [0, 1].")
+    evidence: List[AgentEvidenceItem] = Field(..., description="At least one cited justification.")
+    changed_paths: List[str] = Field(default_factory=list, description="Field paths the agent modified.")
+    escalate: bool = Field(default=False, description="If True the agent declined to commit; a human verification pass is required.")
+    escalation_reason: Optional[str] = Field(default=None, description="Required when escalate=True; surfaced to the human reviewer.")
+
+
+class AgentHilReview(RetabBaseModel):
+    """Sidecar row tracking one managed-agent review attempt for a HIL block.
+
+    The dashboard polls this to render the agent's proposal alongside the
+    human verification form. ``status`` drives the UI (running spinner,
+    accept/apply buttons on a stored proposal, failure callout, etc.). Returns
+    ``None`` (404 over HTTP) when the block has ``agent_in_the_loop=disabled``
+    or the workflow hasn't reached the block yet.
+    """
+    id: str = Field(..., description="Internal id (nanoid).")
+    organization_id: str = Field(..., description="Organization that owns the workflow run.")
+    run_id: str = Field(..., description="Workflow run id the block belongs to.")
+    block_id: str = Field(..., description="HIL block id being reviewed.")
+    workflow_id: str = Field(..., description="Workflow id the run belongs to (denormalized).")
+    mode: AgentReviewMode = Field(..., description="Configured agent_in_the_loop mode at spawn time.")
+    status: AgentReviewStatus = Field(default="queued", description="Lifecycle status.")
+    managed_agent_session_id: Optional[str] = Field(default=None, description="Anthropic Managed Agents session id, once spawned.")
+    managed_agent_vault_id: Optional[str] = Field(default=None, description="Anthropic vault id minted per session.")
+    proposed_decision: Optional[AgentProposedDecision] = Field(default=None, description="Last proposal received from the agent.")
+    submitted_hil_command_id: Optional[str] = Field(default=None, description="HIL command id used when the proposal was applied as the workflow's HIL decision.")
+    failure_reason: Optional[str] = Field(default=None, description="Free-text reason when status='failed'.")
+    auto_threshold: float = Field(..., ge=0.0, le=1.0, description="Snapshot of agent_auto_confidence_threshold at spawn time (frozen).")
+    timeout_seconds: int = Field(..., ge=30, le=3600, description="Snapshot of agent_review_timeout_seconds at spawn time (hard ceiling).")
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+
 class RunCountsResponse(RetabBaseModel):
     """Run counts grouped by status."""
     total: int = 0

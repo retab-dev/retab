@@ -931,6 +931,58 @@ def test_workflow_runs_get_hil_decision_route() -> None:
     assert result.block_status == "completed"
 
 
+def test_workflow_runs_get_agent_hil_review_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "id": "agrev_abc",
+        "organization_id": "org_1",
+        "run_id": "run_1",
+        "block_id": "hil-1",
+        "workflow_id": "wf_1",
+        "mode": "pre_review",
+        "status": "proposed",
+        "managed_agent_session_id": "sesn_1",
+        "managed_agent_vault_id": "vlt_1",
+        "proposed_decision": {
+            "approved": True,
+            "modified_data": {"total": 325},
+            "confidence": 0.92,
+            "evidence": [
+                {
+                    "field_path": "total",
+                    "action": "modified",
+                    "quote": "Total $325.00",
+                    "source": {"document_index": 0, "page_number": 1},
+                    "from_value": 505,
+                    "to_value": 325,
+                }
+            ],
+            "changed_paths": ["total"],
+            "escalate": False,
+        },
+        "submitted_hil_command_id": None,
+        "failure_reason": None,
+        "auto_threshold": 0.85,
+        "timeout_seconds": 900,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:01Z",
+    }
+
+    result = WorkflowRuns(client=client).get_agent_hil_review("run_1", "hil-1")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/runs/run_1/agent-hil-reviews/hil-1"
+    assert result.id == "agrev_abc"
+    assert result.mode == "pre_review"
+    assert result.status == "proposed"
+    assert result.proposed_decision is not None
+    assert result.proposed_decision.confidence == 0.92
+    assert result.proposed_decision.changed_paths == ["total"]
+    assert result.proposed_decision.evidence[0].from_value == 505
+    assert result.proposed_decision.evidence[0].to_value == 325
+
+
 def test_workflow_runs_export_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {

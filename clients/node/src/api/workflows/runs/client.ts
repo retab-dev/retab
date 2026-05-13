@@ -13,6 +13,8 @@ import {
     ZHILDecisionResource,
     SubmitHILDecisionResponse,
     ZSubmitHILDecisionResponse,
+    AgentHilReview,
+    ZAgentHilReview,
     WorkflowRunExportResponse,
     ZWorkflowRunExportResponse,
     WorkflowRunStatus,
@@ -346,6 +348,37 @@ export default class APIWorkflowRuns extends CompositionClient {
         options?: RequestOptions
     ): Promise<HILDecisionResource> {
         return this.getHilDecision(runId, blockId, options);
+    }
+
+    /**
+     * Get the managed-agent review state for a HIL block.
+     *
+     * Returns the AgentHilReview row tracking the agent's session for this
+     * block: mode, lifecycle status, and the proposed_decision when one has
+     * been emitted. An agent review is only spawned when the block's
+     * `agent_in_the_loop` config is `pre_review` / `review` / `auto`; when the
+     * block has `agent_in_the_loop=disabled` or the workflow hasn't reached
+     * the block yet, the server returns 404 and this method throws.
+     */
+    async getAgentHilReview(
+        runId: string,
+        blockId: string,
+        options?: RequestOptions
+    ): Promise<AgentHilReview> {
+        return this._fetchJson(ZAgentHilReview, {
+            url: `/workflows/runs/${runId}/agent-hil-reviews/${blockId}`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    async get_agent_hil_review(
+        runId: string,
+        blockId: string,
+        options?: RequestOptions
+    ): Promise<AgentHilReview> {
+        return this.getAgentHilReview(runId, blockId, options);
     }
 
     /**

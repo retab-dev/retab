@@ -5415,3 +5415,67 @@ export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
     type: z.literal("base64"),
 })));
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;
+
+// --- Managed-agent HIL review (agent_in_the_loop) ---------------------------
+// Mirrors backend models in main_server/services/v1/workflows/agent_review/models.py.
+// Manually appended (not via generate_types.bash) to keep the scope tight —
+// the regen would rewrite unrelated parts of this file that have drifted
+// from the current Python SDK.
+
+export const ZAgentEvidenceSource = z.lazy(() => (z.object({
+    document_index: z.number().int().min(0),
+    document_title: z.string().nullable().optional(),
+    page_number: z.number().int().min(1).nullable().optional(),
+    char_range: z.tuple([z.number().int(), z.number().int()]).nullable().optional(),
+})));
+export type AgentEvidenceSource = z.infer<typeof ZAgentEvidenceSource>;
+
+export const ZAgentEvidenceItem = z.lazy(() => (z.object({
+    field_path: z.string(),
+    action: z.union([z.literal("approved_unchanged"), z.literal("modified"), z.literal("rejected")]),
+    quote: z.string(),
+    source: ZAgentEvidenceSource,
+    from_value: z.any().nullable().optional(),
+    to_value: z.any().nullable().optional(),
+    reasoning_brief: z.string().nullable().optional(),
+})));
+export type AgentEvidenceItem = z.infer<typeof ZAgentEvidenceItem>;
+
+export const ZAgentProposedDecision = z.lazy(() => (z.object({
+    approved: z.boolean().nullable().optional(),
+    modified_data: z.record(z.string(), z.any()).nullable().optional(),
+    confidence: z.number().min(0).max(1),
+    evidence: z.array(ZAgentEvidenceItem),
+    changed_paths: z.array(z.string()).default([]),
+    escalate: z.boolean().default(false),
+    escalation_reason: z.string().nullable().optional(),
+})));
+export type AgentProposedDecision = z.infer<typeof ZAgentProposedDecision>;
+
+export const ZAgentHilReview = z.lazy(() => (z.object({
+    id: z.string(),
+    organization_id: z.string(),
+    run_id: z.string(),
+    block_id: z.string(),
+    workflow_id: z.string(),
+    mode: z.union([z.literal("pre_review"), z.literal("review"), z.literal("auto")]),
+    status: z.union([
+        z.literal("queued"),
+        z.literal("running"),
+        z.literal("proposed"),
+        z.literal("submitted"),
+        z.literal("escalated"),
+        z.literal("failed"),
+        z.literal("superseded_by_human"),
+    ]).default("queued"),
+    managed_agent_session_id: z.string().nullable().optional(),
+    managed_agent_vault_id: z.string().nullable().optional(),
+    proposed_decision: ZAgentProposedDecision.nullable().optional(),
+    submitted_hil_command_id: z.string().nullable().optional(),
+    failure_reason: z.string().nullable().optional(),
+    auto_threshold: z.number().min(0).max(1),
+    timeout_seconds: z.number().int().min(30).max(3600),
+    created_at: z.string(),
+    updated_at: z.string(),
+})));
+export type AgentHilReview = z.infer<typeof ZAgentHilReview>;

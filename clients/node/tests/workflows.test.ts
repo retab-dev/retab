@@ -900,6 +900,60 @@ describe("workflows client", () => {
         expect(result.block_status).toBe("completed");
     });
 
+    test("runs.getAgentHilReview() sends GET to /agent-hil-reviews/{blockId}", async () => {
+        const mockClient = new MockClient({
+            id: "agrev_abc",
+            organization_id: "org_1",
+            run_id: "run_1",
+            block_id: "hil-1",
+            workflow_id: "wf_1",
+            mode: "pre_review",
+            status: "proposed",
+            managed_agent_session_id: "sesn_1",
+            managed_agent_vault_id: "vlt_1",
+            proposed_decision: {
+                approved: true,
+                modified_data: { total: 325 },
+                confidence: 0.92,
+                evidence: [
+                    {
+                        field_path: "total",
+                        action: "modified",
+                        quote: "Total $325.00",
+                        source: { document_index: 0, page_number: 1 },
+                        from_value: 505,
+                        to_value: 325,
+                    },
+                ],
+                changed_paths: ["total"],
+                escalate: false,
+            },
+            submitted_hil_command_id: null,
+            failure_reason: null,
+            auto_threshold: 0.85,
+            timeout_seconds: 900,
+            created_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:01Z",
+        });
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        const result = await runsClient.getAgentHilReview("run_1", "hil-1");
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/runs/run_1/agent-hil-reviews/hil-1",
+            method: "GET",
+            params: undefined,
+            headers: undefined,
+        });
+        expect(result.id).toBe("agrev_abc");
+        expect(result.mode).toBe("pre_review");
+        expect(result.status).toBe("proposed");
+        expect(result.proposed_decision?.confidence).toBe(0.92);
+        expect(result.proposed_decision?.changed_paths).toEqual(["total"]);
+        expect(result.proposed_decision?.evidence[0]?.from_value).toBe(505);
+        expect(result.proposed_decision?.evidence[0]?.to_value).toBe(325);
+    });
+
     test("runs.export() sends POST to /export_payload", async () => {
         const mockClient = new MockClient({
             csv_data: "a,b\n1,2\n",

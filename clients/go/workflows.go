@@ -802,6 +802,24 @@ func (s *WorkflowRunsService) GetHILDecision(ctx context.Context, runID string, 
 	return &result, err
 }
 
+// GetAgentHILReview returns the managed-agent review state for a HIL block.
+//
+// An agent review is only spawned when the block's agent_in_the_loop config
+// is "pre_review" / "review" / "auto"; when disabled or the workflow hasn't
+// reached the block yet, the server returns 404 and this method returns an
+// error.
+func (s *WorkflowRunsService) GetAgentHILReview(ctx context.Context, runID string, blockID string, opts ...RequestOption) (*AgentHILReview, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	if blockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	var result AgentHILReview
+	err := s.client.do(ctx, http.MethodGet, "/workflows/runs/"+url.PathEscape(runID)+"/agent-hil-reviews/"+url.PathEscape(blockID), nil, nil, &result, opts...)
+	return &result, err
+}
+
 func (s *WorkflowRunsService) GetConfig(ctx context.Context, runID string, opts ...RequestOption) (map[string]any, error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")

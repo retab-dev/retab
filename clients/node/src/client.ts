@@ -37,6 +37,7 @@ const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
     'restart',
     'submit_hil_decision',
     'get_hil_decision',
+    'get_agent_hil_review',
   ],
   APIWorkflowRunSteps: ['get', 'list'],
   APIWorkflowTests: ['create', 'get', 'list', 'update', 'delete', 'execute'],
