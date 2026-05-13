@@ -588,7 +588,6 @@ export const ZInferenceSettings = z.lazy(() => (z.object({
     model: z.string().default("retab-small"),
     image_resolution_dpi: z.number().default(192),
     n_consensus: z.number().default(1),
-    chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
 })));
 export type InferenceSettings = z.infer<typeof ZInferenceSettings>;
 
@@ -936,32 +935,32 @@ export const ZErrorDetails = z.lazy(() => (z.object({
 export type ErrorDetails = z.infer<typeof ZErrorDetails>;
 
 export const ZPendingStepLifecycle = z.object({
-    kind: z.literal("pending").default("pending"),
+    status: z.literal("pending").default("pending"),
 });
 export type PendingStepLifecycle = z.infer<typeof ZPendingStepLifecycle>;
 
 export const ZQueuedStepLifecycle = z.object({
-    kind: z.literal("queued").default("queued"),
+    status: z.literal("queued").default("queued"),
 });
 export type QueuedStepLifecycle = z.infer<typeof ZQueuedStepLifecycle>;
 
 export const ZRunningStepLifecycle = z.object({
-    kind: z.literal("running").default("running"),
+    status: z.literal("running").default("running"),
 });
 export type RunningStepLifecycle = z.infer<typeof ZRunningStepLifecycle>;
 
 export const ZCompletedStepLifecycle = z.object({
-    kind: z.literal("completed").default("completed"),
+    status: z.literal("completed").default("completed"),
 });
 export type CompletedStepLifecycle = z.infer<typeof ZCompletedStepLifecycle>;
 
 export const ZWaitingForHumanStepLifecycle = z.object({
-    kind: z.literal("waiting_for_human").default("waiting_for_human"),
+    status: z.literal("waiting_for_human").default("waiting_for_human"),
 });
 export type WaitingForHumanStepLifecycle = z.infer<typeof ZWaitingForHumanStepLifecycle>;
 
 export const ZErrorStepLifecycle = z.object({
-    kind: z.literal("error").default("error"),
+    status: z.literal("error").default("error"),
     message: z.string(),
     stage: z.string().nullable().optional(),
     category: z.string().nullable().optional(),
@@ -970,18 +969,18 @@ export const ZErrorStepLifecycle = z.object({
 export type ErrorStepLifecycle = z.infer<typeof ZErrorStepLifecycle>;
 
 export const ZSkippedStepLifecycle = z.object({
-    kind: z.literal("skipped").default("skipped"),
+    status: z.literal("skipped").default("skipped"),
     reason: z.string(),
 });
 export type SkippedStepLifecycle = z.infer<typeof ZSkippedStepLifecycle>;
 
 export const ZCancelledStepLifecycle = z.object({
-    kind: z.literal("cancelled").default("cancelled"),
+    status: z.literal("cancelled").default("cancelled"),
     reason: z.string(),
 });
 export type CancelledStepLifecycle = z.infer<typeof ZCancelledStepLifecycle>;
 
-export const ZStepLifecycle = z.discriminatedUnion("kind", [
+export const ZStepLifecycle = z.discriminatedUnion("status", [
     ZPendingStepLifecycle,
     ZQueuedStepLifecycle,
     ZRunningStepLifecycle,
@@ -1195,28 +1194,28 @@ export const ZTrigger = z.discriminatedUnion("type", [
 export type Trigger = z.infer<typeof ZTrigger>;
 
 export const ZPendingRun = z.object({
-    kind: z.literal("pending").default("pending"),
+    status: z.literal("pending").default("pending"),
 });
 export type PendingRun = z.infer<typeof ZPendingRun>;
 
 export const ZRunningRun = z.object({
-    kind: z.literal("running").default("running"),
+    status: z.literal("running").default("running"),
 });
 export type RunningRun = z.infer<typeof ZRunningRun>;
 
 export const ZWaitingForHumanRun = z.object({
-    kind: z.literal("waiting_for_human").default("waiting_for_human"),
+    status: z.literal("waiting_for_human").default("waiting_for_human"),
     waiting_for_block_ids: z.array(z.string()).default([]),
 });
 export type WaitingForHumanRun = z.infer<typeof ZWaitingForHumanRun>;
 
 export const ZCompletedTerminal = z.object({
-    kind: z.literal("completed").default("completed"),
+    status: z.literal("completed").default("completed"),
 });
 export type CompletedTerminal = z.infer<typeof ZCompletedTerminal>;
 
 export const ZErrorTerminal = z.object({
-    kind: z.literal("error").default("error"),
+    status: z.literal("error").default("error"),
     message: z.string(),
     stage: z.string().nullable().optional(),
     category: z.string().nullable().optional(),
@@ -1226,12 +1225,12 @@ export const ZErrorTerminal = z.object({
 export type ErrorTerminal = z.infer<typeof ZErrorTerminal>;
 
 export const ZCancelledTerminal = z.object({
-    kind: z.literal("cancelled").default("cancelled"),
+    status: z.literal("cancelled").default("cancelled"),
     reason: z.string().nullable().optional(),
 });
 export type CancelledTerminal = z.infer<typeof ZCancelledTerminal>;
 
-export const ZRunLifecycle = z.discriminatedUnion("kind", [
+export const ZRunLifecycle = z.discriminatedUnion("status", [
     ZPendingRun,
     ZRunningRun,
     ZWaitingForHumanRun,
@@ -1675,7 +1674,6 @@ export const ZExtractRequest = z.lazy(() => (z.object({
     n_consensus: z.number().default(1),
     image_resolution_dpi: z.number().default(192),
     stream: z.boolean().default(false),
-    chunking_keys: z.record(z.string(), z.string()).nullable().optional(),
     metadata: z.record(z.string(), z.string()),
     extraction_id: z.string().nullable().optional(),
     bust_cache: z.boolean().default(false),

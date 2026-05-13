@@ -282,7 +282,7 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
                 "name_at_run_time": "Classifier Workflow",
             },
             "trigger": {"type": "manual"},
-            "lifecycle": {"kind": "running"},
+            "lifecycle": {"status": "running"},
             "timing": {
                 "created_at": "2026-03-13T10:00:00Z",
                 "started_at": "2026-03-13T10:00:00Z",
@@ -316,7 +316,7 @@ def test_workflow_run_v2_typed_fields() -> None:
             "requested_version": "ver_abcdef0123456789abcdef0123456789",
         },
         "trigger": {"type": "api", "api_key_id": "ak_1"},
-        "lifecycle": {"kind": "completed"},
+        "lifecycle": {"status": "completed"},
         "timing": {
             "created_at": "2026-03-13T10:00:00Z",
             "started_at": "2026-03-13T10:00:00Z",
@@ -329,7 +329,7 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run.workflow.version_id == "ver_abcdef0123456789abcdef0123456789"
     assert run.workflow.name_at_run_time == "Test"
     assert run.trigger.type == "api"
-    assert run.lifecycle.kind == "completed"
+    assert run.lifecycle.status == "completed"
     assert run.inputs.json_data == {"json-1": {"key": "value"}}
     assert run.timing.accumulated_human_waiting_ms == 5000
     assert not hasattr(run.timing, "duration_ms")
@@ -347,7 +347,7 @@ def test_workflow_run_v2_typed_fields() -> None:
             "name_at_run_time": "T",
         },
         "trigger": {"type": "manual"},
-        "lifecycle": {"kind": "pending"},
+        "lifecycle": {"status": "pending"},
         "timing": {"created_at": "2026-01-01T00:00:00Z"},
     })
     assert run2.inputs.documents == {}
@@ -591,7 +591,7 @@ def test_step_execution_response_ignores_removed_payload_schema_fields() -> None
             "block_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "lifecycle": {"kind": "completed"},
+            "lifecycle": {"status": "completed"},
             "output": {
                 "data": {"invoice_number": "INV-001"},
                 "json_schema": {"type": "object"},
@@ -793,7 +793,7 @@ def _v2_run_payload(**overrides) -> dict:
             "name_at_run_time": "Test",
         },
         "trigger": overrides.pop("trigger", {"type": "manual"}),
-        "lifecycle": overrides.pop("lifecycle", {"kind": "running"}),
+        "lifecycle": overrides.pop("lifecycle", {"status": "running"}),
         "timing": overrides.pop(
             "timing",
             {
@@ -809,7 +809,7 @@ def _v2_run_payload(**overrides) -> dict:
 def test_workflow_runs_cancel_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
-        "run": _v2_run_payload(lifecycle={"kind": "cancelled"}),
+        "run": _v2_run_payload(lifecycle={"status": "cancelled"}),
         "cancellation_status": "cancelled",
     }
 
@@ -826,7 +826,7 @@ def test_workflow_runs_cancel_route() -> None:
 def test_workflow_runs_restart_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _v2_run_payload(
-        id="run_2", lifecycle={"kind": "running"}
+        id="run_2", lifecycle={"status": "running"}
     )
 
     run = WorkflowRuns(client=client).restart("run_1", command_id="cmd_2")
@@ -976,7 +976,7 @@ def test_workflow_run_step_extracted_data() -> None:
         "run_id": "run_1", "organization_id": "org_1",
         "block_id": "extract-1", "step_id": "extract-1",
         "block_type": "extract", "block_label": "Extract",
-        "lifecycle": {"kind": "completed"},
+        "lifecycle": {"status": "completed"},
         "handle_outputs": {
             "output-json-0": {"type": "json", "data": {"total": 1234}},
         },

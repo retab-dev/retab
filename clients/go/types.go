@@ -171,7 +171,7 @@ func (s StepExecutionResponse) ExtractedData() any {
 }
 
 type RunLifecycle struct {
-	Kind               string   `json:"kind"`
+	Status               string   `json:"status"`
 	WaitingForBlockIDs []string `json:"waiting_for_block_ids,omitempty"`
 	Message            string   `json:"message,omitempty"`
 }
@@ -240,12 +240,12 @@ func (r *WorkflowRun) UnmarshalJSON(data []byte) error {
 
 // Completed reports whether the run reached the completed terminal state.
 func (r WorkflowRun) Completed() bool {
-	return r.Lifecycle.Kind == "completed"
+	return r.Lifecycle.Status == "completed"
 }
 
 // Terminal reports whether the run is no longer actively executing.
 func (r WorkflowRun) Terminal() bool {
-	switch r.Lifecycle.Kind {
+	switch r.Lifecycle.Status {
 	case "completed", "error", "cancelled":
 		return true
 	default:

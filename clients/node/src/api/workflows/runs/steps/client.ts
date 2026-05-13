@@ -49,7 +49,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      * ```typescript
      * const steps = await client.workflows.runs.steps.list("run_abc123");
      * for (const step of steps) {
-     *     console.log(`${step.block_id}: ${step.lifecycle.kind}`);
+     *     console.log(`${step.block_id}: ${step.lifecycle.status}`);
      * }
      * ```
      */

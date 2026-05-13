@@ -499,7 +499,7 @@ func workflowRunResponse(runID string, workflowID string, lifecycleKind string) 
 		},
 		"trigger": map[string]any{"type": "api"},
 		"lifecycle": map[string]any{
-			"kind": lifecycleKind,
+			"status": lifecycleKind,
 		},
 		"timing": map[string]any{
 			"created_at": "2026-05-10T00:00:00Z",
@@ -541,7 +541,7 @@ func TestWorkflowRunStepsGet(t *testing.T) {
 			"step_id":     "extract-1",
 			"block_type":  "extract",
 			"block_label": "Extract",
-			"lifecycle":   map[string]any{"kind": "completed"},
+			"lifecycle":   map[string]any{"status": "completed"},
 			"handle_inputs": map[string]any{
 				"input-file-document": map[string]any{"type": "file"},
 			},
@@ -574,7 +574,7 @@ func TestWorkflowRunStepsGet(t *testing.T) {
 	if step.BlockID != "extract-1" {
 		t.Fatalf("block id = %s", step.BlockID)
 	}
-	if step.Lifecycle["kind"] != "completed" {
+	if step.Lifecycle["status"] != "completed" {
 		t.Fatalf("lifecycle = %#v", step.Lifecycle)
 	}
 	if len(step.HandleInputs) != 1 {
@@ -587,7 +587,7 @@ func TestWorkflowRunStepsGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(encoded), `"status"`) || strings.Contains(string(encoded), `"terminal"`) {
+	if strings.Contains(string(encoded), `"terminal"`) {
 		t.Fatalf("step JSON exposed removed state fields: %s", string(encoded))
 	}
 }
@@ -603,7 +603,7 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 				"step_id": "start-1",
 				"block_type": "start",
 				"block_label": "Start",
-				"lifecycle": {"kind": "completed"},
+				"lifecycle": {"status": "completed"},
 				"handle_inputs": null,
 				"handle_outputs": null
 			}
@@ -626,14 +626,14 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 	if steps[0].HandleInputs == nil || steps[0].HandleOutputs == nil {
 		t.Fatalf("handle maps should be normalized: %#v", steps[0])
 	}
-	if steps[0].Lifecycle["kind"] != "completed" {
+	if steps[0].Lifecycle["status"] != "completed" {
 		t.Fatalf("lifecycle = %#v", steps[0].Lifecycle)
 	}
 	encoded, err := json.Marshal(steps[0])
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(encoded), `"status"`) || strings.Contains(string(encoded), `"terminal"`) {
+	if strings.Contains(string(encoded), `"terminal"`) {
 		t.Fatalf("workflow run step JSON exposed removed state fields: %s", string(encoded))
 	}
 }

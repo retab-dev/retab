@@ -181,9 +181,6 @@ describe('Retab SDK Extractions Resource Tests', () => {
           bust_cache: true,
         },
         {
-          body: {
-            chunking_keys: { line_items: 'items' },
-          },
           params: { debug: '1' },
           headers: { 'Idempotency-Key': 'idem_1' },
         }
@@ -211,7 +208,6 @@ describe('Retab SDK Extractions Resource Tests', () => {
       expect(request?.body?.metadata).toEqual({ case: 'stream' });
       expect(request?.body?.additional_messages).toEqual(additionalMessages);
       expect(request?.body?.bust_cache).toBe(true);
-      expect(request?.body?.chunking_keys).toEqual({ line_items: 'items' });
 
       expect(chunks).toHaveLength(2);
       expect(chunks[0]?.extraction_id).toBe('extr_stream_123');
