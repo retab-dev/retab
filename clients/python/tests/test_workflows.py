@@ -591,7 +591,7 @@ def test_step_execution_response_ignores_removed_payload_schema_fields() -> None
             "block_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "status": "completed",
+            "lifecycle": {"kind": "completed"},
             "output": {
                 "data": {"invoice_number": "INV-001"},
                 "json_schema": {"type": "object"},
@@ -976,12 +976,15 @@ def test_workflow_run_step_extracted_data() -> None:
         "run_id": "run_1", "organization_id": "org_1",
         "block_id": "extract-1", "step_id": "extract-1",
         "block_type": "extract", "block_label": "Extract",
-        "status": "completed",
+        "lifecycle": {"kind": "completed"},
         "handle_outputs": {
             "output-json-0": {"type": "json", "data": {"total": 1234}},
         },
     })
     assert step.extracted_data == {"total": 1234}
+    dumped = step.model_dump()
+    assert "status" not in dumped
+    assert "terminal" not in dumped
     # handle_outputs should be typed as HandlePayload
     from retab.types.workflows.model import HandlePayload
     payload = step.handle_outputs["output-json-0"]
@@ -990,3 +993,5 @@ def test_workflow_run_step_extracted_data() -> None:
     assert "input_document" not in WorkflowRunStep.model_fields
     assert "output_document" not in WorkflowRunStep.model_fields
     assert "split_documents" not in WorkflowRunStep.model_fields
+    assert "status" not in WorkflowRunStep.model_fields
+    assert "terminal" not in WorkflowRunStep.model_fields

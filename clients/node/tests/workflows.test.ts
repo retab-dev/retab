@@ -694,7 +694,7 @@ describe("workflows client", () => {
             block_id: "extract-1",
             block_type: "extract",
             block_label: "Extract",
-            status: "completed",
+            lifecycle: { kind: "completed" },
             output: {
                 data: { invoice_number: "INV-001" },
                 json_schema: { type: "object" },
@@ -716,6 +716,8 @@ describe("workflows client", () => {
         expect(removedPayloadKey in parsed).toBe(false);
         expect("json_schema" in parsed).toBe(false);
         expect("artifact_view" in parsed).toBe(false);
+        expect("status" in parsed).toBe(false);
+        expect("terminal" in parsed).toBe(false);
         expect(parsed.handle_outputs?.["output-json-0"]?.data?.invoice_number).toBe("INV-001");
     });
 
@@ -726,13 +728,15 @@ describe("workflows client", () => {
             step_id: "extract-1",
             block_type: "extract",
             block_label: "Extract",
-            status: "completed",
+            lifecycle: { kind: "completed" },
             model: "retab-small",
             handle_outputs: {},
             handle_inputs: {},
         });
 
         expect(parsed.model).toBe("retab-small");
+        expect("status" in parsed).toBe(false);
+        expect("terminal" in parsed).toBe(false);
     });
 
     test("edges.createBatch() accepts camelCase request objects", async () => {

@@ -82,7 +82,7 @@ const runArtifacts = await retab.workflows.artifacts.list({
   runId: currentRun.id,
 });
 
-console.log(steps.map((step) => `${step.block_id}: ${step.status}`));
+console.log(steps.map((step) => `${step.block_id}: ${step.lifecycle.kind}`));
 console.log(extractStep.handle_outputs["output-json-0"]?.data);
 console.log(artifact);
 console.log(runArtifacts);

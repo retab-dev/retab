@@ -19,7 +19,7 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
             "step_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "status": "completed",
+            "lifecycle": {"kind": "completed"},
         }
     ]
 
@@ -89,7 +89,7 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
             "step_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "status": "completed",
+            "lifecycle": {"kind": "completed"},
         }
     ])
 
@@ -131,7 +131,7 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
         "block_id": "extract-1",
         "block_type": "extract",
         "block_label": "Extract",
-        "status": "completed",
+        "lifecycle": {"kind": "completed"},
         "artifact": {
             "operation": "extraction",
             "id": "ext_123",
@@ -175,6 +175,8 @@ def test_workflow_step_sdk_does_not_export_removed_payload_response_names() -> N
     assert not hasattr(workflow_model, response_name)
     assert not hasattr(workflow_model, batch_response_name)
     assert not hasattr(workflow_model, "StepExecutionsBatchResponse")
+    assert not hasattr(workflow_model, "StepExecutionStatus")
+    assert not hasattr(workflow_model, "TerminalState")
 
 
 def test_workflow_steps_get_accepts_partition_artifact() -> None:
@@ -183,7 +185,7 @@ def test_workflow_steps_get_accepts_partition_artifact() -> None:
         "block_id": "for_each-1",
         "block_type": "for_each",
         "block_label": "For Each",
-        "status": "completed",
+        "lifecycle": {"kind": "completed"},
         "artifact": {
             "operation": "partition",
             "id": "prtn_123",
@@ -206,7 +208,7 @@ async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
         "block_id": "start-json-1",
         "block_type": "start_json",
         "block_label": "Start JSON",
-        "status": "completed",
+        "lifecycle": {"kind": "completed"},
         "handle_outputs": {
             "output-json-0": {
                 "type": "json",
@@ -236,7 +238,7 @@ def test_workflow_steps_list_with_block_ids() -> None:
             "step_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "status": "completed",
+            "lifecycle": {"kind": "completed"},
             "artifact": {"operation": "extraction", "id": "ext_123"},
         },
         {
@@ -246,7 +248,7 @@ def test_workflow_steps_list_with_block_ids() -> None:
             "step_id": "parse-1",
             "block_type": "parse",
             "block_label": "Parse",
-            "status": "completed",
+            "lifecycle": {"kind": "completed"},
         },
     ]
 
@@ -288,7 +290,7 @@ def test_workflow_steps_get_no_json_output() -> None:
         "block_id": "parse-1",
         "block_type": "parse",
         "block_label": "Parse",
-        "status": "completed",
+        "lifecycle": {"kind": "completed"},
         "handle_outputs": {
             "output-file-0": {
                 "type": "file",
@@ -310,7 +312,7 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
         "block_id": "start-1",
         "block_type": "start",
         "block_label": "Start",
-        "status": "completed",
+        "lifecycle": {"kind": "completed"},
         "handle_outputs": None,
         "handle_inputs": None,
     }
@@ -319,14 +321,13 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
     assert step.extracted_data is None
 
 
-def test_step_execution_response_uses_terminal_for_failed_step() -> None:
+def test_step_execution_response_uses_lifecycle_for_failed_step() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "block_id": "extract-1",
         "block_type": "extract",
         "block_label": "Extract",
-        "status": "error",
-        "terminal": {
+        "lifecycle": {
             "kind": "error",
             "message": "LLM returned malformed JSON",
             "stage": "execution",
@@ -338,11 +339,11 @@ def test_step_execution_response_uses_terminal_for_failed_step() -> None:
 
     step = WorkflowSteps(client=client).get("run_123", "extract-1")
 
-    assert step.status == "error"
-    assert step.terminal is not None
-    assert step.terminal.kind == "error"
-    assert step.terminal.message == "LLM returned malformed JSON"
+    assert step.lifecycle.kind == "error"
+    assert step.lifecycle.message == "LLM returned malformed JSON"
     assert "error" not in step.model_dump()
+    assert "status" not in step.model_dump()
+    assert "terminal" not in step.model_dump()
 
 
 def test_step_execution_response_has_no_compatibility_error_field() -> None:
@@ -351,10 +352,12 @@ def test_step_execution_response_has_no_compatibility_error_field() -> None:
             "block_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "status": "completed",
+            "lifecycle": {"kind": "completed"},
         }
     )
     assert "error" not in response.model_dump()
+    assert "status" not in response.model_dump()
+    assert "terminal" not in response.model_dump()
 
 
 def _minimal_run_payload(**overrides) -> dict:
@@ -384,4 +387,3 @@ def _minimal_run_payload(**overrides) -> dict:
     }
     payload.update(overrides)
     return payload
-

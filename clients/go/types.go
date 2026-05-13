@@ -80,8 +80,8 @@ type ContainerContextData struct {
 	ParallelItemIndex *int   `json:"parallel_item_index,omitempty"`
 }
 
-// TerminalState is intentionally permissive because terminal payloads evolve.
-type TerminalState map[string]any
+// StepLifecycle is intentionally permissive because lifecycle payloads evolve.
+type StepLifecycle map[string]any
 
 // WorkflowRunStep is a persisted step summary for a workflow run.
 type WorkflowRunStep struct {
@@ -90,10 +90,9 @@ type WorkflowRunStep struct {
 	StepID         string                   `json:"step_id"`
 	BlockType      string                   `json:"block_type"`
 	BlockLabel     string                   `json:"block_label"`
-	Status         string                   `json:"status"`
+	Lifecycle      StepLifecycle            `json:"lifecycle"`
 	StartedAt      *time.Time               `json:"started_at,omitempty"`
 	CompletedAt    *time.Time               `json:"completed_at,omitempty"`
-	Terminal       TerminalState            `json:"terminal,omitempty"`
 	Model          string                   `json:"model,omitempty"`
 	LoopContainers []ContainerContextData   `json:"loop_containers,omitempty"`
 	Artifact       *StepArtifactRef         `json:"artifact,omitempty"`
@@ -128,10 +127,9 @@ type StepExecutionResponse struct {
 	StepID         string                   `json:"step_id"`
 	BlockType      string                   `json:"block_type"`
 	BlockLabel     string                   `json:"block_label"`
-	Status         string                   `json:"status"`
+	Lifecycle      StepLifecycle            `json:"lifecycle"`
 	StartedAt      *time.Time               `json:"started_at,omitempty"`
 	CompletedAt    *time.Time               `json:"completed_at,omitempty"`
-	Terminal       TerminalState            `json:"terminal,omitempty"`
 	Model          string                   `json:"model,omitempty"`
 	LoopContainers []ContainerContextData   `json:"loop_containers,omitempty"`
 	Artifact       *StepArtifactRef         `json:"artifact,omitempty"`

@@ -14,7 +14,7 @@ class WorkflowStepsMixin:
     """Mixin providing shared prepare methods for workflow step operations."""
 
     def prepare_get(self, run_id: str, block_id: str) -> PreparedRequest:
-        """Prepare a request to get status and handles for a specific step."""
+        """Prepare a request to get lifecycle and handles for a specific step."""
         return PreparedRequest(method="GET", url=f"/workflows/runs/{run_id}/steps/{block_id}")
 
     def prepare_list(self, run_id: str) -> PreparedRequest:

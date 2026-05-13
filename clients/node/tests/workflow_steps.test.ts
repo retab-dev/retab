@@ -24,7 +24,7 @@ class MockClient extends AbstractClient {
           step_id: 'extract-1',
           block_type: 'extract',
           block_label: 'Extract',
-          status: 'completed',
+          lifecycle: { kind: 'completed' },
           artifact: {
             operation: 'extraction',
             id: 'ext_123',
@@ -145,7 +145,7 @@ describe('workflow run steps client', () => {
             block_id: 'extract-1',
             block_type: 'extract',
             block_label: 'Extract',
-            status: 'completed',
+            lifecycle: { kind: 'completed' },
             artifact: {
               operation: 'extraction',
               id: 'ext_123',
@@ -198,6 +198,8 @@ describe('workflow run steps client', () => {
       ['Step', 'Outputs', 'BatchResponse'].join(''),
       'ZStepExecutionsBatchResponse',
       'StepExecutionsBatchResponse',
+      'ZTerminalState',
+      'TerminalState',
     ];
     for (const removedName of removedNames) {
       expect(Object.prototype.hasOwnProperty.call(workflowTypes, removedName)).toBe(false);
@@ -218,7 +220,7 @@ describe('workflow run steps client', () => {
     });
     expect(steps).toHaveLength(1);
     expect(steps[0]?.block_id).toBe('extract-1');
-    expect(steps[0]?.status).toBe('completed');
+    expect(steps[0]?.lifecycle.kind).toBe('completed');
     expect(steps[0]?.artifact).toEqual({
       operation: 'extraction',
       id: 'ext_123',
@@ -257,7 +259,7 @@ describe('workflow run steps client', () => {
             block_id: 'for_each-1',
             block_type: 'for_each',
             block_label: 'For Each',
-            status: 'completed',
+            lifecycle: { kind: 'completed' },
             artifact: {
               operation: 'partition',
               id: 'prtn_123',
