@@ -470,16 +470,14 @@ export const ZInferFormSchemaResponse = generated.ZInferFormSchemaResponse;
 export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 
 // ---------------------------------------------------------------------------
-// BREAKING CHANGES (workflow step artifact + StepStatus shape cutover)
+// BREAKING CHANGES (workflow step artifact + StepStatus lifecycle cutover)
 // ---------------------------------------------------------------------------
 // All step shapes (`StepStatus` / `StepExecutionResponse` /
-// `WorkflowRunStep`) now share `StepCore`. The old flat terminal fields are
-// replaced by a single discriminated `terminal: TerminalState | null` payload
-// (`TerminalError` / `TerminalSkipped` / `TerminalCancelled`).
+// `WorkflowRunStep`) now share `StepCore`. Step state is a single
+// discriminated `lifecycle` payload. `status` and `terminal` are removed.
 // `iteration_context` is replaced by a flat `loop_containers:
 // ContainerContextData[]`.
-// Callers that previously read flat terminal details should switch to
-// `step.terminal`. Callers that read
+// Step state is now read from `step.lifecycle`. Callers that read
 // `step.metadata.evaluations` should fetch the backing record via `step.artifact`.
 // ---------------------------------------------------------------------------
 const ZHandlePayloadRecord = z.preprocess(
@@ -493,19 +491,9 @@ export const ZWorkflowRunStep = z.object({
   step_id: z.string().default(''),
   block_type: z.string(),
   block_label: z.string(),
-  status: z.union([
-    z.literal('pending'),
-    z.literal('queued'),
-    z.literal('running'),
-    z.literal('completed'),
-    z.literal('skipped'),
-    z.literal('error'),
-    z.literal('waiting_for_human'),
-    z.literal('cancelled'),
-  ]),
+  lifecycle: generated.ZStepLifecycle,
   started_at: z.string().nullable().optional(),
   completed_at: z.string().nullable().optional(),
-  terminal: generated.ZTerminalState.nullable().optional(),
   loop_containers: z.array(generated.ZContainerContextData).default([]),
   model: z.string().nullable().optional(),
   // WorkflowRunStep extras
@@ -523,19 +511,9 @@ export const ZStepExecutionResponse = z.object({
   step_id: z.string().default(''),
   block_type: z.string(),
   block_label: z.string(),
-  status: z.union([
-    z.literal('pending'),
-    z.literal('queued'),
-    z.literal('running'),
-    z.literal('completed'),
-    z.literal('skipped'),
-    z.literal('error'),
-    z.literal('waiting_for_human'),
-    z.literal('cancelled'),
-  ]),
+  lifecycle: generated.ZStepLifecycle,
   started_at: z.string().nullable().optional(),
   completed_at: z.string().nullable().optional(),
-  terminal: generated.ZTerminalState.nullable().optional(),
   model: z.string().nullable().optional(),
   loop_containers: z.array(generated.ZContainerContextData).default([]),
   artifact: generated.ZStepArtifactRef.nullable().optional(),

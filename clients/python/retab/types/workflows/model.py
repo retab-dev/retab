@@ -7,16 +7,14 @@ from retab.types.base import RetabBaseModel
 from retab.types.mime import FileRef
 
 # ---------------------------------------------------------------------------
-# BREAKING CHANGES (workflow step artifact + StepStatus shape cutover)
+# BREAKING CHANGES (workflow step artifact + StepStatus lifecycle cutover)
 # ---------------------------------------------------------------------------
 # - All step shapes now share :class:`StepCore` — :class:`StepStatus`,
 #   :class:`StepExecutionResponse` and :class:`WorkflowRunStep` inherit
 #   from it. ``updated_at`` is gone.
-# - The old flat error/lifecycle fields are replaced by a single
-#   discriminated :data:`TerminalState` payload under ``terminal``
-#   (``TerminalError`` / ``TerminalSkipped`` / ``TerminalCancelled``). The
-#   ``terminal`` field is present iff ``status`` is one of
-#   error/skipped/cancelled.
+# - Step execution state is a single discriminated :data:`StepLifecycle`
+#   payload under ``lifecycle``. ``status`` and ``terminal`` are removed from
+#   every step model.
 # - ``iteration_context`` is replaced by a flat
 #   ``loop_containers: List[ContainerContextData]`` on :class:`StepCore`;
 #   :class:`IterationContextData` is removed.
@@ -35,8 +33,7 @@ from retab.types.mime import FileRef
 #   :class:`WhileLoopTermination`, :class:`ApiCallInvocation`,
 #   :class:`FunctionInvocation`.
 #
-# Migration: callers that previously read flat terminal details should switch
-# to ``step.terminal`` (a ``TerminalState``).
+# Migration: step state is now read from ``step.lifecycle``.
 # Callers that read ``step.metadata.evaluations`` /
 # ``step.requires_human_review`` should fetch the artifact's backing
 # record (one of the record types above) and read from there.
@@ -73,16 +70,6 @@ def _normalize_handle_payloads(value: Any) -> Any:
 # regenerated. Keep runtime validation permissive so informational step metadata
 # does not break run parsing.
 BlockType = str
-StepExecutionStatus = Literal[
-    "pending",
-    "queued",
-    "running",
-    "completed",
-    "skipped",
-    "error",
-    "waiting_for_human",
-    "cancelled",
-]
 WorkflowArtifactOperation = Literal[
     # Existing persisted-ref operations.
     "extraction",
@@ -159,12 +146,31 @@ class ErrorDetails(RetabBaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Terminal payloads — discriminated union over status in {error, skipped, cancelled}
+# Step lifecycle payloads — discriminated union over the current step state.
 # ---------------------------------------------------------------------------
 
 
-class TerminalError(RetabBaseModel):
-    """Terminal payload for ``status="error"``."""
+class PendingStepLifecycle(RetabBaseModel):
+    kind: Literal["pending"] = "pending"
+
+
+class QueuedStepLifecycle(RetabBaseModel):
+    kind: Literal["queued"] = "queued"
+
+
+class RunningStepLifecycle(RetabBaseModel):
+    kind: Literal["running"] = "running"
+
+
+class CompletedStepLifecycle(RetabBaseModel):
+    kind: Literal["completed"] = "completed"
+
+
+class WaitingForHumanStepLifecycle(RetabBaseModel):
+    kind: Literal["waiting_for_human"] = "waiting_for_human"
+
+
+class ErrorStepLifecycle(RetabBaseModel):
     kind: Literal["error"] = "error"
     message: str = Field(..., description="Human-readable error message")
     # ``stage``/``category`` are typed enums on the canonical model
@@ -175,20 +181,25 @@ class TerminalError(RetabBaseModel):
     details: Optional[ErrorDetails] = Field(default=None, description="Structured error context")
 
 
-class TerminalSkipped(RetabBaseModel):
-    """Terminal payload for ``status="skipped"``."""
+class SkippedStepLifecycle(RetabBaseModel):
     kind: Literal["skipped"] = "skipped"
     reason: str = Field(..., description="Reason the step was skipped")
 
 
-class TerminalCancelled(RetabBaseModel):
-    """Terminal payload for ``status="cancelled"``."""
+class CancelledStepLifecycle(RetabBaseModel):
     kind: Literal["cancelled"] = "cancelled"
     reason: str = Field(..., description="Reason the step was cancelled")
 
 
-TerminalState = Annotated[
-    TerminalError | TerminalSkipped | TerminalCancelled,
+StepLifecycle = Annotated[
+    PendingStepLifecycle
+    | QueuedStepLifecycle
+    | RunningStepLifecycle
+    | CompletedStepLifecycle
+    | WaitingForHumanStepLifecycle
+    | ErrorStepLifecycle
+    | SkippedStepLifecycle
+    | CancelledStepLifecycle,
     Field(discriminator="kind"),
 ]
 
@@ -413,13 +424,9 @@ class StepCore(RetabBaseModel):
     step_id: str = Field(default="", description="Full step ID with iteration context")
     block_type: BlockType = Field(..., description="Type of the block")
     block_label: str = Field(..., description="Label of the block")
-    status: StepExecutionStatus = Field(..., description="Current status")
+    lifecycle: StepLifecycle = Field(..., description="Current lifecycle state")
     started_at: Optional[datetime.datetime] = Field(default=None, description="When the step started")
     completed_at: Optional[datetime.datetime] = Field(default=None, description="When the step completed")
-    terminal: Optional[TerminalState] = Field(
-        default=None,
-        description="Structured terminal payload — present iff status is error/skipped/cancelled",
-    )
     model: Optional[str] = Field(default=None, description="LLM model used by this step, when applicable")
     loop_containers: List[ContainerContextData] = Field(
         default_factory=list,
@@ -428,14 +435,14 @@ class StepCore(RetabBaseModel):
 
 
 class StepStatus(StepCore):
-    """Full step status with all execution details.
+    """Full step lifecycle record with all execution details.
 
     Mirrors the backend ``StepStatus`` document. ``handle_inputs``,
     ``handle_outputs``, and the singular :attr:`artifact` ref are flat,
     real fields on this model. Branch-evaluation / HIL / while-loop
     termination state lives on the backing record referenced by
     ``artifact`` (e.g. :class:`HilEvaluation`), not as flat fields here.
-    The ``"waiting_for_human"`` status value encodes the awaiting-review
+    The ``"waiting_for_human"`` lifecycle value encodes the awaiting-review
     signal; the actual review decision is on the ``HilEvaluation``
     backing record.
     """
@@ -647,7 +654,7 @@ TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancel
 
 
 class StepExecutionResponse(StepCore):
-    """Step status, handle data, and artifact ref for a specific workflow step."""
+    """Step lifecycle, handle data, and artifact ref for a specific workflow step."""
 
 
     artifact: Optional[StepArtifactRef] = Field(
