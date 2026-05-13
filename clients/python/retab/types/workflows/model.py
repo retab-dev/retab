@@ -151,27 +151,27 @@ class ErrorDetails(RetabBaseModel):
 
 
 class PendingStepLifecycle(RetabBaseModel):
-    kind: Literal["pending"] = "pending"
+    status: Literal["pending"] = "pending"
 
 
 class QueuedStepLifecycle(RetabBaseModel):
-    kind: Literal["queued"] = "queued"
+    status: Literal["queued"] = "queued"
 
 
 class RunningStepLifecycle(RetabBaseModel):
-    kind: Literal["running"] = "running"
+    status: Literal["running"] = "running"
 
 
 class CompletedStepLifecycle(RetabBaseModel):
-    kind: Literal["completed"] = "completed"
+    status: Literal["completed"] = "completed"
 
 
 class WaitingForHumanStepLifecycle(RetabBaseModel):
-    kind: Literal["waiting_for_human"] = "waiting_for_human"
+    status: Literal["waiting_for_human"] = "waiting_for_human"
 
 
 class ErrorStepLifecycle(RetabBaseModel):
-    kind: Literal["error"] = "error"
+    status: Literal["error"] = "error"
     message: str = Field(..., description="Human-readable error message")
     # ``stage``/``category`` are typed enums on the canonical model
     # (``ExecutionStage`` / ``ErrorCategory``); kept as ``str`` here for
@@ -182,12 +182,12 @@ class ErrorStepLifecycle(RetabBaseModel):
 
 
 class SkippedStepLifecycle(RetabBaseModel):
-    kind: Literal["skipped"] = "skipped"
+    status: Literal["skipped"] = "skipped"
     reason: str = Field(..., description="Reason the step was skipped")
 
 
 class CancelledStepLifecycle(RetabBaseModel):
-    kind: Literal["cancelled"] = "cancelled"
+    status: Literal["cancelled"] = "cancelled"
     reason: str = Field(..., description="Reason the step was cancelled")
 
 
@@ -200,7 +200,7 @@ StepLifecycle = Annotated[
     | ErrorStepLifecycle
     | SkippedStepLifecycle
     | CancelledStepLifecycle,
-    Field(discriminator="kind"),
+    Field(discriminator="status"),
 ]
 
 
@@ -545,24 +545,24 @@ Trigger = Annotated[
 
 
 class PendingRun(RetabBaseModel):
-    kind: Literal["pending"] = "pending"
+    status: Literal["pending"] = "pending"
 
 
 class RunningRun(RetabBaseModel):
-    kind: Literal["running"] = "running"
+    status: Literal["running"] = "running"
 
 
 class WaitingForHumanRun(RetabBaseModel):
-    kind: Literal["waiting_for_human"] = "waiting_for_human"
+    status: Literal["waiting_for_human"] = "waiting_for_human"
     waiting_for_block_ids: List[str] = Field(default_factory=list)
 
 
 class CompletedTerminal(RetabBaseModel):
-    kind: Literal["completed"] = "completed"
+    status: Literal["completed"] = "completed"
 
 
 class ErrorTerminal(RetabBaseModel):
-    kind: Literal["error"] = "error"
+    status: Literal["error"] = "error"
     message: str = Field(...)
     stage: Optional[str] = Field(default=None)
     category: Optional[str] = Field(default=None)
@@ -571,13 +571,13 @@ class ErrorTerminal(RetabBaseModel):
 
 
 class CancelledTerminal(RetabBaseModel):
-    kind: Literal["cancelled"] = "cancelled"
+    status: Literal["cancelled"] = "cancelled"
     reason: Optional[str] = Field(default=None)
 
 
 RunLifecycle = Annotated[
     PendingRun | RunningRun | WaitingForHumanRun | CompletedTerminal | ErrorTerminal | CancelledTerminal,
-    Field(discriminator="kind"),
+    Field(discriminator="status"),
 ]
 
 

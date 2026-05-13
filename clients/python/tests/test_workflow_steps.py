@@ -19,7 +19,7 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
             "step_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "lifecycle": {"kind": "completed"},
+            "lifecycle": {"status": "completed"},
         }
     ]
 
@@ -89,7 +89,7 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
             "step_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "lifecycle": {"kind": "completed"},
+            "lifecycle": {"status": "completed"},
         }
     ])
 
@@ -131,7 +131,7 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
         "block_id": "extract-1",
         "block_type": "extract",
         "block_label": "Extract",
-        "lifecycle": {"kind": "completed"},
+        "lifecycle": {"status": "completed"},
         "artifact": {
             "operation": "extraction",
             "id": "ext_123",
@@ -185,7 +185,7 @@ def test_workflow_steps_get_accepts_partition_artifact() -> None:
         "block_id": "for_each-1",
         "block_type": "for_each",
         "block_label": "For Each",
-        "lifecycle": {"kind": "completed"},
+        "lifecycle": {"status": "completed"},
         "artifact": {
             "operation": "partition",
             "id": "prtn_123",
@@ -208,7 +208,7 @@ async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
         "block_id": "start-json-1",
         "block_type": "start_json",
         "block_label": "Start JSON",
-        "lifecycle": {"kind": "completed"},
+        "lifecycle": {"status": "completed"},
         "handle_outputs": {
             "output-json-0": {
                 "type": "json",
@@ -238,7 +238,7 @@ def test_workflow_steps_list_with_block_ids() -> None:
             "step_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "lifecycle": {"kind": "completed"},
+            "lifecycle": {"status": "completed"},
             "artifact": {"operation": "extraction", "id": "ext_123"},
         },
         {
@@ -248,7 +248,7 @@ def test_workflow_steps_list_with_block_ids() -> None:
             "step_id": "parse-1",
             "block_type": "parse",
             "block_label": "Parse",
-            "lifecycle": {"kind": "completed"},
+            "lifecycle": {"status": "completed"},
         },
     ]
 
@@ -290,7 +290,7 @@ def test_workflow_steps_get_no_json_output() -> None:
         "block_id": "parse-1",
         "block_type": "parse",
         "block_label": "Parse",
-        "lifecycle": {"kind": "completed"},
+        "lifecycle": {"status": "completed"},
         "handle_outputs": {
             "output-file-0": {
                 "type": "file",
@@ -312,7 +312,7 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
         "block_id": "start-1",
         "block_type": "start",
         "block_label": "Start",
-        "lifecycle": {"kind": "completed"},
+        "lifecycle": {"status": "completed"},
         "handle_outputs": None,
         "handle_inputs": None,
     }
@@ -328,7 +328,7 @@ def test_step_execution_response_uses_lifecycle_for_failed_step() -> None:
         "block_type": "extract",
         "block_label": "Extract",
         "lifecycle": {
-            "kind": "error",
+            "status": "error",
             "message": "LLM returned malformed JSON",
             "stage": "execution",
         },
@@ -339,7 +339,7 @@ def test_step_execution_response_uses_lifecycle_for_failed_step() -> None:
 
     step = WorkflowSteps(client=client).get("run_123", "extract-1")
 
-    assert step.lifecycle.kind == "error"
+    assert step.lifecycle.status == "error"
     assert step.lifecycle.message == "LLM returned malformed JSON"
     assert "error" not in step.model_dump()
     assert "status" not in step.model_dump()
@@ -352,7 +352,7 @@ def test_step_execution_response_has_no_compatibility_error_field() -> None:
             "block_id": "extract-1",
             "block_type": "extract",
             "block_label": "Extract",
-            "lifecycle": {"kind": "completed"},
+            "lifecycle": {"status": "completed"},
         }
     )
     assert "error" not in response.model_dump()
@@ -369,7 +369,7 @@ def _minimal_run_payload(**overrides) -> dict:
     """
     now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc).isoformat()
     lifecycle_kind = overrides.pop("lifecycle_kind", "completed")
-    lifecycle: dict = {"kind": lifecycle_kind}
+    lifecycle: dict = {"status": lifecycle_kind}
     if lifecycle_kind == "error":
         lifecycle.setdefault("message", overrides.pop("error_message", "boom"))
     payload: dict = {

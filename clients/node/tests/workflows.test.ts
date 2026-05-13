@@ -44,7 +44,7 @@ function makeV2Run(overrides: Record<string, any> = {}): Record<string, any> {
             name_at_run_time: "Test",
         },
         trigger = { type: "manual" },
-        lifecycle = { kind: "running" },
+        lifecycle = { status: "running" },
         timing = {
             created_at: "2026-01-01T00:00:00Z",
             started_at: "2026-01-01T00:00:00Z",
@@ -469,7 +469,7 @@ describe("workflows client", () => {
                 name_at_run_time: "Classifier Workflow",
             },
             trigger: { type: "manual" },
-            lifecycle: { kind: "running" },
+            lifecycle: { status: "running" },
             timing: {
                 created_at: "2026-03-13T10:00:00Z",
                 started_at: "2026-03-13T10:00:00Z",
@@ -498,7 +498,7 @@ describe("workflows client", () => {
         // it is no longer a property on the parsed WorkflowRun.
         expect((run as unknown as Record<string, unknown>).steps).toBeUndefined();
         expect(run.id).toBe("run_123");
-        expect(run.lifecycle.kind).toBe("running");
+        expect(run.lifecycle.status).toBe("running");
     });
 
     test("runs.v2 typed fields parse correctly", async () => {
@@ -511,7 +511,7 @@ describe("workflows client", () => {
                 requested_version: "ver_abcdef0123456789abcdef0123456789",
             },
             trigger: { type: "api", api_key_id: "ak_1" },
-            lifecycle: { kind: "completed" },
+            lifecycle: { status: "completed" },
             timing: {
                 created_at: "2026-01-01T00:00:00Z",
                 started_at: "2026-01-01T00:00:00Z",
@@ -694,7 +694,7 @@ describe("workflows client", () => {
             block_id: "extract-1",
             block_type: "extract",
             block_label: "Extract",
-            lifecycle: { kind: "completed" },
+            lifecycle: { status: "completed" },
             output: {
                 data: { invoice_number: "INV-001" },
                 json_schema: { type: "object" },
@@ -728,7 +728,7 @@ describe("workflows client", () => {
             step_id: "extract-1",
             block_type: "extract",
             block_label: "Extract",
-            lifecycle: { kind: "completed" },
+            lifecycle: { status: "completed" },
             model: "retab-small",
             handle_outputs: {},
             handle_inputs: {},
@@ -769,7 +769,7 @@ describe("workflows client", () => {
 
     test("runs.cancel() sends POST to /cancel", async () => {
         const mockClient = new MockClient({
-            run: makeV2Run({ lifecycle: { kind: "cancelled" } }),
+            run: makeV2Run({ lifecycle: { status: "cancelled" } }),
             cancellation_status: "cancelled",
         });
         const runsClient = new APIWorkflowRuns(mockClient);
@@ -788,7 +788,7 @@ describe("workflows client", () => {
 
     test("runs.restart() sends POST to /restart", async () => {
         const mockClient = new MockClient(
-            makeV2Run({ id: "run_2", lifecycle: { kind: "running" } })
+            makeV2Run({ id: "run_2", lifecycle: { status: "running" } })
         );
         const runsClient = new APIWorkflowRuns(mockClient);
 

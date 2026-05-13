@@ -43,7 +43,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(run.ID, run.Lifecycle.Kind)
+	fmt.Println(run.ID, run.Lifecycle.Status)
 
 	stepSummaries, err := client.Workflows.Runs.Steps.List(ctx, run.ID)
 	if err != nil {

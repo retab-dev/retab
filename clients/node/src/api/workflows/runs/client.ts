@@ -55,7 +55,7 @@ export default class APIWorkflowRuns extends CompositionClient {
      * Run a workflow with the provided inputs.
      *
      * This creates a workflow run and starts execution in the background.
-     * The returned WorkflowRun will have lifecycle.kind "running" or
+     * The returned WorkflowRun will have lifecycle.status "running" or
      * "pending" - use get() to check for updates on the run lifecycle.
      *
      * @example

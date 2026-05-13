@@ -252,7 +252,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         """Run a workflow with the provided inputs.
 
         This creates a workflow run and starts execution in the background.
-        The returned WorkflowRun will have lifecycle.kind "running" or
+        The returned WorkflowRun will have lifecycle.status "running" or
         "pending" - use get() to check for updates on the run lifecycle.
 
         Args:
@@ -273,7 +273,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             ...         "start-block-1": Path("invoice.pdf"),
             ...     },
             ... )
-            >>> print(f"Run started: {run.id}, status: {run.lifecycle.kind}")
+            >>> print(f"Run started: {run.id}, status: {run.lifecycle.status}")
         """
         request = self.prepare_create(
             workflow_id=workflow_id,
@@ -538,7 +538,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         """Run a workflow with the provided inputs.
 
         This creates a workflow run and starts execution in the background.
-        The returned WorkflowRun will have lifecycle.kind "running" or
+        The returned WorkflowRun will have lifecycle.status "running" or
         "pending" - use get() to check for updates on the run lifecycle.
 
         Args:
@@ -557,7 +557,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             ...     workflow_id="wf_abc123",
             ...     documents={"start-block-1": Path("invoice.pdf")},
             ... )
-            >>> print(f"Run started: {run.id}, status: {run.lifecycle.kind}")
+            >>> print(f"Run started: {run.id}, status: {run.lifecycle.status}")
         """
         request = self.prepare_create(
             workflow_id=workflow_id,

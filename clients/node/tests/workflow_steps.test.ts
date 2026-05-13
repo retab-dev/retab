@@ -24,7 +24,7 @@ class MockClient extends AbstractClient {
           step_id: 'extract-1',
           block_type: 'extract',
           block_label: 'Extract',
-          lifecycle: { kind: 'completed' },
+          lifecycle: { status: 'completed' },
           artifact: {
             operation: 'extraction',
             id: 'ext_123',
@@ -145,7 +145,7 @@ describe('workflow run steps client', () => {
             block_id: 'extract-1',
             block_type: 'extract',
             block_label: 'Extract',
-            lifecycle: { kind: 'completed' },
+            lifecycle: { status: 'completed' },
             artifact: {
               operation: 'extraction',
               id: 'ext_123',
@@ -220,7 +220,7 @@ describe('workflow run steps client', () => {
     });
     expect(steps).toHaveLength(1);
     expect(steps[0]?.block_id).toBe('extract-1');
-    expect(steps[0]?.lifecycle.kind).toBe('completed');
+    expect(steps[0]?.lifecycle.status).toBe('completed');
     expect(steps[0]?.artifact).toEqual({
       operation: 'extraction',
       id: 'ext_123',
@@ -259,7 +259,7 @@ describe('workflow run steps client', () => {
             block_id: 'for_each-1',
             block_type: 'for_each',
             block_label: 'For Each',
-            lifecycle: { kind: 'completed' },
+            lifecycle: { status: 'completed' },
             artifact: {
               operation: 'partition',
               id: 'prtn_123',

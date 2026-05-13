@@ -693,7 +693,7 @@ Block ID rules:
 
 ### Workflow Status Model
 
-The run lifecycle is a tagged union under `run.lifecycle`. Read `run.lifecycle.kind`:
+The run lifecycle is a tagged union under `run.lifecycle`. Read `run.lifecycle.status`:
 
 - `pending`: accepted but not started yet
 - `running`: actively executing
@@ -732,16 +732,16 @@ run = client.workflows.runs.create(
     },
 )
 
-while run.lifecycle.kind in ["pending", "running"]:
+while run.lifecycle.status in ["pending", "running"]:
     time.sleep(1)
     run = client.workflows.runs.get(run.id)
 
-if run.lifecycle.kind == "error":
+if run.lifecycle.status == "error":
     raise RuntimeError(run.lifecycle.message)
-if run.lifecycle.kind == "cancelled":
+if run.lifecycle.status == "cancelled":
     raise RuntimeError(run.lifecycle.reason or "Workflow run was cancelled")
 
-print(run.lifecycle.kind)
+print(run.lifecycle.status)
 for step in client.workflows.runs.steps.list(run.id):
     if step.handle_outputs:
         print(step.block_id, step.handle_outputs)
@@ -765,7 +765,7 @@ let run = await client.workflows.runs.create({
 });
 
 const deadline = Date.now() + 600000;
-while (run.lifecycle.kind === "pending" || run.lifecycle.kind === "running") {
+while (run.lifecycle.status === "pending" || run.lifecycle.status === "running") {
   if (Date.now() >= deadline) {
     throw new Error(`Timed out waiting for workflow run ${run.id}`);
   }
@@ -773,11 +773,11 @@ while (run.lifecycle.kind === "pending" || run.lifecycle.kind === "running") {
   run = await client.workflows.runs.get(run.id);
 }
 
-if (run.lifecycle.kind === "waiting_for_human") {
+if (run.lifecycle.status === "waiting_for_human") {
   console.log("Run paused for human review", run.lifecycle.waiting_for_block_ids);
-} else if (run.lifecycle.kind === "error") {
+} else if (run.lifecycle.status === "error") {
   throw new Error(run.lifecycle.message);
-} else if (run.lifecycle.kind === "cancelled") {
+} else if (run.lifecycle.status === "cancelled") {
   throw new Error(run.lifecycle.reason ?? "Workflow run was cancelled");
 } else {
   const steps = await client.workflows.runs.steps.list(run.id);
@@ -825,9 +825,9 @@ Inputs:
 
 Outputs:
 
-- `lifecycle.kind`: one of `pending`, `running`, `completed`, `error`, `cancelled`, `waiting_for_human`
-- `lifecycle.message` / `lifecycle.failing_step_id` / `lifecycle.details`: present when `kind == "error"`
-- `lifecycle.waiting_for_block_ids`: present when `kind == "waiting_for_human"`
+- `lifecycle.status`: one of `pending`, `running`, `completed`, `error`, `cancelled`, `waiting_for_human`
+- `lifecycle.message` / `lifecycle.failing_step_id` / `lifecycle.details`: present when `status == "error"`
+- `lifecycle.waiting_for_block_ids`: present when `status == "waiting_for_human"`
 - `workflow`: `{workflow_id, snapshot_id, name_at_run_time}`
 - `trigger`: tagged-union `{type, ...}` (e.g. `{type: "email", sender, subject}`)
 - `timing`: `{created_at, started_at, completed_at, accumulated_human_waiting_ms, ...}`; derive duration from `completed_at - started_at` when needed.
@@ -843,14 +843,14 @@ Python:
 ```python
 # Batch, one HTTP call for the whole run:
 for step in client.workflows.runs.steps.list(run.id):
-    print(step.block_id, step.lifecycle.kind, step.artifact)
-    if step.lifecycle.kind == "error":
+    print(step.block_id, step.lifecycle.status, step.artifact)
+    if step.lifecycle.status == "error":
         print(step.lifecycle.message)
 
 # Single step:
 step = client.workflows.runs.steps.get(run.id, "extract-block-1")
-print(step.lifecycle.kind)
-if step.lifecycle.kind == "error":
+print(step.lifecycle.status)
+if step.lifecycle.status == "error":
     print(step.lifecycle.message)
 print(step.extracted_data)  # handle-derived shortcut
 
@@ -864,8 +864,8 @@ Node:
 
 ```ts
 for (const step of await client.workflows.runs.steps.list(run.id)) {
-  console.log(step.block_id, step.lifecycle.kind, step.artifact);
-  if (step.lifecycle.kind === "error") {
+  console.log(step.block_id, step.lifecycle.status, step.artifact);
+  if (step.lifecycle.status === "error") {
     console.log(step.lifecycle.message);
   }
 }
@@ -905,8 +905,8 @@ Use step inspection when:
 Workflow debugging guidance:
 
 - If run creation fails immediately, check block ID keys first.
-- If `run.lifecycle.kind == "error"`, inspect `run.lifecycle.message` (and `run.lifecycle.failing_step_id` / `run.lifecycle.details` when set), plus the per-step records returned by `steps.list(run.id)` before changing the input payload.
-- If `run.lifecycle.kind == "waiting_for_human"`, use `run.lifecycle.waiting_for_block_ids` and fetch the relevant step execution or HIL decision state instead of retrying blindly.
+- If `run.lifecycle.status == "error"`, inspect `run.lifecycle.message` (and `run.lifecycle.failing_step_id` / `run.lifecycle.details` when set), plus the per-step records returned by `steps.list(run.id)` before changing the input payload.
+- If `run.lifecycle.status == "waiting_for_human"`, use `run.lifecycle.waiting_for_block_ids` and fetch the relevant step execution or HIL decision state instead of retrying blindly.
 - If only one block matters, fetch that block directly with `steps.get(...)`.
 - If you need a snapshot of the entire execution, use `steps.list(...)` / `list(...)`.
 - Prefer SDK waiting helpers over handwritten polling loops when they exist.

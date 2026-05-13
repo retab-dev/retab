@@ -8,7 +8,7 @@ describe('Node SDK smoke coverage', () => {
       block_id: 'extract-1',
       block_type: 'extract',
       block_label: 'Extract',
-      lifecycle: { kind: 'completed' },
+      lifecycle: { status: 'completed' },
       artifact: {
         operation: 'extraction',
         id: 'ext_123',
