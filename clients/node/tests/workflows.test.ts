@@ -7,8 +7,8 @@ import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
 import APIWorkflowEdges from "../src/api/workflows/edges/client";
 import APIWorkflowSpecs from "../src/api/workflows/specs/client";
 import { ZExperimentJobStatus } from "../src/api/workflows/experiments/types";
-import { raiseForStatus, WorkflowRunError, ZStepExecutionResponse, ZWorkflowRun, ZWorkflowRunStep } from "../src/types";
-import type { WorkflowRun, WorkflowRunExportResponse } from "../src/types";
+import { ZStepExecutionResponse, ZWorkflowRun, ZWorkflowRunStep } from "../src/types";
+import type { WorkflowRunExportResponse } from "../src/types";
 
 class MockClient extends AbstractClient {
     public lastFetchParams: Record<string, unknown> | null = null;
@@ -935,62 +935,7 @@ describe("workflows client", () => {
     });
 });
 
-describe("workflow run utilities", () => {
-    // Parses a v2 JSON payload into a fully-typed WorkflowRun (so we can
-    // hand `raiseForStatus` real `WorkflowRun` objects).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parseRun = (overrides: Record<string, any> = {}): WorkflowRun =>
-        ZWorkflowRun.parse(makeV2Run(overrides));
-
-    test("raiseForStatus() throws WorkflowRunError on error lifecycle", () => {
-        const run = parseRun({
-            lifecycle: { kind: "error", message: "Node failed" },
-            timing: {
-                created_at: "2026-01-01T00:00:00Z",
-                started_at: "2026-01-01T00:00:00Z",
-                completed_at: "2026-01-01T00:00:01Z",
-            },
-        });
-        expect(() => raiseForStatus(run)).toThrow(WorkflowRunError);
-        try {
-            raiseForStatus(run);
-        } catch (e) {
-            expect(e).toBeInstanceOf(WorkflowRunError);
-            expect((e as WorkflowRunError).run).toBe(run);
-            expect((e as WorkflowRunError).message).toContain("Node failed");
-        }
-    });
-
-    test("raiseForStatus() does not throw on completed lifecycle", () => {
-        const run = parseRun({
-            lifecycle: { kind: "completed" },
-            timing: {
-                created_at: "2026-01-01T00:00:00Z",
-                started_at: "2026-01-01T00:00:00Z",
-                completed_at: "2026-01-01T00:00:01Z",
-            },
-        });
-        expect(() => raiseForStatus(run)).not.toThrow();
-    });
-
-    test("raiseForStatus() throws WorkflowRunError on cancelled lifecycle", () => {
-        const run = parseRun({
-            lifecycle: { kind: "cancelled", reason: "user cancelled" },
-            timing: {
-                created_at: "2026-01-01T00:00:00Z",
-                started_at: "2026-01-01T00:00:00Z",
-                completed_at: "2026-01-01T00:00:01Z",
-            },
-        });
-        expect(() => raiseForStatus(run)).toThrow(WorkflowRunError);
-        try {
-            raiseForStatus(run);
-        } catch (e) {
-            expect(e).toBeInstanceOf(WorkflowRunError);
-            expect((e as WorkflowRunError).message).toContain("cancelled");
-        }
-    });
-
+describe("workflow runs", () => {
     test("workflow runs do not expose wait helpers", () => {
         const runsClient = new APIWorkflowRuns(new MockClient({}));
 

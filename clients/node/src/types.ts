@@ -477,8 +477,7 @@ export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 // replaced by a single discriminated `terminal: TerminalState | null` payload
 // (`TerminalError` / `TerminalSkipped` / `TerminalCancelled`).
 // `iteration_context` is replaced by a flat `loop_containers:
-// ContainerContextData[]`; `loop_id` / `iteration` / `duration_ms` are
-// computed (no longer set as flat fields).
+// ContainerContextData[]`.
 // Callers that previously read flat terminal details should switch to
 // `step.terminal`. Callers that read
 // `step.metadata.evaluations` should fetch the backing record via `step.artifact`.
@@ -899,38 +898,3 @@ export const ZBlockSimulation = z
   })
   .passthrough();
 export type BlockSimulation = z.infer<typeof ZBlockSimulation>;
-
-// ---------------------------------------------------------------------------
-// Workflow run utility functions
-// ---------------------------------------------------------------------------
-
-/**
- * Error thrown by {@link raiseForStatus} when a workflow run has failed.
- */
-export class WorkflowRunError extends Error {
-  public readonly run: generated.WorkflowRun;
-  constructor(run: generated.WorkflowRun) {
-    const lifecycle = run.lifecycle;
-    let msg: string;
-    if (lifecycle.kind === 'cancelled') {
-      msg = `Workflow run ${run.id} was cancelled`;
-      if (lifecycle.reason) msg += `: ${lifecycle.reason}`;
-    } else if (lifecycle.kind === 'error') {
-      msg = `Workflow run ${run.id} failed: ${lifecycle.message}`;
-    } else {
-      msg = `Workflow run ${run.id} did not succeed`;
-    }
-    super(msg);
-    this.name = 'WorkflowRunError';
-    this.run = run;
-  }
-}
-
-/**
- * Throw a {@link WorkflowRunError} if the run did not succeed.
- * Modelled after `httpx.Response.raise_for_status()`.
- */
-export function raiseForStatus(run: generated.WorkflowRun): void {
-  const kind = run.lifecycle.kind;
-  if (kind === 'error' || kind === 'cancelled') throw new WorkflowRunError(run);
-}

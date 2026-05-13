@@ -385,14 +385,3 @@ def _minimal_run_payload(**overrides) -> dict:
     payload.update(overrides)
     return payload
 
-
-def test_workflow_run_is_terminal_true_for_each_terminal_status() -> None:
-    for kind in ("completed", "error", "cancelled"):
-        run = WorkflowRun.model_validate(_minimal_run_payload(lifecycle_kind=kind))
-        assert run.is_terminal, f"{kind} should be terminal"
-
-
-def test_workflow_run_is_terminal_false_for_non_terminal_statuses() -> None:
-    for kind in ("pending", "running", "waiting_for_human"):
-        run = WorkflowRun.model_validate(_minimal_run_payload(lifecycle_kind=kind))
-        assert not run.is_terminal, f"{kind} should not be terminal"

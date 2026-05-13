@@ -54,7 +54,7 @@ console.log(parse.output.pages[0]);
 ## Workflows
 
 ```typescript
-import { Retab, raiseForStatus } from "@retab/node";
+import { Retab } from "@retab/node";
 
 const retab = new Retab({
   apiKey: "your-api-key",
@@ -66,7 +66,12 @@ const run = await retab.workflows.runs.create({
 });
 
 const currentRun = await retab.workflows.runs.get(run.id);
-raiseForStatus(currentRun);
+if (currentRun.lifecycle.kind === "error") {
+  throw new Error(currentRun.lifecycle.message);
+}
+if (currentRun.lifecycle.kind === "cancelled") {
+  throw new Error(currentRun.lifecycle.reason ?? "Workflow run was cancelled");
+}
 
 const steps = await retab.workflows.runs.steps.list(currentRun.id);
 const extractStep = await retab.workflows.runs.steps.get(currentRun.id, "extract-1");

@@ -11,10 +11,7 @@ from retab.types.mime import FileRef
 # ---------------------------------------------------------------------------
 # - All step shapes now share :class:`StepCore` — :class:`StepStatus`,
 #   :class:`StepExecutionResponse` and :class:`WorkflowRunStep` inherit
-#   from it. ``duration_ms`` / ``loop_id`` /
-#   ``iteration`` are computed properties on :class:`StepCore` (derived from
-#   ``started_at`` / ``completed_at`` / ``loop_containers``); they are no
-#   longer flat fields. ``updated_at`` is gone.
+#   from it. ``updated_at`` is gone.
 # - The old flat error/lifecycle fields are replaced by a single
 #   discriminated :data:`TerminalState` payload under ``terminal``
 #   (``TerminalError`` / ``TerminalSkipped`` / ``TerminalCancelled``). The
@@ -402,9 +399,7 @@ class StepCore(RetabBaseModel):
 
     Mirrors the backend ``StepCore`` shape. :class:`StepStatus` and the
     public-API view classes :class:`StepExecutionResponse` /
-    :class:`WorkflowRunStep` inherit from this. ``duration_ms`` /
-    ``loop_id`` / ``iteration`` are computed from timestamps and
-    ``loop_containers``; do not set them as flat fields.
+    :class:`WorkflowRunStep` inherit from this.
 
     Per the WorkflowRun v2 cutover, ``StepStatusSummary`` was removed —
     listing endpoints return ``StepStatus`` instances with handle payloads
@@ -430,26 +425,6 @@ class StepCore(RetabBaseModel):
         default_factory=list,
         description="Container hierarchy from outermost to innermost. Empty when not inside any container.",
     )
-
-    @computed_field
-    @property
-    def duration_ms(self) -> Optional[int]:
-        """Derived from ``completed_at - started_at``."""
-        if self.started_at and self.completed_at:
-            return int((self.completed_at - self.started_at).total_seconds() * 1000)
-        return None
-
-    @computed_field
-    @property
-    def loop_id(self) -> Optional[str]:
-        """Innermost container's ID. Derived from ``loop_containers[-1]``."""
-        return self.loop_containers[-1].container_id if self.loop_containers else None
-
-    @computed_field
-    @property
-    def iteration(self) -> Optional[int]:
-        """Innermost container's iteration. Derived from ``loop_containers[-1]``."""
-        return self.loop_containers[-1].iteration if self.loop_containers else None
 
 
 class StepStatus(StepCore):
@@ -607,42 +582,9 @@ class RunTiming(RetabBaseModel):
     human_waiting_started_at: Optional[datetime.datetime] = Field(default=None)
     accumulated_human_waiting_ms: int = Field(default=0, ge=0)
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def duration_ms(self) -> Optional[int]:
-        if self.started_at and self.completed_at:
-            return int((self.completed_at - self.started_at).total_seconds() * 1000)
-        return None
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def active_duration_ms(self) -> Optional[int]:
-        wall = self.duration_ms
-        if wall is None:
-            return None
-        return max(0, wall - self.accumulated_human_waiting_ms)
-
-
 class RunInputs(RetabBaseModel):
     documents: Dict[str, FileRef] = Field(default_factory=dict)
     json_data: Dict[str, Any] = Field(default_factory=dict)
-
-
-class WorkflowRunError(Exception):
-    """Raised by :meth:`WorkflowRun.raise_for_status` when a run failed."""
-
-    def __init__(self, run: "WorkflowRun") -> None:
-        self.run = run
-        lifecycle = run.lifecycle
-        if isinstance(lifecycle, CancelledTerminal):
-            msg = f"Workflow run {run.id} was cancelled"
-            if lifecycle.reason:
-                msg += f": {lifecycle.reason}"
-        elif isinstance(lifecycle, ErrorTerminal):
-            msg = f"Workflow run {run.id} failed: {lifecycle.message}"
-        else:
-            msg = f"Workflow run {run.id} did not succeed"
-        super().__init__(msg)
 
 
 class WorkflowRun(RetabBaseModel):
@@ -659,17 +601,6 @@ class WorkflowRun(RetabBaseModel):
     lifecycle: RunLifecycle = Field(...)
     timing: RunTiming = Field(...)
     inputs: RunInputs = Field(default_factory=RunInputs)
-
-    def raise_for_status(self) -> None:
-        """Raise :class:`WorkflowRunError` if the run did not succeed."""
-        if isinstance(self.lifecycle, (ErrorTerminal, CancelledTerminal)):
-            raise WorkflowRunError(self)
-
-    @property
-    def is_terminal(self) -> bool:
-        return isinstance(self.lifecycle, (CompletedTerminal, ErrorTerminal, CancelledTerminal))
-
-
 
 class Workflow(RetabBaseModel):
     """A stored workflow record."""
