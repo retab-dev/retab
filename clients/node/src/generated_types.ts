@@ -1215,8 +1215,6 @@ export const ZRunTiming = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     human_waiting_started_at: z.string().nullable().optional(),
     accumulated_human_waiting_ms: z.number().default(0),
-    duration_ms: z.number().nullable().optional(),
-    active_duration_ms: z.number().nullable().optional(),
 })));
 export type RunTiming = z.infer<typeof ZRunTiming>;
 

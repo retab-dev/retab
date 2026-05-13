@@ -736,7 +736,11 @@ while run.lifecycle.kind in ["pending", "running"]:
     time.sleep(1)
     run = client.workflows.runs.get(run.id)
 
-run.raise_for_status()
+if run.lifecycle.kind == "error":
+    raise RuntimeError(run.lifecycle.message)
+if run.lifecycle.kind == "cancelled":
+    raise RuntimeError(run.lifecycle.reason or "Workflow run was cancelled")
+
 print(run.lifecycle.kind)
 for step in client.workflows.runs.steps.list(run.id):
     if step.handle_outputs:
@@ -747,7 +751,6 @@ for step in client.workflows.runs.steps.list(run.id):
 
 ```ts
 import { Retab } from "@retab/node";
-import { raiseForStatus } from "retab";
 
 const client = new Retab({ apiKey: process.env.RETAB_API_KEY });
 
@@ -772,8 +775,11 @@ while (run.lifecycle.kind === "pending" || run.lifecycle.kind === "running") {
 
 if (run.lifecycle.kind === "waiting_for_human") {
   console.log("Run paused for human review", run.lifecycle.waiting_for_block_ids);
+} else if (run.lifecycle.kind === "error") {
+  throw new Error(run.lifecycle.message);
+} else if (run.lifecycle.kind === "cancelled") {
+  throw new Error(run.lifecycle.reason ?? "Workflow run was cancelled");
 } else {
-  raiseForStatus(run);
   const steps = await client.workflows.runs.steps.list(run.id);
   for (const step of steps) {
     if (Object.keys(step.handle_outputs).length > 0) {
@@ -824,7 +830,7 @@ Outputs:
 - `lifecycle.waiting_for_block_ids`: present when `kind == "waiting_for_human"`
 - `workflow`: `{workflow_id, snapshot_id, name_at_run_time}`
 - `trigger`: tagged-union `{type, ...}` (e.g. `{type: "email", sender, subject}`)
-- `timing`: `{created_at, started_at, completed_at, duration_ms, accumulated_human_waiting_ms, ...}`
+- `timing`: `{created_at, started_at, completed_at, accumulated_human_waiting_ms, ...}`; derive duration from `completed_at - started_at` when needed.
 - `inputs`: `{documents, json_data}`
 - `steps` are NOT embedded; fetch via `GET /v1/workflows/runs/{run_id}/steps` and inspect per-step `handle_outputs`
 

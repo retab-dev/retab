@@ -184,8 +184,6 @@ type RunTiming struct {
 	CompletedAt               *time.Time `json:"completed_at,omitempty"`
 	HumanWaitingStartedAt     *time.Time `json:"human_waiting_started_at,omitempty"`
 	AccumulatedHumanWaitingMS int        `json:"accumulated_human_waiting_ms,omitempty"`
-	DurationMS                *int       `json:"duration_ms,omitempty"`
-	ActiveDurationMS          *int       `json:"active_duration_ms,omitempty"`
 }
 
 type WorkflowSnapshotRef struct {

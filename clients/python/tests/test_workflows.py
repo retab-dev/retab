@@ -14,7 +14,6 @@ from retab.types.workflows.model import (
     DeclarativePlanResponse,
     DeclarativeValidationResponse,
     WorkflowRun,
-    WorkflowRunError,
     WorkflowBlock,
     WorkflowWithEntities,
     Workflow,
@@ -333,7 +332,10 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run.lifecycle.kind == "completed"
     assert run.inputs.json_data == {"json-1": {"key": "value"}}
     assert run.timing.accumulated_human_waiting_ms == 5000
-    assert run.timing.duration_ms == 5000
+    assert not hasattr(run.timing, "duration_ms")
+    assert not hasattr(run.timing, "active_duration_ms")
+    assert "duration_ms" not in run.timing.model_dump()
+    assert "active_duration_ms" not in run.timing.model_dump()
 
     # Defaults: inputs default to empty
     run2 = WorkflowRun.model_validate({
@@ -959,46 +961,6 @@ def test_workflow_runs_export_route() -> None:
     }
     assert result.rows == 1
     assert result.columns == 2
-
-
-def test_workflow_run_raise_for_status_error() -> None:
-    """raise_for_status raises WorkflowRunError on error lifecycle."""
-    run = WorkflowRun.model_validate(
-        _v2_run_payload(
-            id="run_err",
-            lifecycle={
-                "kind": "error",
-                "message": "Node extract-1 failed: invalid schema",
-            },
-        )
-    )
-    with pytest.raises(WorkflowRunError) as exc_info:
-        run.raise_for_status()
-    assert "run_err" in str(exc_info.value)
-    assert "invalid schema" in str(exc_info.value)
-    assert exc_info.value.run is run
-
-
-def test_workflow_run_raise_for_status_cancelled() -> None:
-    """raise_for_status raises WorkflowRunError on cancelled lifecycle."""
-    run = WorkflowRun.model_validate(
-        _v2_run_payload(
-            id="run_cancelled", lifecycle={"kind": "cancelled", "reason": "user cancelled"}
-        )
-    )
-    with pytest.raises(WorkflowRunError) as exc_info:
-        run.raise_for_status()
-    assert "run_cancelled" in str(exc_info.value)
-    assert "cancelled" in str(exc_info.value)
-    assert exc_info.value.run is run
-
-
-def test_workflow_run_raise_for_status_ok() -> None:
-    """raise_for_status is silent on completed lifecycle."""
-    run = WorkflowRun.model_validate(
-        _v2_run_payload(id="run_ok", lifecycle={"kind": "completed"})
-    )
-    run.raise_for_status()  # Should not raise
 
 
 def test_workflow_runs_do_not_expose_wait_for_completion() -> None:
