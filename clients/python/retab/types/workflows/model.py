@@ -968,6 +968,10 @@ class WorkflowBlock(RetabBaseModel):
     height: Optional[float] = Field(default=None, description="Block height")
     config: Optional[dict] = Field(default=None, description="Block-specific configuration")
     field_ref_snapshot: Optional[Dict[str, str]] = Field(default=None, description="Authored field reference snapshot metadata")
+    resolved_schemas: Optional[ResolvedSchemas] = Field(
+        default=None,
+        description="Graph-derived input and output schemas for this block.",
+    )
     parent_id: Optional[str] = Field(default=None, description="Parent container block ID (while_loop, for_each)")
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
