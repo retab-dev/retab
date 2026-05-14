@@ -1,0 +1,129 @@
+# Release workflow for the Retab CLI.
+#
+# Triggered by pushing a tag of the form `cli-vX.Y.Z` to this repo.
+#
+# What it does:
+#   1. Extracts the clean semver (`X.Y.Z`) from the prefixed tag.
+#   2. Runs GoReleaser in build-only mode (publish disabled) so it
+#      doesn't try to parse the `cli-` prefix as semver. We pass the
+#      clean version in via GORELEASER_CURRENT_TAG.
+#   3. Uses `gh release create` to publish a GitHub Release at the
+#      *actual* prefixed tag (`cli-vX.Y.Z`) and upload all archives +
+#      `checksums.txt`.
+#
+# The published release is consumed by the installer at
+# https://retab.com/install.sh.
+#
+# Cut a release:
+#   git tag cli-v0.1.0
+#   git push origin cli-v0.1.0
+#
+# Dry-run locally (no upload):
+#   goreleaser release --snapshot --clean
+#
+name: Release CLI
+
+on:
+  push:
+    tags:
+      - "cli-v*"
+  # Manual re-run support: pick a tag from the Actions UI.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (e.g. cli-v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write  # required to create the release + upload assets
+
+jobs:
+  release:
+    name: Build & release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history + tags so the generated release notes can diff
+          # against the previous CLI tag.
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache: true
+          cache-dependency-path: cli/go.sum
+
+      - name: Extract version from tag
+        id: ver
+        run: |
+          set -eu
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          case "$TAG" in
+            cli-v*) ;;
+            *) echo "::error::Tag '$TAG' does not match expected prefix 'cli-v*'"; exit 1 ;;
+          esac
+          VERSION="${TAG#cli-v}"
+          echo "tag=$TAG"          >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"  >> "$GITHUB_OUTPUT"
+          echo "Releasing tag=$TAG  version=$VERSION"
+
+      - name: Run GoReleaser (build only)
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean --skip=publish,announce,validate
+        env:
+          # Override the tag GoReleaser sees so the `cli-` prefix doesn't
+          # break semver parsing. The real release at the prefixed tag is
+          # created in the next step.
+          GORELEASER_CURRENT_TAG: v${{ steps.ver.outputs.version }}
+
+      - name: List built artifacts
+        run: ls -lh dist/
+
+      - name: Create GitHub release and upload artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -eu
+          # Build the asset list defensively — zip only exists for Windows targets.
+          set -- dist/checksums.txt
+          for f in dist/retab_*.tar.gz dist/retab_*.zip; do
+            [ -f "$f" ] && set -- "$@" "$f"
+          done
+
+          NOTES=$(cat <<EOF
+          ## Retab CLI \`$TAG\`
+
+          Install:
+
+          \`\`\`sh
+          curl -fsSL https://retab.com/install.sh | sh
+          \`\`\`
+
+          Or pin to this version:
+
+          \`\`\`sh
+          curl -fsSL https://retab.com/install.sh | RETAB_VERSION=$VERSION sh
+          \`\`\`
+          EOF
+          )
+
+          gh release create "$TAG" \
+            --title "Retab CLI $TAG" \
+            --notes "$NOTES" \
+            --generate-notes \
+            --target "$GITHUB_SHA" \
+            "$@"

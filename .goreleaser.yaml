@@ -1,0 +1,83 @@
+# GoReleaser config for the Retab CLI.
+#
+# This repo is a Go monorepo. The CLI lives in `cli/` and is released
+# under its own tag namespace (`cli-vX.Y.Z`) so it doesn't collide with
+# the Go/Python/Node SDK clients also tracked here.
+#
+# GoReleaser's native `monorepo` block is Pro-only, so we do this in two
+# stages from the release workflow:
+#
+#   1. This config builds + archives + checksums the CLI in "build-only"
+#      mode. Workflow sets `GORELEASER_CURRENT_TAG=v<semver>` so
+#      GoReleaser sees a clean semver tag (the `cli-` prefix would
+#      otherwise fail semver parsing).
+#   2. The release itself (created at the *real* `cli-v<semver>` tag) is
+#      handled by `gh release create` in the workflow.
+#
+# That split lets us keep all the cross-compile / archive plumbing in
+# GoReleaser while bypassing its inability to release at non-semver tags.
+#
+# Local dry run:
+#   goreleaser release --snapshot --clean
+#
+version: 2
+
+project_name: retab
+
+before:
+  hooks:
+    # `go -C cli` requires Go 1.20+; CI pins via cli/go.mod (go 1.26.1).
+    - go -C cli mod tidy
+
+builds:
+  - id: retab
+    binary: retab
+    dir: cli
+    main: .
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/retab-dev/retab/cli/cmd.version={{.Version}}
+      - -X github.com/retab-dev/retab/cli/cmd.commit={{.Commit}}
+      - -X github.com/retab-dev/retab/cli/cmd.date={{.Date}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: retab
+    # install.sh constructs this exact name. Do not change without
+    # updating frontend/public/install.sh in the monorepo.
+    name_template: "retab_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    # No explicit `files:` — GoReleaser's default picks up LICENSE* /
+    # README* when present and silently skips them otherwise.
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  # Use a literal placeholder rather than `incpatch .Version` so snapshot
+  # builds work even when the current tag isn't semver-parseable (e.g.
+  # the local repo HEAD points at a tag like `clients/go/v0.1.0` that
+  # doesn't belong to the CLI). Real releases set GORELEASER_CURRENT_TAG
+  # explicitly, so they don't hit this branch.
+  version_template: "0.0.0-snapshot-{{ .ShortCommit }}"
+
+# Release publishing is intentionally disabled here. The workflow runs
+# `goreleaser release --skip=publish,announce,validate` to build the
+# artifacts, then creates the GitHub Release at the real prefixed tag
+# (`cli-vX.Y.Z`) via `gh release create`.
+release:
+  disable: true
