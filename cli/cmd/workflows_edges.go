@@ -10,6 +10,25 @@ import (
 var workflowsEdgesCmd = &cobra.Command{
 	Use:   "edges",
 	Short: "Manage workflow edges",
+	Long: `Wire blocks together. Data flows from ` + "`source_block.output`" + `
+into ` + "`target_block.input`" + `, with optional handles
+(` + "`source_handle`" + `, ` + "`target_handle`" + `) for blocks that expose
+multiple ports.
+
+Most workflows don't need direct edge management: when you add a block
+from a start block in the visual editor, edges are auto-created. Reach
+for ` + "`workflows edges create`" + ` when scaffolding a graph from JSON,
+re-wiring after a refactor, or fixing a disconnected node flagged by
+` + "`workflows diagnose`" + `.`,
+	Example: `  # Inspect every edge
+  retab workflows edges list wf_abc123
+
+  # Wire two blocks
+  retab workflows edges create wf_abc123 \
+    --source-block blk_extract_1 --target-block blk_classify_1
+
+  # Clear the entire graph wiring (blocks remain)
+  retab workflows edges delete-all wf_abc123`,
 }
 
 func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgeCreateRequest {
@@ -35,7 +54,14 @@ func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgeCreateRequest {
 var workflowsEdgesListCmd = &cobra.Command{
 	Use:   "list <workflow-id>",
 	Short: "List edges in a workflow",
-	Args:  cobra.ExactArgs(1),
+	Long: `List edges in a workflow's draft graph. Filter by either endpoint
+to focus on a single block's wiring.`,
+	Example: `  # All edges
+  retab workflows edges list wf_abc123
+
+  # Just the edges that fan out of one block
+  retab workflows edges list wf_abc123 --source-block blk_def456`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -57,7 +83,10 @@ var workflowsEdgesListCmd = &cobra.Command{
 var workflowsEdgesGetCmd = &cobra.Command{
 	Use:   "get <workflow-id> <edge-id>",
 	Short: "Get an edge",
-	Args:  cobra.ExactArgs(2),
+	Long:  `Fetch a single edge: source, target, handles.`,
+	Example: `  # Inspect an edge
+  retab workflows edges get wf_abc123 edg_ghi789`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -76,7 +105,21 @@ var workflowsEdgesGetCmd = &cobra.Command{
 var workflowsEdgesCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id>",
 	Short: "Create an edge",
-	Args:  cobra.ExactArgs(1),
+	Long: `Connect two blocks: data flows from ` + "`--source-block`" + ` into
+` + "`--target-block`" + `. Use ` + "`--source-handle`" + ` /
+` + "`--target-handle`" + ` for blocks with multiple named ports (e.g. a
+` + "`conditional`" + ` block exposing ` + "`true`" + ` / ` + "`false`" + `
+branches).`,
+	Example: `  # Connect extractor output to a classifier
+  retab workflows edges create wf_abc123 \
+    --source-block blk_extract_1 \
+    --target-block blk_classify_1
+
+  # Connect a conditional's "true" branch
+  retab workflows edges create wf_abc123 \
+    --source-block blk_cond_1 --source-handle true \
+    --target-block blk_extract_2`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -101,7 +144,13 @@ var workflowsEdgesCreateCmd = &cobra.Command{
 var workflowsEdgesCreateBatchCmd = &cobra.Command{
 	Use:   "create-batch <workflow-id>",
 	Short: "Create multiple edges from --edges-file (JSON array)",
-	Args:  cobra.ExactArgs(1),
+	Long: `Wire many edges in one call. The file is a JSON array of edge
+objects with ` + "`source_block`" + `, ` + "`target_block`" + `, and optional
+` + "`source_handle`" + `, ` + "`target_handle`" + `, ` + "`id`" + `.`,
+	Example: `  # Bulk-wire a graph from a manifest
+  retab workflows edges create-batch wf_abc123 \
+    --edges-file ./graph/edges.json`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -136,7 +185,11 @@ var workflowsEdgesCreateBatchCmd = &cobra.Command{
 var workflowsEdgesDeleteCmd = &cobra.Command{
 	Use:   "delete <workflow-id> <edge-id>",
 	Short: "Delete an edge",
-	Args:  cobra.ExactArgs(2),
+	Long: `Remove a single edge. The blocks remain — only the wiring is
+severed.`,
+	Example: `  # Disconnect two blocks
+  retab workflows edges delete wf_abc123 edg_ghi789`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -151,7 +204,14 @@ var workflowsEdgesDeleteCmd = &cobra.Command{
 var workflowsEdgesDeleteAllCmd = &cobra.Command{
 	Use:   "delete-all <workflow-id>",
 	Short: "Delete all edges in a workflow",
-	Args:  cobra.ExactArgs(1),
+	Long: `Sever every edge in the draft graph at once. Blocks remain;
+re-wire from scratch with ` + "`workflows edges create`" + ` or
+` + "`workflows edges create-batch`" + `. Useful when scripting a graph
+rewrite.`,
+	Example: `  # Reset the wiring before re-creating from a manifest
+  retab workflows edges delete-all wf_abc123
+  retab workflows edges create-batch wf_abc123 --edges-file ./edges.json`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

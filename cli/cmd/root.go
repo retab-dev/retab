@@ -6,7 +6,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:           "retab",
-	Short:         "the document intelligence CLI",
+	Short:         "Retab is the platform to build, evaluate and scale software-defined document processing automations.",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }

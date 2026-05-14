@@ -8,11 +8,44 @@ import (
 var partitionsCmd = &cobra.Command{
 	Use:   "partitions",
 	Short: "Partition repeated records in a document into chunks by a unique identifier",
+	Long: `Partition documents containing repeated records into per-record chunks.
+
+Use this when a single document contains many instances of the same record
+type — bank statements (one entry per transaction), batched invoice PDFs
+(one invoice per record), multi-employee payslip files, etc. You supply a
+unique key that identifies record boundaries (e.g. "transaction date",
+"invoice number") and the service returns one chunk per record.
+
+A common pipeline is partition → ` + "`retab extractions create`" + ` per chunk
+with a per-record schema. For splitting heterogeneous sections (e.g.
+invoice + packing slip), use ` + "`retab splits`" + ` instead.`,
 }
 
 var partitionsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a partition",
+	Long: `Partition a document into per-record chunks by a unique key.
+
+` + "`--key`" + ` is the natural-language name of the field that uniquely
+identifies each record (e.g. ` + "`\"transaction id\"`" + `,
+` + "`\"invoice number\"`" + `). ` + "`--instructions`" + ` gives any extra hints
+about where records start and end. For tight boundary detection on
+ambiguous documents, set ` + "`--n-consensus`" + ` to sample multiple runs.
+
+Pair with ` + "`retab extractions create`" + ` per chunk for per-record schema
+extraction.`,
+	Example: `  # Partition a bank statement by transaction date
+  retab partitions create \
+    --file ./statement.pdf --model gpt-4o \
+    --key "transaction date" \
+    --instructions "Each transaction is one row in the table"
+
+  # Higher accuracy via consensus
+  retab partitions create \
+    --file-id file_abc123 --model gpt-4o \
+    --key "invoice number" \
+    --instructions "Boundaries are clear page breaks between invoices" \
+    --n-consensus 3`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -47,7 +80,17 @@ var partitionsCreateCmd = &cobra.Command{
 var partitionsGetCmd = &cobra.Command{
 	Use:   "get <partition-id>",
 	Short: "Get a partition by id",
-	Args:  cobra.ExactArgs(1),
+	Long: `Fetch a single partition by id.
+
+Returns the source document reference, the partition key, instructions,
+and the resolved per-record chunks (with page ranges and the extracted key
+value for each).`,
+	Example: `  # Fetch a known partition
+  retab partitions get part_xyz789
+
+  # List the key values of every resolved chunk
+  retab partitions get part_xyz789 | jq '.chunks[].key_value'`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -66,6 +109,15 @@ var partitionsGetCmd = &cobra.Command{
 var partitionsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List partitions",
+	Long: `List partitions, newest first by default.
+
+Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
+` + "`--limit`" + `.`,
+	Example: `  # Most recent 25 partitions
+  retab partitions list --limit 25
+
+  # Walk pages from a known id
+  retab partitions list --after part_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -85,7 +137,15 @@ var partitionsListCmd = &cobra.Command{
 var partitionsDeleteCmd = &cobra.Command{
 	Use:   "delete <partition-id>",
 	Short: "Delete a partition",
-	Args:  cobra.ExactArgs(1),
+	Long: `Permanently delete a partition.
+
+Destructive and irreversible. The source document is not affected. Take a
+backup with ` + "`retab partitions get`" + ` first if you may need the chunk
+definitions.`,
+	Example: `  # Back up, then delete
+  retab partitions get part_xyz789 > backup.json
+  retab partitions delete part_xyz789`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

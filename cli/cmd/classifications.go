@@ -10,11 +10,47 @@ import (
 var classificationsCmd = &cobra.Command{
 	Use:   "classifications",
 	Short: "Categorize documents based on content and type",
+	Long: `Assign documents to one of a fixed set of categories.
+
+A classification takes a document plus a list of named categories (each
+with a short natural-language description) and returns the chosen category
+along with confidence. Useful for routing — e.g. invoice vs. receipt vs.
+purchase order — before running a category-specific extraction with
+` + "`retab extractions create`" + `.`,
 }
 
 var classificationsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a classification",
+	Long: `Classify a document into one of a fixed set of named categories.
+
+Supply categories either inline with ` + "`--category name=description`" + ` (one
+flag per category, repeatable) or as a JSON array via
+` + "`--categories-file`" + ` (path, or ` + "`-`" + ` for stdin; each item must be
+` + "`{\"name\":..., \"description\":...}`" + `). Descriptions should be short
+natural-language guidance that disambiguates close categories.
+
+For higher accuracy on ambiguous documents, set ` + "`--n-consensus`" + ` to
+sample multiple model runs and return the majority pick. Use
+` + "`--first-n-pages`" + ` to classify only the first few pages of long docs
+when the type is obvious from the cover.`,
+	Example: `  # Classify with inline categories
+  retab classifications create \
+    --file ./doc.pdf --model gpt-4o \
+    --category invoice="vendor bills with line items and totals" \
+    --category receipt="point-of-sale purchase confirmations" \
+    --category po="buyer purchase orders before goods ship"
+
+  # Same, but categories loaded from a JSON file
+  retab classifications create \
+    --file ./doc.pdf --model gpt-4o \
+    --categories-file ./categories.json
+
+  # Higher-accuracy consensus over 5 samples, only first page
+  retab classifications create \
+    --file-id file_abc123 --model gpt-4o \
+    --categories-file ./categories.json \
+    --n-consensus 5 --first-n-pages 1`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -82,7 +118,16 @@ var classificationsCreateCmd = &cobra.Command{
 var classificationsGetCmd = &cobra.Command{
 	Use:   "get <classification-id>",
 	Short: "Get a classification by id",
-	Args:  cobra.ExactArgs(1),
+	Long: `Fetch a single classification by id.
+
+Returns the chosen category, confidence, the full list of candidate
+categories supplied at create time, and the source document reference.`,
+	Example: `  # Fetch a known classification
+  retab classifications get clas_xyz789
+
+  # Extract just the chosen category name
+  retab classifications get clas_xyz789 | jq -r '.category'`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -101,6 +146,16 @@ var classificationsGetCmd = &cobra.Command{
 var classificationsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List classifications",
+	Long: `List classifications, newest first by default.
+
+Results are paginated via ` + "`--after`" + ` / ` + "`--before`" + ` cursors. Use
+` + "`--limit`" + ` to cap the page size and ` + "`--order`" + ` to flip between
+ascending and descending.`,
+	Example: `  # Most recent 25 classifications
+  retab classifications list --limit 25
+
+  # Cursor-paginate from a known id
+  retab classifications list --after clas_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -120,7 +175,14 @@ var classificationsListCmd = &cobra.Command{
 var classificationsDeleteCmd = &cobra.Command{
 	Use:   "delete <classification-id>",
 	Short: "Delete a classification",
-	Args:  cobra.ExactArgs(1),
+	Long: `Permanently delete a classification.
+
+Destructive and irreversible. The source document is not affected. Take a
+backup with ` + "`retab classifications get`" + ` first if you may need it.`,
+	Example: `  # Back up, then delete
+  retab classifications get clas_xyz789 > backup.json
+  retab classifications delete clas_xyz789`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

@@ -10,12 +10,80 @@ import (
 var workflowsRunsCmd = &cobra.Command{
 	Use:   "runs",
 	Short: "Manage workflow runs",
+	Long: `Execute, inspect, cancel, and replay workflow runs.
+
+A run is one execution of a workflow against a set of inputs. Use this
+subgroup to start runs (` + "`create`" + `), watch their lifecycle
+(` + "`get`" + `, ` + "`steps list`" + `), restart failed runs
+(` + "`restart`" + `), or submit human-in-the-loop decisions
+(` + "`submit-hil`" + `).
+
+Human-in-the-loop: when a run hits a ` + "`hil`" + ` block it pauses with
+status ` + "`awaiting_review`" + `. Use ` + "`get-hil`" + ` to see what's
+pending, then ` + "`submit-hil`" + ` to approve, reject, or send back
+edited data — the run resumes from there.
+
+For declarative regression testing of workflow outputs, see
+` + "`retab workflows tests --help`" + `.`,
+	Example: `  # Start a run by uploading a document into the start block
+  retab workflows runs create wf_abc123 \
+    --document-file start=./invoice.pdf
+
+  # Inspect a run's lifecycle (status, errors, timing)
+  retab workflows runs get run_xyz789
+
+  # Stream per-block execution records
+  retab workflows runs steps list run_xyz789
+
+  # Cancel an in-flight run
+  retab workflows runs cancel run_xyz789
+
+  # Approve a paused HIL block
+  retab workflows runs submit-hil run_xyz789 \
+    --block-id blk_review_1 --approved`,
 }
 
 var workflowsRunsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id>",
 	Short: "Start a workflow run",
-	Args:  cobra.ExactArgs(1),
+	Long: `Start one run of a workflow against the supplied inputs.
+
+Inputs are keyed by the id of the input block they target. There are
+three ways to supply them, mix and match as needed:
+
+  ` + "`--document-file BLOCK=PATH`" + ` — upload a local file. The MIME
+  type is inferred from the file extension. Repeatable.
+
+  ` + "`--document-url BLOCK=URL`" + ` — pass a remote URL the server will
+  fetch. Repeatable.
+
+  ` + "`--documents-file PATH`" + ` — a JSON object mapping block ids to
+  pre-built MIME-data payloads. Use this for advanced cases or when the
+  documents come from upstream pipelines.
+
+Add ` + "`--json-inputs-file PATH`" + ` for blocks that accept structured
+JSON instead of (or alongside) documents.
+
+By default the workflow's latest published version runs; pin a specific
+version with ` + "`--version`" + `. Inspect the resulting run with
+` + "`workflows runs get`" + ` or ` + "`workflows runs steps list`" + `.`,
+	Example: `  # Upload a local file into the start block
+  retab workflows runs create wf_abc123 \
+    --document-file start=./invoice.pdf
+
+  # Multiple inputs across different blocks
+  retab workflows runs create wf_abc123 \
+    --document-file start=./invoice.pdf \
+    --document-url reference=https://acme.com/po.pdf
+
+  # JSON-only inputs (e.g. an api_call block)
+  retab workflows runs create wf_abc123 \
+    --json-inputs-file ./inputs.json
+
+  # Pin to a specific published version
+  retab workflows runs create wf_abc123 \
+    --version v3 --document-file start=./invoice.pdf`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -77,7 +145,17 @@ var workflowsRunsCreateCmd = &cobra.Command{
 var workflowsRunsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get a workflow run",
-	Args:  cobra.ExactArgs(1),
+	Long: `Fetch a run's metadata: status, trigger type, timestamps,
+duration, cost, error info, final outputs. For per-block detail use
+` + "`workflows runs steps list`" + `.`,
+	Example: `  # Inspect a run
+  retab workflows runs get run_xyz789
+
+  # Poll until done
+  while [ "$(retab workflows runs get run_xyz789 | jq -r '.status')" = "running" ]; do
+    sleep 2
+  done`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -96,6 +174,21 @@ var workflowsRunsGetCmd = &cobra.Command{
 var workflowsRunsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List workflow runs",
+	Long: `List runs across workflows, with filters for workflow id, status,
+trigger type, date range, cost, and duration. Use cursor pagination
+(` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `) and
+` + "`--fields`" + ` to keep responses small on busy projects.`,
+	Example: `  # Failed runs in a workflow over the last day
+  retab workflows runs list \
+    --workflow-id wf_abc123 \
+    --status failed \
+    --from-date 2026-05-13
+
+  # Expensive runs only
+  retab workflows runs list --workflow-id wf_abc123 --min-cost 1.0
+
+  # Walk pages
+  retab workflows runs list --workflow-id wf_abc123 --limit 50 --order desc`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -146,7 +239,12 @@ var workflowsRunsListCmd = &cobra.Command{
 var workflowsRunsDeleteCmd = &cobra.Command{
 	Use:   "delete <run-id>",
 	Short: "Delete a workflow run",
-	Args:  cobra.ExactArgs(1),
+	Long: `Permanently delete a run and its step records. Artifacts
+produced by the run are preserved separately (see
+` + "`workflows artifacts`" + `).`,
+	Example: `  # Delete a run
+  retab workflows runs delete run_xyz789`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -161,7 +259,15 @@ var workflowsRunsDeleteCmd = &cobra.Command{
 var workflowsRunsCancelCmd = &cobra.Command{
 	Use:   "cancel <run-id>",
 	Short: "Cancel a workflow run",
-	Args:  cobra.ExactArgs(1),
+	Long: `Cancel an in-flight run. Already-completed blocks keep their
+outputs; in-progress blocks are terminated. Use ` + "`--command-id`" + ` to
+make the cancel idempotent if you may retry the request.`,
+	Example: `  # Cancel a stuck run
+  retab workflows runs cancel run_xyz789
+
+  # Idempotent cancel (safe to retry on network errors)
+  retab workflows runs cancel run_xyz789 --command-id cancel-once-123`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -181,7 +287,12 @@ var workflowsRunsCancelCmd = &cobra.Command{
 var workflowsRunsRestartCmd = &cobra.Command{
 	Use:   "restart <run-id>",
 	Short: "Restart a workflow run",
-	Args:  cobra.ExactArgs(1),
+	Long: `Re-execute a failed or cancelled run, reusing the original
+inputs. Useful after fixing a transient infra issue or tweaking block
+config. Use ` + "`--command-id`" + ` for idempotency.`,
+	Example: `  # Restart a failed run
+  retab workflows runs restart run_xyz789`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -201,7 +312,25 @@ var workflowsRunsRestartCmd = &cobra.Command{
 var workflowsRunsSubmitHILCmd = &cobra.Command{
 	Use:   "submit-hil <run-id>",
 	Short: "Submit a human-in-the-loop decision",
-	Args:  cobra.ExactArgs(1),
+	Long: `Resume a run paused at a ` + "`hil`" + ` (human-in-the-loop) block.
+Approve the proposed output, reject it, or submit edited data that
+replaces the block's output before flow continues downstream.
+
+To see what's pending, query ` + "`workflows runs get-hil`" + ` or
+` + "`workflows runs get-agent-hil`" + ` (managed-agent reviews).`,
+	Example: `  # Approve the block's proposed output as-is
+  retab workflows runs submit-hil run_xyz789 \
+    --block-id blk_review_1 --approved
+
+  # Submit edited data — the file replaces the block's output
+  retab workflows runs submit-hil run_xyz789 \
+    --block-id blk_review_1 --approved \
+    --modified-data-file ./fixed.json
+
+  # Reject (run continues with rejection downstream)
+  retab workflows runs submit-hil run_xyz789 \
+    --block-id blk_review_1`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -231,7 +360,12 @@ var workflowsRunsSubmitHILCmd = &cobra.Command{
 var workflowsRunsGetHILCmd = &cobra.Command{
 	Use:   "get-hil <run-id> <block-id>",
 	Short: "Get HIL decision state for a block",
-	Args:  cobra.ExactArgs(2),
+	Long: `Inspect the pending human-in-the-loop review for a block:
+proposed output, any reviewer-provided edits, decision timestamps. Pair
+with ` + "`workflows runs submit-hil`" + ` to resolve it.`,
+	Example: `  # Inspect the pending HIL state
+  retab workflows runs get-hil run_xyz789 blk_review_1`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -250,7 +384,12 @@ var workflowsRunsGetHILCmd = &cobra.Command{
 var workflowsRunsGetAgentHILCmd = &cobra.Command{
 	Use:   "get-agent-hil <run-id> <block-id>",
 	Short: "Get the managed-agent HIL review for a block",
-	Args:  cobra.ExactArgs(2),
+	Long: `Fetch the managed-agent review record for a HIL block. When the
+HIL is delegated to a managed agent (rather than a human), this returns
+the agent's reasoning, score, and proposed decision.`,
+	Example: `  # Inspect the managed-agent's review
+  retab workflows runs get-agent-hil run_xyz789 blk_review_1`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -269,7 +408,13 @@ var workflowsRunsGetAgentHILCmd = &cobra.Command{
 var workflowsRunsConfigCmd = &cobra.Command{
 	Use:   "config <run-id>",
 	Short: "Get the workflow config used by a run",
-	Args:  cobra.ExactArgs(1),
+	Long: `Return the frozen workflow config (blocks, edges, per-block
+config) as it was at the moment the run started. Useful for forensics
+when a workflow has changed since the run executed and you want to
+understand what produced a given output.`,
+	Example: `  # Audit the config that produced an old run
+  retab workflows runs config run_xyz789`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -288,7 +433,12 @@ var workflowsRunsConfigCmd = &cobra.Command{
 var workflowsRunsExecutionOrderCmd = &cobra.Command{
 	Use:   "execution-order <run-id>",
 	Short: "Get the execution order for a run",
-	Args:  cobra.ExactArgs(1),
+	Long: `Return the topological order in which the run's blocks were (or
+will be) executed. Helpful for understanding scheduling when a run
+contains branches, parallel paths, or conditionals.`,
+	Example: `  # See the order blocks ran in
+  retab workflows runs execution-order run_xyz789`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -307,7 +457,12 @@ var workflowsRunsExecutionOrderCmd = &cobra.Command{
 var workflowsRunsDocumentURLCmd = &cobra.Command{
 	Use:   "document-url <run-id> <block-id>",
 	Short: "Get the document URL stored at a run/block",
-	Args:  cobra.ExactArgs(2),
+	Long: `Return a time-limited URL to the document a block consumed (or
+produced) during a run. Useful for downloading the exact bytes the
+workflow saw.`,
+	Example: `  # Fetch the original input document
+  retab workflows runs document-url run_xyz789 blk_start_1`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -326,6 +481,21 @@ var workflowsRunsDocumentURLCmd = &cobra.Command{
 var workflowsRunsExportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "Export workflow runs as CSV",
+	Long: `Bulk-export the outputs of many runs of a workflow as CSV,
+focused on one block's output. Filter by status, date range, trigger
+type, or an explicit set of run ids. Use ` + "`--preferred-column`" + ` to
+pin column order.`,
+	Example: `  # Export every successful run of a block to CSV
+  retab workflows runs export \
+    --workflow-id wf_abc123 --block-id blk_extract_1 \
+    --status succeeded \
+    --from-date 2026-05-01
+
+  # Export a specific set of runs with custom columns
+  retab workflows runs export \
+    --workflow-id wf_abc123 --block-id blk_extract_1 \
+    --run-id run_xyz789 --run-id run_aaa000 \
+    --preferred-column invoice_id --preferred-column total`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -357,12 +527,31 @@ var workflowsRunsExportCmd = &cobra.Command{
 var workflowsRunsStepsCmd = &cobra.Command{
 	Use:   "steps",
 	Short: "Inspect workflow run steps",
+	Long: `A step is the execution record of one block within a run —
+input it saw, output it produced, error if any, timing, cost. Steps are
+the entry point for debugging: when a run output looks wrong, list its
+steps and pull the offending one with ` + "`workflows runs steps get`" + `
+to see exactly what the block did.`,
+	Example: `  # List every step in a run
+  retab workflows runs steps list run_xyz789
+
+  # Pull the full execution record for one block
+  retab workflows runs steps get run_xyz789 blk_extract_1`,
 }
 
 var workflowsRunsStepsListCmd = &cobra.Command{
 	Use:   "list <run-id>",
 	Short: "List run steps",
-	Args:  cobra.ExactArgs(1),
+	Long: `List every step in a run — one record per block execution.
+Includes status, timing, and a summary of input/output sizes. For the
+full input/output payload of one step use ` + "`steps get`" + `.`,
+	Example: `  # List steps
+  retab workflows runs steps list run_xyz789
+
+  # Find the first failed step
+  retab workflows runs steps list run_xyz789 \
+    | jq '.[] | select(.status == "failed") | .block_id' | head -1`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -381,7 +570,20 @@ var workflowsRunsStepsListCmd = &cobra.Command{
 var workflowsRunsStepsGetCmd = &cobra.Command{
 	Use:   "get <run-id> <block-id>",
 	Short: "Get the full step execution record",
-	Args:  cobra.ExactArgs(2),
+	Long: `Return everything about one block's execution in a run: the
+exact input payload, the produced output, any error, timing, cost, and
+model usage if applicable.
+
+This is the canonical entry point when debugging a run that produced
+the wrong output — find the offending block, inspect its inputs, and
+correlate against the block's config.`,
+	Example: `  # Pull the full record for a single step
+  retab workflows runs steps get run_xyz789 blk_extract_1
+
+  # Save the input payload for offline replay
+  retab workflows runs steps get run_xyz789 blk_extract_1 \
+    | jq '.input' > input.json`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

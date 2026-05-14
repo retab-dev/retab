@@ -247,11 +247,9 @@ func TestCommandTreeShape(t *testing.T) {
 			}
 			names[name] = true
 			if len(child.Commands()) == 0 {
-				// Leaf — must be invokable, UNLESS it's a Hidden help-topic
-				// command (see help_topics.go). Topic leaves are surfaced
-				// only through `retab help <topic>` and intentionally have
-				// no Run/RunE — they just render their Long text via
-				// cobra's default help handler.
+				// Leaf — must be invokable, UNLESS it's a Hidden command
+				// (no help-topic system currently registers any, but we
+				// keep the escape hatch for future opt-in help-only nodes).
 				if child.RunE == nil && child.Run == nil && !child.Hidden {
 					// Built-in cobra commands (help, completion) are fine.
 					if !isBuiltin(child.Name()) {

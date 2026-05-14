@@ -10,11 +10,43 @@ import (
 var splitsCmd = &cobra.Command{
 	Use:   "splits",
 	Short: "Intelligently split documents into logical sections",
+	Long: `Split a multi-section document into its constituent subdocuments.
+
+Useful when a single PDF actually contains several logical documents — for
+example invoice + packing slip + terms-and-conditions concatenated into
+one file. You describe the expected subdocument types up front and the
+service identifies their boundaries. Downstream, you can run a separate
+` + "`retab extractions create`" + ` per section with a section-specific schema.`,
 }
 
 var splitsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a split",
+	Long: `Split a document into logical subdocuments.
+
+` + "`--subdocuments-file`" + ` is a JSON array (or ` + "`-`" + ` for stdin) of
+expected sections, each with ` + "`name`" + ` and ` + "`description`" + ` (plus
+optional ` + "`allow_multiple_instances`" + ` for sections that may appear more
+than once, e.g. multiple invoices in a single file).
+
+Boost accuracy on ambiguous boundaries with ` + "`--n-consensus`" + `. The
+returned subdocument references can be fed back into per-section
+` + "`retab extractions create`" + ` runs.`,
+	Example: `  # Split a multi-section PDF into named pieces
+  retab splits create \
+    --file ./bundle.pdf --model gpt-4o \
+    --subdocuments-file ./sections.json
+
+  # Allow multiple invoices in one file (set in JSON)
+  cat <<'JSON' > sections.json
+  [
+    {"name": "invoice",      "description": "vendor bill", "allow_multiple_instances": true},
+    {"name": "packing_slip", "description": "what shipped"}
+  ]
+  JSON
+  retab splits create \
+    --file-id file_abc123 --model gpt-4o \
+    --subdocuments-file ./sections.json --n-consensus 3`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -74,7 +106,16 @@ var splitsCreateCmd = &cobra.Command{
 var splitsGetCmd = &cobra.Command{
 	Use:   "get <split-id>",
 	Short: "Get a split by id",
-	Args:  cobra.ExactArgs(1),
+	Long: `Fetch a single split by id.
+
+Returns the source document reference, the requested subdocument
+definitions, and the resolved subdocument page ranges.`,
+	Example: `  # Fetch a known split
+  retab splits get split_xyz789
+
+  # List the page ranges of each resolved subdocument
+  retab splits get split_xyz789 | jq '.subdocuments[] | {name, pages}'`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -93,6 +134,15 @@ var splitsGetCmd = &cobra.Command{
 var splitsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List splits",
+	Long: `List splits, newest first by default.
+
+Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
+` + "`--limit`" + `.`,
+	Example: `  # Most recent 25 splits
+  retab splits list --limit 25
+
+  # Walk pages from a known id
+  retab splits list --after split_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -112,7 +162,15 @@ var splitsListCmd = &cobra.Command{
 var splitsDeleteCmd = &cobra.Command{
 	Use:   "delete <split-id>",
 	Short: "Delete a split",
-	Args:  cobra.ExactArgs(1),
+	Long: `Permanently delete a split.
+
+Destructive and irreversible. The source document is not affected. Take a
+backup with ` + "`retab splits get`" + ` first if you may need the subdocument
+boundaries again.`,
+	Example: `  # Back up, then delete
+  retab splits get split_xyz789 > backup.json
+  retab splits delete split_xyz789`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

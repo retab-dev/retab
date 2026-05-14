@@ -54,7 +54,7 @@ var commandGroups = []commandGroup{
 	},
 	{
 		title:    "Account",
-		commands: []string{"auth", "version"},
+		commands: []string{"auth"},
 	},
 }
 
@@ -72,14 +72,14 @@ var commandGroups = []commandGroup{
 // Role assignments — every colour is sourced from bun's CLI template
 // (src/bun_core/output.zig color_map + src/runtime/cli/cli.zig template):
 //   - brand        — bold magenta. Retab wordmark + <command> placeholder.
-//                    Same code bun uses for its "Bun" wordmark.
+//     Same code bun uses for its "Bun" wordmark.
 //   - groupHeader  — bold yellow. Section sub-headers like "Primitives:",
-//                    "Workflows:", "Other:". Repurposes the colour bun
-//                    assigns to its `build` row (we have explicit group
-//                    sub-headers; bun groups by colour with blank lines).
+//     "Workflows:", "Other:". Repurposes the colour bun
+//     assigns to its `build` row (we have explicit group
+//     sub-headers; bun groups by colour with blank lines).
 //   - accent       — bold blue. Every command name in the menu.
 //   - headline     — plain bold. Top-level labels: "Usage:", "Flags:",
-//                    "Learn more:". Matches bun's plain `<b>` for those.
+//     "Learn more:". Matches bun's plain `<b>` for those.
 //   - cyan         — footer URLs.
 //   - bold         — flag names (`--api-key`, `--debug`, …).
 //   - dim          — version tag, parens, env hints, footer hint.
@@ -131,10 +131,18 @@ func renderRootHelp(w io.Writer, root *cobra.Command) {
 // fake a TTY for paletteFor's auto-detection.
 func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 
-	// ----- header: brand · tagline · version -----
+	// ----- header: brand tagline + version -----
+	//
+	// Bun renders its first line as a full sentence with the wordmark
+	// coloured: "<pink>Bun</pink> is a fast JavaScript runtime, ...".
+	// We do the same: if rootCmd.Short already starts with "Retab"
+	// (the recommended shape — the tagline reads as a complete sentence),
+	// we split the wordmark off and colour it in place. Anything else
+	// (legacy or test fixtures with arbitrary Short values) renders
+	// uncoloured so we never duplicate the wordmark on the line.
 	tagline := root.Short
 	if tagline == "" {
-		tagline = "the document intelligence CLI"
+		tagline = "Retab is the document intelligence CLI."
 	}
 	versionStr := root.Version
 	if versionStr == "" {
@@ -147,8 +155,15 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 	if len(versionStr) > 0 && versionStr[0] >= '0' && versionStr[0] <= '9' {
 		versionDisplay = "v" + versionStr
 	}
-	fmt.Fprintf(w, "\n%sRetab%s · %s %s(%s)%s\n",
-		s.brand, s.reset, tagline, s.dim, versionDisplay, s.reset)
+	const wordmark = "Retab"
+	if len(tagline) >= len(wordmark) && tagline[:len(wordmark)] == wordmark {
+		rest := tagline[len(wordmark):]
+		fmt.Fprintf(w, "\n%s%s%s%s %s(%s)%s\n",
+			s.brand, wordmark, s.reset, rest, s.dim, versionDisplay, s.reset)
+	} else {
+		fmt.Fprintf(w, "\n%s %s(%s)%s\n",
+			tagline, s.dim, versionDisplay, s.reset)
+	}
 
 	// ----- usage line -----
 	// `<command>` in brand pink, matching bun's convention where the
@@ -197,10 +212,9 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		if !anyPresent {
 			continue
 		}
-		// Group sub-headers in bold yellow — same role bun gives its
-		// `build` row. Indented 2 spaces (one level under the top-level
-		// labels Usage:/Flags:/Learn more: which sit at col 0). Their
-		// commands sit at col 4, one level under the sub-header.
+		// Group sub-header and its commands all sit at col 2 — vertically
+		// aligned in the same column. Hierarchy comes from the colon on
+		// the header + reading order, not from horizontal indent.
 		fmt.Fprintf(w, "\n  %s%s:%s\n", s.groupHeader, g.title, s.reset)
 		for _, name := range g.commands {
 			c, ok := byName[name]
@@ -208,13 +222,14 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 				continue
 			}
 			rendered[name] = true
-			// All command names in bold blue `accent` — matches bun's
-			// convention. Pad with plain spaces so escape codes don't bleed
-			// into trailing whitespace (would corrupt terminal redraw on
-			// resize).
+			// Commands in bold blue `accent` (bun convention). Pad with
+			// plain spaces so escape codes don't bleed into trailing
+			// whitespace (would corrupt terminal redraw on resize).
 			spaces := pad - len(c.Name())
-			fmt.Fprintf(w, "    %s%s%s%s  %s\n",
+			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
 				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
+
+			renderRouterSubcommands(w, c, s, pad)
 		}
 	}
 
@@ -228,12 +243,13 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 	if len(others) > 0 {
 		sort.Slice(others, func(i, j int) bool { return others[i].Name() < others[j].Name() })
 		// "Other" is a group sub-header just like Primitives/Utils/etc.
-		// — same col 2 / col 4 indent rules apply.
+		// Same col 2 alignment for both the header and its commands.
 		fmt.Fprintf(w, "\n  %sOther:%s\n", s.groupHeader, s.reset)
 		for _, c := range others {
 			spaces := pad - len(c.Name())
-			fmt.Fprintf(w, "    %s%s%s%s  %s\n",
+			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
 				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
+			renderRouterSubcommands(w, c, s, pad)
 		}
 	}
 
@@ -285,30 +301,6 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 			left, repeat(" ", leftWidth-visualWidth), f.desc, suffix)
 	}
 
-	// ----- topical help -----
-	// Drawn from help_topics.go's `helpTopics` slice rather than from
-	// rootCmd.Commands() so the ordering of this section is controlled by
-	// one source of truth (re-order helpTopics, re-order the menu). Topics
-	// are registered Hidden so the top-level menu above skips them and
-	// they only surface here.
-	if len(helpTopics) > 0 {
-		fmt.Fprintf(w, "\n%sTopics:%s\n", s.headline, s.reset)
-		topicPad := 0
-		for _, t := range helpTopics {
-			if len(t.use) > topicPad {
-				topicPad = len(t.use)
-			}
-		}
-		if topicPad < minPad {
-			topicPad = minPad
-		}
-		for _, t := range helpTopics {
-			spaces := topicPad - len(t.use)
-			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
-				s.accent, t.use, s.reset, repeat(" ", spaces), t.short)
-		}
-	}
-
 	// ----- footer: docs + hint -----
 	fmt.Fprintf(w, "\n%sLearn more:%s\n", s.headline, s.reset)
 	fmt.Fprintf(w, "  Docs      %s%s%s\n", s.cyan, "https://docs.retab.com", s.reset)
@@ -318,6 +310,53 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 	// the placeholder reads as a consistent visual token throughout.
 	fmt.Fprintf(w, "\n%sRun%s retab %s<command>%s %s--help%s for command-specific options.\n\n",
 		s.dim, s.reset, s.brand, s.reset, s.dim, s.reset)
+}
+
+// renderRouterSubcommands prints one row per "router" subcommand of c —
+// each direct subcommand that itself has subcommands. Leaf actions
+// (`list`, `get`, `create`, …) are intentionally NOT expanded — they're
+// the body of the command, not its surface, and listing them all would
+// quadruple the height of the help.
+//
+// Rendered at col 4 (one level deeper than command rows at col 2), with
+// the description column aligned to the parent's so the eye reads the
+// rows as a continuation of the same table.
+//
+// Today this fires only for `workflows` (its blocks/edges/runs/artifacts/
+// tests/experiments sub-namespaces are routers, not leaves), but the
+// detection rule is generic — any command that grows nested surface area
+// later will surface here automatically.
+func renderRouterSubcommands(w io.Writer, c *cobra.Command, s styles, parentPad int) {
+	type row struct{ name, short string }
+	var rows []row
+	for _, sub := range c.Commands() {
+		if sub.Hidden || !sub.HasSubCommands() {
+			continue
+		}
+		if sub.Name() == "help" || sub.Name() == "completion" {
+			continue
+		}
+		rows = append(rows, row{name: sub.Name(), short: sub.Short})
+	}
+	if len(rows) == 0 {
+		return
+	}
+	sort.Slice(rows, func(i, j int) bool { return rows[i].name < rows[j].name })
+
+	// Parent description sits at col (2 + parentPad + 2). To align the
+	// nested-row description to the same column from a col-4 indent, the
+	// name field width is (parentPad - 2). If a sub-name happens to be
+	// longer than that, force at least one separator space so the name
+	// never runs into the description text.
+	subPad := parentPad - 2
+	for _, r := range rows {
+		spaces := subPad - len(r.name)
+		if spaces < 1 {
+			spaces = 1
+		}
+		fmt.Fprintf(w, "    %s%s%s%s  %s\n",
+			s.accent, r.name, s.reset, repeat(" ", spaces), r.short)
+	}
 }
 
 // repeat builds a string of n spaces (or whatever sep is). Used to pad

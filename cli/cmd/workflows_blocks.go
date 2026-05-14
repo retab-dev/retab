@@ -10,6 +10,31 @@ import (
 var workflowsBlocksCmd = &cobra.Command{
 	Use:   "blocks",
 	Short: "Manage workflow blocks",
+	Long: `Add, configure, and inspect the nodes of a workflow graph.
+
+A block is one processing step — ` + "`extract`" + `, ` + "`split`" + `,
+` + "`classify`" + `, ` + "`edit`" + `, ` + "`hil`" + `, ` + "`conditional`" + `,
+` + "`api_call`" + `, ` + "`function`" + `, etc. Each block has a typed input,
+typed output, and a JSON ` + "`config`" + ` blob shaped by its type.
+
+The workhorse here is ` + "`update`" + ` — once a block is on the graph, tune
+its config with ` + "`workflows blocks update --config-file ./cfg.json`" + `
+rather than deleting and re-creating. To test a config change without
+re-running the whole workflow, use ` + "`workflows blocks simulate`" + ` to
+replay one block against a past run's input.`,
+	Example: `  # List blocks
+  retab workflows blocks list wf_abc123
+
+  # Add a block from a JSON definition
+  retab workflows blocks create wf_abc123 --block-file ./extract.json
+
+  # Tune just the config of an existing block
+  retab workflows blocks update wf_abc123 blk_def456 \
+    --config-file ./new-config.json
+
+  # Test that config change against an existing run, without a full re-run
+  retab workflows blocks simulate \
+    --run-id run_xyz789 --block-id blk_def456`,
 }
 
 func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, error) {
@@ -53,7 +78,14 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, err
 var workflowsBlocksListCmd = &cobra.Command{
 	Use:   "list <workflow-id>",
 	Short: "List blocks in a workflow",
-	Args:  cobra.ExactArgs(1),
+	Long: `List every block in a workflow's draft graph, including id, type,
+label, position, and config.`,
+	Example: `  # List all blocks
+  retab workflows blocks list wf_abc123
+
+  # Get the ids only
+  retab workflows blocks list wf_abc123 | jq -r '.[].id'`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -72,7 +104,15 @@ var workflowsBlocksListCmd = &cobra.Command{
 var workflowsBlocksGetCmd = &cobra.Command{
 	Use:   "get <workflow-id> <block-id>",
 	Short: "Get a workflow block",
-	Args:  cobra.ExactArgs(2),
+	Long: `Fetch a single block's full definition: type, label, position,
+parent group, and the typed config blob.`,
+	Example: `  # Inspect a block
+  retab workflows blocks get wf_abc123 blk_def456
+
+  # Save a block's config for offline editing
+  retab workflows blocks get wf_abc123 blk_def456 \
+    | jq '.config' > cfg.json`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -91,7 +131,14 @@ var workflowsBlocksGetCmd = &cobra.Command{
 var workflowsBlocksResolvedSchemasCmd = &cobra.Command{
 	Use:   "resolved-schemas <workflow-id> <block-id>",
 	Short: "Get the resolved schema for a single block",
-	Args:  cobra.ExactArgs(2),
+	Long: `Resolve the input and output JSON schemas for one block after
+propagating types from its upstream edges. Use this to confirm a block
+sees the shape you expect before running.
+
+For all blocks at once, use ` + "`workflows resolved-schemas`" + `.`,
+	Example: `  # Inspect schemas for one block
+  retab workflows blocks resolved-schemas wf_abc123 blk_def456`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -110,7 +157,18 @@ var workflowsBlocksResolvedSchemasCmd = &cobra.Command{
 var workflowsBlocksCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id>",
 	Short: "Create a workflow block from --block-file",
-	Args:  cobra.ExactArgs(1),
+	Long: `Add a block to a workflow's draft graph. The block file is a
+JSON object with the keys ` + "`id`" + ` (required), ` + "`type`" + ` (required),
+` + "`label`" + `, ` + "`position_x`" + `, ` + "`position_y`" + `, ` + "`width`" + `,
+` + "`height`" + `, ` + "`parent_id`" + `, and ` + "`config`" + `.
+
+For batch creation, see ` + "`workflows blocks create-batch`" + `.`,
+	Example: `  # Add one block from a JSON file
+  retab workflows blocks create wf_abc123 --block-file ./extract.json
+
+  # Pipe a block definition from stdin
+  cat block.json | retab workflows blocks create wf_abc123 --block-file -`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -141,7 +199,16 @@ var workflowsBlocksCreateCmd = &cobra.Command{
 var workflowsBlocksCreateBatchCmd = &cobra.Command{
 	Use:   "create-batch <workflow-id>",
 	Short: "Create multiple workflow blocks from --blocks-file (JSON array)",
-	Args:  cobra.ExactArgs(1),
+	Long: `Add many blocks in one call. The file is a JSON array of block
+objects, each shaped like the ` + "`--block-file`" + ` payload accepted by
+` + "`workflows blocks create`" + `.
+
+Preferred when scaffolding an entire workflow programmatically — fewer
+round-trips and atomic from the caller's perspective.`,
+	Example: `  # Bulk-create a graph from a manifest
+  retab workflows blocks create-batch wf_abc123 \
+    --blocks-file ./graph/blocks.json`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -180,7 +247,21 @@ var workflowsBlocksCreateBatchCmd = &cobra.Command{
 var workflowsBlocksUpdateCmd = &cobra.Command{
 	Use:   "update <workflow-id> <block-id>",
 	Short: "Update a workflow block",
-	Args:  cobra.ExactArgs(2),
+	Long: `Tune an existing block in place. The most common use is swapping
+the typed config blob (` + "`--config-file`" + `) to adjust the prompt,
+schema, model, or thresholds without re-creating the block — your
+upstream/downstream wiring is preserved.
+
+Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
+` + "`parent-id`" + `) only affect the visual editor.`,
+	Example: `  # Swap the config blob
+  retab workflows blocks update wf_abc123 blk_def456 \
+    --config-file ./new-config.json
+
+  # Rename a block's label
+  retab workflows blocks update wf_abc123 blk_def456 \
+    --label "Extract line items"`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -231,7 +312,12 @@ var workflowsBlocksUpdateCmd = &cobra.Command{
 var workflowsBlocksDeleteCmd = &cobra.Command{
 	Use:   "delete <workflow-id> <block-id>",
 	Short: "Delete a workflow block",
-	Args:  cobra.ExactArgs(2),
+	Long: `Remove a block from the draft graph. Edges that referenced this
+block are also deleted. Past runs that used this block remain intact —
+deletion only affects the draft.`,
+	Example: `  # Remove a block
+  retab workflows blocks delete wf_abc123 blk_def456`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -246,6 +332,20 @@ var workflowsBlocksDeleteCmd = &cobra.Command{
 var workflowsBlocksSimulateCmd = &cobra.Command{
 	Use:   "simulate",
 	Short: "Replay one block against an existing run",
+	Long: `Re-execute a single block using a past run's stored input,
+without re-running the whole workflow. The fastest feedback loop for
+tuning a block's config: update the config, simulate against a known
+input, compare outputs.
+
+Pass ` + "`--n-consensus`" + ` to draw multiple samples for variance
+testing.`,
+	Example: `  # Replay block blk_def456 against an existing run
+  retab workflows blocks simulate \
+    --run-id run_xyz789 --block-id blk_def456
+
+  # Replay with 3-sample consensus
+  retab workflows blocks simulate \
+    --run-id run_xyz789 --block-id blk_def456 --n-consensus 3`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
