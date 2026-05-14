@@ -520,7 +520,9 @@ func init() {
 	workflowsExperimentsCreateCmd.Flags().String("name", "", "experiment name (required)")
 	workflowsExperimentsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
 	addExperimentDocFlags(workflowsExperimentsCreateCmd)
-	_ = workflowsExperimentsCreateCmd.Flags().MarkDeprecated("workflow-id", "use the positional argument instead")
+	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
+	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
+	_ = workflowsExperimentsCreateCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("block-id")
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("name")
 
@@ -538,7 +540,9 @@ func init() {
 	workflowsExperimentsRunBatchCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsExperimentsRunBatchCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsExperimentsRunBatchCmd.Flags().Int("n-consensus", 0, "consensus count")
-	_ = workflowsExperimentsRunBatchCmd.Flags().MarkDeprecated("workflow-id", "use the positional argument instead")
+	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
+	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
+	_ = workflowsExperimentsRunBatchCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsExperimentsRunBatchCmd.MarkFlagRequired("block-id")
 
 	workflowsExperimentsRunsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
