@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -237,9 +239,12 @@ file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
 			}
 			out["api_key_preview"] = redactKey(key)
 		}
+
+		jsonOnly, _ := cmd.Flags().GetBool("json")
+
 		if source == "" {
 			out["hint"] = "run `retab auth login` to authenticate"
-			return printJSON(out)
+			return writeAuthStatus(cmd.OutOrStdout(), out, jsonOnly)
 		}
 
 		// Best-effort verification — list workflows with limit=1.
@@ -247,7 +252,7 @@ file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
 		if err != nil {
 			out["valid"] = false
 			out["error"] = err.Error()
-			return printJSON(out)
+			return writeAuthStatus(cmd.OutOrStdout(), out, jsonOnly)
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
@@ -258,8 +263,101 @@ file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
 		} else {
 			out["valid"] = true
 		}
-		return printJSON(out)
+		return writeAuthStatus(cmd.OutOrStdout(), out, jsonOnly)
 	}),
+}
+
+// writeAuthStatus decides whether `auth status` renders JSON or a human
+// status block, and writes the result to w.
+//
+// Output mode:
+//   - --json flag set         → JSON
+//   - w is not a TTY          → JSON (so pipes / redirects stay parseable)
+//   - otherwise               → human block
+//
+// JSON output is byte-equivalent to the legacy `printJSON(out)` form
+// (encoding/json's encoder with 2-space indent, trailing newline) so any
+// script consuming `auth status | jq …` keeps working.
+func writeAuthStatus(w io.Writer, out map[string]any, jsonOnly bool) error {
+	if jsonOnly || !isTerminalWriter(w) {
+		return writeAuthStatusJSON(w, out)
+	}
+	return writeAuthStatusHuman(w, out)
+}
+
+// writeAuthStatusJSON renders the legacy JSON shape. Encoder (not
+// MarshalIndent) keeps the trailing-newline behaviour of printJSON.
+func writeAuthStatusJSON(w io.Writer, out map[string]any) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
+	return enc.Encode(out)
+}
+
+// writeAuthStatusHuman renders the three-line status block. Colour is
+// applied only when the destination is a real TTY and NO_COLOR is unset,
+// reusing paletteFor's discipline so the rules match `retab --help`.
+//
+// Layout:
+//
+//	Logged in as <preview>
+//	Source:  <source>
+//	Status:  <valid|invalid|not authenticated>
+//
+// "Source" / "Status" labels are dim; the api-key preview is bold magenta
+// (matching the Retab wordmark elsewhere in the CLI).
+func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
+	s := paletteFor(w)
+
+	preview, _ := out["api_key_preview"].(string)
+	source, _ := out["source"].(string)
+
+	// First line — "Logged in as <preview>" when we have any credential to
+	// preview, otherwise "Not logged in" (matches the JSON's empty-source
+	// case, where api_key_preview is absent because there's no key).
+	if preview != "" {
+		fmt.Fprintf(w, "Logged in as %s%s%s\n", s.brand, preview, s.reset)
+	} else {
+		fmt.Fprintln(w, "Not logged in")
+	}
+
+	// Second line — credential source.
+	if source == "" {
+		source = "none"
+	}
+	fmt.Fprintf(w, "%sSource:%s  %s\n", s.dim, s.reset, source)
+
+	// Third line — verification result. The `valid` key is absent when
+	// we never got far enough to probe (no creds, or hint path); treat
+	// that as "not authenticated" so the user gets a definite answer.
+	var status string
+	if v, ok := out["valid"]; ok {
+		if b, _ := v.(bool); b {
+			status = "valid"
+		} else {
+			// Just "invalid" — full error detail (often multi-line, with
+			// URL/code/body) stays in the JSON's `error` field. Splatting
+			// it onto the Status: line would shred the calm 3-line block
+			// the human view exists to provide.
+			status = "invalid"
+		}
+	} else {
+		status = "not authenticated"
+	}
+	fmt.Fprintf(w, "%sStatus:%s  %s\n", s.dim, s.reset, status)
+	return nil
+}
+
+// isTerminalWriter mirrors paletteFor's TTY check — true only when w is
+// an *os.File pointing at a terminal. bytes.Buffer, pipes, and redirected
+// files all return false, which is what we want for "render JSON for
+// machines, human block for humans".
+func isTerminalWriter(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+	return term.IsTerminal(int(f.Fd()))
 }
 
 func redactKey(key string) string {
@@ -291,6 +389,10 @@ func init() {
 	authLoginCmd.Flags().String("api-key", "", "skip the browser flow and store this API key (also reads RETAB_API_KEY)")
 	authLoginCmd.Flags().String("base-url", "", "override the default API base URL")
 	authLoginCmd.Flags().Bool("browser", true, "open a browser for OAuth login (set --browser=false to prompt for an API key)")
+
+	// `--json` forces JSON output even on a TTY. Without it, status auto-
+	// detects: TTY → human block, pipe/redirect → JSON (same shape as today).
+	authStatusCmd.Flags().Bool("json", false, "emit JSON even when stdout is a TTY (default: human-readable on TTY, JSON when piped)")
 
 	authCmd.AddCommand(authLoginCmd, authLogoutCmd, authStatusCmd)
 	rootCmd.AddCommand(authCmd)

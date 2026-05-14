@@ -1,8 +1,28 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
+
+// outputFlagValue is a pflag.Value for --output that rejects unknown
+// strings at parse time. We can't do this from a cobra PreRunE because
+// `--output bogus --help` shortcuts past PreRunE; pflag's Set is the
+// earliest hook that runs regardless of whether help is requested.
+type outputFlagValue struct{ value string }
+
+func (o *outputFlagValue) String() string { return o.value }
+func (o *outputFlagValue) Type() string   { return "string" }
+func (o *outputFlagValue) Set(raw string) error {
+	switch raw {
+	case "", "auto", string(OutputJSON), string(OutputTable):
+		o.value = raw
+		return nil
+	default:
+		return fmt.Errorf("invalid --output value %q (want: json | table | auto)", raw)
+	}
+}
 
 var rootCmd = &cobra.Command{
 	Use:           "retab",
@@ -25,6 +45,7 @@ func init() {
 	rootCmd.PersistentFlags().String("api-key", "", "Retab API key (env: RETAB_API_KEY)")
 	rootCmd.PersistentFlags().String("base-url", "", "Retab API base URL (env: RETAB_BASE_URL)")
 	rootCmd.PersistentFlags().Bool("debug", false, "verbose debug output")
+	rootCmd.PersistentFlags().Var(&outputFlagValue{}, "output", "output format: json | table (default: auto-detect)")
 
 	// Capture cobra's default help func *before* overriding so we can
 	// delegate to it for non-root commands. If we set our func first

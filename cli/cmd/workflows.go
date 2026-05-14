@@ -192,7 +192,8 @@ var workflowsDeleteCmd = &cobra.Command{
 published versions, and run history. Artifacts produced by past runs are
 preserved as separate objects (see ` + "`workflows artifacts`" + `).`,
 	Example: `  # Delete a workflow
-  retab workflows delete wf_abc123`,
+  retab workflows delete wf_abc123
+  # => { "id": "wf_abc123", "deleted": true }`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -204,8 +205,7 @@ preserved as separate objects (see ` + "`workflows artifacts`" + `).`,
 		if err := client.Workflows.Delete(ctx, args[0]); err != nil {
 			return err
 		}
-		confirmDeleted("workflow", args[0])
-		return nil
+		return printJSON(map[string]any{"id": args[0], "deleted": true})
 	}),
 }
 

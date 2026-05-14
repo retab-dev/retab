@@ -78,10 +78,33 @@ alongside your code.`,
 			documents = append(documents, mime)
 		}
 		for _, u := range urls {
-			documents = append(documents, retab.MIMEData{URL: u})
+			// Server requires `filename` on every doc descriptor — derive
+			// from the URL path, same shape as resolveDocument does in
+			// common.go for the single-document commands.
+			documents = append(documents, retab.MIMEData{
+				Filename: filenameFromURL(u),
+				URL:      u,
+			})
 		}
 		for _, id := range fileIDs {
-			documents = append(documents, retab.FileRef{ID: id})
+			// `FileRef{ID: ...}` alone returns 422; the server demands
+			// filename + url. Look the file up via Files.GetDownloadLink
+			// to fill both. One extra GET per id — fine for the UX win.
+			link, err := client.Files.GetDownloadLink(ctx, id)
+			if err != nil {
+				return fmt.Errorf("--file-id %s: %w", id, err)
+			}
+			if link.DownloadURL == "" {
+				return fmt.Errorf("--file-id %s: server returned no download URL", id)
+			}
+			filename := link.Filename
+			if filename == "" {
+				filename = "document"
+			}
+			documents = append(documents, retab.MIMEData{
+				Filename: filename,
+				URL:      link.DownloadURL,
+			})
 		}
 		if docsFile != "" {
 			arr, err := readJSONArray(docsFile)

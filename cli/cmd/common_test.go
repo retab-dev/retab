@@ -114,24 +114,60 @@ func TestResolveDocumentURL(t *testing.T) {
 	if mime.URL != "https://example.com/doc.pdf" {
 		t.Fatalf("url=%q", mime.URL)
 	}
+	// The server requires `filename` on every document descriptor — pin
+	// the rule that --url derives one from the URL path's last segment.
+	if mime.Filename != "doc.pdf" {
+		t.Fatalf("filename=%q, want %q", mime.Filename, "doc.pdf")
+	}
 }
 
-func TestResolveDocumentFileID(t *testing.T) {
+// filenameFromURL is the offline core of the --url → filename derivation,
+// table-driven so edge cases (no path, query string, root, etc.) are all
+// pinned without paying for a real HTTP roundtrip.
+func TestFilenameFromURL(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"https://example.com/doc.pdf", "doc.pdf"},
+		{"https://example.com/nested/path/invoice.PDF", "invoice.PDF"},
+		{"https://example.com/", "document"},
+		{"https://example.com", "document"},
+		{"https://example.com/path/", "path"},
+		{"https://example.com/file.pdf?signed=1&token=abc", "file.pdf"},
+		{"not-a-url", "not-a-url"}, // url.Parse accepts this; path.Base returns the literal
+		{"", "document"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.in, func(t *testing.T) {
+			if got := filenameFromURL(tc.in); got != tc.want {
+				t.Errorf("filenameFromURL(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+		})
+	}
+}
+
+// resolveDocument with --file-id now triggers a server lookup to fetch
+// the file's filename + a fresh download URL (the SDK's `FileRef{ID: ...}`
+// shape is rejected by the server post-API-change). Without RETAB_API_KEY
+// set, the lookup fails fast on missing credentials — the failure mode
+// we pin here. The happy path requires a live API and is exercised via
+// dogfooding rather than as a unit test.
+func TestResolveDocumentFileID_RequiresCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir()) // ensure no ~/.retab/config.json bleeds through
+
 	cmd := &cobra.Command{}
+	cmd.PersistentFlags().String("api-key", "", "")
+	cmd.PersistentFlags().String("base-url", "", "")
 	addDocumentFlags(cmd)
 	if err := cmd.ParseFlags([]string{"--file-id", "file_123"}); err != nil {
 		t.Fatal(err)
 	}
-	doc, err := resolveDocument(cmd)
-	if err != nil {
-		t.Fatal(err)
+	_, err := resolveDocument(cmd)
+	if err == nil {
+		t.Fatal("expected error without credentials, got nil")
 	}
-	ref, ok := doc.(retab.FileRef)
-	if !ok {
-		t.Fatalf("got %T", doc)
-	}
-	if ref.ID != "file_123" {
-		t.Fatalf("id=%q", ref.ID)
+	if !strings.Contains(err.Error(), "credentials") && !strings.Contains(err.Error(), "auth") {
+		t.Errorf("error should mention credentials/auth, got: %v", err)
 	}
 }
 

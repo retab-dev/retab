@@ -8,8 +8,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/signal"
+	"path"
 	"strings"
 	"syscall"
 	"time"
@@ -104,9 +106,24 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 
 // makeOAuthTokenProvider returns a closure that yields a current access
 // token on demand, refreshing transparently as expiry approaches. A
-// successful refresh is persisted to disk so subsequent CLI invocations
-// pick up the new tokens. Save errors are swallowed: the in-memory token
-// still completes the current request.
+// successful refresh is persisted to disk (atomically — see saveConfig)
+// so subsequent CLI invocations pick up the rotated refresh_token.
+//
+// Two failure modes are handled specifically:
+//
+//  1. saveConfig fails. The in-memory token still completes the current
+//     request, but the rotated refresh_token never makes it to disk;
+//     since WorkOS has already invalidated the previous one, the NEXT
+//     CLI invocation would be forced to re-login. We warn loudly on
+//     stderr so the user can fix the underlying disk problem before
+//     the access_token expires.
+//
+//  2. refresh returns `invalid_grant`. The likeliest cause is a
+//     concurrent CLI invocation that refreshed first and rotated the
+//     refresh_token out from under us. We re-read the config file and,
+//     if it now holds a different refresh_token, switch to those
+//     freshly-rotated credentials and try again — exactly once, to
+//     avoid loops if something deeper is wrong.
 func makeOAuthTokenProvider(initial *oauthTokens) func(ctx context.Context) (string, error) {
 	tok := *initial
 	return func(ctx context.Context) (string, error) {
@@ -115,14 +132,61 @@ func makeOAuthTokenProvider(initial *oauthTokens) func(ctx context.Context) (str
 		}
 		refreshed, err := refreshAccessToken(ctx, &tok)
 		if err != nil {
-			return "", err
+			// Concurrent-refresh race: someone else may have rotated
+			// the refresh_token out from under us. Re-read disk and try
+			// once with whatever's there.
+			if isInvalidGrantError(err) {
+				if disk, ldErr := loadConfig(); ldErr == nil && disk.OAuth != nil &&
+					disk.OAuth.RefreshToken != "" && disk.OAuth.RefreshToken != tok.RefreshToken {
+					tok = *disk.OAuth
+					// Disk's access_token may already be valid — use it
+					// directly if so, otherwise refresh with the new RT.
+					if time.Now().Before(tok.ExpiresAt.Add(-refreshLeeway)) {
+						return tok.AccessToken, nil
+					}
+					refreshed, err = refreshAccessToken(ctx, &tok)
+				}
+			}
+			if err != nil {
+				return "", err
+			}
 		}
 		tok = *refreshed
 		cfg, _ := loadConfig()
 		cfg.OAuth = &tok
-		_ = saveConfig(cfg)
+		if err := saveConfig(cfg); err != nil {
+			// The in-memory tok works for this request, but if we lose
+			// the rotated refresh_token before saving, the next process
+			// is forced to re-login. Surface loudly — silent failure
+			// here is exactly the "long-lived token mysteriously expires"
+			// bug we want to avoid.
+			fmt.Fprintf(os.Stderr,
+				"warning: refreshed OAuth token but failed to persist to %s: %v\n"+
+					"  current command will succeed; next CLI invocation may require re-login.\n",
+				configPathOrEmpty(), err)
+		}
 		return tok.AccessToken, nil
 	}
+}
+
+// configPathOrEmpty returns the config path for diagnostic output, swallowing
+// the unlikely error from configPath() — we're already in an error branch.
+func configPathOrEmpty() string {
+	p, _ := configPath()
+	return p
+}
+
+// isInvalidGrantError detects the specific OAuth-spec error code that
+// refresh_token rotation collisions surface as. We string-match against
+// the message produced by postTokenEndpoint — coupling the two via a
+// constant would be cleaner, but a string check keeps the surface area
+// of this defensive path minimal.
+func isInvalidGrantError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "refresh failed:") ||
+		strings.Contains(err.Error(), "invalid_grant")
 }
 
 func ctxFor(cmd *cobra.Command) (context.Context, context.CancelFunc) {
@@ -319,13 +383,61 @@ func resolveDocument(cmd *cobra.Command) (any, error) {
 		}
 		return mime, nil
 	case urlStr != "":
-		return retab.MIMEData{URL: urlStr}, nil
+		// Server requires `filename` on every document descriptor —
+		// `{"url": "..."}` alone returns HTTP 422. Derive from the URL
+		// path's last segment; fall back to "document" for path-less URLs.
+		return retab.MIMEData{Filename: filenameFromURL(urlStr), URL: urlStr}, nil
 	case fileID != "":
-		return retab.FileRef{ID: fileID}, nil
+		// Same filename-required constraint. The SDK's `FileRef{ID: ...}`
+		// shape no longer satisfies the server contract on its own. Look
+		// the file up to fetch its filename and a fresh download URL,
+		// then send a full MIMEData. One extra GET per command — fine
+		// for the readability win on every --file-id callsite.
+		return resolveFileIDToMIMEData(cmd, fileID)
 	case docFile != "":
 		return readJSON(docFile)
 	}
 	return nil, fmt.Errorf("unreachable")
+}
+
+// filenameFromURL returns the basename of a URL path, or "document" when
+// the path is empty / root. Used to satisfy the server's `filename`
+// requirement on document descriptors when only a `--url` was given.
+func filenameFromURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err == nil && u.Path != "" {
+		base := path.Base(u.Path)
+		if base != "/" && base != "." && base != "" {
+			return base
+		}
+	}
+	return "document"
+}
+
+// resolveFileIDToMIMEData fetches the file metadata for fileID and
+// returns a MIMEData populated with filename + a fresh download URL.
+// Costs one round trip (sometimes two — Files.Get for filename + a
+// signed download link for the URL). Kept in one place so all the
+// document-taking commands behave identically.
+func resolveFileIDToMIMEData(cmd *cobra.Command, fileID string) (retab.MIMEData, error) {
+	client, err := newClient(cmd)
+	if err != nil {
+		return retab.MIMEData{}, err
+	}
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+	link, err := client.Files.GetDownloadLink(ctx, fileID)
+	if err != nil {
+		return retab.MIMEData{}, fmt.Errorf("resolving --file-id %s: %w", fileID, err)
+	}
+	if link.DownloadURL == "" {
+		return retab.MIMEData{}, fmt.Errorf("--file-id %s: server returned no download URL", fileID)
+	}
+	filename := link.Filename
+	if filename == "" {
+		filename = "document"
+	}
+	return retab.MIMEData{Filename: filename, URL: link.DownloadURL}, nil
 }
 
 // resolveOptionalDocument is like resolveDocument but returns (nil, nil)

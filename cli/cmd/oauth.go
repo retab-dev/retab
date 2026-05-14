@@ -274,8 +274,25 @@ func buildAuthorizeURL(disc *cliOAuthDiscovery, redirectURI, codeChallenge, stat
 	if len(scopes) == 0 {
 		scopes = []string{"openid", "profile", "email", "offline_access"}
 	}
+	// Belt-and-suspenders: `offline_access` MUST be in the scope list or
+	// WorkOS won't issue a refresh_token, and the CLI silently degrades to
+	// ~10 min sessions. If the deployment's discovery response forgets to
+	// include it, we add it here. Idempotent in the common case.
+	scopes = ensureOfflineAccess(scopes)
 	q.Set("scope", strings.Join(scopes, " "))
 	return fmt.Sprintf("https://%s/oauth2/authorize?%s", disc.AuthKitDomain, q.Encode())
+}
+
+// ensureOfflineAccess appends `offline_access` to scopes if absent. The
+// scope is what tells WorkOS to mint a refresh_token alongside the access
+// token; without it the CLI cannot keep the session alive past ~10 min.
+func ensureOfflineAccess(scopes []string) []string {
+	for _, s := range scopes {
+		if s == "offline_access" {
+			return scopes
+		}
+	}
+	return append(scopes, "offline_access")
 }
 
 // exchangeAuthorizationCode redeems the auth code for tokens. The body is
@@ -295,6 +312,16 @@ func exchangeAuthorizationCode(ctx context.Context, disc *cliOAuthDiscovery, cod
 // refreshAccessToken trades a refresh_token for a new access_token. On
 // success the returned struct carries the same AuthKitDomain/ClientID so
 // the caller can save it back to disk without re-doing discovery.
+//
+// WorkOS AuthKit rotates refresh tokens by default (each call returns a
+// new refresh_token and invalidates the one we just used), so the result
+// MUST be persisted promptly — see makeOAuthTokenProvider.
+//
+// Defensive note: if the server happens to omit `refresh_token` from the
+// rotation response (other OAuth providers signal "keep using the same
+// one" this way), we preserve the caller's existing refresh_token rather
+// than wiping it. WorkOS in practice always returns a new one, but the
+// fallback costs nothing and protects against future regressions.
 func refreshAccessToken(ctx context.Context, tok *oauthTokens) (*oauthTokens, error) {
 	if tok == nil || tok.RefreshToken == "" {
 		return nil, fmt.Errorf("no refresh_token on file; re-run `retab auth login`")
@@ -308,7 +335,14 @@ func refreshAccessToken(ctx context.Context, tok *oauthTokens) (*oauthTokens, er
 	form.Set("client_id", tok.ClientID)
 	tokenURL := fmt.Sprintf("https://%s/oauth2/token", tok.AuthKitDomain)
 	disc := &cliOAuthDiscovery{AuthKitDomain: tok.AuthKitDomain, ClientID: tok.ClientID}
-	return postTokenEndpoint(ctx, tokenURL, form, disc)
+	refreshed, err := postTokenEndpoint(ctx, tokenURL, form, disc)
+	if err != nil {
+		return nil, err
+	}
+	if refreshed.RefreshToken == "" {
+		refreshed.RefreshToken = tok.RefreshToken
+	}
+	return refreshed, nil
 }
 
 // tokenHTTPClient is the HTTP client used for OAuth token endpoint POSTs.
