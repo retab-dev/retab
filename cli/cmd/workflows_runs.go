@@ -2,10 +2,67 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+// parseDocumentArgs merges the new `--document` flag with its deprecated
+// `--document-file` alias into a single block-id → path map.
+//
+// `--document-file` was renamed to `--document` because it collided with the
+// `--document-file <json-path>` flag every other primitive command exposes
+// via addDocumentFlags. The two surfaces had identical names but completely
+// different protocols (single JSON descriptor vs repeatable block-id=path
+// pair), which produced confusing errors when users carried muscle memory
+// from one surface to the other.
+//
+// The deprecated alias is preserved for one release cycle so existing
+// scripts keep working. When the alias is used at least once, a single
+// warning line is written to warnTo regardless of how many values were
+// passed. Mixing both flags is allowed — the maps are unioned, with the
+// new `--document` flag winning on key collision — and still produces
+// exactly one warning line.
+//
+// Each entry must be of the form `block-id=path`. Empty keys, empty values,
+// and entries without an `=` produce an error.
+func parseDocumentArgs(docs []string, docFiles []string, warnTo io.Writer) (map[string]string, error) {
+	out := map[string]string{}
+	if err := appendKVPairs(out, docs, "--document"); err != nil {
+		return nil, err
+	}
+	if len(docFiles) > 0 {
+		if warnTo != nil {
+			fmt.Fprintln(warnTo, "warning: --document-file is deprecated for workflows runs create; use --document <block-id>=<path>")
+		}
+		// Stage the deprecated entries first, then let --document overwrite
+		// on key collision so the new flag wins when both are passed.
+		staged := map[string]string{}
+		if err := appendKVPairs(staged, docFiles, "--document-file"); err != nil {
+			return nil, err
+		}
+		for k, v := range out {
+			staged[k] = v
+		}
+		out = staged
+	}
+	return out, nil
+}
+
+func appendKVPairs(into map[string]string, raws []string, flagName string) error {
+	for _, raw := range raws {
+		key, path, ok := splitKV(raw)
+		if !ok {
+			return fmt.Errorf("%s expects block-id=path, got %q", flagName, raw)
+		}
+		if key == "" || path == "" {
+			return fmt.Errorf("%s expects block-id=path, got %q", flagName, raw)
+		}
+		into[key] = path
+	}
+	return nil
+}
 
 var workflowsRunsCmd = &cobra.Command{
 	Use:   "runs",
@@ -27,7 +84,7 @@ For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
 	Example: `  # Start a run by uploading a document into the start block
   retab workflows runs create wf_abc123 \
-    --document-file start=./invoice.pdf
+    --document start=./invoice.pdf
 
   # Inspect a run's lifecycle (status, errors, timing)
   retab workflows runs get run_xyz789
@@ -51,7 +108,7 @@ var workflowsRunsCreateCmd = &cobra.Command{
 Inputs are keyed by the id of the input block they target. There are
 three ways to supply them, mix and match as needed:
 
-  ` + "`--document-file BLOCK=PATH`" + ` — upload a local file. The MIME
+  ` + "`--document BLOCK=PATH`" + ` — upload a local file. The MIME
   type is inferred from the file extension. Repeatable.
 
   ` + "`--document-url BLOCK=URL`" + ` — pass a remote URL the server will
@@ -66,14 +123,18 @@ JSON instead of (or alongside) documents.
 
 By default the workflow's latest published version runs; pin a specific
 version with ` + "`--version`" + `. Inspect the resulting run with
-` + "`workflows runs get`" + ` or ` + "`workflows runs steps list`" + `.`,
+` + "`workflows runs get`" + ` or ` + "`workflows runs steps list`" + `.
+
+The legacy ` + "`--document-file BLOCK=PATH`" + ` spelling is still
+accepted as a deprecated alias for ` + "`--document`" + ` and will be
+removed in a future release.`,
 	Example: `  # Upload a local file into the start block
   retab workflows runs create wf_abc123 \
-    --document-file start=./invoice.pdf
+    --document start=./invoice.pdf
 
   # Multiple inputs across different blocks
   retab workflows runs create wf_abc123 \
-    --document-file start=./invoice.pdf \
+    --document start=./invoice.pdf \
     --document-url reference=https://acme.com/po.pdf
 
   # JSON-only inputs (e.g. an api_call block)
@@ -82,7 +143,7 @@ version with ` + "`--version`" + `. Inspect the resulting run with
 
   # Pin to a specific published version
   retab workflows runs create wf_abc123 \
-    --version v3 --document-file start=./invoice.pdf`,
+    --version v3 --document start=./invoice.pdf`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -101,20 +162,21 @@ version with ` + "`--version`" + `. Inspect the resulting run with
 			}
 			req.Documents = docs
 		}
-		fileFlags, _ := cmd.Flags().GetStringArray("document-file")
+		docFlags, _ := cmd.Flags().GetStringArray("document")
+		legacyFileFlags, _ := cmd.Flags().GetStringArray("document-file")
+		fileEntries, err := parseDocumentArgs(docFlags, legacyFileFlags, cmd.ErrOrStderr())
+		if err != nil {
+			return err
+		}
 		urlFlags, _ := cmd.Flags().GetStringArray("document-url")
-		if len(fileFlags) > 0 || len(urlFlags) > 0 {
+		if len(fileEntries) > 0 || len(urlFlags) > 0 {
 			if req.Documents == nil {
 				req.Documents = map[string]any{}
 			}
-			for _, raw := range fileFlags {
-				key, path, ok := splitKV(raw)
-				if !ok || path == "" {
-					return fmt.Errorf("--document-file expects block-id=path, got %q", raw)
-				}
+			for key, path := range fileEntries {
 				mime, err := retab.InferMIMEData(path)
 				if err != nil {
-					return fmt.Errorf("--document-file %s: %w", raw, err)
+					return fmt.Errorf("--document %s=%s: %w", key, path, err)
 				}
 				req.Documents[key] = mime
 			}
@@ -612,7 +674,13 @@ correlate against the block's config.`,
 func init() {
 	workflowsRunsCreateCmd.Flags().String("version", "", "workflow version (defaults to production)")
 	workflowsRunsCreateCmd.Flags().String("documents-file", "", "JSON object {block-id: document} (or - for stdin)")
-	workflowsRunsCreateCmd.Flags().StringArray("document-file", nil, "document file as block-id=path (repeatable)")
+	workflowsRunsCreateCmd.Flags().StringArray("document", nil, "document file as block-id=path (repeatable)")
+	// `--document-file` collided with the `--document-file <json-path>` flag
+	// every other primitive command exposes via addDocumentFlags. Kept here
+	// as a hidden deprecated alias for one release cycle; parseDocumentArgs
+	// emits a single stderr warning when it's used.
+	workflowsRunsCreateCmd.Flags().StringArray("document-file", nil, "deprecated alias for --document")
+	_ = workflowsRunsCreateCmd.Flags().MarkHidden("document-file")
 	workflowsRunsCreateCmd.Flags().StringArray("document-url", nil, "document url as block-id=url (repeatable)")
 	workflowsRunsCreateCmd.Flags().String("json-inputs-file", "", "JSON inputs object (or - for stdin)")
 
