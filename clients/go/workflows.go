@@ -15,6 +15,7 @@ type WorkflowsService struct {
 	Artifacts   *WorkflowArtifactsService
 	Blocks      *WorkflowBlocksService
 	Edges       *WorkflowEdgesService
+	Specs       *WorkflowSpecsService
 	Tests       *WorkflowTestsService
 	Experiments *WorkflowExperimentsService
 }
@@ -28,6 +29,7 @@ func newWorkflowsService(client *Client) *WorkflowsService {
 	service.Artifacts = &WorkflowArtifactsService{client: client}
 	service.Blocks = &WorkflowBlocksService{client: client}
 	service.Edges = &WorkflowEdgesService{client: client}
+	service.Specs = &WorkflowSpecsService{client: client}
 	service.Tests = newWorkflowTestsService(client)
 	service.Experiments = newWorkflowExperimentsService(client)
 	return service
@@ -275,6 +277,41 @@ func (s *WorkflowsService) DiagnoseGraph(ctx context.Context, workflowID string,
 	var result WorkflowDiagnosisResponse
 	prepared := prepareDiagnoseRequest(workflowID, request)
 	err := s.client.do(ctx, prepared.Method, prepared.URL, nil, prepared.Body, &result, opts...)
+	return &result, err
+}
+
+type WorkflowSpecsService struct {
+	client *Client
+}
+
+type WorkflowSpecRequest struct {
+	YAMLDefinition string `json:"yaml_definition"`
+}
+
+func (s *WorkflowSpecsService) Validate(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
+	var result Resource
+	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/validate", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowSpecsService) Plan(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
+	var result Resource
+	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/plan", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowSpecsService) Apply(ctx context.Context, yamlDefinition string, opts ...RequestOption) (*Resource, error) {
+	var result Resource
+	err := s.client.do(ctx, http.MethodPost, "/workflows/spec/apply", nil, WorkflowSpecRequest{YAMLDefinition: yamlDefinition}, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowSpecsService) Export(ctx context.Context, workflowID string, opts ...RequestOption) (*Resource, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	var result Resource
+	err := s.client.do(ctx, http.MethodGet, "/workflows/spec/"+url.PathEscape(workflowID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1559,6 +1596,23 @@ func (s *WorkflowExperimentRunsService) List(ctx context.Context, workflowID, ex
 	err := s.client.do(ctx, http.MethodGet,
 		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs",
 		nil, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowExperimentRunsService) CancelDocument(ctx context.Context, workflowID, experimentID, documentID string, opts ...RequestOption) (*CancelExperimentResponse, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if experimentID == "" {
+		return nil, fmt.Errorf("retab: experimentID is required")
+	}
+	if documentID == "" {
+		return nil, fmt.Errorf("retab: documentID is required")
+	}
+	var result CancelExperimentResponse
+	err := s.client.do(ctx, http.MethodPost,
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/documents/"+url.PathEscape(documentID)+"/cancel",
+		nil, map[string]any{}, &result, opts...)
 	return &result, err
 }
 
