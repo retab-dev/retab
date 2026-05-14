@@ -38,16 +38,16 @@ type commandGroup struct {
 
 var commandGroups = []commandGroup{
 	{
-		title:    "Documents",
-		commands: []string{"files", "parses", "partitions", "splits", "edits"},
+		title:    "Primitives",
+		commands: []string{"parses", "extractions", "edits", "splits", "partitions", "classifications"},
 	},
 	{
-		title:    "Extraction",
-		commands: []string{"schemas", "extractions", "classifications"},
+		title:    "Documents & schemas",
+		commands: []string{"files", "schemas"},
 	},
 	{
 		title:    "Workflows",
-		commands: []string{"workflows", "jobs", "webhooks"},
+		commands: []string{"workflows", "jobs"},
 	},
 	{
 		title:    "Account",
@@ -59,27 +59,36 @@ var commandGroups = []commandGroup{
 // disabled (NO_COLOR, non-TTY) every field is the empty string and the
 // printfs degrade to plain text without any conditional branches.
 //
-// Palette tuned by eye against `bun`'s no-args output (a deliberately
-// warm, low-saturation aesthetic):
-//   - brand   — soft light pink for the wordmark and the <command>
-//               placeholder. 256-colour 213 reads closer to bun's pastel
-//               pink than a saturated rose; legible on dark *and* light
-//               terminal themes.
-//   - accent  — warm gold for a single highlighted command. bun marks
-//               `build` this way; we mark `extractions` (the flagship
-//               Retab surface) so the eye lands on the hero feature.
-//   - cyan    — footer URLs.
-//   - bold    — section headers + command names. No colour on purpose —
-//               users with custom terminal themes still get hierarchy.
-//   - dim     — version tag, parens, env hints, footer.
+// Palette is intentionally ANSI 16-colour, not 256-colour. Bun's CLI
+// does the same thing: its wordmark and command rows use bare `\x1b[35m`,
+// `\x1b[34m`, etc., which means each user's terminal theme drives the
+// actual rendered shade. Hard-coding a 256-colour slot overrides the
+// theme — what we want is the opposite, so a Solarized user sees their
+// Solarized magenta and a Dracula user sees their Dracula magenta.
+//
+// Role assignments — every colour is sourced from bun's CLI template
+// (src/bun_core/output.zig color_map + src/runtime/cli/cli.zig template):
+//   - brand        — bold magenta. Retab wordmark + <command> placeholder.
+//                    Same code bun uses for its "Bun" wordmark.
+//   - groupHeader  — bold yellow. Section sub-headers like "Primitives:",
+//                    "Workflows:", "Other:". Repurposes the colour bun
+//                    assigns to its `build` row (we have explicit group
+//                    sub-headers; bun groups by colour with blank lines).
+//   - accent       — bold blue. Every command name in the menu.
+//   - headline     — plain bold. Top-level labels: "Usage:", "Flags:",
+//                    "Learn more:". Matches bun's plain `<b>` for those.
+//   - cyan         — footer URLs.
+//   - bold         — flag names (`--api-key`, `--debug`, …).
+//   - dim          — version tag, parens, env hints, footer hint.
 type styles struct {
-	reset    string
-	bold     string
-	dim      string
-	brand    string
-	accent   string
-	cyan     string
-	headline string
+	reset       string
+	bold        string
+	dim         string
+	brand       string
+	accent      string
+	groupHeader string
+	cyan        string
+	headline    string
 }
 
 func paletteFor(w io.Writer) styles {
@@ -94,27 +103,30 @@ func paletteFor(w io.Writer) styles {
 		return styles{}
 	}
 	return styles{
-		reset:    "\x1b[0m",
-		bold:     "\x1b[1m",
-		dim:      "\x1b[2m",
-		brand:    "\x1b[1;38;5;213m", // bold soft pink — wordmark + <command>
-		accent:   "\x1b[1;38;5;220m", // bold gold — single highlighted command
-		cyan:     "\x1b[36m",
-		headline: "\x1b[1m",
+		reset:       "\x1b[0m",
+		bold:        "\x1b[1m",
+		dim:         "\x1b[2m",
+		brand:       "\x1b[1;35m", // bold magenta — Retab wordmark + <command>
+		accent:      "\x1b[1;34m", // bold blue — command names
+		groupHeader: "\x1b[1;33m", // bold yellow — section sub-headers (bun's `build` colour)
+		cyan:        "\x1b[36m",
+		headline:    "\x1b[1m",
 	}
 }
-
-// featuredCommand is the single subcommand rendered in `accent` instead
-// of `bold`. Mirrors how bun highlights `build` to surface its hero
-// feature. Empty string disables the highlight entirely.
-const featuredCommand = "extractions"
 
 // renderRootHelp prints the polished top-level help. It reads the
 // description of each command from the command's own `Short`, so adding a
 // new subcommand with a `Short` is enough to make it appear correctly here
 // (modulo categorisation in `commandGroups`).
 func renderRootHelp(w io.Writer, root *cobra.Command) {
-	s := paletteFor(w)
+	renderRootHelpWithStyles(w, root, paletteFor(w))
+}
+
+// renderRootHelpWithStyles is the actual renderer. The palette is taken
+// as a parameter so tests can pass sentinel escape strings and assert
+// exactly which style each visual element receives, without having to
+// fake a TTY for paletteFor's auto-detection.
+func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 
 	// ----- header: brand · tagline · version -----
 	tagline := root.Short
@@ -132,13 +144,13 @@ func renderRootHelp(w io.Writer, root *cobra.Command) {
 	if len(versionStr) > 0 && versionStr[0] >= '0' && versionStr[0] <= '9' {
 		versionDisplay = "v" + versionStr
 	}
-	fmt.Fprintf(w, "\n  %sRetab%s · %s %s(%s)%s\n",
+	fmt.Fprintf(w, "\n%sRetab%s · %s %s(%s)%s\n",
 		s.brand, s.reset, tagline, s.dim, versionDisplay, s.reset)
 
 	// ----- usage line -----
 	// `<command>` in brand pink, matching bun's convention where the
 	// placeholder is the same colour as the wordmark.
-	fmt.Fprintf(w, "\n  %sUsage:%s retab %s<command>%s [flags]\n",
+	fmt.Fprintf(w, "\n%sUsage:%s retab %s<command>%s [flags]\n",
 		s.headline, s.reset, s.brand, s.reset)
 
 	// ----- index visible subcommands by name -----
@@ -182,23 +194,23 @@ func renderRootHelp(w io.Writer, root *cobra.Command) {
 		if !anyPresent {
 			continue
 		}
-		fmt.Fprintf(w, "\n  %s%s:%s\n", s.headline, g.title, s.reset)
+		// Group sub-headers in bold yellow — same role bun gives its
+		// `build` row. Top-level labels (Usage:, Flags:, Learn more:)
+		// stay in plain bold via `headline` further down.
+		fmt.Fprintf(w, "\n%s%s:%s\n", s.groupHeader, g.title, s.reset)
 		for _, name := range g.commands {
 			c, ok := byName[name]
 			if !ok {
 				continue
 			}
 			rendered[name] = true
-			// Featured command gets the gold accent — everything else gets
-			// plain bold. Pad with plain spaces so escape codes don't bleed
-			// into trailing whitespace.
-			style := s.bold
-			if c.Name() == featuredCommand {
-				style = s.accent
-			}
+			// All command names in lavender `accent` — matches the bun
+			// convention. Pad with plain spaces so escape codes don't bleed
+			// into trailing whitespace (would corrupt terminal redraw on
+			// resize). Two-space gutter matches bun.
 			spaces := pad - len(c.Name())
-			fmt.Fprintf(w, "    %s%s%s%s  %s\n",
-				style, c.Name(), s.reset, repeat(" ", spaces), c.Short)
+			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
+				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
 		}
 	}
 
@@ -211,15 +223,12 @@ func renderRootHelp(w io.Writer, root *cobra.Command) {
 	}
 	if len(others) > 0 {
 		sort.Slice(others, func(i, j int) bool { return others[i].Name() < others[j].Name() })
-		fmt.Fprintf(w, "\n  %sOther:%s\n", s.headline, s.reset)
+		// "Other" is a group sub-header just like Primitives/Workflows/etc.
+		fmt.Fprintf(w, "\n%sOther:%s\n", s.groupHeader, s.reset)
 		for _, c := range others {
-			style := s.bold
-			if c.Name() == featuredCommand {
-				style = s.accent
-			}
 			spaces := pad - len(c.Name())
-			fmt.Fprintf(w, "    %s%s%s%s  %s\n",
-				style, c.Name(), s.reset, repeat(" ", spaces), c.Short)
+			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
+				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
 		}
 	}
 
@@ -228,7 +237,7 @@ func renderRootHelp(w io.Writer, root *cobra.Command) {
 	// control over wording and column alignment. Keep this in sync with
 	// the PersistentFlags registered in init() below — there's a small
 	// unit test that enforces that contract.
-	fmt.Fprintf(w, "\n  %sFlags:%s\n", s.headline, s.reset)
+	fmt.Fprintf(w, "\n%sFlags:%s\n", s.headline, s.reset)
 	flagRows := []struct {
 		name string // e.g. "--api-key"
 		hint string // e.g. "KEY"   (empty for boolean flags)
@@ -267,17 +276,19 @@ func renderRootHelp(w io.Writer, root *cobra.Command) {
 		if f.env != "" {
 			suffix = "   " + s.dim + "(env: " + f.env + ")" + s.reset
 		}
-		fmt.Fprintf(w, "    %s%s  %s%s\n",
+		fmt.Fprintf(w, "  %s%s  %s%s\n",
 			left, repeat(" ", leftWidth-visualWidth), f.desc, suffix)
 	}
 
 	// ----- footer: docs + hint -----
-	fmt.Fprintf(w, "\n  %sLearn more:%s\n", s.headline, s.reset)
-	fmt.Fprintf(w, "    Docs      %s%s%s\n", s.cyan, "https://docs.retab.com", s.reset)
-	fmt.Fprintf(w, "    GitHub    %s%s%s\n", s.cyan, "https://github.com/retab-dev/retab", s.reset)
+	fmt.Fprintf(w, "\n%sLearn more:%s\n", s.headline, s.reset)
+	fmt.Fprintf(w, "  Docs      %s%s%s\n", s.cyan, "https://docs.retab.com", s.reset)
+	fmt.Fprintf(w, "  GitHub    %s%s%s\n", s.cyan, "https://github.com/retab-dev/retab", s.reset)
 
-	fmt.Fprintf(w, "\n  %sRun%s retab <command> %s--help%s for command-specific options.\n\n",
-		s.dim, s.reset, s.dim, s.reset)
+	// Footer hint — same `<command>` colour rule as the Usage line above so
+	// the placeholder reads as a consistent visual token throughout.
+	fmt.Fprintf(w, "\n%sRun%s retab %s<command>%s %s--help%s for command-specific options.\n\n",
+		s.dim, s.reset, s.brand, s.reset, s.dim, s.reset)
 }
 
 // repeat builds a string of n spaces (or whatever sep is). Used to pad

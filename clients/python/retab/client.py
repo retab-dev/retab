@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import logging
 import os
@@ -26,11 +24,6 @@ from .resources import files, schemas, extractions, classifications, parses, spl
 from .types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
 
 logger = logging.getLogger("retab")
-
-
-class SignatureVerificationError(Exception):
-    """Raised when webhook signature verification fails."""
-    pass
 
 
 class MaxRetriesExceeded(Exception):
@@ -450,44 +443,6 @@ class Retab(BaseRetab):
         """
         self.close()
 
-    @staticmethod
-    def verify_event(event_body: bytes, event_signature: str, secret: str) -> Any:
-        """Verify the signature of a webhook event.
-
-        Args:
-            event_body: The raw request body as bytes
-            event_signature: The signature from the request header (x-retab-signature)
-            secret: The webhook secret key used for signing
-
-        Returns:
-            Any: The parsed event payload (JSON)
-
-        Raises:
-            SignatureVerificationError: If the signature verification fails
-
-        Example:
-            ```python
-            from retab import Retab
-
-            # In your webhook handler
-            secret = "your_webhook_secret"
-            body = request.body  # Raw bytes
-            signature = request.headers.get("x-retab-signature")
-
-            try:
-                event = Retab.verify_event(body, signature, secret)
-                print(f"Verified event: {event}")
-            except SignatureVerificationError:
-                print("Invalid signature!")
-            ```
-        """
-        expected_signature = hmac.new(secret.encode(), event_body, hashlib.sha256).hexdigest()
-
-        if not hmac.compare_digest(event_signature, expected_signature):
-            raise SignatureVerificationError("Invalid signature")
-
-        return json.loads(event_body.decode("utf-8"))
-
 
 class AsyncRetab(BaseRetab):
     """Asynchronous client for interacting with the Retab API.
@@ -753,40 +708,3 @@ class AsyncRetab(BaseRetab):
             traceback: The traceback of the exception that was raised, if any
         """
         await self.close()
-    @staticmethod
-    def verify_event(event_body: bytes, event_signature: str, secret: str) -> Any:
-        """Verify the signature of a webhook event.
-
-        Args:
-            event_body: The raw request body as bytes
-            event_signature: The signature from the request header (x-retab-signature)
-            secret: The webhook secret key used for signing
-
-        Returns:
-            Any: The parsed event payload (JSON)
-
-        Raises:
-            SignatureVerificationError: If the signature verification fails
-
-        Example:
-            ```python
-            from retab import AsyncRetab
-
-            # In your async webhook handler
-            secret = "your_webhook_secret"
-            body = await request.body()  # Raw bytes
-            signature = request.headers.get("x-retab-signature")
-
-            try:
-                event = AsyncRetab.verify_event(body, signature, secret)
-                print(f"Verified event: {event}")
-            except SignatureVerificationError:
-                print("Invalid signature!")
-            ```
-        """
-        expected_signature = hmac.new(secret.encode(), event_body, hashlib.sha256).hexdigest()
-
-        if not hmac.compare_digest(event_signature, expected_signature):
-            raise SignatureVerificationError("Invalid signature")
-
-        return json.loads(event_body.decode("utf-8"))

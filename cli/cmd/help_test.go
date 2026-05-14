@@ -65,49 +65,75 @@ func TestRenderRootHelp_EveryRegisteredCommandIsVisible(t *testing.T) {
 		if c.Hidden || c.Name() == "help" || c.Name() == "completion" {
 			continue
 		}
-		// Match at start-of-line + 4-space indent so we don't accidentally
-		// pass via a substring appearance somewhere in a description.
-		needle := "    " + c.Name() + " " // trailing space rules out prefixes
-		// Some commands hit the exact `pad` width and have only the
-		// description right after, but always with two-space separator.
-		// So look for either the spaced needle or `Name` followed by `<space><space>`:
-		if !strings.Contains(out, needle) && !strings.Contains(out, "    "+c.Name()+"  ") {
-			t.Errorf("command %q is registered on rootCmd but does not appear in help output", c.Name())
+		// Match at the command row's 2-space gutter (rows are "  <name>"
+		// with at least one trailing space before the description). The
+		// trailing space rules out e.g. matching "files" inside a
+		// hypothetical "filesystem" description.
+		if !strings.Contains(out, "  "+c.Name()+" ") {
+			t.Errorf("command %q is registered on rootCmd but does not appear in help output:\n%s", c.Name(), out)
 		}
 	}
 }
 
+// Groups must appear in source order so re-ordering `commandGroups` in
+// help.go is the *only* lever for changing on-screen layout. We don't
+// hardcode names here — that lets the maintainer rename / re-order
+// groups without touching tests, and still catches accidental
+// reshufflings introduced by other edits.
 func TestRenderRootHelp_GroupOrderIsPreserved(t *testing.T) {
 	var buf bytes.Buffer
 	renderRootHelp(&buf, rootCmd)
 	out := buf.String()
-	idx := func(s string) int { return strings.Index(out, s) }
-	docs := idx("Documents:")
-	extr := idx("Extraction:")
-	wf := idx("Workflows:")
-	acct := idx("Account:")
-	if docs < 0 || extr < 0 || wf < 0 || acct < 0 {
-		t.Fatalf("missing section headers: docs=%d extr=%d wf=%d acct=%d\n%s", docs, extr, wf, acct, out)
-	}
-	if !(docs < extr && extr < wf && wf < acct) {
-		t.Errorf("group order broken: docs=%d extr=%d wf=%d acct=%d", docs, extr, wf, acct)
+
+	prev := -1
+	for _, g := range commandGroups {
+		idx := strings.Index(out, g.title+":")
+		if idx < 0 {
+			// Group with zero present commands is allowed to be skipped.
+			continue
+		}
+		if idx < prev {
+			t.Errorf("group %q (idx=%d) appears before a previous group (idx=%d):\n%s",
+				g.title, idx, prev, out)
+		}
+		prev = idx
 	}
 }
 
+// Build a minimal cmd tree with just one command, find the group that
+// owns it, and assert: that one group renders; all the others are
+// skipped. Group identity is read from `commandGroups`, so renames are
+// safe.
 func TestRenderRootHelp_EmptyGroupIsSkipped(t *testing.T) {
-	// Build a minimal cmd tree with only "files" registered. Extraction /
-	// Workflows / Account groups have nothing in them and must not appear.
+	const pickedCmd = "files"
+	var owningGroup string
+	for _, g := range commandGroups {
+		for _, n := range g.commands {
+			if n == pickedCmd {
+				owningGroup = g.title
+				break
+			}
+		}
+	}
+	if owningGroup == "" {
+		t.Fatalf("test setup: %q is not in any group", pickedCmd)
+	}
+
 	root := &cobra.Command{Use: "retab", Short: "x"}
-	root.AddCommand(&cobra.Command{Use: "files", Short: "Manage files"})
+	root.AddCommand(&cobra.Command{Use: pickedCmd, Short: "Manage files"})
 	var buf bytes.Buffer
 	renderRootHelp(&buf, root)
 	out := buf.String()
-	if !strings.Contains(out, "Documents:") {
-		t.Errorf("Documents section should render when 'files' is present:\n%s", out)
+
+	if !strings.Contains(out, owningGroup+":") {
+		t.Errorf("group %q should render when %q is present:\n%s", owningGroup, pickedCmd, out)
 	}
-	for _, absent := range []string{"Extraction:", "Workflows:", "Account:"} {
-		if strings.Contains(out, absent) {
-			t.Errorf("section %q should be skipped when no commands match:\n%s", absent, out)
+	for _, g := range commandGroups {
+		if g.title == owningGroup {
+			continue
+		}
+		if strings.Contains(out, g.title+":") {
+			t.Errorf("group %q should be skipped when none of its commands are registered:\n%s", g.title, out)
 		}
 	}
 }
@@ -165,8 +191,19 @@ func TestHelpFunc_RootGetsCustomChildrenGetDefault(t *testing.T) {
 	if !strings.Contains(rootBuf.String(), "Retab · ") {
 		t.Errorf("root help missing brand header:\n%s", rootBuf.String())
 	}
-	if !strings.Contains(rootBuf.String(), "Documents:") {
-		t.Errorf("root help missing grouped commands:\n%s", rootBuf.String())
+	// Any of the configured groups appearing is sufficient evidence the
+	// custom renderer ran (vs. cobra's default, which uses "Available
+	// Commands:"). Reading group names from commandGroups avoids hardcoded
+	// titles that drift when the groupings get re-organised.
+	gotAnyGroup := false
+	for _, g := range commandGroups {
+		if strings.Contains(rootBuf.String(), g.title+":") {
+			gotAnyGroup = true
+			break
+		}
+	}
+	if !gotAnyGroup {
+		t.Errorf("root help missing any of the configured group headers:\n%s", rootBuf.String())
 	}
 
 	// Child → cobra default
@@ -183,6 +220,69 @@ func TestHelpFunc_RootGetsCustomChildrenGetDefault(t *testing.T) {
 	}
 	if !strings.Contains(childBuf.String(), "Usage:") {
 		t.Errorf("child help missing cobra-default 'Usage:' section:\n%s", childBuf.String())
+	}
+}
+
+// Pin the colour role of each visual element by injecting a sentinel
+// palette and asserting exact wrappers. Five roles all live in one test
+// so a regression on any of them points at the specific role that drifted:
+//
+//   - command names                       → bold blue   `<A>` (accent)
+//   - <command> placeholder (Usage+footer) → bold magenta `<P>` (brand)
+//   - group sub-headers (Primitives:, …)  → bold yellow  `<G>` (groupHeader)
+//   - top-level labels (Usage:, Flags:, Learn more:) → plain bold `<H>` (headline)
+//   - flag names (--api-key, --debug, …)  → plain bold `<B>` (bold)
+//
+// These match bun's role assignments — see palette docs in help.go.
+func TestRenderRootHelp_ColourRolesAreCorrect(t *testing.T) {
+	sentinel := styles{
+		reset: "<R>", bold: "<B>", dim: "<D>",
+		brand: "<P>", accent: "<A>", groupHeader: "<G>",
+		cyan: "<C>", headline: "<H>",
+	}
+	var buf bytes.Buffer
+	renderRootHelpWithStyles(&buf, rootCmd, sentinel)
+	out := buf.String()
+
+	// Every visible command name should be wrapped in the accent role.
+	for _, c := range rootCmd.Commands() {
+		if c.Hidden || c.Name() == "help" || c.Name() == "completion" {
+			continue
+		}
+		if !strings.Contains(out, "<A>"+c.Name()+"<R>") {
+			t.Errorf("command %q is not wrapped in <A>…<R> (accent / bold blue):\n%s", c.Name(), out)
+		}
+	}
+
+	// <command> placeholder uses brand magenta in both Usage line and footer.
+	if got := strings.Count(out, "<P><command><R>"); got < 2 {
+		t.Errorf("<command> should appear in <P>…<R> in both Usage and footer (got %d occurrences):\n%s", got, out)
+	}
+
+	// Group sub-headers use the yellow accent. Sample the first group that
+	// actually appears (some groups may have zero commands and be skipped).
+	gotGroupHeader := false
+	for _, g := range commandGroups {
+		if strings.Contains(out, "<G>"+g.title+":<R>") {
+			gotGroupHeader = true
+			break
+		}
+	}
+	if !gotGroupHeader {
+		t.Errorf("no group sub-header wrapped in <G>…<R> (groupHeader / bold yellow):\n%s", out)
+	}
+
+	// Top-level labels stay in plain bold (the spec headline role).
+	for _, label := range []string{"Usage", "Flags", "Learn more"} {
+		if !strings.Contains(out, "<H>"+label+":<R>") {
+			t.Errorf("top-level label %q should be wrapped in <H>…<R> (headline / plain bold):\n%s", label, out)
+		}
+	}
+
+	// Flag names use plain bold. Sample --debug — no value-hint so its
+	// row is the simplest to match unambiguously.
+	if !strings.Contains(out, "<B>--debug<R>") {
+		t.Errorf("flag --debug should be wrapped in <B>…<R> (bold):\n%s", out)
 	}
 }
 

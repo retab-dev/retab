@@ -9,7 +9,7 @@ import (
 
 var editsCmd = &cobra.Command{
 	Use:   "edits",
-	Short: "Run and manage document edits",
+	Short: "Modify document content while preserving formatting",
 }
 
 var editsCreateCmd = &cobra.Command{

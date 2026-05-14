@@ -11,7 +11,7 @@ import (
 
 var extractionsCmd = &cobra.Command{
 	Use:   "extractions",
-	Short: "Run and manage extractions",
+	Short: "Extract structured JSON from documents using your defined schema",
 }
 
 func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionCreateRequest, error) {

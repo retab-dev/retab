@@ -1,5 +1,4 @@
 import * as z from 'zod';
-import * as crypto from 'crypto';
 
 type FetchParams = {
   url: string;
@@ -300,13 +299,6 @@ async function buildAPIError(response: Response, method?: string, url?: string):
   });
 }
 
-export class SignatureVerificationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'SignatureVerificationError';
-  }
-}
-
 export const DateOrISO = z.union([
   z.date(),
   z
@@ -400,43 +392,5 @@ export class FetcherClient extends AbstractClient {
       throw await buildAPIError(res, params.method, url);
     }
     return res;
-  }
-
-  /**
-   * Verify the signature of a webhook event.
-   *
-   * @param eventBody - The raw request body as a string or Buffer
-   * @param eventSignature - The signature from the request header (x-retab-signature)
-   * @param secret - The webhook secret key used for signing
-   * @returns The parsed event payload (JSON)
-   * @throws {SignatureVerificationError} If the signature verification fails
-   *
-   * @example
-   * ```typescript
-   * import { FetcherClient } from './client';
-   *
-   * // In your webhook handler
-   * const secret = "your_webhook_secret";
-   * const body = req.body; // Raw string or Buffer
-   * const signature = req.headers['x-retab-signature'];
-   *
-   * try {
-   *   const event = FetcherClient.verifyEvent(body, signature, secret);
-   *   console.log(`Verified event: ${event}`);
-   * } catch (error) {
-   *   console.log("Invalid signature!");
-   * }
-   * ```
-   */
-  static verifyEvent(eventBody: string | Buffer, eventSignature: string, secret: string): any {
-    const bodyBuffer = typeof eventBody === 'string' ? Buffer.from(eventBody, 'utf-8') : eventBody;
-    const expectedSignature = crypto.createHmac('sha256', secret).update(bodyBuffer).digest('hex');
-
-    // Use constant-time comparison to prevent timing attacks
-    if (!crypto.timingSafeEqual(Buffer.from(eventSignature), Buffer.from(expectedSignature))) {
-      throw new SignatureVerificationError('Invalid signature');
-    }
-
-    return JSON.parse(bodyBuffer.toString('utf-8'));
   }
 }

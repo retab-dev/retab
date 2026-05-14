@@ -3,9 +3,6 @@ package retab
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,29 +12,6 @@ import (
 	"net/url"
 	"strings"
 )
-
-type SignatureVerificationError struct {
-	Message string
-}
-
-func (e SignatureVerificationError) Error() string {
-	return e.Message
-}
-
-// VerifyEvent validates a Retab webhook HMAC signature and unmarshals the payload.
-func VerifyEvent[T any](eventBody []byte, eventSignature string, secret string) (*T, error) {
-	mac := hmac.New(sha256.New, []byte(secret))
-	_, _ = mac.Write(eventBody)
-	expected := hex.EncodeToString(mac.Sum(nil))
-	if !hmac.Equal([]byte(eventSignature), []byte(expected)) {
-		return nil, SignatureVerificationError{Message: "Invalid signature"}
-	}
-	var event T
-	if err := json.Unmarshal(eventBody, &event); err != nil {
-		return nil, err
-	}
-	return &event, nil
-}
 
 type Stream[T any] struct {
 	decoder *json.Decoder

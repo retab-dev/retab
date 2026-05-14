@@ -1,4 +1,4 @@
-from .client import AsyncRetab, Retab, SignatureVerificationError
+from .client import AsyncRetab, Retab
 from . import utils
 from . import types
 from .exceptions import (
@@ -23,7 +23,6 @@ from .types.pagination import PaginatedList
 __all__ = [
     "Retab",
     "AsyncRetab",
-    "SignatureVerificationError",
     "utils",
     "types",
     # Exceptions
