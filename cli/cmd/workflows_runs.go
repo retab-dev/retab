@@ -232,7 +232,7 @@ trigger type, date range, cost, and duration. Use cursor pagination
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

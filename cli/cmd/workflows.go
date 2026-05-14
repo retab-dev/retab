@@ -71,7 +71,7 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

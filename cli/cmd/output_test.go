@@ -3,6 +3,8 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -177,6 +179,254 @@ func fakeRoot() *cobra.Command {
 	child := &cobra.Command{Use: "list"}
 	root.AddCommand(child)
 	return child
+}
+
+// captureStd swaps os.Stdout and os.Stderr for pipes, runs fn, and
+// returns whatever fn wrote. Used by the printResultTable / printResult
+// tests because those helpers write to the real stdout/stderr (this
+// matches how every other "print*" helper in common.go works — they
+// don't accept an io.Writer arg).
+//
+// We use os.Pipe rather than a bytes.Buffer because os.Stdout/Stderr
+// are *os.File-typed; we can't reassign them to a buffer without
+// breaking other code that reflects on them.
+func captureStd(t *testing.T, fn func()) (stdout, stderr string) {
+	t.Helper()
+	rOut, wOut, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("stdout pipe: %v", err)
+	}
+	rErr, wErr, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("stderr pipe: %v", err)
+	}
+	origOut, origErr := os.Stdout, os.Stderr
+	os.Stdout, os.Stderr = wOut, wErr
+	t.Cleanup(func() {
+		os.Stdout, os.Stderr = origOut, origErr
+	})
+
+	// Drain the pipes in background so a verbose render can't block on
+	// the pipe buffer.
+	outCh := make(chan string, 1)
+	errCh := make(chan string, 1)
+	go func() {
+		b, _ := io.ReadAll(rOut)
+		outCh <- string(b)
+	}()
+	go func() {
+		b, _ := io.ReadAll(rErr)
+		errCh <- string(b)
+	}()
+
+	fn()
+	wOut.Close()
+	wErr.Close()
+	return <-outCh, <-errCh
+}
+
+// TestPrintResultTableDataWrappedList covers acceptance criterion #1:
+// a {"data": [...]} resource shape with id / name / created_at →
+// auto-column table with header + N data rows, columns lined up.
+//
+// We assert structurally (header present, every row appears, columns
+// separated by ≥ 2 spaces — tabwriter's padding setting) rather than
+// pinning the exact whitespace. The latter would couple this test to
+// tabwriter's internal alignment math and break on any width change.
+func TestPrintResultTableDataWrappedList(t *testing.T) {
+	resource := map[string]any{
+		"data": []any{
+			map[string]any{
+				"id":         "f_1",
+				"name":       "alpha.pdf",
+				"created_at": "2026-01-01T00:00:00Z",
+			},
+			map[string]any{
+				"id":         "f_22",
+				"name":       "beta.pdf",
+				"created_at": "2026-01-02T00:00:00Z",
+			},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(resource); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr (data-shape should be tabulable): %q", stderr)
+	}
+
+	lines := strings.Split(strings.TrimRight(stdout, "\n"), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("want 3 lines (header + 2 rows), got %d:\n%s", len(lines), stdout)
+	}
+	// Header — ID, NAME (from name alias), CREATED_AT must appear in order.
+	for _, h := range []string{"ID", "NAME", "CREATED_AT"} {
+		if !strings.Contains(lines[0], h) {
+			t.Fatalf("header missing %q: %q", h, lines[0])
+		}
+	}
+	if strings.Index(lines[0], "ID") > strings.Index(lines[0], "NAME") {
+		t.Fatalf("ID should come before NAME: %q", lines[0])
+	}
+	if strings.Index(lines[0], "NAME") > strings.Index(lines[0], "CREATED_AT") {
+		t.Fatalf("NAME should come before CREATED_AT: %q", lines[0])
+	}
+	// Columns separated by ≥ 2 spaces (tabwriter padding=2).
+	if !strings.Contains(lines[0], "  ") {
+		t.Fatalf("header columns not space-separated: %q", lines[0])
+	}
+	// Each row contains its id + filename.
+	if !strings.Contains(lines[1], "f_1") || !strings.Contains(lines[1], "alpha.pdf") {
+		t.Fatalf("row 1 missing data: %q", lines[1])
+	}
+	if !strings.Contains(lines[2], "f_22") || !strings.Contains(lines[2], "beta.pdf") {
+		t.Fatalf("row 2 missing data: %q", lines[2])
+	}
+}
+
+// TestPrintResultTableBareArray covers acceptance criterion #2:
+// a bare [] of objects (no wrapping {"data": ...}) renders the same
+// way as the wrapped shape. Catches the reflect-on-top-level-slice
+// branch in extractTabulableRows.
+func TestPrintResultTableBareArray(t *testing.T) {
+	bare := []any{
+		map[string]any{"id": "x_1", "filename": "one.pdf"},
+		map[string]any{"id": "x_2", "filename": "two.pdf"},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(bare); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr for bare array: %q", stderr)
+	}
+	for _, want := range []string{"ID", "NAME", "x_1", "one.pdf", "x_2", "two.pdf"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in output:\n%s", want, stdout)
+		}
+	}
+	lines := strings.Split(strings.TrimRight(stdout, "\n"), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("want 3 lines, got %d:\n%s", len(lines), stdout)
+	}
+}
+
+// TestPrintResultTableSingleObjectFallsBackToJSON covers acceptance
+// criterion #3: a single object (not a list) isn't tabulable, so the
+// helper warns on stderr and falls back to JSON on stdout.
+//
+// Important: the JSON on stdout must remain valid JSON so existing
+// `| jq` pipelines keep working when a user has --output table set
+// globally but happens to hit a non-list response.
+func TestPrintResultTableSingleObjectFallsBackToJSON(t *testing.T) {
+	obj := map[string]any{"id": "single", "filename": "lone.pdf"}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(obj); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if !strings.Contains(stderr, "not applicable") {
+		t.Fatalf("expected stderr warning about non-tabulable input, got: %q", stderr)
+	}
+	// Stdout must be valid JSON encoding the original object.
+	var got map[string]any
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("fallback stdout is not valid JSON: %v\nraw:\n%s", err, stdout)
+	}
+	if got["id"] != "single" || got["filename"] != "lone.pdf" {
+		t.Fatalf("fallback JSON missing fields: %v", got)
+	}
+}
+
+// TestPrintResultTableNoPreferredColumns covers acceptance criterion
+// #4: a list of objects whose keys don't match ANY preferred column
+// (no id/name/filename/type/status/model/created_at) must fall back
+// to JSON rather than crash or render a column-less header.
+//
+// This is the failure mode the auto-column path is most exposed to —
+// an unknown resource shape lands in printResultTable from a generic
+// `printResult` dispatch and we never want it to panic.
+func TestPrintResultTableNoPreferredColumns(t *testing.T) {
+	weird := map[string]any{
+		"data": []any{
+			map[string]any{"foo": "bar", "baz": 42},
+			map[string]any{"foo": "qux", "baz": 7},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(weird); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if !strings.Contains(stderr, "not applicable") {
+		t.Fatalf("expected stderr warning, got: %q", stderr)
+	}
+	// Stdout must be valid JSON containing the original payload.
+	var got map[string]any
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("fallback stdout is not valid JSON: %v\nraw:\n%s", err, stdout)
+	}
+	if _, ok := got["data"]; !ok {
+		t.Fatalf("fallback JSON missing data key: %v", got)
+	}
+}
+
+// TestPrintResultDispatch pins the printResult dispatcher: --output
+// table routes to printResultTable, everything else routes to
+// printJSON. Per the bug spec, "auto" and "" both behave like JSON
+// (no TTY detection on this path).
+func TestPrintResultDispatch(t *testing.T) {
+	resource := map[string]any{
+		"data": []any{
+			map[string]any{"id": "a_1", "name": "first"},
+		},
+	}
+
+	cases := []struct {
+		name       string
+		flagValue  string
+		wantTable  bool // true → assert table layout, false → assert JSON
+	}{
+		{"empty defaults to json", "", false},
+		{"auto defaults to json", "auto", false},
+		{"json explicit", "json", false},
+		{"table renders table", "table", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := fakeRoot()
+			if err := cmd.Root().PersistentFlags().Set("output", tc.flagValue); err != nil {
+				t.Fatalf("set flag: %v", err)
+			}
+			stdout, _ := captureStd(t, func() {
+				if err := printResult(cmd, resource); err != nil {
+					t.Fatalf("printResult: %v", err)
+				}
+			})
+			if tc.wantTable {
+				if !strings.Contains(stdout, "ID") || !strings.Contains(stdout, "a_1") {
+					t.Fatalf("expected table layout, got:\n%s", stdout)
+				}
+				// JSON output starts with '{' or '[' — table output starts
+				// with the header line "ID  …".
+				if strings.HasPrefix(strings.TrimSpace(stdout), "{") {
+					t.Fatalf("expected table but got JSON:\n%s", stdout)
+				}
+			} else {
+				var got map[string]any
+				if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+					t.Fatalf("expected JSON, parse failed: %v\n%s", err, stdout)
+				}
+			}
+		})
+	}
 }
 
 func TestResolveOutputFormat(t *testing.T) {

@@ -122,7 +122,7 @@ Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size w
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
