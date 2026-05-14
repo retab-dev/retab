@@ -112,7 +112,26 @@ func inferMIMEDataFromFile(filePath string) (MIMEData, error) {
 	if err != nil {
 		return MIMEData{}, err
 	}
-	return inferMIMEDataFromBytes(data, filepath.Base(filePath))
+	filename := filepath.Base(filePath)
+	mimeType, ok := detectKnownContentType(data)
+	if !ok {
+		// Content-sniffing failed (commonly: CSV, Excel, .eml, plain
+		// text without a clear magic number). Fall back to the file's
+		// extension — same strategy contentTypeForFilename uses on the
+		// upload path. Strip any charset/param suffix appended by the
+		// stdlib (`text/plain; charset=utf-8` → `text/plain`) so the
+		// resulting data URI stays clean.
+		if extType := mime.TypeByExtension(filepath.Ext(filename)); extType != "" {
+			mimeType = strings.TrimSpace(strings.SplitN(extType, ";", 2)[0])
+		}
+	}
+	if mimeType == "" {
+		return MIMEData{}, fmt.Errorf("retab: unable to determine file type for %s", filename)
+	}
+	return MIMEData{
+		Filename: filename,
+		URL:      "data:" + mimeType + ";base64," + base64.StdEncoding.EncodeToString(data),
+	}, nil
 }
 
 func inferMIMEDataFromBytes(data []byte, filename string) (MIMEData, error) {
@@ -129,6 +148,16 @@ func inferMIMEDataFromBytes(data []byte, filename string) (MIMEData, error) {
 	}, nil
 }
 
+// detectKnownContentType identifies a MIME type from a byte prefix.
+// First checks the explicit magic numbers we care about (fast, reliable
+// for the formats most users feed in), then falls back to net/http's
+// general-purpose sniffer. We accept any non-empty result that isn't
+// `application/octet-stream` (the sniffer's "I don't know" reply) —
+// broad enough to cover text/plain, text/csv, text/html, RFC822
+// emails, Excel/Word zips, etc. The previous whitelist of just 4
+// formats was the root cause of `retab: unable to determine file type`
+// on every input the marketing copy promised to support beyond images
+// and PDFs.
 func detectKnownContentType(data []byte) (string, bool) {
 	if len(data) >= 4 && string(data[:4]) == "%PDF" {
 		return "application/pdf", true
@@ -147,12 +176,16 @@ func detectKnownContentType(data []byte) (string, bool) {
 		sniff = sniff[:512]
 	}
 	mimeType := http.DetectContentType(sniff)
-	switch mimeType {
-	case "application/pdf", "image/png", "image/jpeg", "image/gif":
-		return mimeType, true
-	default:
+	// http.DetectContentType returns `application/octet-stream` when it
+	// can't classify the bytes — that's the only result we reject here.
+	// Strip any charset/parameter suffix for a clean data-URI value.
+	if mimeType == "" || mimeType == "application/octet-stream" {
 		return "", false
 	}
+	if i := strings.Index(mimeType, ";"); i > 0 {
+		mimeType = strings.TrimSpace(mimeType[:i])
+	}
+	return mimeType, true
 }
 
 func mimeTypeFromDataURI(dataURI string) string {

@@ -97,9 +97,25 @@ func TestMIMEDataMatchesNodeJSONAndStorageID(t *testing.T) {
 	}
 }
 
-func TestInferMIMEDataRejectsUnknownBytesLikeNode(t *testing.T) {
-	if _, err := InferMIMEData([]byte("plain text is not detected by file-type")); err == nil {
-		t.Fatalf("expected unknown bytes to fail MIME inference")
+// InferMIMEData accepts whatever http.DetectContentType can classify
+// (text, images, PDFs, Office zips, etc.) — broader than the previous
+// 4-format whitelist, which contradicted the CLI's marketing copy
+// promising Excel / email / text support. Only genuinely-opaque bytes
+// (those sniffed as `application/octet-stream`) still fail.
+func TestInferMIMEDataAcceptsTextRejectsOpaqueBytes(t *testing.T) {
+	// Plain text was rejected pre-fix; must succeed now.
+	got, err := InferMIMEData([]byte("plain text is supposed to be detected"))
+	if err != nil {
+		t.Fatalf("plain text should now be accepted, got: %v", err)
+	}
+	if got.URL == "" || got.Filename == "" {
+		t.Errorf("expected populated MIMEData, got %+v", got)
+	}
+
+	// Genuinely structureless bytes — short enough that no sniffer can
+	// classify them — must still fail rather than guessing wrong.
+	if _, err := InferMIMEData([]byte{0x00, 0x01, 0x02}); err == nil {
+		t.Fatalf("expected opaque bytes to fail MIME inference")
 	}
 }
 

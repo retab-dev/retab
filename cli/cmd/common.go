@@ -484,12 +484,28 @@ func addSchemaFlags(cmd *cobra.Command) {
 // response to stderr. Activated by `--debug` on the root command. Output
 // is in HTTP wire format so it's pasteable into other tools (httpie,
 // requestbin, etc.) without translation.
+//
+// Sensitive headers — `Api-Key`, `Authorization` — are redacted in the
+// dump. Without this guard, sharing a `--debug` log with another engineer
+// for a bug report would leak the user's full API key, which is the exact
+// scenario where the redaction matters.
 type debugTransport struct {
 	wrapped http.RoundTripper
 }
 
+// sensitiveHeaders is the list of HTTP header names whose values must be
+// replaced with a redacted preview in --debug output. Lowercase because
+// the comparison is case-insensitive (Go's http.Header normalises).
+var sensitiveHeaders = map[string]bool{
+	"api-key":       true,
+	"authorization": true,
+}
+
 func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if dump, err := httputil.DumpRequestOut(req, true); err == nil {
+	// Clone before mutating so the wire request goes out untouched.
+	dumpReq := req.Clone(req.Context())
+	redactSensitiveHeaders(dumpReq.Header)
+	if dump, err := httputil.DumpRequestOut(dumpReq, true); err == nil {
 		fmt.Fprintf(os.Stderr, "\n--- HTTP request ---\n%s\n", dump)
 	}
 	resp, err := t.wrapped.RoundTrip(req)
@@ -501,6 +517,29 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		fmt.Fprintf(os.Stderr, "--- HTTP response ---\n%s\n", dump)
 	}
 	return resp, nil
+}
+
+// redactSensitiveHeaders replaces credential-carrying header values in
+// place with a short prefix+suffix preview (using the same redactKey
+// shape as `retab auth status`'s `api_key_preview`). Idempotent on
+// headers that don't appear in the request.
+func redactSensitiveHeaders(h http.Header) {
+	for name := range h {
+		if !sensitiveHeaders[strings.ToLower(name)] {
+			continue
+		}
+		for i, v := range h[name] {
+			// Authorization: "Bearer <token>" — preserve the scheme so
+			// users debugging an auth flow still see WHICH scheme the
+			// CLI selected; only the credential body is redacted.
+			if scheme, rest, ok := strings.Cut(v, " "); ok && rest != "" &&
+				(scheme == "Bearer" || scheme == "Basic") {
+				h[name][i] = scheme + " " + redactKey(rest)
+				continue
+			}
+			h[name][i] = redactKey(v)
+		}
+	}
 }
 
 // confirmDeleted writes a one-line confirmation to stderr after a
