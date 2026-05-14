@@ -395,7 +395,9 @@ func init() {
 	workflowsTestsCreateCmd.Flags().String("target-file", "", "JSON file with the target object (or - for stdin)")
 	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin)")
 	workflowsTestsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin)")
-	_ = workflowsTestsCreateCmd.Flags().MarkDeprecated("workflow-id", "use the positional argument instead")
+	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
+	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
+	_ = workflowsTestsCreateCmd.Flags().MarkHidden("workflow-id")
 
 	workflowsTestsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsTestsListCmd.Flags().Int("limit", 0, "max items (default 50)")
@@ -408,7 +410,9 @@ func init() {
 	workflowsTestsExecuteCmd.Flags().String("test-id", "", "single test to execute")
 	workflowsTestsExecuteCmd.Flags().Int("n-consensus", 0, "consensus count")
 	workflowsTestsExecuteCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
-	_ = workflowsTestsExecuteCmd.Flags().MarkDeprecated("workflow-id", "use the positional argument instead")
+	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
+	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
+	_ = workflowsTestsExecuteCmd.Flags().MarkHidden("workflow-id")
 
 	workflowsTestsRunsListCmd.Flags().Int("limit", 0, "max items (default 20)")
 
