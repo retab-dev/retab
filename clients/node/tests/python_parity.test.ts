@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import APIV1 from '../src/api/client.js';
@@ -27,6 +27,7 @@ type PythonClassDefinition = {
 
 const PYTHON_CLIENT_FILE = path.resolve(import.meta.dir, '../../python/retab/client.py');
 const PYTHON_RESOURCES_DIR = path.resolve(import.meta.dir, '../../python/retab/resources');
+const GO_CLIENT_DIR = path.resolve(import.meta.dir, '../../go');
 const ALLOWED_NODE_ONLY_METHODS: Record<string, string[]> = {};
 
 class MockClient extends AbstractClient {
@@ -409,6 +410,115 @@ function buildExpectedPythonSurface(): PythonResourceSurface[] {
     .sort((left, right) => left.resource.localeCompare(right.resource));
 }
 
+function toSnakeCase(value: string): string {
+  return value
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .toLowerCase();
+}
+
+function normalizeGoMethodName(value: string): string {
+  return toSnakeCase(
+    value
+      .replaceAll('API', 'Api')
+      .replaceAll('CSV', 'Csv')
+      .replaceAll('HIL', 'Hil')
+      .replaceAll('HTTP', 'Http')
+      .replaceAll('ID', 'Id')
+      .replaceAll('JSON', 'Json')
+      .replaceAll('MIME', 'Mime')
+      .replaceAll('URL', 'Url')
+      .replaceAll('YAML', 'Yaml')
+  );
+}
+
+function readGoClientSource(): string {
+  return readdirSync(GO_CLIENT_DIR)
+    .filter((filename) => filename.endsWith('.go') && !filename.endsWith('_test.go'))
+    .sort()
+    .map((filename) => readFileSync(path.join(GO_CLIENT_DIR, filename), 'utf8'))
+    .join('\n');
+}
+
+function collectGoServiceFields(source: string): Map<string, Array<{ name: string; type: string }>> {
+  const fieldsByService = new Map<string, Array<{ name: string; type: string }>>();
+
+  for (const match of source.matchAll(/type\s+([A-Za-z_][A-Za-z0-9_]*Service)\s+struct\s*\{([\s\S]*?)\n\}/g)) {
+    const [, serviceName, body] = match;
+    const fields: Array<{ name: string; type: string }> = [];
+
+    for (const fieldMatch of body.matchAll(/^\s*([A-Z][A-Za-z0-9_]*)\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\b/gm)) {
+      fields.push({ name: fieldMatch[1], type: fieldMatch[2] });
+    }
+
+    fieldsByService.set(serviceName, fields);
+  }
+
+  return fieldsByService;
+}
+
+function collectGoServiceMethods(source: string): Map<string, string[]> {
+  const methodsByService = new Map<string, Set<string>>();
+
+  for (const match of source.matchAll(/func\s+\([^)]+\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\)\s+([A-Z][A-Za-z0-9_]*)\s*\(/g)) {
+    const [, serviceName, methodName] = match;
+    if (!methodsByService.has(serviceName)) {
+      methodsByService.set(serviceName, new Set());
+    }
+    methodsByService.get(serviceName)?.add(normalizeGoMethodName(methodName));
+  }
+
+  return new Map(
+    Array.from(methodsByService.entries()).map(([serviceName, methodNames]) => [
+      serviceName,
+      Array.from(methodNames).sort(),
+    ])
+  );
+}
+
+function collectGoRootServices(source: string): Array<{ name: string; type: string }> {
+  const match = /type\s+Client\s+struct\s*\{([\s\S]*?)\n\}/.exec(source);
+  if (!match) {
+    throw new Error('Unable to locate Go Client struct');
+  }
+
+  return Array.from(match[1].matchAll(/^\s*([A-Z][A-Za-z0-9_]*)\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\b/gm)).map(
+    (fieldMatch) => ({ name: fieldMatch[1], type: fieldMatch[2] })
+  );
+}
+
+function buildGoResourceSurface(): PythonResourceSurface[] {
+  const source = readGoClientSource();
+  const fieldsByService = collectGoServiceFields(source);
+  const methodsByService = collectGoServiceMethods(source);
+
+  const visit = (
+    serviceName: string,
+    resourcePath: string,
+    seen: Set<string>
+  ): PythonResourceSurface[] => {
+    const visitKey = `${serviceName}:${resourcePath}`;
+    if (seen.has(visitKey)) {
+      return [];
+    }
+    seen.add(visitKey);
+
+    const current: PythonResourceSurface = {
+      resource: resourcePath,
+      methods: methodsByService.get(serviceName) ?? [],
+    };
+    const children = (fieldsByService.get(serviceName) ?? []).flatMap(({ name, type }) =>
+      visit(type, `${resourcePath}.${normalizeGoMethodName(name)}`, seen)
+    );
+
+    return [current, ...children];
+  };
+
+  return collectGoRootServices(source)
+    .flatMap(({ name, type }) => visit(type, normalizeGoMethodName(name), new Set()))
+    .sort((left, right) => left.resource.localeCompare(right.resource));
+}
+
 describe('python sdk parity surface', () => {
   test('node client exposes the full python resource surface', () => {
     const api = new APIV1(new MockClient()) as unknown as Record<string, unknown>;
@@ -440,6 +550,28 @@ describe('python sdk parity surface', () => {
       expect(
         extraMethods,
         `unexpected python-style methods on ${resource}: ${extraMethods.join(', ')}`
+      ).toEqual([]);
+    }
+  });
+
+  test('go client exposes the full python operation surface', () => {
+    const expectedPythonSurface = buildExpectedPythonSurface();
+    const expectedResourcePaths = expectedPythonSurface.map(({ resource }) => resource).sort();
+    const goSurface = buildGoResourceSurface();
+    const goResourcePaths = goSurface.map(({ resource }) => resource).sort();
+    const goMethodsByResource = new Map(goSurface.map(({ resource, methods }) => [resource, new Set(methods)]));
+
+    expect(expectedPythonSurface.length).toBeGreaterThan(0);
+    expect(goResourcePaths).toEqual(expectedResourcePaths);
+
+    for (const { resource, methods } of expectedPythonSurface) {
+      const goMethods = goMethodsByResource.get(resource) ?? new Set();
+      const expectedOperationMethods = methods.filter((method) => !method.startsWith('prepare_'));
+      const missingMethods = expectedOperationMethods.filter((method) => !goMethods.has(method));
+
+      expect(
+        missingMethods,
+        `missing Go methods on ${resource}: ${missingMethods.join(', ')}`
       ).toEqual([]);
     }
   });
