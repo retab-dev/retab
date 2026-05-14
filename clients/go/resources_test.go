@@ -495,6 +495,25 @@ func TestListQueryShapes(t *testing.T) {
 				}
 			},
 		},
+		{
+			// Regression: a typed-nil map made it past the `value == nil`
+			// guard in addJSONQuery and serialised as `metadata=null`,
+			// which the API then rejected with HTTP 400. The CLI hit this
+			// the moment a user ran `retab jobs list` with no flags.
+			// Pin the fix: an unset Metadata must NOT appear in the URL.
+			name: "jobs list omits metadata when unset",
+			call: func(ctx context.Context, client *Client) error {
+				_, err := client.Jobs.List(ctx, &ListJobsParams{Limit: 1})
+				return err
+			},
+			wantPath: "/jobs",
+			assert: func(t *testing.T, query map[string][]string) {
+				assertQuery(t, query, "limit", "1")
+				if _, ok := query["metadata"]; ok {
+					t.Fatalf("metadata should not appear when unset, got %q", query["metadata"])
+				}
+			},
+		},
 	}
 
 	for _, test := range tests {

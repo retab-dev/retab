@@ -325,7 +325,11 @@ deletion only affects the draft.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Workflows.Blocks.Delete(ctx, args[0], args[1])
+		if err := client.Workflows.Blocks.Delete(ctx, args[0], args[1]); err != nil {
+			return err
+		}
+		confirmDeleted("block", args[1])
+		return nil
 	}),
 }
 

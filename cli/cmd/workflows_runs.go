@@ -252,7 +252,11 @@ produced by the run are preserved separately (see
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Workflows.Runs.Delete(ctx, args[0])
+		if err := client.Workflows.Runs.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("run", args[0])
+		return nil
 	}),
 }
 

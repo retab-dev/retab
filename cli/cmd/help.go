@@ -54,7 +54,7 @@ var commandGroups = []commandGroup{
 	},
 	{
 		title:    "Account",
-		commands: []string{"auth"},
+		commands: []string{"auth", "version"},
 	},
 }
 

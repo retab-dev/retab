@@ -201,7 +201,11 @@ preserved as separate objects (see ` + "`workflows artifacts`" + `).`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Workflows.Delete(ctx, args[0])
+		if err := client.Workflows.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("workflow", args[0])
+		return nil
 	}),
 }
 

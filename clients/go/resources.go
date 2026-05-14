@@ -777,9 +777,19 @@ func addJSONQuery(query url.Values, key string, value any) {
 		return
 	}
 	encoded, err := json.Marshal(value)
-	if err == nil {
-		query.Set(key, string(encoded))
+	if err != nil {
+		return
 	}
+	// json.Marshal of a typed-nil map / slice / pointer produces "null".
+	// The `value == nil` check above doesn't catch typed nil — interface
+	// value nil-ness is tested by both type *and* data being nil. So we
+	// re-check the marshalled output and skip when it's literally "null".
+	// Without this, callers that pass an unset `map[string]string`
+	// produce `?metadata=null` query strings, which the API rejects (400).
+	if string(encoded) == "null" {
+		return
+	}
+	query.Set(key, string(encoded))
 }
 
 func resourceFromJSON(value any) Resource {

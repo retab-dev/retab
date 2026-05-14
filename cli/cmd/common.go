@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"net/http/httputil"
 	"os"
 	"os/signal"
 	"strings"
@@ -65,6 +67,18 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	var opts []retab.Option
 	if baseURL != "" {
 		opts = append(opts, retab.WithBaseURL(baseURL))
+	}
+
+	// --debug wires a logging RoundTripper into the SDK's HTTP client so
+	// every wire-level request/response is dumped to stderr. The dump
+	// uses httputil so headers + body land in a copy-pasteable format
+	// (curl-equivalent). Bodies stay in memory; for large uploads this
+	// adds RAM pressure — that's fine for a debugging flag.
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		opts = append(opts, retab.WithHTTPClient(&http.Client{
+			Timeout:   60 * time.Second,
+			Transport: &debugTransport{wrapped: http.DefaultTransport},
+		}))
 	}
 
 	// Flag/env API key wins outright — the documented CI escape hatch.
@@ -352,4 +366,41 @@ func resolveSchema(cmd *cobra.Command) (any, error) {
 func addSchemaFlags(cmd *cobra.Command) {
 	cmd.Flags().String("json-schema", "", "JSON schema literal")
 	cmd.Flags().String("json-schema-file", "", "path to JSON schema file (or - for stdin)")
+}
+
+// debugTransport wraps an http.RoundTripper and dumps every request +
+// response to stderr. Activated by `--debug` on the root command. Output
+// is in HTTP wire format so it's pasteable into other tools (httpie,
+// requestbin, etc.) without translation.
+type debugTransport struct {
+	wrapped http.RoundTripper
+}
+
+func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if dump, err := httputil.DumpRequestOut(req, true); err == nil {
+		fmt.Fprintf(os.Stderr, "\n--- HTTP request ---\n%s\n", dump)
+	}
+	resp, err := t.wrapped.RoundTrip(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "--- HTTP error ---\n%v\n", err)
+		return nil, err
+	}
+	if dump, err := httputil.DumpResponse(resp, true); err == nil {
+		fmt.Fprintf(os.Stderr, "--- HTTP response ---\n%s\n", dump)
+	}
+	return resp, nil
+}
+
+// confirmDeleted writes a one-line confirmation to stderr after a
+// successful delete. Stderr (not stdout) so users piping a delete
+// command into another process don't get the confirmation in their
+// data stream — the JSON / no-content body still goes to stdout per
+// the rest of the CLI's convention.
+//
+// Quiet by design: a single line, no decoration. The user is mostly
+// interested in "did the right thing happen?" and the resource id is
+// the load-bearing piece — fat-fingered ids are the failure mode this
+// guards against.
+func confirmDeleted(kind, id string) {
+	fmt.Fprintf(os.Stderr, "deleted %s: %s\n", kind, id)
 }
