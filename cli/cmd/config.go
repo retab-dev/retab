@@ -5,12 +5,40 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // retabConfig is the on-disk shape at ~/.retab/config.json.
+//
+// Two auth shapes are supported, and the file may hold both at once. At
+// request time the CLI prefers OAuth tokens when present; the legacy
+// `api_key` field is still honored so that long-standing setups don't
+// break when users upgrade.
 type retabConfig struct {
-	APIKey  string `json:"api_key,omitempty"`
+	// APIKey is the legacy auth path. Still fully supported.
+	APIKey string `json:"api_key,omitempty"`
+
+	// BaseURL overrides the default API endpoint. Useful for staging.
 	BaseURL string `json:"base_url,omitempty"`
+
+	// OAuth holds tokens issued by WorkOS via `retab auth login`. Optional.
+	OAuth *oauthTokens `json:"oauth,omitempty"`
+}
+
+// oauthTokens is the persisted OAuth state. Mirrors the WorkOS token
+// endpoint response, plus an absolute expiry computed at write time so
+// the CLI can decide whether to refresh without re-reading clock skew.
+type oauthTokens struct {
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
+	TokenType    string    `json:"token_type,omitempty"` // "Bearer"
+	ExpiresAt    time.Time `json:"expires_at"`
+	Scope        string    `json:"scope,omitempty"`
+
+	// Echoed from the /v1/auth/cli/config discovery call at login time so
+	// that the refresh path doesn't need to re-discover.
+	AuthKitDomain string `json:"authkit_domain,omitempty"`
+	ClientID      string `json:"client_id,omitempty"`
 }
 
 func configDir() (string, error) {
