@@ -196,14 +196,18 @@ which does the GET for you.`,
 }
 
 var filesDownloadCmd = &cobra.Command{
-	Use:   "download <file-id>",
-	Short: "Download a file to a local path (- for stdout)",
+	Use:   "download <file-id> [dest]",
+	Short: "Download a file to a local path (- writes to stdout)",
 	Long: `Stream a file's bytes from storage to disk (or stdout).
 
-With no -o flag, writes to the server-recorded filename in the current
+The destination can be given as a positional argument or via ` + "`-o`" + `.
+With neither, writes to the server-recorded filename in the current
 directory, falling back to the file id if the server didn't store a
-name. Pass ` + "`-o <path>`" + ` for an explicit destination, or ` + "`-o -`" + ` to
-write to stdout so the output can be piped into another tool.
+name. Use ` + "`-`" + ` (positional or ` + "`-o -`" + `) to write to stdout so the output
+can be piped into another tool.
+
+The positional and ` + "`-o`" + ` forms are mutually exclusive — passing both
+is rejected. Pick whichever reads better at the call site.
 
 Downloads stream chunk-by-chunk and propagate Ctrl-C, so canceling a
 slow transfer leaves no half-written file open on stdout (and partial
@@ -211,13 +215,24 @@ local files can be safely deleted and retried).`,
 	Example: `  # Save under the server's filename
   retab files download file_abc123
 
-  # Save to an explicit path
+  # Pipe to stdout (e.g. into another tool)
+  retab files download file_abc123 -
+
+  # Save to an explicit path (positional)
+  retab files download file_abc123 ./invoice.pdf
+
+  # Same, with the -o flag form
   retab files download file_abc123 -o ./invoice.pdf
 
-  # Pipe to stdout (e.g. into another tool)
+  # Stdout via the flag form (equivalent to the positional -)
   retab files download file_abc123 -o - | pdftotext - -`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		oFlag, _ := cmd.Flags().GetString("output")
+		dest, toStdout, err := resolveDownloadDest(args, oFlag)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -228,12 +243,11 @@ local files can be safely deleted and retried).`,
 		if err != nil {
 			return err
 		}
-		out, _ := cmd.Flags().GetString("output")
-		if out == "" {
-			out = link.Filename
-		}
-		if out == "" {
-			out = args[0]
+		if !toStdout && dest == "" {
+			dest = link.Filename
+			if dest == "" {
+				dest = args[0]
+			}
 		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, link.DownloadURL, nil)
 		if err != nil {
@@ -249,10 +263,10 @@ local files can be safely deleted and retried).`,
 			return fmt.Errorf("download failed: %d %s", resp.StatusCode, string(body))
 		}
 		var sink io.Writer
-		if out == "-" {
+		if toStdout {
 			sink = os.Stdout
 		} else {
-			f, err := os.Create(out)
+			f, err := os.Create(dest)
 			if err != nil {
 				return err
 			}
@@ -262,6 +276,35 @@ local files can be safely deleted and retried).`,
 		_, err = io.Copy(sink, resp.Body)
 		return err
 	}),
+}
+
+// resolveDownloadDest collapses the two destination-input forms (positional
+// arg vs. -o flag) into a single (path, toStdout) result. Pulled out of
+// filesDownloadCmd.RunE so the resolution rules can be exercised without
+// spinning up an HTTP client or a real file.
+//
+// Rules:
+//   - args[1] and oFlag are mutually exclusive; passing both is an error.
+//   - "-" (positional or flag) maps to (path="", toStdout=true).
+//   - Any other non-empty value maps to (path=value, toStdout=false).
+//   - Neither given maps to (path="", toStdout=false) — the caller then
+//     falls back to the server-recorded filename / file id.
+func resolveDownloadDest(args []string, oFlag string) (path string, toStdout bool, err error) {
+	var positional string
+	if len(args) >= 2 {
+		positional = args[1]
+	}
+	if positional != "" && oFlag != "" {
+		return "", false, fmt.Errorf("cannot use positional %s and -o flag together", positional)
+	}
+	value := positional
+	if value == "" {
+		value = oFlag
+	}
+	if value == "-" {
+		return "", true, nil
+	}
+	return value, false, nil
 }
 
 var filesCreateUploadCmd = &cobra.Command{
@@ -355,7 +398,7 @@ func init() {
 	filesListCmd.Flags().String("mime-type", "", "filter by MIME type")
 	filesListCmd.Flags().String("sort-by", "", "sort field (default: created_at)")
 
-	filesDownloadCmd.Flags().StringP("output", "o", "", "output path (default: server filename, - for stdout)")
+	filesDownloadCmd.Flags().StringP("output", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
 
 	filesCreateUploadCmd.Flags().String("filename", "", "filename (required)")
 	filesCreateUploadCmd.Flags().String("content-type", "", "content type (required)")
