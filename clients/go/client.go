@@ -22,6 +22,12 @@ type Client struct {
 	httpClient *http.Client
 	headers    map[string]string
 
+	// tokenProvider, when set, returns a Bearer token at request time.
+	// Takes precedence over apiKey: requests use the `Authorization` header
+	// and `Api-Key` is omitted. Callable on every request so callers can
+	// implement transparent refresh without rebuilding the Client.
+	tokenProvider func(context.Context) (string, error)
+
 	Files           *FilesService
 	Schemas         *SchemasService
 	Extractions     *ExtractionsService
@@ -60,13 +66,38 @@ func WithHeader(key string, value string) Option {
 	}
 }
 
-// NewClient creates a Retab client. If apiKey is empty, RETAB_API_KEY is used.
+// WithBearerToken authenticates as the given Bearer token. The Client will
+// send `Authorization: Bearer <token>` on every request and omit `Api-Key`.
+// Use this for OAuth-issued access tokens (e.g. from `retab auth login`).
+//
+// For tokens that need to be refreshed transparently, use
+// WithBearerTokenProvider instead — it's invoked per request so the caller
+// can return a fresh token whenever the cached one is near expiry.
+func WithBearerToken(token string) Option {
+	return func(c *Client) {
+		t := token
+		c.tokenProvider = func(context.Context) (string, error) { return t, nil }
+	}
+}
+
+// WithBearerTokenProvider authenticates with a Bearer token that's resolved
+// at request time. The provider is called once per outgoing request; if it
+// returns an error the request fails before any network IO. This is the
+// right hook for OAuth refresh: cache the access token + refresh it when
+// `time.Now()` crosses `expires_at - leeway`.
+func WithBearerTokenProvider(provider func(context.Context) (string, error)) Option {
+	return func(c *Client) {
+		c.tokenProvider = provider
+	}
+}
+
+// NewClient creates a Retab client. By default it authenticates with an API
+// key — pass one in, or set RETAB_API_KEY. Pass an empty string AND
+// WithBearerToken / WithBearerTokenProvider to authenticate with an OAuth
+// access token instead. Exactly one auth mode must end up configured.
 func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	if apiKey == "" {
 		apiKey = os.Getenv("RETAB_API_KEY")
-	}
-	if apiKey == "" {
-		return nil, fmt.Errorf("retab: api key is required; pass one to NewClient or set RETAB_API_KEY")
 	}
 
 	client := &Client{
@@ -79,6 +110,9 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	}
 	for _, opt := range opts {
 		opt(client)
+	}
+	if client.apiKey == "" && client.tokenProvider == nil {
+		return nil, fmt.Errorf("retab: no credentials; pass an API key, set RETAB_API_KEY, or use WithBearerToken/WithBearerTokenProvider")
 	}
 	client.Files = &FilesService{client: client}
 	client.Schemas = &SchemasService{client: client}
@@ -232,7 +266,20 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, que
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Api-Key", c.apiKey)
+	// Auth: Bearer token wins over API key. Only one header is sent so the
+	// server's auth resolution sees a single unambiguous credential.
+	if c.tokenProvider != nil {
+		token, err := c.tokenProvider(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("retab: resolve bearer token: %w", err)
+		}
+		if token == "" {
+			return nil, fmt.Errorf("retab: bearer token provider returned empty token")
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+	} else {
+		req.Header.Set("Api-Key", c.apiKey)
+	}
 	req.Header.Set("Accept", "application/json")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")

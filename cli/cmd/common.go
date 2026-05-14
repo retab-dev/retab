@@ -39,28 +39,76 @@ func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Comm
 var errSilent = errors.New("")
 
 func newClient(cmd *cobra.Command) (*retab.Client, error) {
-	apiKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
-	baseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
+	// Resolution order (first match wins):
+	//   1. `--api-key` flag        -> Api-Key header
+	//   2. `RETAB_API_KEY` env     -> Api-Key header
+	//   3. Stored OAuth tokens     -> Bearer header, with transparent refresh
+	//   4. Stored legacy api_key   -> Api-Key header
+	//   5. nothing                 -> error
+	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
+	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
+
+	apiKey := flagKey
+	baseURL := flagBaseURL
 	if apiKey == "" {
 		apiKey = os.Getenv("RETAB_API_KEY")
 	}
 	if baseURL == "" {
 		baseURL = os.Getenv("RETAB_BASE_URL")
 	}
-	if apiKey == "" || baseURL == "" {
-		cfg, _ := loadConfig()
-		if apiKey == "" {
-			apiKey = cfg.APIKey
-		}
-		if baseURL == "" {
-			baseURL = cfg.BaseURL
-		}
+
+	cfg, _ := loadConfig()
+	if baseURL == "" {
+		baseURL = cfg.BaseURL
 	}
+
 	var opts []retab.Option
 	if baseURL != "" {
 		opts = append(opts, retab.WithBaseURL(baseURL))
 	}
-	return retab.NewClient(apiKey, opts...)
+
+	// Flag/env API key wins outright — the documented CI escape hatch.
+	if apiKey != "" {
+		return retab.NewClient(apiKey, opts...)
+	}
+
+	// OAuth path. WithBearerTokenProvider is invoked on every request, so
+	// a command that straddles token expiry still gets a fresh token
+	// without rebuilding the Client.
+	if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
+		opts = append(opts, retab.WithBearerTokenProvider(makeOAuthTokenProvider(cfg.OAuth)))
+		return retab.NewClient("", opts...)
+	}
+
+	// Legacy `api_key` field from ~/.retab/config.json.
+	if cfg.APIKey != "" {
+		return retab.NewClient(cfg.APIKey, opts...)
+	}
+
+	return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+}
+
+// makeOAuthTokenProvider returns a closure that yields a current access
+// token on demand, refreshing transparently as expiry approaches. A
+// successful refresh is persisted to disk so subsequent CLI invocations
+// pick up the new tokens. Save errors are swallowed: the in-memory token
+// still completes the current request.
+func makeOAuthTokenProvider(initial *oauthTokens) func(ctx context.Context) (string, error) {
+	tok := *initial
+	return func(ctx context.Context) (string, error) {
+		if time.Now().Before(tok.ExpiresAt.Add(-refreshLeeway)) {
+			return tok.AccessToken, nil
+		}
+		refreshed, err := refreshAccessToken(ctx, &tok)
+		if err != nil {
+			return "", err
+		}
+		tok = *refreshed
+		cfg, _ := loadConfig()
+		cfg.OAuth = &tok
+		_ = saveConfig(cfg)
+		return tok.AccessToken, nil
+	}
 }
 
 func ctxFor(cmd *cobra.Command) (context.Context, context.CancelFunc) {
