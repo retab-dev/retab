@@ -7,7 +7,7 @@ import (
 
 var parsesCmd = &cobra.Command{
 	Use:   "parses",
-	Short: "Run and manage document parses",
+	Short: "Convert any file (PDFs, Excel, emails, images) into LLM-ready markdown",
 }
 
 var parsesCreateCmd = &cobra.Command{

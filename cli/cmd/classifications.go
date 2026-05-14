@@ -9,7 +9,7 @@ import (
 
 var classificationsCmd = &cobra.Command{
 	Use:   "classifications",
-	Short: "Run and manage classifications",
+	Short: "Categorize documents based on content and type",
 }
 
 var classificationsCreateCmd = &cobra.Command{

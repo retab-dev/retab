@@ -9,7 +9,7 @@ import (
 
 var splitsCmd = &cobra.Command{
 	Use:   "splits",
-	Short: "Run and manage document splits",
+	Short: "Intelligently split documents into logical sections",
 }
 
 var splitsCreateCmd = &cobra.Command{

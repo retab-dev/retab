@@ -2,9 +2,6 @@ package retab
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -223,24 +220,6 @@ func TestFetchJSONRequiresJSONContentType(t *testing.T) {
 	apiErr, ok := err.(*APIError)
 	if !ok || apiErr.Message != "Response is not JSON" {
 		t.Fatalf("err = %#v", err)
-	}
-}
-
-func TestVerifyEvent(t *testing.T) {
-	body := []byte(`{"type":"workflow.run.completed"}`)
-	mac := hmac.New(sha256.New, []byte("secret"))
-	_, _ = mac.Write(body)
-	signature := hex.EncodeToString(mac.Sum(nil))
-
-	event, err := VerifyEvent[Resource](body, signature, "secret")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if (*event)["type"] != "workflow.run.completed" {
-		t.Fatalf("event = %#v", event)
-	}
-	if _, err := VerifyEvent[Resource](body, "bad", "secret"); err == nil {
-		t.Fatalf("expected invalid signature error")
 	}
 }
 

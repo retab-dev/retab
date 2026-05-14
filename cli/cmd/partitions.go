@@ -7,7 +7,7 @@ import (
 
 var partitionsCmd = &cobra.Command{
 	Use:   "partitions",
-	Short: "Run and manage partitions",
+	Short: "Partition repeated records in a document into chunks by a unique identifier",
 }
 
 var partitionsCreateCmd = &cobra.Command{
