@@ -13,24 +13,50 @@ import (
 var authCmd = &cobra.Command{
 	Use:   "auth",
 	Short: "Manage Retab authentication",
+	Long: `Manage credentials the CLI uses to talk to the Retab API.
+
+Covers interactive OAuth login, headless API-key login, inspecting the
+currently active credential, and clearing local state. Credentials are
+resolved with --api-key flag > RETAB_API_KEY env > ~/.retab/config.json
+(mode 0600, parent dir 0700).`,
+	Example: `  # Interactive login (browser OAuth by default)
+  retab auth login
+
+  # Headless / CI login with a long-lived key
+  retab auth login --api-key=sk_live_abc123
+
+  # Show which credential the CLI would use right now
+  retab auth status
+
+  # Forget the local credential (does not revoke the key server-side)
+  retab auth logout`,
 }
 
 var authLoginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Log in to Retab",
-	Long: `Log in to Retab.
+	Long: `Log in to Retab and persist the credential locally.
 
-By default, opens your browser for an OAuth login flow via WorkOS. The
-resulting tokens are saved to ~/.retab/config.json and refreshed
-transparently when needed.
+By default, opens a browser for an OAuth login flow via WorkOS. The
+resulting tokens are saved to ~/.retab/config.json (mode 0600) and
+refreshed transparently when needed.
 
-For headless setups (CI, servers, scripts) you can skip the browser flow
-and store a long-lived API key instead:
+For headless setups (CI, servers, scripts) skip the browser flow and
+store a long-lived API key instead with --api-key. Re-running login is
+always safe: it overwrites the saved credential in place, which is also
+how key rotation works. RETAB_API_KEY remains honored as a process-wide
+override and takes precedence over anything written to disk.`,
+	Example: `  # Interactive OAuth flow (opens a browser)
+  retab auth login
 
-  retab auth login --api-key sk_live_…
+  # Headless / CI: pass the key inline
+  retab auth login --api-key=sk_live_abc123
 
-In both cases, RETAB_API_KEY remains honored as an environment-only
-override and takes precedence over anything stored on disk.`,
+  # Headless without echoing the key to history
+  retab auth login --api-key="$RETAB_API_KEY"
+
+  # Prompt for an API key without opening a browser
+  retab auth login --browser=false`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		apiKey, _ := cmd.Flags().GetString("api-key")
 		baseURL, _ := cmd.Flags().GetString("base-url")
@@ -122,6 +148,18 @@ func runAPIKeyLogin(apiKey, baseURL string) error {
 var authLogoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Remove ~/.retab/config.json",
+	Long: `Delete the local credential file at ~/.retab/config.json.
+
+Only clears LOCAL state — the API key (or OAuth refresh token) is not
+revoked on the server. To revoke a key for real, rotate it in the Retab
+dashboard. After logout, commands that need authentication will fail
+until ` + "`retab auth login`" + ` runs again or RETAB_API_KEY is set in
+the environment.`,
+	Example: `  # Forget the credential on this machine
+  retab auth logout
+
+  # Switch accounts: forget, then log in again
+  retab auth logout && retab auth login`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		if err := deleteConfig(); err != nil {
 			return err
@@ -134,6 +172,23 @@ var authLogoutCmd = &cobra.Command{
 var authStatusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show which credentials the CLI is using and verify them",
+	Long: `Report the credential the CLI would use for the next request, and
+verify it works by making a best-effort API call (a tiny ` + "`workflows list`" + `
+probe). Output is JSON with the credential ` + "`source`" + ` (flag, env, or
+config), a redacted ` + "`api_key_preview`" + `, the effective ` + "`base_url`" + `, and a
+` + "`valid`" + ` boolean reflecting the probe.
+
+Useful for debugging "why is the wrong account being used?" — the
+` + "`source`" + ` field disambiguates --api-key vs RETAB_API_KEY vs the config
+file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
+	Example: `  # Quick check
+  retab auth status
+
+  # In a script — assert authenticated and key is valid
+  retab auth status | jq -e '.valid == true'
+
+  # Verify a specific key without persisting it
+  retab --api-key=sk_test_xyz auth status`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
 		envKey := os.Getenv("RETAB_API_KEY")

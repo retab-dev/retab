@@ -10,6 +10,37 @@ import (
 var workflowsTestsCmd = &cobra.Command{
 	Use:   "tests",
 	Short: "Manage block tests for a workflow",
+	Long: `Declarative regression tests for workflow blocks.
+
+A test pins a target block's expected output against a recorded input
+(typically captured from a successful past run). Re-execute the test
+suite after any change — config update, model swap, prompt edit — to
+catch silent drift in extraction quality or classification accuracy.
+
+A test has three pieces:
+
+  * ` + "`target`" + `   — which block is under test
+  * ` + "`source`" + `   — the input the block should consume (often a
+    pointer to an existing run step)
+  * ` + "`assertion`" + ` — the expected output, what we assert against
+
+Use ` + "`workflows tests execute`" + ` to run a single test or the whole
+suite. Inspect history via ` + "`workflows tests runs list`" + `.
+
+For exploring multiple alternative block configurations side-by-side
+(A/B-style), use ` + "`retab workflows experiments --help`" + ` instead.`,
+	Example: `  # List a workflow's tests
+  retab workflows tests list wf_abc123
+
+  # Create a test pinning a block's expected output
+  retab workflows tests create \
+    --workflow-id wf_abc123 --name "Invoice 17 baseline" \
+    --target-file ./target.json \
+    --source-file ./source.json \
+    --assertion-file ./assertion.json
+
+  # Execute every test in the workflow
+  retab workflows tests execute --workflow-id wf_abc123`,
 }
 
 func resolveJSONMap(cmd *cobra.Command, flag string) (map[string]any, error) {
@@ -27,6 +58,25 @@ func resolveJSONMap(cmd *cobra.Command, flag string) (map[string]any, error) {
 var workflowsTestsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a block test",
+	Long: `Create a regression test pinning a block's expected output.
+You'll typically capture the three files from a successful past run:
+
+  ` + "`--target-file`" + `     — which block to test (e.g.
+  ` + `{"block_id": "blk_extract_1"}` + `).
+
+  ` + "`--source-file`" + `     — the input. Usually a reference to a
+  run/step that supplied known-good input.
+
+  ` + "`--assertion-file`" + `  — the expected output JSON.
+
+After creation, run with ` + "`workflows tests execute`" + `.`,
+	Example: `  # Create a test from JSON files
+  retab workflows tests create \
+    --workflow-id wf_abc123 \
+    --name "Invoice 17 baseline" \
+    --target-file ./target.json \
+    --source-file ./source.json \
+    --assertion-file ./assertion.json`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -66,7 +116,11 @@ var workflowsTestsCreateCmd = &cobra.Command{
 var workflowsTestsGetCmd = &cobra.Command{
 	Use:   "get <workflow-id> <test-id>",
 	Short: "Get a test",
-	Args:  cobra.ExactArgs(2),
+	Long: `Fetch a test's definition: target block, source input, assertion
+output, name, timestamps.`,
+	Example: `  # Inspect a test
+  retab workflows tests get wf_abc123 tst_jkl012`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -85,7 +139,15 @@ var workflowsTestsGetCmd = &cobra.Command{
 var workflowsTestsListCmd = &cobra.Command{
 	Use:   "list <workflow-id>",
 	Short: "List tests",
-	Args:  cobra.ExactArgs(1),
+	Long: `List every test attached to a workflow. Filter by
+` + "`--target-block-id`" + ` to focus on the regression suite for a
+particular block.`,
+	Example: `  # All tests in a workflow
+  retab workflows tests list wf_abc123
+
+  # Just the tests guarding one block
+  retab workflows tests list wf_abc123 --target-block-id blk_extract_1`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -107,7 +169,18 @@ var workflowsTestsListCmd = &cobra.Command{
 var workflowsTestsUpdateCmd = &cobra.Command{
 	Use:   "update <workflow-id> <test-id>",
 	Short: "Update a test",
-	Args:  cobra.ExactArgs(2),
+	Long: `Re-pin a test's expected output or source input. Use this when
+a deliberate schema or prompt change makes the old assertion stale — the
+intent is to ratify the new output as the new baseline, not to silence
+flaky runs.`,
+	Example: `  # Refresh the assertion after a deliberate schema change
+  retab workflows tests update wf_abc123 tst_jkl012 \
+    --assertion-file ./new-assertion.json
+
+  # Rename a test
+  retab workflows tests update wf_abc123 tst_jkl012 \
+    --name "Invoice 17 baseline (v2 schema)"`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -142,7 +215,10 @@ var workflowsTestsUpdateCmd = &cobra.Command{
 var workflowsTestsDeleteCmd = &cobra.Command{
 	Use:   "delete <workflow-id> <test-id>",
 	Short: "Delete a test",
-	Args:  cobra.ExactArgs(2),
+	Long:  `Permanently delete a regression test and its run history.`,
+	Example: `  # Drop a stale test
+  retab workflows tests delete wf_abc123 tst_jkl012`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -157,6 +233,25 @@ var workflowsTestsDeleteCmd = &cobra.Command{
 var workflowsTestsExecuteCmd = &cobra.Command{
 	Use:   "execute",
 	Short: "Execute one or more block tests",
+	Long: `Re-run regression tests and compare current output to the pinned
+assertions. Without ` + "`--test-id`" + ` every test in the workflow runs;
+with ` + "`--test-id`" + ` only that one runs.
+
+Use ` + "`--n-consensus`" + ` to sample the target block N times and report
+variance — useful for non-deterministic models.
+
+Inspect results with ` + "`workflows tests runs list`" + ` and
+` + "`workflows tests runs get`" + `.`,
+	Example: `  # Run the whole regression suite
+  retab workflows tests execute --workflow-id wf_abc123
+
+  # Run just one test
+  retab workflows tests execute \
+    --workflow-id wf_abc123 --test-id tst_jkl012
+
+  # Sample 5 times to measure stability
+  retab workflows tests execute \
+    --workflow-id wf_abc123 --test-id tst_jkl012 --n-consensus 5`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -188,12 +283,23 @@ var workflowsTestsExecuteCmd = &cobra.Command{
 var workflowsTestsRunsCmd = &cobra.Command{
 	Use:   "runs",
 	Short: "Inspect test runs",
+	Long: `History of past test executions. Each ` + "`workflows tests execute`" + `
+call creates one run; this subgroup retrieves the records.`,
+	Example: `  # Recent runs for one test
+  retab workflows tests runs list wf_abc123 tst_jkl012
+
+  # Full record for one run
+  retab workflows tests runs get wf_abc123 tst_jkl012 trun_mno345`,
 }
 
 var workflowsTestsRunsListCmd = &cobra.Command{
 	Use:   "list <workflow-id> <test-id>",
 	Short: "List runs for a test",
-	Args:  cobra.ExactArgs(2),
+	Long: `List historical executions of one regression test. Defaults to
+the 20 most recent.`,
+	Example: `  # Recent runs for one test
+  retab workflows tests runs list wf_abc123 tst_jkl012 --limit 50`,
+	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -213,7 +319,11 @@ var workflowsTestsRunsListCmd = &cobra.Command{
 var workflowsTestsRunsGetCmd = &cobra.Command{
 	Use:   "get <workflow-id> <test-id> <run-id>",
 	Short: "Get a test run",
-	Args:  cobra.ExactArgs(3),
+	Long: `Fetch the full record for one test execution: actual output,
+pass/fail per-assertion, diff against the pinned expectation, timing.`,
+	Example: `  # Inspect a test run
+  retab workflows tests runs get wf_abc123 tst_jkl012 trun_mno345`,
+	Args: cobra.ExactArgs(3),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

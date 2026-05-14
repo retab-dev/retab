@@ -1,27 +1,14 @@
 package cmd
 
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-)
-
+// Build-time identity, populated by `-ldflags "-X .../cmd.version=..."`
+// (see .goreleaser.yaml and .github/workflows/release-cli.yml). The values
+// surface to users via `retab --version`, which cobra wires up from
+// rootCmd.Version — see root.go's init() for the assignment.
+//
+// There is intentionally NO `retab version` subcommand. The flag does the
+// job and a dedicated subcommand was just menu noise.
 var (
 	version = "dev"
 	commit  = "none"
 	date    = "unknown"
 )
-
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the CLI version",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("retab %s (commit %s, built %s)\n", version, commit, date)
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.Version = version
-	rootCmd.AddCommand(versionCmd)
-}

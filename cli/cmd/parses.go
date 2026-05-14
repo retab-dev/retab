@@ -8,11 +8,37 @@ import (
 var parsesCmd = &cobra.Command{
 	Use:   "parses",
 	Short: "Convert any file (PDFs, Excel, emails, images) into LLM-ready markdown",
+	Long: `Convert arbitrary file types into LLM-ready markdown.
+
+A parse takes any supported input (PDF, Excel/CSV, .eml, image, etc.) and
+returns a normalized markdown rendering with preserved structure — tables,
+headings, lists, and image alt text. This is typically the first step in a
+pipeline: parse → feed into prompts, or parse → extractions/classifications
+when the downstream task wants normalized text rather than the raw file.`,
 }
 
 var parsesCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a parse",
+	Long: `Parse a document into LLM-ready markdown.
+
+Accepts the standard document sources (` + "`--file`" + `, ` + "`--url`" + `,
+` + "`--file-id`" + `, ` + "`--document-file`" + `). Tune table rendering with
+` + "`--table-parsing-format`" + ` (e.g. ` + "`markdown`" + `, ` + "`html`" + `) and
+raise ` + "`--image-resolution-dpi`" + ` for image-heavy or low-quality scans
+where the default is too coarse.`,
+	Example: `  # Parse a PDF to markdown
+  retab parses create --file ./report.pdf --model gpt-4o
+
+  # Parse an Excel file with HTML tables for downstream rendering
+  retab parses create \
+    --file ./book.xlsx --model gpt-4o \
+    --table-parsing-format html
+
+  # High-DPI parse for a scanned image
+  retab parses create \
+    --file ./scan.png --model gpt-4o \
+    --image-resolution-dpi 300`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -47,7 +73,16 @@ var parsesCreateCmd = &cobra.Command{
 var parsesGetCmd = &cobra.Command{
 	Use:   "get <parse-id>",
 	Short: "Get a parse by id",
-	Args:  cobra.ExactArgs(1),
+	Long: `Fetch a single parse by id.
+
+Returns the parse record including the rendered markdown, source document
+reference, and per-page metadata.`,
+	Example: `  # Print the rendered markdown
+  retab parses get parse_xyz789 | jq -r '.markdown'
+
+  # Save the whole parse record
+  retab parses get parse_xyz789 > parse.json`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -66,6 +101,15 @@ var parsesGetCmd = &cobra.Command{
 var parsesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List parses",
+	Long: `List parses, newest first by default.
+
+Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
+` + "`--limit`" + `.`,
+	Example: `  # Most recent 25 parses
+  retab parses list --limit 25
+
+  # Walk pages from a known id
+  retab parses list --after parse_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -85,7 +129,14 @@ var parsesListCmd = &cobra.Command{
 var parsesDeleteCmd = &cobra.Command{
 	Use:   "delete <parse-id>",
 	Short: "Delete a parse",
-	Args:  cobra.ExactArgs(1),
+	Long: `Permanently delete a parse.
+
+Destructive and irreversible. The source document is not affected. Take a
+backup with ` + "`retab parses get`" + ` first if you may need the markdown.`,
+	Example: `  # Back up, then delete
+  retab parses get parse_xyz789 > backup.json
+  retab parses delete parse_xyz789`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

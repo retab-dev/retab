@@ -10,11 +10,52 @@ import (
 var schemasCmd = &cobra.Command{
 	Use:   "schemas",
 	Short: "Generate JSON schemas",
+	Long: `Generate JSON Schemas from sample documents.
+
+Point ` + "`schemas generate`" + ` at one or more representative documents and
+the API returns a JSON Schema describing the fields a model should
+extract — a useful starting point when you don't already have a schema
+written by hand. Save the result to a file and pass it to
+` + "`retab extractions create --json-schema-file`" + ` to actually run the
+extraction.`,
+	Example: `  # Generate a schema from a single sample document
+  retab schemas generate --file ./invoice.pdf > schema.json
+
+  # Then use it in an extraction
+  retab extractions create \
+    --file ./invoice.pdf \
+    --json-schema-file ./schema.json \
+    --model gpt-4o`,
 }
 
 var schemasGenerateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate a JSON schema from one or more documents",
+	Long: `Infer a JSON Schema from one or more sample documents.
+
+Provide documents in any combination of:
+  --file <path>        local file (repeatable)
+  --url <url>          publicly fetchable URL (repeatable)
+  --file-id <id>       already-uploaded Retab file id (repeatable)
+  --documents-file     JSON array of document descriptors (or - for stdin)
+
+At least one document is required. The more representative samples you
+pass, the more general the resulting schema. The output is a JSON Schema
+suitable for ` + "`retab extractions create --json-schema-file`" + ` — save it,
+review it, edit it by hand if you want tighter typing, and commit it
+alongside your code.`,
+	Example: `  # Single sample -> schema on stdout
+  retab schemas generate --file ./invoice.pdf > schema.json
+
+  # Multiple samples for a more general schema
+  retab schemas generate \
+    --file ./invoices/inv1.pdf \
+    --file ./invoices/inv2.pdf \
+    --file ./invoices/inv3.pdf \
+    --model gpt-4o > schema.json
+
+  # Mix uploaded ids and local files
+  retab schemas generate --file-id file_abc123 --file ./extra.pdf`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

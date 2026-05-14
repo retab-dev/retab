@@ -155,6 +155,53 @@ func TestRenderRootHelp_UncategorizedCommandLandsInOther(t *testing.T) {
 	}
 }
 
+// Subcommands that are themselves routers (their `Use` has children of
+// its own — like `workflows blocks`, `workflows experiments`) should be
+// surfaced one indent level deeper than the parent command row, so users
+// can discover nested CLI surface from the top-level help. Leaf actions
+// like `list`/`get`/`create` are NOT expanded — those are the body of the
+// command, not its surface.
+func TestRenderRootHelp_RouterSubcommandsAreExpanded(t *testing.T) {
+	// Build a stand-in tree so the test doesn't depend on which routers
+	// the real workflows command happens to have today.
+	root := &cobra.Command{Use: "retab", Short: "x"}
+	workflows := &cobra.Command{Use: "workflows", Short: "Manage workflows"}
+	// Two routers (they have subcommands), one leaf (no subcommands).
+	blocks := &cobra.Command{Use: "blocks", Short: "Manage workflow blocks"}
+	blocks.AddCommand(&cobra.Command{Use: "list", Short: "List blocks"})
+	experiments := &cobra.Command{Use: "experiments", Short: "Manage experiments"}
+	experiments.AddCommand(&cobra.Command{Use: "create", Short: "Create"})
+	leaf := &cobra.Command{Use: "create", Short: "Leaf — should NOT be expanded"}
+	workflows.AddCommand(blocks, experiments, leaf)
+	root.AddCommand(workflows)
+
+	var buf bytes.Buffer
+	renderRootHelp(&buf, root)
+	out := buf.String()
+
+	// Both routers should appear with their Short description, indented
+	// 4 cols (one level deeper than the parent at col 2).
+	for _, want := range []string{"blocks", "experiments"} {
+		if !strings.Contains(out, "    "+want+" ") {
+			t.Errorf("router subcommand %q should be expanded at col 4:\n%s", want, out)
+		}
+	}
+	// Router subcommands should land *under* the parent's row.
+	parentIdx := strings.Index(out, "workflows ")
+	subIdx := strings.Index(out, "    blocks ")
+	if parentIdx < 0 || subIdx < 0 || subIdx < parentIdx {
+		t.Errorf("router subcommand should appear after the parent row (parent=%d, sub=%d):\n%s",
+			parentIdx, subIdx, out)
+	}
+	// Leaf subcommand `create` must NOT appear as a nested row (it's a
+	// leaf action, not a router). Note: this test's `create` has no
+	// subcommands; we check that the unique short "Leaf — should NOT be
+	// expanded" never gets rendered.
+	if strings.Contains(out, "Leaf — should NOT be expanded") {
+		t.Errorf("leaf subcommand was expanded (it shouldn't be):\n%s", out)
+	}
+}
+
 func TestRenderRootHelp_VersionFormatting(t *testing.T) {
 	cases := []struct {
 		in   string
@@ -188,8 +235,13 @@ func TestHelpFunc_RootGetsCustomChildrenGetDefault(t *testing.T) {
 	rootCmd.SetOut(&rootBuf)
 	t.Cleanup(func() { rootCmd.SetOut(nil) })
 	rootCmd.HelpFunc()(rootCmd, nil)
-	if !strings.Contains(rootBuf.String(), "Retab · ") {
-		t.Errorf("root help missing brand header:\n%s", rootBuf.String())
+	// The brand line inlines the wordmark into the tagline sentence
+	// (matching bun: "<Bun> is a fast JavaScript runtime…"). Looking for
+	// the literal "Retab is" lets the test stay agnostic to wordmark
+	// colouring and tagline rewording — both can change freely as long
+	// as the sentence still starts with the product name.
+	if !strings.Contains(rootBuf.String(), "Retab is") {
+		t.Errorf("root help missing brand sentence:\n%s", rootBuf.String())
 	}
 	// Any of the configured groups appearing is sufficient evidence the
 	// custom renderer ran (vs. cobra's default, which uses "Available
@@ -215,8 +267,10 @@ func TestHelpFunc_RootGetsCustomChildrenGetDefault(t *testing.T) {
 	files.SetOut(&childBuf)
 	t.Cleanup(func() { files.SetOut(nil) })
 	rootCmd.HelpFunc()(files, nil)
-	if strings.Contains(childBuf.String(), "Retab · ") {
-		t.Errorf("child help leaked brand header:\n%s", childBuf.String())
+	// Cobra's default child help doesn't print our brand sentence (it
+	// uses the child's own Short / Long), so "Retab is" must not appear.
+	if strings.Contains(childBuf.String(), "Retab is") {
+		t.Errorf("child help leaked brand sentence:\n%s", childBuf.String())
 	}
 	if !strings.Contains(childBuf.String(), "Usage:") {
 		t.Errorf("child help missing cobra-default 'Usage:' section:\n%s", childBuf.String())
@@ -289,21 +343,18 @@ func TestRenderRootHelp_ColourRolesAreCorrect(t *testing.T) {
 // help, completion, and Hidden commands are noise on the top-level menu —
 // they're available via `retab help <x>` and `retab completion --help`,
 // but listing them up top buries the actually-useful surface.
-//
-// Both checks are line-based with a leading-space trim so they only fire
-// on the menu-row pattern (`<indent><name> <description>`). A plain
-// `strings.Contains` on the whole output would false-positive on
-// legitimate substrings — e.g. the `shell-completion` topic name, or
-// any description containing the word "completion".
 func TestRenderRootHelp_HidesHelpAndCompletion(t *testing.T) {
 	var buf bytes.Buffer
 	renderRootHelp(&buf, rootCmd)
 	out := buf.String()
+	// `completion` is the cobra-auto-generated subcommand
+	if strings.Contains(out, "completion ") {
+		t.Errorf("expected `completion` to be hidden from top-level help:\n%s", out)
+	}
+	// `help` is the cobra-auto-generated help command
 	for _, line := range strings.Split(out, "\n") {
+		// Must not have a line like "    help     ...something..."
 		trimmed := strings.TrimLeft(line, " ")
-		if strings.HasPrefix(trimmed, "completion ") || trimmed == "completion" {
-			t.Errorf("expected `completion` to be hidden, found line: %q", line)
-		}
 		if strings.HasPrefix(trimmed, "help ") || trimmed == "help" {
 			t.Errorf("expected `help` to be hidden, found line: %q", line)
 		}

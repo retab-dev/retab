@@ -23,11 +23,49 @@ var fileDownloadClient = &http.Client{
 var filesCmd = &cobra.Command{
 	Use:   "files",
 	Short: "Manage files",
+	Long: `Manage files in your Retab workspace.
+
+Files are document blobs (PDFs, images, emails, spreadsheets, etc.)
+referenced by id across the API. Upload once via ` + "`files upload`" + `, then
+pass ` + "`--file-id`" + ` everywhere a document is required (extractions,
+edits, schemas, workflow runs) so the same blob isn't re-uploaded on
+every call.
+
+For files larger than the synchronous upload path allows, use the
+two-phase ` + "`create-upload`" + ` -> direct PUT -> ` + "`complete-upload`" + ` flow.`,
+	Example: `  # List the five most recent files
+  retab files list --limit 5
+
+  # Upload a local PDF and capture the id for reuse
+  FILE_ID=$(retab files upload ./invoice.pdf | jq -r .id)
+
+  # Reuse the id in an extraction (no re-upload)
+  retab extractions create \
+    --file-id $FILE_ID \
+    --json-schema-file ./schema.json \
+    --model gpt-4o
+
+  # Pull the file back down to a local path
+  retab files download $FILE_ID -o ./invoice.pdf`,
 }
 
 var filesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List files",
+	Long: `List files in the workspace, newest first.
+
+Output is JSON: a top-level array (or paginated wrapper, depending on the
+server) with one entry per file. Use --limit, --mime-type, and --sort-by
+to narrow the view. Pipe through ` + "`jq`" + ` to project just the fields you
+need.`,
+	Example: `  # Five most recent files
+  retab files list --limit 5
+
+  # Just PDFs, newest first
+  retab files list --mime-type application/pdf
+
+  # Extract ids only, one per line
+  retab files list | jq -r '.data[].id'`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -53,7 +91,18 @@ var filesListCmd = &cobra.Command{
 var filesGetCmd = &cobra.Command{
 	Use:   "get <file-id>",
 	Short: "Get a file by id",
-	Args:  cobra.ExactArgs(1),
+	Long: `Fetch the metadata record for a single file as JSON.
+
+Returns the file's filename, MIME type, size, sha256, created_at, and any
+other workspace-level fields — but NOT the file bytes. Use
+` + "`retab files download`" + ` to retrieve the content, or
+` + "`retab files download-link`" + ` to get a signed URL.`,
+	Example: `  # Inspect a known file
+  retab files get file_abc123
+
+  # Project just the fields you need
+  retab files get file_abc123 | jq '{id, filename, size_bytes}'`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -72,7 +121,20 @@ var filesGetCmd = &cobra.Command{
 var filesUploadCmd = &cobra.Command{
 	Use:   "upload <path>",
 	Short: "Upload a local file",
-	Args:  cobra.ExactArgs(1),
+	Long: `Upload a local file to Retab and receive a file id.
+
+The id can be passed as --file-id to extractions, edits, schemas, and
+workflow runs in lieu of re-uploading the same blob on every call. The
+upload is synchronous; for very large files use ` + "`files create-upload`" + `
+plus ` + "`files complete-upload`" + ` to upload directly to storage.`,
+	Example: `  # Upload and capture the id for reuse
+  FILE_ID=$(retab files upload ./invoice.pdf | jq -r .id)
+
+  # Upload, then immediately run an extraction against the id
+  retab files upload ./invoice.pdf | jq -r .id | xargs -I{} \
+    retab extractions create --file-id {} \
+      --json-schema-file ./schema.json --model gpt-4o`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -91,7 +153,19 @@ var filesUploadCmd = &cobra.Command{
 var filesDownloadLinkCmd = &cobra.Command{
 	Use:   "download-link <file-id>",
 	Short: "Get a download link for a file",
-	Args:  cobra.ExactArgs(1),
+	Long: `Mint a short-lived signed URL that streams the file's bytes from
+storage. Useful when handing the URL to another tool (a browser, curl,
+a worker in another process) instead of pulling the bytes through this
+CLI. The link expires; mint a new one if it's stale.
+
+For the common case of "save this file to disk" use ` + "`retab files download`" + `
+which does the GET for you.`,
+	Example: `  # Print the signed URL
+  retab files download-link file_abc123 | jq -r .download_url
+
+  # Pipe straight into curl
+  curl -o invoice.pdf "$(retab files download-link file_abc123 | jq -r .download_url)"`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -110,7 +184,25 @@ var filesDownloadLinkCmd = &cobra.Command{
 var filesDownloadCmd = &cobra.Command{
 	Use:   "download <file-id>",
 	Short: "Download a file to a local path (- for stdout)",
-	Args:  cobra.ExactArgs(1),
+	Long: `Stream a file's bytes from storage to disk (or stdout).
+
+With no -o flag, writes to the server-recorded filename in the current
+directory, falling back to the file id if the server didn't store a
+name. Pass ` + "`-o <path>`" + ` for an explicit destination, or ` + "`-o -`" + ` to
+write to stdout so the output can be piped into another tool.
+
+Downloads stream chunk-by-chunk and propagate Ctrl-C, so canceling a
+slow transfer leaves no half-written file open on stdout (and partial
+local files can be safely deleted and retried).`,
+	Example: `  # Save under the server's filename
+  retab files download file_abc123
+
+  # Save to an explicit path
+  retab files download file_abc123 -o ./invoice.pdf
+
+  # Pipe to stdout (e.g. into another tool)
+  retab files download file_abc123 -o - | pdftotext - -`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -161,6 +253,28 @@ var filesDownloadCmd = &cobra.Command{
 var filesCreateUploadCmd = &cobra.Command{
 	Use:   "create-upload",
 	Short: "Reserve a direct-to-storage upload session",
+	Long: `Phase 1 of the two-phase upload flow for large files.
+
+Reserves a file id on the server and returns a signed PUT URL that
+accepts the bytes directly into object storage — bypassing the
+synchronous upload path. Use this when ` + "`files upload`" + ` is too slow or
+hits a size limit. The returned ` + "`upload_url`" + ` accepts a single PUT;
+after that succeeds, call ` + "`retab files complete-upload <file-id>`" + ` to
+mark the upload as finalized.
+
+Steps: (1) ` + "`create-upload`" + ` returns ` + "`{id, upload_url, ...}`" + `;
+(2) PUT the bytes to ` + "`upload_url`" + ` with the Content-Type you declared;
+(3) call ` + "`complete-upload`" + ` with the file id to commit the upload.`,
+	Example: `  # Three-step large-file upload
+  RESP=$(retab files create-upload \
+    --filename big.pdf \
+    --content-type application/pdf \
+    --size-bytes 1234567890)
+  FILE_ID=$(echo "$RESP" | jq -r .id)
+  URL=$(echo "$RESP" | jq -r .upload_url)
+
+  curl -X PUT --upload-file ./big.pdf -H "Content-Type: application/pdf" "$URL"
+  retab files complete-upload $FILE_ID`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -192,7 +306,20 @@ var filesCreateUploadCmd = &cobra.Command{
 var filesCompleteUploadCmd = &cobra.Command{
 	Use:   "complete-upload <file-id>",
 	Short: "Mark a direct upload as finished",
-	Args:  cobra.ExactArgs(1),
+	Long: `Phase 2 of the two-phase upload flow for large files.
+
+After ` + "`retab files create-upload`" + ` reserved an id and you PUT the bytes
+to the returned ` + "`upload_url`" + `, run this to commit the upload — the file
+won't be usable in extractions or workflow runs until it's marked
+complete. Optionally pass --sha256 to have the server verify integrity
+against the digest you computed locally.`,
+	Example: `  # Commit after a direct PUT
+  retab files complete-upload file_abc123
+
+  # Same, with server-side integrity check
+  retab files complete-upload file_abc123 \
+    --sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {

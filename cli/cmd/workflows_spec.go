@@ -1,0 +1,192 @@
+package cmd
+
+import (
+	"fmt"
+	"io"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+// workflows spec — declarative (YAML) management for workflows.
+//
+// Mirrors the four methods on `WorkflowSpecsService` in the Go SDK:
+// validate, plan, apply (POST a YAML body), and export (GET an existing
+// workflow back to YAML by id). Aimed at the Terraform-style flow:
+// edit YAML in your repo, plan, apply, commit.
+
+var workflowsSpecCmd = &cobra.Command{
+	Use:   "spec",
+	Short: "Manage workflows declaratively from YAML",
+	Long: `Validate, plan, apply, and export YAML workflow specs.
+
+A spec is a single YAML file describing a workflow's blocks, edges, and
+metadata. The four verbs form a Terraform-style loop:
+
+  validate   parse + type-check the spec, no server changes
+  plan       diff the spec against the live workflow without applying
+  apply      create or update the workflow from the spec
+  export     dump a live workflow's spec back to YAML
+
+The three POST verbs read YAML from a file path, or from stdin when the
+path is "-". Output is JSON on stdout, suitable for piping into ` + "`jq`" + `.`,
+	Example: `  # Round-trip a workflow through git
+  retab workflows spec export wf_abc123 > workflow.yaml
+  $EDITOR workflow.yaml
+  retab workflows spec validate workflow.yaml
+  retab workflows spec plan     workflow.yaml
+  retab workflows spec apply    workflow.yaml
+
+  # Tail of a pipe
+  cat workflow.yaml | retab workflows spec apply -`,
+}
+
+// readSpecYAML reads the YAML body for validate/plan/apply. The server
+// is the source of truth on YAML schema, so we don't pre-parse here —
+// any bytes go through, including comments and unrecognised fields.
+// Path "-" reads from stdin so the command works as the tail of a pipe.
+func readSpecYAML(path string) (string, error) {
+	var raw []byte
+	var err error
+	if path == "-" {
+		raw, err = io.ReadAll(os.Stdin)
+	} else {
+		raw, err = os.ReadFile(path)
+	}
+	if err != nil {
+		return "", err
+	}
+	if len(raw) == 0 {
+		return "", fmt.Errorf("empty spec input")
+	}
+	return string(raw), nil
+}
+
+var workflowsSpecValidateCmd = &cobra.Command{
+	Use:   "validate <path>",
+	Short: "Parse + type-check a YAML spec without touching the server",
+	Long: `Send the YAML to the server's spec validator. No workflow is
+created or modified — the server only returns whether the spec parses
+and whether its referenced blocks / schemas / model ids exist.
+
+Returns a non-zero exit if validation fails, with the server's diagnostic
+JSON on stderr — wire it into pre-commit / CI to keep broken specs out
+of main.`,
+	Example: `  retab workflows spec validate ./workflow.yaml
+  cat workflow.yaml | retab workflows spec validate -`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		yaml, err := readSpecYAML(args[0])
+		if err != nil {
+			return err
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Specs.Validate(ctx, yaml)
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+var workflowsSpecPlanCmd = &cobra.Command{
+	Use:   "plan <path>",
+	Short: "Diff a YAML spec against the live workflow without applying",
+	Long: `Compute what would change if the spec were applied: which
+blocks would be created, updated, deleted; which edges would be re-wired.
+
+Plan is read-only — safe to run on production specs. Pair it with
+` + "`apply`" + ` for a Terraform-style review-then-apply loop.`,
+	Example: `  retab workflows spec plan ./workflow.yaml
+  cat workflow.yaml | retab workflows spec plan - | jq .changes`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		yaml, err := readSpecYAML(args[0])
+		if err != nil {
+			return err
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Specs.Plan(ctx, yaml)
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+var workflowsSpecApplyCmd = &cobra.Command{
+	Use:   "apply <path>",
+	Short: "Create or update a workflow from a YAML spec",
+	Long: `Apply the YAML spec: create the workflow if it doesn't exist,
+or update it (block + edge diff) if it does. The workflow's id is read
+from the spec body, so the same file always targets the same workflow.
+
+Mutating — gate behind ` + "`plan`" + ` in CI if the workflow is in production.`,
+	Example: `  retab workflows spec apply ./workflow.yaml
+  cat workflow.yaml | retab workflows spec apply -`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		yaml, err := readSpecYAML(args[0])
+		if err != nil {
+			return err
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Specs.Apply(ctx, yaml)
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+var workflowsSpecExportCmd = &cobra.Command{
+	Use:   "export <workflow-id>",
+	Short: "Dump a live workflow's spec back to YAML",
+	Long: `Fetch the YAML spec representing the workflow's current
+state. Useful for round-tripping a workflow created in the dashboard
+back into a git-managed YAML file, or for diffing two environments.
+
+The server returns the spec inside the response body — pipe through
+` + "`jq -r .yaml_definition`" + ` (or the equivalent field) to get raw YAML.`,
+	Example: `  retab workflows spec export wf_abc123
+  retab workflows spec export wf_abc123 | jq -r .yaml_definition > workflow.yaml`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Specs.Export(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+func init() {
+	workflowsSpecCmd.AddCommand(
+		workflowsSpecValidateCmd,
+		workflowsSpecPlanCmd,
+		workflowsSpecApplyCmd,
+		workflowsSpecExportCmd,
+	)
+	workflowsCmd.AddCommand(workflowsSpecCmd)
+}
