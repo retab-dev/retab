@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -146,22 +150,133 @@ plus ` + "`files complete-upload`" + ` to upload directly to storage.`,
 		if err != nil {
 			return err
 		}
-		// The SDK returns MIMEData (filename + url + optional content
-		// + mime_type). The id is encoded in the URL path but isn't a
-		// distinct JSON field — surface it explicitly so `| jq -r .id`
-		// works without users having to regex-pluck the URL. The Long
-		// description on this command literally tells users to do
-		// `jq -r .id`, so we owe them an `.id` to read.
-		out := map[string]any{
-			"id":       result.ID(),
-			"filename": result.Filename,
-			"url":      result.URL,
-		}
-		if result.MIMEType != "" {
-			out["mime_type"] = result.MIMEType
+		out, err := shapeUploadResponse(result)
+		if err != nil {
+			return err
 		}
 		return printJSON(out)
 	}),
+}
+
+// shapeUploadResponse builds the JSON written by `files upload`. The SDK
+// returns MIMEData (filename + url + optional mime_type) — the id is
+// encoded in the URL path but isn't a distinct JSON field, so we surface
+// it explicitly. The Long description on `files upload` literally tells
+// users to run `| jq -r .id`, so we owe them an `.id` to read.
+//
+// id resolution prefers the SDK's typed accessor (which validates the
+// retab storage URL shape); if that returns "", we fall back to parsing
+// the URL path's basename minus the extension. If neither yields an id,
+// we surface a hard error instead of silently emitting a partial blob —
+// downstream commands all key off `.id`, so an empty id is a footgun.
+//
+// Output ordering — `id` first, then `filename`, then `url`, then any
+// optional fields — is enforced via an OrderedMap-style sidecar map so
+// the JSON encoder doesn't reshuffle keys. We use slice-pair encoding
+// (see uploadResponse.MarshalJSON) because encoding/json sorts map keys
+// alphabetically; without this `filename` would jump ahead of `id`.
+func shapeUploadResponse(result *retab.MIMEData) (uploadResponse, error) {
+	id := result.ID()
+	if id == "" {
+		id = fileIDFromURL(result.URL)
+	}
+	if id == "" {
+		return uploadResponse{}, fmt.Errorf(
+			"upload succeeded but server response is missing a file id (url=%s) — please report this",
+			result.URL,
+		)
+	}
+	out := uploadResponse{
+		pairs: []uploadResponseField{
+			{"id", id},
+			{"filename", result.Filename},
+			{"url", result.URL},
+		},
+	}
+	if result.MIMEType != "" {
+		out.pairs = append(out.pairs, uploadResponseField{"mime_type", result.MIMEType})
+	}
+	return out, nil
+}
+
+// uploadResponse is an ordered-key JSON object so that `id` is the first
+// field a user sees — both for human readability and so tools that
+// pretty-print don't bury the load-bearing field below the noise.
+// encoding/json sorts map keys alphabetically, hence the custom marshal.
+type uploadResponse struct {
+	pairs []uploadResponseField
+}
+
+type uploadResponseField struct {
+	Key   string
+	Value string
+}
+
+// MarshalJSON emits the pairs in insertion order. Values are always
+// strings here, so we lean on encoding/json's string encoder for each
+// key/value (handles escaping, unicode, etc.) and just glue them
+// together — no need for json.RawMessage gymnastics.
+func (u uploadResponse) MarshalJSON() ([]byte, error) {
+	var b strings.Builder
+	b.WriteByte('{')
+	for i, p := range u.pairs {
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		keyBytes, err := json.Marshal(p.Key)
+		if err != nil {
+			return nil, err
+		}
+		valBytes, err := json.Marshal(p.Value)
+		if err != nil {
+			return nil, err
+		}
+		b.Write(keyBytes)
+		b.WriteByte(':')
+		b.Write(valBytes)
+	}
+	b.WriteByte('}')
+	return []byte(b.String()), nil
+}
+
+// fileIDFromURL is the URL-parsing fallback when the SDK's typed
+// MIMEData.ID() returns "" (e.g. the server returned a non-retab storage
+// host). It pulls the basename out of the path and strips the file
+// extension; query strings and trailing slashes are tolerated, but
+// pathless URLs, empty basenames, and basenames without an extension are
+// rejected so we never invent a bogus id.
+//
+// Examples:
+//
+//	https://storage.retab.com/org_x/file_abc123.pdf  → file_abc123
+//	https://cdn.example/v1/file_zzz.txt              → file_zzz
+//	https://x/file_a.pdf?token=...                   → file_a
+//	https://x/file_a.pdf/                            → file_a
+//	https://x/file_a                                 → "" (no extension)
+//	https://x/                                       → "" (no basename)
+func fileIDFromURL(rawURL string) string {
+	if rawURL == "" {
+		return ""
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	// Trim query/fragment by ignoring them; reject completely empty paths.
+	p := strings.Trim(parsed.Path, "/")
+	if p == "" {
+		return ""
+	}
+	base := path.Base(p)
+	if base == "." || base == "/" || base == "" {
+		return ""
+	}
+	idx := strings.LastIndex(base, ".")
+	// Require a real extension (dot not at start, not at end).
+	if idx <= 0 || idx == len(base)-1 {
+		return ""
+	}
+	return base[:idx]
 }
 
 var filesDownloadLinkCmd = &cobra.Command{
