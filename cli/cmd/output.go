@@ -246,3 +246,436 @@ func ResolveOutputFormat(cmd *cobra.Command, w io.Writer) (OutputFormat, error) 
 		return "", fmt.Errorf("invalid --output value %q (want: json | table | auto)", raw)
 	}
 }
+
+// preferredColumnOrder lists the field names a generic auto-column table
+// will pull from each row, in priority order. The first up to 5 names
+// present on the row become the rendered columns. Aliases (filename for
+// name, status for type) accept either spelling but only one wins per
+// row so we never duplicate columns.
+//
+// The list is intentionally short and curated: id and name/filename are
+// the load-bearing identifiers, type/status describes what kind of thing
+// the row is, model is a hot field on extractions / parses, and
+// created_at gives temporal ordering. Anything else falls back to JSON
+// — the goal is a useful default for the five wired list commands, not
+// per-resource customization (TableColumn already covers that path).
+var preferredColumnOrder = []struct {
+	header  string
+	aliases []string
+}{
+	{"ID", []string{"id"}},
+	{"NAME", []string{"name", "filename"}},
+	{"TYPE", []string{"type", "status"}},
+	{"MODEL", []string{"model"}},
+	{"CREATED_AT", []string{"created_at"}},
+}
+
+// maxAutoColumns is the per-row column cap. Five matches
+// preferredColumnOrder; the constant exists so the truncation rule is
+// findable from one place.
+const maxAutoColumns = 5
+
+// autoTableTruncate is the per-cell width cap for trailing string
+// columns. ~40 chars + ellipsis is enough to identify a row without
+// blowing out terminal width on long URLs / filenames.
+const autoTableTruncate = 40
+
+// printResultTable renders v as a fixed-width text table to stdout when
+// the shape is tabulable, falling back to printJSON otherwise.
+//
+// Tabulable shapes:
+//
+//  1. {"data": [...]} where the array contains objects. Reached via
+//     extractDataSlice, which already handles the typed struct + JSON
+//     round-trip cases used by RenderList.
+//  2. A bare [] of objects passed directly. Handled by a separate
+//     reflect path so callers don't have to wrap their slice in
+//     {"data": ...} just to get a table.
+//
+// Non-tabulable shapes (single object, primitives, deeply nested
+// without a usable data array, objects with no preferred-column keys)
+// emit a single-line stderr warning and fall through to printJSON.
+// The warning keeps the JSON output on stdout pipe-clean — anything
+// piped into jq still works, the user just learns their --output
+// table preference didn't apply this time.
+//
+// Column selection: scans the first row's keys, picks up to
+// maxAutoColumns columns from preferredColumnOrder. Each preferred
+// header collapses its aliases (e.g. "name" and "filename" both map
+// to NAME) so a list whose rows have one or the other gets a single
+// column rather than two half-empty ones.
+func printResultTable(v any) error {
+	rows, err := extractTabulableRows(v)
+	if err != nil {
+		return err
+	}
+	if rows == nil {
+		fmt.Fprintln(os.Stderr, "note: --output table not applicable, falling back to json")
+		return printJSON(v)
+	}
+
+	columns := pickAutoColumns(rows)
+	if len(columns) == 0 {
+		// Tabulable shape but no preferred column matched on any row —
+		// rendering a header-less table would be more confusing than
+		// useful. Fall back to JSON with the same warning so the user
+		// knows their preference didn't apply.
+		fmt.Fprintln(os.Stderr, "note: --output table not applicable, falling back to json")
+		return printJSON(v)
+	}
+
+	// Empty data array is a valid tabulable shape — render headers alone.
+	return renderAutoTable(os.Stdout, rows, columns)
+}
+
+// printResult dispatches between printResultTable and printJSON based
+// on the --output persistent flag on the root command.
+//
+// Mapping:
+//
+//   - "table"           → printResultTable
+//   - "json" / "" / "auto" → printJSON
+//
+// Per the bug spec, "auto" does NOT consult TTY state here — it's
+// treated identically to "" (i.e. JSON). The DefaultOutputFormat /
+// RenderList path that DOES auto-detect is preserved for callers
+// using TableColumn specs; the generic path is intentionally simpler.
+//
+// Unknown --output values shouldn't reach this function because
+// outputFlagValue rejects them at parse time. We still fall through
+// to printJSON rather than erroring so programmatic callers (tests,
+// embedding) get a sensible default.
+func printResult(cmd *cobra.Command, v any) error {
+	var raw string
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+	}
+	if raw == string(OutputTable) {
+		return printResultTable(v)
+	}
+	return printJSON(v)
+}
+
+// extractTabulableRows tries to coerce v into a slice of row values
+// suitable for the auto-column table renderer. Returns:
+//
+//   - rows != nil → tabulable; render this slice (may be empty).
+//   - rows == nil → not tabulable; caller falls back to JSON.
+//   - err != nil  → genuine extraction failure (rare; extractDataSlice
+//     only errors when the shape claims to be a list but the data
+//     field is the wrong type).
+//
+// Two routes, tried in order:
+//
+//  1. extractDataSlice — covers {"data": [...]} for both typed list
+//     responses (struct with Data field) and JSON-round-tripped maps.
+//  2. Reflect on v for a top-level slice/array of objects (bare []
+//     payloads passed directly).
+//
+// A single object, primitive, or anything that doesn't fit either
+// shape returns (nil, nil) so the caller falls back to JSON.
+func extractTabulableRows(v any) ([]any, error) {
+	if v == nil {
+		return nil, nil
+	}
+
+	// Route 1: {"data": [...]} via the existing extractor.
+	if rows, err := extractDataSlice(v); err != nil {
+		return nil, err
+	} else if rows != nil {
+		// rows can be empty — that's still a valid tabulable shape
+		// (header-only render). extractDataSlice returns (nil, nil)
+		// only when there was no data field at all.
+		return rows, nil
+	}
+
+	// Route 2: bare slice / array.
+	rv := reflect.ValueOf(v)
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
+		if rv.IsNil() {
+			return nil, nil
+		}
+		rv = rv.Elem()
+	}
+	if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
+		// Only treat slices of objects (struct or map) as tabulable.
+		// A []string or []int has no column structure to render.
+		n := rv.Len()
+		if n == 0 {
+			// Empty top-level slice — still a valid (header-only) table.
+			return []any{}, nil
+		}
+		first := rv.Index(0).Interface()
+		if !rowIsObject(first) {
+			return nil, nil
+		}
+		out := make([]any, n)
+		for i := 0; i < n; i++ {
+			out[i] = rv.Index(i).Interface()
+		}
+		return out, nil
+	}
+
+	return nil, nil
+}
+
+// rowIsObject reports whether row looks tabulable — a struct or
+// map[string]any. Primitive types and []byte / strings are rejected
+// so we don't try to render a flat list as a table of one column.
+func rowIsObject(row any) bool {
+	if row == nil {
+		return false
+	}
+	rv := reflect.ValueOf(row)
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
+		if !rv.IsValid() || rv.IsNil() {
+			return false
+		}
+		rv = rv.Elem()
+	}
+	switch rv.Kind() {
+	case reflect.Struct:
+		return true
+	case reflect.Map:
+		// Only string-keyed maps make sense as table rows.
+		return rv.Type().Key().Kind() == reflect.String
+	default:
+		return false
+	}
+}
+
+// pickAutoColumns selects up to maxAutoColumns columns from
+// preferredColumnOrder by inspecting which aliases appear on at
+// least one row's flattened key set.
+//
+// We scan every row (not just the first) because typed SDK structs
+// sometimes omit zero-valued fields after JSON round-trip — a row
+// missing "name" but with "filename" should still produce a NAME
+// column. A column is included once any row exposes one of its
+// aliases.
+//
+// Only the last (trailing) column gets per-cell truncation —
+// truncating internal columns would mis-align everything to the
+// right of them, which is uglier than letting tabwriter spread the
+// columns wider. The trailing column is the natural place to absorb
+// long values (timestamps, URLs, descriptions).
+func pickAutoColumns(rows []any) []TableColumn {
+	// Build the set of keys present across all rows. Use the alias
+	// itself as the key (not the header) so lookup during Extract
+	// is a plain map read.
+	present := make(map[string]bool)
+	for _, row := range rows {
+		for _, k := range rowKeys(row) {
+			present[k] = true
+		}
+	}
+
+	// Collect the matching alias-sets in priority order, capped at
+	// maxAutoColumns. We materialize the alias slice for each pick
+	// here so the closure below captures by value rather than
+	// re-reading preferredColumnOrder.
+	type pick struct {
+		header  string
+		aliases []string
+	}
+	var picks []pick
+	for _, spec := range preferredColumnOrder {
+		hit := false
+		for _, alias := range spec.aliases {
+			if present[alias] {
+				hit = true
+				break
+			}
+		}
+		if !hit {
+			continue
+		}
+		picks = append(picks, pick{header: spec.header, aliases: spec.aliases})
+		if len(picks) == maxAutoColumns {
+			break
+		}
+	}
+
+	cols := make([]TableColumn, 0, len(picks))
+	for i, p := range picks {
+		aliases := p.aliases
+		isTrailing := i == len(picks)-1
+		cols = append(cols, TableColumn{
+			Header: p.header,
+			Extract: func(row any) string {
+				for _, alias := range aliases {
+					if v, ok := rowField(row, alias); ok {
+						s := stringifyCell(v)
+						if isTrailing && len(s) > autoTableTruncate {
+							return s[:autoTableTruncate] + "…"
+						}
+						return s
+					}
+				}
+				return ""
+			},
+		})
+	}
+	return cols
+}
+
+// rowKeys returns the JSON-visible field names of a row, normalized
+// to lowercase. Struct rows are inspected via reflect using the
+// `json` tag (falling back to the field name lowercased); map rows
+// return their keys directly.
+func rowKeys(row any) []string {
+	if row == nil {
+		return nil
+	}
+	rv := reflect.ValueOf(row)
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
+		if !rv.IsValid() || rv.IsNil() {
+			return nil
+		}
+		rv = rv.Elem()
+	}
+	switch rv.Kind() {
+	case reflect.Struct:
+		t := rv.Type()
+		out := make([]string, 0, t.NumField())
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			if !f.IsExported() {
+				continue
+			}
+			out = append(out, jsonFieldName(f))
+		}
+		return out
+	case reflect.Map:
+		if rv.Type().Key().Kind() != reflect.String {
+			return nil
+		}
+		out := make([]string, 0, rv.Len())
+		iter := rv.MapRange()
+		for iter.Next() {
+			out = append(out, iter.Key().String())
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+// jsonFieldName extracts the JSON field name for a struct field,
+// matching encoding/json's resolution. Omitted (`json:"-"`) fields
+// return an empty string which the caller skips.
+func jsonFieldName(f reflect.StructField) string {
+	tag := f.Tag.Get("json")
+	if tag == "-" {
+		return ""
+	}
+	if tag == "" {
+		return f.Name
+	}
+	// Split on ',' to drop options like omitempty.
+	if i := indexByte(tag, ','); i >= 0 {
+		tag = tag[:i]
+	}
+	if tag == "" {
+		return f.Name
+	}
+	return tag
+}
+
+// indexByte is strings.IndexByte inlined to avoid a strings import in
+// this hot path — keeps the file's dependency footprint minimal.
+func indexByte(s string, b byte) int {
+	for i := 0; i < len(s); i++ {
+		if s[i] == b {
+			return i
+		}
+	}
+	return -1
+}
+
+// rowField returns the value at key on row, or (nil, false) if the
+// row doesn't expose that key.
+func rowField(row any, key string) (any, bool) {
+	if row == nil {
+		return nil, false
+	}
+	rv := reflect.ValueOf(row)
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
+		if !rv.IsValid() || rv.IsNil() {
+			return nil, false
+		}
+		rv = rv.Elem()
+	}
+	switch rv.Kind() {
+	case reflect.Struct:
+		t := rv.Type()
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			if !f.IsExported() {
+				continue
+			}
+			if jsonFieldName(f) == key {
+				return rv.Field(i).Interface(), true
+			}
+		}
+		return nil, false
+	case reflect.Map:
+		if rv.Type().Key().Kind() != reflect.String {
+			return nil, false
+		}
+		mv := rv.MapIndex(reflect.ValueOf(key))
+		if !mv.IsValid() {
+			return nil, false
+		}
+		return mv.Interface(), true
+	default:
+		return nil, false
+	}
+}
+
+// stringifyCell renders a single cell value as plain text. Strings
+// pass through unchanged; numbers and bools use fmt's default; nil
+// renders as empty; everything else falls through to fmt.Sprintf("%v")
+// for a reasonable approximation. Nested structs / maps print as
+// Go's default format — acceptable because the auto-column path
+// only targets the five preferred columns, none of which are
+// expected to carry nested values.
+func stringifyCell(v any) string {
+	if v == nil {
+		return ""
+	}
+	switch t := v.(type) {
+	case string:
+		return t
+	case fmt.Stringer:
+		return t.String()
+	}
+	return fmt.Sprintf("%v", v)
+}
+
+// renderAutoTable writes the header + rows to w using text/tabwriter.
+// Mirrors renderTable's settings (padding=2, tab separator) so the
+// column-aligned look is identical between the auto-column and
+// explicit-TableColumn paths.
+func renderAutoTable(w io.Writer, rows []any, columns []TableColumn) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	for i, col := range columns {
+		if i > 0 {
+			fmt.Fprint(tw, "\t")
+		}
+		fmt.Fprint(tw, col.Header)
+	}
+	fmt.Fprintln(tw)
+	for _, row := range rows {
+		for i, col := range columns {
+			if i > 0 {
+				fmt.Fprint(tw, "\t")
+			}
+			fmt.Fprint(tw, col.Extract(row))
+		}
+		fmt.Fprintln(tw)
+	}
+	return tw.Flush()
+}

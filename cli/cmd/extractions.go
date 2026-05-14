@@ -213,7 +213,7 @@ arbitrary tags set at create time with ` + "`--metadata`" + ` (repeatable).`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
