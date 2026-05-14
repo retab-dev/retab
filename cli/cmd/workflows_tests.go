@@ -2,10 +2,49 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+// resolveWorkflowIDArg implements the positional/deprecated-flag shim used by
+// the workflows subcommands that historically required `--workflow-id` and
+// have since standardized on a positional first argument.
+//
+// Resolution order:
+//
+//  1. positional `args[0]` (if present) — wins outright. If a deprecated
+//     `--workflow-id` flag was ALSO provided, a one-line warning is emitted
+//     to stderr.
+//  2. `--workflow-id <id>` — accepted with a deprecation warning to stderr.
+//  3. neither — returns an error "workflow id required".
+//
+// The warning sink is parameterized so tests can capture it without
+// hijacking os.Stderr.
+func resolveWorkflowIDArg(cmd *cobra.Command, args []string) (string, error) {
+	return resolveWorkflowIDArgTo(cmd, args, cmd.ErrOrStderr())
+}
+
+func resolveWorkflowIDArgTo(cmd *cobra.Command, args []string, warnTo io.Writer) (string, error) {
+	flagVal, _ := cmd.Flags().GetString("workflow-id")
+	flagSet := cmd.Flags().Changed("workflow-id")
+	if warnTo == nil {
+		warnTo = os.Stderr
+	}
+	if len(args) > 0 && args[0] != "" {
+		if flagSet {
+			fmt.Fprintln(warnTo, "warning: --workflow-id is deprecated; positional argument takes precedence")
+		}
+		return args[0], nil
+	}
+	if flagSet && flagVal != "" {
+		fmt.Fprintln(warnTo, "warning: --workflow-id is deprecated; pass the workflow id as the first positional argument")
+		return flagVal, nil
+	}
+	return "", fmt.Errorf("workflow id required")
+}
 
 var workflowsTestsCmd = &cobra.Command{
 	Use:   "tests",
@@ -33,14 +72,14 @@ For exploring multiple alternative block configurations side-by-side
   retab workflows tests list wf_abc123
 
   # Create a test pinning a block's expected output
-  retab workflows tests create \
-    --workflow-id wf_abc123 --name "Invoice 17 baseline" \
+  retab workflows tests create wf_abc123 \
+    --name "Invoice 17 baseline" \
     --target-file ./target.json \
     --source-file ./source.json \
     --assertion-file ./assertion.json
 
   # Execute every test in the workflow
-  retab workflows tests execute --workflow-id wf_abc123`,
+  retab workflows tests execute wf_abc123`,
 }
 
 func resolveJSONMap(cmd *cobra.Command, flag string) (map[string]any, error) {
@@ -56,7 +95,7 @@ func resolveJSONMap(cmd *cobra.Command, flag string) (map[string]any, error) {
 }
 
 var workflowsTestsCreateCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create <workflow-id> [flags]",
 	Short: "Create a block test",
 	Long: `Create a regression test pinning a block's expected output.
 You'll typically capture the three files from a successful past run:
@@ -71,13 +110,17 @@ You'll typically capture the three files from a successful past run:
 
 After creation, run with ` + "`workflows tests execute`" + `.`,
 	Example: `  # Create a test from JSON files
-  retab workflows tests create \
-    --workflow-id wf_abc123 \
+  retab workflows tests create wf_abc123 \
     --name "Invoice 17 baseline" \
     --target-file ./target.json \
     --source-file ./source.json \
     --assertion-file ./assertion.json`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		workflowID, err := resolveWorkflowIDArg(cmd, args)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -85,7 +128,7 @@ After creation, run with ` + "`workflows tests execute`" + `.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		req := retab.WorkflowTestCreateRequest{}
-		req.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
+		req.WorkflowID = workflowID
 		req.Name, _ = cmd.Flags().GetString("name")
 		target, err := resolveJSONMap(cmd, "target-file")
 		if err != nil {
@@ -235,7 +278,7 @@ var workflowsTestsDeleteCmd = &cobra.Command{
 }
 
 var workflowsTestsExecuteCmd = &cobra.Command{
-	Use:   "execute",
+	Use:   "execute <workflow-id> [flags]",
 	Short: "Execute one or more block tests",
 	Long: `Re-run regression tests and compare current output to the pinned
 assertions. Without ` + "`--test-id`" + ` every test in the workflow runs;
@@ -247,16 +290,19 @@ variance — useful for non-deterministic models.
 Inspect results with ` + "`workflows tests runs list`" + ` and
 ` + "`workflows tests runs get`" + `.`,
 	Example: `  # Run the whole regression suite
-  retab workflows tests execute --workflow-id wf_abc123
+  retab workflows tests execute wf_abc123
 
   # Run just one test
-  retab workflows tests execute \
-    --workflow-id wf_abc123 --test-id tst_jkl012
+  retab workflows tests execute wf_abc123 --test-id tst_jkl012
 
   # Sample 5 times to measure stability
-  retab workflows tests execute \
-    --workflow-id wf_abc123 --test-id tst_jkl012 --n-consensus 5`,
+  retab workflows tests execute wf_abc123 --test-id tst_jkl012 --n-consensus 5`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		workflowID, err := resolveWorkflowIDArg(cmd, args)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -264,7 +310,7 @@ Inspect results with ` + "`workflows tests runs list`" + ` and
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		req := retab.ExecuteBlockTestsRequest{}
-		req.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
+		req.WorkflowID = workflowID
 		req.TestID, _ = cmd.Flags().GetString("test-id")
 		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
 		target, err := resolveJSONMap(cmd, "target-file")
@@ -344,12 +390,12 @@ pass/fail per-assertion, diff against the pinned expectation, timing.`,
 }
 
 func init() {
-	workflowsTestsCreateCmd.Flags().String("workflow-id", "", "workflow id (required)")
+	workflowsTestsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsTestsCreateCmd.Flags().String("name", "", "test name")
 	workflowsTestsCreateCmd.Flags().String("target-file", "", "JSON file with the target object (or - for stdin)")
 	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin)")
 	workflowsTestsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin)")
-	_ = workflowsTestsCreateCmd.MarkFlagRequired("workflow-id")
+	_ = workflowsTestsCreateCmd.Flags().MarkDeprecated("workflow-id", "use the positional argument instead")
 
 	workflowsTestsListCmd.Flags().String("target-block-id", "", "filter by target block id")
 	workflowsTestsListCmd.Flags().Int("limit", 0, "max items (default 50)")
@@ -358,11 +404,11 @@ func init() {
 	workflowsTestsUpdateCmd.Flags().String("assertion-file", "", "JSON file with new assertion (or - for stdin)")
 	workflowsTestsUpdateCmd.Flags().String("source-file", "", "JSON file with new source (or - for stdin)")
 
-	workflowsTestsExecuteCmd.Flags().String("workflow-id", "", "workflow id (required)")
+	workflowsTestsExecuteCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsTestsExecuteCmd.Flags().String("test-id", "", "single test to execute")
 	workflowsTestsExecuteCmd.Flags().Int("n-consensus", 0, "consensus count")
 	workflowsTestsExecuteCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
-	_ = workflowsTestsExecuteCmd.MarkFlagRequired("workflow-id")
+	_ = workflowsTestsExecuteCmd.Flags().MarkDeprecated("workflow-id", "use the positional argument instead")
 
 	workflowsTestsRunsListCmd.Flags().Int("limit", 0, "max items (default 20)")
 

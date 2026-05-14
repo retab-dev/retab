@@ -30,8 +30,8 @@ For deterministic regression testing of a single pinned assertion, see
   retab workflows experiments eligible-blocks wf_abc123
 
   # Create an experiment on one block, capturing documents from real runs
-  retab workflows experiments create \
-    --workflow-id wf_abc123 --block-id blk_extract_1 \
+  retab workflows experiments create wf_abc123 \
+    --block-id blk_extract_1 \
     --name "Tighter schema v2" \
     --captures-file ./captures.json
 
@@ -93,7 +93,7 @@ func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureR
 }
 
 var workflowsExperimentsCreateCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create <workflow-id> [flags]",
 	Short: "Create an experiment",
 	Long: `Create an experiment scoped to one block. Provide the input
 documents in one of two ways:
@@ -110,12 +110,17 @@ After creation, trigger a run with
 ` + "`workflows experiments runs create`" + ` or run the whole block's
 experiments together via ` + "`workflows experiments run-batch`" + `.`,
 	Example: `  # Capture documents from real production runs
-  retab workflows experiments create \
-    --workflow-id wf_abc123 --block-id blk_extract_1 \
+  retab workflows experiments create wf_abc123 \
+    --block-id blk_extract_1 \
     --name "Try gpt-4o-mini" \
     --captures-file ./captures.json \
     --n-consensus 3`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		workflowID, err := resolveWorkflowIDArg(cmd, args)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -123,7 +128,7 @@ experiments together via ` + "`workflows experiments run-batch`" + `.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		req := retab.CreateExperimentRequest{}
-		req.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
+		req.WorkflowID = workflowID
 		req.BlockID, _ = cmd.Flags().GetString("block-id")
 		req.Name, _ = cmd.Flags().GetString("name")
 		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
@@ -367,15 +372,20 @@ to discover what to experiment on before calling
 }
 
 var workflowsExperimentsRunBatchCmd = &cobra.Command{
-	Use:   "run-batch",
+	Use:   "run-batch <workflow-id> [flags]",
 	Short: "Run every experiment attached to a block",
 	Long: `Trigger a run for every experiment attached to one block, in one
 call. Use when iterating across multiple candidate configs for the same
 block — kick off the whole comparison sweep at once, then read metrics.`,
 	Example: `  # Run every experiment on a block
-  retab workflows experiments run-batch \
-    --workflow-id wf_abc123 --block-id blk_extract_1 --n-consensus 3`,
+  retab workflows experiments run-batch wf_abc123 \
+    --block-id blk_extract_1 --n-consensus 3`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		workflowID, err := resolveWorkflowIDArg(cmd, args)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -383,7 +393,7 @@ block — kick off the whole comparison sweep at once, then read metrics.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		req := retab.RunBatchExperimentsRequest{}
-		req.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
+		req.WorkflowID = workflowID
 		req.BlockID, _ = cmd.Flags().GetString("block-id")
 		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
 		result, err := client.Workflows.Experiments.RunBatch(ctx, req)
@@ -505,12 +515,12 @@ func init() {
 		c.Flags().String("documents-file", "", "JSON array of {handle_inputs, provenance} (or - for stdin)")
 	}
 
-	workflowsExperimentsCreateCmd.Flags().String("workflow-id", "", "workflow id (required)")
+	workflowsExperimentsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsExperimentsCreateCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsExperimentsCreateCmd.Flags().String("name", "", "experiment name (required)")
 	workflowsExperimentsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
 	addExperimentDocFlags(workflowsExperimentsCreateCmd)
-	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("workflow-id")
+	_ = workflowsExperimentsCreateCmd.Flags().MarkDeprecated("workflow-id", "use the positional argument instead")
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("block-id")
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("name")
 
@@ -525,10 +535,10 @@ func init() {
 	workflowsExperimentsMetricsCmd.Flags().String("prior-run-id", "", "prior run id")
 	workflowsExperimentsMetricsCmd.Flags().Bool("include-prior", true, "include prior run metrics")
 
-	workflowsExperimentsRunBatchCmd.Flags().String("workflow-id", "", "workflow id (required)")
+	workflowsExperimentsRunBatchCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsExperimentsRunBatchCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsExperimentsRunBatchCmd.Flags().Int("n-consensus", 0, "consensus count")
-	_ = workflowsExperimentsRunBatchCmd.MarkFlagRequired("workflow-id")
+	_ = workflowsExperimentsRunBatchCmd.Flags().MarkDeprecated("workflow-id", "use the positional argument instead")
 	_ = workflowsExperimentsRunBatchCmd.MarkFlagRequired("block-id")
 
 	workflowsExperimentsRunsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
