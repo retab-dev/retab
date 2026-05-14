@@ -1,10 +1,11 @@
 import { CompositionClient, RequestOptions } from "../../../client.js";
 import {
+    PaginatedList,
     StepArtifactRef,
     WorkflowArtifact,
+    ZPaginatedList,
     ZWorkflowArtifact,
 } from "../../../types.js";
-import * as z from "zod";
 
 /**
  * Workflow Artifacts API client for dereferencing step artifact refs.
@@ -123,6 +124,11 @@ export default class APIWorkflowArtifacts extends CompositionClient {
 
     /**
      * List dereferenced artifacts produced by one workflow run.
+     *
+     * Returns the canonical
+     * `{"data": [...], "list_metadata": {"before": null, "after": null}}`
+     * pagination envelope. Cursor pagination is not yet implemented for this
+     * endpoint; `list_metadata` is always `{before: null, after: null}`.
      */
     async list(
         {
@@ -135,14 +141,14 @@ export default class APIWorkflowArtifacts extends CompositionClient {
             blockId?: string;
         },
         options?: RequestOptions
-    ): Promise<WorkflowArtifact[]> {
+    ): Promise<PaginatedList> {
         const request = this.prepare_list(runId, operation, blockId);
         const params = {
             ...request.params,
             ...(options?.params || {}),
         };
 
-        return this._fetchJson(z.array(ZWorkflowArtifact), {
+        return this._fetchJson(ZPaginatedList, {
             url: request.url,
             method: request.method,
             params,

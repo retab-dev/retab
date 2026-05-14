@@ -282,6 +282,58 @@ export default class APIWorkflows extends CompositionClient {
         return this.getResolvedSchemas(workflowId, options);
     }
 
+    prepare_list_snapshots(
+        workflowId: string,
+        limit?: number | null
+    ): {
+        url: string;
+        method: string;
+        params?: Record<string, unknown>;
+    } {
+        const params: Record<string, unknown> = {};
+        if (limit !== undefined && limit !== null) params.limit = limit;
+        return {
+            url: `/workflows/${workflowId}/snapshots`,
+            method: 'GET',
+            ...(Object.keys(params).length > 0 ? { params } : {}),
+        };
+    }
+
+    /**
+     * List published snapshots for a workflow (newest first).
+     *
+     * Returns the canonical
+     * `{"data": [...], "list_metadata": {"before": null, "after": null}}`
+     * pagination envelope. `limit` bounds the page size (server default: 50,
+     * max 100). Cursor pagination is not yet implemented for this endpoint.
+     */
+    async listSnapshots(
+        workflowId: string,
+        { limit }: { limit?: number } = {},
+        options?: RequestOptions
+    ): Promise<PaginatedList> {
+        const params = Object.fromEntries(
+            Object.entries({
+                limit,
+                ...(options?.params || {}),
+            }).filter(([, value]) => value !== undefined)
+        );
+        return this._fetchJson(ZPaginatedList, {
+            url: `/workflows/${workflowId}/snapshots`,
+            method: "GET",
+            params,
+            headers: options?.headers,
+        });
+    }
+
+    async list_snapshots(
+        workflowId: string,
+        opts: { limit?: number } = {},
+        options?: RequestOptions
+    ): Promise<PaginatedList> {
+        return this.listSnapshots(workflowId, opts, options);
+    }
+
     prepare_diagnose(
         workflowId: string,
         blocks: Array<Record<string, unknown>>,

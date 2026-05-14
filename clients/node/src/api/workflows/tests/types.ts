@@ -310,16 +310,30 @@ export const ZExecuteBlockTestsResponse = z
     .passthrough();
 export type ExecuteBlockTestsResponse = z.infer<typeof ZExecuteBlockTestsResponse>;
 
+// Canonical PaginatedList envelope. The two list routes used to return
+// `{"tests": [...]}` and `{"runs": [...]}` respectively — the migration to
+// `{data, list_metadata}` brings them in line with every other Retab list
+// endpoint (workflows list, files list, extractions list, etc.).
+export const ZListMetadata = z
+    .object({
+        before: z.string().nullable(),
+        after: z.string().nullable(),
+    })
+    .passthrough();
+export type ListMetadata = z.infer<typeof ZListMetadata>;
+
 export const ZBlockTestListResponse = z
     .object({
-        tests: z.array(ZWorkflowTest).default([]),
+        data: z.array(ZWorkflowTest).default([]),
+        list_metadata: ZListMetadata,
     })
     .passthrough();
 export type BlockTestListResponse = z.infer<typeof ZBlockTestListResponse>;
 
 export const ZBlockTestRunListResponse = z
     .object({
-        runs: z.array(ZWorkflowTestRunRecord).default([]),
+        data: z.array(ZWorkflowTestRunRecord).default([]),
+        list_metadata: ZListMetadata,
     })
     .passthrough();
 export type BlockTestRunListResponse = z.infer<typeof ZBlockTestRunListResponse>;

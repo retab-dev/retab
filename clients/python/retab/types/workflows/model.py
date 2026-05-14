@@ -1195,6 +1195,52 @@ class WorkflowDiagnosisResponse(RetabBaseModel):
 # ---------------------------------------------------------------------------
 
 
+class BlockConfigVersion(RetabBaseModel):
+    """A distinct config era for a block across workflow publishes.
+
+    Returned by ``client.workflows.blocks.config_history(...)``. Groups
+    consecutive workflow snapshots in which the block's config did not
+    change into a single entry, with the snapshot version range, run
+    count, and the captured config snapshot.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    config_fingerprint: str
+    block_type: str = ""
+    block_label: str = ""
+    config_snapshot: Optional[Dict[str, Any]] = None
+    first_seen_at: datetime.datetime
+    last_seen_at: datetime.datetime
+    snapshot_versions: List[int] = Field(default_factory=list)
+    run_count: int = 0
+    is_current: bool = False
+
+
+class WorkflowSnapshot(RetabBaseModel):
+    """Metadata for a single published snapshot of a workflow.
+
+    Returned by ``client.workflows.snapshots.list(...)``. Each snapshot is
+    the entry point for a complete published workflow version (block and
+    edge snapshots are referenced via ``snapshot_id``).
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    snapshot_id: str
+    workflow_id: str
+    organization_id: Optional[str] = None
+    version: int
+    description: str = ""
+    block_count: int = 0
+    edge_count: int = 0
+    published_by: Optional[str] = None
+    published_by_email: Optional[str] = None
+    published_by_name: Optional[str] = None
+    published_at: datetime.datetime
+
+
 class BlockSimulationIteration(RetabBaseModel):
     """One available iteration step exposed to simulate."""
     model_config = ConfigDict(extra="ignore")

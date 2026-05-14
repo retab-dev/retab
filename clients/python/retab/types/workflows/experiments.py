@@ -200,12 +200,6 @@ class ExperimentRunSummary(RetabBaseModel):
     job_id: str | None = None
 
 
-class ExperimentRunListResponse(RetabBaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    runs: list[ExperimentRunSummary] = Field(default_factory=list)
-
-
 # ---------------------------------------------------------------------------
 # Content (per-run job execution)
 # ---------------------------------------------------------------------------
@@ -502,7 +496,6 @@ __all__ = [
     "PreviousRunSummary",
     "RunExperimentResponse",
     "ExperimentRunSummary",
-    "ExperimentRunListResponse",
     "ExperimentJobResponse",
     "ExperimentContent",
     "ExperimentContentResponse",

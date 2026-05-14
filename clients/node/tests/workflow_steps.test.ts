@@ -17,20 +17,23 @@ class MockClient extends AbstractClient {
   }): Promise<Response> {
     this.lastFetchParams = params;
     return new Response(
-      JSON.stringify([
-        {
-          run_id: 'run_123',
-          block_id: 'extract-1',
-          step_id: 'extract-1',
-          block_type: 'extract',
-          block_label: 'Extract',
-          lifecycle: { status: 'completed' },
-          artifact: {
-            operation: 'extraction',
-            id: 'ext_123',
+      JSON.stringify({
+        data: [
+          {
+            run_id: 'run_123',
+            block_id: 'extract-1',
+            step_id: 'extract-1',
+            block_type: 'extract',
+            block_label: 'Extract',
+            lifecycle: { status: 'completed' },
+            artifact: {
+              operation: 'extraction',
+              id: 'ext_123',
+            },
           },
-        },
-      ]),
+        ],
+        list_metadata: { before: null, after: null },
+      }),
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -84,7 +87,7 @@ describe('workflow run steps client', () => {
     expect(artifact.requires_human_review).toBe(true);
   });
 
-  test('artifacts.list() uses run scoped artifact route', async () => {
+  test('artifacts.list() uses run scoped artifact route and returns paginated envelope', async () => {
     class ArtifactListMockClient extends AbstractClient {
       public lastFetchParams: Record<string, unknown> | null = null;
 
@@ -97,7 +100,10 @@ describe('workflow run steps client', () => {
       }): Promise<Response> {
         this.lastFetchParams = params;
         return new Response(
-          JSON.stringify([{ operation: 'conditional_evaluation', id: 'ceval_123' }]),
+          JSON.stringify({
+            data: [{ operation: 'conditional_evaluation', id: 'ceval_123' }],
+            list_metadata: { before: null, after: null },
+          }),
           {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
@@ -124,8 +130,9 @@ describe('workflow run steps client', () => {
       },
       headers: undefined,
     });
-    expect(artifacts).toHaveLength(1);
-    expect(artifacts[0]?.operation).toBe('conditional_evaluation');
+    expect(artifacts.data).toHaveLength(1);
+    expect(artifacts.data[0]?.operation).toBe('conditional_evaluation');
+    expect(artifacts.list_metadata).toEqual({ before: null, after: null });
   });
 
   test('get() uses the public step artifact route', async () => {
@@ -206,7 +213,7 @@ describe('workflow run steps client', () => {
     }
   });
 
-  test('list() uses the full steps route', async () => {
+  test('list() uses the full steps route and returns paginated envelope', async () => {
     const mockClient = new MockClient();
     const stepsClient = new APIWorkflowRunSteps(mockClient);
 
@@ -218,20 +225,21 @@ describe('workflow run steps client', () => {
       params: undefined,
       headers: undefined,
     });
-    expect(steps).toHaveLength(1);
-    expect(steps[0]?.block_id).toBe('extract-1');
-    expect(steps[0]?.lifecycle.status).toBe('completed');
-    expect(steps[0]?.artifact).toEqual({
+    expect(steps.list_metadata).toEqual({ before: null, after: null });
+    expect(steps.data).toHaveLength(1);
+    expect(steps.data[0]?.block_id).toBe('extract-1');
+    expect(steps.data[0]?.lifecycle.status).toBe('completed');
+    expect(steps.data[0]?.artifact).toEqual({
       operation: 'extraction',
       id: 'ext_123',
     });
-    expect(steps[0] && 'output' in steps[0]).toBe(false);
-    expect(steps[0] && 'artifacts' in steps[0]).toBe(false);
-    expect(steps[0] && 'artifact_view' in steps[0]).toBe(false);
-    expect(steps[0] && 'metadata' in steps[0]).toBe(false);
-    expect(steps[0] && 'input_document' in steps[0]).toBe(false);
-    expect(steps[0] && 'output_document' in steps[0]).toBe(false);
-    expect(steps[0] && 'split_documents' in steps[0]).toBe(false);
+    expect(steps.data[0] && 'output' in steps.data[0]).toBe(false);
+    expect(steps.data[0] && 'artifacts' in steps.data[0]).toBe(false);
+    expect(steps.data[0] && 'artifact_view' in steps.data[0]).toBe(false);
+    expect(steps.data[0] && 'metadata' in steps.data[0]).toBe(false);
+    expect(steps.data[0] && 'input_document' in steps.data[0]).toBe(false);
+    expect(steps.data[0] && 'output_document' in steps.data[0]).toBe(false);
+    expect(steps.data[0] && 'split_documents' in steps.data[0]).toBe(false);
   });
 
   test('get() is the single-step execution fetch', async () => {

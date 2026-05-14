@@ -175,10 +175,13 @@ describe("workflows.tests CRUD URL shapes", () => {
     });
 
     test("list() uses the block-tests route with `target_block_id` filter", async () => {
-        const mockClient = new MockClient({ tests: [] });
+        const mockClient = new MockClient({
+            data: [],
+            list_metadata: { before: null, after: null },
+        });
         const tests = new APIWorkflowTests(mockClient);
 
-        await tests.list({
+        const result = await tests.list({
             workflowId: "wf_abc123",
             targetBlockId: "block_extract",
             limit: 25,
@@ -189,13 +192,19 @@ describe("workflows.tests CRUD URL shapes", () => {
             method: "GET",
             params: { limit: 25, target_block_id: "block_extract" },
         });
+        expect(result.data).toEqual([]);
+        expect(result.list_metadata.before).toBeNull();
+        expect(result.list_metadata.after).toBeNull();
     });
 
     test("list() omits target_block_id when undefined", async () => {
         // Passing `target_block_id: undefined` would have the backend
         // string-coerce to the literal "undefined" — make sure the SDK
         // omits the param entirely.
-        const mockClient = new MockClient({ tests: [] });
+        const mockClient = new MockClient({
+            data: [],
+            list_metadata: { before: null, after: null },
+        });
         const tests = new APIWorkflowTests(mockClient);
 
         await tests.list({ workflowId: "wf_abc123" });
@@ -315,10 +324,13 @@ describe("workflows.tests.execute()", () => {
 
 describe("workflows.tests.runs", () => {
     test("runs.list() uses the test runs route", async () => {
-        const mockClient = new MockClient({ runs: [] });
+        const mockClient = new MockClient({
+            data: [],
+            list_metadata: { before: null, after: null },
+        });
         const tests = new APIWorkflowTests(mockClient);
 
-        await tests.runs.list({
+        const result = await tests.runs.list({
             workflowId: "wf_abc123",
             testId: "wfnodetest_abc",
             limit: 10,
@@ -329,6 +341,9 @@ describe("workflows.tests.runs", () => {
             method: "GET",
             params: { limit: 10 },
         });
+        expect(result.data).toEqual([]);
+        expect(result.list_metadata.before).toBeNull();
+        expect(result.list_metadata.after).toBeNull();
     });
 
     test("runs.get() uses the run detail route and parses `outputs`", async () => {
@@ -447,13 +462,13 @@ describe("workflows.tests response parsing edge cases", () => {
         expect(parsed.assertion).toBeNull();
     });
 
-    test("runs.list() correctly parses a populated runs[] array", async () => {
+    test("runs.list() correctly parses a populated data[] array", async () => {
         // The empty-array path is covered above. Pin the populated path so
         // a future schema drift (renaming `outputs` again, dropping
         // `verdict_summary`, etc.) breaks here — not in production with a
         // real run-history fetch.
         const populatedRunsResponse = {
-            runs: [
+            data: [
                 RUN_RESPONSE,
                 { ...RUN_RESPONSE, id: "wfnodetestrun_b", status: "blocked" },
                 {
@@ -463,6 +478,7 @@ describe("workflows.tests response parsing edge cases", () => {
                     outputs: null,
                 },
             ],
+            list_metadata: { before: null, after: null },
         };
         const mockClient = new MockClient(populatedRunsResponse);
         const tests = new APIWorkflowTests(mockClient);
@@ -472,14 +488,14 @@ describe("workflows.tests response parsing edge cases", () => {
             testId: "wfnodetest_abc",
         });
 
-        expect(result.runs).toHaveLength(3);
-        expect(result.runs[0]?.status).toBe("passed");
-        expect(result.runs[1]?.status).toBe("blocked");
-        expect(result.runs[2]?.status).toBe("cancelled");
+        expect(result.data).toHaveLength(3);
+        expect(result.data[0]?.status).toBe("passed");
+        expect(result.data[1]?.status).toBe("blocked");
+        expect(result.data[2]?.status).toBe("cancelled");
         // The renamed `outputs` field (formerly `handle_outputs`) parses on
         // the populated record and tolerates `null` on the cancelled one.
-        expect(result.runs[0]?.outputs).toEqual({ "output-json-0": { total: 1234.56 } });
-        expect(result.runs[2]?.outputs).toBeNull();
+        expect(result.data[0]?.outputs).toEqual({ "output-json-0": { total: 1234.56 } });
+        expect(result.data[2]?.outputs).toBeNull();
     });
 });
 
@@ -490,7 +506,10 @@ describe("workflows.tests param-merge precedence (sibling parity)", () => {
         // default, but the `options.params` escape hatch wins. Allows
         // power users to pass through query params without forking the
         // SDK signature.
-        const mockClient = new MockClient({ tests: [] });
+        const mockClient = new MockClient({
+            data: [],
+            list_metadata: { before: null, after: null },
+        });
         const tests = new APIWorkflowTests(mockClient);
 
         await tests.list(
@@ -504,7 +523,10 @@ describe("workflows.tests param-merge precedence (sibling parity)", () => {
     });
 
     test("runs.list() also lets options.params override the typed `limit`", async () => {
-        const mockClient = new MockClient({ runs: [] });
+        const mockClient = new MockClient({
+            data: [],
+            list_metadata: { before: null, after: null },
+        });
         const tests = new APIWorkflowTests(mockClient);
 
         await tests.runs.list(

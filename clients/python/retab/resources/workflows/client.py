@@ -7,6 +7,7 @@ from ...types.workflows import (
     Workflow,
     WorkflowDiagnosisResponse,
     WorkflowResolvedSchemasResponse,
+    WorkflowSnapshot,
     WorkflowWithEntities,
 )
 from .runs import WorkflowRuns, AsyncWorkflowRuns
@@ -92,6 +93,21 @@ class WorkflowsMixin:
     def prepare_get_resolved_schemas(self, workflow_id: str) -> PreparedRequest:
         """Prepare a request to get graph-derived schemas for all current-draft blocks."""
         return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/resolved-schemas")
+
+    def prepare_list_snapshots(
+        self,
+        workflow_id: str,
+        limit: int | None = None,
+    ) -> PreparedRequest:
+        """Prepare a request to list published snapshots for a workflow."""
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/{workflow_id}/snapshots",
+            params=params or None,
+        )
 
     def prepare_diagnose(
         self,
@@ -255,6 +271,25 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         response = self._client._prepared_request(request)
         return WorkflowResolvedSchemasResponse.model_validate(response)
 
+    def list_snapshots(
+        self,
+        workflow_id: str,
+        limit: int | None = None,
+    ) -> PaginatedList[WorkflowSnapshot]:
+        """List published snapshots for a workflow (newest first).
+
+        Returns the canonical
+        ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
+        pagination envelope. ``limit`` bounds the page size (server default:
+        50, max 100). Cursor pagination is not yet implemented for this
+        endpoint.
+        """
+        request = self.prepare_list_snapshots(workflow_id, limit=limit)
+        response = self._client._prepared_request(request)
+        result = PaginatedList[WorkflowSnapshot](**response)
+        result.data = [WorkflowSnapshot.model_validate(item) for item in result.data]
+        return result
+
     def diagnose(
         self,
         workflow_id: str,
@@ -399,6 +434,18 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         request = self.prepare_get_resolved_schemas(workflow_id)
         response = await self._client._prepared_request(request)
         return WorkflowResolvedSchemasResponse.model_validate(response)
+
+    async def list_snapshots(
+        self,
+        workflow_id: str,
+        limit: int | None = None,
+    ) -> PaginatedList[WorkflowSnapshot]:
+        """List published snapshots for a workflow (newest first)."""
+        request = self.prepare_list_snapshots(workflow_id, limit=limit)
+        response = await self._client._prepared_request(request)
+        result = PaginatedList[WorkflowSnapshot](**response)
+        result.data = [WorkflowSnapshot.model_validate(item) for item in result.data]
+        return result
 
     async def diagnose(
         self,

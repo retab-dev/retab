@@ -235,10 +235,13 @@ func TestWorkflowArtifactsGetListAndPrepare(t *testing.T) {
 			})
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/artifacts":
 			listQuery = r.URL.RawQuery
-			_ = json.NewEncoder(w).Encode([]map[string]any{{
-				"operation": "extraction",
-				"id":        "ext_123",
-			}})
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{{
+					"operation": "extraction",
+					"id":        "ext_123",
+				}},
+				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
@@ -282,8 +285,11 @@ func TestWorkflowArtifactsGetListAndPrepare(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(artifacts) != 1 || artifacts[0]["id"] != "ext_123" {
+	if len(artifacts.Data) != 1 || artifacts.Data[0]["id"] != "ext_123" {
 		t.Fatalf("artifacts = %#v", artifacts)
+	}
+	if artifacts.ListMetadata.Before != "" || artifacts.ListMetadata.After != "" {
+		t.Fatalf("artifacts list_metadata = %#v", artifacts.ListMetadata)
 	}
 	if !strings.Contains(listQuery, "run_id=run_123") || !strings.Contains(listQuery, "operation=extraction") || !strings.Contains(listQuery, "block_id=extract-1") {
 		t.Fatalf("list query = %s", listQuery)
@@ -708,19 +714,22 @@ func TestWorkflowRunStepsGet(t *testing.T) {
 func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[
-			{
-				"run_id": "run_123",
-				"organization_id": "org_123",
-				"block_id": "start-1",
-				"step_id": "start-1",
-				"block_type": "start",
-				"block_label": "Start",
-				"lifecycle": {"status": "completed"},
-				"handle_inputs": null,
-				"handle_outputs": null
-			}
-		]`))
+		_, _ = w.Write([]byte(`{
+			"data": [
+				{
+					"run_id": "run_123",
+					"organization_id": "org_123",
+					"block_id": "start-1",
+					"step_id": "start-1",
+					"block_type": "start",
+					"block_label": "Start",
+					"lifecycle": {"status": "completed"},
+					"handle_inputs": null,
+					"handle_outputs": null
+				}
+			],
+			"list_metadata": {"before": null, "after": null}
+		}`))
 	}))
 	defer server.Close()
 
@@ -733,16 +742,19 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(steps) != 1 {
-		t.Fatalf("steps length = %d", len(steps))
+	if len(steps.Data) != 1 {
+		t.Fatalf("steps length = %d", len(steps.Data))
 	}
-	if steps[0].HandleInputs == nil || steps[0].HandleOutputs == nil {
-		t.Fatalf("handle maps should be normalized: %#v", steps[0])
+	if steps.Data[0].HandleInputs == nil || steps.Data[0].HandleOutputs == nil {
+		t.Fatalf("handle maps should be normalized: %#v", steps.Data[0])
 	}
-	if steps[0].Lifecycle["status"] != "completed" {
-		t.Fatalf("lifecycle = %#v", steps[0].Lifecycle)
+	if steps.Data[0].Lifecycle["status"] != "completed" {
+		t.Fatalf("lifecycle = %#v", steps.Data[0].Lifecycle)
 	}
-	encoded, err := json.Marshal(steps[0])
+	if steps.ListMetadata.Before != "" || steps.ListMetadata.After != "" {
+		t.Fatalf("steps list_metadata = %#v", steps.ListMetadata)
+	}
+	encoded, err := json.Marshal(steps.Data[0])
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,11 +1,10 @@
 import { CompositionClient, RequestOptions } from "../../../../client.js";
 import {
+    PaginatedList,
     StepExecutionResponse,
+    ZPaginatedList,
     ZStepExecutionResponse,
-    WorkflowRunStep,
-    ZWorkflowRunStep,
 } from "../../../../types.js";
-import * as z from "zod";
 
 /**
  * Workflow Run Steps API client for accessing step-level execution artifacts.
@@ -45,10 +44,15 @@ export default class APIWorkflowRunSteps extends CompositionClient {
     /**
      * List all persisted step documents for a workflow run.
      *
+     * Returns the canonical
+     * `{"data": [...], "list_metadata": {"before": null, "after": null}}`
+     * pagination envelope. Cursor pagination is not yet implemented; iterate
+     * `result.data` directly.
+     *
      * @example
      * ```typescript
      * const steps = await client.workflows.runs.steps.list("run_abc123");
-     * for (const step of steps) {
+     * for (const step of steps.data) {
      *     console.log(`${step.block_id}: ${step.lifecycle.status}`);
      * }
      * ```
@@ -56,8 +60,8 @@ export default class APIWorkflowRunSteps extends CompositionClient {
     async list(
         runId: string,
         options?: RequestOptions
-    ): Promise<WorkflowRunStep[]> {
-        return this._fetchJson(z.array(ZWorkflowRunStep), {
+    ): Promise<PaginatedList> {
+        return this._fetchJson(ZPaginatedList, {
             url: `/workflows/runs/${runId}/steps`,
             method: "GET",
             params: options?.params,

@@ -187,7 +187,10 @@ def test_get_uses_test_detail_route() -> None:
 
 def test_list_uses_block_tests_route_with_filter() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {"tests": []}
+    client._prepared_request.return_value = {
+        "data": [],
+        "list_metadata": {"before": None, "after": None},
+    }
 
     result = Workflows(client=client).tests.list(
         workflow_id="wf_abc123",
@@ -199,7 +202,9 @@ def test_list_uses_block_tests_route_with_filter() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/wf_abc123/block-tests"
     assert request.params == {"limit": 25, "target_block_id": "block_extract"}
-    assert result.tests == []
+    assert result.data == []
+    assert result.list_metadata.before is None
+    assert result.list_metadata.after is None
 
 
 def test_list_omits_target_block_id_when_unset() -> None:
@@ -208,7 +213,10 @@ def test_list_omits_target_block_id_when_unset() -> None:
     string-coerces and tries to match a literal `"None"`.
     """
     client = MagicMock()
-    client._prepared_request.return_value = {"tests": []}
+    client._prepared_request.return_value = {
+        "data": [],
+        "list_metadata": {"before": None, "after": None},
+    }
 
     Workflows(client=client).tests.list(workflow_id="wf_abc123")
 
@@ -365,7 +373,10 @@ _RUN_RESPONSE = {
 
 def test_runs_list_uses_test_runs_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {"runs": []}
+    client._prepared_request.return_value = {
+        "data": [],
+        "list_metadata": {"before": None, "after": None},
+    }
 
     result = Workflows(client=client).tests.runs.list(
         workflow_id="wf_abc123",
@@ -377,7 +388,9 @@ def test_runs_list_uses_test_runs_route() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/wf_abc123/block-tests/wfnodetest_abc/runs"
     assert request.params == {"limit": 10}
-    assert result.runs == []
+    assert result.data == []
+    assert result.list_metadata.before is None
+    assert result.list_metadata.after is None
 
 
 def test_runs_get_uses_run_detail_route() -> None:
@@ -490,7 +503,9 @@ def test_async_runs_list_uses_test_runs_route() -> None:
     import asyncio
 
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value={"runs": []})
+    client._prepared_request = AsyncMock(
+        return_value={"data": [], "list_metadata": {"before": None, "after": None}},
+    )
 
     async def _go() -> None:
         await AsyncWorkflows(client=client).tests.runs.list(

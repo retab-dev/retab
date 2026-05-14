@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Mapping, Sequence, Union
 from pydantic import TypeAdapter
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
+from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows.experiments import (
     EligibleBlockListResponse,
@@ -32,7 +33,7 @@ from ....types.workflows.experiments import (
     ExperimentMetricsResponse,
     ExperimentMetricView,
     ExperimentResponse,
-    ExperimentRunListResponse,
+    ExperimentRunSummary,
     ExplicitExperimentDocumentRequest,
     NConsensusValue,
     RunBatchResponse,
@@ -316,11 +317,11 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         self,
         workflow_id: str,
         experiment_id: str,
-    ) -> ExperimentRunListResponse:
+    ) -> PaginatedList[ExperimentRunSummary]:
         """List historical runs for one experiment, newest first."""
         request = self.prepare_list(workflow_id, experiment_id)
         response = self._client._prepared_request(request)
-        return ExperimentRunListResponse.model_validate(response)
+        return PaginatedList[ExperimentRunSummary].model_validate(response)
 
     def get(
         self,
@@ -419,11 +420,11 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         response = self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
-    def list(self, workflow_id: str) -> List[ExperimentResponse]:
+    def list(self, workflow_id: str) -> PaginatedList[ExperimentResponse]:
         """List all experiments attached to a workflow."""
         request = self.prepare_list(workflow_id)
         response = self._client._prepared_request(request)
-        return [ExperimentResponse.model_validate(item) for item in response]
+        return PaginatedList[ExperimentResponse].model_validate(response)
 
     def get(self, workflow_id: str, experiment_id: str) -> ExperimentResponse:
         """Fetch a single experiment by id (refreshes drift state)."""
@@ -563,10 +564,10 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         self,
         workflow_id: str,
         experiment_id: str,
-    ) -> ExperimentRunListResponse:
+    ) -> PaginatedList[ExperimentRunSummary]:
         request = self.prepare_list(workflow_id, experiment_id)
         response = await self._client._prepared_request(request)
-        return ExperimentRunListResponse.model_validate(response)
+        return PaginatedList[ExperimentRunSummary].model_validate(response)
 
     async def get(
         self,
@@ -618,10 +619,10 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         response = await self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
-    async def list(self, workflow_id: str) -> List[ExperimentResponse]:
+    async def list(self, workflow_id: str) -> PaginatedList[ExperimentResponse]:
         request = self.prepare_list(workflow_id)
         response = await self._client._prepared_request(request)
-        return [ExperimentResponse.model_validate(item) for item in response]
+        return PaginatedList[ExperimentResponse].model_validate(response)
 
     async def get(self, workflow_id: str, experiment_id: str) -> ExperimentResponse:
         request = self.prepare_get(workflow_id, experiment_id)

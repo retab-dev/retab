@@ -573,7 +573,7 @@ full input/output payload of one step use ` + "`steps get`" + `.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

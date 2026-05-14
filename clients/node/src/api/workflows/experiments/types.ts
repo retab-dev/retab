@@ -110,7 +110,23 @@ export const ZExperimentResponse = z
     .passthrough();
 export type ExperimentResponse = z.infer<typeof ZExperimentResponse>;
 
-export const ZExperimentList = z.array(ZExperimentResponse);
+// Canonical PaginatedList envelope. The route used to return a bare array;
+// the migration to `{data, list_metadata}` brings it in line with workflows
+// list, files list, extractions list, etc.
+export const ZListMetadata = z
+    .object({
+        before: z.string().nullable(),
+        after: z.string().nullable(),
+    })
+    .passthrough();
+export type ListMetadata = z.infer<typeof ZListMetadata>;
+
+export const ZExperimentList = z
+    .object({
+        data: z.array(ZExperimentResponse).default([]),
+        list_metadata: ZListMetadata,
+    })
+    .passthrough();
 export type ExperimentList = z.infer<typeof ZExperimentList>;
 
 // ---------------------------------------------------------------------------
@@ -174,9 +190,13 @@ export const ZExperimentRunSummary = z
     .passthrough();
 export type ExperimentRunSummary = z.infer<typeof ZExperimentRunSummary>;
 
+// Canonical PaginatedList envelope for `GET /experiments/{id}/runs`. The
+// route used to return `{"runs": [...]}`; the migration to
+// `{data, list_metadata}` matches the rest of the Retab list endpoints.
 export const ZExperimentRunListResponse = z
     .object({
-        runs: z.array(ZExperimentRunSummary).default([]),
+        data: z.array(ZExperimentRunSummary).default([]),
+        list_metadata: ZListMetadata,
     })
     .passthrough();
 export type ExperimentRunListResponse = z.infer<typeof ZExperimentRunListResponse>;
