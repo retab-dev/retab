@@ -190,7 +190,11 @@ backup with ` + "`retab classifications get`" + ` first if you may need it.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Classifications.Delete(ctx, args[0])
+		if err := client.Classifications.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("classification", args[0])
+		return nil
 	}),
 }
 

@@ -162,7 +162,11 @@ if you may need it.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Edits.Delete(ctx, args[0])
+		if err := client.Edits.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("edit", args[0])
+		return nil
 	}),
 }
 
@@ -372,7 +376,11 @@ for this id afterwards. Take a backup with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Edits.Templates.Delete(ctx, args[0])
+		if err := client.Edits.Templates.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("edit template", args[0])
+		return nil
 	}),
 }
 

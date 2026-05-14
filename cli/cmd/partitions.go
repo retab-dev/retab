@@ -153,7 +153,11 @@ definitions.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Partitions.Delete(ctx, args[0])
+		if err := client.Partitions.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("partition", args[0])
+		return nil
 	}),
 }
 

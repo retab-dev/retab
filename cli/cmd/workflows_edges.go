@@ -197,7 +197,11 @@ severed.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Workflows.Edges.Delete(ctx, args[0], args[1])
+		if err := client.Workflows.Edges.Delete(ctx, args[0], args[1]); err != nil {
+			return err
+		}
+		confirmDeleted("edge", args[1])
+		return nil
 	}),
 }
 
@@ -219,7 +223,11 @@ rewrite.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Workflows.Edges.DeleteAll(ctx, args[0])
+		if err := client.Workflows.Edges.DeleteAll(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("all edges in workflow", args[0])
+		return nil
 	}),
 }
 

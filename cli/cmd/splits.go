@@ -178,7 +178,11 @@ boundaries again.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Splits.Delete(ctx, args[0])
+		if err := client.Splits.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("split", args[0])
+		return nil
 	}),
 }
 

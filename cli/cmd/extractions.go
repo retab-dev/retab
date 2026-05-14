@@ -301,7 +301,11 @@ document (if uploaded as a file) is not affected. Take a local backup with
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Extractions.Delete(ctx, args[0])
+		if err := client.Extractions.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("extraction", args[0])
+		return nil
 	}),
 }
 

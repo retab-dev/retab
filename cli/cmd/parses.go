@@ -144,7 +144,11 @@ backup with ` + "`retab parses get`" + ` first if you may need the markdown.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Parses.Delete(ctx, args[0])
+		if err := client.Parses.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		confirmDeleted("parse", args[0])
+		return nil
 	}),
 }
 

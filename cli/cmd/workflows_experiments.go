@@ -242,7 +242,11 @@ production runs and artifacts are unaffected.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		return client.Workflows.Experiments.Delete(ctx, args[0], args[1])
+		if err := client.Workflows.Experiments.Delete(ctx, args[0], args[1]); err != nil {
+			return err
+		}
+		confirmDeleted("experiment", args[1])
+		return nil
 	}),
 }
 
