@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 
+	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
 
@@ -161,12 +163,18 @@ var workflowsSpecExportCmd = &cobra.Command{
 state. Useful for round-tripping a workflow created in the dashboard
 back into a git-managed YAML file, or for diffing two environments.
 
-The server returns the spec inside the response body — pipe through
-` + "`jq -r .yaml_definition`" + ` (or the equivalent field) to get raw YAML.`,
-	Example: `  retab workflows spec export wf_abc123
-  retab workflows spec export wf_abc123 | jq -r .yaml_definition > workflow.yaml`,
+By default, the raw YAML body is written to stdout so the command can
+be redirected straight into a file. Pass ` + "`--format json`" + ` to see
+the full server response object (handy for piping into ` + "`jq`" + ` to
+pull out other fields).`,
+	Example: `  retab workflows spec export wf_abc123 > workflow.yaml
+  retab workflows spec export wf_abc123 --format json | jq .`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		format, err := cmd.Flags().GetString("format")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -177,11 +185,61 @@ The server returns the spec inside the response body — pipe through
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return writeSpecExport(os.Stdout, result, format)
 	}),
 }
 
+// writeSpecExport renders the export response onto w in the requested
+// format. Pulled out of RunE so the format dispatch — which is the only
+// non-trivial branch in the command — is testable without a live server
+// or a stubbed cobra invocation.
+//
+// "yaml" (the default) extracts result["yaml_definition"] and writes it
+// as bare text terminated by exactly one trailing newline, so a shell
+// redirect produces a clean YAML file. A missing or empty field is an
+// error rather than an empty file: the user asked for a workflow's YAML
+// and got nothing back, that's worth surfacing.
+//
+// "json" preserves the legacy behaviour — the full Resource map pretty-
+// printed with the same settings as printJSON. This keeps the response
+// envelope available for power users who want to read other fields
+// (e.g. `workflow_id`) with `jq`.
+func writeSpecExport(w io.Writer, result *retab.Resource, format string) error {
+	switch format {
+	case "yaml":
+		if result == nil {
+			return fmt.Errorf("server response missing yaml_definition field")
+		}
+		raw, ok := (*result)["yaml_definition"]
+		if !ok {
+			return fmt.Errorf("server response missing yaml_definition field")
+		}
+		yaml, ok := raw.(string)
+		if !ok || yaml == "" {
+			return fmt.Errorf("server response missing yaml_definition field")
+		}
+		// Guarantee exactly one trailing newline regardless of whether the
+		// server already included one — a redirected `> workflow.yaml`
+		// should end cleanly, and a doubled newline would dirty the diff
+		// on the very next round-trip.
+		for len(yaml) > 0 && yaml[len(yaml)-1] == '\n' {
+			yaml = yaml[:len(yaml)-1]
+		}
+		_, err := fmt.Fprintln(w, yaml)
+		return err
+	case "json":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		enc.SetEscapeHTML(false)
+		return enc.Encode(result)
+	default:
+		return fmt.Errorf("invalid --format value %q (want: yaml | json)", format)
+	}
+}
+
 func init() {
+	workflowsSpecExportCmd.Flags().String("format", "yaml", "output format: yaml | json")
+
 	workflowsSpecCmd.AddCommand(
 		workflowsSpecValidateCmd,
 		workflowsSpecPlanCmd,
