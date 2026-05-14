@@ -390,9 +390,9 @@ func TestPrintResultDispatch(t *testing.T) {
 	}
 
 	cases := []struct {
-		name       string
-		flagValue  string
-		wantTable  bool // true → assert table layout, false → assert JSON
+		name      string
+		flagValue string
+		wantTable bool // true → assert table layout, false → assert JSON
 	}{
 		{"empty defaults to json", "", false},
 		{"auto defaults to json", "auto", false},

@@ -146,7 +146,21 @@ plus ` + "`files complete-upload`" + ` to upload directly to storage.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		// The SDK returns MIMEData (filename + url + optional content
+		// + mime_type). The id is encoded in the URL path but isn't a
+		// distinct JSON field — surface it explicitly so `| jq -r .id`
+		// works without users having to regex-pluck the URL. The Long
+		// description on this command literally tells users to do
+		// `jq -r .id`, so we owe them an `.id` to read.
+		out := map[string]any{
+			"id":       result.ID(),
+			"filename": result.Filename,
+			"url":      result.URL,
+		}
+		if result.MIMEType != "" {
+			out["mime_type"] = result.MIMEType
+		}
+		return printJSON(out)
 	}),
 }
 

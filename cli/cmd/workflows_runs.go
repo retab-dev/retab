@@ -123,7 +123,13 @@ version with ` + "`--version`" + `. Inspect the resulting run with
 				if !ok || url == "" {
 					return fmt.Errorf("--document-url expects block-id=url, got %q", raw)
 				}
-				req.Documents[key] = retab.MIMEData{URL: url}
+				// Server requires `filename` on every document descriptor;
+				// derive from URL path's last segment (same rule applied
+				// across single-document commands in common.go).
+				req.Documents[key] = retab.MIMEData{
+					Filename: filenameFromURL(url),
+					URL:      url,
+				}
 			}
 		}
 		jsonInputsFile, _ := cmd.Flags().GetString("json-inputs-file")

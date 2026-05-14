@@ -11,9 +11,9 @@ import (
 // surfaces read these vars:
 //
 //   - `retab --version`  — cobra wires this from rootCmd.Version (see
-//                          root.go's init()). Short, just the version.
+//     root.go's init()). Short, just the version.
 //   - `retab version`    — registered below. Prints version + commit
-//                          + ISO build date.
+//   - ISO build date.
 //
 // We expose both because users coming from `git`/`go`/`node` instinctively
 // type the subcommand form first; getting `unknown command "version"` is a
