@@ -42,12 +42,15 @@ var commandGroups = []commandGroup{
 		commands: []string{"parses", "extractions", "edits", "splits", "partitions", "classifications"},
 	},
 	{
-		title:    "Documents & schemas",
-		commands: []string{"files", "schemas"},
+		// Catch-all for resource management surfaces (files, schemas) and
+		// background-execution surfaces (jobs). Not strictly docs + schemas
+		// anymore — the title reflects that.
+		title:    "Utils",
+		commands: []string{"files", "schemas", "jobs"},
 	},
 	{
 		title:    "Workflows",
-		commands: []string{"workflows", "jobs"},
+		commands: []string{"workflows"},
 	},
 	{
 		title:    "Account",
@@ -195,21 +198,22 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 			continue
 		}
 		// Group sub-headers in bold yellow — same role bun gives its
-		// `build` row. Top-level labels (Usage:, Flags:, Learn more:)
-		// stay in plain bold via `headline` further down.
-		fmt.Fprintf(w, "\n%s%s:%s\n", s.groupHeader, g.title, s.reset)
+		// `build` row. Indented 2 spaces (one level under the top-level
+		// labels Usage:/Flags:/Learn more: which sit at col 0). Their
+		// commands sit at col 4, one level under the sub-header.
+		fmt.Fprintf(w, "\n  %s%s:%s\n", s.groupHeader, g.title, s.reset)
 		for _, name := range g.commands {
 			c, ok := byName[name]
 			if !ok {
 				continue
 			}
 			rendered[name] = true
-			// All command names in lavender `accent` — matches the bun
+			// All command names in bold blue `accent` — matches bun's
 			// convention. Pad with plain spaces so escape codes don't bleed
 			// into trailing whitespace (would corrupt terminal redraw on
-			// resize). Two-space gutter matches bun.
+			// resize).
 			spaces := pad - len(c.Name())
-			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
+			fmt.Fprintf(w, "    %s%s%s%s  %s\n",
 				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
 		}
 	}
@@ -223,11 +227,12 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 	}
 	if len(others) > 0 {
 		sort.Slice(others, func(i, j int) bool { return others[i].Name() < others[j].Name() })
-		// "Other" is a group sub-header just like Primitives/Workflows/etc.
-		fmt.Fprintf(w, "\n%sOther:%s\n", s.groupHeader, s.reset)
+		// "Other" is a group sub-header just like Primitives/Utils/etc.
+		// — same col 2 / col 4 indent rules apply.
+		fmt.Fprintf(w, "\n  %sOther:%s\n", s.groupHeader, s.reset)
 		for _, c := range others {
 			spaces := pad - len(c.Name())
-			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
+			fmt.Fprintf(w, "    %s%s%s%s  %s\n",
 				s.accent, c.Name(), s.reset, repeat(" ", spaces), c.Short)
 		}
 	}
@@ -278,6 +283,30 @@ func renderRootHelpWithStyles(w io.Writer, root *cobra.Command, s styles) {
 		}
 		fmt.Fprintf(w, "  %s%s  %s%s\n",
 			left, repeat(" ", leftWidth-visualWidth), f.desc, suffix)
+	}
+
+	// ----- topical help -----
+	// Drawn from help_topics.go's `helpTopics` slice rather than from
+	// rootCmd.Commands() so the ordering of this section is controlled by
+	// one source of truth (re-order helpTopics, re-order the menu). Topics
+	// are registered Hidden so the top-level menu above skips them and
+	// they only surface here.
+	if len(helpTopics) > 0 {
+		fmt.Fprintf(w, "\n%sTopics:%s\n", s.headline, s.reset)
+		topicPad := 0
+		for _, t := range helpTopics {
+			if len(t.use) > topicPad {
+				topicPad = len(t.use)
+			}
+		}
+		if topicPad < minPad {
+			topicPad = minPad
+		}
+		for _, t := range helpTopics {
+			spaces := topicPad - len(t.use)
+			fmt.Fprintf(w, "  %s%s%s%s  %s\n",
+				s.accent, t.use, s.reset, repeat(" ", spaces), t.short)
+		}
 	}
 
 	// ----- footer: docs + hint -----
