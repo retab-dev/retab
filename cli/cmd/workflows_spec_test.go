@@ -1,10 +1,14 @@
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	retab "github.com/retab-dev/retab/clients/go"
 )
 
 // readSpecYAML is the only piece of logic in workflows_spec.go that isn't
@@ -140,4 +144,174 @@ func captureRootHelp(t *testing.T) string {
 	t.Cleanup(func() { rootCmd.SetOut(nil) })
 	rootCmd.HelpFunc()(rootCmd, nil)
 	return buf.String()
+}
+
+// fakeExportResource builds the kind of envelope the server actually
+// returns for `GET /workflows/spec/{id}`: a `workflow_id` plus a
+// `yaml_definition` string. Keeps each writeSpecExport test self-
+// contained instead of stashing a global fixture.
+func fakeExportResource(yaml string) *retab.Resource {
+	r := retab.Resource{
+		"workflow_id":     "wf_test",
+		"yaml_definition": yaml,
+	}
+	return &r
+}
+
+// The whole point of `spec export` is to produce a file you can commit
+// to git. Format=yaml must emit the YAML body verbatim — no JSON
+// envelope, no escape sequences, exactly one trailing newline so a
+// shell redirect doesn't double-newline the round-trip.
+func TestWriteSpecExport_YAMLFormat(t *testing.T) {
+	body := "apiVersion: workflows.retab.com/v1alpha2\nkind: Workflow\nmetadata:\n  name: demo\n"
+	r := fakeExportResource(body)
+
+	var buf bytes.Buffer
+	if err := writeSpecExport(&buf, r, "yaml"); err != nil {
+		t.Fatalf("writeSpecExport: %v", err)
+	}
+	got := buf.String()
+
+	// Exact match: body verbatim plus a single trailing newline. No JSON
+	// braces, no `yaml_definition` key — the file must be directly
+	// re-importable by `spec apply`.
+	want := body
+	if !strings.HasSuffix(want, "\n") {
+		want += "\n"
+	}
+	if got != want {
+		t.Errorf("yaml output mismatch:\n got: %q\nwant: %q", got, want)
+	}
+}
+
+// If the server's YAML already ends with a newline, the writer must
+// still produce exactly one — not two. A redirected `> workflow.yaml`
+// should round-trip without growing a blank line each time.
+func TestWriteSpecExport_YAMLFormat_StripsTrailingNewlines(t *testing.T) {
+	body := "name: demo\n\n\n"
+	r := fakeExportResource(body)
+
+	var buf bytes.Buffer
+	if err := writeSpecExport(&buf, r, "yaml"); err != nil {
+		t.Fatalf("writeSpecExport: %v", err)
+	}
+	got := buf.String()
+	if got != "name: demo\n" {
+		t.Errorf("expected exactly one trailing newline, got: %q", got)
+	}
+}
+
+// Format=json preserves the legacy behaviour: the full Resource map
+// pretty-printed. Power users opt into this when they want to read
+// adjacent fields (e.g. `workflow_id`) with jq.
+func TestWriteSpecExport_JSONFormat(t *testing.T) {
+	body := "name: demo\n"
+	r := fakeExportResource(body)
+
+	var buf bytes.Buffer
+	if err := writeSpecExport(&buf, r, "json"); err != nil {
+		t.Fatalf("writeSpecExport: %v", err)
+	}
+
+	// Round-trip the JSON to confirm structure (indented output, key
+	// presence) rather than pinning whitespace.
+	var decoded map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &decoded); err != nil {
+		t.Fatalf("json output not parseable: %v\nraw: %s", err, buf.String())
+	}
+	if decoded["yaml_definition"] != body {
+		t.Errorf("yaml_definition mismatch: got %q", decoded["yaml_definition"])
+	}
+	if decoded["workflow_id"] != "wf_test" {
+		t.Errorf("workflow_id missing or wrong: got %v", decoded["workflow_id"])
+	}
+	if !strings.Contains(buf.String(), "\n  \"") {
+		t.Errorf("json output should be indented:\n%s", buf.String())
+	}
+}
+
+// The error path the bug report cares about: if the server returns a
+// response with no `yaml_definition` field (or an empty one), the
+// command must fail loudly. An empty file would be worse than the
+// JSON-wrapped behaviour we just fixed — users would commit a blank
+// YAML to git and only notice on the next `apply`.
+func TestWriteSpecExport_MissingYAMLDefinition(t *testing.T) {
+	cases := []struct {
+		name     string
+		resource *retab.Resource
+	}{
+		{
+			name:     "nil resource",
+			resource: nil,
+		},
+		{
+			name:     "field absent",
+			resource: &retab.Resource{"workflow_id": "wf_test"},
+		},
+		{
+			name:     "field empty string",
+			resource: &retab.Resource{"yaml_definition": ""},
+		},
+		{
+			name:     "field wrong type",
+			resource: &retab.Resource{"yaml_definition": 42},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			err := writeSpecExport(&buf, tc.resource, "yaml")
+			if err == nil {
+				t.Fatalf("expected error for missing yaml_definition, got nil (output=%q)", buf.String())
+			}
+			if !strings.Contains(err.Error(), "missing yaml_definition") {
+				t.Errorf("error should mention missing yaml_definition, got: %v", err)
+			}
+		})
+	}
+}
+
+// Unknown format values surface as a CLI error rather than silently
+// defaulting to yaml or json. Catches typos like `--format yml`.
+func TestWriteSpecExport_UnknownFormat(t *testing.T) {
+	r := fakeExportResource("name: demo\n")
+	var buf bytes.Buffer
+	err := writeSpecExport(&buf, r, "yml")
+	if err == nil {
+		t.Fatalf("expected error for unknown format, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid --format") {
+		t.Errorf("error should mention invalid --format, got: %v", err)
+	}
+}
+
+// The --format flag must be registered on the export command (and only
+// on the export command — other spec verbs print JSON unconditionally
+// and a stray flag would be confusing). Default value is "yaml" so the
+// out-of-the-box behaviour matches the bug-fix contract.
+func TestWorkflowsSpecExport_FormatFlag(t *testing.T) {
+	exp, _, err := rootCmd.Find([]string{"workflows", "spec", "export"})
+	if err != nil {
+		t.Fatalf("workflows spec export not registered: %v", err)
+	}
+	f := exp.Flags().Lookup("format")
+	if f == nil {
+		t.Fatalf("export command should expose a --format flag")
+	}
+	if f.DefValue != "yaml" {
+		t.Errorf("--format default should be yaml, got %q", f.DefValue)
+	}
+
+	// The flag must NOT leak onto the sibling verbs. Each of them still
+	// only prints JSON — adding --format would be silently ignored and
+	// look like a real opt-out the user could rely on.
+	for _, name := range []string{"validate", "plan", "apply"} {
+		sibling, _, err := rootCmd.Find([]string{"workflows", "spec", name})
+		if err != nil {
+			t.Fatalf("workflows spec %s not registered: %v", name, err)
+		}
+		if sibling.Flags().Lookup("format") != nil {
+			t.Errorf("workflows spec %s should not expose --format (export-only)", name)
+		}
+	}
 }
