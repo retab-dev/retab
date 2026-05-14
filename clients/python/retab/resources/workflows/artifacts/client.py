@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
+from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows import (
     StepArtifactRef,
@@ -68,11 +69,18 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
         run_id: str,
         operation: WorkflowArtifactOperation | None = None,
         block_id: str | None = None,
-    ) -> List[WorkflowArtifact]:
-        """List dereferenced artifacts produced by one workflow run."""
+    ) -> PaginatedList[WorkflowArtifact]:
+        """List dereferenced artifacts produced by one workflow run.
+
+        Returns the canonical
+        ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
+        pagination envelope. Cursor pagination is not yet implemented.
+        """
         request = self.prepare_list(run_id, operation=operation, block_id=block_id)
         response = self._client._prepared_request(request)
-        return [WorkflowArtifact.model_validate(item) for item in response]
+        result = PaginatedList[WorkflowArtifact](**response)
+        result.data = [WorkflowArtifact.model_validate(item) for item in result.data]
+        return result
 
 
 class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
@@ -93,8 +101,15 @@ class AsyncWorkflowArtifacts(AsyncAPIResource, WorkflowArtifactsMixin):
         run_id: str,
         operation: WorkflowArtifactOperation | None = None,
         block_id: str | None = None,
-    ) -> List[WorkflowArtifact]:
-        """List dereferenced artifacts produced by one workflow run."""
+    ) -> PaginatedList[WorkflowArtifact]:
+        """List dereferenced artifacts produced by one workflow run.
+
+        Returns the canonical
+        ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
+        pagination envelope.
+        """
         request = self.prepare_list(run_id, operation=operation, block_id=block_id)
         response = await self._client._prepared_request(request)
-        return [WorkflowArtifact.model_validate(item) for item in response]
+        result = PaginatedList[WorkflowArtifact](**response)
+        result.data = [WorkflowArtifact.model_validate(item) for item in result.data]
+        return result

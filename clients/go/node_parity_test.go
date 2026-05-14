@@ -274,13 +274,21 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/workflows/wf_123/blocks":
-			_ = json.NewEncoder(w).Encode([]Resource{{"id": "block_1", "workflow_id": "wf_123", "organization_id": "org", "type": "start"}})
+			_ = json.NewEncoder(w).Encode(Resource{
+				"data": []Resource{{
+					"id": "block_1", "workflow_id": "wf_123", "organization_id": "org", "type": "start",
+				}},
+				"list_metadata": Resource{"before": nil, "after": nil},
+			})
 		case "/workflows/wf_123/edges":
 			if r.Method == http.MethodDelete {
 				w.WriteHeader(http.StatusNoContent)
 				return
 			}
-			_ = json.NewEncoder(w).Encode([]Resource{})
+			_ = json.NewEncoder(w).Encode(Resource{
+				"data":          []Resource{},
+				"list_metadata": Resource{"before": nil, "after": nil},
+			})
 		case "/workflows/wf_123/block-tests":
 			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "test_1"}}})
 		case "/workflows/wf_123/block-tests/test_1/runs":

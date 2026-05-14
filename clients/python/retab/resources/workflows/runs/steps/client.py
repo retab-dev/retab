@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from ....._resource import AsyncAPIResource, SyncAPIResource
+from .....types.pagination import PaginatedList
 from .....types.standards import PreparedRequest
 from .....types.workflows import (
     StepExecutionResponse,
@@ -49,7 +50,11 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
         response = self._client._prepared_request(request)
         return StepExecutionResponse.model_validate(response)
 
-    def list(self, run_id: str, block_ids: Optional[List[str]] = None) -> List[WorkflowRunStep]:
+    def list(
+        self,
+        run_id: str,
+        block_ids: Optional[List[str]] = None,
+    ) -> PaginatedList[WorkflowRunStep]:
         """List step documents for a workflow run.
 
         Args:
@@ -57,15 +62,21 @@ class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
             block_ids: If provided, filters the returned step documents to these block IDs.
 
         Returns:
-            List[WorkflowRunStep] for the requested steps.
+            ``PaginatedList[WorkflowRunStep]`` — the canonical list envelope
+            ``{"data": [...], "list_metadata": {"before": null, "after": null}}``.
+            ``block_ids`` filtering is applied client-side after the wire
+            response is parsed; ``list_metadata`` is preserved verbatim from
+            the unfiltered response.
         """
         request = self.prepare_list(run_id)
         response = self._client._prepared_request(request)
-        steps = [WorkflowRunStep.model_validate(item) for item in response]
-        if block_ids is None:
-            return steps
-        requested_block_ids = set(block_ids)
-        return [step for step in steps if step.block_id in requested_block_ids]
+        result = PaginatedList[WorkflowRunStep](**response)
+        steps = [WorkflowRunStep.model_validate(item) for item in result.data]
+        if block_ids is not None:
+            requested_block_ids = set(block_ids)
+            steps = [step for step in steps if step.block_id in requested_block_ids]
+        result.data = steps
+        return result
 
 
 class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
@@ -95,7 +106,11 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
         response = await self._client._prepared_request(request)
         return StepExecutionResponse.model_validate(response)
 
-    async def list(self, run_id: str, block_ids: Optional[List[str]] = None) -> List[WorkflowRunStep]:
+    async def list(
+        self,
+        run_id: str,
+        block_ids: Optional[List[str]] = None,
+    ) -> PaginatedList[WorkflowRunStep]:
         """List step documents for a workflow run.
 
         Args:
@@ -103,12 +118,14 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
             block_ids: If provided, filters the returned step documents to these block IDs.
 
         Returns:
-            List[WorkflowRunStep] for the requested steps.
+            ``PaginatedList[WorkflowRunStep]`` — the canonical list envelope.
         """
         request = self.prepare_list(run_id)
         response = await self._client._prepared_request(request)
-        steps = [WorkflowRunStep.model_validate(item) for item in response]
-        if block_ids is None:
-            return steps
-        requested_block_ids = set(block_ids)
-        return [step for step in steps if step.block_id in requested_block_ids]
+        result = PaginatedList[WorkflowRunStep](**response)
+        steps = [WorkflowRunStep.model_validate(item) for item in result.data]
+        if block_ids is not None:
+            requested_block_ids = set(block_ids)
+            steps = [step for step in steps if step.block_id in requested_block_ids]
+        result.data = steps
+        return result

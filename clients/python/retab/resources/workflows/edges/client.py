@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Sequence
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
+from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows import WorkflowEdgeDoc, WorkflowEdgeCreateRequest
 
@@ -98,7 +99,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
 
         source_block: str | None = None,
         target_block: str | None = None,
-    ) -> List[WorkflowEdgeDoc]:
+    ) -> PaginatedList[WorkflowEdgeDoc]:
         """List all edges for a workflow.
 
         Args:
@@ -107,11 +108,15 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
             target_block: Filter by target block ID (optional)
 
         Returns:
-            List of workflow edge documents
+            ``PaginatedList[WorkflowEdgeDoc]`` — the canonical list envelope
+            ``{"data": [...], "list_metadata": {"before": null, "after": null}}``.
+            Cursor pagination is not yet implemented for this endpoint.
         """
         request = self.prepare_list(workflow_id, source_block=source_block, target_block=target_block)
         response = self._client._prepared_request(request)
-        return [WorkflowEdgeDoc.model_validate(item) for item in response]
+        result = PaginatedList[WorkflowEdgeDoc](**response)
+        result.data = [WorkflowEdgeDoc.model_validate(item) for item in result.data]
+        return result
 
     def get(self, workflow_id: str, edge_id: str) -> WorkflowEdgeDoc:
         """Get a single edge by ID."""
@@ -197,11 +202,18 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
 
         source_block: str | None = None,
         target_block: str | None = None,
-    ) -> List[WorkflowEdgeDoc]:
-        """List all edges for a workflow."""
+    ) -> PaginatedList[WorkflowEdgeDoc]:
+        """List all edges for a workflow.
+
+        Returns the canonical
+        ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
+        pagination envelope.
+        """
         request = self.prepare_list(workflow_id, source_block=source_block, target_block=target_block)
         response = await self._client._prepared_request(request)
-        return [WorkflowEdgeDoc.model_validate(item) for item in response]
+        result = PaginatedList[WorkflowEdgeDoc](**response)
+        result.data = [WorkflowEdgeDoc.model_validate(item) for item in result.data]
+        return result
 
     async def get(self, workflow_id: str, edge_id: str) -> WorkflowEdgeDoc:
         """Get a single edge by ID."""

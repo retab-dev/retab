@@ -76,7 +76,7 @@ to focus on a single block's wiring.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

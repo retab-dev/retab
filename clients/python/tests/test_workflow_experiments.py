@@ -174,15 +174,20 @@ def test_experiments_update_passing_n_consensus_only() -> None:
 
 def test_experiments_list_uses_get() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = [_EXPERIMENT_RESPONSE]
+    client._prepared_request.return_value = {
+        "data": [_EXPERIMENT_RESPONSE],
+        "list_metadata": {"before": None, "after": None},
+    }
 
-    rows = Workflows(client=client).experiments.list(workflow_id="wf_abc123")
+    page = Workflows(client=client).experiments.list(workflow_id="wf_abc123")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/workflows/wf_abc123/experiments"
-    assert len(rows) == 1
-    assert rows[0].id == "exp_abc"
+    assert len(page.data) == 1
+    assert page.data[0].id == "exp_abc"
+    assert page.list_metadata.before is None
+    assert page.list_metadata.after is None
 
 
 def test_experiments_get_uses_detail_route() -> None:
@@ -337,15 +342,21 @@ def test_experiments_runs_cancel_document_uses_document_cancel_route() -> None:
 
 def test_experiments_runs_list_uses_runs_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {"runs": []}
+    client._prepared_request.return_value = {
+        "data": [],
+        "list_metadata": {"before": None, "after": None},
+    }
 
-    Workflows(client=client).experiments.runs.list(
+    page = Workflows(client=client).experiments.runs.list(
         workflow_id="wf_abc123", experiment_id="exp_abc"
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
     assert request.url == "/workflows/wf_abc123/experiments/exp_abc/runs"
+    assert page.data == []
+    assert page.list_metadata.before is None
+    assert page.list_metadata.after is None
 
 
 def test_experiment_content_is_only_on_runs_get() -> None:

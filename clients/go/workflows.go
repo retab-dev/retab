@@ -171,6 +171,48 @@ func (s *WorkflowsService) GetResolvedSchemas(ctx context.Context, workflowID st
 	return &result, err
 }
 
+// WorkflowSnapshot is the metadata for one published snapshot of a workflow,
+// returned as the data items of (*WorkflowsService).ListSnapshots.
+type WorkflowSnapshot struct {
+	ID                string    `json:"id"`
+	SnapshotID        string    `json:"snapshot_id"`
+	WorkflowID        string    `json:"workflow_id"`
+	OrganizationID    string    `json:"organization_id,omitempty"`
+	Version           int       `json:"version"`
+	Description       string    `json:"description"`
+	BlockCount        int       `json:"block_count"`
+	EdgeCount         int       `json:"edge_count"`
+	PublishedBy       string    `json:"published_by,omitempty"`
+	PublishedByEmail  string    `json:"published_by_email,omitempty"`
+	PublishedByName   string    `json:"published_by_name,omitempty"`
+	PublishedAt       time.Time `json:"published_at"`
+}
+
+// ListSnapshotsParams bounds the snapshot page returned by ListSnapshots.
+type ListSnapshotsParams struct {
+	Limit int
+}
+
+// ListSnapshots returns published snapshots for a workflow, newest first,
+// wrapped in the canonical paginated envelope. Cursor pagination is not yet
+// implemented for this endpoint; pass Limit (default 50, max 100) to bound
+// the page size.
+func (s *WorkflowsService) ListSnapshots(ctx context.Context, workflowID string, params *ListSnapshotsParams, opts ...RequestOption) (*PaginatedList[WorkflowSnapshot], error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	query := url.Values{}
+	if params != nil && params.Limit > 0 {
+		query.Set("limit", fmt.Sprintf("%d", params.Limit))
+	}
+	var result PaginatedList[WorkflowSnapshot]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/snapshots", query, nil, &result, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // WorkflowDiagnosisIssue is one issue found by Diagnose.
 type WorkflowDiagnosisIssue struct {
 	Severity string  `json:"severity"`
@@ -363,14 +405,21 @@ func (s *WorkflowArtifactsService) GetRef(ctx context.Context, ref StepArtifactR
 	return s.Get(ctx, ref.Operation, ref.ID, opts...)
 }
 
-func (s *WorkflowArtifactsService) List(ctx context.Context, params ListWorkflowArtifactsParams, opts ...RequestOption) ([]WorkflowArtifact, error) {
+// List returns the canonical paginated envelope
+// {"data": [...], "list_metadata": {"before": null, "after": null}} for
+// workflow artifacts produced by a single run. Cursor pagination is not
+// yet implemented for this endpoint; ListMetadata is always {nil, nil}.
+func (s *WorkflowArtifactsService) List(ctx context.Context, params ListWorkflowArtifactsParams, opts ...RequestOption) (*PaginatedList[WorkflowArtifact], error) {
 	if params.RunID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
-	var result []WorkflowArtifact
+	var result PaginatedList[WorkflowArtifact]
 	prepared := s.PrepareList(params)
 	err := s.client.do(ctx, prepared.Method, prepared.URL, prepared.Params, nil, &result, opts...)
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 type WorkflowBlocksService struct {
@@ -399,13 +448,90 @@ type WorkflowBlockUpdateRequest struct {
 	ParentID  *string        `json:"parent_id,omitempty"`
 }
 
-func (s *WorkflowBlocksService) List(ctx context.Context, workflowID string, opts ...RequestOption) ([]WorkflowBlock, error) {
+// List returns the canonical paginated envelope
+// {"data": [...], "list_metadata": {"before": null, "after": null}} for
+// the blocks of a workflow's current draft. Cursor pagination is not yet
+// implemented for this endpoint; ListMetadata is always {nil, nil}.
+func (s *WorkflowBlocksService) List(ctx context.Context, workflowID string, opts ...RequestOption) (*PaginatedList[WorkflowBlock], error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
-	var blocks []WorkflowBlock
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks", nil, nil, &blocks, opts...)
-	return blocks, err
+	var result PaginatedList[WorkflowBlock]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks", nil, nil, &result, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// BlockConfigVersion captures one config-era for a block across workflow
+// publishes. Returned as the data items of
+// (*WorkflowBlocksService).ConfigHistory.
+type BlockConfigVersion struct {
+	ConfigFingerprint string         `json:"config_fingerprint"`
+	BlockType         string         `json:"block_type"`
+	BlockLabel        string         `json:"block_label"`
+	ConfigSnapshot    map[string]any `json:"config_snapshot,omitempty"`
+	FirstSeenAt       time.Time      `json:"first_seen_at"`
+	LastSeenAt        time.Time      `json:"last_seen_at"`
+	SnapshotVersions  []int          `json:"snapshot_versions"`
+	RunCount          int            `json:"run_count"`
+	IsCurrent         bool           `json:"is_current"`
+}
+
+// ConfigHistory returns the config-version timeline for a block, wrapped in
+// the canonical paginated envelope. Each entry groups consecutive workflow
+// snapshots in which the block's config did not change. Cursor pagination is
+// not yet implemented for this endpoint.
+func (s *WorkflowBlocksService) ConfigHistory(ctx context.Context, workflowID string, blockID string, opts ...RequestOption) (*PaginatedList[BlockConfigVersion], error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if blockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	var result PaginatedList[BlockConfigVersion]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks/"+url.PathEscape(blockID)+"/config-history", nil, nil, &result, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ListSimulationsParams bounds the simulations history page returned by
+// (*WorkflowBlocksService).ListSimulations.
+type ListSimulationsParams struct {
+	Limit int
+}
+
+// ListSimulations returns the paginated history of simulations for a block
+// inside a workflow run. Cursor pagination is not yet implemented; pass
+// Limit (default 20, max 100) to bound the page size.
+func (s *WorkflowBlocksService) ListSimulations(ctx context.Context, runID string, blockID string, params *ListSimulationsParams, opts ...RequestOption) (*PaginatedList[BlockSimulation], error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	if blockID == "" {
+		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	query := url.Values{}
+	if params != nil && params.Limit > 0 {
+		query.Set("limit", fmt.Sprintf("%d", params.Limit))
+	}
+	var result PaginatedList[BlockSimulation]
+	err := s.client.do(
+		ctx,
+		http.MethodGet,
+		"/workflows/runs/"+url.PathEscape(runID)+"/steps/"+url.PathEscape(blockID)+"/simulations",
+		query,
+		nil,
+		&result,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func (s *WorkflowBlocksService) Get(ctx context.Context, workflowID string, blockID string, opts ...RequestOption) (*WorkflowBlock, error) {
@@ -561,7 +687,11 @@ type ListWorkflowEdgesParams struct {
 	TargetBlock string
 }
 
-func (s *WorkflowEdgesService) List(ctx context.Context, workflowID string, params *ListWorkflowEdgesParams, opts ...RequestOption) ([]WorkflowEdgeDoc, error) {
+// List returns the canonical paginated envelope
+// {"data": [...], "list_metadata": {"before": null, "after": null}} for
+// edges of a workflow's current draft. Cursor pagination is not yet
+// implemented for this endpoint; ListMetadata is always {nil, nil}.
+func (s *WorkflowEdgesService) List(ctx context.Context, workflowID string, params *ListWorkflowEdgesParams, opts ...RequestOption) (*PaginatedList[WorkflowEdgeDoc], error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
@@ -570,9 +700,12 @@ func (s *WorkflowEdgesService) List(ctx context.Context, workflowID string, para
 		addQuery(query, "source_block", params.SourceBlock)
 		addQuery(query, "target_block", params.TargetBlock)
 	}
-	var edges []WorkflowEdgeDoc
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/edges", query, nil, &edges, opts...)
-	return edges, err
+	var result PaginatedList[WorkflowEdgeDoc]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/edges", query, nil, &result, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func (s *WorkflowEdgesService) Get(ctx context.Context, workflowID string, edgeID string, opts ...RequestOption) (*WorkflowEdgeDoc, error) {
@@ -947,13 +1080,20 @@ type WorkflowRunStepsService struct {
 	client *Client
 }
 
-func (s *WorkflowRunStepsService) List(ctx context.Context, runID string, opts ...RequestOption) ([]WorkflowRunStep, error) {
+// List returns the canonical paginated envelope
+// {"data": [...], "list_metadata": {"before": null, "after": null}} for
+// the persisted step documents of one workflow run. Cursor pagination is
+// not yet implemented for this endpoint; ListMetadata is always {nil, nil}.
+func (s *WorkflowRunStepsService) List(ctx context.Context, runID string, opts ...RequestOption) (*PaginatedList[WorkflowRunStep], error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
-	var steps []WorkflowRunStep
-	err := s.client.do(ctx, http.MethodGet, "/workflows/runs/"+url.PathEscape(runID)+"/steps", nil, nil, &steps, opts...)
-	return steps, err
+	var result PaginatedList[WorkflowRunStep]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/runs/"+url.PathEscape(runID)+"/steps", nil, nil, &result, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func (s *WorkflowRunStepsService) Get(ctx context.Context, runID string, blockID string, opts ...RequestOption) (*StepExecutionResponse, error) {
@@ -1003,9 +1143,11 @@ type ListWorkflowTestsRequest struct {
 	Limit         int
 }
 
-type BlockTestListResponse struct {
-	Data []WorkflowTest `json:"data"`
-}
+// BlockTestListResponse is the canonical PaginatedList envelope for
+// `GET /v1/workflows/{wf}/block-tests`. Kept as a type alias so callers can
+// keep referring to the named type while the underlying shape rides the
+// shared `{data, list_metadata}` envelope.
+type BlockTestListResponse = PaginatedList[WorkflowTest]
 
 type ExecuteBlockTestsRequest struct {
 	WorkflowID string   `json:"-"`
@@ -1042,7 +1184,7 @@ func (s *WorkflowTestsService) Get(ctx context.Context, workflowID string, testI
 	return &result, err
 }
 
-func (s *WorkflowTestsService) List(ctx context.Context, request ListWorkflowTestsRequest, opts ...RequestOption) (*BlockTestListResponse, error) {
+func (s *WorkflowTestsService) List(ctx context.Context, request ListWorkflowTestsRequest, opts ...RequestOption) (*PaginatedList[WorkflowTest], error) {
 	if request.WorkflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
@@ -1053,7 +1195,7 @@ func (s *WorkflowTestsService) List(ctx context.Context, request ListWorkflowTes
 	}
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	addQuery(query, "target_block_id", request.TargetBlockID)
-	var result BlockTestListResponse
+	var result PaginatedList[WorkflowTest]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(request.WorkflowID)+"/block-tests", query, nil, &result, opts...)
 	return &result, err
 }
@@ -1095,11 +1237,13 @@ type WorkflowTestRunsService struct {
 	client *Client
 }
 
-type BlockTestRunListResponse struct {
-	Data []WorkflowTestRunRecord `json:"data"`
-}
+// BlockTestRunListResponse is the canonical PaginatedList envelope for
+// `GET /v1/workflows/{wf}/block-tests/{id}/runs`. Kept as a type alias for
+// the same reason `BlockTestListResponse` is — callers keep the named type,
+// the underlying shape rides the shared `{data, list_metadata}` envelope.
+type BlockTestRunListResponse = PaginatedList[WorkflowTestRunRecord]
 
-func (s *WorkflowTestRunsService) List(ctx context.Context, workflowID string, testID string, limit int, opts ...RequestOption) (*BlockTestRunListResponse, error) {
+func (s *WorkflowTestRunsService) List(ctx context.Context, workflowID string, testID string, limit int, opts ...RequestOption) (*PaginatedList[WorkflowTestRunRecord], error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
@@ -1111,7 +1255,7 @@ func (s *WorkflowTestRunsService) List(ctx context.Context, workflowID string, t
 	}
 	query := url.Values{}
 	query.Set("limit", fmt.Sprintf("%d", limit))
-	var result BlockTestRunListResponse
+	var result PaginatedList[WorkflowTestRunRecord]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/block-tests/"+url.PathEscape(testID)+"/runs", query, nil, &result, opts...)
 	return &result, err
 }
@@ -1251,10 +1395,11 @@ type ExperimentRunSummary struct {
 	JobID                 string         `json:"job_id,omitempty"`
 }
 
-// ExperimentRunListResponse is the GET /experiments/{id}/runs envelope.
-type ExperimentRunListResponse struct {
-	Runs []ExperimentRunSummary `json:"runs"`
-}
+// ExperimentRunListResponse is the canonical PaginatedList envelope for
+// `GET /v1/workflows/{wf}/experiments/{id}/runs`. Kept as a type alias so
+// callers don't have to re-import — the underlying shape rides the shared
+// `{data, list_metadata}` envelope.
+type ExperimentRunListResponse = PaginatedList[ExperimentRunSummary]
 
 // ExperimentJobResponse is the per-document execution record inside a run.
 type ExperimentJobResponse struct {
@@ -1395,13 +1540,17 @@ func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateE
 }
 
 // List returns every experiment attached to the workflow, newest first.
-func (s *WorkflowExperimentsService) List(ctx context.Context, workflowID string, opts ...RequestOption) ([]ExperimentResponse, error) {
+//
+// Returns a `PaginatedList[ExperimentResponse]` to match the canonical Retab
+// list envelope (`{data, list_metadata}`). Iterate over `result.Data` for the
+// rows.
+func (s *WorkflowExperimentsService) List(ctx context.Context, workflowID string, opts ...RequestOption) (*PaginatedList[ExperimentResponse], error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
-	var result []ExperimentResponse
+	var result PaginatedList[ExperimentResponse]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/experiments", nil, nil, &result, opts...)
-	return result, err
+	return &result, err
 }
 
 // Get fetches one experiment by ID.
@@ -1585,14 +1734,18 @@ func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, 
 }
 
 // List returns the run history for one experiment, newest first.
-func (s *WorkflowExperimentRunsService) List(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*ExperimentRunListResponse, error) {
+//
+// Returns a `PaginatedList[ExperimentRunSummary]` to match the canonical
+// Retab list envelope (`{data, list_metadata}`). Iterate over `result.Data`
+// for the run summaries.
+func (s *WorkflowExperimentRunsService) List(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*PaginatedList[ExperimentRunSummary], error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	if experimentID == "" {
 		return nil, fmt.Errorf("retab: experimentID is required")
 	}
-	var result ExperimentRunListResponse
+	var result PaginatedList[ExperimentRunSummary]
 	err := s.client.do(ctx, http.MethodGet,
 		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs",
 		nil, nil, &result, opts...)

@@ -322,22 +322,6 @@ class ExecuteBlockTestsResponse(RetabBaseModel):
     total_tests: int
 
 
-class BlockTestListResponse(RetabBaseModel):
-    """Response shape for `tests.list(...)`."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    tests: list[WorkflowTest] = Field(default_factory=list)
-
-
-class BlockTestRunListResponse(RetabBaseModel):
-    """Response shape for `tests.runs.list(...)`."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    runs: list[WorkflowTestRunRecord] = Field(default_factory=list)
-
-
 __all__ = [
     "AssertionDriftStatus",
     "AssertionFailure",
@@ -349,8 +333,6 @@ __all__ = [
     "BlockTestBatchExecutionCounts",
     "BlockTestBatchExecutionItem",
     "BlockTestBatchExecutionResult",
-    "BlockTestListResponse",
-    "BlockTestRunListResponse",
     "BlockTestRunStatus",
     "ExecuteBlockTestsResponse",
     "LatestBlockTestRunSummary",

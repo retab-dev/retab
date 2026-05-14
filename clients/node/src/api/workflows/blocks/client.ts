@@ -3,11 +3,13 @@ import { CompositionClient, RequestOptions } from "../../../client.js";
 import {
     BlockResolvedSchemasResponse,
     BlockSimulation,
+    PaginatedList,
     WorkflowBlock,
     WorkflowBlockCreateRequest,
     WorkflowBlockUpdateRequest,
     ZBlockResolvedSchemasResponse,
     ZBlockSimulation,
+    ZPaginatedList,
     ZWorkflowBlock,
 } from "../../../types.js";
 
@@ -51,17 +53,112 @@ export default class APIWorkflowBlocks extends CompositionClient {
 
     /**
      * List all blocks for a workflow.
+     *
+     * Returns the canonical
+     * `{"data": [...], "list_metadata": {"before": null, "after": null}}`
+     * pagination envelope. Cursor pagination is not yet implemented for this
+     * endpoint; `list_metadata` is always `{before: null, after: null}`.
      */
     async list(
         workflowId: string,
         options?: RequestOptions
-    ): Promise<WorkflowBlock[]> {
-        return this._fetchJson(z.array(ZWorkflowBlock), {
+    ): Promise<PaginatedList> {
+        return this._fetchJson(ZPaginatedList, {
             url: `/workflows/${workflowId}/blocks`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
         });
+    }
+
+    prepare_config_history(
+        workflowId: string,
+        blockId: string
+    ): { url: string; method: string } {
+        return {
+            url: `/workflows/${workflowId}/blocks/${blockId}/config-history`,
+            method: 'GET',
+        };
+    }
+
+    /**
+     * Return the config-version timeline for a block, wrapped in the canonical
+     * pagination envelope. Each `data` entry groups consecutive workflow
+     * snapshots in which the block's config did not change. Cursor pagination
+     * is not yet implemented for this endpoint.
+     */
+    async configHistory(
+        workflowId: string,
+        blockId: string,
+        options?: RequestOptions
+    ): Promise<PaginatedList> {
+        return this._fetchJson(ZPaginatedList, {
+            url: `/workflows/${workflowId}/blocks/${blockId}/config-history`,
+            method: "GET",
+            params: options?.params,
+            headers: options?.headers,
+        });
+    }
+
+    async config_history(
+        workflowId: string,
+        blockId: string,
+        options?: RequestOptions
+    ): Promise<PaginatedList> {
+        return this.configHistory(workflowId, blockId, options);
+    }
+
+    prepare_list_simulations(
+        runId: string,
+        blockId: string,
+        limit?: number | null
+    ): {
+        url: string;
+        method: string;
+        params?: Record<string, unknown>;
+    } {
+        const params: Record<string, unknown> = {};
+        if (limit !== undefined && limit !== null) params.limit = limit;
+        return {
+            url: `/workflows/runs/${runId}/steps/${blockId}/simulations`,
+            method: 'GET',
+            ...(Object.keys(params).length > 0 ? { params } : {}),
+        };
+    }
+
+    /**
+     * List recent simulation results for a block in a workflow run.
+     *
+     * Returns the canonical pagination envelope. Cursor pagination is not yet
+     * implemented; pass `limit` (default 20, max 100) to bound the page size.
+     */
+    async listSimulations(
+        runId: string,
+        blockId: string,
+        { limit }: { limit?: number } = {},
+        options?: RequestOptions
+    ): Promise<PaginatedList> {
+        const params = Object.fromEntries(
+            Object.entries({
+                limit,
+                ...(options?.params || {}),
+            }).filter(([, value]) => value !== undefined)
+        );
+        return this._fetchJson(ZPaginatedList, {
+            url: `/workflows/runs/${runId}/steps/${blockId}/simulations`,
+            method: "GET",
+            params,
+            headers: options?.headers,
+        });
+    }
+
+    async list_simulations(
+        runId: string,
+        blockId: string,
+        opts: { limit?: number } = {},
+        options?: RequestOptions
+    ): Promise<PaginatedList> {
+        return this.listSimulations(runId, blockId, opts, options);
     }
 
     /**

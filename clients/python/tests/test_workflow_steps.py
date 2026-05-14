@@ -11,17 +11,20 @@ from retab.types.workflows.model import StepExecutionResponse, WorkflowRun
 
 def test_workflow_steps_list_uses_full_steps_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = [
-        {
-            "run_id": "run_123",
-            "organization_id": "org_123",
-            "block_id": "extract-1",
-            "step_id": "extract-1",
-            "block_type": "extract",
-            "block_label": "Extract",
-            "lifecycle": {"status": "completed"},
-        }
-    ]
+    client._prepared_request.return_value = {
+        "data": [
+            {
+                "run_id": "run_123",
+                "organization_id": "org_123",
+                "block_id": "extract-1",
+                "step_id": "extract-1",
+                "block_type": "extract",
+                "block_label": "Extract",
+                "lifecycle": {"status": "completed"},
+            }
+        ],
+        "list_metadata": {"before": None, "after": None},
+    }
 
     steps = WorkflowSteps(client=client).list("run_123")
 
@@ -30,6 +33,8 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
     assert request.url == "/workflows/runs/run_123/steps"
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
+    assert steps.list_metadata.before is None
+    assert steps.list_metadata.after is None
 
 
 def test_workflow_artifacts_get_accepts_ref_and_returns_flattened_record() -> None:
@@ -56,9 +61,12 @@ def test_workflow_artifacts_get_accepts_ref_and_returns_flattened_record() -> No
 
 def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = [
-        {"operation": "conditional_evaluation", "id": "ceval_123"},
-    ]
+    client._prepared_request.return_value = {
+        "data": [
+            {"operation": "conditional_evaluation", "id": "ceval_123"},
+        ],
+        "list_metadata": {"before": None, "after": None},
+    }
 
     artifacts = WorkflowArtifacts(client=client).list(
         "run_123",
@@ -76,22 +84,27 @@ def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
     }
     assert len(artifacts) == 1
     assert artifacts[0].operation == "conditional_evaluation"
+    assert artifacts.list_metadata.before is None
+    assert artifacts.list_metadata.after is None
 
 
 @pytest.mark.asyncio
 async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value=[
-        {
-            "run_id": "run_123",
-            "organization_id": "org_123",
-            "block_id": "extract-1",
-            "step_id": "extract-1",
-            "block_type": "extract",
-            "block_label": "Extract",
-            "lifecycle": {"status": "completed"},
-        }
-    ])
+    client._prepared_request = AsyncMock(return_value={
+        "data": [
+            {
+                "run_id": "run_123",
+                "organization_id": "org_123",
+                "block_id": "extract-1",
+                "step_id": "extract-1",
+                "block_type": "extract",
+                "block_label": "Extract",
+                "lifecycle": {"status": "completed"},
+            }
+        ],
+        "list_metadata": {"before": None, "after": None},
+    })
 
     steps = await AsyncWorkflowSteps(client=client).list("run_123")
 
@@ -100,6 +113,8 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     assert request.url == "/workflows/runs/run_123/steps"
     assert len(steps) == 1
     assert steps[0].block_id == "extract-1"
+    assert steps.list_metadata.before is None
+    assert steps.list_metadata.after is None
 
 
 @pytest.mark.asyncio
@@ -230,27 +245,30 @@ async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
 def test_workflow_steps_list_with_block_ids() -> None:
     """list() with block_ids filters the persisted step list and still returns WorkflowRunStep items."""
     client = MagicMock()
-    client._prepared_request.return_value = [
-        {
-            "run_id": "run_123",
-            "organization_id": "org_123",
-            "block_id": "extract-1",
-            "step_id": "extract-1",
-            "block_type": "extract",
-            "block_label": "Extract",
-            "lifecycle": {"status": "completed"},
-            "artifact": {"operation": "extraction", "id": "ext_123"},
-        },
-        {
-            "run_id": "run_123",
-            "organization_id": "org_123",
-            "block_id": "parse-1",
-            "step_id": "parse-1",
-            "block_type": "parse",
-            "block_label": "Parse",
-            "lifecycle": {"status": "completed"},
-        },
-    ]
+    client._prepared_request.return_value = {
+        "data": [
+            {
+                "run_id": "run_123",
+                "organization_id": "org_123",
+                "block_id": "extract-1",
+                "step_id": "extract-1",
+                "block_type": "extract",
+                "block_label": "Extract",
+                "lifecycle": {"status": "completed"},
+                "artifact": {"operation": "extraction", "id": "ext_123"},
+            },
+            {
+                "run_id": "run_123",
+                "organization_id": "org_123",
+                "block_id": "parse-1",
+                "step_id": "parse-1",
+                "block_type": "parse",
+                "block_label": "Parse",
+                "lifecycle": {"status": "completed"},
+            },
+        ],
+        "list_metadata": {"before": None, "after": None},
+    }
 
     result = WorkflowSteps(client=client).list("run_123", block_ids=["extract-1"])
 

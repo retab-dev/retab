@@ -19,11 +19,10 @@ from typing import Any, Dict, Mapping, Union
 from pydantic import TypeAdapter
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
+from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows.block_tests import (
     AssertionSpec,
-    BlockTestListResponse,
-    BlockTestRunListResponse,
     ExecuteBlockTestsResponse,
     ManualWorkflowTestSource,
     RunStepWorkflowTestSource,
@@ -209,10 +208,10 @@ class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
         test_id: str,
         *,
         limit: int = 20,
-    ) -> BlockTestRunListResponse:
+    ) -> PaginatedList[WorkflowTestRunRecord]:
         request = self.prepare_list(workflow_id, test_id, limit=limit)
         response = self._client._prepared_request(request)
-        return BlockTestRunListResponse.model_validate(response)
+        return PaginatedList[WorkflowTestRunRecord].model_validate(response)
 
     def get(
         self,
@@ -234,10 +233,10 @@ class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
         test_id: str,
         *,
         limit: int = 20,
-    ) -> BlockTestRunListResponse:
+    ) -> PaginatedList[WorkflowTestRunRecord]:
         request = self.prepare_list(workflow_id, test_id, limit=limit)
         response = await self._client._prepared_request(request)
-        return BlockTestRunListResponse.model_validate(response)
+        return PaginatedList[WorkflowTestRunRecord].model_validate(response)
 
     async def get(
         self,
@@ -312,7 +311,7 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         *,
         target_block_id: str | None = None,
         limit: int = 50,
-    ) -> BlockTestListResponse:
+    ) -> PaginatedList[WorkflowTest]:
         """List all block tests for a workflow."""
         request = self.prepare_list(
             workflow_id,
@@ -320,7 +319,7 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
             limit=limit,
         )
         response = self._client._prepared_request(request)
-        return BlockTestListResponse.model_validate(response)
+        return PaginatedList[WorkflowTest].model_validate(response)
 
     def update(
         self,
@@ -417,14 +416,14 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         *,
         target_block_id: str | None = None,
         limit: int = 50,
-    ) -> BlockTestListResponse:
+    ) -> PaginatedList[WorkflowTest]:
         request = self.prepare_list(
             workflow_id,
             target_block_id=target_block_id,
             limit=limit,
         )
         response = await self._client._prepared_request(request)
-        return BlockTestListResponse.model_validate(response)
+        return PaginatedList[WorkflowTest].model_validate(response)
 
     async def update(
         self,

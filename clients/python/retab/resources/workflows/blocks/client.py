@@ -1,8 +1,10 @@
 from typing import Any, Dict, List, Sequence
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
+from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows import (
+    BlockConfigVersion,
     BlockResolvedSchemasResponse,
     BlockSimulation,
     WorkflowBlock,
@@ -25,6 +27,13 @@ class WorkflowBlocksMixin:
     def prepare_get_resolved_schemas(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to get graph-derived schemas for one block."""
         return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/blocks/{block_id}/resolved-schemas")
+
+    def prepare_config_history(self, workflow_id: str, block_id: str) -> PreparedRequest:
+        """Prepare a request to fetch the config-version timeline for a block."""
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/{workflow_id}/blocks/{block_id}/config-history",
+        )
 
     def prepare_create(
         self,
@@ -59,6 +68,22 @@ class WorkflowBlocksMixin:
     def prepare_delete(self, workflow_id: str, block_id: str) -> PreparedRequest:
         """Prepare a request to delete a block (also deletes connected edges)."""
         return PreparedRequest(method="DELETE", url=f"/workflows/{workflow_id}/blocks/{block_id}")
+
+    def prepare_list_simulations(
+        self,
+        run_id: str,
+        block_id: str,
+        limit: int | None = None,
+    ) -> PreparedRequest:
+        """Prepare a request to list recent simulation results for a block in a run."""
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/runs/{run_id}/steps/{block_id}/simulations",
+            params=params or None,
+        )
 
     def prepare_simulate(
         self,
@@ -162,18 +187,37 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             for block in blocks
         ]
 
-    def list(self, workflow_id: str) -> List[WorkflowBlock]:
+    def list(self, workflow_id: str) -> PaginatedList[WorkflowBlock]:
         """List all blocks for a workflow.
 
         Args:
             workflow_id: The workflow ID
 
         Returns:
-            List of workflow blocks
+            ``PaginatedList[WorkflowBlock]`` — the canonical list envelope
+            ``{"data": [...], "list_metadata": {"before": null, "after": null}}``.
+            Cursor pagination is not yet implemented; ``list_metadata`` is
+            always ``{before: None, after: None}``.
         """
         request = self.prepare_list(workflow_id)
         response = self._client._prepared_request(request)
-        return [WorkflowBlock.model_validate(item) for item in response]
+        result = PaginatedList[WorkflowBlock](**response)
+        result.data = [WorkflowBlock.model_validate(item) for item in result.data]
+        return result
+
+    def config_history(self, workflow_id: str, block_id: str) -> PaginatedList[BlockConfigVersion]:
+        """Return the config-version timeline for a block.
+
+        Each ``data`` entry groups consecutive workflow snapshots in which the
+        block's config didn't change, with the snapshot version range and the
+        captured config snapshot. Wrapped in the canonical pagination envelope;
+        cursor pagination is not yet implemented for this endpoint.
+        """
+        request = self.prepare_config_history(workflow_id, block_id)
+        response = self._client._prepared_request(request)
+        result = PaginatedList[BlockConfigVersion](**response)
+        result.data = [BlockConfigVersion.model_validate(item) for item in result.data]
+        return result
 
     def get(self, workflow_id: str, block_id: str) -> WorkflowBlock:
         """Get a single block by ID."""
@@ -292,6 +336,25 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         request = self.prepare_delete(workflow_id, block_id)
         self._client._prepared_request(request)
 
+    def list_simulations(
+        self,
+        run_id: str,
+        block_id: str,
+        limit: int | None = None,
+    ) -> PaginatedList[BlockSimulation]:
+        """List recent simulation results for a block in a workflow run.
+
+        Returns the canonical
+        ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
+        pagination envelope. Cursor pagination is not yet implemented; pass
+        ``limit`` to bound the page size (default server-side: 20, max 100).
+        """
+        request = self.prepare_list_simulations(run_id, block_id, limit=limit)
+        response = self._client._prepared_request(request)
+        result = PaginatedList[BlockSimulation](**response)
+        result.data = [BlockSimulation.model_validate(item) for item in result.data]
+        return result
+
     def simulate(
         self,
         run_id: str,
@@ -344,11 +407,26 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
     Usage: ``await client.workflows.blocks.list(workflow_id)``
     """
 
-    async def list(self, workflow_id: str) -> List[WorkflowBlock]:
-        """List all blocks for a workflow."""
+    async def list(self, workflow_id: str) -> PaginatedList[WorkflowBlock]:
+        """List all blocks for a workflow.
+
+        Returns the canonical
+        ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
+        pagination envelope.
+        """
         request = self.prepare_list(workflow_id)
         response = await self._client._prepared_request(request)
-        return [WorkflowBlock.model_validate(item) for item in response]
+        result = PaginatedList[WorkflowBlock](**response)
+        result.data = [WorkflowBlock.model_validate(item) for item in result.data]
+        return result
+
+    async def config_history(self, workflow_id: str, block_id: str) -> PaginatedList[BlockConfigVersion]:
+        """Return the config-version timeline for a block."""
+        request = self.prepare_config_history(workflow_id, block_id)
+        response = await self._client._prepared_request(request)
+        result = PaginatedList[BlockConfigVersion](**response)
+        result.data = [BlockConfigVersion.model_validate(item) for item in result.data]
+        return result
 
     async def get(self, workflow_id: str, block_id: str) -> WorkflowBlock:
         """Get a single block by ID."""
@@ -437,6 +515,19 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         """Delete a block and any edges connected to it."""
         request = self.prepare_delete(workflow_id, block_id)
         await self._client._prepared_request(request)
+
+    async def list_simulations(
+        self,
+        run_id: str,
+        block_id: str,
+        limit: int | None = None,
+    ) -> PaginatedList[BlockSimulation]:
+        """List recent simulation results for a block in a workflow run."""
+        request = self.prepare_list_simulations(run_id, block_id, limit=limit)
+        response = await self._client._prepared_request(request)
+        result = PaginatedList[BlockSimulation](**response)
+        result.data = [BlockSimulation.model_validate(item) for item in result.data]
+        return result
 
     async def simulate(
         self,
