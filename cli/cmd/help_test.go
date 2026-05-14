@@ -289,18 +289,21 @@ func TestRenderRootHelp_ColourRolesAreCorrect(t *testing.T) {
 // help, completion, and Hidden commands are noise on the top-level menu —
 // they're available via `retab help <x>` and `retab completion --help`,
 // but listing them up top buries the actually-useful surface.
+//
+// Both checks are line-based with a leading-space trim so they only fire
+// on the menu-row pattern (`<indent><name> <description>`). A plain
+// `strings.Contains` on the whole output would false-positive on
+// legitimate substrings — e.g. the `shell-completion` topic name, or
+// any description containing the word "completion".
 func TestRenderRootHelp_HidesHelpAndCompletion(t *testing.T) {
 	var buf bytes.Buffer
 	renderRootHelp(&buf, rootCmd)
 	out := buf.String()
-	// `completion` is the cobra-auto-generated subcommand
-	if strings.Contains(out, "completion ") {
-		t.Errorf("expected `completion` to be hidden from top-level help:\n%s", out)
-	}
-	// `help` is the cobra-auto-generated help command
 	for _, line := range strings.Split(out, "\n") {
-		// Must not have a line like "    help     ...something..."
 		trimmed := strings.TrimLeft(line, " ")
+		if strings.HasPrefix(trimmed, "completion ") || trimmed == "completion" {
+			t.Errorf("expected `completion` to be hidden, found line: %q", line)
+		}
 		if strings.HasPrefix(trimmed, "help ") || trimmed == "help" {
 			t.Errorf("expected `help` to be hidden, found line: %q", line)
 		}
