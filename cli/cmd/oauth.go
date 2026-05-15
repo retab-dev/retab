@@ -11,8 +11,10 @@ package cmd
 //      WorkOS authkit_domain + the CLI's client_id. No secret involved.
 //   2. CLI generates a fresh PKCE code_verifier (43+ chars high-entropy
 //      random) and its S256-derived code_challenge.
-//   3. CLI binds a TCP listener on 127.0.0.1:0 (let the kernel pick a port)
-//      and constructs https://{authkit_domain}/oauth2/authorize?... with
+//   3. CLI binds a TCP listener on 127.0.0.1, taking the first free port
+//      from a fixed set (cliRedirectPorts) — WorkOS matches redirect_uri
+//      against an exact pre-registered list — and constructs
+//      https://{authkit_domain}/oauth2/authorize?... with
 //      redirect_uri=http://127.0.0.1:<port>/callback.
 //   4. CLI opens the user's default browser to that URL. User logs in
 //      through WorkOS AuthKit (which transparently dispatches to SSO,
@@ -63,6 +65,32 @@ const loginTimeout = 5 * time.Minute
 // CLI builds a fresh client per command, so the only reason to give
 // headroom is in-flight latency between refresh and use.
 const refreshLeeway = 30 * time.Second
+
+// cliRedirectPorts is the fixed set of loopback ports the CLI tries for
+// the OAuth callback. WorkOS validates redirect_uri against an exact
+// pre-registered list, and its OAuth-application editor rejects the
+// RFC 8252 port wildcard, so the CLI cannot use a kernel-picked port.
+// Every port here MUST be registered on the WorkOS CLI application as
+// `http://127.0.0.1:<port>/callback`. The CLI binds the first free one;
+// the rest are fallbacks for when an earlier login left a listener around
+// or another process holds the port.
+var cliRedirectPorts = []int{42817, 42818, 42819, 42820, 42821, 42822, 42823}
+
+// bindLoopbackListener binds 127.0.0.1 on the first available port from
+// cliRedirectPorts and returns the listener plus the chosen port. It
+// errors only when every registered port is occupied.
+func bindLoopbackListener() (net.Listener, int, error) {
+	for _, port := range cliRedirectPorts {
+		listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+		if err == nil {
+			return listener, port, nil
+		}
+	}
+	return nil, 0, fmt.Errorf(
+		"all loopback callback ports are in use (%v); close any other `retab auth login` still running and retry",
+		cliRedirectPorts,
+	)
+}
 
 // cliOAuthDiscovery is the shape returned by GET /v1/auth/cli/config.
 type cliOAuthDiscovery struct {
@@ -169,15 +197,14 @@ func runLoginFlow(ctx context.Context, disc *cliOAuthDiscovery, opener func(url 
 		return nil, err
 	}
 
-	// Bind on 127.0.0.1 with kernel-picked port. RFC 8252 §7.3 explicitly
-	// blesses loopback for native apps; WorkOS accepts any port on
-	// http://127.0.0.1 and http://localhost when the redirect URI is
-	// registered as `http://127.0.0.1/*` or `http://localhost/*`.
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	// Bind 127.0.0.1 on one of the pre-registered callback ports. RFC 8252
+	// §7.3 blesses loopback for native apps, but WorkOS matches redirect_uri
+	// against an exact pre-registered list — its OAuth-application editor
+	// rejects the port wildcard — so we cannot let the kernel pick a port.
+	listener, port, err := bindLoopbackListener()
 	if err != nil {
-		return nil, fmt.Errorf("bind loopback: %w", err)
+		return nil, err
 	}
-	port := listener.Addr().(*net.TCPAddr).Port
 	redirectURI := fmt.Sprintf("http://127.0.0.1:%d/callback", port)
 
 	resultCh := make(chan callbackResult, 1)

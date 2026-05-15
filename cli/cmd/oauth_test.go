@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -155,6 +157,47 @@ func withTrustingTokenClient(t *testing.T, c *http.Client) {
 	prev := tokenHTTPClient
 	tokenHTTPClient = c
 	t.Cleanup(func() { tokenHTTPClient = prev })
+}
+
+// TestBindLoopbackListenerUsesRegisteredPort verifies the callback
+// listener binds one of the ports registered with WorkOS. If this
+// regresses to a kernel-picked port, every `retab auth login` fails with
+// WorkOS `invalid_redirect_uri` because the redirect_uri won't match a
+// pre-registered entry.
+func TestBindLoopbackListenerUsesRegisteredPort(t *testing.T) {
+	listener, port, err := bindLoopbackListener()
+	if err != nil {
+		t.Fatalf("bindLoopbackListener: %v", err)
+	}
+	defer listener.Close()
+
+	for _, p := range cliRedirectPorts {
+		if p == port {
+			return
+		}
+	}
+	t.Errorf("bound port %d is not in the registered set %v", port, cliRedirectPorts)
+}
+
+// TestBindLoopbackListenerFallsThroughOccupiedPort verifies that when an
+// earlier port in the set is taken, the CLI falls through to the next one
+// instead of failing the login.
+func TestBindLoopbackListenerFallsThroughOccupiedPort(t *testing.T) {
+	blocker, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", cliRedirectPorts[0]))
+	if err != nil {
+		t.Skipf("could not occupy port %d to set up the test: %v", cliRedirectPorts[0], err)
+	}
+	defer blocker.Close()
+
+	listener, port, err := bindLoopbackListener()
+	if err != nil {
+		t.Fatalf("bindLoopbackListener should fall through to a free port: %v", err)
+	}
+	defer listener.Close()
+
+	if port == cliRedirectPorts[0] {
+		t.Errorf("expected a port other than the occupied %d", cliRedirectPorts[0])
+	}
 }
 
 // TestRunLoginFlowHappyPath exercises end-to-end:
