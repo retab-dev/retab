@@ -379,6 +379,69 @@ func TestWorkflowExperimentRunsGetUsesContentRoute(t *testing.T) {
 	}
 }
 
+func TestWorkflowExperimentRunRequestsDoNotSendUnsupportedOverrides(t *testing.T) {
+	var runBody map[string]any
+	var batchBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/experiments/exp_123/run":
+			if err := json.NewDecoder(r.Body).Decode(&runBody); err != nil {
+				t.Fatal(err)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"experiment_id":          "exp_123",
+				"run_id":                 "exprun_123",
+				"status":                 "queued",
+				"definition_fingerprint": "fp",
+				"document_count":         1,
+				"n_consensus":            5,
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/experiments/run-batch":
+			if err := json.NewDecoder(r.Body).Decode(&batchBody); err != nil {
+				t.Fatal(err)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"block_id":         "block_1",
+				"experiment_count": 0,
+				"runs":             []map[string]any{},
+			})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := client.Workflows.Experiments.Runs.Create(context.Background(), "wf_123", "exp_123", &RunExperimentOptions{
+		NConsensus:      3,
+		RetryFailedOnly: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := runBody["n_consensus"]; ok {
+		t.Fatalf("run body should omit unsupported n_consensus override, got %#v", runBody)
+	}
+	if _, ok := runBody["retry_failed_only"]; ok {
+		t.Fatalf("run body should omit unsupported retry_failed_only override, got %#v", runBody)
+	}
+
+	if _, err := client.Workflows.Experiments.RunBatch(context.Background(), RunBatchExperimentsRequest{
+		WorkflowID: "wf_123",
+		BlockID:    "block_1",
+		NConsensus: 3,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := batchBody["n_consensus"]; ok {
+		t.Fatalf("run-batch body should omit unsupported n_consensus override, got %#v", batchBody)
+	}
+}
+
 func TestWorkflowRunsListDeleteCancelRestartHILAndExport(t *testing.T) {
 	var cancelBody map[string]any
 	var restartBody map[string]any
@@ -518,7 +581,7 @@ func TestWorkflowRunsListDeleteCancelRestartHILAndExport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if restarted.ID != "run_456" || restartBody["command_id"] != "cmd_restart" {
+	if restarted.ID != "run_456" || restartBody["command_id"] != "cmd_restart" || restartBody["config_source"] != "published" {
 		t.Fatalf("restarted = %#v body = %#v", restarted, restartBody)
 	}
 
@@ -580,6 +643,7 @@ func TestWorkflowRunsListDeleteCancelRestartHILAndExport(t *testing.T) {
 		WorkflowID:       "wf_123",
 		BlockID:          "extract-1",
 		SelectedRunIDs:   []string{"run_123"},
+		TriggerTypes:     []string{},
 		PreferredColumns: []string{"total"},
 	})
 	if err != nil {
@@ -587,6 +651,49 @@ func TestWorkflowRunsListDeleteCancelRestartHILAndExport(t *testing.T) {
 	}
 	if exported.Rows != 1 || exportBody["export_source"] != "outputs" {
 		t.Fatalf("exported = %#v body = %#v", exported, exportBody)
+	}
+	if _, ok := exportBody["trigger_types"]; ok {
+		t.Fatalf("export body should omit empty trigger_types filter, got %#v", exportBody["trigger_types"])
+	}
+}
+
+func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
+	var exportBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export_payload" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&exportBody); err != nil {
+			t.Fatal(err)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"csv_data": "filename;amount\nUnknown file;10",
+			"rows":     1,
+			"columns":  2,
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Workflows.Runs.Export(context.Background(), ExportWorkflowRunsRequest{
+		WorkflowID:     "wf_123",
+		BlockID:        "block_1",
+		SelectedRunIDs: []string{},
+		TriggerTypes:   []string{"manual"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := exportBody["selected_run_ids"]; ok {
+		t.Fatalf("export body should omit empty selected_run_ids filter, got %#v", exportBody["selected_run_ids"])
+	}
+	triggerTypes, ok := exportBody["trigger_types"].([]any)
+	if !ok || len(triggerTypes) != 1 || triggerTypes[0] != "manual" {
+		t.Fatalf("trigger_types = %#v", exportBody["trigger_types"])
 	}
 }
 

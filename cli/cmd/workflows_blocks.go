@@ -224,6 +224,9 @@ round-trips and atomic from the caller's perspective.`,
 		if err != nil {
 			return err
 		}
+		if len(arr) == 0 {
+			return fmt.Errorf("--blocks-file: empty JSON array")
+		}
 		var reqs []retab.WorkflowBlockCreateRequest
 		for i, item := range arr {
 			obj, ok := item.(map[string]any)
@@ -394,7 +397,7 @@ func init() {
 	workflowsBlocksSimulateCmd.Flags().String("run-id", "", "run id (required)")
 	workflowsBlocksSimulateCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsBlocksSimulateCmd.Flags().String("step-id", "", "step id")
-	workflowsBlocksSimulateCmd.Flags().Int("n-consensus", 0, "consensus count")
+	workflowsBlocksSimulateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
 	workflowsBlocksSimulateCmd.Flags().Bool("check-eligibility", true, "check block eligibility")
 	_ = workflowsBlocksSimulateCmd.MarkFlagRequired("run-id")
 	_ = workflowsBlocksSimulateCmd.MarkFlagRequired("block-id")

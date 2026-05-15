@@ -35,9 +35,10 @@ type FilesService struct {
 type File = Resource
 
 type FileLink struct {
-	DownloadURL string `json:"download_url"`
-	ExpiresIn   string `json:"expires_in"`
-	Filename    string `json:"filename"`
+	DownloadURL string    `json:"download_url"`
+	ExpiresIn   string    `json:"expires_in"`
+	Filename    string    `json:"filename"`
+	MIMEData    *MIMEData `json:"mime_data,omitempty"`
 }
 
 type PrepareUploadRequest struct {
@@ -618,6 +619,13 @@ type ListJobsParams struct {
 	IncludeResponse  *bool
 }
 
+type JobListResponse struct {
+	Data    []Job  `json:"data"`
+	FirstID string `json:"first_id,omitempty"`
+	LastID  string `json:"last_id,omitempty"`
+	HasMore bool   `json:"has_more"`
+}
+
 type JobWaitForCompletionParams struct {
 	PollInterval    time.Duration
 	Timeout         time.Duration
@@ -716,7 +724,7 @@ func (s *JobsService) Retry(ctx context.Context, jobID string, opts ...RequestOp
 	return &result, err
 }
 
-func (s *JobsService) List(ctx context.Context, params *ListJobsParams, opts ...RequestOption) (*PaginatedList[Job], error) {
+func (s *JobsService) List(ctx context.Context, params *ListJobsParams, opts ...RequestOption) (*JobListResponse, error) {
 	query := url.Values{}
 	query.Set("limit", "20")
 	query.Set("order", "desc")
@@ -750,8 +758,11 @@ func (s *JobsService) List(ctx context.Context, params *ListJobsParams, opts ...
 			query.Set("include_response", strconv.FormatBool(*params.IncludeResponse))
 		}
 	}
-	var result PaginatedList[Job]
+	var result JobListResponse
 	err := s.client.do(ctx, http.MethodGet, "/jobs", query, nil, &result, opts...)
+	if result.Data == nil {
+		result.Data = []Job{}
+	}
 	return &result, err
 }
 

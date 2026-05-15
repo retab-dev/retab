@@ -2,7 +2,13 @@ package cmd
 
 import (
 	"bytes"
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -179,6 +185,188 @@ func TestWorkflowsTestsCreateCmd_NoCobraAutoDeprecation(t *testing.T) {
 		t.Fatalf("cleanup reset workflow-id: %v", err)
 	}
 	cmd.Flags().Lookup("workflow-id").Changed = false
+}
+
+func TestWorkflowsTestsExecuteRejectsUnsupportedConsensusLocally(t *testing.T) {
+	err := workflowsTestsExecuteCmd.Flags().Set("n-consensus", "2")
+	if err == nil {
+		t.Fatal("expected local parse error for --n-consensus=2")
+	}
+	if !strings.Contains(err.Error(), "3, 5, or 7") {
+		t.Fatalf("error %q does not mention allowed consensus counts", err.Error())
+	}
+	if resetErr := workflowsTestsExecuteCmd.Flags().Set("n-consensus", "0"); resetErr != nil {
+		t.Fatalf("reset --n-consensus: %v", resetErr)
+	}
+}
+
+func TestWorkflowsTestsListCommandsRejectNegativeLimitLocally(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "tests list", cmd: workflowsTestsListCmd},
+		{name: "test runs list", cmd: workflowsTestsRunsListCmd},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cmd.Flags().Set("limit", "-1")
+			if err == nil {
+				t.Fatal("expected local parse error for --limit=-1")
+			}
+			if !strings.Contains(err.Error(), "non-negative") {
+				t.Fatalf("error %q does not mention non-negative", err.Error())
+			}
+			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {
+				t.Fatalf("reset --limit: %v", resetErr)
+			}
+		})
+	}
+}
+
+func TestWorkflowsExperimentsConsensusFlagsMatchBackendContract(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "create", cmd: workflowsExperimentsCreateCmd},
+		{name: "update", cmd: workflowsExperimentsUpdateCmd},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cmd.Flags().Set("n-consensus", "2")
+			if err == nil {
+				t.Fatal("expected local parse error for --n-consensus=2")
+			}
+			if !strings.Contains(err.Error(), "3, 5, or 7") {
+				t.Fatalf("error %q does not mention allowed consensus counts", err.Error())
+			}
+			if resetErr := tc.cmd.Flags().Set("n-consensus", "0"); resetErr != nil {
+				t.Fatalf("reset --n-consensus: %v", resetErr)
+			}
+		})
+	}
+}
+
+func TestWorkflowsExperimentsUnsupportedRunOverrideFlagsAreNotRegistered(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "run-batch", cmd: workflowsExperimentsRunBatchCmd},
+		{name: "runs create", cmd: workflowsExperimentsRunsCreateCmd},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if flag := tc.cmd.Flags().Lookup("n-consensus"); flag != nil {
+				t.Fatalf("%s should not expose unsupported --n-consensus flag", tc.name)
+			}
+		})
+	}
+	if flag := workflowsExperimentsRunsCreateCmd.Flags().Lookup("retry-failed-only"); flag != nil {
+		t.Fatalf("runs create should not expose unsupported --retry-failed-only flag")
+	}
+}
+
+func TestWorkflowsExperimentsMetricsRejectsInvalidViewBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	workflowsExperimentsMetricsCmd.SetContext(context.Background())
+	t.Cleanup(func() { workflowsExperimentsMetricsCmd.SetContext(nil) })
+	if err := workflowsExperimentsMetricsCmd.Flags().Set("view", "banana"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsExperimentsMetricsCmd.Flags().Set("view", "") })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsExperimentsMetricsCmd.RunE(workflowsExperimentsMetricsCmd, []string{"wf_123", "exp_123"})
+	})
+	if err == nil {
+		t.Fatal("expected invalid view error")
+	}
+	if !strings.Contains(stderr, "invalid --view") {
+		t.Fatalf("stderr %q does not mention invalid --view", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want no requests", got)
+	}
+}
+
+func TestWorkflowsExperimentsMetricsViewsMatchBackendContract(t *testing.T) {
+	for _, view := range []string{"", "summary", "by_document", "by_target", "votes"} {
+		if err := validateExperimentMetricsView(view); err != nil {
+			t.Fatalf("view %q should be valid, got %v", view, err)
+		}
+	}
+	for _, view := range []string{"per_run", "per_document", "per_field"} {
+		err := validateExperimentMetricsView(view)
+		if err == nil {
+			t.Fatalf("view %q should be rejected", view)
+		}
+		if !strings.Contains(err.Error(), "by_document") || !strings.Contains(err.Error(), "votes") {
+			t.Fatalf("error %q does not mention backend view names", err.Error())
+		}
+	}
+}
+
+func TestWorkflowsTestsCreateRejectsAssertionMissingTargetBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	targetPath := filepath.Join(dir, "target.json")
+	sourcePath := filepath.Join(dir, "source.json")
+	assertionPath := filepath.Join(dir, "assertion.json")
+	if err := os.WriteFile(targetPath, []byte(`{"type":"block","block_id":"block_123"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(sourcePath, []byte(`{"type":"manual","handle_inputs":{}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(assertionPath, []byte(`{"condition":{"kind":"exists"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	for flag, path := range map[string]string{
+		"name":           "missing target",
+		"target-file":    targetPath,
+		"source-file":    sourcePath,
+		"assertion-file": assertionPath,
+	} {
+		if err := workflowsTestsCreateCmd.Flags().Set(flag, path); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = workflowsTestsCreateCmd.Flags().Set(flag, "") })
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsTestsCreateCmd.RunE(workflowsTestsCreateCmd, []string{"wf_123"})
+	})
+	if err == nil {
+		t.Fatal("expected assertion validation error")
+	}
+	if !strings.Contains(stderr, "--assertion-file: assertion.target is required") {
+		t.Fatalf("stderr %q does not mention assertion target", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want no requests", got)
+	}
 }
 
 // nonEmptyLines splits s on "\n" and returns the non-empty entries. We use

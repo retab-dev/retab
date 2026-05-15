@@ -8,6 +8,8 @@ T = TypeVar("T")
 
 
 class ListMetadata(RetabBaseModel):
+    """Boundary resource IDs for page navigation."""
+
     before: str | None
     after: str | None
 
@@ -31,7 +33,7 @@ class PaginatedList(RetabBaseModel, Generic[T]):
 
     @property
     def has_more(self) -> bool:
-        """Whether there are more pages available after this one."""
+        """Whether there are more pages available after this page's last resource ID."""
         return self.list_metadata.after is not None
 
     def auto_paging_iter(self) -> Iterator[T]:

@@ -196,7 +196,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         Returns:
             ``PaginatedList[WorkflowBlock]`` — the canonical list envelope
             ``{"data": [...], "list_metadata": {"before": null, "after": null}}``.
-            Cursor pagination is not yet implemented; ``list_metadata`` is
+            ID pagination is not yet implemented; ``list_metadata`` is
             always ``{before: None, after: None}``.
         """
         request = self.prepare_list(workflow_id)
@@ -211,7 +211,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         Each ``data`` entry groups consecutive workflow snapshots in which the
         block's config didn't change, with the snapshot version range and the
         captured config snapshot. Wrapped in the canonical pagination envelope;
-        cursor pagination is not yet implemented for this endpoint.
+        id pagination is not yet implemented for this endpoint.
         """
         request = self.prepare_config_history(workflow_id, block_id)
         response = self._client._prepared_request(request)
@@ -346,7 +346,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
 
         Returns the canonical
         ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
-        pagination envelope. Cursor pagination is not yet implemented; pass
+        pagination envelope. ID pagination is not yet implemented; pass
         ``limit`` to bound the page size (default server-side: 20, max 100).
         """
         request = self.prepare_list_simulations(run_id, block_id, limit=limit)

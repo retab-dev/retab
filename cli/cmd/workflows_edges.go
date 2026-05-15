@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -48,7 +51,22 @@ func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgeCreateRequest {
 	if v, ok := obj["target_handle"].(string); ok {
 		req.TargetHandle = v
 	}
+	ensureWorkflowEdgeID(&req)
 	return req
+}
+
+func ensureWorkflowEdgeID(req *retab.WorkflowEdgeCreateRequest) {
+	if req.ID != "" {
+		return
+	}
+	req.ID = defaultWorkflowEdgeID(*req)
+}
+
+func defaultWorkflowEdgeID(req retab.WorkflowEdgeCreateRequest) string {
+	parts := []string{req.SourceBlock, req.SourceHandle, req.TargetBlock, req.TargetHandle}
+	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
+	encoded := base64.RawURLEncoding.EncodeToString(sum[:])
+	return "edge_" + encoded[:22]
 }
 
 var workflowsEdgesListCmd = &cobra.Command{
@@ -133,6 +151,7 @@ branches).`,
 		req.SourceHandle, _ = cmd.Flags().GetString("source-handle")
 		req.TargetHandle, _ = cmd.Flags().GetString("target-handle")
 		req.ID, _ = cmd.Flags().GetString("id")
+		ensureWorkflowEdgeID(&req)
 		result, err := client.Workflows.Edges.Create(ctx, args[0], req)
 		if err != nil {
 			return err
@@ -165,6 +184,9 @@ objects with ` + "`source_block`" + `, ` + "`target_block`" + `, and optional
 		arr, err := readJSONArray(path)
 		if err != nil {
 			return err
+		}
+		if len(arr) == 0 {
+			return fmt.Errorf("--edges-file: empty JSON array")
 		}
 		var reqs []retab.WorkflowEdgeCreateRequest
 		for i, item := range arr {

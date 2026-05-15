@@ -2,10 +2,14 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -282,6 +286,44 @@ func TestWriteSpecExport_UnknownFormat(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "invalid --format") {
 		t.Errorf("error should mention invalid --format, got: %v", err)
+	}
+}
+
+func TestWorkflowsSpecExportRejectsUnknownFormatBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id":     "wf_test",
+			"yaml_definition": "metadata:\n  id: wf_test\n",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	workflowsSpecExportCmd.SetContext(context.Background())
+	t.Cleanup(func() { workflowsSpecExportCmd.SetContext(nil) })
+	if err := workflowsSpecExportCmd.Flags().Set("format", "yml"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsSpecExportCmd.Flags().Set("format", "yaml") })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsSpecExportCmd.RunE(workflowsSpecExportCmd, []string{"wf_test"})
+	})
+	if err == nil {
+		t.Fatalf("expected invalid format error")
+	}
+	if !strings.Contains(stderr, "invalid --format") {
+		t.Fatalf("stderr %q does not mention invalid --format", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want no requests", got)
 	}
 }
 

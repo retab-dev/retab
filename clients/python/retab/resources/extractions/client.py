@@ -134,7 +134,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
         # Enable auto-pagination
         def fetch_next(after: str) -> PaginatedList:
             return self.list(
-                before=before,
+                before=None,
                 after=after,
                 limit=limit,
                 order=order,

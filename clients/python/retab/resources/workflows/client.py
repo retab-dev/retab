@@ -281,7 +281,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         Returns the canonical
         ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
         pagination envelope. ``limit`` bounds the page size (server default:
-        50, max 100). Cursor pagination is not yet implemented for this
+        50, max 100). ID pagination is not yet implemented for this
         endpoint.
         """
         request = self.prepare_list_snapshots(workflow_id, limit=limit)

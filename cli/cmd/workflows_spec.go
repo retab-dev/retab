@@ -183,6 +183,9 @@ pull out other fields).`,
 		if jsonShortcut, _ := cmd.Flags().GetBool("json"); jsonShortcut && format == "yaml" {
 			format = "json"
 		}
+		if format != "yaml" && format != "json" {
+			return fmt.Errorf("invalid --format value %q (want: yaml | json)", format)
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

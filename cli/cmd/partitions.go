@@ -111,7 +111,7 @@ var partitionsListCmd = &cobra.Command{
 	Short: "List partitions",
 	Long: `List partitions, newest first by default.
 
-Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
+Page by partition id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
 ` + "`--limit`" + `.`,
 	Example: `  # Most recent 25 partitions
   retab partitions list --limit 25
@@ -130,7 +130,7 @@ Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size w
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -166,7 +166,7 @@ func init() {
 	partitionsCreateCmd.Flags().String("key", "", "partition key (required)")
 	partitionsCreateCmd.Flags().String("instructions", "", "instructions (required)")
 	partitionsCreateCmd.Flags().String("model", "", "model identifier (required)")
-	partitionsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
+	partitionsCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
 	partitionsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	_ = partitionsCreateCmd.MarkFlagRequired("key")
 	_ = partitionsCreateCmd.MarkFlagRequired("instructions")

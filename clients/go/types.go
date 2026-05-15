@@ -11,8 +11,6 @@ type PaginatedList[T any] struct {
 	Data         []T              `json:"data"`
 	ListMetadata PaginationCursor `json:"list_metadata"`
 	HasMore      bool             `json:"has_more,omitempty"`
-	NextCursor   string           `json:"next_cursor,omitempty"`
-	PrevCursor   string           `json:"prev_cursor,omitempty"`
 	Total        int              `json:"total,omitempty"`
 }
 

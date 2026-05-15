@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -23,7 +25,8 @@ import (
 
 // runE wraps a command body so APIErrors render with full context
 // (request id, method, url, status, code, body) and other errors render as a
-// single line. Non-nil return propagates a non-zero exit through cobra.
+// single line. Returned sentinel errors keep the process exit non-zero without
+// asking cobra to print the same message a second time.
 func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		err := fn(cmd, args)
@@ -36,12 +39,24 @@ func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Comm
 			return errSilent
 		}
 		fmt.Fprintln(os.Stderr, "error: "+err.Error())
-		return errSilent
+		return renderedError{err: err}
 	}
 }
 
-// errSilent signals that the error was already rendered to stderr.
+// errSilent signals that an API error was already rendered to stderr.
 var errSilent = errors.New("")
+
+type renderedError struct {
+	err error
+}
+
+func (e renderedError) Error() string {
+	return ""
+}
+
+func (e renderedError) Unwrap() error {
+	return e.err
+}
 
 func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	// Resolution order (first match wins):
@@ -191,11 +206,11 @@ func isInvalidGrantError(err error) bool {
 }
 
 func ctxFor(cmd *cobra.Command) (context.Context, context.CancelFunc) {
-	ctx, cancel := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
-	if ctx.Err() != nil {
-		ctx, cancel = signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	parent := context.Background()
+	if cmd != nil && cmd.Context() != nil && cmd.Context().Err() == nil {
+		parent = cmd.Context()
 	}
-	return ctx, cancel
+	return signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
 }
 
 // printJSON writes v to stdout as indented JSON followed by a newline.
@@ -297,18 +312,112 @@ func splitKV(raw string) (string, string, bool) {
 	return strings.Cut(raw, "=")
 }
 
-// addListFlags attaches the cursor pagination + filter flags shared by
+// addListFlags attaches the id pagination + filter flags shared by
 // most list commands. baseOnly skips filename/from-date/to-date (which only
 // apply to file-shaped resources).
 func addListFlags(cmd *cobra.Command, baseOnly bool) {
-	cmd.Flags().String("before", "", "cursor: items before this id")
-	cmd.Flags().String("after", "", "cursor: items after this id")
-	cmd.Flags().Int("limit", 0, "max items to return")
-	cmd.Flags().String("order", "", "asc | desc")
+	cmd.Flags().String("before", "", "item id: return items before this id")
+	cmd.Flags().String("after", "", "item id: return items after this id")
+	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
+	cmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	if !baseOnly {
 		cmd.Flags().String("filename", "", "filter by filename")
-		cmd.Flags().String("from-date", "", "filter from this RFC3339 date")
-		cmd.Flags().String("to-date", "", "filter to this RFC3339 date")
+		cmd.Flags().Var(&rfc3339FlagValue{}, "from-date", "filter from this RFC3339 date")
+		cmd.Flags().Var(&rfc3339FlagValue{}, "to-date", "filter to this RFC3339 date")
+	}
+}
+
+type nonNegativeIntFlagValue struct{ value string }
+
+func (v *nonNegativeIntFlagValue) String() string {
+	if v.value == "" {
+		return "0"
+	}
+	return v.value
+}
+
+func (v *nonNegativeIntFlagValue) Type() string { return "int" }
+
+func (v *nonNegativeIntFlagValue) Set(raw string) error {
+	parsed, err := strconv.Atoi(raw)
+	if err != nil {
+		return err
+	}
+	if parsed < 0 {
+		return fmt.Errorf("must be non-negative")
+	}
+	v.value = raw
+	return nil
+}
+
+type nonNegativeFloatFlagValue struct{ value string }
+
+func (v *nonNegativeFloatFlagValue) String() string {
+	if v.value == "" {
+		return "0"
+	}
+	return v.value
+}
+
+func (v *nonNegativeFloatFlagValue) Type() string { return "float64" }
+
+func (v *nonNegativeFloatFlagValue) Set(raw string) error {
+	parsed, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return err
+	}
+	if parsed < 0 {
+		return fmt.Errorf("must be non-negative")
+	}
+	v.value = raw
+	return nil
+}
+
+type rfc3339FlagValue struct{ value string }
+
+func (v *rfc3339FlagValue) String() string { return v.value }
+
+func (v *rfc3339FlagValue) Type() string { return "string" }
+
+func (v *rfc3339FlagValue) Set(raw string) error {
+	if raw != "" {
+		if _, err := time.Parse(time.RFC3339, raw); err != nil {
+			return fmt.Errorf("must be RFC3339 timestamp: %w", err)
+		}
+	}
+	v.value = raw
+	return nil
+}
+
+type dateFlagValue struct{ value string }
+
+func (v *dateFlagValue) String() string { return v.value }
+
+func (v *dateFlagValue) Type() string { return "string" }
+
+func (v *dateFlagValue) Set(raw string) error {
+	if raw != "" {
+		if _, err := time.Parse("2006-01-02", raw); err != nil {
+			return fmt.Errorf("must use YYYY-MM-DD date format: %w", err)
+		}
+	}
+	v.value = raw
+	return nil
+}
+
+type orderFlagValue struct{ value string }
+
+func (v *orderFlagValue) String() string { return v.value }
+
+func (v *orderFlagValue) Type() string { return "string" }
+
+func (v *orderFlagValue) Set(raw string) error {
+	switch raw {
+	case "", "asc", "desc":
+		v.value = raw
+		return nil
+	default:
+		return fmt.Errorf("must be asc or desc")
 	}
 }
 
@@ -458,6 +567,15 @@ func resolveFileIDToMIMEData(cmd *cobra.Command, fileID string) (retab.MIMEData,
 	if link.DownloadURL == "" {
 		return retab.MIMEData{}, fmt.Errorf("--file-id %s: server returned no download URL", fileID)
 	}
+	if link.MIMEData != nil && link.MIMEData.URL != "" {
+		if link.MIMEData.Filename == "" {
+			link.MIMEData.Filename = link.Filename
+		}
+		if link.MIMEData.Filename == "" {
+			link.MIMEData.Filename = "document"
+		}
+		return *link.MIMEData, nil
+	}
 	filename := link.Filename
 	if filename == "" {
 		filename = "document"
@@ -527,9 +645,33 @@ var sensitiveHeaders = map[string]bool{
 }
 
 func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Clone before mutating so the wire request goes out untouched.
+	var requestBody []byte
+	if req.Body != nil {
+		body, readErr := io.ReadAll(req.Body)
+		if readErr != nil {
+			fmt.Fprintf(os.Stderr, "--- HTTP debug read error ---\n%v\n", readErr)
+		} else {
+			_ = req.Body.Close()
+			requestBody = body
+			req.Body = io.NopCloser(bytes.NewReader(requestBody))
+			req.GetBody = func() (io.ReadCloser, error) {
+				return io.NopCloser(bytes.NewReader(requestBody)), nil
+			}
+			req.ContentLength = int64(len(body))
+		}
+	}
+
+	// Clone after restoring the request body so the debug dump cannot consume
+	// the body that still needs to go over the wire.
 	dumpReq := req.Clone(req.Context())
 	redactSensitiveHeaders(dumpReq.Header)
+	if requestBody != nil {
+		dumpReq.Body = io.NopCloser(bytes.NewReader(requestBody))
+		dumpReq.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(requestBody)), nil
+		}
+		dumpReq.ContentLength = int64(len(requestBody))
+	}
 	if dump, err := httputil.DumpRequestOut(dumpReq, true); err == nil {
 		fmt.Fprintf(os.Stderr, "\n--- HTTP request ---\n%s\n", dump)
 	}
@@ -538,7 +680,17 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		fmt.Fprintf(os.Stderr, "--- HTTP error ---\n%v\n", err)
 		return nil, err
 	}
-	if dump, err := httputil.DumpResponse(resp, true); err == nil {
+	body, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		fmt.Fprintf(os.Stderr, "--- HTTP debug read error ---\n%v\n", readErr)
+		return resp, nil
+	}
+	_ = resp.Body.Close()
+	resp.Body = io.NopCloser(bytes.NewReader(body))
+	dumpResp := *resp
+	dumpResp.Body = io.NopCloser(bytes.NewReader(body))
+	dumpResp.ContentLength = int64(len(body))
+	if dump, err := httputil.DumpResponse(&dumpResp, true); err == nil {
 		fmt.Fprintf(os.Stderr, "--- HTTP response ---\n%s\n", dump)
 	}
 	return resp, nil
@@ -578,5 +730,11 @@ func redactSensitiveHeaders(h http.Header) {
 // the load-bearing piece — fat-fingered ids are the failure mode this
 // guards against.
 func confirmDeleted(kind, id string) {
+	if f := rootCmd.PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputJSON) {
+		if err := printJSON(map[string]any{"id": id, "deleted": true}); err != nil {
+			fmt.Fprintln(os.Stderr, "error: "+err.Error())
+		}
+		return
+	}
 	fmt.Fprintf(os.Stderr, "deleted %s: %s\n", kind, id)
 }

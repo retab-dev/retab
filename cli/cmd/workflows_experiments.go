@@ -92,6 +92,15 @@ func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureR
 	return captures, explicit, nil
 }
 
+func validateExperimentMetricsView(view string) error {
+	switch view {
+	case "", "summary", "by_document", "by_target", "votes":
+		return nil
+	default:
+		return fmt.Errorf("invalid --view %q (want: summary | by_document | by_target | votes)", view)
+	}
+}
+
 var workflowsExperimentsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> [flags]",
 	Short: "Create an experiment",
@@ -306,21 +315,25 @@ var workflowsExperimentsMetricsCmd = &cobra.Command{
 	Use:   "metrics <workflow-id> <experiment-id>",
 	Short: "Get experiment metrics",
 	Long: `Aggregate quality metrics for an experiment's runs. Pivot the
-view with ` + "`--view`" + ` (` + "`summary`" + ` | ` + "`per_run`" + ` |
-` + "`per_document`" + ` | ` + "`per_field`" + `) to drill from headline
+view with ` + "`--view`" + ` (` + "`summary`" + ` | ` + "`by_document`" + ` |
+` + "`by_target`" + ` | ` + "`votes`" + `) to drill from headline
 numbers down to individual fields. Compare against a prior run with
 ` + "`--prior-run-id`" + `.`,
 	Example: `  # Headline numbers
   retab workflows experiments metrics wf_abc123 exp_pqr678 --view summary
 
-  # Per-field accuracy
-  retab workflows experiments metrics wf_abc123 exp_pqr678 --view per_field
+  # Per-document accuracy
+  retab workflows experiments metrics wf_abc123 exp_pqr678 --view by_document
 
   # Compare two runs of the same experiment
   retab workflows experiments metrics wf_abc123 exp_pqr678 \
-    --run-id exprun_aaa --prior-run-id exprun_bbb --view per_field`,
+    --run-id exprun_aaa --prior-run-id exprun_bbb --view by_target`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		view, _ := cmd.Flags().GetString("view")
+		if err := validateExperimentMetricsView(view); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -328,7 +341,7 @@ numbers down to individual fields. Compare against a prior run with
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := &retab.GetExperimentMetricsParams{}
-		params.View, _ = cmd.Flags().GetString("view")
+		params.View = view
 		params.RunID, _ = cmd.Flags().GetString("run-id")
 		params.DocumentID, _ = cmd.Flags().GetString("document-id")
 		params.TargetPath, _ = cmd.Flags().GetString("target-path")
@@ -379,7 +392,7 @@ call. Use when iterating across multiple candidate configs for the same
 block — kick off the whole comparison sweep at once, then read metrics.`,
 	Example: `  # Run every experiment on a block
   retab workflows experiments run-batch wf_abc123 \
-    --block-id blk_extract_1 --n-consensus 3`,
+    --block-id blk_extract_1`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		workflowID, err := resolveWorkflowIDArg(cmd, args)
@@ -395,7 +408,6 @@ block — kick off the whole comparison sweep at once, then read metrics.`,
 		req := retab.RunBatchExperimentsRequest{}
 		req.WorkflowID = workflowID
 		req.BlockID, _ = cmd.Flags().GetString("block-id")
-		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
 		result, err := client.Workflows.Experiments.RunBatch(ctx, req)
 		if err != nil {
 			return err
@@ -417,8 +429,7 @@ These runs are isolated from production workflow runs — they don't
 appear in ` + "`retab workflows runs list`" + ` and don't affect downstream
 consumers.`,
 	Example: `  # Trigger a new run on an experiment
-  retab workflows experiments runs create wf_abc123 exp_pqr678 \
-    --n-consensus 3
+  retab workflows experiments runs create wf_abc123 exp_pqr678
 
   # Inspect the latest run's per-document content
   retab workflows experiments runs get wf_abc123 exp_pqr678`,
@@ -428,16 +439,9 @@ var workflowsExperimentsRunsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> <experiment-id>",
 	Short: "Trigger a new experiment run",
 	Long: `Execute the experiment's candidate config across every
-document in its set. Use ` + "`--retry-failed-only`" + ` to re-run only
-the documents that failed in the previous run — cheaper than a full
-re-run when iterating on a flaky config.`,
-	Example: `  # Full run with 3-sample consensus
-  retab workflows experiments runs create wf_abc123 exp_pqr678 \
-    --n-consensus 3
-
-  # Retry just the failed documents from the last run
-  retab workflows experiments runs create wf_abc123 exp_pqr678 \
-    --retry-failed-only`,
+document in its set.`,
+	Example: `  # Trigger an experiment run
+  retab workflows experiments runs create wf_abc123 exp_pqr678`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -446,10 +450,7 @@ re-run when iterating on a flaky config.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := &retab.RunExperimentOptions{}
-		params.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
-		params.RetryFailedOnly, _ = cmd.Flags().GetBool("retry-failed-only")
-		result, err := client.Workflows.Experiments.Runs.Create(ctx, args[0], args[1], params)
+		result, err := client.Workflows.Experiments.Runs.Create(ctx, args[0], args[1], nil)
 		if err != nil {
 			return err
 		}
@@ -518,7 +519,7 @@ func init() {
 	workflowsExperimentsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsExperimentsCreateCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsExperimentsCreateCmd.Flags().String("name", "", "experiment name (required)")
-	workflowsExperimentsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
+	workflowsExperimentsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
 	addExperimentDocFlags(workflowsExperimentsCreateCmd)
 	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
@@ -527,10 +528,10 @@ func init() {
 	_ = workflowsExperimentsCreateCmd.MarkFlagRequired("name")
 
 	workflowsExperimentsUpdateCmd.Flags().String("name", "", "new name")
-	workflowsExperimentsUpdateCmd.Flags().Int("n-consensus", 0, "new consensus count")
+	workflowsExperimentsUpdateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "new consensus count (3, 5, or 7)")
 	addExperimentDocFlags(workflowsExperimentsUpdateCmd)
 
-	workflowsExperimentsMetricsCmd.Flags().String("view", "", "view (summary | per_run | per_document | per_field)")
+	workflowsExperimentsMetricsCmd.Flags().String("view", "", "view (summary | by_document | by_target | votes)")
 	workflowsExperimentsMetricsCmd.Flags().String("run-id", "", "run id")
 	workflowsExperimentsMetricsCmd.Flags().String("document-id", "", "document id")
 	workflowsExperimentsMetricsCmd.Flags().String("target-path", "", "target path")
@@ -539,14 +540,11 @@ func init() {
 
 	workflowsExperimentsRunBatchCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsExperimentsRunBatchCmd.Flags().String("block-id", "", "block id (required)")
-	workflowsExperimentsRunBatchCmd.Flags().Int("n-consensus", 0, "consensus count")
 	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
 	_ = workflowsExperimentsRunBatchCmd.Flags().MarkHidden("workflow-id")
 	_ = workflowsExperimentsRunBatchCmd.MarkFlagRequired("block-id")
 
-	workflowsExperimentsRunsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
-	workflowsExperimentsRunsCreateCmd.Flags().Bool("retry-failed-only", false, "retry only failed documents")
 	workflowsExperimentsRunsGetCmd.Flags().String("run-id", "", "specific run id (default: latest)")
 
 	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd)

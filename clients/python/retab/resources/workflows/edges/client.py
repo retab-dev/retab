@@ -110,7 +110,7 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         Returns:
             ``PaginatedList[WorkflowEdgeDoc]`` — the canonical list envelope
             ``{"data": [...], "list_metadata": {"before": null, "after": null}}``.
-            Cursor pagination is not yet implemented for this endpoint.
+            ID pagination is not yet implemented for this endpoint.
         """
         request = self.prepare_list(workflow_id, source_block=source_block, target_block=target_block)
         response = self._client._prepared_request(request)

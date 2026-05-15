@@ -564,7 +564,7 @@ type ListSimulationsParams struct {
 }
 
 // ListSimulations returns the paginated history of simulations for a block
-// inside a workflow run. Cursor pagination is not yet implemented; pass
+// inside a workflow run. ID pagination is not yet implemented; pass
 // Limit (default 20, max 100) to bound the page size.
 func (s *WorkflowBlocksService) ListSimulations(ctx context.Context, runID string, blockID string, params *ListSimulationsParams, opts ...RequestOption) (*PaginatedList[BlockSimulation], error) {
 	if runID == "" {
@@ -961,7 +961,8 @@ func (s *WorkflowRunsService) Delete(ctx context.Context, runID string, opts ...
 }
 
 type WorkflowRunCommandRequest struct {
-	CommandID string `json:"command_id,omitempty"`
+	CommandID    string `json:"command_id,omitempty"`
+	ConfigSource string `json:"config_source,omitempty"`
 }
 
 func (s *WorkflowRunsService) Cancel(ctx context.Context, runID string, request WorkflowRunCommandRequest, opts ...RequestOption) (*CancelWorkflowResponse, error) {
@@ -981,7 +982,11 @@ func (s *WorkflowRunsService) Restart(ctx context.Context, runID string, request
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
-	body := map[string]any{}
+	configSource := request.ConfigSource
+	if configSource == "" {
+		configSource = "published"
+	}
+	body := map[string]any{"config_source": configSource}
 	if request.CommandID != "" {
 		body["command_id"] = request.CommandID
 	}
@@ -1112,7 +1117,7 @@ func (s *WorkflowRunsService) Export(ctx context.Context, request ExportWorkflow
 	if body["preferred_columns"] == nil {
 		body["preferred_columns"] = []string{}
 	}
-	if request.SelectedRunIDs != nil {
+	if len(request.SelectedRunIDs) > 0 {
 		body["selected_run_ids"] = request.SelectedRunIDs
 	}
 	if request.Status != "" {
@@ -1127,7 +1132,7 @@ func (s *WorkflowRunsService) Export(ctx context.Context, request ExportWorkflow
 	if request.ToDate != "" {
 		body["to_date"] = request.ToDate
 	}
-	if request.TriggerTypes != nil {
+	if len(request.TriggerTypes) > 0 {
 		body["trigger_types"] = request.TriggerTypes
 	}
 	var result WorkflowRunExportResponse
@@ -1216,8 +1221,13 @@ type ExecuteBlockTestsRequest struct {
 }
 
 type ExecuteBlockTestsResponse struct {
-	BatchID string `json:"batch_id"`
-	JobID   string `json:"job_id"`
+	BatchID    string    `json:"batch_id"`
+	JobID      string    `json:"job_id"`
+	Status     string    `json:"status"`
+	WorkflowID string    `json:"workflow_id"`
+	Target     *Resource `json:"target,omitempty"`
+	TestID     string    `json:"test_id,omitempty"`
+	TotalTests int       `json:"total_tests"`
 }
 
 func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestCreateRequest, opts ...RequestOption) (*WorkflowTest, error) {
@@ -1542,7 +1552,8 @@ type UpdateExperimentRequest struct {
 	Documents        []ExplicitExperimentDocumentRequest `json:"-"`
 }
 
-// RunExperimentOptions tunes POST /experiments/{id}/run.
+// RunExperimentOptions is retained for source compatibility.
+// The current API does not accept per-run experiment overrides.
 type RunExperimentOptions struct {
 	NConsensus      int
 	RetryFailedOnly bool
@@ -1552,7 +1563,9 @@ type RunExperimentOptions struct {
 type RunBatchExperimentsRequest struct {
 	WorkflowID string `json:"-"`
 	BlockID    string `json:"block_id"`
-	NConsensus int    `json:"n_consensus,omitempty"`
+	// NConsensus is retained for source compatibility.
+	// The current API does not accept per-run-batch consensus overrides.
+	NConsensus int `json:"-"`
 }
 
 // GetExperimentMetricsParams gathers the GET /experiments/{id}/metrics
@@ -1757,9 +1770,6 @@ func (s *WorkflowExperimentsService) RunBatch(ctx context.Context, request RunBa
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	body := map[string]any{"block_id": request.BlockID}
-	if request.NConsensus != 0 {
-		body["n_consensus"] = request.NConsensus
-	}
 	var result RunBatchResponse
 	err := s.client.do(ctx, http.MethodPost,
 		"/workflows/"+url.PathEscape(request.WorkflowID)+"/experiments/run-batch",
@@ -1777,14 +1787,6 @@ func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, 
 		return nil, fmt.Errorf("retab: experimentID is required")
 	}
 	body := map[string]any{}
-	if params != nil {
-		if params.NConsensus != 0 {
-			body["n_consensus"] = params.NConsensus
-		}
-		if params.RetryFailedOnly {
-			body["retry_failed_only"] = true
-		}
-	}
 	var result RunExperimentResponse
 	err := s.client.do(ctx, http.MethodPost,
 		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/run",

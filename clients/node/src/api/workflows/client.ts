@@ -305,7 +305,7 @@ export default class APIWorkflows extends CompositionClient {
      * Returns the canonical
      * `{"data": [...], "list_metadata": {"before": null, "after": null}}`
      * pagination envelope. `limit` bounds the page size (server default: 50,
-     * max 100). Cursor pagination is not yet implemented for this endpoint.
+     * max 100). ID pagination is not yet implemented for this endpoint.
      */
     async listSnapshots(
         workflowId: string,

@@ -191,7 +191,7 @@ arbitrary tags set at create time with ` + "`--metadata`" + ` (repeatable).`,
   # Filter by metadata tag set at create time
   retab extractions list --metadata customer=acme --metadata env=prod
 
-  # Cursor-paginate from a known extraction id
+  # Page from a known extraction id
   retab extractions list --after extr_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -313,8 +313,8 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	addDocumentFlags(cmd)
 	addSchemaFlags(cmd)
 	cmd.Flags().String("model", "", "model identifier (required)")
-	cmd.Flags().Int("image-resolution-dpi", 0, "image resolution DPI")
-	cmd.Flags().Int("n-consensus", 0, "consensus count")
+	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "image-resolution-dpi", "image resolution DPI")
+	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
 	cmd.Flags().String("instructions", "", "extra instructions")
 	cmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	cmd.Flags().StringArray("metadata", nil, "metadata key=value (repeatable)")

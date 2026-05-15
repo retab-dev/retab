@@ -127,7 +127,7 @@ export default class APIWorkflowArtifacts extends CompositionClient {
      *
      * Returns the canonical
      * `{"data": [...], "list_metadata": {"before": null, "after": null}}`
-     * pagination envelope. Cursor pagination is not yet implemented for this
+     * pagination envelope. ID pagination is not yet implemented for this
      * endpoint; `list_metadata` is always `{before: null, after: null}`.
      */
     async list(

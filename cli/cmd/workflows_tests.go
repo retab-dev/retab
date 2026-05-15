@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -61,7 +62,7 @@ A test has three pieces:
   * ` + "`target`" + `   — which block is under test
   * ` + "`source`" + `   — the input the block should consume (often a
     pointer to an existing run step)
-  * ` + "`assertion`" + ` — the expected output, what we assert against
+  * ` + "`assertion`" + ` — the output handle/path and expected condition
 
 Use ` + "`workflows tests execute`" + ` to run a single test or the whole
 suite. Inspect history via ` + "`workflows tests runs list`" + `.
@@ -94,6 +95,45 @@ func resolveJSONMap(cmd *cobra.Command, flag string) (map[string]any, error) {
 	return obj, nil
 }
 
+func validateWorkflowTestAssertion(assertion map[string]any) error {
+	target, ok := assertion["target"].(map[string]any)
+	if !ok || target == nil {
+		return fmt.Errorf("assertion.target is required")
+	}
+	if outputHandleID, ok := target["output_handle_id"].(string); !ok || outputHandleID == "" {
+		return fmt.Errorf("assertion.target.output_handle_id is required")
+	}
+	if _, ok := assertion["condition"].(map[string]any); !ok {
+		return fmt.Errorf("assertion.condition is required")
+	}
+	return nil
+}
+
+type consensusFlagValue struct{ value string }
+
+func (v *consensusFlagValue) String() string {
+	if v.value == "" {
+		return "0"
+	}
+	return v.value
+}
+
+func (v *consensusFlagValue) Type() string { return "int" }
+
+func (v *consensusFlagValue) Set(raw string) error {
+	parsed, err := strconv.Atoi(raw)
+	if err != nil {
+		return err
+	}
+	switch parsed {
+	case 0, 3, 5, 7:
+		v.value = raw
+		return nil
+	default:
+		return fmt.Errorf("must be 0, 3, 5, or 7")
+	}
+}
+
 var workflowsTestsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> [flags]",
 	Short: "Create a block test",
@@ -101,12 +141,13 @@ var workflowsTestsCreateCmd = &cobra.Command{
 You'll typically capture the three files from a successful past run:
 
   ` + "`--target-file`" + `     — which block to test (e.g.
-  ` + `{"block_id": "blk_extract_1"}` + `).
+  ` + `{"type": "block", "block_id": "blk_extract_1"}` + `).
 
   ` + "`--source-file`" + `     — the input. Usually a reference to a
   run/step that supplied known-good input.
 
-  ` + "`--assertion-file`" + `  — the expected output JSON.
+  ` + "`--assertion-file`" + `  — the output handle/path and condition
+  (e.g. ` + `{"target":{"output_handle_id":"output-json-0","path":"total"},"condition":{"kind":"equals","expected":120}}` + `).
 
 After creation, run with ` + "`workflows tests execute`" + `.`,
 	Example: `  # Create a test from JSON files
@@ -144,6 +185,9 @@ After creation, run with ` + "`workflows tests execute`" + `.`,
 		}
 		if target == nil || source == nil || assertion == nil {
 			return fmt.Errorf("--target-file, --source-file, and --assertion-file are required")
+		}
+		if err := validateWorkflowTestAssertion(assertion); err != nil {
+			return fmt.Errorf("--assertion-file: %w", err)
 		}
 		req.Target = retab.Resource(target)
 		req.Source = retab.Resource(source)
@@ -242,6 +286,9 @@ flaky runs.`,
 			return err
 		}
 		if assertion != nil {
+			if err := validateWorkflowTestAssertion(assertion); err != nil {
+				return fmt.Errorf("--assertion-file: %w", err)
+			}
 			req.Assertion = retab.Resource(assertion)
 		}
 		if source != nil {
@@ -400,7 +447,7 @@ func init() {
 	_ = workflowsTestsCreateCmd.Flags().MarkHidden("workflow-id")
 
 	workflowsTestsListCmd.Flags().String("target-block-id", "", "filter by target block id")
-	workflowsTestsListCmd.Flags().Int("limit", 0, "max items (default 50)")
+	workflowsTestsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items (default 50)")
 
 	workflowsTestsUpdateCmd.Flags().String("name", "", "new test name")
 	workflowsTestsUpdateCmd.Flags().String("assertion-file", "", "JSON file with new assertion (or - for stdin)")
@@ -408,13 +455,13 @@ func init() {
 
 	workflowsTestsExecuteCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsTestsExecuteCmd.Flags().String("test-id", "", "single test to execute")
-	workflowsTestsExecuteCmd.Flags().Int("n-consensus", 0, "consensus count")
+	workflowsTestsExecuteCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
 	workflowsTestsExecuteCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
 	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
 	_ = workflowsTestsExecuteCmd.Flags().MarkHidden("workflow-id")
 
-	workflowsTestsRunsListCmd.Flags().Int("limit", 0, "max items (default 20)")
+	workflowsTestsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items (default 20)")
 
 	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd)
 	workflowsTestsCmd.AddCommand(workflowsTestsCreateCmd, workflowsTestsGetCmd, workflowsTestsListCmd, workflowsTestsUpdateCmd, workflowsTestsDeleteCmd, workflowsTestsExecuteCmd, workflowsTestsRunsCmd)

@@ -139,6 +139,47 @@ func TestDebugTransport_OutgoingRequestStillAuthenticated(t *testing.T) {
 	}
 }
 
+func TestDebugTransport_PreservesRequestAndResponseBodies(t *testing.T) {
+	var sawBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read request body: %v", err)
+		}
+		sawBody = string(body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+
+	stderr := captureStderr(t)
+	defer stderr.restore()
+
+	tr := &debugTransport{wrapped: http.DefaultTransport}
+	req, _ := http.NewRequest(http.MethodPost, srv.URL, strings.NewReader(`{"hello":"world"}`))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := tr.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("roundtrip: %v", err)
+	}
+	defer resp.Body.Close()
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read response body: %v", err)
+	}
+
+	if sawBody != `{"hello":"world"}` {
+		t.Fatalf("server saw body %q, want original request body", sawBody)
+	}
+	if string(responseBody) != `{"ok":true}` {
+		t.Fatalf("client saw response body %q, want original response body", string(responseBody))
+	}
+	got := stderr.read()
+	if !strings.Contains(got, `{"hello":"world"}`) || !strings.Contains(got, `{"ok":true}`) {
+		t.Fatalf("debug dump missing request or response body:\n%s", got)
+	}
+}
+
 // stderrCapture redirects os.Stderr to a buffer for assertions, with a
 // proper restore on cleanup. This pattern is common enough that a couple
 // of the other tests in this package would benefit from it too, but

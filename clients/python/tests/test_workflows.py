@@ -48,7 +48,7 @@ def test_workflows_list_uses_paginated_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "data": [],
-        "list_metadata": {"before": None, "after": "cursor_1"},
+        "list_metadata": {"before": None, "after": "workflow_after"},
     }
 
     result = Workflows(client=client).list(
@@ -56,7 +56,7 @@ def test_workflows_list_uses_paginated_route() -> None:
         order="asc",
         sort_by="updated_at",
         fields="id,name",
-        after="cursor_0",
+        after="workflow_before",
     )
 
     request = client._prepared_request.call_args.args[0]
@@ -67,9 +67,9 @@ def test_workflows_list_uses_paginated_route() -> None:
         "order": "asc",
         "sort_by": "updated_at",
         "fields": "id,name",
-        "after": "cursor_0",
+        "after": "workflow_before",
     }
-    assert result.list_metadata.after == "cursor_1"
+    assert result.list_metadata.after == "workflow_after"
 
 
 @pytest.mark.asyncio
@@ -98,7 +98,7 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(return_value={
         "data": [],
-        "list_metadata": {"before": None, "after": "cursor_1"},
+        "list_metadata": {"before": None, "after": "workflow_after"},
     })
 
     result = await AsyncWorkflows(client=client).list(
@@ -106,7 +106,7 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
         order="asc",
         sort_by="updated_at",
         fields="id,name",
-        after="cursor_0",
+        after="workflow_before",
     )
 
     request = client._prepared_request.call_args.args[0]
@@ -117,9 +117,9 @@ async def test_async_workflows_list_uses_paginated_route() -> None:
         "order": "asc",
         "sort_by": "updated_at",
         "fields": "id,name",
-        "after": "cursor_0",
+        "after": "workflow_before",
     }
-    assert result.list_metadata.after == "cursor_1"
+    assert result.list_metadata.after == "workflow_after"
 
 
 def test_workflows_exposes_specs_subresource() -> None:
@@ -759,7 +759,7 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
         from_date=date(2026, 1, 1),
         to_date=date(2026, 1, 31),
         fields=["id", "status"],
-        after="cursor_1",
+        after="run_after",
     )
 
     request = client._prepared_request.call_args.args[0]
@@ -771,7 +771,7 @@ def test_workflow_runs_list_serializes_pythonic_filters() -> None:
     assert request.params["from_date"] == "2026-01-01"
     assert request.params["to_date"] == "2026-01-31"
     assert request.params["fields"] == "id,status"
-    assert request.params["after"] == "cursor_1"
+    assert request.params["after"] == "run_after"
 
 
 def test_workflow_runs_create_without_inputs_sends_json_body() -> None:

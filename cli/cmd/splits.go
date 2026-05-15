@@ -136,7 +136,7 @@ var splitsListCmd = &cobra.Command{
 	Short: "List splits",
 	Long: `List splits, newest first by default.
 
-Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
+Page by split id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
 ` + "`--limit`" + `.`,
 	Example: `  # Most recent 25 splits
   retab splits list --limit 25
@@ -155,7 +155,7 @@ Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size w
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -190,7 +190,7 @@ func init() {
 	addDocumentFlags(splitsCreateCmd)
 	splitsCreateCmd.Flags().String("subdocuments-file", "", "JSON array of subdocuments (name, description, allow_multiple_instances)")
 	splitsCreateCmd.Flags().String("model", "", "model identifier (required)")
-	splitsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
+	splitsCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
 	splitsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	splitsCreateCmd.Flags().String("instructions", "", "extra instructions")
 	_ = splitsCreateCmd.MarkFlagRequired("model")

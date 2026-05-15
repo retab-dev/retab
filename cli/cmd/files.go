@@ -241,12 +241,12 @@ type uploadResponse struct {
 
 type uploadResponseField struct {
 	Key   string
-	Value string
+	Value any
 }
 
 // MarshalJSON emits the pairs in insertion order. Values are always
-// strings here, so we lean on encoding/json's string encoder for each
-// key/value (handles escaping, unicode, etc.) and just glue them
+// JSON-encodable here, so we lean on encoding/json's encoder for each
+// key/value (handles escaping, unicode, nested objects, etc.) and glue them
 // together — no need for json.RawMessage gymnastics.
 func (u uploadResponse) MarshalJSON() ([]byte, error) {
 	var b strings.Builder
@@ -503,8 +503,31 @@ Steps: (1) ` + "`create-upload`" + ` returns ` + "`{id, upload_url, ...}`" + `;
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		out, err := shapeCreateUploadResponse(result)
+		if err != nil {
+			return err
+		}
+		return printJSON(out)
 	}),
+}
+
+func shapeCreateUploadResponse(result *retab.CreateUploadResponse) (uploadResponse, error) {
+	if result.FileID == "" {
+		return uploadResponse{}, fmt.Errorf("create-upload succeeded but server response is missing a file id")
+	}
+	if result.UploadURL == "" {
+		return uploadResponse{}, fmt.Errorf("create-upload succeeded but server response is missing an upload URL")
+	}
+	return uploadResponse{
+		pairs: []uploadResponseField{
+			{"id", result.FileID},
+			{"upload_url", result.UploadURL},
+			{"upload_method", result.UploadMethod},
+			{"upload_headers", result.UploadHeaders},
+			{"mime_data", result.MIMEData},
+			{"expires_at", result.ExpiresAt},
+		},
+	}, nil
 }
 
 var filesCompleteUploadCmd = &cobra.Command{

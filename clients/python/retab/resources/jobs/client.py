@@ -295,8 +295,8 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         List jobs with pagination and optional filtering.
 
         Args:
-            before: Pagination cursor (first ID from current page)
-            after: Pagination cursor (last ID from previous page)
+            before: First job ID from the current page, used to fetch the previous page
+            after: Last job ID from the previous page, used to fetch the next page
             limit: Number of jobs to return (1-100, default 20)
             order: Sort order by created_at ("asc" or "desc")
             id: Filter by job ID
@@ -520,8 +520,8 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         List jobs with pagination and optional filtering.
 
         Args:
-            before: Pagination cursor (first ID from current page)
-            after: Pagination cursor (last ID from previous page)
+            before: First job ID from the current page, used to fetch the previous page
+            after: Last job ID from the previous page, used to fetch the next page
             limit: Number of jobs to return (1-100, default 20)
             order: Sort order by created_at ("asc" or "desc")
             id: Filter by job ID

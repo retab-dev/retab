@@ -142,3 +142,41 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 		t.Fatalf("page.Data[0][id] = %v, want wfnodetestrun_1", page.Data[0]["id"])
 	}
 }
+
+func TestWorkflowTestsExecuteDecodesFullQueuedResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_1/block-tests/execute" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"batch_id":    "btbatch_1",
+			"job_id":      "job_1",
+			"status":      "queued",
+			"workflow_id": "wf_1",
+			"test_id":     "wfnodetest_1",
+			"total_tests": 1,
+			"target": map[string]any{
+				"type":     "block",
+				"block_id": "block_transform",
+			},
+		})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	result, err := client.Workflows.Tests.Execute(context.Background(), ExecuteBlockTestsRequest{
+		WorkflowID: "wf_1",
+		TestID:     "wfnodetest_1",
+		NConsensus: 3,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != "queued" || result.WorkflowID != "wf_1" || result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
+		t.Fatalf("execute response lost fields: %#v", result)
+	}
+	if result.Target == nil || (*result.Target)["block_id"] != "block_transform" {
+		t.Fatalf("target = %#v, want block_transform", result.Target)
+	}
+}

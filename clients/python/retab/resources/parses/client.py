@@ -127,7 +127,7 @@ class Parses(SyncAPIResource, ParsesMixin):
 
         def fetch_next(after: str) -> PaginatedList:
             return self.list(
-                before=before, after=after, limit=limit, order=order,
+                before=None, after=after, limit=limit, order=order,
                 filename=filename, from_date=from_date, to_date=to_date,
             )
 

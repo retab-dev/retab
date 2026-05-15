@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -60,6 +62,101 @@ func appendKVPairs(into map[string]string, raws []string, flagName string) error
 			return fmt.Errorf("%s expects block-id=path, got %q", flagName, raw)
 		}
 		into[key] = path
+	}
+	return nil
+}
+
+func parseWorkflowRunConfigSource(value string) (string, error) {
+	if value == "" {
+		return "published", nil
+	}
+	switch value {
+	case "published", "draft":
+		return value, nil
+	default:
+		return "", fmt.Errorf("--config-source must be published or draft, got %q", value)
+	}
+}
+
+var allowedWorkflowRunStatuses = map[string]bool{
+	"pending":           true,
+	"running":           true,
+	"completed":         true,
+	"error":             true,
+	"waiting_for_human": true,
+	"cancelled":         true,
+}
+
+var allowedWorkflowRunTriggerTypes = map[string]bool{
+	"manual":   true,
+	"api":      true,
+	"schedule": true,
+	"webhook":  true,
+	"email":    true,
+	"restart":  true,
+}
+
+var allowedWorkflowRunExportSources = map[string]bool{
+	"outputs": true,
+	"inputs":  true,
+}
+
+const workflowRunStatusValues = "pending, running, completed, error, waiting_for_human, cancelled"
+const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, email, restart"
+const workflowRunExportSourceValues = "outputs, inputs"
+
+func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
+	if err := validateEnumFlag(cmd, "status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
+		return err
+	}
+	if err := validateEnumArrayFlag(cmd, "statuses", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
+		return err
+	}
+	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
+		return err
+	}
+	if err := validateEnumFlag(cmd, "trigger-type", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues); err != nil {
+		return err
+	}
+	return validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+}
+
+func validateWorkflowRunsExportFilters(cmd *cobra.Command) error {
+	if err := validateEnumFlag(cmd, "export-source", allowedWorkflowRunExportSources, workflowRunExportSourceValues); err != nil {
+		return err
+	}
+	if err := validateEnumFlag(cmd, "status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
+		return err
+	}
+	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
+		return err
+	}
+	return validateEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+}
+
+func validateEnumFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) error {
+	value, _ := cmd.Flags().GetString(flagName)
+	if value == "" {
+		return nil
+	}
+	if !allowed[value] {
+		return fmt.Errorf("invalid --%s %q (want: %s)", flagName, value, allowedValues)
+	}
+	return nil
+}
+
+func validateEnumArrayFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) error {
+	values, _ := cmd.Flags().GetStringArray(flagName)
+	for _, raw := range values {
+		for _, value := range strings.Split(raw, ",") {
+			value = strings.TrimSpace(value)
+			if value == "" {
+				continue
+			}
+			if !allowed[value] {
+				return fmt.Errorf("invalid --%s %q (want: %s)", flagName, value, allowedValues)
+			}
+		}
 	}
 	return nil
 }
@@ -193,6 +290,10 @@ removed in a future release.`,
 					URL:      url,
 				}
 			}
+			req.Documents, err = resolveWorkflowRunDocumentAliases(ctx, client, args[0], req.Documents)
+			if err != nil {
+				return err
+			}
 		}
 		jsonInputsFile, _ := cmd.Flags().GetString("json-inputs-file")
 		if jsonInputsFile != "" {
@@ -210,6 +311,47 @@ removed in a future release.`,
 	}),
 }
 
+func resolveWorkflowRunDocumentAliases(
+	ctx context.Context,
+	client *retab.Client,
+	workflowID string,
+	documents map[string]any,
+) (map[string]any, error) {
+	if _, ok := documents["start"]; !ok {
+		return documents, nil
+	}
+	blocks, err := client.Workflows.Blocks.List(ctx, workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("resolve --document start alias: %w", err)
+	}
+	for _, block := range blocks.Data {
+		if block.ID == "start" {
+			return documents, nil
+		}
+	}
+	var startBlocks []retab.WorkflowBlock
+	for _, block := range blocks.Data {
+		if block.Type == "start" {
+			startBlocks = append(startBlocks, block)
+		}
+	}
+	if len(startBlocks) == 0 {
+		return documents, nil
+	}
+	if len(startBlocks) > 1 {
+		return nil, fmt.Errorf("--document start=... is ambiguous: workflow has %d start blocks; use the concrete block id", len(startBlocks))
+	}
+	resolved := make(map[string]any, len(documents))
+	for key, value := range documents {
+		if key == "start" {
+			resolved[startBlocks[0].ID] = value
+			continue
+		}
+		resolved[key] = value
+	}
+	return resolved, nil
+}
+
 var workflowsRunsGetCmd = &cobra.Command{
 	Use:   "get <run-id>",
 	Short: "Get a workflow run",
@@ -220,7 +362,7 @@ duration, cost, error info, final outputs. For per-block detail use
   retab workflows runs get run_xyz789
 
   # Poll until done
-  while [ "$(retab workflows runs get run_xyz789 | jq -r '.status')" = "running" ]; do
+  while [ "$(retab workflows runs get run_xyz789 | jq -r '.lifecycle.status')" = "running" ]; do
     sleep 2
   done`,
 	Args: cobra.ExactArgs(1),
@@ -245,19 +387,22 @@ var workflowsRunsListCmd = &cobra.Command{
 	Long: `List workflow runs. Without a workflow id the result spans the
 whole workspace; with one (passed positionally OR via ` + "`--workflow-id`" + `,
 not both) the result is scoped to that workflow. Other filters available:
-status, trigger type, date range, cost, and duration. Use cursor pagination
+status, trigger type, date range, cost, and duration. Page by run id
 (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `) and
 ` + "`--fields`" + ` to keep responses small on busy projects.`,
 	Example: `  # Scope to a single workflow (positional, matches the rest of workflows)
   retab workflows runs list wf_abc123 --limit 50
 
   # Same, but with the flag form when composing many filters
-  retab workflows runs list --workflow-id wf_abc123 --status failed --from-date 2026-05-13
+  retab workflows runs list --workflow-id wf_abc123 --status error --from-date 2026-05-13
 
   # Workspace-wide (omit the workflow id entirely)
-  retab workflows runs list --status failed --limit 50`,
+  retab workflows runs list --status error --limit 50`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateWorkflowRunsListFilters(cmd); err != nil {
+			return err
+		}
 		// Honour <workflow-id> positional (matches workflows entities /
 		// blocks list / edges create / tests execute convention). The flag
 		// form stays supported. If both are set and they disagree, error
@@ -378,10 +523,14 @@ var workflowsRunsRestartCmd = &cobra.Command{
 	Use:   "restart <run-id>",
 	Short: "Restart a workflow run",
 	Long: `Re-execute a failed or cancelled run, reusing the original
-inputs. Useful after fixing a transient infra issue or tweaking block
-config. Use ` + "`--command-id`" + ` for idempotency.`,
+inputs. By default the restarted run uses the latest published workflow
+config. Use ` + "`--config-source draft`" + ` after tweaking draft block config,
+or ` + "`--command-id`" + ` for idempotency.`,
 	Example: `  # Restart a failed run
-  retab workflows runs restart run_xyz789`,
+  retab workflows runs restart run_xyz789
+
+  # Restart against the current draft config
+  retab workflows runs restart run_xyz789 --config-source draft`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -391,7 +540,12 @@ config. Use ` + "`--command-id`" + ` for idempotency.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		commandID, _ := cmd.Flags().GetString("command-id")
-		result, err := client.Workflows.Runs.Restart(ctx, args[0], retab.WorkflowRunCommandRequest{CommandID: commandID})
+		configSourceValue, _ := cmd.Flags().GetString("config-source")
+		configSource, err := parseWorkflowRunConfigSource(configSourceValue)
+		if err != nil {
+			return err
+		}
+		result, err := client.Workflows.Runs.Restart(ctx, args[0], retab.WorkflowRunCommandRequest{CommandID: commandID, ConfigSource: configSource})
 		if err != nil {
 			return err
 		}
@@ -578,7 +732,7 @@ pin column order.`,
 	Example: `  # Export every successful run of a block to CSV
   retab workflows runs export \
     --workflow-id wf_abc123 --block-id blk_extract_1 \
-    --status succeeded \
+    --status completed \
     --from-date 2026-05-01
 
   # Export a specific set of runs with custom columns
@@ -587,6 +741,9 @@ pin column order.`,
     --run-id run_xyz789 --run-id run_aaa000 \
     --preferred-column invoice_id --preferred-column total`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateWorkflowRunsExportFilters(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -640,7 +797,7 @@ full input/output payload of one step use ` + "`steps get`" + `.`,
 
   # Find the first failed step
   retab workflows runs steps list run_xyz789 \
-    | jq '.[] | select(.status == "failed") | .block_id' | head -1`,
+    | jq '.data[] | select(.lifecycle.status == "error") | .block_id' | head -1`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -708,22 +865,23 @@ func init() {
 	workflowsRunsListCmd.Flags().String("exclude-status", "", "exclude status")
 	workflowsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
 	workflowsRunsListCmd.Flags().StringArray("trigger-types", nil, "filter by trigger types (repeatable)")
-	workflowsRunsListCmd.Flags().String("from-date", "", "filter from this date")
-	workflowsRunsListCmd.Flags().String("to-date", "", "filter to this date")
+	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "from-date", "filter from this YYYY-MM-DD date")
+	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "to-date", "filter to this YYYY-MM-DD date")
 	workflowsRunsListCmd.Flags().String("search", "", "search query")
 	workflowsRunsListCmd.Flags().String("sort-by", "", "sort field")
 	workflowsRunsListCmd.Flags().StringArray("fields", nil, "include only these fields (repeatable)")
-	workflowsRunsListCmd.Flags().String("before", "", "cursor: items before this id")
-	workflowsRunsListCmd.Flags().String("after", "", "cursor: items after this id")
-	workflowsRunsListCmd.Flags().Int("limit", 0, "max items to return")
-	workflowsRunsListCmd.Flags().String("order", "", "asc | desc")
-	workflowsRunsListCmd.Flags().Float64("min-cost", 0, "min cost")
-	workflowsRunsListCmd.Flags().Float64("max-cost", 0, "max cost")
-	workflowsRunsListCmd.Flags().Int("min-duration", 0, "min duration (ms)")
-	workflowsRunsListCmd.Flags().Int("max-duration", 0, "max duration (ms)")
+	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id")
+	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id")
+	workflowsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
+	workflowsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
+	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "min-cost", "min cost")
+	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "max-cost", "max cost")
+	workflowsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "min-duration", "min duration (ms)")
+	workflowsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "max-duration", "max duration (ms)")
 
 	workflowsRunsCancelCmd.Flags().String("command-id", "", "idempotency command id")
 	workflowsRunsRestartCmd.Flags().String("command-id", "", "idempotency command id")
+	workflowsRunsRestartCmd.Flags().String("config-source", "published", "published | draft")
 
 	workflowsRunsSubmitHILCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsRunsSubmitHILCmd.Flags().Bool("approved", false, "approve the block output")
@@ -737,8 +895,8 @@ func init() {
 	workflowsRunsExportCmd.Flags().StringArray("run-id", nil, "filter to selected run ids (repeatable)")
 	workflowsRunsExportCmd.Flags().String("status", "", "status filter")
 	workflowsRunsExportCmd.Flags().String("exclude-status", "", "exclude status")
-	workflowsRunsExportCmd.Flags().String("from-date", "", "from date")
-	workflowsRunsExportCmd.Flags().String("to-date", "", "to date")
+	workflowsRunsExportCmd.Flags().Var(&dateFlagValue{}, "from-date", "from YYYY-MM-DD date")
+	workflowsRunsExportCmd.Flags().Var(&dateFlagValue{}, "to-date", "to YYYY-MM-DD date")
 	workflowsRunsExportCmd.Flags().StringArray("trigger-types", nil, "trigger types (repeatable)")
 	workflowsRunsExportCmd.Flags().StringArray("preferred-column", nil, "preferred CSV column (repeatable)")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("workflow-id")

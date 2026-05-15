@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -32,7 +33,15 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() error {
-	return rootCmd.Execute()
+	err := rootCmd.Execute()
+	if err == nil {
+		return nil
+	}
+	var rendered renderedError
+	if errors.As(err, &rendered) {
+		return errSilent
+	}
+	return err
 }
 
 func init() {

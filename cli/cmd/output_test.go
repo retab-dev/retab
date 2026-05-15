@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -316,6 +317,130 @@ func TestPrintResultTableBareArray(t *testing.T) {
 	}
 }
 
+type stepItem struct {
+	ID        string     `json:"id"`
+	StepID    string     `json:"step_id"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	StartedAt *time.Time `json:"started_at,omitempty"`
+}
+
+type stepList struct {
+	Data []stepItem `json:"data"`
+}
+
+func TestPrintResultTableTypedNilPointerCellDoesNotPanic(t *testing.T) {
+	startedAt := time.Date(2026, 5, 15, 10, 15, 49, 0, time.UTC)
+	steps := stepList{
+		Data: []stepItem{
+			{ID: "step_1", StepID: "run_1_block_1", CreatedAt: nil, StartedAt: &startedAt},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(steps); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr for typed list: %q", stderr)
+	}
+	if !strings.Contains(stdout, "ID") || !strings.Contains(stdout, "step_1") {
+		t.Fatalf("expected table output with step id, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "2026-05-15") {
+		t.Fatalf("expected fallback timestamp alias in table output, got:\n%s", stdout)
+	}
+}
+
+func TestPrintResultTableWorkflowStepColumns(t *testing.T) {
+	startedAt := time.Date(2026, 5, 15, 10, 15, 49, 0, time.UTC)
+	steps := map[string]any{
+		"data": []any{
+			map[string]any{
+				"step_id":     "run_1_block_extract",
+				"block_label": "Extract invoice",
+				"block_type":  "extract",
+				"started_at":  startedAt.Format(time.RFC3339),
+				"model":       "retab-small",
+			},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(steps); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr for workflow step list: %q", stderr)
+	}
+	for _, want := range []string{"ID", "NAME", "TYPE", "MODEL", "CREATED_AT", "run_1_block_extract", "Extract invoice", "extract", "retab-small", "2026-05-15"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in workflow step table, got:\n%s", want, stdout)
+		}
+	}
+}
+
+func TestPrintResultTableWorkflowRunNestedColumns(t *testing.T) {
+	runs := map[string]any{
+		"data": []any{
+			map[string]any{
+				"id": "run_1",
+				"workflow": map[string]any{
+					"name_at_run_time": "Invoice workflow",
+				},
+				"lifecycle": map[string]any{
+					"status": "completed",
+				},
+				"timing": map[string]any{
+					"created_at": "2026-05-15T10:15:48Z",
+				},
+			},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(runs); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr for workflow run list: %q", stderr)
+	}
+	for _, want := range []string{"ID", "NAME", "TYPE", "CREATED_AT", "run_1", "Invoice workflow", "completed", "2026-05-15"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in workflow run table, got:\n%s", want, stdout)
+		}
+	}
+}
+
+func TestPrintResultTableWorkflowEdgeColumns(t *testing.T) {
+	edges := map[string]any{
+		"data": []any{
+			map[string]any{
+				"id":           "edge_1",
+				"source_block": "start",
+				"target_block": "extract",
+				"updated_at":   "2026-05-15T10:15:13Z",
+			},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(edges); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr for workflow edge list: %q", stderr)
+	}
+	for _, want := range []string{"ID", "SOURCE", "TARGET", "CREATED_AT", "edge_1", "start", "extract", "2026-05-15"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in workflow edge table, got:\n%s", want, stdout)
+		}
+	}
+}
+
 // TestPrintResultTableSingleObjectFallsBackToJSON covers acceptance
 // criterion #3: a single object (not a list) isn't tabulable, so the
 // helper warns on stderr and falls back to JSON on stdout.
@@ -375,6 +500,30 @@ func TestPrintResultTableNoPreferredColumns(t *testing.T) {
 	}
 	if _, ok := got["data"]; !ok {
 		t.Fatalf("fallback JSON missing data key: %v", got)
+	}
+}
+
+func TestPrintResultTableEmptyListHonorsTableOutput(t *testing.T) {
+	empty := map[string]any{
+		"data":          []any{},
+		"list_metadata": map[string]any{},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(empty); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("expected no fallback warning, got stderr: %q", stderr)
+	}
+	if strings.HasPrefix(strings.TrimSpace(stdout), "{") {
+		t.Fatalf("expected table output for empty list, got JSON:\n%s", stdout)
+	}
+	for _, want := range []string{"ID", "NAME", "TYPE", "CREATED_AT"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected empty table header %q, got:\n%s", want, stdout)
+		}
 	}
 }
 
