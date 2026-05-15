@@ -1,6 +1,7 @@
 package retab
 
 import (
+	"bytes"
 	"encoding/json"
 	"time"
 )
@@ -21,6 +22,25 @@ type PaginationCursor struct {
 }
 
 func (p *PaginatedList[T]) UnmarshalJSON(data []byte) error {
+	// Most list endpoints return the {data, list_metadata} envelope, but a
+	// few (e.g. GET /workflows/{id}/edges) return a bare JSON array with no
+	// pagination wrapper. Decode either shape: if the first non-whitespace
+	// byte is '[', unmarshal straight into Data and leave the pagination
+	// fields zero-valued; otherwise decode the envelope as usual.
+	//
+	// Without this, `retab workflows edges list` failed with
+	//   json: cannot unmarshal array into Go value of type retab.alias[...]
+	// because the generic `type alias PaginatedList[T]` is a struct and the
+	// wire payload was an array.
+	if trimmed := bytes.TrimLeft(data, " \t\r\n"); len(trimmed) > 0 && trimmed[0] == '[' {
+		if err := json.Unmarshal(data, &p.Data); err != nil {
+			return err
+		}
+		if p.Data == nil {
+			p.Data = []T{}
+		}
+		return nil
+	}
 	type alias PaginatedList[T]
 	aux := (*alias)(p)
 	if err := json.Unmarshal(data, aux); err != nil {

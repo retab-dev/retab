@@ -407,21 +407,60 @@ func (s *WorkflowArtifactsService) GetRef(ctx context.Context, ref StepArtifactR
 	return s.Get(ctx, ref.Operation, ref.ID, opts...)
 }
 
-// List returns the canonical paginated envelope
-// {"data": [...], "list_metadata": {"before": null, "after": null}} for
-// workflow artifacts produced by a single run. Cursor pagination is not
-// yet implemented for this endpoint; ListMetadata is always {nil, nil}.
+// List returns workflow artifacts produced by a single run.
+//
+// Response-shape tolerance: production currently returns a bare JSON
+// array (`[...]`) for this endpoint, while every other list endpoint on
+// the API returns the standard paginated envelope (`{"data": [...],
+// "list_metadata": {...}}`). The SDK accepts BOTH shapes and always
+// hands callers a `*PaginatedList[WorkflowArtifact]`, so the call site
+// never has to care which response the server emits on a given deploy.
+// When the server is normalised to the envelope shape later, nothing
+// here or in any caller needs to change.
+//
+// Cursor pagination is not implemented for this endpoint regardless of
+// response shape; ListMetadata is {nil, nil} when the server returns a
+// bare array.
 func (s *WorkflowArtifactsService) List(ctx context.Context, params ListWorkflowArtifactsParams, opts ...RequestOption) (*PaginatedList[WorkflowArtifact], error) {
 	if params.RunID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
-	var result PaginatedList[WorkflowArtifact]
+	var raw json.RawMessage
 	prepared := s.PrepareList(params)
-	err := s.client.do(ctx, prepared.Method, prepared.URL, prepared.Params, nil, &result, opts...)
+	if err := s.client.do(ctx, prepared.Method, prepared.URL, prepared.Params, nil, &raw, opts...); err != nil {
+		return nil, err
+	}
+	result, err := decodeArtifactListResponse(raw)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
+}
+
+// decodeArtifactListResponse normalises both response shapes into the
+// PaginatedList envelope. It sniffs the first non-whitespace byte: `[`
+// is a bare array, `{` is the envelope. Anything else is a protocol
+// violation surfaced as a typed error rather than a silent empty list.
+func decodeArtifactListResponse(raw json.RawMessage) (PaginatedList[WorkflowArtifact], error) {
+	var result PaginatedList[WorkflowArtifact]
+	trimmed := bytes.TrimLeft(raw, " \t\r\n")
+	if len(trimmed) == 0 {
+		return result, nil
+	}
+	switch trimmed[0] {
+	case '[':
+		if err := json.Unmarshal(raw, &result.Data); err != nil {
+			return result, fmt.Errorf("retab: decode artifact list (array shape): %w", err)
+		}
+	case '{':
+		if err := json.Unmarshal(raw, &result); err != nil {
+			return result, fmt.Errorf("retab: decode artifact list (envelope shape): %w", err)
+		}
+	default:
+		return result, fmt.Errorf("retab: unexpected artifact list response shape (first byte %q): %s",
+			trimmed[0], string(raw))
+	}
+	return result, nil
 }
 
 type WorkflowBlocksService struct {
