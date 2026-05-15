@@ -593,6 +593,28 @@ func addDocumentFlags(cmd *cobra.Command) {
 	cmd.Flags().String("document-file", "", "path to a JSON file describing the document (or - for stdin)")
 }
 
+// inferFileMIMEData turns a local file path into MIMEData, statting the
+// path upfront so a bad path surfaces as a clear "file not found" instead
+// of being routed through the SDK's MIME inference and resurfacing as the
+// cryptic "unsupported MIME input string" (which is what InferMIMEData
+// reports when it can't open the file for sniffing). Directories stat
+// fine but break MIME sniffing the same way, so they get an explicit
+// check too. Shared by every command that accepts a local-file document
+// flag.
+func inferFileMIMEData(path string) (retab.MIMEData, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return retab.MIMEData{}, fmt.Errorf("file not found: %s", path)
+		}
+		return retab.MIMEData{}, fmt.Errorf("cannot read %s: %w", path, err)
+	}
+	if info.IsDir() {
+		return retab.MIMEData{}, fmt.Errorf("not a file (is a directory): %s", path)
+	}
+	return retab.InferMIMEData(path)
+}
+
 // resolveDocument turns the document flags into a value the SDK can marshal.
 // At most one of file / url / file-id / document-file must be set.
 func resolveDocument(cmd *cobra.Command) (any, error) {
@@ -614,18 +636,7 @@ func resolveDocument(cmd *cobra.Command) (any, error) {
 	}
 	switch {
 	case file != "":
-		// Stat upfront so a bad path surfaces as a clear "file not found"
-		// instead of being routed through the SDK's MIME inference and
-		// resurfacing as the cryptic "unsupported MIME input string"
-		// (which is what InferMIMEData reports when it can't open the
-		// file for sniffing).
-		if _, err := os.Stat(file); err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				return nil, fmt.Errorf("file not found: %s", file)
-			}
-			return nil, fmt.Errorf("cannot read %s: %w", file, err)
-		}
-		mime, err := retab.InferMIMEData(file)
+		mime, err := inferFileMIMEData(file)
 		if err != nil {
 			return nil, err
 		}

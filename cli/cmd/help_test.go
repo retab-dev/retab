@@ -27,6 +27,30 @@ import (
 //      default templates. Regressing here would mean rewriting every
 //      subcommand's help, which is not what we signed up for.
 
+// Cobra renders Long / Short / Example verbatim into help output. A stray
+// tab inside a raw-string literal (easy to introduce when a multi-line
+// description is indented to match surrounding Go code) shows up as a
+// misaligned hard tab in the user's terminal. Walk every registered
+// command and reject embedded tabs so the help stays clean.
+func TestCommandHelpTextHasNoStrayTabs(t *testing.T) {
+	var walk func(c *cobra.Command)
+	walk = func(c *cobra.Command) {
+		for label, text := range map[string]string{
+			"Short":   c.Short,
+			"Long":    c.Long,
+			"Example": c.Example,
+		} {
+			if strings.Contains(text, "\t") {
+				t.Errorf("command %q has a stray tab in its %s text:\n%q", c.CommandPath(), label, text)
+			}
+		}
+		for _, child := range c.Commands() {
+			walk(child)
+		}
+	}
+	walk(rootCmd)
+}
+
 func TestPaletteFor_DisablesWhenNotAFile(t *testing.T) {
 	// bytes.Buffer is the prototypical "writing to memory" case — e.g.
 	// `retab > out.txt`. Must produce plain text.

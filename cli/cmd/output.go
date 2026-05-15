@@ -508,6 +508,7 @@ func pickAutoColumns(rows []any) []TableColumn {
 	for i, p := range picks {
 		aliases := p.aliases
 		isTrailing := i == len(picks)-1
+		isTimestamp := isTimestampHeader(p.header)
 		cols = append(cols, TableColumn{
 			Header: p.header,
 			Extract: func(row any) string {
@@ -520,6 +521,9 @@ func pickAutoColumns(rows []any) []TableColumn {
 							continue
 						}
 						s := stringifyCell(v)
+						if isTimestamp {
+							s = normalizeTimestampCell(s)
+						}
 						if isTrailing && len(s) > autoTableTruncate {
 							return s[:autoTableTruncate] + "…"
 						}
@@ -531,6 +535,31 @@ func pickAutoColumns(rows []any) []TableColumn {
 		})
 	}
 	return cols
+}
+
+// isTimestampHeader reports whether a rendered column header names a
+// timestamp column whose cells should be canonicalized by
+// normalizeTimestampCell. Matches the headers produced by
+// preferredColumnOrder and by the explicit files-list column specs.
+func isTimestampHeader(header string) bool {
+	return header == "CREATED_AT" || header == "UPDATED_AT"
+}
+
+// normalizeTimestampCell renders timestamp strings in one canonical form
+// for table output. SDK list responses are inconsistent: workflows
+// decode created_at into a time.Time (already RFC3339 after
+// stringifyCell), while files / parses / extractions leave it as the raw
+// JSON string carrying microsecond precision. Untreated the same column
+// shows "2026-05-15T14:21:10.389000Z" for one resource and
+// "2026-05-15T14:30:29Z" for another. Parse anything that is a full
+// RFC3339 timestamp and re-emit it as second-precision UTC RFC3339 so
+// every list table reads the same; pass through anything that does not
+// parse (ids, filenames, bare dates) untouched.
+func normalizeTimestampCell(s string) string {
+	if ts, err := time.Parse(time.RFC3339, s); err == nil {
+		return ts.UTC().Format(time.RFC3339)
+	}
+	return s
 }
 
 func aliasHasDisplayableValue(rows []any, alias string) bool {

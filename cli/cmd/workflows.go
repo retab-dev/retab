@@ -310,6 +310,12 @@ and ` + "`workflows edges`" + `.`,
     --allowed-sender ops@vendor.io`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Reject an empty invocation before issuing a no-op PATCH that
+		// would round-trip to the server and silently bump updated_at.
+		if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("description") &&
+			!cmd.Flags().Changed("allowed-sender") && !cmd.Flags().Changed("allowed-domain") {
+			return fmt.Errorf("nothing to update: pass at least one of --name, --description, --allowed-sender, or --allowed-domain")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

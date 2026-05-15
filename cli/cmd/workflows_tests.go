@@ -314,6 +314,12 @@ flaky runs.`,
     --name "Invoice 17 baseline (v2 schema)"`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Reject an empty invocation before issuing a no-op PATCH that
+		// would round-trip to the server and silently bump updated_at.
+		if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("assertion-file") &&
+			!cmd.Flags().Changed("source-file") {
+			return fmt.Errorf("nothing to update: pass at least one of --name, --assertion-file, or --source-file")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -490,9 +496,9 @@ pass/fail per-assertion, diff against the pinned expectation, timing.`,
 func init() {
 	workflowsTestsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsTestsCreateCmd.Flags().String("name", "", "test name")
-	workflowsTestsCreateCmd.Flags().String("target-file", "", "JSON file with the target object (or - for stdin)")
-	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin)")
-	workflowsTestsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin)")
+	workflowsTestsCreateCmd.Flags().String("target-file", "", "JSON file with the target object (or - for stdin) (required)")
+	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin) (required)")
+	workflowsTestsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin) (required)")
 	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
 	_ = workflowsTestsCreateCmd.Flags().MarkHidden("workflow-id")

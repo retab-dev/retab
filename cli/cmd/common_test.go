@@ -293,6 +293,60 @@ func TestResolveDocumentDocumentFileMissing(t *testing.T) {
 	}
 }
 
+// inferFileMIMEData is the shared guard behind every command that takes a
+// local-file document flag (resolveDocument, schemas generate, workflows
+// runs create --document). A missing path must surface as "file not
+// found:" rather than the SDK's cryptic "unsupported MIME input string".
+func TestInferFileMIMEDataMissing(t *testing.T) {
+	missing := "/definitely/does/not/exist.pdf"
+	_, err := inferFileMIMEData(missing)
+	if err == nil {
+		t.Fatal("expected error for missing file, got nil")
+	}
+	want := "file not found: " + missing
+	if err.Error() != want {
+		t.Fatalf("error mismatch:\n got: %q\nwant: %q", err.Error(), want)
+	}
+}
+
+// A directory passed to --file used to slip past inferFileMIMEData's
+// os.Stat guard (stat succeeds on a directory) and fall through to the
+// SDK's MIME sniffing, resurfacing as exactly the cryptic "unsupported
+// MIME input string" the guard exists to prevent. The guard must reject
+// directories with a clear error too.
+func TestInferFileMIMEDataDirectory(t *testing.T) {
+	dir := t.TempDir()
+	_, err := inferFileMIMEData(dir)
+	if err == nil {
+		t.Fatal("expected error for directory path, got nil")
+	}
+	if strings.Contains(err.Error(), "unsupported MIME input string") {
+		t.Fatalf("directory error leaked the cryptic SDK message: %v", err)
+	}
+	want := "not a file (is a directory): " + dir
+	if err.Error() != want {
+		t.Fatalf("error mismatch:\n got: %q\nwant: %q", err.Error(), want)
+	}
+}
+
+// resolveDocument with --file pointing at a directory must surface the
+// same clear error rather than the cryptic MIME message.
+func TestResolveDocumentFileIsDirectory(t *testing.T) {
+	cmd := &cobra.Command{}
+	addDocumentFlags(cmd)
+	dir := t.TempDir()
+	if err := cmd.ParseFlags([]string{"--file", dir}); err != nil {
+		t.Fatal(err)
+	}
+	_, err := resolveDocument(cmd)
+	if err == nil {
+		t.Fatal("expected error for directory path, got nil")
+	}
+	if !strings.HasPrefix(err.Error(), "not a file (is a directory): ") {
+		t.Fatalf("error should start with %q, got: %v", "not a file (is a directory): ", err)
+	}
+}
+
 func TestResolveDocumentMutex(t *testing.T) {
 	cmd := &cobra.Command{}
 	addDocumentFlags(cmd)
@@ -437,7 +491,7 @@ func TestRedactKey(t *testing.T) {
 // --debug output with a screenful of asterisks and reproduced the exact
 // length of the secret.
 func TestRedactKeyMaskIsFixedWidth(t *testing.T) {
-	short := redactKey("retab_sk_abcd1234")             // 17 chars
+	short := redactKey("retab_sk_abcd1234")                       // 17 chars
 	long := redactKey("eyJ" + strings.Repeat("x", 1000) + "_abc") // ~1006 chars
 
 	if !strings.HasPrefix(long, "eyJx") || !strings.HasSuffix(long, "_abc") {

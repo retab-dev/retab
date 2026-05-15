@@ -63,6 +63,41 @@ func TestEditTemplatesCreateValidatesFormFieldsBeforeRequest(t *testing.T) {
 	}
 }
 
+func TestEditTemplatesUpdateRejectsNoFieldsBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached when no update fields are set, got %s %s", r.Method, r.URL.String())
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	// The `edits templates update` help promises "At least one of the two
+	// flags must be set." Invoking it with neither --name nor
+	// --form-fields-file must fail locally instead of issuing a no-op
+	// PATCH that silently bumps updated_at.
+	cmd := &cobra.Command{Use: "test-edit-template-update", RunE: editsTemplatesUpdateCmd.RunE}
+	cmd.Flags().String("name", "", "")
+	cmd.Flags().String("form-fields-file", "", "")
+
+	err := cmd.RunE(cmd, []string{"tmpl_123"})
+	if err == nil {
+		t.Fatal("expected an error when no update fields are provided")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "at least one of --name or --form-fields-file is required") {
+		t.Fatalf("error %q does not mention the required flags", err.Error())
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func TestEditTemplatesUpdateRejectsBlankNameBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

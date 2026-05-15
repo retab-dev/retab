@@ -286,7 +286,7 @@ removed in a future release.`,
 				req.Documents = map[string]any{}
 			}
 			for key, path := range fileEntries {
-				mime, err := retab.InferMIMEData(path)
+				mime, err := inferFileMIMEData(path)
 				if err != nil {
 					return fmt.Errorf("--document %s=%s: %w", key, path, err)
 				}

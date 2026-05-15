@@ -79,9 +79,9 @@ response envelope (` + "`json_schema`" + `, ` + "`created_at`" + `, etc.).`,
 			documents = append(documents, arr...)
 		}
 		for _, path := range files {
-			mime, err := retab.InferMIMEData(path)
+			mime, err := inferFileMIMEData(path)
 			if err != nil {
-				return fmt.Errorf("--file %s: %w", path, err)
+				return err
 			}
 			documents = append(documents, mime)
 		}
