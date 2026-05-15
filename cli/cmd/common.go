@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -377,6 +378,17 @@ func resolveDocument(cmd *cobra.Command) (any, error) {
 	}
 	switch {
 	case file != "":
+		// Stat upfront so a bad path surfaces as a clear "file not found"
+		// instead of being routed through the SDK's MIME inference and
+		// resurfacing as the cryptic "unsupported MIME input string"
+		// (which is what InferMIMEData reports when it can't open the
+		// file for sniffing).
+		if _, err := os.Stat(file); err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil, fmt.Errorf("file not found: %s", file)
+			}
+			return nil, fmt.Errorf("cannot read %s: %w", file, err)
+		}
 		mime, err := retab.InferMIMEData(file)
 		if err != nil {
 			return nil, err
@@ -395,6 +407,19 @@ func resolveDocument(cmd *cobra.Command) (any, error) {
 		// for the readability win on every --file-id callsite.
 		return resolveFileIDToMIMEData(cmd, fileID)
 	case docFile != "":
+		// Same upfront stat as --file: a missing JSON descriptor would
+		// otherwise bubble out as a json-unmarshal error wrapped around
+		// "no such file or directory" — confusing for users who just
+		// fat-fingered the path. Skip the stat for "-" (stdin), which
+		// readJSON handles.
+		if docFile != "-" {
+			if _, err := os.Stat(docFile); err != nil {
+				if errors.Is(err, fs.ErrNotExist) {
+					return nil, fmt.Errorf("file not found: %s", docFile)
+				}
+				return nil, fmt.Errorf("cannot read %s: %w", docFile, err)
+			}
+		}
 		return readJSON(docFile)
 	}
 	return nil, fmt.Errorf("unreachable")

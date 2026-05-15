@@ -12,13 +12,13 @@ import (
 // shape conversion of the seven workflow GRAPH list endpoints from bare
 // arrays to PaginatedList[T] envelopes.
 //
-//   GET /v1/workflows/{wf}/blocks                                    -> PaginatedList[WorkflowBlock]
-//   GET /v1/workflows/{wf}/blocks/{id}/config-history                -> PaginatedList[BlockConfigVersion]
-//   GET /v1/workflows/{wf}/edges                                     -> PaginatedList[WorkflowEdgeDoc]
-//   GET /v1/workflows/artifacts                                      -> PaginatedList[WorkflowArtifact]
-//   GET /v1/workflows/{wf}/snapshots                                 -> PaginatedList[WorkflowSnapshot]
-//   GET /v1/workflows/runs/{run}/steps                               -> PaginatedList[WorkflowRunStep]
-//   GET /v1/workflows/runs/{run}/steps/{block}/simulations           -> PaginatedList[BlockSimulation]
+//	GET /v1/workflows/{wf}/blocks                                    -> PaginatedList[WorkflowBlock]
+//	GET /v1/workflows/{wf}/blocks/{id}/config-history                -> PaginatedList[BlockConfigVersion]
+//	GET /v1/workflows/{wf}/edges                                     -> PaginatedList[WorkflowEdgeDoc]
+//	GET /v1/workflows/artifacts                                      -> PaginatedList[WorkflowArtifact]
+//	GET /v1/workflows/{wf}/snapshots                                 -> PaginatedList[WorkflowSnapshot]
+//	GET /v1/workflows/runs/{run}/steps                               -> PaginatedList[WorkflowRunStep]
+//	GET /v1/workflows/runs/{run}/steps/{block}/simulations           -> PaginatedList[BlockSimulation]
 func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 	envelope := func(items ...map[string]any) map[string]any {
 		return map[string]any{

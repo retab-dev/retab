@@ -1,7 +1,9 @@
 package retab
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -174,18 +176,18 @@ func (s *WorkflowsService) GetResolvedSchemas(ctx context.Context, workflowID st
 // WorkflowSnapshot is the metadata for one published snapshot of a workflow,
 // returned as the data items of (*WorkflowsService).ListSnapshots.
 type WorkflowSnapshot struct {
-	ID                string    `json:"id"`
-	SnapshotID        string    `json:"snapshot_id"`
-	WorkflowID        string    `json:"workflow_id"`
-	OrganizationID    string    `json:"organization_id,omitempty"`
-	Version           int       `json:"version"`
-	Description       string    `json:"description"`
-	BlockCount        int       `json:"block_count"`
-	EdgeCount         int       `json:"edge_count"`
-	PublishedBy       string    `json:"published_by,omitempty"`
-	PublishedByEmail  string    `json:"published_by_email,omitempty"`
-	PublishedByName   string    `json:"published_by_name,omitempty"`
-	PublishedAt       time.Time `json:"published_at"`
+	ID               string    `json:"id"`
+	SnapshotID       string    `json:"snapshot_id"`
+	WorkflowID       string    `json:"workflow_id"`
+	OrganizationID   string    `json:"organization_id,omitempty"`
+	Version          int       `json:"version"`
+	Description      string    `json:"description"`
+	BlockCount       int       `json:"block_count"`
+	EdgeCount        int       `json:"edge_count"`
+	PublishedBy      string    `json:"published_by,omitempty"`
+	PublishedByEmail string    `json:"published_by_email,omitempty"`
+	PublishedByName  string    `json:"published_by_name,omitempty"`
+	PublishedAt      time.Time `json:"published_at"`
 }
 
 // ListSnapshotsParams bounds the snapshot page returned by ListSnapshots.
@@ -456,10 +458,28 @@ func (s *WorkflowBlocksService) List(ctx context.Context, workflowID string, opt
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
-	var result PaginatedList[WorkflowBlock]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks", nil, nil, &result, opts...)
-	if err != nil {
+	// The /workflows/<id>/blocks endpoint currently returns a bare JSON
+	// array; every other list endpoint returns the canonical paginated
+	// envelope. Sniff the first non-whitespace byte and dispatch
+	// accordingly so callers always receive a wrapped *PaginatedList,
+	// matching the rest of the SDK. Drop the bare-array branch once the
+	// server is consistent.
+	var raw json.RawMessage
+	if err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/blocks", nil, nil, &raw, opts...); err != nil {
 		return nil, err
+	}
+	trimmed := bytes.TrimLeft(raw, " \t\r\n")
+	var result PaginatedList[WorkflowBlock]
+	if len(trimmed) > 0 && trimmed[0] == '[' {
+		var arr []WorkflowBlock
+		if err := json.Unmarshal(raw, &arr); err != nil {
+			return nil, fmt.Errorf("retab: decode workflow blocks list (bare array): %w", err)
+		}
+		result.Data = arr
+	} else {
+		if err := json.Unmarshal(raw, &result); err != nil {
+			return nil, fmt.Errorf("retab: decode workflow blocks list (envelope): %w", err)
+		}
 	}
 	return &result, nil
 }
