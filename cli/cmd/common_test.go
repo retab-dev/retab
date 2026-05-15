@@ -171,6 +171,50 @@ func TestResolveDocumentFileID_RequiresCredentials(t *testing.T) {
 	}
 }
 
+// A bad --file path used to bubble up as "retab: unsupported MIME input
+// string" because the path was handed straight to retab.InferMIMEData,
+// which fails the same way a binary blob with no detectable mime would.
+// Stat the path upfront and surface a clear "file not found:" error so
+// users can spot the typo without thinking about MIME machinery.
+func TestResolveDocumentFileMissing(t *testing.T) {
+	cmd := &cobra.Command{}
+	addDocumentFlags(cmd)
+	missing := "/definitely/does/not/exist.pdf"
+	if err := cmd.ParseFlags([]string{"--file", missing}); err != nil {
+		t.Fatal(err)
+	}
+	_, err := resolveDocument(cmd)
+	if err == nil {
+		t.Fatal("expected error for missing file, got nil")
+	}
+	want := "file not found: " + missing
+	if !strings.HasPrefix(err.Error(), "file not found: ") {
+		t.Fatalf("error should start with %q, got: %v", "file not found: ", err)
+	}
+	if err.Error() != want {
+		t.Errorf("error mismatch:\n got: %q\nwant: %q", err.Error(), want)
+	}
+}
+
+// Same treatment for --document-file — a missing JSON descriptor used to
+// surface as a json-unmarshal error wrapping "no such file or directory",
+// which is confusing for a typo'd path.
+func TestResolveDocumentDocumentFileMissing(t *testing.T) {
+	cmd := &cobra.Command{}
+	addDocumentFlags(cmd)
+	missing := "/definitely/does/not/exist.json"
+	if err := cmd.ParseFlags([]string{"--document-file", missing}); err != nil {
+		t.Fatal(err)
+	}
+	_, err := resolveDocument(cmd)
+	if err == nil {
+		t.Fatal("expected error for missing file, got nil")
+	}
+	if !strings.HasPrefix(err.Error(), "file not found: ") {
+		t.Fatalf("error should start with %q, got: %v", "file not found: ", err)
+	}
+}
+
 func TestResolveDocumentMutex(t *testing.T) {
 	cmd := &cobra.Command{}
 	addDocumentFlags(cmd)

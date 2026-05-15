@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -90,7 +91,7 @@ of main.`,
 		defer cancel()
 		result, err := client.Workflows.Specs.Validate(ctx, yaml)
 		if err != nil {
-			return err
+			return translateSpecAPIError(err)
 		}
 		return printJSON(result)
 	}),
@@ -120,7 +121,7 @@ Plan is read-only — safe to run on production specs. Pair it with
 		defer cancel()
 		result, err := client.Workflows.Specs.Plan(ctx, yaml)
 		if err != nil {
-			return err
+			return translateSpecAPIError(err)
 		}
 		return printJSON(result)
 	}),
@@ -150,7 +151,7 @@ Mutating — gate behind ` + "`plan`" + ` in CI if the workflow is in production
 		defer cancel()
 		result, err := client.Workflows.Specs.Apply(ctx, yaml)
 		if err != nil {
-			return err
+			return translateSpecAPIError(err)
 		}
 		return printJSON(result)
 	}),
@@ -174,6 +175,13 @@ pull out other fields).`,
 		format, err := cmd.Flags().GetString("format")
 		if err != nil {
 			return err
+		}
+		// `--json` is the shorthand for `--format json`. When both are
+		// passed and they disagree, the explicit `--format` value wins
+		// (`--json` is the cheap-to-type alias, `--format` is the strict
+		// version). Both being set to compatible values is a no-op.
+		if jsonShortcut, _ := cmd.Flags().GetBool("json"); jsonShortcut && format == "yaml" {
+			format = "json"
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -237,8 +245,39 @@ func writeSpecExport(w io.Writer, result *retab.Resource, format string) error {
 	}
 }
 
+// translateSpecAPIError catches the most common failure mode of the spec
+// validate/plan/apply surface — a YAML body without `metadata.id` — and
+// rewrites the server's giant pydantic blob into a single actionable
+// sentence. The original error is still surfaced by `--debug` (which dumps
+// the full HTTP trace) so we don't hide debugging detail.
+//
+// The marker is the substring `"yaml_path":"metadata.id"` returned in the
+// pydantic error envelope when the field is missing. Matching on this
+// string is intentional: it's stable, it's what the server emits today,
+// and switching to structural unmarshalling would couple us to the exact
+// shape of the server's error wrapper (which has churned).
+//
+// Any error that doesn't match this pattern is passed through unchanged.
+func translateSpecAPIError(err error) error {
+	if err == nil {
+		return nil
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, `"yaml_path":"metadata.id"`) {
+		return err
+	}
+	if !strings.Contains(msg, `"type":"missing"`) {
+		return err
+	}
+	return fmt.Errorf(`spec: metadata.id is required.
+  For new workflows, use any unique identifier (e.g. metadata.id: wrk_my-pipeline).
+  For existing workflows, use the id returned by ` + "`retab workflows list`" + `.
+  Use --debug to see the full server response.`)
+}
+
 func init() {
 	workflowsSpecExportCmd.Flags().String("format", "yaml", "output format: yaml | json")
+	workflowsSpecExportCmd.Flags().Bool("json", false, "shorthand for --format json")
 
 	workflowsSpecCmd.AddCommand(
 		workflowsSpecValidateCmd,

@@ -171,7 +171,7 @@ func (s StepExecutionResponse) ExtractedData() any {
 }
 
 type RunLifecycle struct {
-	Status               string   `json:"status"`
+	Status             string   `json:"status"`
 	WaitingForBlockIDs []string `json:"waiting_for_block_ids,omitempty"`
 	Message            string   `json:"message,omitempty"`
 }
@@ -394,13 +394,13 @@ type AgentEvidenceSource struct {
 
 // AgentEvidenceItem is one field-level justification cited from a source.
 type AgentEvidenceItem struct {
-	FieldPath       string              `json:"field_path"`
-	Action          string              `json:"action"` // "approved_unchanged" | "modified" | "rejected"
-	Quote           string              `json:"quote"`
-	Source          AgentEvidenceSource `json:"source"`
-	FromValue       any                 `json:"from_value,omitempty"`
-	ToValue         any                 `json:"to_value,omitempty"`
-	ReasoningBrief  string              `json:"reasoning_brief,omitempty"`
+	FieldPath      string              `json:"field_path"`
+	Action         string              `json:"action"` // "approved_unchanged" | "modified" | "rejected"
+	Quote          string              `json:"quote"`
+	Source         AgentEvidenceSource `json:"source"`
+	FromValue      any                 `json:"from_value,omitempty"`
+	ToValue        any                 `json:"to_value,omitempty"`
+	ReasoningBrief string              `json:"reasoning_brief,omitempty"`
 }
 
 // AgentProposedDecision is the structured proposal the agent submits via its
@@ -408,33 +408,33 @@ type AgentEvidenceItem struct {
 // ModifiedData / ChangedPaths are empty and EscalationReason carries the
 // rationale.
 type AgentProposedDecision struct {
-	Approved         *bool              `json:"approved,omitempty"`
-	ModifiedData     map[string]any     `json:"modified_data,omitempty"`
-	Confidence       float64            `json:"confidence"`
+	Approved         *bool               `json:"approved,omitempty"`
+	ModifiedData     map[string]any      `json:"modified_data,omitempty"`
+	Confidence       float64             `json:"confidence"`
 	Evidence         []AgentEvidenceItem `json:"evidence"`
-	ChangedPaths     []string           `json:"changed_paths,omitempty"`
-	Escalate         bool               `json:"escalate"`
-	EscalationReason string             `json:"escalation_reason,omitempty"`
+	ChangedPaths     []string            `json:"changed_paths,omitempty"`
+	Escalate         bool                `json:"escalate"`
+	EscalationReason string              `json:"escalation_reason,omitempty"`
 }
 
 // AgentHILReview is the sidecar row tracking one managed-agent review for a
 // HIL block. The dashboard polls this to render the proposal alongside the
 // human verification form.
 type AgentHILReview struct {
-	ID                       string                 `json:"id"`
-	OrganizationID           string                 `json:"organization_id"`
-	RunID                    string                 `json:"run_id"`
-	BlockID                  string                 `json:"block_id"`
-	WorkflowID               string                 `json:"workflow_id"`
-	Mode                     string                 `json:"mode"`   // "pre_review" | "review" | "auto"
-	Status                   string                 `json:"status"` // queued | running | proposed | submitted | escalated | failed | superseded_by_human
-	ManagedAgentSessionID    string                 `json:"managed_agent_session_id,omitempty"`
-	ManagedAgentVaultID      string                 `json:"managed_agent_vault_id,omitempty"`
-	ProposedDecision         *AgentProposedDecision `json:"proposed_decision,omitempty"`
-	SubmittedHILCommandID    string                 `json:"submitted_hil_command_id,omitempty"`
-	FailureReason            string                 `json:"failure_reason,omitempty"`
-	AutoThreshold            float64                `json:"auto_threshold"`
-	TimeoutSeconds           int                    `json:"timeout_seconds"`
-	CreatedAt                time.Time              `json:"created_at"`
-	UpdatedAt                time.Time              `json:"updated_at"`
+	ID                    string                 `json:"id"`
+	OrganizationID        string                 `json:"organization_id"`
+	RunID                 string                 `json:"run_id"`
+	BlockID               string                 `json:"block_id"`
+	WorkflowID            string                 `json:"workflow_id"`
+	Mode                  string                 `json:"mode"`   // "pre_review" | "review" | "auto"
+	Status                string                 `json:"status"` // queued | running | proposed | submitted | escalated | failed | superseded_by_human
+	ManagedAgentSessionID string                 `json:"managed_agent_session_id,omitempty"`
+	ManagedAgentVaultID   string                 `json:"managed_agent_vault_id,omitempty"`
+	ProposedDecision      *AgentProposedDecision `json:"proposed_decision,omitempty"`
+	SubmittedHILCommandID string                 `json:"submitted_hil_command_id,omitempty"`
+	FailureReason         string                 `json:"failure_reason,omitempty"`
+	AutoThreshold         float64                `json:"auto_threshold"`
+	TimeoutSeconds        int                    `json:"timeout_seconds"`
+	CreatedAt             time.Time              `json:"created_at"`
+	UpdatedAt             time.Time              `json:"updated_at"`
 }

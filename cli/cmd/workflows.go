@@ -1,9 +1,51 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
+	"io"
+
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+// warnIfEmptyWorkflowOnPublish prints a stderr warning when the workflow has
+// 0 or 1 blocks and the single block (if any) is the auto-added `start`
+// placeholder. A freshly-`workflows create`d draft is exactly that shape —
+// publishing it produces a version that does nothing. The user might still
+// want to (CI stub, scaffolding), so the warning never blocks; --force on
+// the publish command suppresses it entirely.
+//
+// Failures fetching the block list are deliberately swallowed: this is a
+// best-effort UX nicety, not a precondition. A network blip here must not
+// keep the user from publishing — the publish call itself will surface any
+// real auth/server failure with its own error.
+func warnIfEmptyWorkflowOnPublish(ctx context.Context, client *retab.Client, workflowID string, w io.Writer) {
+	blocks, err := client.Workflows.Blocks.List(ctx, workflowID)
+	if err != nil {
+		return
+	}
+	if !isEffectivelyEmptyDraft(blocks.Data) {
+		return
+	}
+	fmt.Fprintln(w, "warning: workflow has only a start block — publishing an empty workflow.")
+	fmt.Fprintln(w, "warning: add blocks with `retab workflows blocks create` before publishing.")
+}
+
+// isEffectivelyEmptyDraft returns true for the two empty-ish shapes that
+// produce a no-op published version: a fully empty block list (shouldn't
+// happen via the UI but is possible via the API), and the canonical
+// freshly-created-workflow shape of exactly one `start` block.
+func isEffectivelyEmptyDraft(blocks []retab.WorkflowBlock) bool {
+	switch len(blocks) {
+	case 0:
+		return true
+	case 1:
+		return blocks[0].Type == "start"
+	default:
+		return false
+	}
+}
 
 var workflowsCmd = &cobra.Command{
 	Use:   "workflows",
@@ -217,14 +259,22 @@ Subsequent ` + "`workflows runs create`" + ` calls without an explicit
 ` + "`--version`" + ` use the latest published version.
 
 The draft remains editable after publishing; iterate freely, then publish
-again to cut a new version.`,
+again to cut a new version.
+
+By default, publishing a draft that contains only the auto-added ` + "`start`" + `
+block (i.e. an effectively empty workflow) prints a warning to stderr but
+proceeds — the publish itself succeeds. Pass ` + "`--force`" + ` to skip
+the warning.`,
 	Example: `  # Publish with a release note
   retab workflows publish wf_abc123 \
     --description "v3: tighter line-item schema"
 
   # Pin a run to a specific published version
   retab workflows runs create wf_abc123 \
-    --version v3 --document-file start=./invoice.pdf`,
+    --version v3 --document-file start=./invoice.pdf
+
+  # Skip the "empty workflow" warning when intentionally publishing a stub
+  retab workflows publish wf_abc123 --force`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -234,6 +284,12 @@ again to cut a new version.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		description, _ := cmd.Flags().GetString("description")
+		force, _ := cmd.Flags().GetBool("force")
+		if !force {
+			// stderr is the warning sink: it doesn't pollute the JSON
+			// payload on stdout that callers pipe into `jq`.
+			warnIfEmptyWorkflowOnPublish(ctx, client, args[0], cmd.ErrOrStderr())
+		}
 		result, err := client.Workflows.Publish(ctx, args[0], retab.PublishWorkflowRequest{Description: description})
 		if err != nil {
 			return err
@@ -411,6 +467,7 @@ func init() {
 	workflowsUpdateCmd.Flags().StringArray("allowed-domain", nil, "email trigger allowed domain (repeatable)")
 
 	workflowsPublishCmd.Flags().String("description", "", "publish description")
+	workflowsPublishCmd.Flags().Bool("force", false, "skip the empty-workflow warning")
 
 	workflowsDiagnoseCmd.Flags().String("graph-file", "", "JSON file with {blocks, edges, re_propagate} to diagnose without persisting")
 

@@ -122,6 +122,38 @@ other workspace-level fields — but NOT the file bytes. Use
 	}),
 }
 
+var filesDeleteCmd = &cobra.Command{
+	Use:   "delete <file-id>",
+	Short: "Delete a file from the workspace",
+	Long: `Permanently delete a file from the workspace. The underlying blob is
+removed from storage; downstream artefacts (extractions, parses, runs)
+that reference the file id keep their snapshots but the original blob
+can no longer be downloaded.
+
+For bulk cleanup of test or stale files, pipe ` + "`files list`" + ` IDs
+through ` + "`xargs`" + `.`,
+	Example: `  # Delete a single file
+  retab files delete file_abc123
+  # => { "id": "file_abc123", "deleted": true }
+
+  # Bulk-delete every file matching a pattern (be careful)
+  retab files list --limit 100 | jq -r '.data[] | select(.filename | test("^stress_")) | .id' \
+    | xargs -n1 retab files delete`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		if err := client.Files.Delete(ctx, args[0]); err != nil {
+			return err
+		}
+		return printJSON(map[string]any{"id": args[0], "deleted": true})
+	}),
+}
+
 var filesUploadCmd = &cobra.Command{
 	Use:   "upload <path>",
 	Short: "Upload a local file",
@@ -525,6 +557,6 @@ func init() {
 
 	filesCompleteUploadCmd.Flags().String("sha256", "", "sha256 hex digest (optional)")
 
-	filesCmd.AddCommand(filesListCmd, filesGetCmd, filesUploadCmd, filesDownloadLinkCmd, filesDownloadCmd, filesCreateUploadCmd, filesCompleteUploadCmd)
+	filesCmd.AddCommand(filesListCmd, filesGetCmd, filesUploadCmd, filesDeleteCmd, filesDownloadLinkCmd, filesDownloadCmd, filesCreateUploadCmd, filesCompleteUploadCmd)
 	rootCmd.AddCommand(filesCmd)
 }

@@ -240,24 +240,42 @@ duration, cost, error info, final outputs. For per-block detail use
 }
 
 var workflowsRunsListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   "list [workflow-id]",
 	Short: "List workflow runs",
-	Long: `List runs across workflows, with filters for workflow id, status,
-trigger type, date range, cost, and duration. Use cursor pagination
+	Long: `List workflow runs. Without a workflow id the result spans the
+whole workspace; with one (passed positionally OR via ` + "`--workflow-id`" + `,
+not both) the result is scoped to that workflow. Other filters available:
+status, trigger type, date range, cost, and duration. Use cursor pagination
 (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `) and
 ` + "`--fields`" + ` to keep responses small on busy projects.`,
-	Example: `  # Failed runs in a workflow over the last day
-  retab workflows runs list \
-    --workflow-id wf_abc123 \
-    --status failed \
-    --from-date 2026-05-13
+	Example: `  # Scope to a single workflow (positional, matches the rest of workflows)
+  retab workflows runs list wf_abc123 --limit 50
 
-  # Expensive runs only
-  retab workflows runs list --workflow-id wf_abc123 --min-cost 1.0
+  # Same, but with the flag form when composing many filters
+  retab workflows runs list --workflow-id wf_abc123 --status failed --from-date 2026-05-13
 
-  # Walk pages
-  retab workflows runs list --workflow-id wf_abc123 --limit 50 --order desc`,
+  # Workspace-wide (omit the workflow id entirely)
+  retab workflows runs list --status failed --limit 50`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Honour <workflow-id> positional (matches workflows entities /
+		// blocks list / edges create / tests execute convention). The flag
+		// form stays supported. If both are set and they disagree, error
+		// — silently picking one would mask real user mistakes.
+		flagID, _ := cmd.Flags().GetString("workflow-id")
+		var posID string
+		if len(args) == 1 {
+			posID = args[0]
+		}
+		effectiveID := ""
+		switch {
+		case posID != "" && flagID != "" && posID != flagID:
+			return fmt.Errorf("workflow id specified twice (positional %q, --workflow-id %q)", posID, flagID)
+		case posID != "":
+			effectiveID = posID
+		case flagID != "":
+			effectiveID = flagID
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -265,7 +283,7 @@ trigger type, date range, cost, and duration. Use cursor pagination
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.ListWorkflowRunsParams{}
-		params.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
+		params.WorkflowID = effectiveID
 		params.Status, _ = cmd.Flags().GetString("status")
 		params.Statuses, _ = cmd.Flags().GetStringArray("statuses")
 		params.ExcludeStatus, _ = cmd.Flags().GetString("exclude-status")

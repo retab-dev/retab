@@ -229,6 +229,15 @@ func (s *FilesService) GetDownloadLink(ctx context.Context, fileID string, opts 
 	return &link, err
 }
 
+// Delete removes a file from the workspace. The CLI exposes this via
+// `retab files delete <file-id>`. Mirrors WorkflowsService.Delete.
+func (s *FilesService) Delete(ctx context.Context, fileID string, opts ...RequestOption) error {
+	if fileID == "" {
+		return fmt.Errorf("retab: fileID is required")
+	}
+	return s.client.do(ctx, http.MethodDelete, "/files/"+url.PathEscape(fileID), nil, nil, nil, opts...)
+}
+
 type SchemasService struct {
 	client *Client
 }
