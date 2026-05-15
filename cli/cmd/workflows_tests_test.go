@@ -110,6 +110,39 @@ func TestResolveWorkflowIDArg_NeitherErrors(t *testing.T) {
 	}
 }
 
+func TestResolveWorkflowIDArg_BlankValuesError(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		flag string
+	}{
+		{name: "blank positional", args: []string{"   "}},
+		{name: "blank deprecated flag", flag: "   "},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := makeCmdWithWorkflowIDFlag()
+			if tc.flag != "" {
+				if err := c.ParseFlags([]string{"--workflow-id", tc.flag}); err != nil {
+					t.Fatalf("parse: %v", err)
+				}
+			} else if err := c.ParseFlags(nil); err != nil {
+				t.Fatalf("parse: %v", err)
+			}
+			var warn bytes.Buffer
+			_, err := resolveWorkflowIDArgTo(c, tc.args, &warn)
+			if err == nil {
+				t.Fatal("expected blank workflow id error")
+			}
+			if !strings.Contains(err.Error(), "workflow id required") {
+				t.Fatalf("expected workflow id required message, got %q", err.Error())
+			}
+			if warn.Len() != 0 {
+				t.Fatalf("expected no warning for blank workflow id, got %q", warn.String())
+			}
+		})
+	}
+}
+
 // TestWorkflowsTestsCreateCmd_NoCobraAutoDeprecation verifies that the real
 // workflowsTestsCreateCmd does NOT trigger cobra's auto-emitted
 // "Flag --workflow-id has been deprecated..." message. The custom warning
@@ -213,11 +246,136 @@ func TestWorkflowsTestsListCommandsRejectNegativeLimitLocally(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected local parse error for --limit=-1")
 			}
-			if !strings.Contains(err.Error(), "non-negative") {
-				t.Fatalf("error %q does not mention non-negative", err.Error())
+			if !strings.Contains(err.Error(), "between 0 and 100") {
+				t.Fatalf("error %q does not mention backend limit range", err.Error())
 			}
 			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {
 				t.Fatalf("reset --limit: %v", resetErr)
+			}
+		})
+	}
+}
+
+func TestWorkflowsTestsListCommandsRejectOverLimitLocally(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "tests list", cmd: workflowsTestsListCmd},
+		{name: "test runs list", cmd: workflowsTestsRunsListCmd},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cmd.Flags().Set("limit", "101")
+			if err == nil {
+				t.Fatal("expected local parse error for --limit=101")
+			}
+			if !strings.Contains(err.Error(), "between 0 and 100") {
+				t.Fatalf("error %q does not mention backend limit range", err.Error())
+			}
+			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {
+				t.Fatalf("reset --limit: %v", resetErr)
+			}
+		})
+	}
+}
+
+func TestWorkflowsTestsRejectMalformedTargetAndSourceBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	validTarget := filepath.Join(dir, "target.json")
+	validSource := filepath.Join(dir, "source.json")
+	validAssertion := filepath.Join(dir, "assertion.json")
+	invalidTarget := filepath.Join(dir, "invalid-target.json")
+	invalidSource := filepath.Join(dir, "invalid-source.json")
+	for path, body := range map[string]string{
+		validTarget:    `{"type":"block","block_id":"blk_1"}`,
+		validSource:    `{"type":"manual","handle_inputs":{}}`,
+		validAssertion: `{"target":{"output_handle_id":"output-json-0"},"condition":{"kind":"exists"}}`,
+		invalidTarget:  `{}`,
+		invalidSource:  `{}`,
+	} {
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	cases := []struct {
+		name      string
+		cmd       *cobra.Command
+		args      []string
+		flags     map[string]string
+		wantError string
+	}{
+		{
+			name: "create invalid target",
+			cmd:  workflowsTestsCreateCmd,
+			args: []string{"wf_123"},
+			flags: map[string]string{
+				"target-file":    invalidTarget,
+				"source-file":    validSource,
+				"assertion-file": validAssertion,
+			},
+			wantError: "--target-file",
+		},
+		{
+			name: "create invalid source",
+			cmd:  workflowsTestsCreateCmd,
+			args: []string{"wf_123"},
+			flags: map[string]string{
+				"target-file":    validTarget,
+				"source-file":    invalidSource,
+				"assertion-file": validAssertion,
+			},
+			wantError: "--source-file",
+		},
+		{
+			name:      "update invalid source",
+			cmd:       workflowsTestsUpdateCmd,
+			args:      []string{"wf_123", "test_123"},
+			flags:     map[string]string{"source-file": invalidSource},
+			wantError: "--source-file",
+		},
+		{
+			name:      "execute invalid target",
+			cmd:       workflowsTestsExecuteCmd,
+			args:      []string{"wf_123"},
+			flags:     map[string]string{"target-file": invalidTarget},
+			wantError: "--target-file",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			before := hits.Load()
+			for name, value := range tc.flags {
+				if err := tc.cmd.Flags().Set(name, value); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { _ = tc.cmd.Flags().Set(name, "") })
+			}
+
+			var err error
+			_, stderr := captureStd(t, func() {
+				err = tc.cmd.RunE(tc.cmd, tc.args)
+			})
+			if err == nil {
+				t.Fatal("expected malformed local file error")
+			}
+			if !strings.Contains(stderr, tc.wantError) {
+				t.Fatalf("stderr %q does not contain %q", stderr, tc.wantError)
+			}
+			if got := hits.Load(); got != before {
+				t.Fatalf("server was hit %d time(s), want 0", got-before)
 			}
 		})
 	}
@@ -230,6 +388,7 @@ func TestWorkflowsExperimentsConsensusFlagsMatchBackendContract(t *testing.T) {
 	}{
 		{name: "create", cmd: workflowsExperimentsCreateCmd},
 		{name: "update", cmd: workflowsExperimentsUpdateCmd},
+		{name: "block simulate", cmd: workflowsBlocksSimulateCmd},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.cmd.Flags().Set("n-consensus", "2")
@@ -243,6 +402,197 @@ func TestWorkflowsExperimentsConsensusFlagsMatchBackendContract(t *testing.T) {
 				t.Fatalf("reset --n-consensus: %v", resetErr)
 			}
 		})
+	}
+}
+
+func TestWorkflowsExperimentsUpdateRejectsExplicitZeroConsensusBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	if err := workflowsExperimentsUpdateCmd.Flags().Set("n-consensus", "0"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsExperimentsUpdateCmd.Flags().Set("n-consensus", "0")
+		workflowsExperimentsUpdateCmd.Flags().Lookup("n-consensus").Changed = false
+	})
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"wf_123", "exp_123"})
+	})
+	if err == nil {
+		t.Fatal("expected explicit zero consensus error")
+	}
+	if !strings.Contains(stderr, "invalid --n-consensus 0") {
+		t.Fatalf("stderr %q does not mention invalid zero consensus", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want no requests", got)
+	}
+}
+
+func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	emptyCaptures := filepath.Join(dir, "empty-captures.json")
+	missingRunID := filepath.Join(dir, "missing-run-id.json")
+	missingHandleInputs := filepath.Join(dir, "missing-handle-inputs.json")
+	for path, body := range map[string]string{
+		emptyCaptures:       `[]`,
+		missingRunID:        `[{"step_id":"step_123"}]`,
+		missingHandleInputs: `[{"provenance":{"workflow_run_id":"run_123"}}]`,
+	} {
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	cases := []struct {
+		name      string
+		flags     map[string]string
+		wantError string
+	}{
+		{name: "no documents", flags: nil, wantError: "at least one document"},
+		{name: "empty captures", flags: map[string]string{"captures-file": emptyCaptures}, wantError: "at least one document"},
+		{name: "missing capture run id", flags: map[string]string{"captures-file": missingRunID}, wantError: "workflow_run_id is required"},
+		{name: "missing explicit handle inputs", flags: map[string]string{"documents-file": missingHandleInputs}, wantError: "handle_inputs is required"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			before := hits.Load()
+			if err := workflowsExperimentsCreateCmd.Flags().Set("block-id", "blk_123"); err != nil {
+				t.Fatal(err)
+			}
+			if err := workflowsExperimentsCreateCmd.Flags().Set("name", "experiment"); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				_ = workflowsExperimentsCreateCmd.Flags().Set("block-id", "")
+				_ = workflowsExperimentsCreateCmd.Flags().Set("name", "")
+			})
+			for name, value := range tc.flags {
+				if err := workflowsExperimentsCreateCmd.Flags().Set(name, value); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { _ = workflowsExperimentsCreateCmd.Flags().Set(name, "") })
+			}
+
+			var err error
+			_, stderr := captureStd(t, func() {
+				err = workflowsExperimentsCreateCmd.RunE(workflowsExperimentsCreateCmd, []string{"wf_123"})
+			})
+			if err == nil {
+				t.Fatal("expected invalid experiment document input error")
+			}
+			if !strings.Contains(stderr, tc.wantError) {
+				t.Fatalf("stderr %q does not contain %q", stderr, tc.wantError)
+			}
+			if got := hits.Load(); got != before {
+				t.Fatalf("server was hit %d time(s), want 0", got-before)
+			}
+		})
+	}
+}
+
+func TestWorkflowsExperimentsRejectBlankNameBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	docsFile := filepath.Join(t.TempDir(), "documents.json")
+	if err := os.WriteFile(docsFile, []byte(`[{"handle_inputs":{}}]`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name  string
+		cmd   *cobra.Command
+		args  []string
+		setup func(t *testing.T)
+	}{
+		{
+			name: "create",
+			cmd:  workflowsExperimentsCreateCmd,
+			args: []string{"wf_123"},
+			setup: func(t *testing.T) {
+				t.Helper()
+				if err := workflowsExperimentsCreateCmd.Flags().Set("block-id", "blk_123"); err != nil {
+					t.Fatal(err)
+				}
+				if err := workflowsExperimentsCreateCmd.Flags().Set("documents-file", docsFile); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() {
+					_ = workflowsExperimentsCreateCmd.Flags().Set("block-id", "")
+					_ = workflowsExperimentsCreateCmd.Flags().Set("documents-file", "")
+				})
+			},
+		},
+		{
+			name:  "update",
+			cmd:   workflowsExperimentsUpdateCmd,
+			args:  []string{"wf_123", "exp_123"},
+			setup: func(t *testing.T) { t.Helper() },
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			before := hits.Load()
+			tc.setup(t)
+			if err := tc.cmd.Flags().Set("name", "   "); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = tc.cmd.Flags().Set("name", "") })
+
+			var err error
+			_, stderr := captureStd(t, func() {
+				err = tc.cmd.RunE(tc.cmd, tc.args)
+			})
+			if err == nil {
+				t.Fatal("expected blank name error")
+			}
+			if !strings.Contains(stderr, "experiment name is required") {
+				t.Fatalf("stderr %q does not mention blank experiment name", stderr)
+			}
+			if got := hits.Load(); got != before {
+				t.Fatalf("server was hit %d time(s), want 0", got-before)
+			}
+		})
+	}
+}
+
+func TestWorkflowsExperimentsCreateHelpDoesNotRepeatRunBatchSentence(t *testing.T) {
+	const repeated = "experiments together via `workflows experiments run-batch`"
+	if strings.Count(workflowsExperimentsCreateCmd.Long, repeated) != 1 {
+		t.Fatalf("experiments create help should mention run-batch once, got:\n%s", workflowsExperimentsCreateCmd.Long)
 	}
 }
 
@@ -312,6 +662,48 @@ func TestWorkflowsExperimentsMetricsViewsMatchBackendContract(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), "by_document") || !strings.Contains(err.Error(), "votes") {
 			t.Fatalf("error %q does not mention backend view names", err.Error())
+		}
+	}
+}
+
+func TestWorkflowsExperimentsEligibleBlocksHonorsOutputTable(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/workflows/wf_123/experiments/eligible-blocks" {
+			t.Fatalf("path = %s, want eligible-blocks path", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"blocks":[{"block_id":"blk_extract","block_label":"Extract","block_type":"extract","experiment_count":2}]}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	var err error
+	stdout, stderr := captureStd(t, func() {
+		err = workflowsExperimentsEligibleBlocksCmd.RunE(workflowsExperimentsEligibleBlocksCmd, []string{"wf_123"})
+	})
+	if err != nil {
+		t.Fatalf("eligible-blocks: %v", err)
+	}
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if strings.HasPrefix(strings.TrimSpace(stdout), "{") {
+		t.Fatalf("expected table output, got JSON:\n%s", stdout)
+	}
+	for _, want := range []string{"ID", "NAME", "TYPE", "blk_extract", "Extract", "extract"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
 	}
 }

@@ -76,9 +76,47 @@ func InferMIMEData(input any) (MIMEData, error) {
 			return MIMEData{}, err
 		}
 		return inferMIMEDataFromBytes(data, "")
+	case map[string]any:
+		return inferMIMEDataFromMap(value)
+	case map[string]string:
+		return inferMIMEDataFromStringMap(value)
 	default:
 		return MIMEData{}, fmt.Errorf("retab: unsupported MIME input type %T", input)
 	}
+}
+
+func inferMIMEDataFromMap(value map[string]any) (MIMEData, error) {
+	stringValue := map[string]string{}
+	for _, key := range []string{"filename", "url", "content", "mime_type", "mimeType"} {
+		if raw, ok := value[key]; ok && raw != nil {
+			str, ok := raw.(string)
+			if !ok {
+				return MIMEData{}, fmt.Errorf("retab: MIMEData field %s must be a string", key)
+			}
+			stringValue[key] = str
+		}
+	}
+	return inferMIMEDataFromStringMap(stringValue)
+}
+
+func inferMIMEDataFromStringMap(value map[string]string) (MIMEData, error) {
+	mimeType := value["mime_type"]
+	if mimeType == "" {
+		mimeType = value["mimeType"]
+	}
+	mimeData := MIMEData{
+		Filename: value["filename"],
+		Content:  value["content"],
+		URL:      value["url"],
+		MIMEType: mimeType,
+	}
+	if mimeData.URL != "" {
+		return mimeData, nil
+	}
+	if mimeData.Content != "" && mimeData.MIMEType != "" {
+		return mimeData, nil
+	}
+	return MIMEData{}, fmt.Errorf("retab: MIMEData descriptor must include url or both content and mime_type")
 }
 
 func retabStorageFileIDFromURL(rawURL string) string {

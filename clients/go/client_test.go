@@ -901,3 +901,87 @@ func TestAPIError(t *testing.T) {
 		t.Fatalf("details = %#v", apiErr.Details)
 	}
 }
+
+// TestAPIErrorUnwrappedEnvelope pins that APIError parsing also handles the
+// error envelope when it arrives at the top level instead of under a
+// `detail` key. Some endpoints (e.g. POST /v1/jobs validation failures)
+// return `{"code":...,"message":...,"details":...}` directly. Without
+// handling that shape the SDK falls back to a generic "Request failed (N)"
+// message and drops Code/Details — so the CLI renders a degraded error.
+func TestAPIErrorUnwrappedEnvelope(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte(`{"code":"HTTP_EXCEPTION","message":"An HTTP exception occurred.","details":{"error":"document field required"}}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected APIError, got %T", err)
+	}
+	if apiErr.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d", apiErr.StatusCode)
+	}
+	if apiErr.Code != "HTTP_EXCEPTION" {
+		t.Fatalf("code = %q, want HTTP_EXCEPTION", apiErr.Code)
+	}
+	if apiErr.Message != "An HTTP exception occurred." {
+		t.Fatalf("message = %q, want the envelope message", apiErr.Message)
+	}
+	if apiErr.Details["error"] != "document field required" {
+		t.Fatalf("details = %#v", apiErr.Details)
+	}
+}
+
+// TestAPIErrorFlatValidationEnvelope pins that parseAPIError surfaces the
+// `message` field of the backend's flat 422 envelope.
+//
+// FastAPI request-validation failures (RequestValidationError) are returned
+// by main_server's global handler as {"status_code","message","data"} —
+// NOT the {"detail":{...}} shape every other error uses. parseAPIError only
+// understood the nested shape, so every 422 (the most common error class:
+// bad request bodies) degraded to the generic "Request failed (422)" with
+// the real validation detail buried in the raw Body field.
+func TestAPIErrorFlatValidationEnvelope(t *testing.T) {
+	const validationMessage = `[{"type": "missing", "loc": ["body", "document", "filename"], "msg": "Field required"}]`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status_code": 10422,
+			"message":     validationMessage,
+			"data":        nil,
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.Workflows.Runs.Get(context.Background(), "run_123")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected APIError, got %T", err)
+	}
+	if apiErr.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d", apiErr.StatusCode)
+	}
+	if apiErr.Message != validationMessage {
+		t.Fatalf("message = %q, want the validation detail from the flat envelope", apiErr.Message)
+	}
+}

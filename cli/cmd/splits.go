@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -48,16 +49,16 @@ returned subdocument references can be fed back into per-section
     --file-id file_abc123 --model gpt-4o \
     --subdocuments-file ./sections.json --n-consensus 3`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		model, err := requireNonBlankFlag(cmd, "model")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		doc, err := resolveDocument(cmd)
-		if err != nil {
-			return err
-		}
 		subdocsFile, _ := cmd.Flags().GetString("subdocuments-file")
 		if subdocsFile == "" {
 			return fmt.Errorf("--subdocuments-file is required")
@@ -66,25 +67,48 @@ returned subdocument references can be fed back into per-section
 		if err != nil {
 			return fmt.Errorf("--subdocuments-file: %w", err)
 		}
+		if len(arr) == 0 {
+			return fmt.Errorf("--subdocuments-file: at least one subdocument is required")
+		}
 		var subs []retab.SplitSubdocument
-		for _, item := range arr {
+		for i, item := range arr {
 			obj, ok := item.(map[string]any)
 			if !ok {
-				return fmt.Errorf("--subdocuments-file: each item must be a JSON object")
+				return fmt.Errorf("--subdocuments-file[%d] must be a JSON object", i)
 			}
 			sub := retab.SplitSubdocument{}
-			if v, ok := obj["name"].(string); ok {
-				sub.Name = v
+			nameValue, ok := obj["name"]
+			if !ok {
+				return fmt.Errorf("--subdocuments-file[%d].name is required", i)
 			}
-			if v, ok := obj["description"].(string); ok {
-				sub.Description = v
+			name, ok := nameValue.(string)
+			if !ok {
+				return fmt.Errorf("--subdocuments-file[%d].name must be a string", i)
 			}
-			if v, ok := obj["allow_multiple_instances"].(bool); ok {
-				sub.AllowMultipleInstances = v
+			sub.Name = name
+			if v, ok := obj["description"]; ok {
+				description, ok := v.(string)
+				if !ok {
+					return fmt.Errorf("--subdocuments-file[%d].description must be a string", i)
+				}
+				sub.Description = description
+			}
+			if v, ok := obj["allow_multiple_instances"]; ok {
+				allowMultipleInstances, ok := v.(bool)
+				if !ok {
+					return fmt.Errorf("--subdocuments-file[%d].allow_multiple_instances must be a boolean", i)
+				}
+				sub.AllowMultipleInstances = allowMultipleInstances
+			}
+			if err := validateSplitSubdocument(i, sub); err != nil {
+				return err
 			}
 			subs = append(subs, sub)
 		}
-		model, _ := cmd.Flags().GetString("model")
+		doc, err := resolveDocument(cmd)
+		if err != nil {
+			return err
+		}
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		instructions, _ := cmd.Flags().GetString("instructions")
@@ -101,6 +125,13 @@ returned subdocument references can be fed back into per-section
 		}
 		return printJSON(result)
 	}),
+}
+
+func validateSplitSubdocument(index int, subdocument retab.SplitSubdocument) error {
+	if strings.TrimSpace(subdocument.Name) == "" {
+		return fmt.Errorf("--subdocuments-file[%d].name is required", index)
+	}
+	return nil
 }
 
 var splitsGetCmd = &cobra.Command{
@@ -190,7 +221,7 @@ func init() {
 	addDocumentFlags(splitsCreateCmd)
 	splitsCreateCmd.Flags().String("subdocuments-file", "", "JSON array of subdocuments (name, description, allow_multiple_instances)")
 	splitsCreateCmd.Flags().String("model", "", "model identifier (required)")
-	splitsCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
+	splitsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "consensus count (1-8)")
 	splitsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	splitsCreateCmd.Flags().String("instructions", "", "extra instructions")
 	_ = splitsCreateCmd.MarkFlagRequired("model")

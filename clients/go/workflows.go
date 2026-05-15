@@ -854,9 +854,26 @@ func (s *WorkflowRunsService) Create(ctx context.Context, request CreateWorkflow
 func workflowRunDocumentsPayload(documents map[string]any) (map[string]map[string]string, error) {
 	payload := map[string]map[string]string{}
 	for blockID, document := range documents {
+		if descriptor, ok, err := workflowRunDocumentDescriptor(blockID, document); ok || err != nil {
+			if err != nil {
+				return nil, err
+			}
+			payload[blockID] = descriptor
+			continue
+		}
 		mimeData, err := InferMIMEData(document)
 		if err != nil {
 			return nil, err
+		}
+		if isWorkflowRunURLBackedDocument(mimeData) {
+			payload[blockID] = map[string]string{
+				"filename": mimeData.Filename,
+				"url":      mimeData.URL,
+			}
+			if mimeData.MIMEType != "" {
+				payload[blockID]["mime_type"] = mimeData.MIMEType
+			}
+			continue
 		}
 		content := mimeData.Content
 		mimeType := mimeData.MIMEType
@@ -880,6 +897,42 @@ func workflowRunDocumentsPayload(documents map[string]any) (map[string]map[strin
 		}
 	}
 	return payload, nil
+}
+
+func workflowRunDocumentDescriptor(blockID string, document any) (map[string]string, bool, error) {
+	switch value := document.(type) {
+	case map[string]string:
+		return normalizeWorkflowRunDocumentDescriptor(blockID, value), true, nil
+	case map[string]any:
+		descriptor := map[string]string{}
+		for _, key := range []string{"filename", "url", "content", "mime_type"} {
+			raw, ok := value[key]
+			if !ok {
+				continue
+			}
+			text, ok := raw.(string)
+			if !ok {
+				return nil, true, fmt.Errorf("retab: workflow run document %s field %q must be a string", blockID, key)
+			}
+			if text != "" {
+				descriptor[key] = text
+			}
+		}
+		return normalizeWorkflowRunDocumentDescriptor(blockID, descriptor), true, nil
+	default:
+		return nil, false, nil
+	}
+}
+
+func normalizeWorkflowRunDocumentDescriptor(blockID string, descriptor map[string]string) map[string]string {
+	if descriptor["filename"] == "" {
+		descriptor["filename"] = blockID
+	}
+	return descriptor
+}
+
+func isWorkflowRunURLBackedDocument(mimeData MIMEData) bool {
+	return strings.HasPrefix(mimeData.URL, "https://") || strings.HasPrefix(mimeData.URL, "http://")
 }
 
 func (s *WorkflowRunsService) Get(ctx context.Context, runID string, opts ...RequestOption) (*WorkflowRun, error) {

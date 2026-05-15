@@ -33,6 +33,7 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -267,8 +268,8 @@ var preferredColumnOrder = []struct {
 	aliases []string
 }{
 	{"ID", []string{"id", "step_id", "block_id", "workflow_id", "run_id"}},
-	{"SOURCE", []string{"source_block", "source"}},
-	{"TARGET", []string{"target_block", "target"}},
+	{"SOURCE", []string{"source_block", "source.type", "source"}},
+	{"TARGET", []string{"target_block", "target.block_id", "target"}},
 	{"NAME", []string{"name", "filename", "block_label", "name_at_run_time", "workflow.name_at_run_time"}},
 	{"TYPE", []string{"type", "status", "block_type", "trigger_type", "lifecycle.status", "trigger.type"}},
 	{"MODEL", []string{"model"}},
@@ -477,16 +478,6 @@ func rowIsObject(row any) bool {
 // columns wider. The trailing column is the natural place to absorb
 // long values (timestamps, URLs, descriptions).
 func pickAutoColumns(rows []any) []TableColumn {
-	// Build the set of keys present across all rows. Use the alias
-	// itself as the key (not the header) so lookup during Extract
-	// is a plain map read.
-	present := make(map[string]bool)
-	for _, row := range rows {
-		for _, k := range rowKeys(row) {
-			present[k] = true
-		}
-	}
-
 	// Collect the matching alias-sets in priority order, capped at
 	// maxAutoColumns. We materialize the alias slice for each pick
 	// here so the closure below captures by value rather than
@@ -499,7 +490,7 @@ func pickAutoColumns(rows []any) []TableColumn {
 	for _, spec := range preferredColumnOrder {
 		hit := false
 		for _, alias := range spec.aliases {
-			if present[alias] {
+			if aliasHasDisplayableValue(rows, alias) {
 				hit = true
 				break
 			}
@@ -525,6 +516,9 @@ func pickAutoColumns(rows []any) []TableColumn {
 						if cellIsEmpty(v) {
 							continue
 						}
+						if !cellIsDisplayable(v) {
+							continue
+						}
 						s := stringifyCell(v)
 						if isTrailing && len(s) > autoTableTruncate {
 							return s[:autoTableTruncate] + "…"
@@ -539,6 +533,19 @@ func pickAutoColumns(rows []any) []TableColumn {
 	return cols
 }
 
+func aliasHasDisplayableValue(rows []any, alias string) bool {
+	for _, row := range rows {
+		v, ok := rowField(row, alias)
+		if !ok || cellIsEmpty(v) {
+			continue
+		}
+		if cellIsDisplayable(v) {
+			return true
+		}
+	}
+	return false
+}
+
 func cellIsEmpty(v any) bool {
 	if v == nil {
 		return true
@@ -549,6 +556,37 @@ func cellIsEmpty(v any) bool {
 		return rv.IsNil()
 	case reflect.String:
 		return rv.Len() == 0
+	default:
+		return false
+	}
+}
+
+func cellIsDisplayable(v any) bool {
+	if v == nil {
+		return false
+	}
+	if _, ok := v.(fmt.Stringer); ok {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
+		if rv.IsNil() {
+			return false
+		}
+		if rv.CanInterface() {
+			if _, ok := rv.Interface().(fmt.Stringer); ok {
+				return true
+			}
+		}
+		rv = rv.Elem()
+	}
+	switch rv.Kind() {
+	case reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+		reflect.Float32, reflect.Float64,
+		reflect.String:
+		return true
 	default:
 		return false
 	}
@@ -745,6 +783,17 @@ func stringifyCell(v any) string {
 	switch t := v.(type) {
 	case string:
 		return t
+	case time.Time:
+		// time.Time implements fmt.Stringer, but its String() form
+		// ("2026-05-15 13:24:54 +0000 UTC") is inconsistent with the
+		// RFC3339 timestamps jobs/files list tables render. Match those
+		// by special-casing before the fmt.Stringer branch below.
+		return t.UTC().Format(time.RFC3339)
+	case *time.Time:
+		if t == nil {
+			return ""
+		}
+		return t.UTC().Format(time.RFC3339)
 	case float32:
 		if math.Trunc(float64(t)) == float64(t) {
 			return strconv.FormatInt(int64(t), 10)

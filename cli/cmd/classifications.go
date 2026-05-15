@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -52,17 +53,16 @@ when the type is obvious from the cover.`,
     --categories-file ./categories.json \
     --n-consensus 5 --first-n-pages 1`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		model, err := requireNonBlankFlag(cmd, "model")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		doc, err := resolveDocument(cmd)
-		if err != nil {
-			return err
-		}
-
 		categoriesFile, _ := cmd.Flags().GetString("categories-file")
 		categoryFlags, _ := cmd.Flags().GetStringArray("category")
 		var categories []retab.ClassificationCategory
@@ -71,30 +71,50 @@ when the type is obvious from the cover.`,
 			if err != nil {
 				return fmt.Errorf("--categories-file: %w", err)
 			}
-			for _, item := range arr {
+			for i, item := range arr {
 				obj, ok := item.(map[string]any)
 				if !ok {
-					return fmt.Errorf("--categories-file: each item must be a JSON object")
+					return fmt.Errorf("--categories-file[%d] must be a JSON object", i)
 				}
 				cat := retab.ClassificationCategory{}
-				if v, ok := obj["name"].(string); ok {
-					cat.Name = v
+				nameValue, ok := obj["name"]
+				if !ok {
+					return fmt.Errorf("--categories-file[%d].name is required", i)
 				}
-				if v, ok := obj["description"].(string); ok {
-					cat.Description = v
+				name, ok := nameValue.(string)
+				if !ok {
+					return fmt.Errorf("--categories-file[%d].name must be a string", i)
+				}
+				cat.Name = name
+				if v, ok := obj["description"]; ok {
+					description, ok := v.(string)
+					if !ok {
+						return fmt.Errorf("--categories-file[%d].description must be a string", i)
+					}
+					cat.Description = description
+				}
+				if err := validateClassificationCategory(i, cat, "--categories-file"); err != nil {
+					return err
 				}
 				categories = append(categories, cat)
 			}
 		}
-		for _, raw := range categoryFlags {
+		for i, raw := range categoryFlags {
 			name, desc, _ := splitKV(raw)
-			categories = append(categories, retab.ClassificationCategory{Name: name, Description: desc})
+			cat := retab.ClassificationCategory{Name: name, Description: desc}
+			if err := validateClassificationCategory(i, cat, "--category"); err != nil {
+				return err
+			}
+			categories = append(categories, cat)
 		}
 		if len(categories) == 0 {
 			return fmt.Errorf("at least one category is required (--category or --categories-file)")
 		}
+		doc, err := resolveDocument(cmd)
+		if err != nil {
+			return err
+		}
 
-		model, _ := cmd.Flags().GetString("model")
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		firstN, _ := cmd.Flags().GetInt("first-n-pages")
@@ -113,6 +133,13 @@ when the type is obvious from the cover.`,
 		}
 		return printJSON(result)
 	}),
+}
+
+func validateClassificationCategory(index int, category retab.ClassificationCategory, source string) error {
+	if strings.TrimSpace(category.Name) == "" {
+		return fmt.Errorf("%s[%d].name is required", source, index)
+	}
+	return nil
 }
 
 var classificationsGetCmd = &cobra.Command{
@@ -201,9 +228,9 @@ backup with ` + "`retab classifications get`" + ` first if you may need it.`,
 func init() {
 	addDocumentFlags(classificationsCreateCmd)
 	classificationsCreateCmd.Flags().String("model", "", "model identifier (required)")
-	classificationsCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
+	classificationsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 16}, "n-consensus", "consensus count (1-16)")
 	classificationsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
-	classificationsCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "first-n-pages", "only classify the first N pages")
+	classificationsCreateCmd.Flags().Var(&positiveIntFlagValue{}, "first-n-pages", "only classify the first N pages")
 	classificationsCreateCmd.Flags().String("instructions", "", "extra instructions")
 	classificationsCreateCmd.Flags().StringArray("category", nil, "category as name=description (repeatable)")
 	classificationsCreateCmd.Flags().String("categories-file", "", "JSON array of {name, description} (or - for stdin)")

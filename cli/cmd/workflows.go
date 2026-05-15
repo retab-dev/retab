@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -143,7 +145,7 @@ Typical lifecycle:
 
   # Run a workflow against an uploaded file
   retab workflows runs create wf_abc123 \
-    --document-file start=./invoice.pdf
+    --document start=./invoice.pdf
 
   # Publish the current draft as an immutable version
   retab workflows publish wf_abc123 --description "v1: invoice extraction"`,
@@ -181,8 +183,46 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printWorkflowList(cmd, result)
 	}),
+}
+
+// printWorkflowList renders a workflow list response. For JSON output it
+// rebuilds the envelope from each Workflow's Raw bytes (the exact server
+// payload) so server-side `--fields` trimming survives to stdout —
+// re-marshaling the typed struct would re-inflate zero-valued fields
+// (name, description, email_trigger) and defeat the flag's whole purpose.
+// Table output keeps the shared renderer: it only surfaces id/name/
+// created_at, so struct re-inflation is harmless there.
+func printWorkflowList(cmd *cobra.Command, result *retab.PaginatedList[retab.Workflow]) error {
+	if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
+		return printResultTable(result)
+	}
+	rows := make([]json.RawMessage, len(result.Data))
+	for i, wf := range result.Data {
+		if len(wf.Raw) > 0 {
+			rows[i] = wf.Raw
+			continue
+		}
+		// Defensive: an element with no captured Raw (shouldn't happen for
+		// a decoded list response) falls back to the typed marshal.
+		encoded, err := json.Marshal(wf)
+		if err != nil {
+			return err
+		}
+		rows[i] = encoded
+	}
+	return printJSON(struct {
+		Data         []json.RawMessage      `json:"data"`
+		ListMetadata retab.PaginationCursor `json:"list_metadata"`
+		HasMore      bool                   `json:"has_more,omitempty"`
+		Total        int                    `json:"total,omitempty"`
+	}{
+		Data:         rows,
+		ListMetadata: result.ListMetadata,
+		HasMore:      result.HasMore,
+		Total:        result.Total,
+	})
 }
 
 var workflowsGetCmd = &cobra.Command{
@@ -197,7 +237,7 @@ For per-block I/O schemas, use ` + "`workflows resolved-schemas`" + `.`,
   retab workflows get wf_abc123
 
   # Pretty-print just the published version
-  retab workflows get wf_abc123 | jq '.published_version'`,
+  retab workflows get wf_abc123 | jq '.published.version_id'`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -235,6 +275,11 @@ functional.`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		name, _ := cmd.Flags().GetString("name")
+		if cmd.Flags().Changed("name") {
+			if err := validateWorkflowName(name); err != nil {
+				return err
+			}
+		}
 		description, _ := cmd.Flags().GetString("description")
 		result, err := client.Workflows.Create(ctx, retab.CreateWorkflowRequest{
 			Name:        name,
@@ -274,6 +319,9 @@ and ` + "`workflows edges`" + `.`,
 		var req retab.UpdateWorkflowRequest
 		if cmd.Flags().Changed("name") {
 			v, _ := cmd.Flags().GetString("name")
+			if err := validateWorkflowName(v); err != nil {
+				return err
+			}
 			req.Name = &v
 		}
 		if cmd.Flags().Changed("description") {
@@ -283,6 +331,12 @@ and ` + "`workflows edges`" + `.`,
 		senders, _ := cmd.Flags().GetStringArray("allowed-sender")
 		domains, _ := cmd.Flags().GetStringArray("allowed-domain")
 		if cmd.Flags().Changed("allowed-sender") || cmd.Flags().Changed("allowed-domain") {
+			if err := validateWorkflowEmailAllowlistValues("--allowed-sender", senders); err != nil {
+				return err
+			}
+			if err := validateWorkflowEmailAllowlistValues("--allowed-domain", domains); err != nil {
+				return err
+			}
 			req.EmailTrigger = &retab.WorkflowEmailTrigger{
 				AllowedSenders: senders,
 				AllowedDomains: domains,
@@ -294,6 +348,22 @@ and ` + "`workflows edges`" + `.`,
 		}
 		return printJSON(result)
 	}),
+}
+
+func validateWorkflowName(name string) error {
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("workflow name must not be blank")
+	}
+	return nil
+}
+
+func validateWorkflowEmailAllowlistValues(flagName string, values []string) error {
+	for _, value := range values {
+		if strings.TrimSpace(value) == "" {
+			return fmt.Errorf("%s must not be blank", flagName)
+		}
+	}
+	return nil
 }
 
 var workflowsDeleteCmd = &cobra.Command{
@@ -340,7 +410,7 @@ the warning.`,
 
   # Pin a run to a specific published version
   retab workflows runs create wf_abc123 \
-    --version v3 --document-file start=./invoice.pdf
+    --version v3 --document start=./invoice.pdf
 
   # Skip the "empty workflow" warning when intentionally publishing a stub
   retab workflows publish wf_abc123 --force`,
@@ -544,9 +614,9 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 func init() {
 	workflowsListCmd.Flags().String("before", "", "workflow id: return items before this id")
 	workflowsListCmd.Flags().String("after", "", "workflow id: return items after this id")
-	workflowsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
+	workflowsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items to return (1-100)")
 	workflowsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
-	workflowsListCmd.Flags().String("sort-by", "", "sort field")
+	workflowsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "updated_at"), "sort-by", "sort field: updated_at")
 	workflowsListCmd.Flags().String("fields", "", "comma-separated field list to return")
 
 	workflowsCreateCmd.Flags().String("name", "", "workflow name")
@@ -560,7 +630,7 @@ func init() {
 	workflowsPublishCmd.Flags().String("description", "", "publish description")
 	workflowsPublishCmd.Flags().Bool("force", false, "skip the empty-workflow warning")
 
-	workflowsSnapshotsCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max snapshots to return")
+	workflowsSnapshotsCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max snapshots to return (1-100)")
 
 	workflowsDiagnoseCmd.Flags().String("graph-file", "", "JSON file with {blocks, edges, re_propagate} to diagnose without persisting")
 

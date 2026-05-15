@@ -1,14 +1,85 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	retab "github.com/retab-dev/retab/clients/go"
 )
+
+// failingReader yields data once, then errors — simulating a transfer that
+// drops mid-stream (network failure, Ctrl-C).
+type failingReader struct {
+	data []byte
+	done bool
+}
+
+func (r *failingReader) Read(p []byte) (int, error) {
+	if r.done {
+		return 0, errors.New("simulated transfer failure")
+	}
+	r.done = true
+	return copy(p, r.data), nil
+}
+
+// TestStreamDownloadToFileSuccess pins that a successful download lands the
+// full content at dest and leaves no temp file behind.
+func TestStreamDownloadToFileSuccess(t *testing.T) {
+	dir := t.TempDir()
+	dest := filepath.Join(dir, "out.bin")
+
+	if err := streamDownloadToFile(dest, strings.NewReader("hello world")); err != nil {
+		t.Fatalf("streamDownloadToFile: %v", err)
+	}
+	got, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("read dest: %v", err)
+	}
+	if string(got) != "hello world" {
+		t.Fatalf("dest content = %q, want %q", got, "hello world")
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 1 {
+		t.Fatalf("expected only dest in dir, got %d entries: %v", len(entries), entries)
+	}
+}
+
+// TestStreamDownloadToFileFailureKeepsExistingFile is the regression guard:
+// a download that fails mid-stream must NOT truncate a pre-existing file at
+// dest and must NOT leave a partial file behind. The old os.Create(dest)
+// implementation truncated dest to zero bytes before the first byte arrived.
+func TestStreamDownloadToFileFailureKeepsExistingFile(t *testing.T) {
+	dir := t.TempDir()
+	dest := filepath.Join(dir, "precious.pdf")
+	if err := os.WriteFile(dest, []byte("ORIGINAL IMPORTANT CONTENT"), 0o644); err != nil {
+		t.Fatalf("seed dest: %v", err)
+	}
+
+	err := streamDownloadToFile(dest, &failingReader{data: []byte("junk")})
+	if err == nil {
+		t.Fatal("expected error from failing transfer")
+	}
+
+	got, readErr := os.ReadFile(dest)
+	if readErr != nil {
+		t.Fatalf("pre-existing dest disappeared: %v", readErr)
+	}
+	if string(got) != "ORIGINAL IMPORTANT CONTENT" {
+		t.Fatalf("failed download corrupted existing file: dest = %q", got)
+	}
+
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 1 {
+		t.Fatalf("failed download left a partial file behind: %v", entries)
+	}
+}
 
 // TestResolveDownloadDest pins the destination-resolution rules for
 // `retab files download`: positional vs. -o flag, "-" → stdout, and the
@@ -271,6 +342,99 @@ func TestFilesCreateUploadShapesDocumentedOutput(t *testing.T) {
 	}
 	if _, ok := got["fileId"]; ok {
 		t.Fatalf("raw SDK key fileId leaked into CLI output:\n%s", stdout)
+	}
+}
+
+func TestFilesListUpdatedAtSortTableShowsUpdatedAt(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/files" {
+			t.Fatalf("path = %s, want /files", r.URL.Path)
+		}
+		if got := r.URL.Query().Get("sort_by"); got != "updated_at" {
+			t.Fatalf("sort_by = %q, want updated_at", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": []map[string]any{
+				{
+					"id":         "file_123",
+					"filename":   "invoice.pdf",
+					"created_at": "2026-05-15T10:00:00Z",
+					"updated_at": "2026-05-15T13:24:08Z",
+				},
+			},
+			"list_metadata": map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	filesListCmd.SetContext(context.Background())
+	t.Cleanup(func() { filesListCmd.SetContext(nil) })
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+	if err := filesListCmd.Flags().Set("sort-by", "updated_at"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = filesListCmd.Flags().Set("sort-by", "") })
+
+	var err error
+	stdout, stderr := captureStd(t, func() {
+		err = filesListCmd.RunE(filesListCmd, nil)
+	})
+	if err != nil {
+		t.Fatalf("files list: %v", err)
+	}
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if !strings.Contains(stdout, "UPDATED_AT") {
+		t.Fatalf("expected UPDATED_AT column, got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "CREATED_AT") {
+		t.Fatalf("did not expect CREATED_AT column for updated_at sort, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "2026-05-15T13:24:08Z") {
+		t.Fatalf("expected updated_at value in table, got:\n%s", stdout)
+	}
+}
+
+func TestFilesUploadSHA256FlagsRejectInvalidValuesLocally(t *testing.T) {
+	cases := []struct {
+		name string
+		cmd  string
+	}{
+		{name: "create-upload", cmd: "create-upload"},
+		{name: "complete-upload", cmd: "complete-upload"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd, _, err := filesCmd.Find([]string{tc.cmd})
+			if err != nil {
+				t.Fatalf("find %s: %v", tc.cmd, err)
+			}
+			err = cmd.Flags().Set("sha256", "banana")
+			if err == nil {
+				t.Fatal("expected local parse error for invalid --sha256")
+			}
+			if !strings.Contains(err.Error(), "64-character hex") {
+				t.Fatalf("error %q does not describe the SHA-256 format", err.Error())
+			}
+			if resetErr := cmd.Flags().Set("sha256", strings.Repeat("a", 64)); resetErr != nil {
+				t.Fatalf("set valid --sha256: %v", resetErr)
+			}
+			if resetErr := cmd.Flags().Set("sha256", ""); resetErr != nil {
+				t.Fatalf("clear --sha256: %v", resetErr)
+			}
+		})
 	}
 }
 

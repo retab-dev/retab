@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -138,6 +139,158 @@ func TestWorkflowsSpec_AppearsInTopLevelHelp(t *testing.T) {
 	got := captureRootHelp(t)
 	if !strings.Contains(got, "    spec ") {
 		t.Errorf("`spec` should appear as a router subcommand under workflows in top-level help:\n%s", got)
+	}
+}
+
+func TestWorkflowsSpecValidateReturnsErrorWhenResultIsInvalid(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/workflows/spec/validate" {
+			t.Fatalf("path = %s, want /workflows/spec/validate", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id": "wf_invalid",
+			"is_valid":    false,
+			"block_count": 2,
+			"edge_count":  1,
+			"diagnostics": map[string]any{
+				"is_valid": false,
+				"issues": []map[string]any{
+					{
+						"severity": "error",
+						"code":     "MISSING_USER_DECLARED_SCHEMA",
+						"message":  "Function block has no output_schema.",
+					},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsSpecValidateCmd.RunE(workflowsSpecValidateCmd, []string{path})
+	})
+	if err == nil {
+		t.Fatal("expected spec validate to fail when response is_valid=false")
+	}
+	if !strings.Contains(errors.Unwrap(err).Error(), "validation failed") {
+		t.Fatalf("error should mention validation failed, got: %v", err)
+	}
+	if !strings.Contains(stderr, "MISSING_USER_DECLARED_SCHEMA") {
+		t.Fatalf("stderr should include diagnostic JSON, got:\n%s", stderr)
+	}
+}
+
+func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/workflows/spec/apply" {
+			t.Fatalf("path = %s, want /workflows/spec/apply", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id": "wf_invalid",
+			"is_valid":    false,
+			"diagnostics": map[string]any{
+				"is_valid": false,
+				"issues": []map[string]any{
+					{
+						"severity": "error",
+						"code":     "INVALID_EDGE_ENDPOINT",
+						"message":  "Edge target block is missing.",
+					},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path})
+	})
+	if err == nil {
+		t.Fatal("expected spec apply to fail when response is_valid=false")
+	}
+	if !strings.Contains(errors.Unwrap(err).Error(), "validation failed") {
+		t.Fatalf("error should mention validation failed, got: %v", err)
+	}
+	if !strings.Contains(stderr, "INVALID_EDGE_ENDPOINT") {
+		t.Fatalf("stderr should include diagnostic JSON, got:\n%s", stderr)
+	}
+}
+
+func TestWorkflowsSpecPlanReturnsErrorWhenDiagnosticsAreInvalid(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/workflows/spec/plan" {
+			t.Fatalf("path = %s, want /workflows/spec/plan", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id": "wf_invalid",
+			"diagnostics": map[string]any{
+				"is_valid": false,
+				"issues": []map[string]any{
+					{
+						"severity": "error",
+						"code":     "UNKNOWN_BLOCK_REFERENCE",
+						"message":  "Edge references a missing block.",
+					},
+				},
+			},
+			"changes": []map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsSpecPlanCmd.RunE(workflowsSpecPlanCmd, []string{path})
+	})
+	if err == nil {
+		t.Fatal("expected spec plan to fail when diagnostics.is_valid=false")
+	}
+	if !strings.Contains(errors.Unwrap(err).Error(), "validation failed") {
+		t.Fatalf("error should mention validation failed, got: %v", err)
+	}
+	if !strings.Contains(stderr, "UNKNOWN_BLOCK_REFERENCE") {
+		t.Fatalf("stderr should include diagnostic JSON, got:\n%s", stderr)
 	}
 }
 

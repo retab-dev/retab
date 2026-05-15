@@ -146,19 +146,26 @@ func validateEnumFlag(cmd *cobra.Command, flagName string, allowed map[string]bo
 }
 
 func validateEnumArrayFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) error {
-	values, _ := cmd.Flags().GetStringArray(flagName)
-	for _, raw := range values {
+	_, err := normalizeEnumArrayFlag(cmd, flagName, allowed, allowedValues)
+	return err
+}
+
+func normalizeEnumArrayFlag(cmd *cobra.Command, flagName string, allowed map[string]bool, allowedValues string) ([]string, error) {
+	rawValues, _ := cmd.Flags().GetStringArray(flagName)
+	values := make([]string, 0, len(rawValues))
+	for _, raw := range rawValues {
 		for _, value := range strings.Split(raw, ",") {
 			value = strings.TrimSpace(value)
 			if value == "" {
 				continue
 			}
 			if !allowed[value] {
-				return fmt.Errorf("invalid --%s %q (want: %s)", flagName, value, allowedValues)
+				return nil, fmt.Errorf("invalid --%s %q (want: %s)", flagName, value, allowedValues)
 			}
+			values = append(values, value)
 		}
 	}
-	return nil
+	return values, nil
 }
 
 var workflowsRunsCmd = &cobra.Command{
@@ -173,7 +180,7 @@ subgroup to start runs (` + "`create`" + `), watch their lifecycle
 (` + "`submit-hil`" + `).
 
 Human-in-the-loop: when a run hits a ` + "`hil`" + ` block it pauses with
-status ` + "`awaiting_review`" + `. Use ` + "`get-hil`" + ` to see what's
+status ` + "`waiting_for_human`" + `. Use ` + "`get-hil`" + ` to see what's
 pending, then ` + "`submit-hil`" + ` to approve, reject, or send back
 edited data — the run resumes from there.
 
@@ -259,6 +266,14 @@ removed in a future release.`,
 			}
 			req.Documents = docs
 		}
+		jsonInputsFile, _ := cmd.Flags().GetString("json-inputs-file")
+		if jsonInputsFile != "" {
+			inputs, err := readJSONMap(jsonInputsFile)
+			if err != nil {
+				return fmt.Errorf("--json-inputs-file: %w", err)
+			}
+			req.JSONInputs = inputs
+		}
 		docFlags, _ := cmd.Flags().GetStringArray("document")
 		legacyFileFlags, _ := cmd.Flags().GetStringArray("document-file")
 		fileEntries, err := parseDocumentArgs(docFlags, legacyFileFlags, cmd.ErrOrStderr())
@@ -279,7 +294,7 @@ removed in a future release.`,
 			}
 			for _, raw := range urlFlags {
 				key, url, ok := splitKV(raw)
-				if !ok || url == "" {
+				if !ok || strings.TrimSpace(key) == "" || url == "" {
 					return fmt.Errorf("--document-url expects block-id=url, got %q", raw)
 				}
 				// Server requires `filename` on every document descriptor;
@@ -294,14 +309,6 @@ removed in a future release.`,
 			if err != nil {
 				return err
 			}
-		}
-		jsonInputsFile, _ := cmd.Flags().GetString("json-inputs-file")
-		if jsonInputsFile != "" {
-			inputs, err := readJSONMap(jsonInputsFile)
-			if err != nil {
-				return fmt.Errorf("--json-inputs-file: %w", err)
-			}
-			req.JSONInputs = inputs
 		}
 		result, err := client.Workflows.Runs.Create(ctx, req)
 		if err != nil {
@@ -430,15 +437,27 @@ status, trigger type, date range, cost, and duration. Page by run id
 		params := retab.ListWorkflowRunsParams{}
 		params.WorkflowID = effectiveID
 		params.Status, _ = cmd.Flags().GetString("status")
-		params.Statuses, _ = cmd.Flags().GetStringArray("statuses")
+		statuses, err := normalizeEnumArrayFlag(cmd, "statuses", allowedWorkflowRunStatuses, workflowRunStatusValues)
+		if err != nil {
+			return err
+		}
+		params.Statuses = statuses
 		params.ExcludeStatus, _ = cmd.Flags().GetString("exclude-status")
 		params.TriggerType, _ = cmd.Flags().GetString("trigger-type")
-		params.TriggerTypes, _ = cmd.Flags().GetStringArray("trigger-types")
+		triggerTypes, err := normalizeEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+		if err != nil {
+			return err
+		}
+		params.TriggerTypes = triggerTypes
 		params.FromDate, _ = cmd.Flags().GetString("from-date")
 		params.ToDate, _ = cmd.Flags().GetString("to-date")
 		params.Search, _ = cmd.Flags().GetString("search")
 		params.SortBy, _ = cmd.Flags().GetString("sort-by")
-		params.Fields, _ = cmd.Flags().GetStringArray("fields")
+		fields, err := nonBlankStringArrayFlag(cmd, "fields")
+		if err != nil {
+			return err
+		}
+		params.Fields = fields
 		params.Before, _ = cmd.Flags().GetString("before")
 		params.After, _ = cmd.Flags().GetString("after")
 		params.Limit, _ = cmd.Flags().GetInt("limit")
@@ -754,19 +773,41 @@ pin column order.`,
 		req.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
 		req.BlockID, _ = cmd.Flags().GetString("block-id")
 		req.ExportSource, _ = cmd.Flags().GetString("export-source")
-		req.SelectedRunIDs, _ = cmd.Flags().GetStringArray("run-id")
+		selectedRunIDs, err := nonBlankStringArrayFlag(cmd, "run-id")
+		if err != nil {
+			return err
+		}
+		req.SelectedRunIDs = selectedRunIDs
 		req.Status, _ = cmd.Flags().GetString("status")
 		req.ExcludeStatus, _ = cmd.Flags().GetString("exclude-status")
 		req.FromDate, _ = cmd.Flags().GetString("from-date")
 		req.ToDate, _ = cmd.Flags().GetString("to-date")
-		req.TriggerTypes, _ = cmd.Flags().GetStringArray("trigger-types")
-		req.PreferredColumns, _ = cmd.Flags().GetStringArray("preferred-column")
+		triggerTypes, err := normalizeEnumArrayFlag(cmd, "trigger-types", allowedWorkflowRunTriggerTypes, workflowRunTriggerTypeValues)
+		if err != nil {
+			return err
+		}
+		req.TriggerTypes = triggerTypes
+		preferredColumns, err := nonBlankStringArrayFlag(cmd, "preferred-column")
+		if err != nil {
+			return err
+		}
+		req.PreferredColumns = preferredColumns
 		result, err := client.Workflows.Runs.Export(ctx, req)
 		if err != nil {
 			return err
 		}
 		return printJSON(result)
 	}),
+}
+
+func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, error) {
+	values, _ := cmd.Flags().GetStringArray(flagName)
+	for _, value := range values {
+		if strings.TrimSpace(value) == "" {
+			return nil, fmt.Errorf("--%s must not be blank", flagName)
+		}
+	}
+	return values, nil
 }
 
 // ---- steps subgroup ----
@@ -868,11 +909,11 @@ func init() {
 	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "from-date", "filter from this YYYY-MM-DD date")
 	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "to-date", "filter to this YYYY-MM-DD date")
 	workflowsRunsListCmd.Flags().String("search", "", "search query")
-	workflowsRunsListCmd.Flags().String("sort-by", "", "sort field")
+	workflowsRunsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "timing.created_at", "timing.started_at"), "sort-by", "sort field: timing.created_at | timing.started_at")
 	workflowsRunsListCmd.Flags().StringArray("fields", nil, "include only these fields (repeatable)")
 	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id")
 	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id")
-	workflowsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
+	workflowsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items to return (1-100)")
 	workflowsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "min-cost", "min cost")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "max-cost", "max cost")

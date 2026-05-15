@@ -25,21 +25,20 @@ output, ` + "`retab extractions sources`" + ` to inspect where each field came f
 }
 
 func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionCreateRequest, error) {
-	doc, err := resolveDocument(cmd)
+	metaPairs, _ := cmd.Flags().GetStringArray("metadata")
+	metadata, err := parseKVStringList(metaPairs)
 	if err != nil {
 		return retab.ExtractionCreateRequest{}, err
 	}
-	schema, err := resolveSchema(cmd)
+	model, err := requireNonBlankFlag(cmd, "model")
 	if err != nil {
 		return retab.ExtractionCreateRequest{}, err
 	}
-	model, _ := cmd.Flags().GetString("model")
 	imageDPI, _ := cmd.Flags().GetInt("image-resolution-dpi")
 	nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 	instructions, _ := cmd.Flags().GetString("instructions")
 	bustCache, _ := cmd.Flags().GetBool("bust-cache")
-	metaPairs, _ := cmd.Flags().GetStringArray("metadata")
-	metadata, err := parseKVStringList(metaPairs)
+	schema, err := resolveSchema(cmd)
 	if err != nil {
 		return retab.ExtractionCreateRequest{}, err
 	}
@@ -57,6 +56,10 @@ func newExtractionRequest(cmd *cobra.Command) (retab.ExtractionCreateRequest, er
 			}
 			messages = append(messages, retab.Resource(obj))
 		}
+	}
+	doc, err := resolveDocument(cmd)
+	if err != nil {
+		return retab.ExtractionCreateRequest{}, err
 	}
 	return retab.ExtractionCreateRequest{
 		Document:           doc,
@@ -313,8 +316,8 @@ func addExtractionBodyFlags(cmd *cobra.Command) {
 	addDocumentFlags(cmd)
 	addSchemaFlags(cmd)
 	cmd.Flags().String("model", "", "model identifier (required)")
-	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "image-resolution-dpi", "image resolution DPI")
-	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "image resolution DPI (96-300)")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 16}, "n-consensus", "consensus count (1-16)")
 	cmd.Flags().String("instructions", "", "extra instructions")
 	cmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	cmd.Flags().StringArray("metadata", nil, "metadata key=value (repeatable)")

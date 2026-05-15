@@ -9,25 +9,30 @@ import (
 
 func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 	cases := []struct {
-		name string
-		cmd  *cobra.Command
-		flag string
+		name      string
+		cmd       *cobra.Command
+		flag      string
+		reset     string
+		wantError string
 	}{
-		{name: "parses dpi", cmd: parsesCreateCmd, flag: "image-resolution-dpi"},
-		{name: "extractions create dpi", cmd: extractionsCreateCmd, flag: "image-resolution-dpi"},
-		{name: "extractions create consensus", cmd: extractionsCreateCmd, flag: "n-consensus"},
-		{name: "extractions stream dpi", cmd: extractionsStreamCmd, flag: "image-resolution-dpi"},
-		{name: "extractions stream consensus", cmd: extractionsStreamCmd, flag: "n-consensus"},
-		{name: "classifications consensus", cmd: classificationsCreateCmd, flag: "n-consensus"},
-		{name: "classifications first pages", cmd: classificationsCreateCmd, flag: "first-n-pages"},
-		{name: "splits consensus", cmd: splitsCreateCmd, flag: "n-consensus"},
-		{name: "partitions consensus", cmd: partitionsCreateCmd, flag: "n-consensus"},
-		{name: "workflow tests limit", cmd: workflowsTestsListCmd, flag: "limit"},
-		{name: "workflow test runs limit", cmd: workflowsTestsRunsListCmd, flag: "limit"},
+		{name: "parses dpi", cmd: parsesCreateCmd, flag: "image-resolution-dpi", reset: "96", wantError: "between"},
+		{name: "extractions create dpi", cmd: extractionsCreateCmd, flag: "image-resolution-dpi", reset: "96", wantError: "between"},
+		{name: "extractions create consensus", cmd: extractionsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "extractions stream dpi", cmd: extractionsStreamCmd, flag: "image-resolution-dpi", reset: "96", wantError: "between"},
+		{name: "extractions stream consensus", cmd: extractionsStreamCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "classifications consensus", cmd: classificationsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "classifications first pages", cmd: classificationsCreateCmd, flag: "first-n-pages", reset: "1", wantError: "positive"},
+		{name: "splits consensus", cmd: splitsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "partitions consensus", cmd: partitionsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "files create-upload size", cmd: filesCreateUploadCmd, flag: "size-bytes"},
+		{name: "workflow tests limit", cmd: workflowsTestsListCmd, flag: "limit", wantError: "between"},
+		{name: "workflow test runs limit", cmd: workflowsTestsRunsListCmd, flag: "limit", wantError: "between"},
 		{name: "workflow tests consensus", cmd: workflowsTestsExecuteCmd, flag: "n-consensus"},
 		{name: "workflow experiments create consensus", cmd: workflowsExperimentsCreateCmd, flag: "n-consensus"},
 		{name: "workflow experiments update consensus", cmd: workflowsExperimentsUpdateCmd, flag: "n-consensus"},
 		{name: "workflow block simulate consensus", cmd: workflowsBlocksSimulateCmd, flag: "n-consensus"},
+		{name: "workflow block width", cmd: workflowsBlocksUpdateCmd, flag: "width"},
+		{name: "workflow block height", cmd: workflowsBlocksUpdateCmd, flag: "height"},
 		{name: "workflow runs min duration", cmd: workflowsRunsListCmd, flag: "min-duration"},
 		{name: "workflow runs max duration", cmd: workflowsRunsListCmd, flag: "max-duration"},
 		{name: "workflow runs min cost", cmd: workflowsRunsListCmd, flag: "min-cost"},
@@ -39,11 +44,135 @@ func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 			if err == nil {
 				t.Fatalf("expected local parse error for --%s=-1", tc.flag)
 			}
-			if !strings.Contains(err.Error(), "non-negative") && !strings.Contains(err.Error(), "0, 3, 5, or 7") {
+			wantError := tc.wantError
+			if wantError == "" {
+				wantError = "non-negative"
+			}
+			if !strings.Contains(err.Error(), wantError) && !strings.Contains(err.Error(), "0, 3, 5, or 7") {
 				t.Fatalf("error %q does not contain a numeric validation hint", err.Error())
 			}
-			if resetErr := tc.cmd.Flags().Set(tc.flag, "0"); resetErr != nil {
+			reset := tc.reset
+			if reset == "" {
+				reset = "0"
+			}
+			if resetErr := tc.cmd.Flags().Set(tc.flag, reset); resetErr != nil {
 				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
+			}
+		})
+	}
+}
+
+func TestDPIFlagsRejectValuesOutsideBackendRangeLocally(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "parses create", cmd: parsesCreateCmd},
+		{name: "extractions create", cmd: extractionsCreateCmd},
+		{name: "extractions stream", cmd: extractionsStreamCmd},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, value := range []string{"1", "999"} {
+				err := tc.cmd.Flags().Set("image-resolution-dpi", value)
+				if err == nil {
+					t.Fatalf("expected local parse error for --image-resolution-dpi=%s", value)
+				}
+				if !strings.Contains(err.Error(), "between 96 and 300") {
+					t.Fatalf("error %q does not mention DPI range", err.Error())
+				}
+			}
+			if resetErr := tc.cmd.Flags().Set("image-resolution-dpi", "96"); resetErr != nil {
+				t.Fatalf("reset --image-resolution-dpi: %v", resetErr)
+			}
+		})
+	}
+}
+
+func TestPositiveNumericFlagsRejectZeroValuesLocally(t *testing.T) {
+	cases := []struct {
+		name      string
+		cmd       *cobra.Command
+		flag      string
+		reset     string
+		wantError string
+	}{
+		{name: "extractions create consensus", cmd: extractionsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "extractions stream consensus", cmd: extractionsStreamCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "classifications consensus", cmd: classificationsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "classifications first pages", cmd: classificationsCreateCmd, flag: "first-n-pages", reset: "1", wantError: "positive"},
+		{name: "splits consensus", cmd: splitsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+		{name: "partitions consensus", cmd: partitionsCreateCmd, flag: "n-consensus", reset: "1", wantError: "between"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cmd.Flags().Set(tc.flag, "0")
+			if err == nil {
+				t.Fatalf("expected local parse error for --%s=0", tc.flag)
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not contain %q", err.Error(), tc.wantError)
+			}
+			if resetErr := tc.cmd.Flags().Set(tc.flag, tc.reset); resetErr != nil {
+				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
+			}
+		})
+	}
+}
+
+func TestConsensusFlagsRejectValuesAboveBackendRangeLocally(t *testing.T) {
+	cases := []struct {
+		name  string
+		cmd   *cobra.Command
+		value string
+		reset string
+	}{
+		{name: "extractions create consensus", cmd: extractionsCreateCmd, value: "17", reset: "1"},
+		{name: "extractions stream consensus", cmd: extractionsStreamCmd, value: "17", reset: "1"},
+		{name: "classifications consensus", cmd: classificationsCreateCmd, value: "17", reset: "1"},
+		{name: "splits consensus", cmd: splitsCreateCmd, value: "9", reset: "1"},
+		{name: "partitions consensus", cmd: partitionsCreateCmd, value: "9", reset: "1"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cmd.Flags().Set("n-consensus", tc.value)
+			if err == nil {
+				t.Fatalf("expected local parse error for --n-consensus=%s", tc.value)
+			}
+			if !strings.Contains(err.Error(), "between") {
+				t.Fatalf("error %q does not mention bounded validation", err.Error())
+			}
+			if resetErr := tc.cmd.Flags().Set("n-consensus", tc.reset); resetErr != nil {
+				t.Fatalf("reset --n-consensus: %v", resetErr)
+			}
+		})
+	}
+}
+
+func TestSharedListLimitFlagsRejectValuesAboveBackendRangeLocally(t *testing.T) {
+	cases := []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "files", cmd: filesListCmd},
+		{name: "extractions", cmd: extractionsListCmd},
+		{name: "classifications", cmd: classificationsListCmd},
+		{name: "splits", cmd: splitsListCmd},
+		{name: "partitions", cmd: partitionsListCmd},
+		{name: "parses", cmd: parsesListCmd},
+		{name: "edits", cmd: editsListCmd},
+		{name: "edit templates", cmd: editsTemplatesListCmd},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cmd.Flags().Set("limit", "101")
+			if err == nil {
+				t.Fatal("expected local parse error for --limit=101")
+			}
+			if !strings.Contains(err.Error(), "between 0 and 100") {
+				t.Fatalf("error %q does not mention backend limit range", err.Error())
+			}
+			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {
+				t.Fatalf("reset --limit: %v", resetErr)
 			}
 		})
 	}

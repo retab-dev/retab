@@ -360,11 +360,24 @@ func isTerminalWriter(w io.Writer) bool {
 	return term.IsTerminal(int(f.Fd()))
 }
 
+// redactKey masks a credential for display: the first 4 and last 4
+// characters are kept, the middle replaced by a FIXED-WIDTH asterisk run.
+//
+// The width is capped at redactMaskWidth rather than len(key)-8. An OAuth
+// access token is a ~900-1200 character JWT; the old len-8 mask dumped a
+// full screen of asterisks into `--debug` output and `auth status`, and
+// reproduced the exact length of the secret. A fixed mask is both readable
+// and leaks nothing about the credential's size.
 func redactKey(key string) string {
 	if len(key) <= 8 {
 		return strings.Repeat("*", len(key))
 	}
-	return key[:4] + strings.Repeat("*", len(key)-8) + key[len(key)-4:]
+	const redactMaskWidth = 8
+	mask := len(key) - 8
+	if mask > redactMaskWidth {
+		mask = redactMaskWidth
+	}
+	return key[:4] + strings.Repeat("*", mask) + key[len(key)-4:]
 }
 
 func promptSecret(prompt string) (string, error) {

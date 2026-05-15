@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"strconv"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -88,8 +88,47 @@ need.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printFilesListResult(cmd, result, params.SortBy)
 	}),
+}
+
+func printFilesListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.File], sortBy string) error {
+	var raw string
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+	}
+	if raw != string(OutputTable) {
+		return printJSON(result)
+	}
+	timestampHeader := "CREATED_AT"
+	timestampField := "created_at"
+	if sortBy == "updated_at" {
+		timestampHeader = "UPDATED_AT"
+		timestampField = "updated_at"
+	}
+	return renderAutoTable(os.Stdout, resourcesToRows(result.Data), []TableColumn{
+		{Header: "ID", Extract: func(row any) string { return resourceCell(row, "id") }},
+		{Header: "NAME", Extract: func(row any) string { return resourceCell(row, "filename") }},
+		{Header: timestampHeader, Extract: func(row any) string { return resourceCell(row, timestampField) }},
+	})
+}
+
+func resourcesToRows(resources []retab.Resource) []any {
+	rows := make([]any, len(resources))
+	for i, resource := range resources {
+		rows[i] = resource
+	}
+	return rows
+}
+
+func resourceCell(row any, key string) string {
+	value, ok := rowField(row, key)
+	if !ok || cellIsEmpty(value) || !cellIsDisplayable(value) {
+		return ""
+	}
+	return stringifyCell(value)
 }
 
 var filesGetCmd = &cobra.Command{
@@ -248,6 +287,12 @@ type uploadResponseField struct {
 // JSON-encodable here, so we lean on encoding/json's encoder for each
 // key/value (handles escaping, unicode, nested objects, etc.) and glue them
 // together — no need for json.RawMessage gymnastics.
+//
+// Encoding goes through encodeJSONNoHTMLEscape rather than the package-level
+// json.Marshal: the latter always HTML-escapes `&`, `<` and `>` into their
+// unicode-escape forms, which would mangle signed upload URLs (full of `&`
+// query separators) and clash with the rest of the CLI, whose output
+// (printJSON) sets SetEscapeHTML(false).
 func (u uploadResponse) MarshalJSON() ([]byte, error) {
 	var b strings.Builder
 	b.WriteByte('{')
@@ -255,11 +300,11 @@ func (u uploadResponse) MarshalJSON() ([]byte, error) {
 		if i > 0 {
 			b.WriteByte(',')
 		}
-		keyBytes, err := json.Marshal(p.Key)
+		keyBytes, err := encodeJSONNoHTMLEscape(p.Key)
 		if err != nil {
 			return nil, err
 		}
-		valBytes, err := json.Marshal(p.Value)
+		valBytes, err := encodeJSONNoHTMLEscape(p.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -269,6 +314,20 @@ func (u uploadResponse) MarshalJSON() ([]byte, error) {
 	}
 	b.WriteByte('}')
 	return []byte(b.String()), nil
+}
+
+// encodeJSONNoHTMLEscape marshals v to compact JSON with HTML escaping
+// disabled, so `&`, `<`, `>` survive verbatim. json.Encoder appends a
+// trailing newline that we strip to keep the result a drop-in for
+// json.Marshal.
+func encodeJSONNoHTMLEscape(v any) ([]byte, error) {
+	var sb strings.Builder
+	enc := json.NewEncoder(&sb)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	return []byte(strings.TrimRight(sb.String(), "\n")), nil
 }
 
 // fileIDFromURL is the URL-parsing fallback when the SDK's typed
@@ -356,9 +415,10 @@ can be piped into another tool.
 The positional and ` + "`-o`" + ` forms are mutually exclusive — passing both
 is rejected. Pick whichever reads better at the call site.
 
-Downloads stream chunk-by-chunk and propagate Ctrl-C, so canceling a
-slow transfer leaves no half-written file open on stdout (and partial
-local files can be safely deleted and retried).`,
+Downloads stream chunk-by-chunk and propagate Ctrl-C. A file destination
+is written atomically — bytes land in a temp file and are renamed over
+the destination only on success — so a canceled or failed transfer never
+truncates an existing file or leaves a half-written one behind.`,
 	Example: `  # Save under the server's filename
   retab files download file_abc123
 
@@ -409,20 +469,48 @@ local files can be safely deleted and retried).`,
 			body, _ := io.ReadAll(resp.Body)
 			return fmt.Errorf("download failed: %d %s", resp.StatusCode, string(body))
 		}
-		var sink io.Writer
 		if toStdout {
-			sink = os.Stdout
-		} else {
-			f, err := os.Create(dest)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-			sink = f
+			_, err = io.Copy(os.Stdout, resp.Body)
+			return err
 		}
-		_, err = io.Copy(sink, resp.Body)
-		return err
+		return streamDownloadToFile(dest, resp.Body)
 	}),
+}
+
+// streamDownloadToFile writes src to dest atomically: bytes go to a temp
+// file in the same directory and are renamed over dest only after the copy
+// fully succeeds. A failed or interrupted transfer (network drop, Ctrl-C)
+// therefore never truncates a pre-existing dest and never leaves a
+// half-written file at the dest path — the temp file is removed instead.
+//
+// The earlier implementation called os.Create(dest) directly, which
+// truncated dest to zero bytes *before* the first byte arrived: a download
+// that then failed mid-stream destroyed whatever the user already had at
+// that path.
+func streamDownloadToFile(dest string, src io.Reader) (err error) {
+	tmp, err := os.CreateTemp(filepath.Dir(dest), "."+filepath.Base(dest)+".partial-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	// Any failure past this point: drop the temp file so the dest path is
+	// never left half-written and a retry starts from a clean slate.
+	defer func() {
+		if err != nil {
+			_ = tmp.Close()
+			_ = os.Remove(tmpName)
+		}
+	}()
+	if _, err = io.Copy(tmp, src); err != nil {
+		return err
+	}
+	if err = tmp.Close(); err != nil {
+		return err
+	}
+	if err = os.Rename(tmpName, dest); err != nil {
+		return err
+	}
+	return nil
 }
 
 // resolveDownloadDest collapses the two destination-input forms (positional
@@ -480,20 +568,22 @@ Steps: (1) ` + "`create-upload`" + ` returns ` + "`{id, upload_url, ...}`" + `;
   curl -X PUT --upload-file ./big.pdf -H "Content-Type: application/pdf" "$URL"
   retab files complete-upload $FILE_ID`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		filename, err := requireNonBlankFlag(cmd, "filename")
+		if err != nil {
+			return err
+		}
+		contentType, err := requireNonBlankFlag(cmd, "content-type")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		filename, _ := cmd.Flags().GetString("filename")
-		contentType, _ := cmd.Flags().GetString("content-type")
-		sizeStr, _ := cmd.Flags().GetString("size-bytes")
+		size, _ := cmd.Flags().GetInt64("size-bytes")
 		sha256Hash, _ := cmd.Flags().GetString("sha256")
-		size, err := strconv.ParseInt(sizeStr, 10, 64)
-		if err != nil {
-			return fmt.Errorf("invalid --size-bytes: %w", err)
-		}
 		result, err := client.Files.CreateUpload(ctx, retab.PrepareUploadRequest{
 			Filename:    filename,
 			ContentType: contentType,
@@ -566,19 +656,19 @@ against the digest you computed locally.`,
 func init() {
 	addListFlags(filesListCmd, false)
 	filesListCmd.Flags().String("mime-type", "", "filter by MIME type")
-	filesListCmd.Flags().String("sort-by", "", "sort field (default: created_at)")
+	filesListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "created_at", "updated_at"), "sort-by", "sort field: created_at | updated_at (default: created_at)")
 
 	filesDownloadCmd.Flags().StringP("output", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
 
 	filesCreateUploadCmd.Flags().String("filename", "", "filename (required)")
 	filesCreateUploadCmd.Flags().String("content-type", "", "content type (required)")
-	filesCreateUploadCmd.Flags().String("size-bytes", "0", "file size in bytes (required)")
-	filesCreateUploadCmd.Flags().String("sha256", "", "sha256 hex digest (optional)")
+	filesCreateUploadCmd.Flags().Var(&nonNegativeInt64FlagValue{}, "size-bytes", "file size in bytes (required)")
+	filesCreateUploadCmd.Flags().Var(&sha256FlagValue{}, "sha256", "sha256 hex digest (optional)")
 	_ = filesCreateUploadCmd.MarkFlagRequired("filename")
 	_ = filesCreateUploadCmd.MarkFlagRequired("content-type")
 	_ = filesCreateUploadCmd.MarkFlagRequired("size-bytes")
 
-	filesCompleteUploadCmd.Flags().String("sha256", "", "sha256 hex digest (optional)")
+	filesCompleteUploadCmd.Flags().Var(&sha256FlagValue{}, "sha256", "sha256 hex digest (optional)")
 
 	filesCmd.AddCommand(filesListCmd, filesGetCmd, filesUploadCmd, filesDeleteCmd, filesDownloadLinkCmd, filesDownloadCmd, filesCreateUploadCmd, filesCompleteUploadCmd)
 	rootCmd.AddCommand(filesCmd)

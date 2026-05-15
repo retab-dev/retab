@@ -404,8 +404,8 @@ func TestAddListFlagsRejectsNegativeLimit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected parse error for negative --limit, got nil")
 	}
-	if !strings.Contains(err.Error(), "non-negative") {
-		t.Fatalf("error should mention non-negative, got: %v", err)
+	if !strings.Contains(err.Error(), "between 0 and 100") {
+		t.Fatalf("error should mention backend limit range, got: %v", err)
 	}
 }
 
@@ -428,6 +428,26 @@ func TestRedactKey(t *testing.T) {
 	}
 	if got := redactKey("short"); got != "*****" {
 		t.Fatalf("got %q", got)
+	}
+}
+
+// TestRedactKeyMaskIsFixedWidth pins that a long credential (e.g. an OAuth
+// JWT, ~1000 chars) is masked with a short, bounded asterisk run rather
+// than one asterisk per hidden character. The old len-8 mask flooded
+// --debug output with a screenful of asterisks and reproduced the exact
+// length of the secret.
+func TestRedactKeyMaskIsFixedWidth(t *testing.T) {
+	short := redactKey("retab_sk_abcd1234")             // 17 chars
+	long := redactKey("eyJ" + strings.Repeat("x", 1000) + "_abc") // ~1006 chars
+
+	if !strings.HasPrefix(long, "eyJx") || !strings.HasSuffix(long, "_abc") {
+		t.Fatalf("long key lost its prefix/suffix preview: %q", long)
+	}
+	if len(long) != len(short) {
+		t.Fatalf("redacted length leaks the secret size: short=%d long=%d", len(short), len(long))
+	}
+	if stars := strings.Count(long, "*"); stars > 8 {
+		t.Fatalf("mask width not capped: %d asterisks", stars)
 	}
 }
 

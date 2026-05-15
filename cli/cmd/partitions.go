@@ -47,6 +47,18 @@ extraction.`,
     --instructions "Boundaries are clear page breaks between invoices" \
     --n-consensus 3`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		key, err := requireNonBlankFlag(cmd, "key")
+		if err != nil {
+			return err
+		}
+		instructions, err := requireNonBlankFlag(cmd, "instructions")
+		if err != nil {
+			return err
+		}
+		model, err := requireNonBlankFlag(cmd, "model")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -57,9 +69,6 @@ extraction.`,
 		if err != nil {
 			return err
 		}
-		key, _ := cmd.Flags().GetString("key")
-		instructions, _ := cmd.Flags().GetString("instructions")
-		model, _ := cmd.Flags().GetString("model")
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		result, err := client.Partitions.Create(ctx, retab.PartitionCreateRequest{
@@ -166,7 +175,7 @@ func init() {
 	partitionsCreateCmd.Flags().String("key", "", "partition key (required)")
 	partitionsCreateCmd.Flags().String("instructions", "", "instructions (required)")
 	partitionsCreateCmd.Flags().String("model", "", "model identifier (required)")
-	partitionsCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
+	partitionsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "consensus count (1-8)")
 	partitionsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	_ = partitionsCreateCmd.MarkFlagRequired("key")
 	_ = partitionsCreateCmd.MarkFlagRequired("instructions")
