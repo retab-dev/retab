@@ -74,7 +74,7 @@ class WorkflowArtifacts(SyncAPIResource, WorkflowArtifactsMixin):
 
         Returns the canonical
         ``{"data": [...], "list_metadata": {"before": null, "after": null}}``
-        pagination envelope. Cursor pagination is not yet implemented.
+        pagination envelope. ID pagination is not yet implemented.
         """
         request = self.prepare_list(run_id, operation=operation, block_id=block_id)
         response = self._client._prepared_request(request)

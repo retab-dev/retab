@@ -148,13 +148,13 @@ var classificationsListCmd = &cobra.Command{
 	Short: "List classifications",
 	Long: `List classifications, newest first by default.
 
-Results are paginated via ` + "`--after`" + ` / ` + "`--before`" + ` cursors. Use
+Results are paginated by classification id via ` + "`--after`" + ` / ` + "`--before`" + `. Use
 ` + "`--limit`" + ` to cap the page size and ` + "`--order`" + ` to flip between
 ascending and descending.`,
 	Example: `  # Most recent 25 classifications
   retab classifications list --limit 25
 
-  # Cursor-paginate from a known id
+  # Page from a known classification id
   retab classifications list --after clas_xyz789 --limit 50`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -168,7 +168,7 @@ ascending and descending.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -201,9 +201,9 @@ backup with ` + "`retab classifications get`" + ` first if you may need it.`,
 func init() {
 	addDocumentFlags(classificationsCreateCmd)
 	classificationsCreateCmd.Flags().String("model", "", "model identifier (required)")
-	classificationsCreateCmd.Flags().Int("n-consensus", 0, "consensus count")
+	classificationsCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
 	classificationsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
-	classificationsCreateCmd.Flags().Int("first-n-pages", 0, "only classify the first N pages")
+	classificationsCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "first-n-pages", "only classify the first N pages")
 	classificationsCreateCmd.Flags().String("instructions", "", "extra instructions")
 	classificationsCreateCmd.Flags().StringArray("category", nil, "category as name=description (repeatable)")
 	classificationsCreateCmd.Flags().String("categories-file", "", "JSON array of {name, description} (or - for stdin)")

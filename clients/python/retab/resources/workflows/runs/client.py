@@ -346,8 +346,8 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             search: Search by run ID (partial match)
             sort_by: Field to sort by (default: "created_at")
             fields: Comma-separated list of fields to return
-            before: Pagination cursor (first ID from current page)
-            after: Pagination cursor (last ID from previous page)
+            before: First run ID from the current page, used to fetch the previous page
+            after: Last run ID from the previous page, used to fetch the next page
             limit: Items per page (1-100, default 20)
             order: Sort order ("asc" or "desc")
 
@@ -653,8 +653,8 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             search: Search by run ID (partial match)
             sort_by: Field to sort by (default: "created_at")
             fields: Comma-separated list of fields to return
-            before: Pagination cursor (first ID from current page)
-            after: Pagination cursor (last ID from previous page)
+            before: First run ID from the current page, used to fetch the previous page
+            after: Last run ID from the previous page, used to fetch the next page
             limit: Items per page (1-100, default 20)
             order: Sort order ("asc" or "desc")
 

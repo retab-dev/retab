@@ -103,7 +103,7 @@ var parsesListCmd = &cobra.Command{
 	Short: "List parses",
 	Long: `List parses, newest first by default.
 
-Cursor-paginate with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
+Page by parse id with ` + "`--before`" + ` / ` + "`--after`" + `, cap page size with
 ` + "`--limit`" + `.`,
 	Example: `  # Most recent 25 parses
   retab parses list --limit 25
@@ -156,7 +156,7 @@ func init() {
 	addDocumentFlags(parsesCreateCmd)
 	parsesCreateCmd.Flags().String("model", "", "model identifier (required)")
 	parsesCreateCmd.Flags().String("table-parsing-format", "", "table parsing format")
-	parsesCreateCmd.Flags().Int("image-resolution-dpi", 0, "image resolution DPI")
+	parsesCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "image-resolution-dpi", "image resolution DPI")
 	parsesCreateCmd.Flags().String("instructions", "", "extra instructions")
 	parsesCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	_ = parsesCreateCmd.MarkFlagRequired("model")

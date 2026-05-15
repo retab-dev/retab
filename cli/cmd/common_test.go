@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,6 +63,31 @@ func TestSplitKV(t *testing.T) {
 	k, v, ok = splitKV("foo=bar=baz")
 	if !ok || k != "foo" || v != "bar=baz" {
 		t.Fatalf("multi-eq case wrong: %q %q %v", k, v, ok)
+	}
+}
+
+func TestConfirmDeletedHonorsJSONOutputFlag(t *testing.T) {
+	if err := rootCmd.PersistentFlags().Set("output", "json"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, stderr := captureStd(t, func() {
+		confirmDeleted("parse", "prs_123")
+	})
+	if stderr != "" {
+		t.Fatalf("expected no human stderr confirmation, got %q", stderr)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("expected JSON stdout, got parse error %v for:\n%s", err, stdout)
+	}
+	if got["id"] != "prs_123" {
+		t.Fatalf("id = %#v, want prs_123", got["id"])
+	}
+	if got["deleted"] != true {
+		t.Fatalf("deleted = %#v, want true", got["deleted"])
 	}
 }
 
@@ -168,6 +195,57 @@ func TestResolveDocumentFileID_RequiresCredentials(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "credentials") && !strings.Contains(err.Error(), "auth") {
 		t.Errorf("error should mention credentials/auth, got: %v", err)
+	}
+}
+
+func TestResolveDocumentFileIDUsesDurableMIMEData(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var seenPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"download_url": "https://storage.googleapis.com/bucket/org_1/file/file_123.pdf?signed=1",
+			"expires_in": "60 minutes",
+			"filename": "invoice.pdf",
+			"mime_data": {
+				"filename": "invoice.pdf",
+				"url": "https://storage.retab.com/org_1/file_123.pdf"
+			}
+		}`))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{}
+	cmd.PersistentFlags().String("api-key", "", "")
+	cmd.PersistentFlags().String("base-url", "", "")
+	addDocumentFlags(cmd)
+	if err := cmd.ParseFlags([]string{"--file-id", "file_123"}); err != nil {
+		t.Fatal(err)
+	}
+
+	doc, err := resolveDocument(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mime, ok := doc.(retab.MIMEData)
+	if !ok {
+		t.Fatalf("got %T", doc)
+	}
+	if seenPath != "/files/file_123/download-link" {
+		t.Fatalf("path = %q", seenPath)
+	}
+	if mime.Filename != "invoice.pdf" {
+		t.Fatalf("filename = %q", mime.Filename)
+	}
+	if mime.URL != "https://storage.retab.com/org_1/file_123.pdf" {
+		t.Fatalf("url = %q", mime.URL)
+	}
+	if mime.ID() != "file_123" {
+		t.Fatalf("id = %q", mime.ID())
 	}
 }
 
@@ -302,6 +380,45 @@ func TestCollectListParams(t *testing.T) {
 	}
 	if got.FromDate == nil || got.FromDate.Year() != 2024 {
 		t.Fatalf("from_date=%v", got.FromDate)
+	}
+}
+
+func TestAddListFlagsRejectsInvalidDate(t *testing.T) {
+	cmd := &cobra.Command{}
+	addListFlags(cmd, false)
+
+	err := cmd.ParseFlags([]string{"--from-date", "not-a-date"})
+	if err == nil {
+		t.Fatal("expected parse error for invalid --from-date, got nil")
+	}
+	if !strings.Contains(err.Error(), "RFC3339") {
+		t.Fatalf("error should mention RFC3339, got: %v", err)
+	}
+}
+
+func TestAddListFlagsRejectsNegativeLimit(t *testing.T) {
+	cmd := &cobra.Command{}
+	addListFlags(cmd, false)
+
+	err := cmd.ParseFlags([]string{"--limit", "-1"})
+	if err == nil {
+		t.Fatal("expected parse error for negative --limit, got nil")
+	}
+	if !strings.Contains(err.Error(), "non-negative") {
+		t.Fatalf("error should mention non-negative, got: %v", err)
+	}
+}
+
+func TestAddListFlagsRejectsInvalidOrder(t *testing.T) {
+	cmd := &cobra.Command{}
+	addListFlags(cmd, false)
+
+	err := cmd.ParseFlags([]string{"--order", "sideways"})
+	if err == nil {
+		t.Fatal("expected parse error for invalid --order, got nil")
+	}
+	if !strings.Contains(err.Error(), "asc") || !strings.Contains(err.Error(), "desc") {
+		t.Fatalf("error should mention asc/desc, got: %v", err)
 	}
 }
 

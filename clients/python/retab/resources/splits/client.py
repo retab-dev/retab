@@ -130,7 +130,7 @@ class Splits(SyncAPIResource, SplitsMixin):
 
         def fetch_next(after_cursor: str) -> PaginatedList:
             return self.list(
-                before=before,
+                before=None,
                 after=after_cursor,
                 limit=limit,
                 order=order,

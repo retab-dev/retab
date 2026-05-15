@@ -46,7 +46,7 @@ export default class APIWorkflowRunSteps extends CompositionClient {
      *
      * Returns the canonical
      * `{"data": [...], "list_metadata": {"before": null, "after": null}}`
-     * pagination envelope. Cursor pagination is not yet implemented; iterate
+     * pagination envelope. ID pagination is not yet implemented; iterate
      * `result.data` directly.
      *
      * @example

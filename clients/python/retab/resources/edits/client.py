@@ -132,7 +132,7 @@ class Edits(SyncAPIResource, EditsMixin):
 
         def fetch_next(after: str) -> PaginatedList:
             return self.list(
-                before=before, after=after, limit=limit, order=order,
+                before=None, after=after, limit=limit, order=order,
                 filename=filename, template_id=template_id,
                 from_date=from_date, to_date=to_date,
             )

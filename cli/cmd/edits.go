@@ -119,7 +119,7 @@ var editsListCmd = &cobra.Command{
 	Long: `List edits, newest first by default.
 
 Filter by template with ` + "`--template-id`" + ` to see only edits derived
-from a specific template. Cursor-paginate with ` + "`--before`" + ` /
+from a specific template. Page by edit id with ` + "`--before`" + ` /
 ` + "`--after`" + `.`,
 	Example: `  # Most recent 25 edits
   retab edits list --limit 25
@@ -139,7 +139,7 @@ from a specific template. Cursor-paginate with ` + "`--before`" + ` /
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -195,8 +195,10 @@ var editsTemplatesCreateCmd = &cobra.Command{
 	Long: `Create a reusable edit template from a sample document.
 
 ` + "`--name`" + ` is the human-readable label. ` + "`--form-fields-file`" + ` is a
-JSON array (or ` + "`-`" + ` for stdin) describing each field on the template —
-typically name, label, type, and anchor info. The accompanying document
+JSON array (or ` + "`-`" + ` for stdin) describing each field on the template.
+Each field must include ` + "`key`" + `, ` + "`description`" + `, ` + "`type`" + ` (` + "`text`" + ` or
+` + "`checkbox`" + `), and a normalized ` + "`bbox`" + ` with ` + "`left`" + `, ` + "`top`" + `, ` + "`width`" + `,
+` + "`height`" + `, and 1-based ` + "`page`" + `. The accompanying document
 (supplied via the usual document flags) acts as the blueprint that future
 fills are anchored against.
 
@@ -208,6 +210,16 @@ Once created, apply it to new documents with
     --name "Standard Invoice Form" \
     --file ./sample-invoice.pdf \
     --form-fields-file ./fields.json
+
+  # fields.json:
+  # [
+  #   {
+  #     "key": "name",
+  #     "description": "Full name",
+  #     "type": "text",
+  #     "bbox": {"left": 0.1, "top": 0.1, "width": 0.3, "height": 0.05, "page": 1}
+  #   }
+  # ]
 
   # Inline JSON via stdin
   cat ./fields.json | retab edits templates create \
@@ -233,13 +245,9 @@ Once created, apply it to new documents with
 		if err != nil {
 			return fmt.Errorf("--form-fields-file: %w", err)
 		}
-		var fields []retab.FormField
-		for _, item := range arr {
-			obj, ok := item.(map[string]any)
-			if !ok {
-				return fmt.Errorf("--form-fields-file: each item must be a JSON object")
-			}
-			fields = append(fields, retab.FormField(obj))
+		fields, err := formFieldsFromJSONArray(arr)
+		if err != nil {
+			return fmt.Errorf("--form-fields-file: %w", err)
 		}
 		result, err := client.Edits.Templates.Create(ctx, retab.EditTemplateCreateRequest{
 			Name:       name,
@@ -283,7 +291,7 @@ var editsTemplatesListCmd = &cobra.Command{
 	Short: "List edit templates",
 	Long: `List edit templates, newest first by default.
 
-Filter by name substring with ` + "`--name`" + `. Cursor-paginate with
+Filter by name substring with ` + "`--name`" + `. Page by template id with
 ` + "`--before`" + ` / ` + "`--after`" + `.`,
 	Example: `  # All templates
   retab edits templates list
@@ -303,7 +311,7 @@ Filter by name substring with ` + "`--name`" + `. Cursor-paginate with
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -340,13 +348,11 @@ template are not retroactively re-rendered.`,
 			if err != nil {
 				return fmt.Errorf("--form-fields-file: %w", err)
 			}
-			for _, item := range arr {
-				obj, ok := item.(map[string]any)
-				if !ok {
-					return fmt.Errorf("--form-fields-file: each item must be a JSON object")
-				}
-				req.FormFields = append(req.FormFields, retab.FormField(obj))
+			fields, err := formFieldsFromJSONArray(arr)
+			if err != nil {
+				return fmt.Errorf("--form-fields-file: %w", err)
 			}
+			req.FormFields = fields
 		}
 		result, err := client.Edits.Templates.Update(ctx, args[0], req)
 		if err != nil {
@@ -433,6 +439,43 @@ For one-off edits without a template, use ` + "`retab edits create`" + ` instead
 	}),
 }
 
+func formFieldsFromJSONArray(arr []any) ([]retab.FormField, error) {
+	fields := make([]retab.FormField, 0, len(arr))
+	for i, item := range arr {
+		obj, ok := item.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("form_fields[%d] must be a JSON object", i)
+		}
+		if err := validateFormFieldObject(i, obj); err != nil {
+			return nil, err
+		}
+		fields = append(fields, retab.FormField(obj))
+	}
+	return fields, nil
+}
+
+func validateFormFieldObject(index int, obj map[string]any) error {
+	for _, key := range []string{"key", "description", "type", "bbox"} {
+		if _, ok := obj[key]; !ok {
+			return fmt.Errorf("form_fields[%d] missing required field %q", index, key)
+		}
+	}
+	fieldType, ok := obj["type"].(string)
+	if !ok || (fieldType != "text" && fieldType != "checkbox") {
+		return fmt.Errorf("form_fields[%d].type must be \"text\" or \"checkbox\"", index)
+	}
+	bbox, ok := obj["bbox"].(map[string]any)
+	if !ok {
+		return fmt.Errorf("form_fields[%d].bbox must be a JSON object", index)
+	}
+	for _, key := range []string{"left", "top", "width", "height", "page"} {
+		if _, ok := bbox[key]; !ok {
+			return fmt.Errorf("form_fields[%d].bbox missing required field %q", index, key)
+		}
+	}
+	return nil
+}
+
 func init() {
 	addDocumentFlags(editsCreateCmd)
 	editsCreateCmd.Flags().String("instructions", "", "instructions (required)")
@@ -447,7 +490,7 @@ func init() {
 
 	addDocumentFlags(editsTemplatesCreateCmd)
 	editsTemplatesCreateCmd.Flags().String("name", "", "template name (required)")
-	editsTemplatesCreateCmd.Flags().String("form-fields-file", "", "JSON array of form_fields (or - for stdin)")
+	editsTemplatesCreateCmd.Flags().String("form-fields-file", "", "JSON array of form_fields with key, description, type, and bbox (or - for stdin)")
 	_ = editsTemplatesCreateCmd.MarkFlagRequired("name")
 	_ = editsTemplatesCreateCmd.MarkFlagRequired("form-fields-file")
 
@@ -455,7 +498,7 @@ func init() {
 	editsTemplatesListCmd.Flags().String("name", "", "filter by template name")
 
 	editsTemplatesUpdateCmd.Flags().String("name", "", "update template name")
-	editsTemplatesUpdateCmd.Flags().String("form-fields-file", "", "JSON array of form_fields (or - for stdin)")
+	editsTemplatesUpdateCmd.Flags().String("form-fields-file", "", "JSON array of form_fields with key, description, type, and bbox (or - for stdin)")
 
 	editsTemplatesFillCmd.Flags().String("template-id", "", "template id (required)")
 	editsTemplatesFillCmd.Flags().String("instructions", "", "instructions (required)")

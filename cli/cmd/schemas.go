@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -43,7 +45,8 @@ At least one document is required. The more representative samples you
 pass, the more general the resulting schema. The output is a JSON Schema
 suitable for ` + "`retab extractions create --json-schema-file`" + ` — save it,
 review it, edit it by hand if you want tighter typing, and commit it
-alongside your code.`,
+alongside your code. Pass ` + "`--format json`" + ` to preserve the full server
+response envelope (` + "`json_schema`" + `, ` + "`created_at`" + `, etc.).`,
 	Example: `  # Single sample -> schema on stdout
   retab schemas generate --file ./invoice.pdf > schema.json
 
@@ -57,6 +60,10 @@ alongside your code.`,
   # Mix uploaded ids and local files
   retab schemas generate --file-id file_abc123 --file ./extra.pdf`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		format, _ := cmd.Flags().GetString("format")
+		if format != "" && format != "schema" && format != "json" {
+			return fmt.Errorf("invalid --format value %q (want: schema | json)", format)
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -125,8 +132,32 @@ alongside your code.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return writeGeneratedSchema(cmd.OutOrStdout(), result, format)
 	}),
+}
+
+func writeGeneratedSchema(w io.Writer, result *retab.Resource, format string) error {
+	switch format {
+	case "", "schema":
+		if result == nil {
+			return fmt.Errorf("server response missing json_schema field")
+		}
+		schema, ok := (*result)["json_schema"]
+		if !ok || schema == nil {
+			return fmt.Errorf("server response missing json_schema field")
+		}
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		enc.SetEscapeHTML(false)
+		return enc.Encode(schema)
+	case "json":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		enc.SetEscapeHTML(false)
+		return enc.Encode(result)
+	default:
+		return fmt.Errorf("invalid --format value %q (want: schema | json)", format)
+	}
 }
 
 func init() {
@@ -135,6 +166,7 @@ func init() {
 	schemasGenerateCmd.Flags().StringArray("file-id", nil, "Retab file id (repeatable)")
 	schemasGenerateCmd.Flags().String("documents-file", "", "JSON array of documents (or - for stdin)")
 	schemasGenerateCmd.Flags().String("model", "", "model identifier")
+	schemasGenerateCmd.Flags().String("format", "schema", "output format: schema | json")
 
 	schemasCmd.AddCommand(schemasGenerateCmd)
 	rootCmd.AddCommand(schemasCmd)

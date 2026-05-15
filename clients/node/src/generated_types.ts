@@ -568,8 +568,8 @@ export const ZSubdocument = z.lazy(() => (z.object({
 export type Subdocument = z.infer<typeof ZSubdocument>;
 
 export const ZListMetadata = z.lazy(() => (z.object({
-    before: z.string().nullable().optional(),
-    after: z.string().nullable().optional(),
+    before: z.string().nullable(),
+    after: z.string().nullable(),
 })));
 export type ListMetadata = z.infer<typeof ZListMetadata>;
 

@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -203,6 +205,72 @@ func TestFileIDFromURL(t *testing.T) {
 				t.Errorf("fileIDFromURL(%q) = %q, want %q", tc.url, gotID, tc.wantID)
 			}
 		})
+	}
+}
+
+func TestFilesCreateUploadShapesDocumentedOutput(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/files/upload" {
+			t.Fatalf("path = %s, want /files/upload", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"fileId":       "file_123",
+			"uploadUrl":    "https://uploads.example.com/file_123",
+			"uploadMethod": "PUT",
+			"uploadHeaders": map[string]string{
+				"Content-Type": "text/plain",
+			},
+			"mimeData": map[string]string{
+				"filename":  "direct.txt",
+				"mime_type": "text/plain",
+				"url":       "https://storage.retab.com/org_1/file_123.txt",
+			},
+			"expiresAt": "2026-05-15T12:32:26Z",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	if err := filesCreateUploadCmd.Flags().Set("filename", "direct.txt"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = filesCreateUploadCmd.Flags().Set("filename", "") })
+	if err := filesCreateUploadCmd.Flags().Set("content-type", "text/plain"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = filesCreateUploadCmd.Flags().Set("content-type", "") })
+	if err := filesCreateUploadCmd.Flags().Set("size-bytes", "37"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = filesCreateUploadCmd.Flags().Set("size-bytes", "0") })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := filesCreateUploadCmd.RunE(filesCreateUploadCmd, nil); err != nil {
+			t.Fatalf("create-upload: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	var got map[string]any
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout)
+	}
+	if got["id"] != "file_123" {
+		t.Fatalf("id = %#v, want file_123; raw:\n%s", got["id"], stdout)
+	}
+	if got["upload_url"] != "https://uploads.example.com/file_123" {
+		t.Fatalf("upload_url = %#v, want documented snake_case key; raw:\n%s", got["upload_url"], stdout)
+	}
+	if _, ok := got["fileId"]; ok {
+		t.Fatalf("raw SDK key fileId leaked into CLI output:\n%s", stdout)
 	}
 }
 

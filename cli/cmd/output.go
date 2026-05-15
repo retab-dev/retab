@@ -27,8 +27,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"reflect"
+	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -263,11 +266,20 @@ var preferredColumnOrder = []struct {
 	header  string
 	aliases []string
 }{
-	{"ID", []string{"id"}},
-	{"NAME", []string{"name", "filename"}},
-	{"TYPE", []string{"type", "status"}},
+	{"ID", []string{"id", "step_id", "block_id", "workflow_id", "run_id"}},
+	{"SOURCE", []string{"source_block", "source"}},
+	{"TARGET", []string{"target_block", "target"}},
+	{"NAME", []string{"name", "filename", "block_label", "name_at_run_time", "workflow.name_at_run_time"}},
+	{"TYPE", []string{"type", "status", "block_type", "trigger_type", "lifecycle.status", "trigger.type"}},
 	{"MODEL", []string{"model"}},
-	{"CREATED_AT", []string{"created_at"}},
+	{"CREATED_AT", []string{"created_at", "started_at", "updated_at", "completed_at", "timing.created_at"}},
+}
+
+var defaultEmptyAutoColumns = []TableColumn{
+	{Header: "ID", Extract: func(any) string { return "" }},
+	{Header: "NAME", Extract: func(any) string { return "" }},
+	{Header: "TYPE", Extract: func(any) string { return "" }},
+	{Header: "CREATED_AT", Extract: func(any) string { return "" }},
 }
 
 // maxAutoColumns is the per-row column cap. Five matches
@@ -315,6 +327,9 @@ func printResultTable(v any) error {
 	}
 
 	columns := pickAutoColumns(rows)
+	if len(columns) == 0 && len(rows) == 0 {
+		return renderAutoTable(os.Stdout, rows, defaultEmptyAutoColumns)
+	}
 	if len(columns) == 0 {
 		// Tabulable shape but no preferred column matched on any row —
 		// rendering a header-less table would be more confusing than
@@ -507,6 +522,9 @@ func pickAutoColumns(rows []any) []TableColumn {
 			Extract: func(row any) string {
 				for _, alias := range aliases {
 					if v, ok := rowField(row, alias); ok {
+						if cellIsEmpty(v) {
+							continue
+						}
 						s := stringifyCell(v)
 						if isTrailing && len(s) > autoTableTruncate {
 							return s[:autoTableTruncate] + "…"
@@ -521,45 +539,101 @@ func pickAutoColumns(rows []any) []TableColumn {
 	return cols
 }
 
-// rowKeys returns the JSON-visible field names of a row, normalized
-// to lowercase. Struct rows are inspected via reflect using the
-// `json` tag (falling back to the field name lowercased); map rows
-// return their keys directly.
+func cellIsEmpty(v any) bool {
+	if v == nil {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return rv.IsNil()
+	case reflect.String:
+		return rv.Len() == 0
+	default:
+		return false
+	}
+}
+
+// rowKeys returns the JSON-visible field names of a row. Struct rows are
+// inspected via reflect using the `json` tag; map rows return their keys
+// directly. Nested object keys are also exposed with dot paths so workflow
+// list tables can select fields like `lifecycle.status`.
 func rowKeys(row any) []string {
 	if row == nil {
 		return nil
 	}
-	rv := reflect.ValueOf(row)
+	var out []string
+	collectRowKeys("", reflect.ValueOf(row), &out)
+	return out
+}
+
+func collectRowKeys(prefix string, rv reflect.Value, out *[]string) {
 	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
 		if !rv.IsValid() || rv.IsNil() {
-			return nil
+			return
 		}
 		rv = rv.Elem()
 	}
 	switch rv.Kind() {
 	case reflect.Struct:
 		t := rv.Type()
-		out := make([]string, 0, t.NumField())
 		for i := 0; i < t.NumField(); i++ {
 			f := t.Field(i)
 			if !f.IsExported() {
 				continue
 			}
-			out = append(out, jsonFieldName(f))
+			key := jsonFieldName(f)
+			if key == "" {
+				continue
+			}
+			fullKey := prefixedKey(prefix, key)
+			*out = append(*out, fullKey)
+			fv := rv.Field(i)
+			if canDescendRowValue(fv) {
+				collectRowKeys(fullKey, fv, out)
+			}
 		}
-		return out
 	case reflect.Map:
 		if rv.Type().Key().Kind() != reflect.String {
-			return nil
+			return
 		}
-		out := make([]string, 0, rv.Len())
 		iter := rv.MapRange()
 		for iter.Next() {
-			out = append(out, iter.Key().String())
+			key := iter.Key().String()
+			fullKey := prefixedKey(prefix, key)
+			*out = append(*out, fullKey)
+			mv := iter.Value()
+			if canDescendRowValue(mv) {
+				collectRowKeys(fullKey, mv, out)
+			}
 		}
-		return out
+	}
+}
+
+func prefixedKey(prefix string, key string) string {
+	if prefix == "" {
+		return key
+	}
+	return prefix + "." + key
+}
+
+func canDescendRowValue(rv reflect.Value) bool {
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
+		if !rv.IsValid() || rv.IsNil() {
+			return false
+		}
+		rv = rv.Elem()
+	}
+	if rv.CanInterface() {
+		if _, ok := rv.Interface().(fmt.Stringer); ok {
+			return false
+		}
+	}
+	switch rv.Kind() {
+	case reflect.Struct, reflect.Map:
+		return true
 	default:
-		return nil
+		return false
 	}
 }
 
@@ -598,6 +672,21 @@ func indexByte(s string, b byte) int {
 // rowField returns the value at key on row, or (nil, false) if the
 // row doesn't expose that key.
 func rowField(row any, key string) (any, bool) {
+	if strings.Contains(key, ".") {
+		var current any = row
+		for _, part := range strings.Split(key, ".") {
+			next, ok := rowFieldSingle(current, part)
+			if !ok {
+				return nil, false
+			}
+			current = next
+		}
+		return current, true
+	}
+	return rowFieldSingle(row, key)
+}
+
+func rowFieldSingle(row any, key string) (any, bool) {
 	if row == nil {
 		return nil, false
 	}
@@ -646,9 +735,26 @@ func stringifyCell(v any) string {
 	if v == nil {
 		return ""
 	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		if rv.IsNil() {
+			return ""
+		}
+	}
 	switch t := v.(type) {
 	case string:
 		return t
+	case float32:
+		if math.Trunc(float64(t)) == float64(t) {
+			return strconv.FormatInt(int64(t), 10)
+		}
+		return strconv.FormatFloat(float64(t), 'f', -1, 32)
+	case float64:
+		if math.Trunc(t) == t {
+			return strconv.FormatInt(int64(t), 10)
+		}
+		return strconv.FormatFloat(t, 'f', -1, 64)
 	case fmt.Stringer:
 		return t.String()
 	}

@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
 
 	retab "github.com/retab-dev/retab/clients/go"
+	"github.com/spf13/cobra"
 )
 
 // isEffectivelyEmptyDraft is the pure shape predicate that decides whether
@@ -35,6 +37,261 @@ func TestIsEffectivelyEmptyDraft(t *testing.T) {
 				t.Errorf("isEffectivelyEmptyDraft(%+v) = %v, want %v", tc.blocks, got, tc.want)
 			}
 		})
+	}
+}
+
+func TestWorkflowsListRejectsInvalidListFlagsLocally(t *testing.T) {
+	cases := []struct {
+		name      string
+		flag      string
+		value     string
+		wantError string
+		reset     string
+	}{
+		{name: "negative limit", flag: "limit", value: "-1", wantError: "non-negative", reset: "0"},
+		{name: "invalid order", flag: "order", value: "sideways", wantError: "asc", reset: ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := workflowsListCmd.Flags().Set(tc.flag, tc.value)
+			if err == nil {
+				t.Fatalf("expected local parse error for --%s=%s", tc.flag, tc.value)
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not contain %q", err.Error(), tc.wantError)
+			}
+			if resetErr := workflowsListCmd.Flags().Set(tc.flag, tc.reset); resetErr != nil {
+				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
+			}
+		})
+	}
+}
+
+func TestWorkflowBatchCreateRejectsEmptyArraysLocally(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	emptyArrayPath := t.TempDir() + "/empty.json"
+	if err := os.WriteFile(emptyArrayPath, []byte("[]"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name string
+		cmd  *cobra.Command
+		flag string
+	}{
+		{name: "blocks", cmd: workflowsBlocksCreateBatchCmd, flag: "blocks-file"},
+		{name: "edges", cmd: workflowsEdgesCreateBatchCmd, flag: "edges-file"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			before := hits.Load()
+			tc.cmd.SetContext(context.Background())
+			t.Cleanup(func() { tc.cmd.SetContext(nil) })
+			if err := tc.cmd.Flags().Set(tc.flag, emptyArrayPath); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = tc.cmd.Flags().Set(tc.flag, "") })
+
+			var err error
+			_, stderr := captureStd(t, func() {
+				err = tc.cmd.RunE(tc.cmd, []string{"wf_empty"})
+			})
+			if err == nil {
+				t.Fatalf("expected empty-array error")
+			}
+			if !strings.Contains(stderr, "empty JSON array") {
+				t.Fatalf("stderr %q does not mention empty JSON array", stderr)
+			}
+			if got := hits.Load(); got != before {
+				t.Fatalf("server was hit %d time(s), want no new requests", got-before)
+			}
+		})
+	}
+}
+
+func TestWorkflowsDiagnoseGraphFileRejectsMalformedGraphLocally(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cases := []struct {
+		name      string
+		body      string
+		wantError string
+	}{
+		{name: "blocks not array", body: `{"blocks":{},"edges":[]}`, wantError: "blocks must be an array"},
+		{name: "block item not object", body: `{"blocks":[1],"edges":[]}`, wantError: "blocks[0] must be an object"},
+		{name: "edges not array", body: `{"blocks":[],"edges":{}}`, wantError: "edges must be an array"},
+		{name: "edge item not object", body: `{"blocks":[],"edges":[1]}`, wantError: "edges[0] must be an object"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			before := hits.Load()
+			path := t.TempDir() + "/graph.json"
+			if err := os.WriteFile(path, []byte(tc.body), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			workflowsDiagnoseCmd.SetContext(context.Background())
+			t.Cleanup(func() { workflowsDiagnoseCmd.SetContext(nil) })
+			if err := workflowsDiagnoseCmd.Flags().Set("graph-file", path); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = workflowsDiagnoseCmd.Flags().Set("graph-file", "") })
+
+			var err error
+			_, stderr := captureStd(t, func() {
+				err = workflowsDiagnoseCmd.RunE(workflowsDiagnoseCmd, []string{"wf_graph"})
+			})
+			if err == nil {
+				t.Fatalf("expected malformed graph error")
+			}
+			if !strings.Contains(stderr, tc.wantError) {
+				t.Fatalf("stderr %q does not contain %q", stderr, tc.wantError)
+			}
+			if got := hits.Load(); got != before {
+				t.Fatalf("server was hit %d time(s), want no new requests", got-before)
+			}
+		})
+	}
+}
+
+func TestWorkflowsDiagnoseGraphFileAcceptsEntitiesShape(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/workflows/wf_graph/diagnose-graph" {
+			t.Fatalf("path = %s, want diagnose-graph", r.URL.Path)
+		}
+		var posted map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		blocks, ok := posted["blocks"].([]any)
+		if !ok || len(blocks) != 1 {
+			http.Error(w, "missing blocks array", http.StatusBadRequest)
+			return
+		}
+		block, ok := blocks[0].(map[string]any)
+		if !ok {
+			http.Error(w, "block is not object", http.StatusBadRequest)
+			return
+		}
+		position, ok := block["position"].(map[string]any)
+		if !ok || position["x"] != float64(11) || position["y"] != float64(22) {
+			http.Error(w, "block position was not normalized", http.StatusBadRequest)
+			return
+		}
+		edges, ok := posted["edges"].([]any)
+		if !ok || len(edges) != 1 {
+			http.Error(w, "missing edges array", http.StatusBadRequest)
+			return
+		}
+		edge, ok := edges[0].(map[string]any)
+		if !ok || edge["source"] != "start" || edge["target"] != "extract" {
+			http.Error(w, "edge endpoints were not normalized", http.StatusBadRequest)
+			return
+		}
+		if posted["re_propagate"] != false {
+			http.Error(w, "re_propagate was not preserved", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"is_valid":    true,
+			"issues":      []any{},
+			"suggestions": []any{},
+			"stats": map[string]any{
+				"total_blocks": 1,
+				"total_edges":  1,
+				"block_types":  map[string]any{"start": 1},
+				"start_blocks": 1,
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	graphPath := t.TempDir() + "/entities.json"
+	graph := `{
+		"workflow": {"id": "wf_graph"},
+		"blocks": [
+			{
+				"id": "start",
+				"type": "start",
+				"label": "Start",
+				"config": {},
+				"position_x": 11,
+				"position_y": 22,
+				"width": 300,
+				"height": 200
+			}
+		],
+		"edges": [
+			{
+				"id": "edge_1",
+				"source_block": "start",
+				"target_block": "extract",
+				"source_handle": "output",
+				"target_handle": "input"
+			}
+		],
+		"re_propagate": false
+	}`
+	if err := os.WriteFile(graphPath, []byte(graph), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	workflowsDiagnoseCmd.SetContext(context.Background())
+	t.Cleanup(func() { workflowsDiagnoseCmd.SetContext(nil) })
+	if err := workflowsDiagnoseCmd.Flags().Set("graph-file", graphPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsDiagnoseCmd.Flags().Set("graph-file", "") })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsDiagnoseCmd.RunE(workflowsDiagnoseCmd, []string{"wf_graph"}); err != nil {
+			t.Fatalf("diagnose graph-file: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if !strings.Contains(stdout, `"is_valid": true`) {
+		t.Fatalf("expected diagnosis response, got:\n%s", stdout)
+	}
+}
+
+func TestWorkflowsSnapshotsCommandRegistered(t *testing.T) {
+	cmd, _, err := rootCmd.Find([]string{"workflows", "snapshots", "wf_abc"})
+	if err != nil {
+		t.Fatalf("workflows snapshots not registered: %v", err)
+	}
+	if cmd.Name() != "snapshots" {
+		t.Fatalf("resolved command = %q, want snapshots", cmd.Name())
+	}
+	if cmd.Flags().Lookup("limit") == nil {
+		t.Fatal("workflows snapshots should expose --limit")
 	}
 }
 

@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -27,7 +29,7 @@ response with ` + "`retrieve-full`" + `.`,
     --request-file ./req.json \
     --metadata team=ops --metadata source=daily-batch
 
-  # Block until terminal status (succeeded / failed / cancelled)
+  # Block until terminal status (completed / failed / cancelled / expired)
   retab jobs wait job_abc123 --timeout-seconds 300
 
   # Pull the full response body once done
@@ -53,13 +55,16 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
   cat req.json | retab jobs create \
     --endpoint /v1/parses --request-file -`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		endpoint, _ := cmd.Flags().GetString("endpoint")
+		if err := validateJobEndpointFlag(endpoint); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		endpoint, _ := cmd.Flags().GetString("endpoint")
 		reqFile, _ := cmd.Flags().GetString("request-file")
 		if reqFile == "" {
 			return fmt.Errorf("--request-file is required")
@@ -100,7 +105,7 @@ for both.`,
   retab jobs retrieve job_abc123 --include-response
 
   # Poll until done
-  while [ "$(retab jobs retrieve job_abc123 | jq -r '.status')" = "running" ]; do
+  while [[ "$(retab jobs retrieve job_abc123 | jq -r '.status')" =~ ^(queued|in_progress)$ ]]; do
     sleep 2
   done`,
 	Args: cobra.ExactArgs(1),
@@ -120,7 +125,10 @@ for both.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		if err := printJSON(result); err != nil {
+			return err
+		}
+		return nil
 	}),
 }
 
@@ -153,9 +161,9 @@ response body embedded. Equivalent to ` + "`retrieve --include-request --include
 var jobsWaitCmd = &cobra.Command{
 	Use:   "wait <job-id>",
 	Short: "Poll until a job reaches a terminal status",
-	Long: `Block until a job hits a terminal status (` + "`succeeded`" + `,
-` + "`failed`" + `, or ` + "`cancelled`" + `), polling on a configurable
-interval. Defaults: 2-second polls, 10-minute timeout.
+	Long: `Block until a job hits a terminal status (` + "`completed`" + `,
+` + "`failed`" + `, ` + "`cancelled`" + `, or ` + "`expired`" + `), polling
+on a configurable interval. Defaults: 2-second polls, 10-minute timeout.
 
 Cleaner than scripting a poll loop with ` + "`retrieve`" + ` — the CLI
 handles backoff and timeout, and exits non-zero if the timeout elapses.`,
@@ -192,15 +200,18 @@ handles backoff and timeout, and exits non-zero if the timeout elapses.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		if err := printJSON(result); err != nil {
+			return err
+		}
+		return jobWaitTerminalError(result)
 	}),
 }
 
 var jobsCancelCmd = &cobra.Command{
 	Use:   "cancel <job-id>",
 	Short: "Cancel a job",
-	Long: `Cancel a pending or in-flight job. Already-completed jobs are
-unaffected.`,
+	Long: `Cancel a pending or in-flight job. Completed jobs cannot be
+cancelled and the API returns an error.`,
 	Example: `  # Cancel a stuck job
   retab jobs cancel job_abc123`,
 	Args: cobra.ExactArgs(1),
@@ -248,7 +259,7 @@ var jobsListCmd = &cobra.Command{
 	Short: "List jobs",
 	Long: `List jobs with a wide set of filters: status, endpoint, source,
 project/workflow/block ids, model, filename pattern, date range, and
-metadata. Use cursor pagination (` + "`--after`" + ` / ` + "`--before`" + `
+metadata. Page by job id (` + "`--after`" + ` / ` + "`--before`" + `
 / ` + "`--limit`" + `) and metadata filters (` + "`--metadata key=value`" + `)
 to slice large job catalogs.`,
 	Example: `  # Recent failed jobs
@@ -264,7 +275,14 @@ to slice large job catalogs.`,
   retab jobs list \
     --from-date 2026-05-01 --to-date 2026-05-14 \
     --filename-contains invoice`,
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
+	RunE: runJobsList,
+}
+
+func runJobsList(cmd *cobra.Command, args []string) error {
+	return runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateJobsListFilters(cmd); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -307,8 +325,161 @@ to slice large job catalogs.`,
 		if err != nil {
 			return err
 		}
+		return printJobsListResult(cmd, result)
+	})(cmd, args)
+}
+
+var allowedJobStatuses = map[string]bool{
+	"validating":  true,
+	"queued":      true,
+	"in_progress": true,
+	"completed":   true,
+	"failed":      true,
+	"cancelled":   true,
+	"expired":     true,
+}
+
+var allowedJobSources = map[string]bool{
+	"api":      true,
+	"project":  true,
+	"workflow": true,
+}
+
+var allowedJobEndpoints = map[string]bool{
+	"/v1/documents/extract":        true,
+	"/v1/extractions":              true,
+	"/v1/documents/parse":          true,
+	"/v1/parses":                   true,
+	"/v1/documents/split":          true,
+	"/v1/splits":                   true,
+	"/v1/partitions":               true,
+	"/v1/documents/classify":       true,
+	"/v1/classifications":          true,
+	"/v1/schemas/generate":         true,
+	"/v1/edits":                    true,
+	"/v1/edits/templates/fill":     true,
+	"/v1/edits/templates/generate": true,
+	"/v1/edit/templates/fill":      true,
+	"/v1/edit/templates/generate":  true,
+	"/v1/evals/extract/process":    true,
+	"/v1/evals/extract/extract":    true,
+	"/v1/evals/extract/split":      true,
+}
+
+var allowedJobDocumentTypes = map[string]bool{
+	"bmp": true, "csv": true, "doc": true, "docm": true, "docx": true,
+	"dotm": true, "dotx": true, "eml": true, "gif": true, "heic": true,
+	"heif": true, "htm": true, "html": true, "jpeg": true, "jpg": true,
+	"json": true, "md": true, "mhtml": true, "msg": true, "odp": true,
+	"ods": true, "odt": true, "ots": true, "ott": true, "pdf": true,
+	"png": true, "ppt": true, "pptx": true, "rtf": true, "svg": true,
+	"tif": true, "tiff": true, "tsv": true, "txt": true, "webp": true,
+	"xlam": true, "xls": true, "xlsb": true, "xlsm": true, "xlsx": true,
+	"xltm": true, "xltx": true, "xml": true, "yaml": true, "yml": true,
+}
+
+const maxJobsListLimit = 100
+const maxJobsFilenameRegexLength = 256
+
+func validateJobEndpointFlag(endpoint string) error {
+	if endpoint != "" && !allowedJobEndpoints[endpoint] {
+		return fmt.Errorf("invalid --endpoint %q", endpoint)
+	}
+	return nil
+}
+
+func validateJobsListFilters(cmd *cobra.Command) error {
+	limit, _ := cmd.Flags().GetInt("limit")
+	if limit > maxJobsListLimit {
+		return fmt.Errorf("invalid --limit %d (max %d)", limit, maxJobsListLimit)
+	}
+	status, _ := cmd.Flags().GetString("status")
+	if status != "" && !allowedJobStatuses[status] {
+		return fmt.Errorf("invalid --status %q", status)
+	}
+	filenameRegex, _ := cmd.Flags().GetString("filename-regex")
+	if len(strings.TrimSpace(filenameRegex)) > maxJobsFilenameRegexLength {
+		return fmt.Errorf("invalid --filename-regex: max %d characters", maxJobsFilenameRegexLength)
+	}
+	endpoint, _ := cmd.Flags().GetString("endpoint")
+	if err := validateJobEndpointFlag(endpoint); err != nil {
+		return err
+	}
+	source, _ := cmd.Flags().GetString("source")
+	if source != "" && !allowedJobSources[source] {
+		return fmt.Errorf("invalid --source %q", source)
+	}
+	documentTypes, _ := cmd.Flags().GetStringArray("document-type")
+	for _, documentType := range documentTypes {
+		if !allowedJobDocumentTypes[documentType] {
+			return fmt.Errorf("invalid --document-type %q", documentType)
+		}
+	}
+	return nil
+}
+
+func jobWaitTerminalError(job *retab.Job) error {
+	if job == nil {
+		return nil
+	}
+	status, _ := (*job)["status"].(string)
+	switch status {
+	case "", string(retab.JobStatusCompleted):
+		return nil
+	case string(retab.JobStatusFailed), string(retab.JobStatusCancelled), string(retab.JobStatusExpired):
+		id, _ := (*job)["id"].(string)
+		if id == "" {
+			return fmt.Errorf("job ended with status %s", status)
+		}
+		return fmt.Errorf("job %s ended with status %s", id, status)
+	default:
+		return nil
+	}
+}
+
+func printJobsListResult(cmd *cobra.Command, result any) error {
+	var raw string
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+	}
+	if raw != string(OutputTable) {
 		return printJSON(result)
-	}),
+	}
+	return RenderList(os.Stdout, OutputTable, result, []TableColumn{
+		{Header: "ID", Extract: func(row any) string { return jobTableCell(row, "id") }},
+		{Header: "STATUS", Extract: func(row any) string { return jobTableCell(row, "status") }},
+		{Header: "ENDPOINT", Extract: func(row any) string { return jobTableCell(row, "endpoint") }},
+		{Header: "CREATED_AT", Extract: func(row any) string { return jobTableCell(row, "created_at") }},
+	})
+}
+
+func jobTableCell(row any, key string) string {
+	value, ok := rowField(row, key)
+	if !ok {
+		return ""
+	}
+	if strings.HasSuffix(key, "_at") {
+		if formatted, ok := formatJobTimestampCell(value); ok {
+			return formatted
+		}
+	}
+	return stringifyCell(value)
+}
+
+func formatJobTimestampCell(value any) (string, bool) {
+	switch v := value.(type) {
+	case int:
+		return time.Unix(int64(v), 0).UTC().Format(time.RFC3339), true
+	case int64:
+		return time.Unix(v, 0).UTC().Format(time.RFC3339), true
+	case float64:
+		if v == float64(int64(v)) {
+			return time.Unix(int64(v), 0).UTC().Format(time.RFC3339), true
+		}
+	}
+	return "", false
 }
 
 func init() {
@@ -322,13 +493,13 @@ func init() {
 		c.Flags().Bool("include-request", false, "include the original request body")
 		c.Flags().Bool("include-response", false, "include the full response body")
 	}
-	jobsWaitCmd.Flags().Int("poll-interval-ms", 0, "polling interval in ms (default 2000)")
-	jobsWaitCmd.Flags().Int("timeout-seconds", 0, "wait timeout in seconds (default 600)")
+	jobsWaitCmd.Flags().Var(&nonNegativeIntFlagValue{}, "poll-interval-ms", "polling interval in ms (default 2000)")
+	jobsWaitCmd.Flags().Var(&nonNegativeIntFlagValue{}, "timeout-seconds", "wait timeout in seconds (default 600)")
 
-	jobsListCmd.Flags().String("before", "", "cursor: items before this id")
-	jobsListCmd.Flags().String("after", "", "cursor: items after this id")
-	jobsListCmd.Flags().Int("limit", 0, "max items to return")
-	jobsListCmd.Flags().String("order", "", "asc | desc")
+	jobsListCmd.Flags().String("before", "", "job id: return items before this id")
+	jobsListCmd.Flags().String("after", "", "job id: return items after this id")
+	jobsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
+	jobsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	jobsListCmd.Flags().String("id", "", "filter by job id")
 	jobsListCmd.Flags().String("status", "", "filter by status")
 	jobsListCmd.Flags().String("endpoint", "", "filter by endpoint")
@@ -340,8 +511,8 @@ func init() {
 	jobsListCmd.Flags().String("filename-regex", "", "filter by filename regex")
 	jobsListCmd.Flags().String("filename-contains", "", "filter by filename substring")
 	jobsListCmd.Flags().StringArray("document-type", nil, "filter by document type (repeatable)")
-	jobsListCmd.Flags().String("from-date", "", "filter from this date")
-	jobsListCmd.Flags().String("to-date", "", "filter to this date")
+	jobsListCmd.Flags().Var(&dateFlagValue{}, "from-date", "filter from this YYYY-MM-DD date")
+	jobsListCmd.Flags().Var(&dateFlagValue{}, "to-date", "filter to this YYYY-MM-DD date")
 	jobsListCmd.Flags().StringArray("metadata", nil, "metadata key=value filter (repeatable)")
 	jobsListCmd.Flags().Bool("include-request", false, "include request body")
 	jobsListCmd.Flags().Bool("include-response", false, "include response body")

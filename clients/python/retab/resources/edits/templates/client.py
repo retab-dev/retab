@@ -140,7 +140,7 @@ class EditTemplates(SyncAPIResource, EditTemplatesMixin):
         result = PaginatedList(**response)
 
         def fetch_next(after: str) -> PaginatedList:
-            return self.list(before=before, after=after, limit=limit, order=order, name=name)
+            return self.list(before=None, after=after, limit=limit, order=order, name=name)
 
         result._fetch_next_page = fetch_next
         return result

@@ -25,6 +25,12 @@ var (
 	date    = "unknown"
 )
 
+type versionInfo struct {
+	Version string `json:"version"`
+	Commit  string `json:"commit"`
+	Built   string `json:"built"`
+}
+
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the CLI version, commit, and build date",
@@ -37,10 +43,45 @@ build.`,
 	Example: `  retab version
   # retab 0.1.0 (commit a1b2c3d, built 2026-05-14T15:03:21Z)`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		info := versionInfo{
+			Version: version,
+			Commit:  commit,
+			Built:   date,
+		}
+		var raw string
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+		switch raw {
+		case string(OutputJSON):
+			return printJSON(info)
+		case string(OutputTable):
+			return RenderList(cmd.OutOrStdout(), OutputTable, map[string]any{
+				"data": []map[string]string{
+					{
+						"version": info.Version,
+						"commit":  info.Commit,
+						"built":   info.Built,
+					},
+				},
+			}, []TableColumn{
+				{Header: "VERSION", Extract: func(row any) string { return versionTableCell(row, "version") }},
+				{Header: "COMMIT", Extract: func(row any) string { return versionTableCell(row, "commit") }},
+				{Header: "BUILT", Extract: func(row any) string { return versionTableCell(row, "built") }},
+			})
+		}
 		fmt.Fprintf(cmd.OutOrStdout(), "retab %s (commit %s, built %s)\n",
 			version, commit, date)
 		return nil
 	},
+}
+
+func versionTableCell(row any, key string) string {
+	value, ok := rowField(row, key)
+	if !ok {
+		return ""
+	}
+	return stringifyCell(value)
 }
 
 func init() {

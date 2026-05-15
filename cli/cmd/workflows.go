@@ -47,6 +47,74 @@ func isEffectivelyEmptyDraft(blocks []retab.WorkflowBlock) bool {
 	}
 }
 
+func workflowGraphObjects(body map[string]any, key string) ([]map[string]any, error) {
+	raw, ok := body[key]
+	if !ok {
+		return nil, nil
+	}
+	arr, ok := raw.([]any)
+	if !ok {
+		return nil, fmt.Errorf("--graph-file: %s must be an array", key)
+	}
+	out := make([]map[string]any, 0, len(arr))
+	for i, item := range arr {
+		obj, ok := item.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("--graph-file: %s[%d] must be an object", key, i)
+		}
+		out = append(out, normalizeWorkflowGraphObject(key, obj))
+	}
+	return out, nil
+}
+
+func normalizeWorkflowGraphObject(key string, obj map[string]any) map[string]any {
+	switch key {
+	case "blocks":
+		out := map[string]any{}
+		copyWorkflowGraphField(out, obj, "id")
+		copyWorkflowGraphField(out, obj, "type")
+		copyWorkflowGraphField(out, obj, "label")
+		copyWorkflowGraphField(out, obj, "config")
+		copyWorkflowGraphField(out, obj, "width")
+		copyWorkflowGraphField(out, obj, "height")
+		copyWorkflowGraphField(out, obj, "parent_id")
+		if _, ok := obj["position"]; ok {
+			copyWorkflowGraphField(out, obj, "position")
+		} else if _, hasX := obj["position_x"]; hasX {
+			out["position"] = map[string]any{"x": obj["position_x"], "y": obj["position_y"]}
+		} else if _, hasY := obj["position_y"]; hasY {
+			out["position"] = map[string]any{"x": obj["position_x"], "y": obj["position_y"]}
+		}
+		return out
+	case "edges":
+		out := map[string]any{}
+		copyWorkflowGraphField(out, obj, "id")
+		copyWorkflowGraphEndpoint(out, obj, "source", "source_block")
+		copyWorkflowGraphEndpoint(out, obj, "target", "target_block")
+		copyWorkflowGraphField(out, obj, "source_handle")
+		copyWorkflowGraphField(out, obj, "target_handle")
+		return out
+	default:
+		return obj
+	}
+}
+
+func copyWorkflowGraphField(dst map[string]any, src map[string]any, key string) {
+	if value, ok := src[key]; ok {
+		dst[key] = value
+	}
+}
+
+func copyWorkflowGraphEndpoint(dst map[string]any, src map[string]any, key string, fallbackKey string) {
+	if value, ok := src[key]; ok {
+		dst[key] = value
+		return
+	}
+	if value, ok := src[fallbackKey]; ok {
+		dst[key] = value
+	}
+}
+
 var workflowsCmd = &cobra.Command{
 	Use:   "workflows",
 	Short: "Manage workflows",
@@ -84,13 +152,13 @@ Typical lifecycle:
 var workflowsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List workflows",
-	Long: `List workflows in your project, with cursor pagination and field
+	Long: `List workflows in your project, with id pagination and field
 selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 ` + "`--after`" + ` / ` + "`--before`" + ` to walk through pages.`,
 	Example: `  # First page
   retab workflows list --limit 20
 
-  # Next page (cursor returned in the previous response)
+  # Next page (use the last workflow id from the previous response)
   retab workflows list --after wf_abc123 --limit 20
 
   # Project just the fields you need
@@ -149,9 +217,10 @@ For per-block I/O schemas, use ` + "`workflows resolved-schemas`" + `.`,
 var workflowsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a workflow",
-	Long: `Scaffold a new draft workflow. The returned workflow has an empty
-graph — add blocks (` + "`workflows blocks create`" + `) and wire them with
-edges (` + "`workflows edges create`" + `) to make it functional.`,
+	Long: `Scaffold a new draft workflow. Fresh drafts include the default
+start block; add processing blocks (` + "`workflows blocks create`" + `) and
+wire them with edges (` + "`workflows edges create`" + `) to make the workflow
+functional.`,
 	Example: `  # Create a draft workflow
   retab workflows create --name "Invoice extraction" \
     --description "Parse vendor invoices into structured JSON"
@@ -327,6 +396,32 @@ Published versions and run history are NOT carried over.`,
 	}),
 }
 
+var workflowsSnapshotsCmd = &cobra.Command{
+	Use:   "snapshots <workflow-id>",
+	Short: "List published workflow snapshots",
+	Long: `List immutable published snapshots for a workflow, newest first.
+
+Each snapshot is a versioned frozen graph that can be used for forensic
+inspection or pinned runs. Use ` + "`--limit`" + ` to bound the page size.`,
+	Example: `  # Recent snapshots
+  retab workflows snapshots wf_abc123 --limit 5`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		limit, _ := cmd.Flags().GetInt("limit")
+		result, err := client.Workflows.ListSnapshots(ctx, args[0], &retab.ListSnapshotsParams{Limit: limit})
+		if err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
 var workflowsEntitiesCmd = &cobra.Command{
 	Use:   "entities <workflow-id>",
 	Short: "Get the workflow with its blocks and edges",
@@ -419,20 +514,16 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 				return err
 			}
 			req := retab.DiagnoseWorkflowGraphRequest{RePropagate: true}
-			if blocks, ok := body["blocks"].([]any); ok {
-				for _, b := range blocks {
-					if obj, ok := b.(map[string]any); ok {
-						req.Blocks = append(req.Blocks, obj)
-					}
-				}
+			blocks, err := workflowGraphObjects(body, "blocks")
+			if err != nil {
+				return err
 			}
-			if edges, ok := body["edges"].([]any); ok {
-				for _, e := range edges {
-					if obj, ok := e.(map[string]any); ok {
-						req.Edges = append(req.Edges, obj)
-					}
-				}
+			req.Blocks = blocks
+			edges, err := workflowGraphObjects(body, "edges")
+			if err != nil {
+				return err
 			}
+			req.Edges = edges
 			if v, ok := body["re_propagate"].(bool); ok {
 				req.RePropagate = v
 			}
@@ -451,10 +542,10 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 }
 
 func init() {
-	workflowsListCmd.Flags().String("before", "", "cursor: items before this id")
-	workflowsListCmd.Flags().String("after", "", "cursor: items after this id")
-	workflowsListCmd.Flags().Int("limit", 0, "max items to return")
-	workflowsListCmd.Flags().String("order", "", "asc | desc")
+	workflowsListCmd.Flags().String("before", "", "workflow id: return items before this id")
+	workflowsListCmd.Flags().String("after", "", "workflow id: return items after this id")
+	workflowsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
+	workflowsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsListCmd.Flags().String("sort-by", "", "sort field")
 	workflowsListCmd.Flags().String("fields", "", "comma-separated field list to return")
 
@@ -469,8 +560,10 @@ func init() {
 	workflowsPublishCmd.Flags().String("description", "", "publish description")
 	workflowsPublishCmd.Flags().Bool("force", false, "skip the empty-workflow warning")
 
+	workflowsSnapshotsCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max snapshots to return")
+
 	workflowsDiagnoseCmd.Flags().String("graph-file", "", "JSON file with {blocks, edges, re_propagate} to diagnose without persisting")
 
-	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd, workflowsDuplicateCmd, workflowsEntitiesCmd, workflowsResolvedSchemasCmd, workflowsDiagnoseCmd)
+	workflowsCmd.AddCommand(workflowsListCmd, workflowsGetCmd, workflowsCreateCmd, workflowsUpdateCmd, workflowsDeleteCmd, workflowsPublishCmd, workflowsDuplicateCmd, workflowsSnapshotsCmd, workflowsEntitiesCmd, workflowsResolvedSchemasCmd, workflowsDiagnoseCmd)
 	rootCmd.AddCommand(workflowsCmd)
 }

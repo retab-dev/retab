@@ -88,7 +88,7 @@ describe("workflows client", () => {
     test("list() uses the workflows route with pagination params", async () => {
         const mockClient = new MockClient({
             data: [],
-            list_metadata: { before: null, after: "cursor_1" },
+            list_metadata: { before: null, after: "workflow_after" },
         });
         const workflowsClient = new APIWorkflows(mockClient);
 
@@ -97,7 +97,7 @@ describe("workflows client", () => {
             order: "asc",
             sortBy: "updated_at",
             fields: "id,name",
-            after: "cursor_0",
+            after: "workflow_before",
         });
 
         expect(mockClient.lastFetchParams).toEqual({
@@ -108,11 +108,11 @@ describe("workflows client", () => {
                 order: "asc",
                 sort_by: "updated_at",
                 fields: "id,name",
-                after: "cursor_0",
+                after: "workflow_before",
             },
             headers: undefined,
         });
-        expect(result.list_metadata.after).toBe("cursor_1");
+        expect(result.list_metadata.after).toBe("workflow_after");
     });
 
     test("update() accepts an email trigger policy", async () => {
@@ -544,7 +544,7 @@ describe("workflows client", () => {
             fromDate: new Date("2026-01-01T00:00:00.000Z"),
             toDate: new Date("2026-01-31T00:00:00.000Z"),
             fields: ["id", "status"],
-            after: "cursor_1",
+            after: "run_after",
         });
 
         expect(mockClient.lastFetchParams).toEqual({
@@ -557,7 +557,7 @@ describe("workflows client", () => {
                 from_date: "2026-01-01",
                 to_date: "2026-01-31",
                 fields: "id,status",
-                after: "cursor_1",
+                after: "run_after",
                 limit: 20,
                 order: "desc",
             },

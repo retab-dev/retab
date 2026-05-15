@@ -311,6 +311,40 @@ func TestResourceGetDeleteAndFilePaths(t *testing.T) {
 	}
 }
 
+func TestFilesDownloadLinkDecodesDurableMIMEData(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/files/file_123/download-link" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"download_url": "https://storage.googleapis.com/bucket/org_1/file/file_123.pdf?signed=1",
+			"expires_in":   "60 minutes",
+			"filename":     "invoice.pdf",
+			"mime_data": map[string]string{
+				"filename": "invoice.pdf",
+				"url":      "https://storage.retab.com/org_1/file_123.pdf",
+			},
+		})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	link, err := client.Files.GetDownloadLink(context.Background(), "file_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if link.MIMEData == nil {
+		t.Fatal("expected mime_data")
+	}
+	if link.MIMEData.URL != "https://storage.retab.com/org_1/file_123.pdf" {
+		t.Fatalf("mime url = %q", link.MIMEData.URL)
+	}
+	if link.MIMEData.ID() != "file_123" {
+		t.Fatalf("mime id = %q", link.MIMEData.ID())
+	}
+}
+
 func TestFilesPrepareUploadRequestsMatchNode(t *testing.T) {
 	client := &Client{}
 	uploadRequest := client.Files
