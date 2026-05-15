@@ -93,6 +93,9 @@ of main.`,
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
+		if err := failIfSpecValidationInvalid(result); err != nil {
+			return err
+		}
 		return printJSON(result)
 	}),
 }
@@ -123,6 +126,9 @@ Plan is read-only — safe to run on production specs. Pair it with
 		if err != nil {
 			return translateSpecAPIError(err)
 		}
+		if err := failIfSpecValidationInvalid(result); err != nil {
+			return err
+		}
 		return printJSON(result)
 	}),
 }
@@ -152,6 +158,9 @@ Mutating — gate behind ` + "`plan`" + ` in CI if the workflow is in production
 		result, err := client.Workflows.Specs.Apply(ctx, yaml)
 		if err != nil {
 			return translateSpecAPIError(err)
+		}
+		if err := failIfSpecValidationInvalid(result); err != nil {
+			return err
 		}
 		return printJSON(result)
 	}),
@@ -246,6 +255,34 @@ func writeSpecExport(w io.Writer, result *retab.Resource, format string) error {
 	default:
 		return fmt.Errorf("invalid --format value %q (want: yaml | json)", format)
 	}
+}
+
+func failIfSpecValidationInvalid(result *retab.Resource) error {
+	if result == nil {
+		return nil
+	}
+	if !specValidationIsInvalid(result) {
+		return nil
+	}
+	enc := json.NewEncoder(os.Stderr)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(result); err != nil {
+		return err
+	}
+	return fmt.Errorf("validation failed")
+}
+
+func specValidationIsInvalid(result *retab.Resource) bool {
+	if isValid, ok := (*result)["is_valid"].(bool); ok {
+		return !isValid
+	}
+	diagnostics, ok := (*result)["diagnostics"].(map[string]any)
+	if !ok {
+		return false
+	}
+	isValid, ok := diagnostics["is_valid"].(bool)
+	return ok && !isValid
 }
 
 // translateSpecAPIError catches the most common failure mode of the spec

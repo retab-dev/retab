@@ -62,6 +62,16 @@ func ensureWorkflowEdgeID(req *retab.WorkflowEdgeCreateRequest) {
 	req.ID = defaultWorkflowEdgeID(*req)
 }
 
+func validateWorkflowEdgeCreate(req retab.WorkflowEdgeCreateRequest) error {
+	if strings.TrimSpace(req.SourceBlock) == "" {
+		return fmt.Errorf("source_block is required")
+	}
+	if strings.TrimSpace(req.TargetBlock) == "" {
+		return fmt.Errorf("target_block is required")
+	}
+	return nil
+}
+
 func defaultWorkflowEdgeID(req retab.WorkflowEdgeCreateRequest) string {
 	parts := []string{req.SourceBlock, req.SourceHandle, req.TargetBlock, req.TargetHandle}
 	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
@@ -151,6 +161,9 @@ branches).`,
 		req.SourceHandle, _ = cmd.Flags().GetString("source-handle")
 		req.TargetHandle, _ = cmd.Flags().GetString("target-handle")
 		req.ID, _ = cmd.Flags().GetString("id")
+		if err := validateWorkflowEdgeCreate(req); err != nil {
+			return err
+		}
 		ensureWorkflowEdgeID(&req)
 		result, err := client.Workflows.Edges.Create(ctx, args[0], req)
 		if err != nil {
@@ -194,7 +207,11 @@ objects with ` + "`source_block`" + `, ` + "`target_block`" + `, and optional
 			if !ok {
 				return fmt.Errorf("--edges-file[%d]: must be a JSON object", i)
 			}
-			reqs = append(reqs, parseEdgeCreate(obj))
+			req := parseEdgeCreate(obj)
+			if err := validateWorkflowEdgeCreate(req); err != nil {
+				return fmt.Errorf("--edges-file[%d]: %w", i, err)
+			}
+			reqs = append(reqs, req)
 		}
 		result, err := client.Workflows.Edges.CreateBatch(ctx, args[0], reqs)
 		if err != nil {

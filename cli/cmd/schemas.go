@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -64,19 +65,19 @@ response envelope (` + "`json_schema`" + `, ` + "`created_at`" + `, etc.).`,
 		if format != "" && format != "schema" && format != "json" {
 			return fmt.Errorf("invalid --format value %q (want: schema | json)", format)
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-
 		documents := []any{}
 		files, _ := cmd.Flags().GetStringArray("file")
 		urls, _ := cmd.Flags().GetStringArray("url")
 		fileIDs, _ := cmd.Flags().GetStringArray("file-id")
 		docsFile, _ := cmd.Flags().GetString("documents-file")
 
+		if docsFile != "" {
+			arr, err := readJSONArray(docsFile)
+			if err != nil {
+				return fmt.Errorf("--documents-file: %w", err)
+			}
+			documents = append(documents, arr...)
+		}
 		for _, path := range files {
 			mime, err := retab.InferMIMEData(path)
 			if err != nil {
@@ -85,6 +86,9 @@ response envelope (` + "`json_schema`" + `, ` + "`created_at`" + `, etc.).`,
 			documents = append(documents, mime)
 		}
 		for _, u := range urls {
+			if strings.TrimSpace(u) == "" {
+				return fmt.Errorf("--url must not be blank")
+			}
 			// Server requires `filename` on every doc descriptor — derive
 			// from the URL path, same shape as resolveDocument does in
 			// common.go for the single-document commands.
@@ -93,6 +97,12 @@ response envelope (` + "`json_schema`" + `, ` + "`created_at`" + `, etc.).`,
 				URL:      u,
 			})
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		for _, id := range fileIDs {
 			// `FileRef{ID: ...}` alone returns 422; the server demands
 			// filename + url. Look the file up via Files.GetDownloadLink
@@ -112,13 +122,6 @@ response envelope (` + "`json_schema`" + `, ` + "`created_at`" + `, etc.).`,
 				Filename: filename,
 				URL:      link.DownloadURL,
 			})
-		}
-		if docsFile != "" {
-			arr, err := readJSONArray(docsFile)
-			if err != nil {
-				return fmt.Errorf("--documents-file: %w", err)
-			}
-			documents = append(documents, arr...)
 		}
 		if len(documents) == 0 {
 			return fmt.Errorf("at least one document is required (--file, --url, --file-id, or --documents-file)")

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -34,13 +35,13 @@ func resolveWorkflowIDArgTo(cmd *cobra.Command, args []string, warnTo io.Writer)
 	if warnTo == nil {
 		warnTo = os.Stderr
 	}
-	if len(args) > 0 && args[0] != "" {
+	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
 		if flagSet {
 			fmt.Fprintln(warnTo, "warning: --workflow-id is deprecated; positional argument takes precedence")
 		}
 		return args[0], nil
 	}
-	if flagSet && flagVal != "" {
+	if flagSet && strings.TrimSpace(flagVal) != "" {
 		fmt.Fprintln(warnTo, "warning: --workflow-id is deprecated; pass the workflow id as the first positional argument")
 		return flagVal, nil
 	}
@@ -107,6 +108,44 @@ func validateWorkflowTestAssertion(assertion map[string]any) error {
 		return fmt.Errorf("assertion.condition is required")
 	}
 	return nil
+}
+
+func validateWorkflowTestTarget(target map[string]any) error {
+	targetType, _ := target["type"].(string)
+	if targetType != "" && targetType != "block" {
+		return fmt.Errorf("target.type must be block")
+	}
+	blockID, _ := target["block_id"].(string)
+	if strings.TrimSpace(blockID) == "" {
+		return fmt.Errorf("target.block_id is required")
+	}
+	return nil
+}
+
+func validateWorkflowTestSource(source map[string]any) error {
+	sourceType, _ := source["type"].(string)
+	switch sourceType {
+	case "manual":
+		if handleInputs, ok := source["handle_inputs"]; ok {
+			if _, ok := handleInputs.(map[string]any); !ok {
+				return fmt.Errorf("source.handle_inputs must be an object")
+			}
+		}
+		return nil
+	case "run_step":
+		runID, _ := source["run_id"].(string)
+		if strings.TrimSpace(runID) == "" {
+			return fmt.Errorf("source.run_id is required")
+		}
+		if stepID, ok := source["step_id"]; ok && stepID != nil {
+			if _, ok := stepID.(string); !ok {
+				return fmt.Errorf("source.step_id must be a string")
+			}
+		}
+		return nil
+	default:
+		return fmt.Errorf("source.type must be manual or run_step")
+	}
 }
 
 type consensusFlagValue struct{ value string }
@@ -185,6 +224,12 @@ After creation, run with ` + "`workflows tests execute`" + `.`,
 		}
 		if target == nil || source == nil || assertion == nil {
 			return fmt.Errorf("--target-file, --source-file, and --assertion-file are required")
+		}
+		if err := validateWorkflowTestTarget(target); err != nil {
+			return fmt.Errorf("--target-file: %w", err)
+		}
+		if err := validateWorkflowTestSource(source); err != nil {
+			return fmt.Errorf("--source-file: %w", err)
 		}
 		if err := validateWorkflowTestAssertion(assertion); err != nil {
 			return fmt.Errorf("--assertion-file: %w", err)
@@ -292,6 +337,9 @@ flaky runs.`,
 			req.Assertion = retab.Resource(assertion)
 		}
 		if source != nil {
+			if err := validateWorkflowTestSource(source); err != nil {
+				return fmt.Errorf("--source-file: %w", err)
+			}
 			req.Source = retab.Resource(source)
 		}
 		result, err := client.Workflows.Tests.Update(ctx, args[0], args[1], req)
@@ -365,6 +413,9 @@ Inspect results with ` + "`workflows tests runs list`" + ` and
 			return err
 		}
 		if target != nil {
+			if err := validateWorkflowTestTarget(target); err != nil {
+				return fmt.Errorf("--target-file: %w", err)
+			}
 			req.Target = retab.Resource(target)
 		}
 		result, err := client.Workflows.Tests.Execute(ctx, req)
@@ -447,7 +498,7 @@ func init() {
 	_ = workflowsTestsCreateCmd.Flags().MarkHidden("workflow-id")
 
 	workflowsTestsListCmd.Flags().String("target-block-id", "", "filter by target block id")
-	workflowsTestsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items (default 50)")
+	workflowsTestsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 50)")
 
 	workflowsTestsUpdateCmd.Flags().String("name", "", "new test name")
 	workflowsTestsUpdateCmd.Flags().String("assertion-file", "", "JSON file with new assertion (or - for stdin)")
@@ -461,7 +512,7 @@ func init() {
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
 	_ = workflowsTestsExecuteCmd.Flags().MarkHidden("workflow-id")
 
-	workflowsTestsRunsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items (default 20)")
+	workflowsTestsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 20)")
 
 	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd)
 	workflowsTestsCmd.AddCommand(workflowsTestsCreateCmd, workflowsTestsGetCmd, workflowsTestsListCmd, workflowsTestsUpdateCmd, workflowsTestsDeleteCmd, workflowsTestsExecuteCmd, workflowsTestsRunsCmd)

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -55,8 +56,15 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
   cat req.json | retab jobs create \
     --endpoint /v1/parses --request-file -`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		endpoint, _ := cmd.Flags().GetString("endpoint")
+		endpoint, err := requireNonBlankFlag(cmd, "endpoint")
+		if err != nil {
+			return err
+		}
 		if err := validateJobEndpointFlag(endpoint); err != nil {
+			return err
+		}
+		reqFile, err := requireNonBlankFlag(cmd, "request-file")
+		if err != nil {
 			return err
 		}
 		client, err := newClient(cmd)
@@ -65,10 +73,6 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		reqFile, _ := cmd.Flags().GetString("request-file")
-		if reqFile == "" {
-			return fmt.Errorf("--request-file is required")
-		}
 		body, err := readJSONMap(reqFile)
 		if err != nil {
 			return fmt.Errorf("--request-file: %w", err)
@@ -76,6 +80,9 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
 		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
 		md, err := parseKVStringList(metaPairs)
 		if err != nil {
+			return err
+		}
+		if err := validateJobMetadata(md); err != nil {
 			return err
 		}
 		result, err := client.Jobs.Create(ctx, retab.JobCreateRequest{
@@ -304,7 +311,12 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 		params.Model, _ = cmd.Flags().GetString("model")
 		params.FilenameRegex, _ = cmd.Flags().GetString("filename-regex")
 		params.FilenameContains, _ = cmd.Flags().GetString("filename-contains")
-		params.DocumentType, _ = cmd.Flags().GetStringArray("document-type")
+		rawDocumentTypes, _ := cmd.Flags().GetStringArray("document-type")
+		documentTypes, err := normalizeJobDocumentTypes(rawDocumentTypes)
+		if err != nil {
+			return err
+		}
+		params.DocumentType = documentTypes
 		params.FromDate, _ = cmd.Flags().GetString("from-date")
 		params.ToDate, _ = cmd.Flags().GetString("to-date")
 		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
@@ -379,7 +391,15 @@ var allowedJobDocumentTypes = map[string]bool{
 }
 
 const maxJobsListLimit = 100
+const maxJobsListIncludeResponseLimit = 20
 const maxJobsFilenameRegexLength = 256
+const maxJobMetadataPairs = 16
+const maxJobMetadataKeyLength = 64
+const maxJobMetadataValueLength = 512
+
+var literalJobFilenameRegex = regexp.MustCompile(`^[\w\s.\-()]+$`)
+var unsupportedJobFilenameRegexFlag = regexp.MustCompile(`\(\?`)
+var unsupportedJobFilenameRegexBackreference = regexp.MustCompile(`\\[1-9]`)
 
 func validateJobEndpointFlag(endpoint string) error {
 	if endpoint != "" && !allowedJobEndpoints[endpoint] {
@@ -388,18 +408,41 @@ func validateJobEndpointFlag(endpoint string) error {
 	return nil
 }
 
+func normalizeJobDocumentTypes(rawValues []string) ([]string, error) {
+	documentTypes := make([]string, 0, len(rawValues))
+	seen := map[string]bool{}
+	for _, rawValue := range rawValues {
+		for _, rawDocumentType := range strings.Split(rawValue, ",") {
+			documentType := strings.ToLower(strings.TrimSpace(rawDocumentType))
+			if documentType == "" || seen[documentType] {
+				continue
+			}
+			if !allowedJobDocumentTypes[documentType] {
+				return nil, fmt.Errorf("invalid --document-type %q", rawDocumentType)
+			}
+			seen[documentType] = true
+			documentTypes = append(documentTypes, documentType)
+		}
+	}
+	return documentTypes, nil
+}
+
 func validateJobsListFilters(cmd *cobra.Command) error {
 	limit, _ := cmd.Flags().GetInt("limit")
 	if limit > maxJobsListLimit {
 		return fmt.Errorf("invalid --limit %d (max %d)", limit, maxJobsListLimit)
+	}
+	includeResponse, _ := cmd.Flags().GetBool("include-response")
+	if includeResponse && limit > maxJobsListIncludeResponseLimit {
+		return fmt.Errorf("invalid --include-response with --limit %d (max %d)", limit, maxJobsListIncludeResponseLimit)
 	}
 	status, _ := cmd.Flags().GetString("status")
 	if status != "" && !allowedJobStatuses[status] {
 		return fmt.Errorf("invalid --status %q", status)
 	}
 	filenameRegex, _ := cmd.Flags().GetString("filename-regex")
-	if len(strings.TrimSpace(filenameRegex)) > maxJobsFilenameRegexLength {
-		return fmt.Errorf("invalid --filename-regex: max %d characters", maxJobsFilenameRegexLength)
+	if err := validateJobFilenameRegexFlag(filenameRegex); err != nil {
+		return err
 	}
 	endpoint, _ := cmd.Flags().GetString("endpoint")
 	if err := validateJobEndpointFlag(endpoint); err != nil {
@@ -409,13 +452,89 @@ func validateJobsListFilters(cmd *cobra.Command) error {
 	if source != "" && !allowedJobSources[source] {
 		return fmt.Errorf("invalid --source %q", source)
 	}
-	documentTypes, _ := cmd.Flags().GetStringArray("document-type")
-	for _, documentType := range documentTypes {
-		if !allowedJobDocumentTypes[documentType] {
-			return fmt.Errorf("invalid --document-type %q", documentType)
+	projectID, _ := cmd.Flags().GetString("project-id")
+	workflowID, _ := cmd.Flags().GetString("workflow-id")
+	if source == "api" && (projectID != "" || workflowID != "") {
+		return fmt.Errorf("source=api cannot be combined with --project-id or --workflow-id")
+	}
+	rawDocumentTypes, _ := cmd.Flags().GetStringArray("document-type")
+	if _, err := normalizeJobDocumentTypes(rawDocumentTypes); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateJobMetadata(metadata map[string]string) error {
+	if len(metadata) > maxJobMetadataPairs {
+		return fmt.Errorf("metadata can contain at most %d key-value pairs", maxJobMetadataPairs)
+	}
+	for key, value := range metadata {
+		if len(key) > maxJobMetadataKeyLength {
+			return fmt.Errorf("metadata key %q exceeds %d characters", truncateForError(key, 20), maxJobMetadataKeyLength)
+		}
+		if len(value) > maxJobMetadataValueLength {
+			return fmt.Errorf("metadata value for key %q exceeds %d characters", key, maxJobMetadataValueLength)
 		}
 	}
 	return nil
+}
+
+func truncateForError(value string, maxLength int) string {
+	if len(value) <= maxLength {
+		return value
+	}
+	return value[:maxLength] + "..."
+}
+
+func validateJobFilenameRegexFlag(raw string) error {
+	normalized := strings.TrimSpace(raw)
+	if normalized == "" {
+		return nil
+	}
+	if len(normalized) > maxJobsFilenameRegexLength {
+		return fmt.Errorf("invalid --filename-regex: max %d characters", maxJobsFilenameRegexLength)
+	}
+	if literalJobFilenameRegex.MatchString(normalized) || regexp.QuoteMeta(normalized) == normalized {
+		return nil
+	}
+	if _, err := regexp.Compile(normalized); err != nil {
+		return fmt.Errorf("invalid --filename-regex: invalid pattern")
+	}
+	if !strings.HasPrefix(normalized, "^") {
+		return fmt.Errorf("invalid --filename-regex: regex patterns must start with '^'")
+	}
+	if unsupportedJobFilenameRegexFlag.MatchString(normalized) {
+		return fmt.Errorf("invalid --filename-regex: lookaround and inline flags are unsupported")
+	}
+	if unsupportedJobFilenameRegexBackreference.MatchString(normalized) {
+		return fmt.Errorf("invalid --filename-regex: backreferences are unsupported")
+	}
+	if hasUnescapedJobRegexQuantifier(normalized) {
+		return fmt.Errorf("invalid --filename-regex: quantified patterns are unsupported")
+	}
+	if idx := strings.Index(normalized, "$"); idx >= 0 && !strings.HasSuffix(normalized, "$") {
+		return fmt.Errorf("invalid --filename-regex: '$' is only allowed as an end anchor")
+	}
+	return nil
+}
+
+func hasUnescapedJobRegexQuantifier(pattern string) bool {
+	escaped := false
+	for _, ch := range pattern {
+		if escaped {
+			escaped = false
+			continue
+		}
+		if ch == '\\' {
+			escaped = true
+			continue
+		}
+		switch ch {
+		case '*', '+', '?', '{', '}':
+			return true
+		}
+	}
+	return false
 }
 
 func jobWaitTerminalError(job *retab.Job) error {

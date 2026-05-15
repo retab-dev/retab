@@ -84,7 +84,7 @@ label, position, and config.`,
   retab workflows blocks list wf_abc123
 
   # Get the ids only
-  retab workflows blocks list wf_abc123 | jq -r '.[].id'`,
+  retab workflows blocks list wf_abc123 | jq -r '.data[].id'`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -354,14 +354,20 @@ testing.`,
   retab workflows blocks simulate \
     --run-id run_xyz789 --block-id blk_def456 --n-consensus 3`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		runID, err := requireNonBlankFlag(cmd, "run-id")
+		if err != nil {
+			return err
+		}
+		blockID, err := requireNonBlankFlag(cmd, "block-id")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		runID, _ := cmd.Flags().GetString("run-id")
-		blockID, _ := cmd.Flags().GetString("block-id")
 		stepID, _ := cmd.Flags().GetString("step-id")
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		req := retab.SimulateBlockRequest{
@@ -389,15 +395,15 @@ func init() {
 	workflowsBlocksUpdateCmd.Flags().String("label", "", "update label")
 	workflowsBlocksUpdateCmd.Flags().Float64("position-x", 0, "update X position")
 	workflowsBlocksUpdateCmd.Flags().Float64("position-y", 0, "update Y position")
-	workflowsBlocksUpdateCmd.Flags().Float64("width", 0, "update width")
-	workflowsBlocksUpdateCmd.Flags().Float64("height", 0, "update height")
+	workflowsBlocksUpdateCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "width", "update width")
+	workflowsBlocksUpdateCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "height", "update height")
 	workflowsBlocksUpdateCmd.Flags().String("parent-id", "", "update parent id")
 	workflowsBlocksUpdateCmd.Flags().String("config-file", "", "JSON file with new config (or - for stdin)")
 
 	workflowsBlocksSimulateCmd.Flags().String("run-id", "", "run id (required)")
 	workflowsBlocksSimulateCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsBlocksSimulateCmd.Flags().String("step-id", "", "step id")
-	workflowsBlocksSimulateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "consensus count")
+	workflowsBlocksSimulateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
 	workflowsBlocksSimulateCmd.Flags().Bool("check-eligibility", true, "check block eligibility")
 	_ = workflowsBlocksSimulateCmd.MarkFlagRequired("run-id")
 	_ = workflowsBlocksSimulateCmd.MarkFlagRequired("block-id")

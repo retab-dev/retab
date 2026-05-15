@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +16,21 @@ A parse takes any supported input (PDF, Excel/CSV, .eml, image, etc.) and
 returns a normalized markdown rendering with preserved structure — tables,
 headings, lists, and image alt text. This is typically the first step in a
 pipeline: parse → feed into prompts, or parse → extractions/classifications
-when the downstream task wants normalized text rather than the raw file.`,
+	when the downstream task wants normalized text rather than the raw file.`,
+}
+
+var allowedTableParsingFormats = map[string]bool{
+	"markdown": true,
+	"yaml":     true,
+	"html":     true,
+	"json":     true,
+}
+
+func validateTableParsingFormat(value string) error {
+	if value == "" || allowedTableParsingFormats[value] {
+		return nil
+	}
+	return fmt.Errorf("invalid --table-parsing-format %q (want: markdown | yaml | html | json)", value)
 }
 
 var parsesCreateCmd = &cobra.Command{
@@ -40,6 +56,14 @@ where the default is too coarse.`,
     --file ./scan.png --model gpt-4o \
     --image-resolution-dpi 300`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		tableFormat, _ := cmd.Flags().GetString("table-parsing-format")
+		if err := validateTableParsingFormat(tableFormat); err != nil {
+			return err
+		}
+		model, err := requireNonBlankFlag(cmd, "model")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -50,8 +74,6 @@ where the default is too coarse.`,
 		if err != nil {
 			return err
 		}
-		model, _ := cmd.Flags().GetString("model")
-		tableFormat, _ := cmd.Flags().GetString("table-parsing-format")
 		dpi, _ := cmd.Flags().GetInt("image-resolution-dpi")
 		instructions, _ := cmd.Flags().GetString("instructions")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
@@ -156,7 +178,7 @@ func init() {
 	addDocumentFlags(parsesCreateCmd)
 	parsesCreateCmd.Flags().String("model", "", "model identifier (required)")
 	parsesCreateCmd.Flags().String("table-parsing-format", "", "table parsing format")
-	parsesCreateCmd.Flags().Var(&nonNegativeIntFlagValue{}, "image-resolution-dpi", "image resolution DPI")
+	parsesCreateCmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "image resolution DPI (96-300)")
 	parsesCreateCmd.Flags().String("instructions", "", "extra instructions")
 	parsesCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	_ = parsesCreateCmd.MarkFlagRequired("model")

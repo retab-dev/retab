@@ -441,6 +441,45 @@ func TestPrintResultTableWorkflowEdgeColumns(t *testing.T) {
 	}
 }
 
+func TestPrintResultTableSkipsNestedObjectCells(t *testing.T) {
+	tests := map[string]any{
+		"data": []any{
+			map[string]any{
+				"id": "wfnodetest_1",
+				"source": map[string]any{
+					"type": "manual",
+					"handle_inputs": map[string]any{
+						"input-json-0": map[string]any{"type": "json"},
+					},
+				},
+				"target": map[string]any{
+					"type":     "block",
+					"block_id": "block_calc_total",
+				},
+				"name":       "calc-total-baseline",
+				"created_at": "2026-05-15T13:12:16Z",
+			},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(tests); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr for workflow test list: %q", stderr)
+	}
+	for _, want := range []string{"ID", "SOURCE", "TARGET", "NAME", "CREATED_AT", "wfnodetest_1", "manual", "block_calc_total", "calc-total-baseline"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in workflow test table, got:\n%s", want, stdout)
+		}
+	}
+	if strings.Contains(stdout, "map[") {
+		t.Fatalf("nested object leaked into table output:\n%s", stdout)
+	}
+}
+
 // TestPrintResultTableSingleObjectFallsBackToJSON covers acceptance
 // criterion #3: a single object (not a list) isn't tabulable, so the
 // helper warns on stderr and falls back to JSON on stdout.
@@ -613,5 +652,48 @@ func TestResolveOutputFormat(t *testing.T) {
 				t.Fatalf("got %q want %q", got, tc.want)
 			}
 		})
+	}
+}
+
+// timeRow mirrors the SDK's workflow list-response element shape: a
+// `created_at` field typed as time.Time (not a pre-formatted string).
+// `retab workflows list --output table` decodes into exactly this shape.
+type timeRow struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type timeRowList struct {
+	Data []timeRow `json:"data"`
+}
+
+// TestPrintResultTableFormatsTimeDotTimeAsRFC3339 pins that a time.Time
+// cell renders as RFC3339 in --output table, not Go's default
+// time.Time.String() form ("2026-05-15 13:24:54.014 +0000 UTC").
+//
+// Regression: workflow list responses type created_at as time.Time, and
+// stringifyCell's fmt.Stringer branch caught it first, emitting the Go
+// default format — visibly inconsistent with jobs/files list tables,
+// which render clean RFC3339 timestamps.
+func TestPrintResultTableFormatsTimeDotTimeAsRFC3339(t *testing.T) {
+	createdAt := time.Date(2026, 5, 15, 13, 24, 54, 0, time.UTC)
+	list := timeRowList{
+		Data: []timeRow{{ID: "wrk_1", Name: "probe", CreatedAt: createdAt}},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printResultTable(list); err != nil {
+			t.Fatalf("printResultTable: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if !strings.Contains(stdout, "2026-05-15T13:24:54Z") {
+		t.Fatalf("expected RFC3339 timestamp in table output, got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "+0000 UTC") {
+		t.Fatalf("table leaked Go default time.Time format, got:\n%s", stdout)
 	}
 }

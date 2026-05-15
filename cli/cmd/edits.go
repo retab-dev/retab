@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -51,6 +52,10 @@ rendered output (handy when distinguishing edits from multiple passes).`,
     --instructions "Mark every monetary value above $10,000" \
     --color "#ff4d4f" --model gpt-4o`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		instructions, err := requireNonBlankFlag(cmd, "instructions")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -61,7 +66,6 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 		if err != nil {
 			return err
 		}
-		instructions, _ := cmd.Flags().GetString("instructions")
 		templateID, _ := cmd.Flags().GetString("template-id")
 		model, _ := cmd.Flags().GetString("model")
 		color, _ := cmd.Flags().GetString("color")
@@ -233,8 +237,7 @@ Once created, apply it to new documents with
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		name, _ := cmd.Flags().GetString("name")
-		doc, err := resolveDocument(cmd)
-		if err != nil {
+		if err := validateEditTemplateName(name); err != nil {
 			return err
 		}
 		formFieldsPath, _ := cmd.Flags().GetString("form-fields-file")
@@ -248,6 +251,10 @@ Once created, apply it to new documents with
 		fields, err := formFieldsFromJSONArray(arr)
 		if err != nil {
 			return fmt.Errorf("--form-fields-file: %w", err)
+		}
+		doc, err := resolveDocument(cmd)
+		if err != nil {
+			return err
 		}
 		result, err := client.Edits.Templates.Create(ctx, retab.EditTemplateCreateRequest{
 			Name:       name,
@@ -341,6 +348,9 @@ template are not retroactively re-rendered.`,
 		var req retab.EditTemplateUpdateRequest
 		if cmd.Flags().Changed("name") {
 			v, _ := cmd.Flags().GetString("name")
+			if err := validateEditTemplateName(v); err != nil {
+				return err
+			}
 			req.Name = &v
 		}
 		if path, _ := cmd.Flags().GetString("form-fields-file"); path != "" {
@@ -414,14 +424,20 @@ For one-off edits without a template, use ` + "`retab edits create`" + ` instead
     --instructions "Fill required fields only" \
     --color "#1677ff" --model gpt-4o`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		templateID, err := requireNonBlankFlag(cmd, "template-id")
+		if err != nil {
+			return err
+		}
+		instructions, err := requireNonBlankFlag(cmd, "instructions")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		templateID, _ := cmd.Flags().GetString("template-id")
-		instructions, _ := cmd.Flags().GetString("instructions")
 		model, _ := cmd.Flags().GetString("model")
 		color, _ := cmd.Flags().GetString("color")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
@@ -452,6 +468,13 @@ func formFieldsFromJSONArray(arr []any) ([]retab.FormField, error) {
 		fields = append(fields, retab.FormField(obj))
 	}
 	return fields, nil
+}
+
+func validateEditTemplateName(name string) error {
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("template name is required")
+	}
+	return nil
 }
 
 func validateFormFieldObject(index int, obj map[string]any) error {

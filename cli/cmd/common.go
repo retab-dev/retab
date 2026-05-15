@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -51,7 +52,7 @@ type renderedError struct {
 }
 
 func (e renderedError) Error() string {
-	return ""
+	return e.err.Error()
 }
 
 func (e renderedError) Unwrap() error {
@@ -305,6 +306,14 @@ func parseKVStringList(values []string) (map[string]string, error) {
 	return out, nil
 }
 
+func requireNonBlankFlag(cmd *cobra.Command, name string) (string, error) {
+	value, _ := cmd.Flags().GetString(name)
+	if strings.TrimSpace(value) == "" {
+		return "", fmt.Errorf("--%s must not be blank", name)
+	}
+	return value, nil
+}
+
 // splitKV splits "name=value" into (name, value, true). When no '=' is present,
 // it returns (raw, "", false). Used for repeatable k=v flags where the value
 // half is optional (compare parseKVStringList, which is strict).
@@ -318,7 +327,7 @@ func splitKV(raw string) (string, string, bool) {
 func addListFlags(cmd *cobra.Command, baseOnly bool) {
 	cmd.Flags().String("before", "", "item id: return items before this id")
 	cmd.Flags().String("after", "", "item id: return items after this id")
-	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items to return (1-100)")
 	cmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	if !baseOnly {
 		cmd.Flags().String("filename", "", "filter by filename")
@@ -345,6 +354,82 @@ func (v *nonNegativeIntFlagValue) Set(raw string) error {
 	}
 	if parsed < 0 {
 		return fmt.Errorf("must be non-negative")
+	}
+	v.value = raw
+	return nil
+}
+
+type positiveIntFlagValue struct{ value string }
+
+func (v *positiveIntFlagValue) String() string {
+	if v.value == "" {
+		return "0"
+	}
+	return v.value
+}
+
+func (v *positiveIntFlagValue) Type() string { return "int" }
+
+func (v *positiveIntFlagValue) Set(raw string) error {
+	parsed, err := strconv.Atoi(raw)
+	if err != nil {
+		return err
+	}
+	if parsed <= 0 {
+		return fmt.Errorf("must be positive")
+	}
+	v.value = raw
+	return nil
+}
+
+type nonNegativeInt64FlagValue struct{ value string }
+
+func (v *nonNegativeInt64FlagValue) String() string {
+	if v.value == "" {
+		return "0"
+	}
+	return v.value
+}
+
+func (v *nonNegativeInt64FlagValue) Type() string { return "int64" }
+
+func (v *nonNegativeInt64FlagValue) Set(raw string) error {
+	parsed, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		return err
+	}
+	if parsed < 0 {
+		return fmt.Errorf("must be non-negative")
+	}
+	v.value = raw
+	return nil
+}
+
+type boundedIntFlagValue struct {
+	value string
+	min   int
+	max   int
+}
+
+func (v *boundedIntFlagValue) String() string {
+	if v.value == "" {
+		return "0"
+	}
+	return v.value
+}
+
+func (v *boundedIntFlagValue) Type() string { return "int" }
+
+func (v *boundedIntFlagValue) Set(raw string) error {
+	parsed, err := strconv.Atoi(raw)
+	if err != nil {
+		return err
+	}
+	if parsed < v.min || parsed > v.max {
+		if v.min == 0 && parsed < 0 {
+			return fmt.Errorf("must be non-negative and between %d and %d", v.min, v.max)
+		}
+		return fmt.Errorf("must be between %d and %d", v.min, v.max)
 	}
 	v.value = raw
 	return nil
@@ -419,6 +504,48 @@ func (v *orderFlagValue) Set(raw string) error {
 	default:
 		return fmt.Errorf("must be asc or desc")
 	}
+}
+
+type enumStringFlagValue struct {
+	value   string
+	allowed map[string]bool
+	label   string
+}
+
+func newEnumStringFlagValue(label string, allowedValues ...string) *enumStringFlagValue {
+	allowed := map[string]bool{"": true}
+	for _, value := range allowedValues {
+		allowed[value] = true
+	}
+	return &enumStringFlagValue{allowed: allowed, label: label}
+}
+
+func (v *enumStringFlagValue) String() string { return v.value }
+
+func (v *enumStringFlagValue) Type() string { return "string" }
+
+func (v *enumStringFlagValue) Set(raw string) error {
+	if v.allowed[raw] {
+		v.value = raw
+		return nil
+	}
+	return fmt.Errorf("invalid %s %q", v.label, raw)
+}
+
+var sha256HexPattern = regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
+
+type sha256FlagValue struct{ value string }
+
+func (v *sha256FlagValue) String() string { return v.value }
+
+func (v *sha256FlagValue) Type() string { return "string" }
+
+func (v *sha256FlagValue) Set(raw string) error {
+	if raw != "" && !sha256HexPattern.MatchString(raw) {
+		return fmt.Errorf("must be a 64-character hex SHA-256 digest")
+	}
+	v.value = raw
+	return nil
 }
 
 func collectListParams(cmd *cobra.Command) retab.ListParams {

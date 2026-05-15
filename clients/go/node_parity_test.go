@@ -190,6 +190,88 @@ func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 	}
 }
 
+func TestWorkflowRunCreatePreservesURLBackedDocuments(t *testing.T) {
+	var body Resource
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		defer r.Body.Close()
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(workflowRunResponse("run_123", "wf_123", "running"))
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	_, err := client.Workflows.Runs.Create(context.Background(), CreateWorkflowRunRequest{
+		WorkflowID: "wf_123",
+		Documents: map[string]any{
+			"start-1": MIMEData{Filename: "invoice.pdf", URL: "https://storage.retab.com/org_1/file_123.pdf"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	documents, ok := body["documents"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents = %#v", body["documents"])
+	}
+	startDocument, ok := documents["start-1"].(map[string]any)
+	if !ok {
+		t.Fatalf("start document = %#v", documents["start-1"])
+	}
+	if startDocument["filename"] != "invoice.pdf" || startDocument["url"] != "https://storage.retab.com/org_1/file_123.pdf" {
+		t.Fatalf("start document = %#v", startDocument)
+	}
+	if _, ok := startDocument["content"]; ok {
+		t.Fatalf("url-backed workflow document should not be materialized inline: %#v", startDocument)
+	}
+}
+
+func TestWorkflowRunCreateAcceptsJSONDocumentDescriptors(t *testing.T) {
+	var body Resource
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		defer r.Body.Close()
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(workflowRunResponse("run_123", "wf_123", "running"))
+	}))
+	defer server.Close()
+	client := newTestClient(t, server)
+
+	_, err := client.Workflows.Runs.Create(context.Background(), CreateWorkflowRunRequest{
+		WorkflowID: "wf_123",
+		Documents: map[string]any{
+			"start-1": map[string]any{
+				"filename": "invoice.pdf",
+				"url":      "https://storage.retab.com/org_1/file_123.pdf",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	documents, ok := body["documents"].(map[string]any)
+	if !ok {
+		t.Fatalf("documents = %#v", body["documents"])
+	}
+	startDocument, ok := documents["start-1"].(map[string]any)
+	if !ok {
+		t.Fatalf("start document = %#v", documents["start-1"])
+	}
+	if startDocument["filename"] != "invoice.pdf" || startDocument["url"] != "https://storage.retab.com/org_1/file_123.pdf" {
+		t.Fatalf("start document = %#v", startDocument)
+	}
+}
+
 func TestListDefaultsMatchNode(t *testing.T) {
 	requests := map[string]string{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -1,9 +1,37 @@
 package cmd
 
 import (
+	"fmt"
+
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
 )
+
+var allowedWorkflowArtifactOperations = map[string]bool{
+	"extraction":             true,
+	"split":                  true,
+	"classification":         true,
+	"parse":                  true,
+	"edit":                   true,
+	"partition":              true,
+	"conditional_evaluation": true,
+	"hil_evaluation":         true,
+	"while_loop_termination": true,
+	"api_call_invocation":    true,
+	"function_invocation":    true,
+}
+
+const workflowArtifactOperationValues = "extraction, split, classification, parse, edit, partition, conditional_evaluation, hil_evaluation, while_loop_termination, api_call_invocation, function_invocation"
+
+func validateWorkflowArtifactOperation(operation string) error {
+	if operation == "" {
+		return nil
+	}
+	if !allowedWorkflowArtifactOperations[operation] {
+		return fmt.Errorf("invalid operation %q (want: %s)", operation, workflowArtifactOperationValues)
+	}
+	return nil
+}
 
 var workflowsArtifactsCmd = &cobra.Command{
 	Use:   "artifacts",
@@ -23,22 +51,25 @@ after their run is gone. Look up an artifact by ` + "`<operation>`" + ` +
   retab workflows artifacts list run_xyz789 --block-id blk_extract_1
 
   # Fetch one artifact
-  retab workflows artifacts get extract art_stu901`,
+  retab workflows artifacts get extraction art_stu901`,
 }
 
 var workflowsArtifactsGetCmd = &cobra.Command{
 	Use:   "get <operation> <artifact-id>",
 	Short: "Get an artifact by operation and id",
-	Long: `Fetch one artifact. ` + "`<operation>`" + ` is the block type
-that produced it (e.g. ` + "`extract`" + `, ` + "`parse`" + `,
-` + "`classify`" + `) and addresses the artifact namespace.`,
+	Long: `Fetch one artifact. ` + "`<operation>`" + ` is the persisted artifact
+operation (e.g. ` + "`extraction`" + `, ` + "`parse`" + `,
+` + "`classification`" + `) and addresses the artifact namespace.`,
 	Example: `  # Fetch an extracted JSON artifact
-  retab workflows artifacts get extract art_stu901
+  retab workflows artifacts get extraction art_stu901
 
   # Fetch a parsed document
   retab workflows artifacts get parse art_vwx234`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateWorkflowArtifactOperation(args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -83,6 +114,9 @@ always the parent id, and flags are reserved for filters.`,
 		params := retab.ListWorkflowArtifactsParams{}
 		params.RunID = args[0]
 		params.Operation, _ = cmd.Flags().GetString("operation")
+		if err := validateWorkflowArtifactOperation(params.Operation); err != nil {
+			return err
+		}
 		params.BlockID, _ = cmd.Flags().GetString("block-id")
 		result, err := client.Workflows.Artifacts.List(ctx, params)
 		if err != nil {

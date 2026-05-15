@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -92,6 +93,215 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 	}
 }
 
+func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		postedDocuments, _ = body["documents"].(map[string]any)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":     "run_123",
+			"status": "running",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("document-url", "block_start=https://example.com/invoice.pdf"); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("runs create: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if !strings.Contains(stdout, "run_123") {
+		t.Fatalf("expected run response on stdout, got:\n%s", stdout)
+	}
+	startDocument, ok := postedDocuments["block_start"].(map[string]any)
+	if !ok {
+		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
+	}
+	if startDocument["filename"] != "invoice.pdf" || startDocument["url"] != "https://example.com/invoice.pdf" {
+		t.Fatalf("start document = %#v", startDocument)
+	}
+	if _, ok := startDocument["content"]; ok {
+		t.Fatalf("document-url should send url-backed payload, got %#v", startDocument)
+	}
+}
+
+func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		postedDocuments, _ = body["documents"].(map[string]any)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":     "run_123",
+			"status": "running",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	dir := t.TempDir()
+	docsPath := filepath.Join(dir, "documents.json")
+	if err := os.WriteFile(
+		docsPath,
+		[]byte(`{"block_start":{"filename":"invoice.pdf","url":"https://example.com/invoice.pdf"}}`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("documents-file", docsPath); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+			t.Fatalf("runs create: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if !strings.Contains(stdout, "run_123") {
+		t.Fatalf("expected run response on stdout, got:\n%s", stdout)
+	}
+	startDocument, ok := postedDocuments["block_start"].(map[string]any)
+	if !ok {
+		t.Fatalf("block_start document = %#v", postedDocuments["block_start"])
+	}
+	if startDocument["filename"] != "invoice.pdf" || startDocument["url"] != "https://example.com/invoice.pdf" {
+		t.Fatalf("start document = %#v", startDocument)
+	}
+}
+
+func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/wf_123/blocks" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": []map[string]any{
+				{"id": "block_generated", "type": "start", "label": "Document"},
+			},
+			"list_metadata": map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	_ = cmd.Flags().Set("document-url", "start=https://example.com/invoice.pdf")
+	_ = cmd.Flags().Set("json-inputs-file", "/does/not/exist.json")
+
+	err := cmd.RunE(cmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected json-inputs-file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--json-inputs-file") {
+		t.Fatalf("error %q does not mention --json-inputs-file", err.Error())
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want json inputs validation before start alias resolution", got)
+	}
+}
+
+func TestWorkflowsRunsCreateRejectsEmptyDocumentURLBlockIDBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for invalid document-url, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+
+	if err := cmd.Flags().Set("document-url", "=https://example.com/invoice.pdf"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected document-url validation error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--document-url expects block-id=url") {
+		t.Fatalf("error %q does not mention --document-url shape", err.Error())
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func keysOfAnyMap(values map[string]any) []string {
 	keys := make([]string, 0, len(values))
 	for key := range values {
@@ -108,7 +318,7 @@ func TestWorkflowsRunsListRejectsInvalidListFlagsLocally(t *testing.T) {
 		wantError string
 		reset     string
 	}{
-		{name: "negative limit", flag: "limit", value: "-1", wantError: "non-negative", reset: "0"},
+		{name: "negative limit", flag: "limit", value: "-1", wantError: "between 0 and 100", reset: "0"},
 		{name: "invalid order", flag: "order", value: "sideways", wantError: "asc", reset: ""},
 		{name: "invalid from date", flag: "from-date", value: "not-a-date", wantError: "YYYY-MM-DD", reset: ""},
 		{name: "invalid to date", flag: "to-date", value: "not-a-date", wantError: "YYYY-MM-DD", reset: ""},
@@ -126,6 +336,51 @@ func TestWorkflowsRunsListRejectsInvalidListFlagsLocally(t *testing.T) {
 				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
 			}
 		})
+	}
+}
+
+func TestWorkflowsRunsListRejectsOverLimitLocally(t *testing.T) {
+	err := workflowsRunsListCmd.Flags().Set("limit", "101")
+	if err == nil {
+		t.Fatal("expected local parse error for --limit=101")
+	}
+	if !strings.Contains(err.Error(), "between 0 and 100") {
+		t.Fatalf("error %q does not mention backend limit range", err.Error())
+	}
+	if resetErr := workflowsRunsListCmd.Flags().Set("limit", "0"); resetErr != nil {
+		t.Fatalf("reset --limit: %v", resetErr)
+	}
+}
+
+func TestWorkflowsRunsListRejectsBlankFieldsBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for blank fields flag, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	if err := workflowsRunsListCmd.Flags().Set("fields", "   "); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "fields") })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
+	})
+	if err == nil {
+		t.Fatal("expected blank fields error")
+	}
+	if !strings.Contains(stderr, "--fields must not be blank") {
+		t.Fatalf("stderr %q does not mention blank fields", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
 	}
 }
 
@@ -328,6 +583,15 @@ func TestWorkflowsRunsListExamplesUseBackendStatusNames(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsHelpUsesBackendHILStatusName(t *testing.T) {
+	if strings.Contains(workflowsRunsCmd.Long, "awaiting_review") {
+		t.Fatalf("runs help should not mention stale awaiting_review status:\n%s", workflowsRunsCmd.Long)
+	}
+	if !strings.Contains(workflowsRunsCmd.Long, "waiting_for_human") {
+		t.Fatalf("runs help should mention backend HIL status waiting_for_human:\n%s", workflowsRunsCmd.Long)
+	}
+}
+
 func TestWorkflowsRunsExportRejectsInvalidDateFlagsLocally(t *testing.T) {
 	cases := []struct {
 		name string
@@ -347,6 +611,116 @@ func TestWorkflowsRunsExportRejectsInvalidDateFlagsLocally(t *testing.T) {
 			}
 			if resetErr := workflowsRunsExportCmd.Flags().Set(tc.flag, ""); resetErr != nil {
 				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
+			}
+		})
+	}
+}
+
+func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export_payload" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"csv_data": "id\nrun_123\n",
+			"rows":     1,
+			"columns":  1,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	flags := map[string]string{
+		"workflow-id":   "wf_123",
+		"block-id":      "blk_123",
+		"trigger-types": "api, email",
+	}
+	for flag, value := range flags {
+		if err := workflowsRunsExportCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsExportCmd, flag) })
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, nil)
+	})
+	if err != nil {
+		t.Fatalf("runs export: %v\nstderr:\n%s", err, stderr)
+	}
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	triggerTypes, ok := body["trigger_types"].([]any)
+	if !ok {
+		t.Fatalf("trigger_types = %#v", body["trigger_types"])
+	}
+	want := []string{"api", "email"}
+	if len(triggerTypes) != len(want) {
+		t.Fatalf("trigger_types = %#v, want %#v", triggerTypes, want)
+	}
+	for i, value := range want {
+		if triggerTypes[i] != value {
+			t.Fatalf("trigger_types = %#v, want %#v", triggerTypes, want)
+		}
+	}
+}
+
+func TestWorkflowsRunsExportRejectsBlankStringArrayFlagsBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cases := []struct {
+		name      string
+		flag      string
+		wantError string
+	}{
+		{name: "blank run id", flag: "run-id", wantError: "--run-id must not be blank"},
+		{name: "blank preferred column", flag: "preferred-column", wantError: "--preferred-column must not be blank"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				t.Fatalf("server should not be reached for invalid export flag, got %s %s", r.Method, r.URL.Path)
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_BASE_URL", server.URL)
+
+			flags := map[string]string{
+				"workflow-id": "wf_123",
+				"block-id":    "blk_123",
+				tc.flag:       "   ",
+			}
+			for flag, value := range flags {
+				if err := workflowsRunsExportCmd.Flags().Set(flag, value); err != nil {
+					t.Fatalf("set --%s: %v", flag, err)
+				}
+				t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsExportCmd, flag) })
+			}
+
+			var err error
+			_, stderr := captureStd(t, func() {
+				err = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, nil)
+			})
+			if err == nil {
+				t.Fatal("expected blank export flag error")
+			}
+			if !strings.Contains(stderr, tc.wantError) {
+				t.Fatalf("stderr %q does not contain %q", stderr, tc.wantError)
+			}
+			if got := hits.Load(); got != 0 {
+				t.Fatalf("server was hit %d time(s), want 0", got)
 			}
 		})
 	}

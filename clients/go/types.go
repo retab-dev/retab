@@ -256,6 +256,20 @@ func (r *WorkflowRun) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON re-emits the verbatim server payload captured in Raw on
+// decode, so a server-side field projection (?fields=id) survives a
+// decode→encode round-trip. Without it the typed struct's zero-valued
+// fields re-inflate the output with empty workflow{}, trigger{}, ...
+// objects the server never sent. A run constructed in code has no Raw
+// and falls back to normal struct encoding.
+func (r WorkflowRun) MarshalJSON() ([]byte, error) {
+	if len(r.Raw) > 0 {
+		return r.Raw, nil
+	}
+	type alias WorkflowRun
+	return json.Marshal(alias(r))
+}
+
 // Completed reports whether the run reached the completed terminal state.
 func (r WorkflowRun) Completed() bool {
 	return r.Lifecycle.Status == "completed"
@@ -291,6 +305,18 @@ func (w *Workflow) UnmarshalJSON(data []byte) error {
 	}
 	w.Raw = append(w.Raw[:0], data...)
 	return nil
+}
+
+// MarshalJSON re-emits the verbatim server payload captured in Raw on
+// decode — see WorkflowRun.MarshalJSON for the rationale. A workflow
+// constructed in code has no Raw and falls back to normal struct
+// encoding.
+func (w Workflow) MarshalJSON() ([]byte, error) {
+	if len(w.Raw) > 0 {
+		return w.Raw, nil
+	}
+	type alias Workflow
+	return json.Marshal(alias(w))
 }
 
 type WorkflowPublished struct {

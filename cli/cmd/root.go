@@ -33,6 +33,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() error {
+	hardenGroupCommands(rootCmd)
 	err := rootCmd.Execute()
 	if err == nil {
 		return nil
@@ -42,6 +43,35 @@ func Execute() error {
 		return errSilent
 	}
 	return err
+}
+
+// hardenGroupCommands makes router commands (those that only group
+// subcommands and have no action of their own) reject unknown
+// subcommands instead of silently printing help and exiting 0.
+//
+// Cobra's built-in unknown-command detection (legacyArgs) only fires for
+// the root command — it explicitly bails for any command that has a
+// parent. So `retab bogus` errors as expected, but `retab jobs bogus`,
+// `retab files bogus`, `retab workflows runs bogus` etc. all fall through
+// to a help dump with exit code 0, which silently swallows typos in
+// scripts.
+//
+// A non-runnable command short-circuits to help *before* cobra validates
+// args, so setting Args alone is not enough — the command must also be
+// made runnable. We give each router a RunE that just prints help (so a
+// bare `retab jobs` keeps working) plus Args=NoArgs (so any leftover
+// token surfaces as `unknown command "..." for "retab jobs"`).
+func hardenGroupCommands(c *cobra.Command) {
+	for _, sub := range c.Commands() {
+		hardenGroupCommands(sub)
+	}
+	if c == rootCmd || !c.HasSubCommands() || c.Runnable() {
+		return
+	}
+	c.Args = cobra.NoArgs
+	c.RunE = func(cmd *cobra.Command, _ []string) error {
+		return cmd.Help()
+	}
 }
 
 func init() {
@@ -67,4 +97,6 @@ func init() {
 		}
 		cobraDefault(c, args)
 	})
+
+	hardenGroupCommands(rootCmd)
 }

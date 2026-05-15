@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -48,7 +49,7 @@ func TestWorkflowsListRejectsInvalidListFlagsLocally(t *testing.T) {
 		wantError string
 		reset     string
 	}{
-		{name: "negative limit", flag: "limit", value: "-1", wantError: "non-negative", reset: "0"},
+		{name: "negative limit", flag: "limit", value: "-1", wantError: "between 0 and 100", reset: "0"},
 		{name: "invalid order", flag: "order", value: "sideways", wantError: "asc", reset: ""},
 	}
 	for _, tc := range cases {
@@ -64,6 +65,158 @@ func TestWorkflowsListRejectsInvalidListFlagsLocally(t *testing.T) {
 				t.Fatalf("reset --%s: %v", tc.flag, resetErr)
 			}
 		})
+	}
+}
+
+func TestWorkflowsListRejectsOverLimitLocally(t *testing.T) {
+	cases := []struct {
+		name string
+		cmd  *cobra.Command
+	}{
+		{name: "workflows list", cmd: workflowsListCmd},
+		{name: "workflows snapshots", cmd: workflowsSnapshotsCmd},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cmd.Flags().Set("limit", "101")
+			if err == nil {
+				t.Fatal("expected local parse error for --limit=101")
+			}
+			if !strings.Contains(err.Error(), "between 0 and 100") {
+				t.Fatalf("error %q does not mention backend limit range", err.Error())
+			}
+			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {
+				t.Fatalf("reset --limit: %v", resetErr)
+			}
+		})
+	}
+}
+
+func TestWorkflowExamplesUseCurrentDocumentFlag(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		example string
+	}{
+		{name: "workflows", example: workflowsCmd.Example},
+		{name: "publish", example: workflowsPublishCmd.Example},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if strings.Contains(tc.example, "--document-file") {
+				t.Fatalf("%s example should use --document, got:\n%s", tc.name, tc.example)
+			}
+			if !strings.Contains(tc.example, "--document start=") {
+				t.Fatalf("%s example should include --document start=..., got:\n%s", tc.name, tc.example)
+			}
+		})
+	}
+}
+
+func TestWorkflowsUpdateRejectsBlankEmailAllowlistValuesBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cases := []struct {
+		name      string
+		flag      string
+		wantError string
+	}{
+		{name: "blank sender", flag: "allowed-sender", wantError: "--allowed-sender must not be blank"},
+		{name: "blank domain", flag: "allowed-domain", wantError: "--allowed-domain must not be blank"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				t.Fatalf("server should not be reached for invalid allowlist value, got %s %s", r.Method, r.URL.Path)
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_BASE_URL", server.URL)
+
+			cmd := &cobra.Command{Use: "test-workflow-update", RunE: workflowsUpdateCmd.RunE}
+			cmd.Flags().String("name", "", "")
+			cmd.Flags().String("description", "", "")
+			cmd.Flags().StringArray("allowed-sender", nil, "")
+			cmd.Flags().StringArray("allowed-domain", nil, "")
+
+			if err := cmd.Flags().Set(tc.flag, "   "); err != nil {
+				t.Fatal(err)
+			}
+
+			err := cmd.RunE(cmd, []string{"wf_123"})
+			if err == nil {
+				t.Fatal("expected blank allowlist value error")
+			}
+			if unwrapped := errors.Unwrap(err); unwrapped != nil {
+				err = unwrapped
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not contain %q", err.Error(), tc.wantError)
+			}
+			if got := hits.Load(); got != 0 {
+				t.Fatalf("server was hit %d time(s), want 0", got)
+			}
+		})
+	}
+}
+
+func TestWorkflowsRejectBlankNamesBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cases := []struct {
+		name string
+		cmd  *cobra.Command
+		args []string
+	}{
+		{name: "create", cmd: workflowsCreateCmd},
+		{name: "update", cmd: workflowsUpdateCmd, args: []string{"wf_123"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				t.Fatalf("server should not be reached for blank workflow name, got %s %s", r.Method, r.URL.Path)
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_BASE_URL", server.URL)
+
+			cmd := &cobra.Command{Use: "test-workflow-" + tc.name, RunE: tc.cmd.RunE}
+			cmd.Flags().String("name", "", "")
+			cmd.Flags().String("description", "", "")
+			if tc.name == "update" {
+				cmd.Flags().StringArray("allowed-sender", nil, "")
+				cmd.Flags().StringArray("allowed-domain", nil, "")
+			}
+
+			if err := cmd.Flags().Set("name", "   "); err != nil {
+				t.Fatal(err)
+			}
+
+			err := cmd.RunE(cmd, tc.args)
+			if err == nil {
+				t.Fatal("expected blank workflow name error")
+			}
+			if unwrapped := errors.Unwrap(err); unwrapped != nil {
+				err = unwrapped
+			}
+			if !strings.Contains(err.Error(), "workflow name must not be blank") {
+				t.Fatalf("error %q does not mention blank workflow name", err.Error())
+			}
+			if got := hits.Load(); got != 0 {
+				t.Fatalf("server was hit %d time(s), want 0", got)
+			}
+		})
+	}
+}
+
+func TestWorkflowListExamplesUsePaginatedEnvelope(t *testing.T) {
+	if strings.Contains(workflowsBlocksListCmd.Example, ".[].") {
+		t.Fatalf("blocks list example should iterate over .data[], got:\n%s", workflowsBlocksListCmd.Example)
+	}
+	if !strings.Contains(workflowsBlocksListCmd.Example, ".data[].id") {
+		t.Fatalf("blocks list example should read .data[].id, got:\n%s", workflowsBlocksListCmd.Example)
 	}
 }
 
@@ -292,6 +445,15 @@ func TestWorkflowsSnapshotsCommandRegistered(t *testing.T) {
 	}
 	if cmd.Flags().Lookup("limit") == nil {
 		t.Fatal("workflows snapshots should expose --limit")
+	}
+}
+
+func TestWorkflowsGetExampleUsesPublishedObjectShape(t *testing.T) {
+	if strings.Contains(workflowsGetCmd.Example, ".published_version") {
+		t.Fatalf("workflows get example references removed field:\n%s", workflowsGetCmd.Example)
+	}
+	if !strings.Contains(workflowsGetCmd.Example, ".published.version_id") {
+		t.Fatalf("workflows get example should show current published version path:\n%s", workflowsGetCmd.Example)
 	}
 }
 

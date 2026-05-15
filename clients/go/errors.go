@@ -59,7 +59,10 @@ func parseAPIError(resp *http.Response, body []byte) *APIError {
 	}
 
 	var parsed struct {
-		Detail any `json:"detail"`
+		Detail  any            `json:"detail"`
+		Message string         `json:"message"`
+		Code    string         `json:"code"`
+		Details map[string]any `json:"details"`
 	}
 	if err := json.Unmarshal(body, &parsed); err != nil {
 		if len(body) > 0 {
@@ -80,6 +83,23 @@ func parseAPIError(resp *http.Response, body []byte) *APIError {
 		}
 		if details, ok := detail["details"].(map[string]any); ok {
 			apiErr.Details = details
+		}
+	}
+
+	// Flat envelope fallback: FastAPI request-validation failures (every
+	// 422) come back from main_server as {"status_code","message","data"}
+	// with no "detail" key at all. Without this branch the real validation
+	// message degrades to the generic "Request failed (NNN)". Only consulted
+	// when "detail" carried nothing, so the nested shape always wins.
+	if parsed.Detail == nil {
+		if parsed.Message != "" {
+			apiErr.Message = parsed.Message
+		}
+		if parsed.Code != "" {
+			apiErr.Code = parsed.Code
+		}
+		if parsed.Details != nil {
+			apiErr.Details = parsed.Details
 		}
 	}
 	return apiErr

@@ -1,12 +1,16 @@
 package cmd
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestEditTemplatesCreateValidatesFormFieldsBeforeRequest(t *testing.T) {
@@ -56,5 +60,37 @@ func TestEditTemplatesCreateValidatesFormFieldsBeforeRequest(t *testing.T) {
 	}
 	if serverHits != 0 {
 		t.Fatalf("server was hit %d time(s), want 0", serverHits)
+	}
+}
+
+func TestEditTemplatesUpdateRejectsBlankNameBeforeRequest(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for blank template name, got %s %s", r.Method, r.URL.String())
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "test-edit-template-update", RunE: editsTemplatesUpdateCmd.RunE}
+	cmd.Flags().String("name", "", "")
+	cmd.Flags().String("form-fields-file", "", "")
+	_ = cmd.Flags().Set("name", "   ")
+
+	err := cmd.RunE(cmd, []string{"tmpl_123"})
+	if err == nil {
+		t.Fatal("expected blank template name error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "template name is required") {
+		t.Fatalf("error %q does not mention blank template name", err.Error())
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
 	}
 }

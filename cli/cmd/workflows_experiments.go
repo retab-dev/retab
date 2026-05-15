@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -56,6 +57,9 @@ func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureR
 			if v, ok := obj["workflow_run_id"].(string); ok {
 				cap.WorkflowRunID = v
 			}
+			if cap.WorkflowRunID == "" {
+				return nil, nil, fmt.Errorf("--captures-file[%d]: workflow_run_id is required", i)
+			}
 			if v, ok := obj["step_id"].(string); ok {
 				cap.StepID = v
 			}
@@ -75,6 +79,9 @@ func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureR
 			doc := retab.ExplicitExperimentDocumentRequest{}
 			if v, ok := obj["handle_inputs"].(map[string]any); ok {
 				doc.HandleInputs = v
+			}
+			if doc.HandleInputs == nil {
+				return nil, nil, fmt.Errorf("--documents-file[%d]: handle_inputs is required", i)
 			}
 			if v, ok := obj["provenance"].(map[string]any); ok {
 				prov := &retab.ExperimentDocumentProvenance{}
@@ -99,6 +106,13 @@ func validateExperimentMetricsView(view string) error {
 	default:
 		return fmt.Errorf("invalid --view %q (want: summary | by_document | by_target | votes)", view)
 	}
+}
+
+func validateExperimentName(name string) error {
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("experiment name is required")
+	}
+	return nil
 }
 
 var workflowsExperimentsCreateCmd = &cobra.Command{
@@ -130,6 +144,10 @@ experiments together via ` + "`workflows experiments run-batch`" + `.`,
 		if err != nil {
 			return err
 		}
+		blockID, err := requireNonBlankFlag(cmd, "block-id")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -138,8 +156,11 @@ experiments together via ` + "`workflows experiments run-batch`" + `.`,
 		defer cancel()
 		req := retab.CreateExperimentRequest{}
 		req.WorkflowID = workflowID
-		req.BlockID, _ = cmd.Flags().GetString("block-id")
+		req.BlockID = blockID
 		req.Name, _ = cmd.Flags().GetString("name")
+		if err := validateExperimentName(req.Name); err != nil {
+			return err
+		}
 		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
 		captures, explicit, err := parseExperimentDocs(cmd)
 		if err != nil {
@@ -147,6 +168,9 @@ experiments together via ` + "`workflows experiments run-batch`" + `.`,
 		}
 		req.DocumentCaptures = captures
 		req.Documents = explicit
+		if len(req.DocumentCaptures) == 0 && len(req.Documents) == 0 {
+			return fmt.Errorf("at least one document or document capture is required (--captures-file or --documents-file)")
+		}
 		result, err := client.Workflows.Experiments.Create(ctx, req)
 		if err != nil {
 			return err
@@ -223,8 +247,16 @@ previously-captured results for that experiment.`,
 		defer cancel()
 		req := retab.UpdateExperimentRequest{}
 		req.Name, _ = cmd.Flags().GetString("name")
+		if cmd.Flags().Changed("name") {
+			if err := validateExperimentName(req.Name); err != nil {
+				return err
+			}
+		}
 		if cmd.Flags().Changed("n-consensus") {
 			v, _ := cmd.Flags().GetInt("n-consensus")
+			if v == 0 {
+				return fmt.Errorf("invalid --n-consensus 0 (want: 3 | 5 | 7)")
+			}
 			req.NConsensus = &v
 		}
 		captures, explicit, err := parseExperimentDocs(cmd)
@@ -380,8 +412,21 @@ to discover what to experiment on before calling
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printEligibleBlocksResult(cmd, result)
 	}),
+}
+
+func printEligibleBlocksResult(cmd *cobra.Command, result *retab.EligibleBlockListResponse) error {
+	var raw string
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+	}
+	if raw != string(OutputTable) {
+		return printJSON(result)
+	}
+	return printResult(cmd, map[string]any{"data": result.Blocks})
 }
 
 var workflowsExperimentsRunBatchCmd = &cobra.Command{
@@ -399,6 +444,10 @@ block — kick off the whole comparison sweep at once, then read metrics.`,
 		if err != nil {
 			return err
 		}
+		blockID, err := requireNonBlankFlag(cmd, "block-id")
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -407,7 +456,7 @@ block — kick off the whole comparison sweep at once, then read metrics.`,
 		defer cancel()
 		req := retab.RunBatchExperimentsRequest{}
 		req.WorkflowID = workflowID
-		req.BlockID, _ = cmd.Flags().GetString("block-id")
+		req.BlockID = blockID
 		result, err := client.Workflows.Experiments.RunBatch(ctx, req)
 		if err != nil {
 			return err
