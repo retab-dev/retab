@@ -16,7 +16,7 @@ A parse takes any supported input (PDF, Excel/CSV, .eml, image, etc.) and
 returns a normalized markdown rendering with preserved structure — tables,
 headings, lists, and image alt text. This is typically the first step in a
 pipeline: parse → feed into prompts, or parse → extractions/classifications
-	when the downstream task wants normalized text rather than the raw file.`,
+when the downstream task wants normalized text rather than the raw file.`,
 }
 
 var allowedTableParsingFormats = map[string]bool{

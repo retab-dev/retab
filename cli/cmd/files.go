@@ -111,7 +111,7 @@ func printFilesListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.
 	return renderAutoTable(os.Stdout, resourcesToRows(result.Data), []TableColumn{
 		{Header: "ID", Extract: func(row any) string { return resourceCell(row, "id") }},
 		{Header: "NAME", Extract: func(row any) string { return resourceCell(row, "filename") }},
-		{Header: timestampHeader, Extract: func(row any) string { return resourceCell(row, timestampField) }},
+		{Header: timestampHeader, Extract: func(row any) string { return normalizeTimestampCell(resourceCell(row, timestampField)) }},
 	})
 }
 

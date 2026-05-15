@@ -239,6 +239,12 @@ previously-captured results for that experiment.`,
     --captures-file ./more-captures.json`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Reject an empty invocation before issuing a no-op PATCH that
+		// would round-trip to the server and silently bump updated_at.
+		if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("n-consensus") &&
+			!cmd.Flags().Changed("captures-file") && !cmd.Flags().Changed("documents-file") {
+			return fmt.Errorf("nothing to update: pass at least one of --name, --n-consensus, --captures-file, or --documents-file")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

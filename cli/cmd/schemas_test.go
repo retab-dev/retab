@@ -65,6 +65,57 @@ func TestWriteGeneratedSchemaJSONFormatPreservesEnvelope(t *testing.T) {
 	}
 }
 
+// A missing --file path used to reach retab.InferMIMEData directly and
+// surface as the cryptic "retab: unsupported MIME input string" — the
+// same failure a binary blob with no detectable mime produces. schemas
+// generate should stat the path upfront like resolveDocument does and
+// report a clear "file not found:" instead.
+func TestSchemasGenerateFileMissingReportsClearError(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"json_schema": map[string]any{"type": "object"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	schemasGenerateCmd.SetContext(context.Background())
+	t.Cleanup(func() { schemasGenerateCmd.SetContext(nil) })
+
+	missing := "/definitely/does/not/exist.pdf"
+	if err := schemasGenerateCmd.Flags().Set("file", missing); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if slice, ok := schemasGenerateCmd.Flags().Lookup("file").Value.(interface{ Replace([]string) error }); ok {
+			_ = slice.Replace(nil)
+		}
+	})
+
+	var err error
+	_, _ = captureStd(t, func() {
+		err = schemasGenerateCmd.RunE(schemasGenerateCmd, nil)
+	})
+	if err == nil {
+		t.Fatal("expected error for missing --file, got nil")
+	}
+	if !strings.Contains(err.Error(), "file not found: "+missing) {
+		t.Fatalf("error should report a clear file-not-found, got: %v", err)
+	}
+	if strings.Contains(err.Error(), "unsupported MIME") {
+		t.Fatalf("error leaks the cryptic MIME failure: %v", err)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want no requests", got)
+	}
+}
+
 func TestSchemasGenerateRejectsUnknownFormatBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

@@ -266,6 +266,14 @@ Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
     --label "Extract line items"`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Reject an empty invocation before issuing a no-op PATCH that
+		// would round-trip to the server and silently bump updated_at.
+		if !cmd.Flags().Changed("label") && !cmd.Flags().Changed("position-x") &&
+			!cmd.Flags().Changed("position-y") && !cmd.Flags().Changed("width") &&
+			!cmd.Flags().Changed("height") && !cmd.Flags().Changed("parent-id") &&
+			!cmd.Flags().Changed("config-file") {
+			return fmt.Errorf("nothing to update: pass at least one of --label, --position-x, --position-y, --width, --height, --parent-id, or --config-file")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

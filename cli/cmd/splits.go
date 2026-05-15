@@ -219,7 +219,7 @@ boundaries again.`,
 
 func init() {
 	addDocumentFlags(splitsCreateCmd)
-	splitsCreateCmd.Flags().String("subdocuments-file", "", "JSON array of subdocuments (name, description, allow_multiple_instances)")
+	splitsCreateCmd.Flags().String("subdocuments-file", "", "JSON array of subdocuments (name, description, allow_multiple_instances) (required)")
 	splitsCreateCmd.Flags().String("model", "", "model identifier (required)")
 	splitsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "consensus count (1-8)")
 	splitsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")

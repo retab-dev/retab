@@ -339,6 +339,14 @@ template are not retroactively re-rendered.`,
     --form-fields-file ./fields-v2.json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// The help promises "At least one of the two flags must be set."
+		// Enforce it locally so an empty invocation fails fast instead of
+		// issuing a no-op PATCH that silently bumps the template's
+		// updated_at timestamp.
+		formFieldsPath, _ := cmd.Flags().GetString("form-fields-file")
+		if !cmd.Flags().Changed("name") && formFieldsPath == "" {
+			return fmt.Errorf("at least one of --name or --form-fields-file is required")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -513,7 +521,7 @@ func init() {
 
 	addDocumentFlags(editsTemplatesCreateCmd)
 	editsTemplatesCreateCmd.Flags().String("name", "", "template name (required)")
-	editsTemplatesCreateCmd.Flags().String("form-fields-file", "", "JSON array of form_fields with key, description, type, and bbox (or - for stdin)")
+	editsTemplatesCreateCmd.Flags().String("form-fields-file", "", "JSON array of form_fields with key, description, type, and bbox (or - for stdin) (required)")
 	_ = editsTemplatesCreateCmd.MarkFlagRequired("name")
 	_ = editsTemplatesCreateCmd.MarkFlagRequired("form-fields-file")
 
