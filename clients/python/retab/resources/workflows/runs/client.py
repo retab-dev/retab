@@ -8,6 +8,7 @@ from pydantic import HttpUrl
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....utils.mime import MIMEData, prepare_mime_document
+from ....types.mime import FileRef
 from ....types.standards import PreparedRequest
 from ....types.pagination import PaginatedList, PaginationOrder
 from ....types.workflows import (
@@ -24,7 +25,7 @@ from .steps import WorkflowSteps, AsyncWorkflowSteps
 
 
 # Type alias for document inputs
-DocumentInput = Path | str | bytes | IOBase | MIMEData | PIL.Image.Image | HttpUrl
+DocumentInput = Path | str | bytes | IOBase | MIMEData | FileRef | PIL.Image.Image | HttpUrl
 DateInput: TypeAlias = str | date
 
 
@@ -84,6 +85,13 @@ class WorkflowRunsMixin:
         if documents:
             documents_payload: Dict[str, Dict[str, Any]] = {}
             for block_id, document in documents.items():
+                if isinstance(document, FileRef):
+                    documents_payload[block_id] = {
+                        "id": document.id,
+                        "filename": document.filename,
+                        "mime_type": document.mime_type,
+                    }
+                    continue
                 mime_data = prepare_mime_document(document)
                 documents_payload[block_id] = {
                     "filename": mime_data.filename,

@@ -767,6 +767,72 @@ describe("workflows client", () => {
         expect(edges.map((edge) => edge.id)).toEqual(["edge-1"]);
     });
 
+    test("runs.create() passes FileRef documents without content", async () => {
+        const mockClient = new MockClient(makeV2Run());
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        await runsClient.create({
+            workflowId: "wf_1",
+            documents: {
+                start_1: {
+                    id: "file_existing",
+                    filename: "invoice.pdf",
+                    mime_type: "application/pdf",
+                },
+            },
+        });
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/wf_1/run",
+            method: "POST",
+            body: {
+                documents: {
+                    start_1: {
+                        id: "file_existing",
+                        filename: "invoice.pdf",
+                        mime_type: "application/pdf",
+                    },
+                },
+                version: "production",
+            },
+            params: undefined,
+            headers: undefined,
+        });
+        expect(JSON.stringify(mockClient.lastFetchParams)).not.toContain("content");
+    });
+
+    test("runs.create() keeps MIMEData content for new documents", async () => {
+        const mockClient = new MockClient(makeV2Run());
+        const runsClient = new APIWorkflowRuns(mockClient);
+
+        await runsClient.create({
+            workflowId: "wf_1",
+            documents: {
+                start_1: {
+                    filename: "note.txt",
+                    url: "data:text/plain;base64,aGVsbG8=",
+                },
+            },
+        });
+
+        expect(mockClient.lastFetchParams).toEqual({
+            url: "/workflows/wf_1/run",
+            method: "POST",
+            body: {
+                documents: {
+                    start_1: {
+                        filename: "note.txt",
+                        content: "aGVsbG8=",
+                        mime_type: "text/plain",
+                    },
+                },
+                version: "production",
+            },
+            params: undefined,
+            headers: undefined,
+        });
+    });
+
     test("runs.cancel() sends POST to /cancel", async () => {
         const mockClient = new MockClient({
             run: makeV2Run({ lifecycle: { status: "cancelled" } }),
