@@ -183,6 +183,42 @@ def test_workflow_steps_get_handle_outputs_typed() -> None:
     assert step.get_json_output("output-json-0") == {"invoice_number": "INV-001"}
 
 
+def test_workflow_steps_get_accepts_json_ref_handle_payload() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "run_id": "run_123",
+        "organization_id": "org_123",
+        "block_id": "function-1",
+        "step_id": "function-1",
+        "block_type": "function",
+        "block_label": "Function",
+        "lifecycle": {"status": "completed"},
+        "handle_outputs": {
+            "output-json-0": {
+                "type": "json_ref",
+                "artifact_ref": {
+                    "operation": "workflow_step_json",
+                    "id": "artifact_123",
+                    "key": "output-json-0",
+                },
+                "preview": {"truncated": True},
+            },
+        },
+        "handle_inputs": {},
+    }
+
+    step = WorkflowSteps(client=client).get("run_123", "function-1")
+
+    payload = step.handle_outputs["output-json-0"]
+    assert payload.type == "json_ref"
+    assert payload.artifact_ref == {
+        "operation": "workflow_step_json",
+        "id": "artifact_123",
+        "key": "output-json-0",
+    }
+    assert payload.preview == {"truncated": True}
+
+
 def test_workflow_step_sdk_does_not_export_removed_payload_response_names() -> None:
     response_name = "Step" + "Output" + "Response"
     batch_response_name = "Step" + "Outputs" + "BatchResponse"

@@ -54,9 +54,11 @@ class HandlePayload(RetabBaseModel):
     - json: Structured JSON data (extracted data, etc.)
     - text: Plain text content
     """
-    type: Literal["file", "json", "text"] = Field(..., description="Type of payload")
+    type: Literal["file", "json", "json_ref", "text"] = Field(..., description="Type of payload")
     document: Optional[FileRef] = Field(default=None, description="For file handles: document reference")
     data: Any | None = Field(default=None, description="For JSON handles: structured data")
+    artifact_ref: Optional[dict[str, Any]] = Field(default=None, description="For json_ref handles: artifact pointer")
+    preview: Optional[dict[str, Any]] = Field(default=None, description="For json_ref handles: lightweight preview")
     text: Optional[str] = Field(default=None, description="For text payloads: text content")
 
 

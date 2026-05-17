@@ -721,6 +721,31 @@ describe("workflows client", () => {
         expect(parsed.handle_outputs?.["output-json-0"]?.data?.invoice_number).toBe("INV-001");
     });
 
+    test("step execution responses accept json_ref handle outputs", () => {
+        const parsed = ZStepExecutionResponse.parse({
+            block_id: "function-1",
+            block_type: "function",
+            block_label: "Function",
+            lifecycle: { status: "completed" },
+            handle_outputs: {
+                "output-json-0": {
+                    type: "json_ref",
+                    artifact_ref: {
+                        operation: "workflow_step_json",
+                        id: "artifact_123",
+                        key: "output-json-0",
+                    },
+                    preview: { truncated: true },
+                },
+            },
+            handle_inputs: {},
+        });
+
+        expect(parsed.handle_outputs?.["output-json-0"]?.type).toBe("json_ref");
+        expect(parsed.handle_outputs?.["output-json-0"]?.artifact_ref?.id).toBe("artifact_123");
+        expect(parsed.handle_outputs?.["output-json-0"]?.preview?.truncated).toBe(true);
+    });
+
     test("workflow run steps expose top-level model", () => {
         const parsed = ZWorkflowRunStep.parse({
             run_id: "run_123",

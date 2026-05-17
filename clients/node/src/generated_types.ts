@@ -901,9 +901,11 @@ export const ZHILDecisionResource = z.lazy(() => (z.object({
 export type HILDecisionResource = z.infer<typeof ZHILDecisionResource>;
 
 export const ZHandlePayload = z.lazy(() => (z.object({
-    type: z.union([z.literal("file"), z.literal("json"), z.literal("text")]),
+    type: z.union([z.literal("file"), z.literal("json"), z.literal("json_ref"), z.literal("text")]),
     document: ZFileRef.nullable().optional(),
     data: z.unknown().nullable().optional(),
+    artifact_ref: z.record(z.string(), z.any()).nullable().optional(),
+    preview: z.record(z.string(), z.any()).nullable().optional(),
     text: z.string().nullable().optional(),
 })));
 export type HandlePayload = z.infer<typeof ZHandlePayload>;

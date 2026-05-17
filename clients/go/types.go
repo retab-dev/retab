@@ -78,10 +78,12 @@ type FileRef struct {
 
 // HandlePayload is the typed payload attached to a workflow handle.
 type HandlePayload struct {
-	Type     string   `json:"type"`
-	Document *FileRef `json:"document,omitempty"`
-	Data     any      `json:"data,omitempty"`
-	Text     string   `json:"text,omitempty"`
+	Type        string         `json:"type"`
+	Document    *FileRef       `json:"document,omitempty"`
+	Data        any            `json:"data,omitempty"`
+	Text        string         `json:"text,omitempty"`
+	ArtifactRef map[string]any `json:"artifact_ref,omitempty"`
+	Preview     map[string]any `json:"preview,omitempty"`
 }
 
 // StepArtifactRef points at a persisted resource produced by a workflow step.

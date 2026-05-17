@@ -1090,3 +1090,37 @@ def test_workflow_run_step_extracted_data() -> None:
     assert "split_documents" not in WorkflowRunStep.model_fields
     assert "status" not in WorkflowRunStep.model_fields
     assert "terminal" not in WorkflowRunStep.model_fields
+
+
+def test_workflow_run_step_accepts_json_ref_handle_payload() -> None:
+    from retab.types.workflows.model import WorkflowRunStep
+
+    step = WorkflowRunStep.model_validate({
+        "run_id": "run_1",
+        "organization_id": "org_1",
+        "block_id": "function-1",
+        "step_id": "function-1",
+        "block_type": "function",
+        "block_label": "Function",
+        "lifecycle": {"status": "completed"},
+        "handle_outputs": {
+            "output-json-0": {
+                "type": "json_ref",
+                "artifact_ref": {
+                    "operation": "workflow_step_json",
+                    "id": "artifact_123",
+                    "key": "output-json-0",
+                },
+                "preview": {"truncated": True},
+            },
+        },
+    })
+
+    payload = step.handle_outputs["output-json-0"]
+    assert payload.type == "json_ref"
+    assert payload.artifact_ref == {
+        "operation": "workflow_step_json",
+        "id": "artifact_123",
+        "key": "output-json-0",
+    }
+    assert payload.preview == {"truncated": True}
