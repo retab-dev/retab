@@ -20,7 +20,15 @@ import {
     WorkflowRunStatus,
     WorkflowRunTriggerType,
 } from "../../../types.js";
+import { ZFileRef, type FileRef } from "../../../generated_types.js";
 import APIWorkflowRunSteps from "./steps/client.js";
+
+type WorkflowRunDocumentInput = MIMEDataInput | FileRef;
+
+function isFileRefInput(document: WorkflowRunDocumentInput): document is FileRef {
+    const parsed = ZFileRef.safeParse(document);
+    return parsed.success;
+}
 
 function normalizeCsvParam(value?: string | string[]): string | undefined {
     if (value === undefined) {
@@ -76,7 +84,7 @@ export default class APIWorkflowRuns extends CompositionClient {
             version = "production",
         }: {
             workflowId: string;
-            documents?: Record<string, MIMEDataInput>;
+            documents?: Record<string, WorkflowRunDocumentInput>;
             jsonInputs?: Record<string, unknown>;
             version?: string;
         },
@@ -86,9 +94,17 @@ export default class APIWorkflowRuns extends CompositionClient {
         const body: Record<string, any> = {};
 
         if (documents) {
-            const documentsPayload: Record<string, { filename: string; content: string; mime_type: string }> = {};
+            const documentsPayload: Record<string, { id?: string; filename: string; content?: string; mime_type: string }> = {};
 
             for (const [blockId, document] of Object.entries(documents)) {
+                if (isFileRefInput(document)) {
+                    documentsPayload[blockId] = {
+                        id: document.id,
+                        filename: document.filename,
+                        mime_type: document.mime_type,
+                    };
+                    continue;
+                }
                 const parsedDocument = await ZMIMEData.parseAsync(document);
                 const content = parsedDocument.url.split(",")[1];
                 const mimeType = parsedDocument.url.split(";")[0].split(":")[1];

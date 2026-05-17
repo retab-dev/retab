@@ -8,6 +8,7 @@ from retab.resources.workflows.client import AsyncWorkflows, Workflows
 from retab.resources.workflows.edges.client import WorkflowEdges
 from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
 from retab.resources.workflows.specs.client import AsyncWorkflowSpecs, WorkflowSpecs
+from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.model import (
     DeclarativeApplyResponse,
     DeclarativeExportResponse,
@@ -780,6 +781,48 @@ def test_workflow_runs_create_without_inputs_sends_json_body() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/wf_1/run"
     assert request.data == {"documents": {}, "json_inputs": {}, "version": "production"}
+
+
+def test_workflow_runs_create_passes_file_refs_without_content() -> None:
+    request = WorkflowRuns(client=MagicMock()).prepare_create(
+        workflow_id="wf_1",
+        documents={
+            "start_1": FileRef(
+                id="file_existing",
+                filename="invoice.pdf",
+                mime_type="application/pdf",
+            )
+        },
+    )
+
+    assert request.data["documents"] == {
+        "start_1": {
+            "id": "file_existing",
+            "filename": "invoice.pdf",
+            "mime_type": "application/pdf",
+        }
+    }
+    assert "content" not in request.data["documents"]["start_1"]
+
+
+def test_workflow_runs_create_keeps_mime_data_content_for_new_documents() -> None:
+    request = WorkflowRuns(client=MagicMock()).prepare_create(
+        workflow_id="wf_1",
+        documents={
+            "start_1": MIMEData(
+                filename="note.txt",
+                url="data:text/plain;base64,aGVsbG8=",
+            )
+        },
+    )
+
+    assert request.data["documents"] == {
+        "start_1": {
+            "filename": "note.txt",
+            "content": "aGVsbG8=",
+            "mime_type": "text/plain",
+        }
+    }
 
 
 def _v2_run_payload(**overrides) -> dict:
