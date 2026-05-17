@@ -773,6 +773,14 @@ func TestWorkflowRunStepsGet(t *testing.T) {
 			},
 			"handle_outputs": map[string]any{
 				"output-json-0": map[string]any{"type": "json", "data": map[string]any{"ok": true}},
+				"output-json-ref": map[string]any{
+					"type": "json_ref",
+					"artifact_ref": map[string]any{
+						"id": "artifact_123",
+						"uri": "gs://bucket/run/block/output.json",
+					},
+					"preview": map[string]any{"truncated": true},
+				},
 			},
 		})
 	}))
@@ -808,6 +816,16 @@ func TestWorkflowRunStepsGet(t *testing.T) {
 	}
 	if step.ExtractedData() == nil {
 		t.Fatal("expected extracted data")
+	}
+	refPayload := step.HandleOutputs["output-json-ref"]
+	if refPayload.Type != "json_ref" {
+		t.Fatalf("json_ref type = %s", refPayload.Type)
+	}
+	if refPayload.ArtifactRef["id"] != "artifact_123" {
+		t.Fatalf("artifact_ref = %#v", refPayload.ArtifactRef)
+	}
+	if refPayload.Preview["truncated"] != true {
+		t.Fatalf("preview = %#v", refPayload.Preview)
 	}
 	encoded, err := json.Marshal(step)
 	if err != nil {
