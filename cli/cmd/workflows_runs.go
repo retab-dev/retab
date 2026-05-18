@@ -176,15 +176,13 @@ var workflowsRunsCmd = &cobra.Command{
 A run is one execution of a workflow against a set of inputs. Use this
 subgroup to start runs (` + "`create`" + `), watch their lifecycle
 (` + "`get`" + `, ` + "`steps list`" + `), restart failed runs
-(` + "`restart`" + `), or submit human-in-the-loop decisions
-(` + "`submit-hil`" + `).
+(` + "`restart`" + `), or review gated block runs (` + "`reviews`" + `).
 
 Human-in-the-loop: when a gated block pauses a run it enters status
 ` + "`waiting_for_human`" + `. Use the ` + "`reviews`" + ` subgroup —
 ` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
 a paused block run, then ` + "`reviews approve`" + ` / ` + "`reject`" + ` /
-` + "`escalate`" + ` to decide it. The legacy ` + "`get-hil`" + ` /
-` + "`submit-hil`" + ` commands remain for the pre-overlay HIL surface.
+` + "`escalate`" + ` to decide it.
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
@@ -201,9 +199,9 @@ For declarative regression testing of workflow outputs, see
   # Cancel an in-flight run
   retab workflows runs cancel run_xyz789
 
-  # Approve a paused HIL block
-  retab workflows runs submit-hil run_xyz789 \
-    --block-id blk_review_1 --approved`,
+  # Approve a paused (gated) block run
+  retab workflows runs reviews approve run_xyz789 blk_review_1 \
+    --version-stamp 0`,
 }
 
 var workflowsRunsCreateCmd = &cobra.Command{
@@ -574,103 +572,8 @@ or ` + "`--command-id`" + ` for idempotency.`,
 	}),
 }
 
-var workflowsRunsSubmitHILCmd = &cobra.Command{
-	Use:   "submit-hil <run-id>",
-	Short: "Submit a human-in-the-loop decision",
-	Long: `Resume a run paused at a ` + "`hil`" + ` (human-in-the-loop) block.
-Approve the proposed output, reject it, or submit edited data that
-replaces the block's output before flow continues downstream.
-
-To see what's pending, query ` + "`workflows runs get-hil`" + ` or
-` + "`workflows runs get-agent-hil`" + ` (managed-agent reviews).`,
-	Example: `  # Approve the block's proposed output as-is
-  retab workflows runs submit-hil run_xyz789 \
-    --block-id blk_review_1 --approved
-
-  # Submit edited data — the file replaces the block's output
-  retab workflows runs submit-hil run_xyz789 \
-    --block-id blk_review_1 --approved \
-    --modified-data-file ./fixed.json
-
-  # Reject (run continues with rejection downstream)
-  retab workflows runs submit-hil run_xyz789 \
-    --block-id blk_review_1`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		req := retab.SubmitHILDecisionRequest{}
-		req.BlockID, _ = cmd.Flags().GetString("block-id")
-		req.Approved, _ = cmd.Flags().GetBool("approved")
-		req.CommandID, _ = cmd.Flags().GetString("command-id")
-		req.VersionStamp, _ = cmd.Flags().GetInt("version-stamp")
-		req.RejectReason, _ = cmd.Flags().GetString("reject-reason")
-		if path, _ := cmd.Flags().GetString("modified-data-file"); path != "" {
-			data, err := readJSONMap(path)
-			if err != nil {
-				return fmt.Errorf("--modified-data-file: %w", err)
-			}
-			req.ModifiedData = data
-		}
-		result, err := client.Workflows.Runs.SubmitHILDecision(ctx, args[0], req)
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
-	}),
-}
-
-var workflowsRunsGetHILCmd = &cobra.Command{
-	Use:   "get-hil <run-id> <block-id>",
-	Short: "Get HIL decision state for a block",
-	Long: `Inspect the pending human-in-the-loop review for a block:
-proposed output, any reviewer-provided edits, decision timestamps. Pair
-with ` + "`workflows runs submit-hil`" + ` to resolve it.`,
-	Example: `  # Inspect the pending HIL state
-  retab workflows runs get-hil run_xyz789 blk_review_1`,
-	Args: cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Runs.GetHILDecision(ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
-	}),
-}
-
-var workflowsRunsGetAgentHILCmd = &cobra.Command{
-	Use:   "get-agent-hil <run-id> <block-id>",
-	Short: "Get the managed-agent HIL review for a block",
-	Long: `Fetch the managed-agent review record for a HIL block. When the
-HIL is delegated to a managed agent (rather than a human), this returns
-the agent's reasoning, score, and proposed decision.`,
-	Example: `  # Inspect the managed-agent's review
-  retab workflows runs get-agent-hil run_xyz789 blk_review_1`,
-	Args: cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Runs.GetAgentHILReview(ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
-	}),
-}
+// The v1 HIL commands (submit-hil / get-hil / get-agent-hil) were removed in
+// the hard cutover to the review overlay — see `workflows runs reviews`.
 
 var workflowsRunsConfigCmd = &cobra.Command{
 	Use:   "config <run-id>",
@@ -928,14 +831,6 @@ func init() {
 	workflowsRunsRestartCmd.Flags().String("command-id", "", "idempotency command id")
 	workflowsRunsRestartCmd.Flags().String("config-source", "published", "published | draft")
 
-	workflowsRunsSubmitHILCmd.Flags().String("block-id", "", "block id (required)")
-	workflowsRunsSubmitHILCmd.Flags().Bool("approved", false, "approve the block output")
-	workflowsRunsSubmitHILCmd.Flags().String("modified-data-file", "", "JSON file with modified data (or - for stdin)")
-	workflowsRunsSubmitHILCmd.Flags().String("command-id", "", "idempotency command id")
-	workflowsRunsSubmitHILCmd.Flags().Int("version-stamp", 0, "CAS token: the version_stamp last read from the block's HIL state")
-	workflowsRunsSubmitHILCmd.Flags().String("reject-reason", "", "free-text reason recorded on a reject (ignored when --approved)")
-	_ = workflowsRunsSubmitHILCmd.MarkFlagRequired("block-id")
-
 	workflowsRunsExportCmd.Flags().String("workflow-id", "", "workflow id (required)")
 	workflowsRunsExportCmd.Flags().String("block-id", "", "block id (required)")
 	workflowsRunsExportCmd.Flags().String("export-source", "", "export source (default outputs)")
@@ -950,6 +845,6 @@ func init() {
 	_ = workflowsRunsExportCmd.MarkFlagRequired("block-id")
 
 	workflowsRunsStepsCmd.AddCommand(workflowsRunsStepsListCmd, workflowsRunsStepsGetCmd)
-	workflowsRunsCmd.AddCommand(workflowsRunsCreateCmd, workflowsRunsGetCmd, workflowsRunsListCmd, workflowsRunsDeleteCmd, workflowsRunsCancelCmd, workflowsRunsRestartCmd, workflowsRunsSubmitHILCmd, workflowsRunsGetHILCmd, workflowsRunsGetAgentHILCmd, workflowsRunsConfigCmd, workflowsRunsExecutionOrderCmd, workflowsRunsDocumentURLCmd, workflowsRunsExportCmd, workflowsRunsStepsCmd)
+	workflowsRunsCmd.AddCommand(workflowsRunsCreateCmd, workflowsRunsGetCmd, workflowsRunsListCmd, workflowsRunsDeleteCmd, workflowsRunsCancelCmd, workflowsRunsRestartCmd, workflowsRunsConfigCmd, workflowsRunsExecutionOrderCmd, workflowsRunsDocumentURLCmd, workflowsRunsExportCmd, workflowsRunsStepsCmd)
 	workflowsCmd.AddCommand(workflowsRunsCmd)
 }

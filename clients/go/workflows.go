@@ -1050,75 +1050,10 @@ func (s *WorkflowRunsService) Restart(ctx context.Context, runID string, request
 	return &run, err
 }
 
-type SubmitHILDecisionRequest struct {
-	BlockID      string         `json:"-"`
-	Approved     bool           `json:"-"`
-	ModifiedData map[string]any `json:"-"`
-	CommandID    string         `json:"-"`
-	// VersionStamp is the CAS token the server requires on every HIL
-	// decision — the version_stamp last read from the block's HIL state.
-	// The server rejects a stale stamp with 409.
-	VersionStamp int `json:"-"`
-	// RejectReason is an optional free-text reason recorded on a reject
-	// (Approved=false); ignored when Approved=true.
-	RejectReason string `json:"-"`
-}
-
-func (s *WorkflowRunsService) SubmitHILDecision(ctx context.Context, runID string, request SubmitHILDecisionRequest, opts ...RequestOption) (*SubmitHILDecisionResponse, error) {
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if request.BlockID == "" {
-		return nil, fmt.Errorf("retab: blockID is required")
-	}
-	body := map[string]any{
-		"block_id":      request.BlockID,
-		"approved":      request.Approved,
-		"version_stamp": request.VersionStamp,
-	}
-	if request.ModifiedData != nil {
-		body["modified_data"] = request.ModifiedData
-	}
-	if request.CommandID != "" {
-		body["command_id"] = request.CommandID
-	}
-	if request.RejectReason != "" {
-		body["reject_reason"] = request.RejectReason
-	}
-	var result SubmitHILDecisionResponse
-	err := s.client.do(ctx, http.MethodPost, "/workflows/runs/"+url.PathEscape(runID)+"/hil-decisions", nil, body, &result, opts...)
-	return &result, err
-}
-
-func (s *WorkflowRunsService) GetHILDecision(ctx context.Context, runID string, blockID string, opts ...RequestOption) (*HILDecisionResource, error) {
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if blockID == "" {
-		return nil, fmt.Errorf("retab: blockID is required")
-	}
-	var result HILDecisionResource
-	err := s.client.do(ctx, http.MethodGet, "/workflows/runs/"+url.PathEscape(runID)+"/hil-decisions/"+url.PathEscape(blockID), nil, nil, &result, opts...)
-	return &result, err
-}
-
-// GetAgentHILReview returns the managed-agent review state for a HIL block.
-//
-// An agent review is only spawned when the block's agent_in_the_loop config
-// is "pre_review" / "review" / "auto"; when disabled or the workflow hasn't
-// reached the block yet, the server returns 404 and this method returns an
-// error.
-func (s *WorkflowRunsService) GetAgentHILReview(ctx context.Context, runID string, blockID string, opts ...RequestOption) (*AgentHILReview, error) {
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if blockID == "" {
-		return nil, fmt.Errorf("retab: blockID is required")
-	}
-	var result AgentHILReview
-	err := s.client.do(ctx, http.MethodGet, "/workflows/runs/"+url.PathEscape(runID)+"/agent-hil-reviews/"+url.PathEscape(blockID), nil, nil, &result, opts...)
-	return &result, err
-}
+// The v1 HIL decision surface (SubmitHILDecision / GetHILDecision /
+// GetAgentHILReview) was removed in the hard cutover to the review overlay.
+// Drive human-in-the-loop reviews through WorkflowReviewsService instead —
+// see Workflows.Runs.Reviews.
 
 func (s *WorkflowRunsService) GetConfig(ctx context.Context, runID string, opts ...RequestOption) (map[string]any, error) {
 	if runID == "" {
