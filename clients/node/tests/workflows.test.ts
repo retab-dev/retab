@@ -916,6 +916,7 @@ describe("workflows client", () => {
         const result = await runsClient.submitHilDecision("run_1", {
             blockId: "hil-1",
             approved: true,
+            versionStamp: 4,
             modifiedData: { field: "value" },
             commandId: "cmd_3",
         });
@@ -926,6 +927,7 @@ describe("workflows client", () => {
             body: {
                 block_id: "hil-1",
                 approved: true,
+                version_stamp: 4,
                 modified_data: { field: "value" },
                 command_id: "cmd_3",
             },
@@ -957,6 +959,7 @@ describe("workflows client", () => {
         const result = await runsClient.submitHilDecision("run_1", {
             blockId: "hil-1",
             approved: true,
+            versionStamp: 7,
         });
 
         expect(result.submission_status).toBe("already_applied");

@@ -876,3 +876,147 @@ export const ZBlockSimulation = z
   })
   .passthrough();
 export type BlockSimulation = z.infer<typeof ZBlockSimulation>;
+
+// ---------------------------------------------------------------------------
+// Workflow HIL review overlay (served under /workflows/reviews)
+//
+// A versioned sidecar attached to a gated workflow block run. Actor-neutral by
+// construction: a proposal authored by a model, an agent, or a human all flow
+// through the SAME types and methods. `Actor.kind` is descriptive data — code
+// never branches on it. Every mutating call carries a `version_stamp` (the
+// overlay's `rev`); the server returns HTTP 409 if the rev has advanced.
+// ---------------------------------------------------------------------------
+
+/** Who performed a review action. `kind` is descriptive only — never branched on. */
+export const ZActor = z
+  .object({
+    kind: z.enum(['model', 'agent', 'human']),
+    id: z.string(),
+    display_name: z.string(),
+  })
+  .passthrough();
+export type Actor = z.infer<typeof ZActor>;
+
+/** One immutable snapshot of the block output in the version history. */
+export const ZOutputVersion = z
+  .object({
+    seq: z.number(),
+    parent_seq: z.number().nullable().default(null),
+    author: ZActor,
+    origin: z.enum(['model_output', 'agent_edit', 'human_edit', 'revert']),
+    snapshot: z.record(z.unknown()),
+    content_sha256: z.string(),
+    note: z.string().nullable().default(null),
+    created_at: z.string(),
+  })
+  .passthrough();
+export type OutputVersion = z.infer<typeof ZOutputVersion>;
+
+/** A verdict recorded against a specific output version. */
+export const ZReviewDecision = z
+  .object({
+    decision_id: z.string(),
+    verdict: z.enum(['approved', 'rejected', 'escalated']),
+    decided_by: ZActor,
+    decided_at: z.string(),
+    on_seq: z.number(),
+    effective_seq: z.number().nullable().default(null),
+    reason: z.string().nullable().default(null),
+    escalate_to: z.string().nullable().default(null),
+    supersedes_decision_id: z.string().nullable().default(null),
+  })
+  .passthrough();
+export type ReviewDecision = z.infer<typeof ZReviewDecision>;
+
+/** One row of the overlay's append-only audit log. */
+export const ZAuditEntry = z
+  .object({
+    entry_id: z.string(),
+    action: z.string(),
+    actor: ZActor,
+    at: z.string(),
+    rev_observed: z.number(),
+    rev_result: z.number().nullable().default(null),
+    detail: z.record(z.unknown()).default({}),
+  })
+  .passthrough();
+export type AuditEntry = z.infer<typeof ZAuditEntry>;
+
+/** A soft, advisory lock held by an actor while it works on the review. */
+export const ZReviewClaim = z
+  .object({
+    holder: ZActor,
+    claimed_at: z.string(),
+    expires_at: z.string(),
+  })
+  .passthrough();
+export type ReviewClaim = z.infer<typeof ZReviewClaim>;
+
+/** The full versioned review sidecar for one gated block run. */
+export const ZReviewOverlay = z
+  .object({
+    _id: z.string(),
+    organization_id: z.string(),
+    workflow_id: z.string(),
+    workflow_version_id: z.string(),
+    workflow_run_id: z.string(),
+    block_id: z.string(),
+    block_run_id: z.string(),
+    block_type: z.enum(['extract', 'classifier', 'split', 'conditional']),
+    triggered_by: z.record(z.unknown()),
+    status: z.enum(['awaiting_review', 'approved', 'rejected']),
+    awaiting_since: z.string(),
+    decided_at: z.string().nullable().default(null),
+    priority: z.number(),
+    rev: z.number(),
+    claim: ZReviewClaim.nullable().default(null),
+    versions: z.array(ZOutputVersion).default([]),
+    decisions: z.array(ZReviewDecision).default([]),
+    audit: z.array(ZAuditEntry).default([]),
+    head_seq: z.number(),
+    effective_seq: z.number().nullable().default(null),
+  })
+  .passthrough();
+export type ReviewOverlay = z.infer<typeof ZReviewOverlay>;
+
+/** A lightweight overlay summary returned by `reviews.list(...)` — no version history. */
+export const ZReviewQueueItem = z
+  .object({
+    _id: z.string(),
+    organization_id: z.string(),
+    workflow_id: z.string(),
+    workflow_version_id: z.string(),
+    workflow_run_id: z.string(),
+    block_id: z.string(),
+    block_run_id: z.string(),
+    block_type: z.enum(['extract', 'classifier', 'split', 'conditional']),
+    triggered_by: z.record(z.unknown()),
+    status: z.enum(['awaiting_review', 'approved', 'rejected']),
+    awaiting_since: z.string(),
+    decided_at: z.string().nullable().default(null),
+    priority: z.number(),
+    rev: z.number(),
+    claim: ZReviewClaim.nullable().default(null),
+    head_seq: z.number(),
+    effective_seq: z.number().nullable().default(null),
+  })
+  .passthrough();
+export type ReviewQueueItem = z.infer<typeof ZReviewQueueItem>;
+
+/** Envelope returned by `reviews.list(...)`. */
+export const ZReviewQueueResponse = z
+  .object({
+    data: z.array(ZReviewQueueItem).default([]),
+    has_more: z.boolean(),
+  })
+  .passthrough();
+export type ReviewQueueResponse = z.infer<typeof ZReviewQueueResponse>;
+
+/** Envelope returned by `reviews.approve/reject/escalate(...)`. */
+export const ZSubmitDecisionResponse = z
+  .object({
+    submission_status: z.enum(['accepted', 'already_received', 'already_applied']),
+    overlay: ZReviewOverlay,
+  })
+  .passthrough();
+export type SubmitDecisionResponse = z.infer<typeof ZSubmitDecisionResponse>;
