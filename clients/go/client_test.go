@@ -442,10 +442,9 @@ func TestWorkflowExperimentRunRequestsDoNotSendUnsupportedOverrides(t *testing.T
 	}
 }
 
-func TestWorkflowRunsListDeleteCancelRestartHILAndExport(t *testing.T) {
+func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 	var cancelBody map[string]any
 	var restartBody map[string]any
-	var hilBody map[string]any
 	var exportBody map[string]any
 	var listQuery string
 
@@ -473,60 +472,6 @@ func TestWorkflowRunsListDeleteCancelRestartHILAndExport(t *testing.T) {
 				t.Fatal(err)
 			}
 			_ = json.NewEncoder(w).Encode(workflowRunResponse("run_456", "wf_123", "running"))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs/run_123/hil-decisions":
-			if err := json.NewDecoder(r.Body).Decode(&hilBody); err != nil {
-				t.Fatal(err)
-			}
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"decision": map[string]any{
-					"run_id":            "run_123",
-					"block_id":          "review-1",
-					"decision_received": true,
-					"decision_applied":  true,
-					"approved":          true,
-				},
-			})
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_123/hil-decisions/review-1":
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"run_id":            "run_123",
-				"block_id":          "review-1",
-				"decision_received": true,
-				"decision_applied":  true,
-				"approved":          true,
-			})
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_123/agent-hil-reviews/review-1":
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id":                       "agrev_abc",
-				"organization_id":          "org_1",
-				"run_id":                   "run_123",
-				"block_id":                 "review-1",
-				"workflow_id":              "wf_123",
-				"mode":                     "pre_review",
-				"status":                   "proposed",
-				"managed_agent_session_id": "sesn_1",
-				"managed_agent_vault_id":   "vlt_1",
-				"proposed_decision": map[string]any{
-					"approved":      true,
-					"modified_data": map[string]any{"total": 325},
-					"confidence":    0.92,
-					"evidence": []any{
-						map[string]any{
-							"field_path": "total",
-							"action":     "modified",
-							"quote":      "Total $325.00",
-							"source":     map[string]any{"document_index": 0, "page_number": 1},
-							"from_value": 505,
-							"to_value":   325,
-						},
-					},
-					"changed_paths": []string{"total"},
-					"escalate":      false,
-				},
-				"auto_threshold":  0.85,
-				"timeout_seconds": 900,
-				"created_at":      "2026-01-01T00:00:00Z",
-				"updated_at":      "2026-01-01T00:00:01Z",
-			})
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_123/config":
 			_ = json.NewEncoder(w).Encode(map[string]any{"blocks": []string{"start-1"}})
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_123/execution-order":
@@ -585,38 +530,6 @@ func TestWorkflowRunsListDeleteCancelRestartHILAndExport(t *testing.T) {
 		t.Fatalf("restarted = %#v body = %#v", restarted, restartBody)
 	}
 
-	decision, err := client.Workflows.Runs.SubmitHILDecision(context.Background(), "run_123", SubmitHILDecisionRequest{
-		BlockID:      "review-1",
-		Approved:     true,
-		ModifiedData: map[string]any{"approved_total": 12},
-		CommandID:    "cmd_hil",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if decision.Decision.BlockID != "review-1" || hilBody["block_id"] != "review-1" || hilBody["approved"] != true {
-		t.Fatalf("decision = %#v body = %#v", decision, hilBody)
-	}
-	gotDecision, err := client.Workflows.Runs.GetHILDecision(context.Background(), "run_123", "review-1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if gotDecision.BlockID != "review-1" {
-		t.Fatalf("got decision = %#v", gotDecision)
-	}
-	agentReview, err := client.Workflows.Runs.GetAgentHILReview(context.Background(), "run_123", "review-1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if agentReview.ID != "agrev_abc" || agentReview.Mode != "pre_review" || agentReview.Status != "proposed" {
-		t.Fatalf("agent review = %#v", agentReview)
-	}
-	if agentReview.ProposedDecision == nil || agentReview.ProposedDecision.Confidence != 0.92 {
-		t.Fatalf("proposed decision = %#v", agentReview.ProposedDecision)
-	}
-	if len(agentReview.ProposedDecision.Evidence) != 1 || agentReview.ProposedDecision.Evidence[0].FieldPath != "total" {
-		t.Fatalf("evidence = %#v", agentReview.ProposedDecision.Evidence)
-	}
 	config, err := client.Workflows.Runs.GetConfig(context.Background(), "run_123")
 	if err != nil {
 		t.Fatal(err)

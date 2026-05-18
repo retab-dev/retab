@@ -254,34 +254,3 @@ func TestWorkflowReviewsEditClaimRelease(t *testing.T) {
 		t.Fatalf("release path = %s", seenPath)
 	}
 }
-
-// TestSubmitHILDecisionThreadsVersionStamp pins the v1 bug fix: the legacy
-// hil-decisions call must send version_stamp (and reject_reason on reject).
-func TestSubmitHILDecisionThreadsVersionStamp(t *testing.T) {
-	var body map[string]any
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		raw, _ := io.ReadAll(r.Body)
-		_ = json.Unmarshal(raw, &body)
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"decision": map[string]any{"run_id": "run_1", "block_id": "blk_1"},
-		})
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.Workflows.Runs.SubmitHILDecision(context.Background(), "run_1", SubmitHILDecisionRequest{
-		BlockID: "blk_1", Approved: false, VersionStamp: 4, RejectReason: "bad scan",
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := body["version_stamp"]; !ok {
-		t.Fatalf("version_stamp missing from hil-decision body: %#v", body)
-	}
-	if body["reject_reason"] != "bad scan" {
-		t.Fatalf("reject_reason = %#v", body["reject_reason"])
-	}
-}
