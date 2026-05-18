@@ -6,7 +6,6 @@ import APIWorkflowRuns from "../src/api/workflows/runs/client";
 import APIWorkflowBlocks from "../src/api/workflows/blocks/client";
 import APIWorkflowEdges from "../src/api/workflows/edges/client";
 import APIWorkflowSpecs from "../src/api/workflows/specs/client";
-import { ZExperimentJobStatus } from "../src/api/workflows/experiments/types";
 import { ZStepExecutionResponse, ZWorkflowRun, ZWorkflowRunStep } from "../src/types";
 import type { WorkflowRunExportResponse } from "../src/types";
 
@@ -393,22 +392,29 @@ describe("workflows client", () => {
     test("experiments expose Python snake_case and prepare helpers", () => {
         const workflowsClient = new APIWorkflows(new MockClient({}));
 
+        expect("cancel" in workflowsClient.experiments).toBe(false);
+        expect("get_metrics" in workflowsClient.experiments).toBe(false);
+        expect("getMetrics" in workflowsClient.experiments).toBe(false);
         expect("get_content" in workflowsClient.experiments).toBe(false);
         expect("getContent" in workflowsClient.experiments).toBe(false);
-        expect(typeof workflowsClient.experiments.get_metrics).toBe("function");
         expect(typeof workflowsClient.experiments.list_eligible_blocks).toBe("function");
-        expect(typeof workflowsClient.experiments.run_batch).toBe("function");
+        expect("prepare_run_batch" in workflowsClient.experiments).toBe(false);
+        expect("run_batch" in workflowsClient.experiments).toBe(false);
+        expect("runBatch" in workflowsClient.experiments).toBe(false);
         expect(typeof workflowsClient.experiments.runs.get).toBe("function");
+        expect(typeof workflowsClient.experiments.runs.cancel).toBe("function");
+        expect(typeof workflowsClient.experiments.runs.results.get).toBe("function");
+        expect(typeof workflowsClient.experiments.runs.metrics.get).toBe("function");
         expect("get_content" in workflowsClient.experiments.runs).toBe(false);
         expect("getContent" in workflowsClient.experiments.runs).toBe(false);
+        expect("cancel_document" in workflowsClient.experiments.runs).toBe(false);
         expect("get_job" in workflowsClient.experiments.runs).toBe(false);
         expect("getJob" in workflowsClient.experiments.runs).toBe(false);
         expect("wait_for_completion" in workflowsClient.experiments.runs).toBe(false);
         expect("waitForCompletion" in workflowsClient.experiments.runs).toBe(false);
-        expect(workflowsClient.experiments.runs.prepare_get("wf_1", "exp_1", { runId: "run_1" })).toEqual({
-            url: "/workflows/wf_1/experiments/exp_1/content",
+        expect(workflowsClient.experiments.runs.prepare_get("run_1")).toEqual({
+            url: "/workflows/experiments/runs/run_1",
             method: "GET",
-            params: { run_id: "run_1" },
         });
         expect(workflowsClient.experiments.runs.prepare_create("wf_1", "exp_1")).toEqual({
             url: "/workflows/wf_1/experiments/exp_1/runs",
@@ -417,17 +423,11 @@ describe("workflows client", () => {
         });
         expect("prepare_run_document" in workflowsClient.experiments.runs).toBe(false);
         expect("run_document" in workflowsClient.experiments.runs).toBe(false);
-        expect(workflowsClient.experiments.runs.prepare_cancel_document("wf_1", "exp_1", "expdoc_1")).toEqual({
-            url: "/workflows/wf_1/experiments/exp_1/documents/expdoc_1/cancel",
+        expect(workflowsClient.experiments.runs.prepare_cancel("run_1")).toEqual({
+            url: "/workflows/experiments/runs/run_1/cancel",
             method: "POST",
             body: {},
         });
-        expect(workflowsClient.experiments.prepare_get_metrics("wf_1", "exp_1").params).toEqual({
-            view: "summary",
-            include_prior: true,
-        });
-        expect(ZExperimentJobStatus.safeParse("completed").success).toBe(true);
-        expect(ZExperimentJobStatus.safeParse("cancelled").success).toBe(false);
     });
 
     test("delete() sends DELETE to /workflows/{id}", async () => {

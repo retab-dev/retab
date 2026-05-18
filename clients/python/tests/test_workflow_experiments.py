@@ -22,6 +22,16 @@ from retab.resources.workflows.experiments.client import (
 
 
 _NOW = "2026-05-01T14:30:00Z"
+_WORKFLOW_REF = {
+    "workflow_id": "wf_abc123",
+    "version_id": "draft_1",
+    "name_at_run_time": "Q1 workflow",
+    "requested_version": "draft",
+}
+_TRIGGER = {"type": "api"}
+_PENDING = {"status": "pending"}
+_COMPLETED = {"status": "completed"}
+_TIMING = {"created_at": _NOW, "started_at": _NOW, "completed_at": _NOW}
 
 
 _EXPERIMENT_RESPONSE = {
@@ -228,38 +238,52 @@ def test_experiments_duplicate_posts_to_duplicate_subroute() -> None:
     assert request.url == "/workflows/wf_abc123/experiments/exp_abc/duplicate"
 
 
-def test_experiments_cancel_posts_to_cancel_subroute() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {"status": "cancelled", "run_id": "exprun_1"}
-
-    result = Workflows(client=client).experiments.cancel(
-        workflow_id="wf_abc123", experiment_id="exp_abc"
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/cancel"
-    assert result == {"status": "cancelled", "run_id": "exprun_1"}
-
-
 # ---------------------------------------------------------------------------
-# runs — create, list, get
+# runs — create, list, get, cancel, results, metrics
 # ---------------------------------------------------------------------------
+
+
+def _experiment_run_response(**overrides: object) -> dict:
+    base = {
+        "id": "exprun_1",
+        "workflow": _WORKFLOW_REF,
+        "trigger": _TRIGGER,
+        "lifecycle": _PENDING,
+        "timing": _TIMING,
+        "experiment_id": "exp_abc",
+        "block_id": "block_extract",
+        "block_kind": "extract",
+        "n_consensus": 5,
+        "definition_fingerprint": "deadbeef",
+        "documents_fingerprint": "docbeef",
+        "document_count": 3,
+        "total_document_count": 3,
+        "completed_document_count": 0,
+        "error_count": 0,
+    }
+    base.update(overrides)
+    return base
+
+
+_EXPERIMENT_RESULT = {
+    "id": "expresult_1",
+    "run_id": "exprun_1",
+    "experiment_id": "exp_abc",
+    "document_id": "expdoc_1",
+    "lifecycle": _COMPLETED,
+    "timing": _TIMING,
+    "block_kind": "extract",
+    "handle_inputs": {"input-file-0": {"type": "file"}},
+    "artifact": {"operation": "extraction", "id": "ext_1"},
+    "attempt": 1,
+}
 
 
 def test_experiments_runs_create_posts_to_run_subroute() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "experiment_id": "exp_abc",
-        "run_id": "exprun_1",
-        "status": "pending",
-        "definition_fingerprint": "deadbeef",
-        "document_count": 3,
-        "n_consensus": 5,
-        "previous_run": None,
-    }
+    client._prepared_request.return_value = _experiment_run_response()
 
-    Workflows(client=client).experiments.runs.create(
+    run = Workflows(client=client).experiments.runs.create(
         workflow_id="wf_abc123",
         experiment_id="exp_abc",
     )
@@ -268,21 +292,15 @@ def test_experiments_runs_create_posts_to_run_subroute() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/wf_abc123/experiments/exp_abc/runs"
     assert request.data == {}
+    assert run.id == "exprun_1"
+    assert run.lifecycle.status == "pending"
 
 
 def test_experiments_runs_create_default_body_is_empty_dict() -> None:
     """No overrides → empty body. Backend's ``RunExperimentRequest`` has
     all-optional fields, so an empty body is the canonical no-op shape."""
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "experiment_id": "exp_abc",
-        "run_id": "exprun_1",
-        "status": "pending",
-        "definition_fingerprint": "deadbeef",
-        "document_count": 3,
-        "n_consensus": 5,
-        "previous_run": None,
-    }
+    client._prepared_request.return_value = _experiment_run_response()
 
     Workflows(client=client).experiments.runs.create(
         workflow_id="wf_abc123",
@@ -295,16 +313,10 @@ def test_experiments_runs_create_default_body_is_empty_dict() -> None:
 
 def test_experiments_runs_create_does_not_expose_retry_or_stale_flags() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {
-        "experiment_id": "exp_abc",
-        "run_id": "exprun_2",
-        "status": "completed",
-        "definition_fingerprint": "deadbeef",
-        "document_count": 3,
-        "n_consensus": 5,
-        "previous_run": None,
-        "noop": True,
-    }
+    client._prepared_request.return_value = _experiment_run_response(
+        id="exprun_2",
+        lifecycle=_COMPLETED,
+    )
 
     Workflows(client=client).experiments.runs.create(
         workflow_id="wf_abc123",
@@ -316,27 +328,7 @@ def test_experiments_runs_create_does_not_expose_retry_or_stale_flags() -> None:
     assert not hasattr(Workflows(client=client).experiments.runs, "run_document")
 
 
-def test_experiments_runs_cancel_document_uses_document_cancel_route() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {
-        "status": "cancelled",
-        "run_id": "exprun_1",
-        "document_id": "expdoc_1",
-    }
-
-    Workflows(client=client).experiments.runs.cancel_document(
-        workflow_id="wf_abc123",
-        experiment_id="exp_abc",
-        document_id="expdoc_1",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/documents/expdoc_1/cancel"
-    assert request.data == {}
-
-
-def test_experiments_runs_list_uses_runs_route() -> None:
+def test_experiments_runs_list_uses_canonical_runs_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "data": [],
@@ -349,66 +341,87 @@ def test_experiments_runs_list_uses_runs_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/runs"
+    assert request.url == "/workflows/experiments/runs"
+    assert request.params == {
+        "limit": 20,
+        "workflow_id": "wf_abc123",
+        "experiment_id": "exp_abc",
+    }
     assert page.data == []
     assert page.list_metadata.before is None
     assert page.list_metadata.after is None
 
 
-def test_experiment_content_is_only_on_runs_get() -> None:
+def test_experiments_hard_cutover_removes_legacy_content_and_metrics_aliases() -> None:
     experiments = Workflows(client=MagicMock()).experiments
 
+    assert "cancel" not in dir(experiments)
+    assert "get_metrics" not in dir(experiments)
     assert "get_content" not in dir(experiments)
     assert "get_content" not in dir(experiments.runs)
+    assert "cancel_document" not in dir(experiments.runs)
     assert "get_job" not in dir(experiments.runs)
     assert "wait_for_completion" not in dir(experiments.runs)
     assert "get" in dir(experiments.runs)
 
 
-def test_experiments_runs_get_with_run_id_passes_query_param() -> None:
+def test_experiments_runs_get_uses_run_id_first_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _experiment_run_response(lifecycle=_COMPLETED)
+
+    run = Workflows(client=client).experiments.runs.get("exprun_1")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/experiments/runs/exprun_1"
+    assert run.lifecycle.status == "completed"
+    assert run.timing.started_at is not None
+
+
+def test_experiments_runs_cancel_uses_run_id_first_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _experiment_run_response(lifecycle={"status": "cancelled"})
+
+    run = Workflows(client=client).experiments.runs.cancel("exprun_1")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/experiments/runs/exprun_1/cancel"
+    assert request.data == {}
+    assert run.lifecycle.status == "cancelled"
+
+
+def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
-        "experiment_id": "exp_abc",
-        "run_id": "exprun_1",
-        "content": {"jobs": []},
+        "data": [_EXPERIMENT_RESULT],
+        "list_metadata": {"before": None, "after": None},
     }
 
-    Workflows(client=client).experiments.runs.get(
-        workflow_id="wf_abc123",
-        experiment_id="exp_abc",
-        run_id="exprun_1",
+    page = Workflows(client=client).experiments.runs.results.list("exprun_1")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/experiments/runs/exprun_1/results"
+    assert page.data[0].document_id == "expdoc_1"
+
+
+def test_experiments_runs_results_get_uses_document_id_child_key() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _EXPERIMENT_RESULT
+
+    result = Workflows(client=client).experiments.runs.results.get(
+        "exprun_1",
+        "expdoc_1",
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/content"
-    assert request.params == {"run_id": "exprun_1"}
+    assert request.url == "/workflows/experiments/runs/exprun_1/results/expdoc_1"
+    assert result.document_id == "expdoc_1"
 
 
-def test_experiments_runs_get_without_run_id_omits_param() -> None:
-    """``run_id=None`` → no query param at all (server falls back to latest)."""
-    client = MagicMock()
-    client._prepared_request.return_value = {
-        "experiment_id": "exp_abc",
-        "run_id": "",
-        "content": {"jobs": []},
-    }
-
-    Workflows(client=client).experiments.runs.get(
-        workflow_id="wf_abc123",
-        experiment_id="exp_abc",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.params is None
-
-
-# ---------------------------------------------------------------------------
-# get_metrics — view query params
-# ---------------------------------------------------------------------------
-
-
-def test_experiments_get_metrics_summary_view_default() -> None:
+def test_experiments_runs_metrics_summary_view_default() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "experiment_id": "exp_abc",
@@ -420,18 +433,15 @@ def test_experiments_get_metrics_summary_view_default() -> None:
         "documents": [],
     }
 
-    Workflows(client=client).experiments.get_metrics(
-        workflow_id="wf_abc123",
-        experiment_id="exp_abc",
-    )
+    Workflows(client=client).experiments.runs.metrics.get("exprun_1")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/metrics"
+    assert request.url == "/workflows/experiments/runs/exprun_1/metrics"
     assert request.params == {"view": "summary", "include_prior": True}
 
 
-def test_experiments_get_metrics_by_target_view_passes_target_path() -> None:
+def test_experiments_runs_metrics_by_target_view_passes_target_path() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "run_id": "exprun_1",
@@ -441,9 +451,8 @@ def test_experiments_get_metrics_by_target_view_passes_target_path() -> None:
         "documents": [],
     }
 
-    Workflows(client=client).experiments.get_metrics(
-        workflow_id="wf_abc123",
-        experiment_id="exp_abc",
+    Workflows(client=client).experiments.runs.metrics.get(
+        "exprun_1",
         view="by_target",
         target_path="total",
         include_prior=False,
@@ -457,7 +466,7 @@ def test_experiments_get_metrics_by_target_view_passes_target_path() -> None:
     }
 
 
-def test_experiments_get_metrics_returns_stale_error_envelope() -> None:
+def test_experiments_runs_metrics_returns_stale_error_envelope() -> None:
     """When the latest run is stale the backend returns the
     ``error="stale_metrics"`` envelope instead of a view payload."""
     client = MagicMock()
@@ -475,17 +484,14 @@ def test_experiments_get_metrics_returns_stale_error_envelope() -> None:
         "message": "Metrics are stale; rerun the experiment.",
     }
 
-    result = Workflows(client=client).experiments.get_metrics(
-        workflow_id="wf_abc123",
-        experiment_id="exp_abc",
-    )
+    result = Workflows(client=client).experiments.runs.metrics.get("exprun_1")
 
     # Discriminated union accepts the error envelope by ``error`` field.
     assert getattr(result, "error", None) == "stale_metrics"
 
 
 # ---------------------------------------------------------------------------
-# eligible-blocks + run-batch
+# eligible-blocks
 # ---------------------------------------------------------------------------
 
 
@@ -500,23 +506,11 @@ def test_experiments_list_eligible_blocks_uses_eligible_blocks_subroute() -> Non
     assert request.url == "/workflows/wf_abc123/experiments/eligible-blocks"
 
 
-def test_experiments_run_batch_posts_to_run_batch_subroute() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {
-        "block_id": "block_extract",
-        "experiment_count": 0,
-        "runs": [],
-    }
+def test_experiments_do_not_expose_run_batch_surface() -> None:
+    experiments = Workflows(client=MagicMock()).experiments
 
-    Workflows(client=client).experiments.run_batch(
-        workflow_id="wf_abc123",
-        block_id="block_extract",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/experiments/run-batch"
-    assert request.data == {"block_id": "block_extract"}
+    assert "prepare_run_batch" not in dir(experiments)
+    assert "run_batch" not in dir(experiments)
 
 
 # ---------------------------------------------------------------------------

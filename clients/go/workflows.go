@@ -1414,15 +1414,19 @@ type WorkflowTestsService struct {
 	Runs   *WorkflowTestRunsService
 }
 
+type WorkflowTestRunResultsService struct {
+	client *Client
+}
+
 func newWorkflowTestsService(client *Client) *WorkflowTestsService {
 	service := &WorkflowTestsService{client: client}
 	service.Runs = &WorkflowTestRunsService{client: client}
+	service.Runs.Results = &WorkflowTestRunResultsService{client: client}
 	return service
 }
 
 type WorkflowTest = Resource
 type WorkflowTestRunRecord = Resource
-type WorkflowTestBatchExecutionResult = Resource
 
 type WorkflowTestCreateRequest struct {
 	WorkflowID string   `json:"-"`
@@ -1444,13 +1448,25 @@ type ListWorkflowTestsRequest struct {
 	Limit         int
 }
 
+type ListWorkflowTestRunsParams struct {
+	WorkflowID    string
+	TestID        string
+	TargetBlockID string
+	Status        string
+	Statuses      []string
+	ExcludeStatus string
+	Limit         int
+}
+
+type ListWorkflowTestRunsRequest = ListWorkflowTestRunsParams
+
 // WorkflowTestListResponse is the canonical PaginatedList envelope for
 // `GET /v1/workflows/{wf}/tests`. Kept as a type alias so callers can
 // keep referring to the named type while the underlying shape rides the
 // shared `{data, list_metadata}` envelope.
 type WorkflowTestListResponse = PaginatedList[WorkflowTest]
 
-type ExecuteWorkflowTestsRequest struct {
+type CreateWorkflowTestRunRequest struct {
 	WorkflowID string   `json:"-"`
 	TestID     string   `json:"test_id,omitempty"`
 	Target     Resource `json:"target,omitempty"`
@@ -1467,33 +1483,19 @@ type WorkflowTestRunCounts struct {
 	Cancelled int `json:"cancelled,omitempty"`
 }
 
-type WorkflowTestExecutionRunStatus struct {
-	RunID       string                `json:"run_id"`
-	Status      string                `json:"status"`
-	WorkflowID  string                `json:"workflow_id"`
-	Target      *Resource             `json:"target,omitempty"`
-	TestID      string                `json:"test_id,omitempty"`
-	TotalTests  int                   `json:"total_tests"`
-	Counts      WorkflowTestRunCounts `json:"counts,omitempty"`
-	CreatedAt   *time.Time            `json:"created_at,omitempty"`
-	StartedAt   *time.Time            `json:"started_at,omitempty"`
-	CompletedAt *time.Time            `json:"completed_at,omitempty"`
-	DurationMs  *int                  `json:"duration_ms,omitempty"`
-	Error       string                `json:"error,omitempty"`
+type WorkflowTestRun struct {
+	ID         string                `json:"id"`
+	Workflow   WorkflowSnapshotRef   `json:"workflow"`
+	Trigger    RunTrigger            `json:"trigger"`
+	Lifecycle  RunLifecycle          `json:"lifecycle"`
+	Timing     RunTiming             `json:"timing"`
+	Target     *Resource             `json:"target,omitempty"`
+	TestID     string                `json:"test_id,omitempty"`
+	TotalTests int                   `json:"total_tests"`
+	Counts     WorkflowTestRunCounts `json:"counts,omitempty"`
 }
 
-type ExecuteWorkflowTestsResponse = WorkflowTestExecutionRunStatus
-
-type WorkflowTestExecutionRunResults struct {
-	RunID      string                  `json:"run_id"`
-	Status     string                  `json:"status"`
-	WorkflowID string                  `json:"workflow_id"`
-	Target     *Resource               `json:"target,omitempty"`
-	TestID     string                  `json:"test_id,omitempty"`
-	TotalTests int                     `json:"total_tests"`
-	Counts     WorkflowTestRunCounts   `json:"counts,omitempty"`
-	Results    []WorkflowTestRunRecord `json:"results"`
-}
+type WorkflowTestRunResultListResponse = PaginatedList[WorkflowTestRunRecord]
 
 func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestCreateRequest, opts ...RequestOption) (*WorkflowTest, error) {
 	if request.WorkflowID == "" {
@@ -1556,84 +1558,78 @@ func (s *WorkflowTestsService) Delete(ctx context.Context, workflowID string, te
 	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID), nil, nil, nil, opts...)
 }
 
-func (s *WorkflowTestsService) Execute(ctx context.Context, request ExecuteWorkflowTestsRequest, opts ...RequestOption) (*ExecuteWorkflowTestsResponse, error) {
-	return s.Runs.Create(ctx, request, opts...)
-}
-
-func (s *WorkflowTestRunsService) Create(ctx context.Context, request ExecuteWorkflowTestsRequest, opts ...RequestOption) (*WorkflowTestExecutionRunStatus, error) {
+func (s *WorkflowTestRunsService) Create(ctx context.Context, request CreateWorkflowTestRunRequest, opts ...RequestOption) (*WorkflowTestRun, error) {
 	if request.WorkflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	body := resourceFromJSON(request)
 	delete(body, "WorkflowID")
-	var result WorkflowTestExecutionRunStatus
+	var result WorkflowTestRun
 	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(request.WorkflowID)+"/tests/runs", nil, body, &result, opts...)
 	return &result, err
 }
 
 type WorkflowTestRunsService struct {
-	client *Client
+	client  *Client
+	Results *WorkflowTestRunResultsService
 }
 
-// WorkflowTestRunListResponse is the canonical PaginatedList envelope for
-// `GET /v1/workflows/{wf}/tests/{id}/runs`. Kept as a type alias for
-// the same reason `WorkflowTestListResponse` is — callers keep the named type,
-// the underlying shape rides the shared `{data, list_metadata}` envelope.
-type WorkflowTestRunListResponse = PaginatedList[WorkflowTestRunRecord]
+type WorkflowTestRunListResponse = PaginatedList[WorkflowTestRun]
 
-func (s *WorkflowTestRunsService) List(ctx context.Context, workflowID string, testID string, limit int, opts ...RequestOption) (*PaginatedList[WorkflowTestRunRecord], error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if testID == "" {
-		return nil, fmt.Errorf("retab: testID is required")
-	}
+func (s *WorkflowTestRunsService) List(ctx context.Context, request ListWorkflowTestRunsParams, opts ...RequestOption) (*PaginatedList[WorkflowTestRun], error) {
+	limit := request.Limit
 	if limit == 0 {
 		limit = 20
 	}
 	query := url.Values{}
 	query.Set("limit", fmt.Sprintf("%d", limit))
-	var result PaginatedList[WorkflowTestRunRecord]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID)+"/runs", query, nil, &result, opts...)
+	addQuery(query, "workflow_id", request.WorkflowID)
+	addQuery(query, "test_id", request.TestID)
+	addQuery(query, "target_block_id", request.TargetBlockID)
+	addQuery(query, "status", request.Status)
+	addCSVQuery(query, "statuses", request.Statuses)
+	addQuery(query, "exclude_status", request.ExcludeStatus)
+	var result PaginatedList[WorkflowTestRun]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs", query, nil, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowTestRunsService) Get(ctx context.Context, workflowID string, testID string, runID string, opts ...RequestOption) (*WorkflowTestRunRecord, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
+func (s *WorkflowTestRunsService) Get(ctx context.Context, runID string, opts ...RequestOption) (*WorkflowTestRun, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	var result WorkflowTestRun
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowTestRunsService) Cancel(ctx context.Context, runID string, opts ...RequestOption) (*WorkflowTestRun, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	var result WorkflowTestRun
+	err := s.client.do(ctx, http.MethodPost, "/workflows/tests/runs/"+url.PathEscape(runID)+"/cancel", nil, map[string]any{}, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowTestRunResultsService) List(ctx context.Context, runID string, opts ...RequestOption) (*PaginatedList[WorkflowTestRunRecord], error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	var result PaginatedList[WorkflowTestRunRecord]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(runID)+"/results", nil, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowTestRunResultsService) Get(ctx context.Context, runID string, testID string, opts ...RequestOption) (*WorkflowTestRunRecord, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
 	}
 	if testID == "" {
 		return nil, fmt.Errorf("retab: testID is required")
 	}
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
 	var result WorkflowTestRunRecord
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID)+"/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
-	return &result, err
-}
-
-func (s *WorkflowTestRunsService) GetExecution(ctx context.Context, workflowID string, runID string, opts ...RequestOption) (*WorkflowTestExecutionRunStatus, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	var result WorkflowTestExecutionRunStatus
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
-	return &result, err
-}
-
-func (s *WorkflowTestRunsService) Results(ctx context.Context, workflowID string, runID string, opts ...RequestOption) (*WorkflowTestExecutionRunResults, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	var result WorkflowTestExecutionRunResults
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/runs/"+url.PathEscape(runID)+"/results", nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(runID)+"/results/"+url.PathEscape(testID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1661,15 +1657,29 @@ type WorkflowExperimentsService struct {
 	Runs   *WorkflowExperimentRunsService
 }
 
-// WorkflowExperimentRunsService lists per-experiment runs and run content.
+// WorkflowExperimentRunsService manages experiment run lifecycle, results, and metrics.
 type WorkflowExperimentRunsService struct {
+	client  *Client
+	Results *WorkflowExperimentRunResultsService
+	Metrics *WorkflowExperimentRunMetricsService
+}
+
+type WorkflowExperimentRunResultsService struct {
+	client *Client
+}
+
+type WorkflowExperimentRunMetricsService struct {
 	client *Client
 }
 
 func newWorkflowExperimentsService(client *Client) *WorkflowExperimentsService {
 	return &WorkflowExperimentsService{
 		client: client,
-		Runs:   &WorkflowExperimentRunsService{client: client},
+		Runs: &WorkflowExperimentRunsService{
+			client:  client,
+			Results: &WorkflowExperimentRunResultsService{client: client},
+			Metrics: &WorkflowExperimentRunMetricsService{client: client},
+		},
 	}
 }
 
@@ -1712,61 +1722,38 @@ type ExperimentResponse struct {
 	SchemaDriftDetail string    `json:"schema_drift_detail,omitempty"`
 }
 
-// PreviousRunSummary is a slim summary of the previous completed run.
-type PreviousRunSummary struct {
-	RunID                 string   `json:"run_id"`
-	DefinitionFingerprint string   `json:"definition_fingerprint,omitempty"`
-	Score                 *float64 `json:"score,omitempty"`
-}
-
-// RunExperimentResponse is returned by POST /experiments/{id}/runs.
-type RunExperimentResponse struct {
-	ExperimentID          string              `json:"experiment_id"`
-	RunID                 string              `json:"run_id"`
-	Status                string              `json:"status"`
-	DefinitionFingerprint string              `json:"definition_fingerprint"`
-	DocumentCount         int                 `json:"document_count"`
-	NConsensus            int                 `json:"n_consensus"`
-	PreviousRun           *PreviousRunSummary `json:"previous_run,omitempty"`
-}
-
-// CancelExperimentResponse is returned by POST /experiments/{id}/cancel.
-type CancelExperimentResponse struct {
-	Status string `json:"status"`
-	RunID  string `json:"run_id"`
-}
-
-// ExperimentRunSummary is one row of GET /experiments/{id}/runs.
-type ExperimentRunSummary struct {
-	ID                    string         `json:"id"`
-	ParentRunID           string         `json:"parent_run_id,omitempty"`
-	BlockConfig           map[string]any `json:"block_config,omitempty"`
-	DefinitionFingerprint string         `json:"definition_fingerprint"`
-	DocumentsFingerprint  string         `json:"documents_fingerprint"`
-	Status                string         `json:"status"`
-	BlockKind             string         `json:"block_kind"`
-	Score                 *float64       `json:"score,omitempty"`
-	DocumentCount         int            `json:"document_count"`
-	ErrorCount            int            `json:"error_count"`
-	NConsensus            int            `json:"n_consensus"`
-	CreatedAt             time.Time      `json:"created_at"`
-	CompletedAt           *time.Time     `json:"completed_at,omitempty"`
-	DurationMs            *int           `json:"duration_ms,omitempty"`
+// ExperimentRun is the public run document returned by experiment run APIs.
+type ExperimentRun struct {
+	ID                     string              `json:"id"`
+	Workflow               WorkflowSnapshotRef `json:"workflow"`
+	Trigger                RunTrigger          `json:"trigger"`
+	Lifecycle              RunLifecycle        `json:"lifecycle"`
+	Timing                 RunTiming           `json:"timing"`
+	ExperimentID           string              `json:"experiment_id"`
+	BlockID                string              `json:"block_id"`
+	BlockKind              string              `json:"block_kind"`
+	NConsensus             int                 `json:"n_consensus"`
+	DefinitionFingerprint  string              `json:"definition_fingerprint"`
+	DocumentsFingerprint   string              `json:"documents_fingerprint"`
+	Score                  *float64            `json:"score,omitempty"`
+	TotalDocumentCount     int                 `json:"total_document_count"`
+	CompletedDocumentCount int                 `json:"completed_document_count"`
+	DocumentCount          int                 `json:"document_count"`
+	ErrorCount             int                 `json:"error_count"`
 }
 
 // ExperimentRunListResponse is the canonical PaginatedList envelope for
-// `GET /v1/workflows/{wf}/experiments/{id}/runs`. Kept as a type alias so
-// callers don't have to re-import — the underlying shape rides the shared
-// `{data, list_metadata}` envelope.
-type ExperimentRunListResponse = PaginatedList[ExperimentRunSummary]
+// `GET /v1/workflows/experiments/runs`.
+type ExperimentRunListResponse = PaginatedList[ExperimentRun]
 
-// ExperimentJobResponse is the per-document execution record inside a run.
-type ExperimentJobResponse struct {
+// ExperimentResult is the per-document execution record inside a run.
+type ExperimentResult struct {
 	ID            string           `json:"id"`
 	RunID         string           `json:"run_id"`
 	ExperimentID  string           `json:"experiment_id"`
 	DocumentID    string           `json:"document_id"`
-	Status        string           `json:"status"`
+	Lifecycle     RunLifecycle     `json:"lifecycle"`
+	Timing        RunTiming        `json:"timing"`
 	BlockKind     string           `json:"block_kind"`
 	HandleInputs  map[string]any   `json:"handle_inputs"`
 	Artifact      *StepArtifactRef `json:"artifact,omitempty"`
@@ -1779,17 +1766,7 @@ type ExperimentJobResponse struct {
 	IsPlaceholder bool             `json:"is_placeholder"`
 }
 
-// ExperimentContent wraps the per-job execution payload for one run.
-type ExperimentContent struct {
-	Jobs []ExperimentJobResponse `json:"jobs"`
-}
-
-// ExperimentContentResponse is the GET /experiments/{id}/content envelope.
-type ExperimentContentResponse struct {
-	ExperimentID string            `json:"experiment_id"`
-	RunID        string            `json:"run_id"`
-	Content      ExperimentContent `json:"content"`
-}
+type ExperimentResultListResponse = PaginatedList[ExperimentResult]
 
 // EligibleBlockSummary describes a block that supports experiments.
 type EligibleBlockSummary struct {
@@ -1808,14 +1785,7 @@ type EligibleBlockListResponse struct {
 	Blocks []EligibleBlockSummary `json:"blocks"`
 }
 
-// RunBatchResponse is POST /experiments/run-batch.
-type RunBatchResponse struct {
-	BlockID         string                  `json:"block_id"`
-	ExperimentCount int                     `json:"experiment_count"`
-	Runs            []RunExperimentResponse `json:"runs"`
-}
-
-// ExperimentMetricsResponse is the GET /experiments/{id}/metrics payload.
+// ExperimentMetricsResponse is the GET /workflows/experiments/runs/{run_id}/metrics payload.
 //
 // Modelling the discriminated union (four "view" shapes plus two error
 // envelopes) here would couple the SDK to internal structural details. We
@@ -1833,8 +1803,8 @@ type CreateExperimentRequest struct {
 }
 
 // UpdateExperimentRequest is the body for PATCH /experiments/{id}. Only
-// fields you set are forwarded. Use NConsensusPtr to disambiguate the zero
-// value from "leave unchanged".
+// fields you set are forwarded. Use NConsensus to disambiguate the zero value
+// from "leave unchanged".
 type UpdateExperimentRequest struct {
 	Name             string                              `json:"-"`
 	NConsensus       *int                                `json:"-"`
@@ -1842,27 +1812,28 @@ type UpdateExperimentRequest struct {
 	Documents        []ExplicitExperimentDocumentRequest `json:"-"`
 }
 
-// RunExperimentOptions is retained for source compatibility.
-// The current API does not accept per-run experiment overrides.
-type RunExperimentOptions struct {
-	NConsensus      int
-	RetryFailedOnly bool
+type ListExperimentRunsParams struct {
+	WorkflowID    string
+	ExperimentID  string
+	BlockID       string
+	Status        string
+	Statuses      []string
+	ExcludeStatus string
+	TriggerType   string
+	TriggerTypes  []string
+	FromDate      string
+	ToDate        string
+	SortBy        string
+	Before        string
+	After         string
+	Limit         int
+	Order         string
 }
 
-// RunBatchExperimentsRequest is the body for POST /experiments/run-batch.
-type RunBatchExperimentsRequest struct {
-	WorkflowID string `json:"-"`
-	BlockID    string `json:"block_id"`
-	// NConsensus is retained for source compatibility.
-	// The current API does not accept per-run-batch consensus overrides.
-	NConsensus int `json:"-"`
-}
-
-// GetExperimentMetricsParams gathers the GET /experiments/{id}/metrics
+// GetExperimentMetricsParams gathers the GET /workflows/experiments/runs/{run_id}/metrics
 // query params.
 type GetExperimentMetricsParams struct {
 	View         string
-	RunID        string
 	DocumentID   string
 	TargetPath   string
 	IncludePrior *bool
@@ -1986,57 +1957,6 @@ func (s *WorkflowExperimentsService) Duplicate(ctx context.Context, workflowID, 
 	return &result, err
 }
 
-// Cancel stops the latest pending or running run for this experiment.
-// Returns 404 if no in-flight run exists.
-func (s *WorkflowExperimentsService) Cancel(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*CancelExperimentResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if experimentID == "" {
-		return nil, fmt.Errorf("retab: experimentID is required")
-	}
-	var result CancelExperimentResponse
-	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/cancel",
-		nil, map[string]any{}, &result, opts...)
-	return &result, err
-}
-
-// GetMetrics returns experiment metrics for one of the four views.
-//
-// The response is shape-agnostic: callers branch on result["view"] or
-// result["error"] to interpret the payload.
-func (s *WorkflowExperimentsService) GetMetrics(ctx context.Context, workflowID, experimentID string, params *GetExperimentMetricsParams, opts ...RequestOption) (ExperimentMetricsResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if experimentID == "" {
-		return nil, fmt.Errorf("retab: experimentID is required")
-	}
-	query := url.Values{}
-	view := "summary"
-	includePrior := true
-	if params != nil {
-		if params.View != "" {
-			view = params.View
-		}
-		addQuery(query, "run_id", params.RunID)
-		addQuery(query, "document_id", params.DocumentID)
-		addQuery(query, "target_path", params.TargetPath)
-		addQuery(query, "prior_run_id", params.PriorRunID)
-		if params.IncludePrior != nil {
-			includePrior = *params.IncludePrior
-		}
-	}
-	query.Set("view", view)
-	query.Set("include_prior", fmt.Sprintf("%t", includePrior))
-	var result ExperimentMetricsResponse
-	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/metrics",
-		query, nil, &result, opts...)
-	return result, err
-}
-
 // ListEligibleBlocks returns blocks in the workflow that support experiments,
 // with rolled-up counts of how many experiments are attached / drifted / stale.
 func (s *WorkflowExperimentsService) ListEligibleBlocks(ctx context.Context, workflowID string, opts ...RequestOption) (*EligibleBlockListResponse, error) {
@@ -2050,25 +1970,8 @@ func (s *WorkflowExperimentsService) ListEligibleBlocks(ctx context.Context, wor
 	return &result, err
 }
 
-// RunBatch triggers one new run for every experiment attached to a block.
-// Returns 404 if no experiments are attached to that block.
-func (s *WorkflowExperimentsService) RunBatch(ctx context.Context, request RunBatchExperimentsRequest, opts ...RequestOption) (*RunBatchResponse, error) {
-	if request.WorkflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if request.BlockID == "" {
-		return nil, fmt.Errorf("retab: blockID is required")
-	}
-	body := map[string]any{"block_id": request.BlockID}
-	var result RunBatchResponse
-	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/"+url.PathEscape(request.WorkflowID)+"/experiments/run-batch",
-		nil, body, &result, opts...)
-	return &result, err
-}
-
 // Create triggers an experiment run with the current draft block config.
-func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, experimentID string, params *RunExperimentOptions, opts ...RequestOption) (*RunExperimentResponse, error) {
+func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*ExperimentRun, error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
@@ -2076,63 +1979,108 @@ func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, 
 		return nil, fmt.Errorf("retab: experimentID is required")
 	}
 	body := map[string]any{}
-	var result RunExperimentResponse
+	var result ExperimentRun
 	err := s.client.do(ctx, http.MethodPost,
 		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs",
 		nil, body, &result, opts...)
 	return &result, err
 }
 
-// List returns the run history for one experiment, newest first.
-//
-// Returns a `PaginatedList[ExperimentRunSummary]` to match the canonical
-// Retab list envelope (`{data, list_metadata}`). Iterate over `result.Data`
-// for the run summaries.
-func (s *WorkflowExperimentRunsService) List(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*PaginatedList[ExperimentRunSummary], error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
+// List returns experiment runs, newest first by default.
+func (s *WorkflowExperimentRunsService) List(ctx context.Context, params *ListExperimentRunsParams, opts ...RequestOption) (*PaginatedList[ExperimentRun], error) {
+	query := url.Values{}
+	limit := 20
+	if params != nil {
+		if params.Limit != 0 {
+			limit = params.Limit
+		}
+		addQuery(query, "workflow_id", params.WorkflowID)
+		addQuery(query, "experiment_id", params.ExperimentID)
+		addQuery(query, "block_id", params.BlockID)
+		addQuery(query, "status", params.Status)
+		addCSVQuery(query, "statuses", params.Statuses)
+		addQuery(query, "exclude_status", params.ExcludeStatus)
+		addQuery(query, "trigger_type", params.TriggerType)
+		addCSVQuery(query, "trigger_types", params.TriggerTypes)
+		addQuery(query, "from_date", params.FromDate)
+		addQuery(query, "to_date", params.ToDate)
+		addQuery(query, "sort_by", params.SortBy)
+		addQuery(query, "before", params.Before)
+		addQuery(query, "after", params.After)
+		addQuery(query, "order", params.Order)
 	}
-	if experimentID == "" {
-		return nil, fmt.Errorf("retab: experimentID is required")
-	}
-	var result PaginatedList[ExperimentRunSummary]
-	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs",
-		nil, nil, &result, opts...)
+	query.Set("limit", fmt.Sprintf("%d", limit))
+	var result PaginatedList[ExperimentRun]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs", query, nil, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowExperimentRunsService) CancelDocument(ctx context.Context, workflowID, experimentID, documentID string, opts ...RequestOption) (*CancelExperimentResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
+func (s *WorkflowExperimentRunsService) Get(ctx context.Context, runID string, opts ...RequestOption) (*ExperimentRun, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
 	}
-	if experimentID == "" {
-		return nil, fmt.Errorf("retab: experimentID is required")
+	var result ExperimentRun
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowExperimentRunsService) Cancel(ctx context.Context, runID string, opts ...RequestOption) (*ExperimentRun, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	var result ExperimentRun
+	err := s.client.do(ctx, http.MethodPost, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/cancel", nil, map[string]any{}, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowExperimentRunResultsService) List(ctx context.Context, runID string, limit int, opts ...RequestOption) (*PaginatedList[ExperimentResult], error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	if limit == 0 {
+		limit = 20
+	}
+	query := url.Values{}
+	query.Set("limit", fmt.Sprintf("%d", limit))
+	var result PaginatedList[ExperimentResult]
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/results", query, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowExperimentRunResultsService) Get(ctx context.Context, runID string, documentID string, opts ...RequestOption) (*ExperimentResult, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
 	}
 	if documentID == "" {
 		return nil, fmt.Errorf("retab: documentID is required")
 	}
-	var result CancelExperimentResponse
-	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/documents/"+url.PathEscape(documentID)+"/cancel",
-		nil, map[string]any{}, &result, opts...)
+	var result ExperimentResult
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/results/"+url.PathEscape(documentID), nil, nil, &result, opts...)
 	return &result, err
 }
 
-// Get returns per-document execution content for one run.
-// runID defaults to the latest run when empty.
-func (s *WorkflowExperimentRunsService) Get(ctx context.Context, workflowID, experimentID, runID string, opts ...RequestOption) (*ExperimentContentResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
-	if experimentID == "" {
-		return nil, fmt.Errorf("retab: experimentID is required")
+// Get returns experiment metrics for one of the run-scoped views.
+func (s *WorkflowExperimentRunMetricsService) Get(ctx context.Context, runID string, params *GetExperimentMetricsParams, opts ...RequestOption) (ExperimentMetricsResponse, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
 	}
 	query := url.Values{}
-	addQuery(query, "run_id", runID)
-	var result ExperimentContentResponse
-	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/content",
-		query, nil, &result, opts...)
-	return &result, err
+	view := "summary"
+	includePrior := true
+	if params != nil {
+		if params.View != "" {
+			view = params.View
+		}
+		addQuery(query, "document_id", params.DocumentID)
+		addQuery(query, "target_path", params.TargetPath)
+		addQuery(query, "prior_run_id", params.PriorRunID)
+		if params.IncludePrior != nil {
+			includePrior = *params.IncludePrior
+		}
+	}
+	query.Set("view", view)
+	query.Set("include_prior", fmt.Sprintf("%t", includePrior))
+	var result ExperimentMetricsResponse
+	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/metrics", query, nil, &result, opts...)
+	return result, err
 }

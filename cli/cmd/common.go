@@ -121,6 +121,113 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
 }
 
+func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query url.Values, body any) (any, error) {
+	flagKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
+	flagBaseURL, _ := cmd.Root().PersistentFlags().GetString("base-url")
+
+	apiKey := flagKey
+	baseURL := flagBaseURL
+	if apiKey == "" {
+		apiKey = os.Getenv("RETAB_API_KEY")
+	}
+	if baseURL == "" {
+		baseURL = os.Getenv("RETAB_BASE_URL")
+	}
+
+	cfg, _ := loadConfig()
+	if baseURL == "" {
+		baseURL = cfg.BaseURL
+	}
+	if baseURL == "" {
+		baseURL = "https://api.retab.com/v1"
+	}
+
+	var bearerToken string
+	if apiKey == "" {
+		if cfg.OAuth != nil && cfg.OAuth.AccessToken != "" {
+			token, err := makeOAuthTokenProvider(cfg.OAuth)(cmd.Context())
+			if err != nil {
+				return nil, err
+			}
+			bearerToken = token
+		} else if cfg.APIKey != "" {
+			apiKey = cfg.APIKey
+		}
+	}
+	if apiKey == "" && bearerToken == "" {
+		return nil, fmt.Errorf("no credentials configured. Run `retab auth login` or set RETAB_API_KEY")
+	}
+
+	if body == nil && method != http.MethodGet {
+		body = map[string]any{}
+	}
+	var reader io.Reader
+	if body != nil {
+		bodyBytes, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("encode request body: %w", err)
+		}
+		reader = bytes.NewReader(bodyBytes)
+	}
+
+	base, err := url.Parse(strings.TrimRight(baseURL, "/") + "/")
+	if err != nil {
+		return nil, fmt.Errorf("invalid base URL: %w", err)
+	}
+	relative, err := url.Parse(strings.TrimLeft(requestPath, "/"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid request path: %w", err)
+	}
+	requestURL := base.ResolveReference(relative)
+	if query != nil {
+		requestURL.RawQuery = query.Encode()
+	}
+
+	ctx, cancel := ctxFor(cmd)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, method, requestURL.String(), reader)
+	if err != nil {
+		return nil, err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	req.Header.Set("Accept", "application/json")
+	if bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+bearerToken)
+	} else {
+		req.Header.Set("Api-Key", apiKey)
+	}
+
+	httpClient := http.DefaultClient
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		httpClient = &http.Client{
+			Timeout:   60 * time.Second,
+			Transport: &debugTransport{wrapped: http.DefaultTransport},
+		}
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("%s %s failed with status %d: %s", method, requestURL.String(), resp.StatusCode, strings.TrimSpace(string(respBody)))
+	}
+	if len(strings.TrimSpace(string(respBody))) == 0 {
+		return nil, nil
+	}
+	var result any
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
+	return result, nil
+}
+
 // makeOAuthTokenProvider returns a closure that yields a current access
 // token on demand, refreshing transparently as expiry approaches. A
 // successful refresh is persisted to disk (atomically — see saveConfig)
@@ -582,6 +689,14 @@ func collectListParams(cmd *cobra.Command) retab.ListParams {
 		}
 	}
 	return params
+}
+
+func getIntFlagOrDefault(cmd *cobra.Command, name string, defaultValue int) int {
+	value, _ := cmd.Flags().GetInt(name)
+	if value > 0 {
+		return value
+	}
+	return defaultValue
 }
 
 // addDocumentFlags adds the mutually-exclusive document source flags shared

@@ -29,6 +29,16 @@ class MockClient extends AbstractClient {
 }
 
 const NOW = "2026-05-01T14:30:00Z";
+const WORKFLOW_REF = {
+    workflow_id: "wf_abc123",
+    version_id: "draft_1",
+    name_at_run_time: "Q1 workflow",
+    requested_version: "draft",
+};
+const TRIGGER = { type: "api" };
+const PENDING = { status: "pending" };
+const COMPLETED = { status: "completed" };
+const TIMING = { created_at: NOW, started_at: NOW, completed_at: NOW };
 
 const TEST_RESPONSE = {
     id: "wfnodetest_abc",
@@ -53,38 +63,30 @@ const TEST_RESPONSE = {
 };
 
 const RUN_RESPONSE = {
-    id: "wfnodetestrun_abc",
+    id: "wftestrun_q1z2",
+    workflow: WORKFLOW_REF,
+    trigger: TRIGGER,
+    lifecycle: COMPLETED,
+    timing: TIMING,
+    target: { type: "block", block_id: "block_extract" },
+    test_id: null,
+    total_tests: 1,
+    counts: { passed: 1 },
+};
+
+const RESULT_RESPONSE = {
+    id: "wfresult_abc",
+    run_id: "wftestrun_q1z2",
     test_id: "wfnodetest_abc",
-    workflow_id: "wf_abc123",
+    lifecycle: COMPLETED,
+    timing: TIMING,
     target: { type: "block", block_id: "block_extract" },
     source: { type: "manual", handle_inputs: {} },
-    status: "passed",
     execution_fingerprint: "f1",
-    started_at: NOW,
-    completed_at: NOW,
-    duration_ms: 1234,
     outputs: { "output-json-0": { total: 1234.56 } },
     warnings: [],
     skipped: false,
-};
-
-const EXECUTE_RESPONSE = {
-    run_id: "wftestrun_q1z2",
-    status: "queued",
-    workflow_id: "wf_abc123",
-    target: { type: "block", block_id: "block_extract" },
-    test_id: null,
-    total_tests: 4,
-    counts: {
-        queued: 4,
-        running: 0,
-        passed: 0,
-        failed: 0,
-        blocked: 0,
-        error: 0,
-        cancelled: 0,
-    },
-    created_at: NOW,
+    verdict: { status: "passed" },
 };
 
 describe("workflows.tests wiring", () => {
@@ -284,12 +286,12 @@ describe("workflows.tests.update()", () => {
     });
 });
 
-describe("workflows.tests.execute()", () => {
-    test("execute({testId}) posts only test_id", async () => {
-        const mockClient = new MockClient(EXECUTE_RESPONSE);
+describe("workflows.tests.runs.create()", () => {
+    test("runs.create({testId}) posts only test_id", async () => {
+        const mockClient = new MockClient({ ...RUN_RESPONSE, lifecycle: PENDING });
         const tests = new APIWorkflowTests(mockClient);
 
-        const response = await tests.execute({
+        const response = await tests.runs.create({
             workflowId: "wf_abc123",
             testId: "wfnodetest_abc",
         });
@@ -299,15 +301,15 @@ describe("workflows.tests.execute()", () => {
             method: "POST",
             body: { test_id: "wfnodetest_abc" },
         });
-        expect(response.status).toBe("queued");
-        expect(response.run_id).toBe("wftestrun_q1z2");
+        expect(response.lifecycle.status).toBe("pending");
+        expect(response.id).toBe("wftestrun_q1z2");
     });
 
-    test("execute({target, nConsensus}) posts target + n_consensus snake_case", async () => {
-        const mockClient = new MockClient(EXECUTE_RESPONSE);
+    test("runs.create({target, nConsensus}) posts target + n_consensus snake_case", async () => {
+        const mockClient = new MockClient({ ...RUN_RESPONSE, lifecycle: PENDING });
         const tests = new APIWorkflowTests(mockClient);
 
-        await tests.execute({
+        await tests.runs.create({
             workflowId: "wf_abc123",
             target: { type: "block", block_id: "block_extract" },
             nConsensus: 5,
@@ -321,11 +323,11 @@ describe("workflows.tests.execute()", () => {
         });
     });
 
-    test("execute({}) posts an empty body to run every test in the workflow", async () => {
-        const mockClient = new MockClient(EXECUTE_RESPONSE);
+    test("runs.create({}) posts an empty body to run every test in the workflow", async () => {
+        const mockClient = new MockClient({ ...RUN_RESPONSE, lifecycle: PENDING });
         const tests = new APIWorkflowTests(mockClient);
 
-        await tests.execute({ workflowId: "wf_abc123" });
+        await tests.runs.create({ workflowId: "wf_abc123" });
 
         const body = (mockClient.lastFetchParams as { body: Record<string, unknown> }).body;
         expect(body).toEqual({});
@@ -333,7 +335,7 @@ describe("workflows.tests.execute()", () => {
 });
 
 describe("workflows.tests.runs", () => {
-    test("runs.list() uses the test runs route", async () => {
+    test("runs.list() uses the canonical runs route", async () => {
         const mockClient = new MockClient({
             data: [],
             list_metadata: { before: null, after: null },
@@ -347,73 +349,90 @@ describe("workflows.tests.runs", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/tests/wfnodetest_abc/runs",
+            url: "/workflows/tests/runs",
             method: "GET",
-            params: { limit: 10 },
+            params: {
+                limit: 10,
+                workflow_id: "wf_abc123",
+                test_id: "wfnodetest_abc",
+            },
         });
         expect(result.data).toEqual([]);
         expect(result.list_metadata.before).toBeNull();
         expect(result.list_metadata.after).toBeNull();
     });
 
-    test("runs.get() uses the run detail route and parses `outputs`", async () => {
+    test("runs.get() uses the run-id-first route", async () => {
         const mockClient = new MockClient(RUN_RESPONSE);
         const tests = new APIWorkflowTests(mockClient);
 
         const run = await tests.runs.get({
-            workflowId: "wf_abc123",
-            testId: "wfnodetest_abc",
-            runId: "wfnodetestrun_abc",
-        });
-
-        expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/tests/wfnodetest_abc/runs/wfnodetestrun_abc",
-            method: "GET",
-        });
-        // The renamed `outputs` field (formerly `handle_outputs`) parses cleanly.
-        expect(run.outputs).toEqual({ "output-json-0": { total: 1234.56 } });
-        expect(run.status).toBe("passed");
-    });
-
-    test("runs.getExecution() uses the parent execution route", async () => {
-        const mockClient = new MockClient(EXECUTE_RESPONSE);
-        const tests = new APIWorkflowTests(mockClient);
-
-        const run = await tests.runs.getExecution({
-            workflowId: "wf_abc123",
             runId: "wftestrun_q1z2",
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/tests/runs/wftestrun_q1z2",
+            url: "/workflows/tests/runs/wftestrun_q1z2",
             method: "GET",
         });
-        expect(run.run_id).toBe("wftestrun_q1z2");
+        expect(run.lifecycle.status).toBe("completed");
     });
 
-    test("runs.results() uses the parent execution results route", async () => {
+    test("runs.cancel() uses the run-id-first route", async () => {
+        const mockClient = new MockClient({ ...RUN_RESPONSE, lifecycle: { status: "cancelled" } });
+        const tests = new APIWorkflowTests(mockClient);
+
+        const run = await tests.runs.cancel({
+            runId: "wftestrun_q1z2",
+        });
+
+        expect(mockClient.lastFetchParams).toMatchObject({
+            url: "/workflows/tests/runs/wftestrun_q1z2/cancel",
+            method: "POST",
+        });
+        expect(run.lifecycle.status).toBe("cancelled");
+    });
+
+    test("runs.results.list() uses the parent execution results route", async () => {
         const mockClient = new MockClient({
-            run_id: "wftestrun_q1z2",
-            status: "completed",
-            workflow_id: "wf_abc123",
-            target: { type: "block", block_id: "block_extract" },
-            test_id: null,
-            total_tests: 1,
-            counts: { passed: 1 },
-            results: [RUN_RESPONSE],
+            data: [RESULT_RESPONSE],
+            list_metadata: { before: null, after: null },
         });
         const tests = new APIWorkflowTests(mockClient);
 
-        const result = await tests.runs.results({
-            workflowId: "wf_abc123",
+        const result = await tests.runs.results.list({
             runId: "wftestrun_q1z2",
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/tests/runs/wftestrun_q1z2/results",
+            url: "/workflows/tests/runs/wftestrun_q1z2/results",
             method: "GET",
         });
-        expect(result.results[0].id).toBe("wfnodetestrun_abc");
+        expect(result.data[0]?.test_id).toBe("wfnodetest_abc");
+        expect(result.data[0]?.outputs).toEqual({ "output-json-0": { total: 1234.56 } });
+    });
+
+    test("runs.results.get() uses test_id as the child key", async () => {
+        const mockClient = new MockClient(RESULT_RESPONSE);
+        const tests = new APIWorkflowTests(mockClient);
+
+        const result = await tests.runs.results.get({
+            runId: "wftestrun_q1z2",
+            testId: "wfnodetest_abc",
+        });
+
+        expect(mockClient.lastFetchParams).toMatchObject({
+            url: "/workflows/tests/runs/wftestrun_q1z2/results/wfnodetest_abc",
+            method: "GET",
+        });
+        expect(result.test_id).toBe("wfnodetest_abc");
+    });
+
+    test("legacy execute and scoped run aliases are not exposed", () => {
+        const tests = new APIWorkflowTests(new MockClient({}));
+        expect("execute" in tests).toBe(false);
+        expect("getExecution" in tests.runs).toBe(false);
+        expect("get_execution" in tests.runs).toBe(false);
+        expect(typeof tests.runs.results).toBe("object");
     });
 });
 
@@ -464,7 +483,7 @@ describe("status enum coverage", () => {
 
 
 describe("workflows.tests parity bridge installation", () => {
-    test("APIWorkflowTests has all 6 prepare_* aliases installed at runtime", () => {
+    test("APIWorkflowTests has canonical prepare_* aliases installed at runtime", () => {
         // The parity bridge auto-installs `prepare_create`, `prepare_get`, etc.
         // from `PYTHON_PUBLIC_PREPARE_METHODS` in `src/client.ts`. A typo in
         // either the registry key or the method name would silently disable
@@ -481,19 +500,20 @@ describe("workflows.tests parity bridge installation", () => {
             "prepare_list",
             "prepare_update",
             "prepare_delete",
-            "prepare_execute",
         ]) {
             expect(typeof tests[name]).toBe("function");
         }
     });
 
-    test("APIWorkflowTestRuns has both prepare_* aliases installed", () => {
+    test("APIWorkflowTestRuns has canonical prepare_* aliases installed", () => {
         const runs = new APIWorkflowTestRuns(new MockClient({})) as unknown as Record<
             string,
             unknown
         >;
+        expect(typeof runs.prepare_create).toBe("function");
         expect(typeof runs.prepare_list).toBe("function");
         expect(typeof runs.prepare_get).toBe("function");
+        expect(typeof runs.prepare_cancel).toBe("function");
     });
 });
 
@@ -521,12 +541,11 @@ describe("workflows.tests response parsing edge cases", () => {
         const populatedRunsResponse = {
             data: [
                 RUN_RESPONSE,
-                { ...RUN_RESPONSE, id: "wfnodetestrun_b", status: "blocked" },
+                { ...RUN_RESPONSE, id: "wftestrun_b", lifecycle: { status: "running" } },
                 {
                     ...RUN_RESPONSE,
-                    id: "wfnodetestrun_c",
-                    status: "cancelled",
-                    outputs: null,
+                    id: "wftestrun_c",
+                    lifecycle: { status: "cancelled" },
                 },
             ],
             list_metadata: { before: null, after: null },
@@ -540,13 +559,9 @@ describe("workflows.tests response parsing edge cases", () => {
         });
 
         expect(result.data).toHaveLength(3);
-        expect(result.data[0]?.status).toBe("passed");
-        expect(result.data[1]?.status).toBe("blocked");
-        expect(result.data[2]?.status).toBe("cancelled");
-        // The renamed `outputs` field (formerly `handle_outputs`) parses on
-        // the populated record and tolerates `null` on the cancelled one.
-        expect(result.data[0]?.outputs).toEqual({ "output-json-0": { total: 1234.56 } });
-        expect(result.data[2]?.outputs).toBeNull();
+        expect(result.data[0]?.lifecycle.status).toBe("completed");
+        expect(result.data[1]?.lifecycle.status).toBe("running");
+        expect(result.data[2]?.lifecycle.status).toBe("cancelled");
     });
 });
 

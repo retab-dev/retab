@@ -53,11 +53,17 @@ func TestWorkflowExperimentsListUsesPaginatedEnvelope(t *testing.T) {
 	}
 }
 
-// TestWorkflowExperimentRunsListUsesPaginatedEnvelope pins the same
-// canonical envelope for `GET /v1/workflows/{wf}/experiments/{id}/runs`. The
-// route used to ship `{"runs": [...]}`.
+// TestWorkflowExperimentRunsListUsesPaginatedEnvelope pins the canonical
+// envelope for `GET /v1/workflows/experiments/runs`. The route used to ship
+// scoped run lists.
 func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/experiments/runs" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if r.URL.Query().Get("workflow_id") != "wf_1" || r.URL.Query().Get("experiment_id") != "exp_1" {
+			t.Fatalf("query = %s", r.URL.RawQuery)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
@@ -65,10 +71,9 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 					"id":                     "exprun_1",
 					"definition_fingerprint": "fp",
 					"documents_fingerprint":  "fp_doc",
-					"status":                 "completed",
+					"lifecycle":              map[string]any{"status": "completed"},
 					"block_kind":             "extract",
 					"n_consensus":            5,
-					"created_at":             "2026-04-14T00:00:00Z",
 				},
 			},
 			"list_metadata": map[string]any{"before": nil, "after": nil},
@@ -77,7 +82,10 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	page, err := client.Workflows.Experiments.Runs.List(context.Background(), "wf_1", "exp_1")
+	page, err := client.Workflows.Experiments.Runs.List(context.Background(), &ListExperimentRunsParams{
+		WorkflowID:   "wf_1",
+		ExperimentID: "exp_1",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,13 +125,26 @@ func TestWorkflowTestsListUsesPaginatedEnvelope(t *testing.T) {
 }
 
 // TestWorkflowTestRunsListUsesPaginatedEnvelope pins the canonical envelope
-// for `GET /v1/workflows/{wf}/tests/{id}/runs` (was `{"runs": [...]}`).
+// for `GET /v1/workflows/tests/runs`.
 func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/tests/runs" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if r.URL.Query().Get("workflow_id") != "wf_1" || r.URL.Query().Get("test_id") != "wfnodetest_1" {
+			t.Fatalf("query = %s", r.URL.RawQuery)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
-				{"id": "wfnodetestrun_1", "test_id": "wfnodetest_1"},
+				{
+					"id":        "wfnodetestrun_1",
+					"workflow":  map[string]any{"workflow_id": "wf_1", "version_id": "draft_1", "name_at_run_time": "Workflow"},
+					"trigger":   map[string]any{"type": "api"},
+					"lifecycle": map[string]any{"status": "completed"},
+					"timing":    map[string]any{"created_at": "2026-05-18T10:00:00Z", "started_at": "2026-05-18T10:00:01Z"},
+					"test_id":   "wfnodetest_1",
+				},
 			},
 			"list_metadata": map[string]any{"before": nil, "after": nil},
 		})
@@ -131,28 +152,34 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	page, err := client.Workflows.Tests.Runs.List(context.Background(), "wf_1", "wfnodetest_1", 10)
+	page, err := client.Workflows.Tests.Runs.List(context.Background(), ListWorkflowTestRunsParams{
+		WorkflowID: "wf_1",
+		TestID:     "wfnodetest_1",
+		Limit:      10,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page.Data) != 1 {
 		t.Fatalf("page.Data length = %d, want 1", len(page.Data))
 	}
-	if id, _ := page.Data[0]["id"].(string); id != "wfnodetestrun_1" {
-		t.Fatalf("page.Data[0][id] = %v, want wfnodetestrun_1", page.Data[0]["id"])
+	if page.Data[0].ID != "wfnodetestrun_1" {
+		t.Fatalf("page.Data[0].ID = %q, want wfnodetestrun_1", page.Data[0].ID)
 	}
 }
 
-func TestWorkflowTestsExecuteDecodesFullQueuedResponse(t *testing.T) {
+func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_1/tests/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"run_id":      "wftestrun_1",
-			"status":      "queued",
-			"workflow_id": "wf_1",
+			"id":          "wftestrun_1",
+			"workflow":    map[string]any{"workflow_id": "wf_1", "version_id": "draft_1", "name_at_run_time": "Workflow"},
+			"trigger":     map[string]any{"type": "api"},
+			"lifecycle":   map[string]any{"status": "pending"},
+			"timing":      map[string]any{"created_at": "2026-05-18T10:00:00Z", "started_at": nil},
 			"test_id":     "wfnodetest_1",
 			"total_tests": 1,
 			"target": map[string]any{
@@ -164,7 +191,7 @@ func TestWorkflowTestsExecuteDecodesFullQueuedResponse(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	result, err := client.Workflows.Tests.Execute(context.Background(), ExecuteWorkflowTestsRequest{
+	result, err := client.Workflows.Tests.Runs.Create(context.Background(), CreateWorkflowTestRunRequest{
 		WorkflowID: "wf_1",
 		TestID:     "wfnodetest_1",
 		NConsensus: 3,
@@ -172,13 +199,16 @@ func TestWorkflowTestsExecuteDecodesFullQueuedResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Status != "queued" || result.WorkflowID != "wf_1" || result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
-		t.Fatalf("execute response lost fields: %#v", result)
+	if result.Lifecycle.Status != "pending" || result.Workflow.WorkflowID != "wf_1" || result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
+		t.Fatalf("create response lost fields: %#v", result)
 	}
-	if result.RunID != "wftestrun_1" {
-		t.Fatalf("run id = %q, want wftestrun_1", result.RunID)
+	if result.ID != "wftestrun_1" {
+		t.Fatalf("run id = %q, want wftestrun_1", result.ID)
 	}
 	if result.Target == nil || (*result.Target)["block_id"] != "block_transform" {
 		t.Fatalf("target = %#v, want block_transform", result.Target)
+	}
+	if result.Timing.StartedAt != nil {
+		t.Fatalf("started_at = %v, want nil for pending run", result.Timing.StartedAt)
 	}
 }

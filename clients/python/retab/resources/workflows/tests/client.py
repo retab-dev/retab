@@ -14,7 +14,7 @@ instances.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Mapping, Sequence, Union
 
 from pydantic import TypeAdapter
 
@@ -23,13 +23,12 @@ from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows.tests import (
     AssertionSpec,
-    ExecuteWorkflowTestsResponse,
     ManualWorkflowTestSource,
     RunStepWorkflowTestSource,
     WorkflowTest,
     WorkflowTestBlockTarget,
-    WorkflowTestExecutionRunResults,
-    WorkflowTestRunRecord,
+    WorkflowTestResult,
+    WorkflowTestRun,
     WorkflowTestSource,
 )
 
@@ -150,7 +149,7 @@ class WorkflowTestsMixin:
             url=f"/workflows/{workflow_id}/tests/{test_id}",
         )
 
-    def prepare_execute(
+    def prepare_create_run(
         self,
         workflow_id: str,
         *,
@@ -173,113 +172,281 @@ class WorkflowTestsMixin:
 
 
 class WorkflowTestRunsMixin:
-    """Mixin for the nested runs sub-resource."""
+    """Mixin for canonical workflow-test run lifecycle routes."""
 
     def prepare_list(
         self,
-        workflow_id: str,
-        test_id: str,
         *,
+        workflow_id: str | None = None,
+        test_id: str | None = None,
+        target_block_id: str | None = None,
+        status: str | None = None,
+        statuses: Sequence[str] | str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        trigger_types: Sequence[str] | str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = None,
+        fields: Sequence[str] | str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 20,
+        order: str | None = None,
     ) -> PreparedRequest:
+        params: Dict[str, Any] = {"limit": limit}
+        for key, value in {
+            "workflow_id": workflow_id,
+            "test_id": test_id,
+            "target_block_id": target_block_id,
+            "status": status,
+            "statuses": _join_csv(statuses),
+            "exclude_status": exclude_status,
+            "trigger_type": trigger_type,
+            "trigger_types": _join_csv(trigger_types),
+            "from_date": from_date,
+            "to_date": to_date,
+            "sort_by": sort_by,
+            "fields": _join_csv(fields),
+            "before": before,
+            "after": after,
+            "order": order,
+        }.items():
+            if value is not None:
+                params[key] = value
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/tests/{test_id}/runs",
+            url="/workflows/tests/runs",
+            params=params,
+        )
+
+    def prepare_create(
+        self,
+        workflow_id: str,
+        *,
+        test_id: str | None = None,
+        target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
+        n_consensus: int | None = None,
+    ) -> PreparedRequest:
+        return WorkflowTestsMixin.prepare_create_run(
+            self,
+            workflow_id,
+            test_id=test_id,
+            target=target,
+            n_consensus=n_consensus,
+        )
+
+    def prepare_get(self, run_id: str) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/tests/runs/{run_id}",
+        )
+
+    def prepare_cancel(self, run_id: str) -> PreparedRequest:
+        return PreparedRequest(
+            method="POST",
+            url=f"/workflows/tests/runs/{run_id}/cancel",
+            data={},
+        )
+
+
+class WorkflowTestRunResultsMixin:
+    """Mixin for child test results nested under a parent test run."""
+
+    def prepare_list(self, run_id: str, *, limit: int = 20) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/tests/runs/{run_id}/results",
             params={"limit": limit},
         )
 
-    def prepare_get(
-        self,
-        workflow_id: str,
-        test_id: str,
-        run_id: str,
-    ) -> PreparedRequest:
+    def prepare_get(self, run_id: str, test_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/tests/{test_id}/runs/{run_id}",
+            url=f"/workflows/tests/runs/{run_id}/results/{test_id}",
         )
 
-    def prepare_get_execution(self, workflow_id: str, run_id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/{workflow_id}/tests/runs/{run_id}",
-        )
 
-    def prepare_results(self, workflow_id: str, run_id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/{workflow_id}/tests/runs/{run_id}/results",
-        )
+def _join_csv(value: Sequence[str] | str | None) -> str | None:
+    if value is None or isinstance(value, str):
+        return value
+    return ",".join(value)
+
+
+class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
+    def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[WorkflowTestResult]:
+        request = self.prepare_list(run_id, limit=limit)
+        response = self._client._prepared_request(request)
+        return PaginatedList[WorkflowTestResult].model_validate(response)
+
+    def get(self, run_id: str, test_id: str) -> WorkflowTestResult:
+        request = self.prepare_get(run_id, test_id)
+        response = self._client._prepared_request(request)
+        return WorkflowTestResult.model_validate(response)
+
+
+class AsyncWorkflowTestRunResults(AsyncAPIResource, WorkflowTestRunResultsMixin):
+    async def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[WorkflowTestResult]:
+        request = self.prepare_list(run_id, limit=limit)
+        response = await self._client._prepared_request(request)
+        return PaginatedList[WorkflowTestResult].model_validate(response)
+
+    async def get(self, run_id: str, test_id: str) -> WorkflowTestResult:
+        request = self.prepare_get(run_id, test_id)
+        response = await self._client._prepared_request(request)
+        return WorkflowTestResult.model_validate(response)
 
 
 class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
-    """Synchronous read-only access to a test's execution history."""
+    """Synchronous access to workflow-test run lifecycle and results."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.results = WorkflowTestRunResults(client=self._client)
+
+    def create(
+        self,
+        workflow_id: str,
+        *,
+        test_id: str | None = None,
+        target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
+        n_consensus: int | None = None,
+    ) -> WorkflowTestRun:
+        request = self.prepare_create(
+            workflow_id,
+            test_id=test_id,
+            target=target,
+            n_consensus=n_consensus,
+        )
+        response = self._client._prepared_request(request)
+        return WorkflowTestRun.model_validate(response)
 
     def list(
         self,
-        workflow_id: str,
-        test_id: str,
         *,
+        workflow_id: str | None = None,
+        test_id: str | None = None,
+        target_block_id: str | None = None,
+        status: str | None = None,
+        statuses: Sequence[str] | str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        trigger_types: Sequence[str] | str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = None,
+        fields: Sequence[str] | str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 20,
-    ) -> PaginatedList[WorkflowTestRunRecord]:
-        request = self.prepare_list(workflow_id, test_id, limit=limit)
+        order: str | None = None,
+    ) -> PaginatedList[WorkflowTestRun]:
+        request = self.prepare_list(
+            workflow_id=workflow_id,
+            test_id=test_id,
+            target_block_id=target_block_id,
+            status=status,
+            statuses=statuses,
+            exclude_status=exclude_status,
+            trigger_type=trigger_type,
+            trigger_types=trigger_types,
+            from_date=from_date,
+            to_date=to_date,
+            sort_by=sort_by,
+            fields=fields,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+        )
         response = self._client._prepared_request(request)
-        return PaginatedList[WorkflowTestRunRecord].model_validate(response)
+        return PaginatedList[WorkflowTestRun].model_validate(response)
 
-    def get(
-        self,
-        workflow_id: str,
-        test_id: str,
-        run_id: str,
-    ) -> WorkflowTestRunRecord:
-        request = self.prepare_get(workflow_id, test_id, run_id)
+    def get(self, run_id: str) -> WorkflowTestRun:
+        request = self.prepare_get(run_id)
         response = self._client._prepared_request(request)
-        return WorkflowTestRunRecord.model_validate(response)
+        return WorkflowTestRun.model_validate(response)
 
-    def get_execution(self, workflow_id: str, run_id: str) -> ExecuteWorkflowTestsResponse:
-        request = self.prepare_get_execution(workflow_id, run_id)
+    def cancel(self, run_id: str) -> WorkflowTestRun:
+        request = self.prepare_cancel(run_id)
         response = self._client._prepared_request(request)
-        return ExecuteWorkflowTestsResponse.model_validate(response)
-
-    def results(self, workflow_id: str, run_id: str) -> WorkflowTestExecutionRunResults:
-        request = self.prepare_results(workflow_id, run_id)
-        response = self._client._prepared_request(request)
-        return WorkflowTestExecutionRunResults.model_validate(response)
+        return WorkflowTestRun.model_validate(response)
 
 
 class AsyncWorkflowTestRuns(AsyncAPIResource, WorkflowTestRunsMixin):
-    """Asynchronous read-only access to a test's execution history."""
+    """Asynchronous access to workflow-test run lifecycle and results."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.results = AsyncWorkflowTestRunResults(client=self._client)
+
+    async def create(
+        self,
+        workflow_id: str,
+        *,
+        test_id: str | None = None,
+        target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
+        n_consensus: int | None = None,
+    ) -> WorkflowTestRun:
+        request = self.prepare_create(
+            workflow_id,
+            test_id=test_id,
+            target=target,
+            n_consensus=n_consensus,
+        )
+        response = await self._client._prepared_request(request)
+        return WorkflowTestRun.model_validate(response)
 
     async def list(
         self,
-        workflow_id: str,
-        test_id: str,
         *,
+        workflow_id: str | None = None,
+        test_id: str | None = None,
+        target_block_id: str | None = None,
+        status: str | None = None,
+        statuses: Sequence[str] | str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        trigger_types: Sequence[str] | str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = None,
+        fields: Sequence[str] | str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 20,
-    ) -> PaginatedList[WorkflowTestRunRecord]:
-        request = self.prepare_list(workflow_id, test_id, limit=limit)
+        order: str | None = None,
+    ) -> PaginatedList[WorkflowTestRun]:
+        request = self.prepare_list(
+            workflow_id=workflow_id,
+            test_id=test_id,
+            target_block_id=target_block_id,
+            status=status,
+            statuses=statuses,
+            exclude_status=exclude_status,
+            trigger_type=trigger_type,
+            trigger_types=trigger_types,
+            from_date=from_date,
+            to_date=to_date,
+            sort_by=sort_by,
+            fields=fields,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+        )
         response = await self._client._prepared_request(request)
-        return PaginatedList[WorkflowTestRunRecord].model_validate(response)
+        return PaginatedList[WorkflowTestRun].model_validate(response)
 
-    async def get(
-        self,
-        workflow_id: str,
-        test_id: str,
-        run_id: str,
-    ) -> WorkflowTestRunRecord:
-        request = self.prepare_get(workflow_id, test_id, run_id)
+    async def get(self, run_id: str) -> WorkflowTestRun:
+        request = self.prepare_get(run_id)
         response = await self._client._prepared_request(request)
-        return WorkflowTestRunRecord.model_validate(response)
+        return WorkflowTestRun.model_validate(response)
 
-    async def get_execution(self, workflow_id: str, run_id: str) -> ExecuteWorkflowTestsResponse:
-        request = self.prepare_get_execution(workflow_id, run_id)
+    async def cancel(self, run_id: str) -> WorkflowTestRun:
+        request = self.prepare_cancel(run_id)
         response = await self._client._prepared_request(request)
-        return ExecuteWorkflowTestsResponse.model_validate(response)
-
-    async def results(self, workflow_id: str, run_id: str) -> WorkflowTestExecutionRunResults:
-        request = self.prepare_results(workflow_id, run_id)
-        response = await self._client._prepared_request(request)
-        return WorkflowTestExecutionRunResults.model_validate(response)
+        return WorkflowTestRun.model_validate(response)
 
 
 class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
@@ -304,8 +471,8 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         ... )
         >>>
         >>> # Run all tests for the workflow asynchronously.
-        >>> run = client.workflows.tests.execute(workflow_id="wf_abc123")
-        >>> print(run.run_id, run.status)
+        >>> run = client.workflows.tests.runs.create("wf_abc123")
+        >>> print(run.id, run.lifecycle.status)
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -383,35 +550,6 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         request = self.prepare_delete(workflow_id, test_id)
         self._client._prepared_request(request)
 
-    def execute(
-        self,
-        workflow_id: str,
-        *,
-        test_id: str | None = None,
-        target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
-        n_consensus: int | None = None,
-    ) -> ExecuteWorkflowTestsResponse:
-        """Run one workflow test, all tests for a single block, or every test in a workflow.
-
-        Provide EXACTLY ONE of:
-          - ``test_id`` — run a single test by id.
-          - ``target`` — run all tests for a single block.
-          - neither — run every test in the workflow.
-
-        ``n_consensus`` is optional; allowed values are 3, 5, or 7.
-
-        Execution is asynchronous: the response carries a ``run_id``.
-        Poll the workflow-test run by ``run_id`` for status and results.
-        """
-        request = self.prepare_execute(
-            workflow_id,
-            test_id=test_id,
-            target=target,
-            n_consensus=n_consensus,
-        )
-        response = self._client._prepared_request(request)
-        return ExecuteWorkflowTestsResponse.model_validate(response)
-
 class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
     """Workflow tests API client (asynchronous)."""
 
@@ -480,20 +618,3 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
     async def delete(self, workflow_id: str, test_id: str) -> None:
         request = self.prepare_delete(workflow_id, test_id)
         await self._client._prepared_request(request)
-
-    async def execute(
-        self,
-        workflow_id: str,
-        *,
-        test_id: str | None = None,
-        target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
-        n_consensus: int | None = None,
-    ) -> ExecuteWorkflowTestsResponse:
-        request = self.prepare_execute(
-            workflow_id,
-            test_id=test_id,
-            target=target,
-            n_consensus=n_consensus,
-        )
-        response = await self._client._prepared_request(request)
-        return ExecuteWorkflowTestsResponse.model_validate(response)

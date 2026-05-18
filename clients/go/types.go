@@ -200,6 +200,7 @@ type RunTiming struct {
 	CreatedAt                 *time.Time `json:"created_at,omitempty"`
 	StartedAt                 *time.Time `json:"started_at,omitempty"`
 	CompletedAt               *time.Time `json:"completed_at,omitempty"`
+	DurationMs                *int       `json:"duration_ms,omitempty"`
 	HumanWaitingStartedAt     *time.Time `json:"human_waiting_started_at,omitempty"`
 	AccumulatedHumanWaitingMS int        `json:"accumulated_human_waiting_ms,omitempty"`
 }

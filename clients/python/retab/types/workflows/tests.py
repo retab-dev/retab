@@ -11,6 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
+from retab.types.workflows.model import RunLifecycle, RunTiming, Trigger, WorkflowSnapshotRef
 
 # ---------------------------------------------------------------------------
 # Status enums
@@ -40,9 +41,6 @@ WorkflowTestRunStatus = Literal[
 TerminalWorkflowTestRunStatus = Literal[
     "passed", "failed", "blocked", "error", "cancelled"
 ]
-
-WorkflowTestExecutionRunStatus = Literal["queued", "running", "completed", "failed"]
-
 
 # ---------------------------------------------------------------------------
 # Discriminated unions: `target` (what's tested) and `source` (where inputs come from)
@@ -179,7 +177,7 @@ class LatestWorkflowTestRunSummary(RetabBaseModel):
     # populated (the runner only writes summaries on terminal-state
     # transitions).
     status: WorkflowTestRunStatus
-    started_at: datetime.datetime
+    started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
     workflow_draft_fingerprint: str = ""
@@ -239,21 +237,27 @@ class WorkflowTest(RetabBaseModel):
     updated_at: datetime.datetime
 
 
-class WorkflowTestRunRecord(RetabBaseModel):
-    """Public response shape for a single run record."""
+class WorkflowTestResult(RetabBaseModel):
+    """One child result row produced by a workflow-test run.
+
+    Result rows are addressed by ``test_id`` inside their parent run. The
+    ``id`` field is retained as an internal row identifier, but it is not the
+    public lookup key.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
     id: str
+    run_id: str
     test_id: str
-    status: WorkflowTestRunStatus
-    workflow_id: str
+    lifecycle: RunLifecycle
+    timing: RunTiming
     target: WorkflowTestBlockTarget
     execution_fingerprint: str = ""
     handle_inputs_fingerprint: str = ""
     workflow_draft_fingerprint: str = ""
     block_config_fingerprint: str = ""
-    started_at: datetime.datetime
+    started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
     source: WorkflowTestSource
@@ -264,6 +268,7 @@ class WorkflowTestRunRecord(RetabBaseModel):
     skipped: bool = False
     assertion_result: AssertionResult | None = None
     verdict_summary: VerdictSummary | None = None
+    verdict: dict[str, Any] | None = None
 
 
 class WorkflowTestBatchExecutionCounts(RetabBaseModel):
@@ -283,70 +288,26 @@ class WorkflowTestBatchExecutionCounts(RetabBaseModel):
     cancelled: int = 0
 
 
-class WorkflowTestBatchExecutionItem(RetabBaseModel):
-    model_config = ConfigDict(extra="ignore")
+class WorkflowTestRun(RetabBaseModel):
+    """Parent workflow-test run.
 
-    test_id: str
-    run_record_id: str
-    status: WorkflowTestRunStatus
-    workflow_id: str
-    target: WorkflowTestBlockTarget
-    duration_ms: int | None = None
-
-
-class WorkflowTestBatchExecutionResult(RetabBaseModel):
-    """The payload that lands on `Job.result` after `tests.execute(...)`."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    workflow_id: str
-    target: WorkflowTestBlockTarget | None = None
-    counts: WorkflowTestBatchExecutionCounts = Field(
-        default_factory=WorkflowTestBatchExecutionCounts
-    )
-    results: list[WorkflowTestBatchExecutionItem] = Field(default_factory=list)
-
-
-class ExecuteWorkflowTestsResponse(RetabBaseModel):
-    """Synchronous response from `tests.execute(...)`.
-
-    Poll the workflow-test run by `run_id` until terminal, then fetch
-    run results from the workflow-test runs surface.
+    The run identity is ``id`` and lifecycle state lives under
+    ``lifecycle.status``, matching workflow runs.
     """
 
     model_config = ConfigDict(extra="ignore")
 
-    run_id: str
-    status: WorkflowTestExecutionRunStatus = "queued"
-    workflow_id: str
+    id: str
+    workflow: WorkflowSnapshotRef
+    trigger: Trigger
+    lifecycle: RunLifecycle
+    timing: RunTiming
     target: WorkflowTestBlockTarget | None = None
     test_id: str | None = None
     total_tests: int
     counts: WorkflowTestBatchExecutionCounts = Field(
         default_factory=WorkflowTestBatchExecutionCounts
     )
-    created_at: datetime.datetime
-    started_at: datetime.datetime | None = None
-    completed_at: datetime.datetime | None = None
-    duration_ms: int | None = None
-    error: str | None = None
-
-
-class WorkflowTestExecutionRunResults(RetabBaseModel):
-    """Results for a parent workflow-test execution run."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    run_id: str
-    status: WorkflowTestExecutionRunStatus
-    workflow_id: str
-    target: WorkflowTestBlockTarget | None = None
-    test_id: str | None = None
-    total_tests: int
-    counts: WorkflowTestBatchExecutionCounts = Field(
-        default_factory=WorkflowTestBatchExecutionCounts
-    )
-    results: list[WorkflowTestRunRecord] = Field(default_factory=list)
 
 
 __all__ = [
@@ -358,10 +319,7 @@ __all__ = [
     "AssertionSpec",
     "AssertionTarget",
     "WorkflowTestBatchExecutionCounts",
-    "WorkflowTestBatchExecutionItem",
-    "WorkflowTestBatchExecutionResult",
     "WorkflowTestRunStatus",
-    "ExecuteWorkflowTestsResponse",
     "LatestWorkflowTestRunSummary",
     "ManualWorkflowTestSource",
     "RunStepWorkflowTestSource",
@@ -370,8 +328,7 @@ __all__ = [
     "VerdictSummary",
     "WorkflowTest",
     "WorkflowTestBlockTarget",
-    "WorkflowTestExecutionRunStatus",
-    "WorkflowTestExecutionRunResults",
-    "WorkflowTestRunRecord",
+    "WorkflowTestRun",
+    "WorkflowTestResult",
     "WorkflowTestSource",
 ]

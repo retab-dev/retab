@@ -412,7 +412,7 @@ status, trigger type, date range, cost, and duration. Page by run id
 			return err
 		}
 		// Honour <workflow-id> positional (matches workflows entities /
-		// blocks list / edges create / tests execute convention). The flag
+		// blocks list / edges create convention). The flag
 		// form stays supported. If both are set and they disagree, error
 		// — silently picking one would mask real user mistakes.
 		flagID, _ := cmd.Flags().GetString("workflow-id")
