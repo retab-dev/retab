@@ -6,8 +6,8 @@ the review loop through ``client.workflows.runs.reviews.*``.
 
 Actor-neutral by construction: a proposal authored by a model, an agent, or a
 human all flow through the SAME types. ``Actor.kind`` is data, never branched
-on — there is no ``AgentProposedDecision`` / ``agent_proposal`` here, only the
-neutral :class:`OutputVersion` / :class:`ReviewDecision` shapes.
+on — there are no actor-specific proposal shapes here, only the neutral
+:class:`OutputVersion` / :class:`ReviewDecision` shapes.
 """
 
 from __future__ import annotations

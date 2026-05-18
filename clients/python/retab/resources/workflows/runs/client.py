@@ -14,9 +14,6 @@ from ....types.pagination import PaginatedList, PaginationOrder
 from ....types.workflows import (
     WorkflowRun,
     CancelWorkflowResponse,
-    HILDecisionResource,
-    SubmitHILDecisionResponse,
-    AgentHilReview,
     ExportResponse,
     WorkflowRunStatus,
     WorkflowRunTriggerType,
@@ -191,61 +188,6 @@ class WorkflowRunsMixin:
         if command_id is not None:
             data = {"command_id": command_id}
         return PreparedRequest(method="POST", url=f"/workflows/runs/{run_id}/restart", data=data)
-
-    def prepare_submit_hil_decision(
-        self,
-        run_id: str,
-        block_id: str,
-        approved: bool,
-        version_stamp: int,
-        modified_data: dict | None = None,
-        reject_reason: str | None = None,
-        command_id: str | None = None,
-    ) -> PreparedRequest:
-        """Prepare a request to submit a HIL decision for a workflow run.
-
-        Args:
-            run_id: The ID of the workflow run.
-            block_id: The ID of the HIL block being approved/rejected.
-            approved: Whether the human approved the data.
-            version_stamp: The block's current decision version stamp. The
-                backend requires this for compare-and-swap and rejects the
-                request (HTTP 422) if it is missing.
-            modified_data: Optional modified data if the human made changes.
-            reject_reason: Optional free-text reason, surfaced when the
-                decision is a rejection.
-            command_id: Optional idempotency key for deduplicating submissions.
-        """
-        data: Dict[str, Any] = {
-            "block_id": block_id,
-            "approved": approved,
-            "version_stamp": version_stamp,
-        }
-        if modified_data is not None:
-            data["modified_data"] = modified_data
-        if reject_reason is not None:
-            data["reject_reason"] = reject_reason
-        if command_id is not None:
-            data["command_id"] = command_id
-        return PreparedRequest(
-            method="POST",
-            url=f"/workflows/runs/{run_id}/hil-decisions",
-            data=data,
-        )
-
-    def prepare_get_hil_decision(self, run_id: str, block_id: str) -> PreparedRequest:
-        """Prepare a request to get the authoritative HIL decision state for a block."""
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/runs/{run_id}/hil-decisions/{block_id}",
-        )
-
-    def prepare_get_agent_hil_review(self, run_id: str, block_id: str) -> PreparedRequest:
-        """Prepare a request to get the managed-agent review state for a HIL block."""
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/runs/{run_id}/agent-hil-reviews/{block_id}",
-        )
 
 
 class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
@@ -447,74 +389,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         request = self.prepare_restart(run_id, command_id=command_id)
         response = self._client._prepared_request(request)
         return WorkflowRun.model_validate(response)
-
-    def submit_hil_decision(
-        self,
-        run_id: str,
-        block_id: str,
-        approved: bool,
-        version_stamp: int,
-        modified_data: dict | None = None,
-        reject_reason: str | None = None,
-        command_id: str | None = None,
-    ) -> SubmitHILDecisionResponse:
-        """Submit a human-in-the-loop (HIL) decision for a workflow run.
-
-        Args:
-            run_id: The ID of the workflow run
-            block_id: The ID of the HIL block being approved/rejected
-            approved: Whether the human approved the data
-            version_stamp: The block's current decision version stamp. Required
-                by the backend for compare-and-swap; omitting it makes the
-                server reject the submission (HTTP 422).
-            modified_data: Optional modified data if the human made changes
-            reject_reason: Optional free-text reason, surfaced when the
-                decision is a rejection
-            command_id: Optional idempotency key for deduplicating decision submissions
-
-        Returns:
-            SubmitHILDecisionResponse: The decision submission result
-        """
-        request = self.prepare_submit_hil_decision(
-            run_id,
-            block_id=block_id,
-            approved=approved,
-            version_stamp=version_stamp,
-            modified_data=modified_data,
-            reject_reason=reject_reason,
-            command_id=command_id,
-        )
-        response = self._client._prepared_request(request)
-        return SubmitHILDecisionResponse.model_validate(response)
-
-    def get_hil_decision(self, run_id: str, block_id: str) -> HILDecisionResource:
-        """Get the authoritative HIL decision state for a workflow run block."""
-        request = self.prepare_get_hil_decision(run_id, block_id)
-        response = self._client._prepared_request(request)
-        return HILDecisionResource.model_validate(response)
-
-    def get_agent_hil_review(self, run_id: str, block_id: str) -> AgentHilReview:
-        """Get the managed-agent review state for a HIL block.
-
-        Returns the full :class:`AgentHilReview` row tracking a managed-agent
-        session for the given block — its mode, lifecycle ``status``, and the
-        agent's ``proposed_decision`` if one has been emitted.
-
-        An agent review is spawned when the block's ``agent_in_the_loop``
-        config is one of ``pre_review`` / ``review`` / ``auto``. When the block
-        has ``agent_in_the_loop=disabled``, or the workflow hasn't reached the
-        block yet, the server returns 404 and this method raises.
-
-        Args:
-            run_id: The ID of the workflow run.
-            block_id: The ID of the HIL block.
-
-        Returns:
-            AgentHilReview: The current agent review row.
-        """
-        request = self.prepare_get_agent_hil_review(run_id, block_id)
-        response = self._client._prepared_request(request)
-        return AgentHilReview.model_validate(response)
 
     def export(
         self,
@@ -764,57 +638,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         request = self.prepare_restart(run_id, command_id=command_id)
         response = await self._client._prepared_request(request)
         return WorkflowRun.model_validate(response)
-
-    async def submit_hil_decision(
-        self,
-        run_id: str,
-        block_id: str,
-        approved: bool,
-        version_stamp: int,
-        modified_data: dict | None = None,
-        reject_reason: str | None = None,
-        command_id: str | None = None,
-    ) -> SubmitHILDecisionResponse:
-        """Submit a human-in-the-loop (HIL) decision for a workflow run.
-
-        Args:
-            run_id: The ID of the workflow run
-            block_id: The ID of the HIL block being approved/rejected
-            approved: Whether the human approved the data
-            version_stamp: The block's current decision version stamp. Required
-                by the backend for compare-and-swap; omitting it makes the
-                server reject the submission (HTTP 422).
-            modified_data: Optional modified data if the human made changes
-            reject_reason: Optional free-text reason, surfaced when the
-                decision is a rejection
-            command_id: Optional idempotency key for deduplicating decision submissions
-
-        Returns:
-            SubmitHILDecisionResponse: The decision submission result
-        """
-        request = self.prepare_submit_hil_decision(
-            run_id,
-            block_id=block_id,
-            approved=approved,
-            version_stamp=version_stamp,
-            modified_data=modified_data,
-            reject_reason=reject_reason,
-            command_id=command_id,
-        )
-        response = await self._client._prepared_request(request)
-        return SubmitHILDecisionResponse.model_validate(response)
-
-    async def get_hil_decision(self, run_id: str, block_id: str) -> HILDecisionResource:
-        """Get the authoritative HIL decision state for a workflow run block."""
-        request = self.prepare_get_hil_decision(run_id, block_id)
-        response = await self._client._prepared_request(request)
-        return HILDecisionResource.model_validate(response)
-
-    async def get_agent_hil_review(self, run_id: str, block_id: str) -> AgentHilReview:
-        """Get the managed-agent review state for a HIL block (async)."""
-        request = self.prepare_get_agent_hil_review(run_id, block_id)
-        response = await self._client._prepared_request(request)
-        return AgentHilReview.model_validate(response)
 
     async def export(
         self,
