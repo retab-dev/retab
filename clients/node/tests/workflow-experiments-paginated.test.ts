@@ -3,7 +3,7 @@
  * two list endpoints under `/v1/workflows/{wf}/experiments`:
  *
  *   GET /v1/workflows/{wf}/experiments
- *   GET /v1/workflows/{wf}/experiments/{id}/runs
+ *   GET /v1/workflows/experiments/runs?workflow_id=...&experiment_id=...
  *
  * Both routes used to return non-canonical shapes (a bare list and the
  * `{"runs": [...]}` named-key envelope respectively). The migration to the
@@ -39,6 +39,14 @@ class MockClient extends AbstractClient {
 }
 
 const NOW = "2026-05-01T14:30:00Z";
+const WORKFLOW_REF = {
+    workflow_id: "wf_1",
+    version_id: "draft_1",
+    name_at_run_time: "Q1",
+    requested_version: "draft",
+};
+const TRIGGER = { type: "api" };
+const TIMING = { created_at: NOW, started_at: NOW, completed_at: NOW };
 
 const EXPERIMENT = {
     id: "exp_1",
@@ -60,21 +68,21 @@ const EXPERIMENT = {
 
 const RUN = {
     id: "exprun_1",
-    parent_run_id: null,
-    block_config: null,
+    workflow: WORKFLOW_REF,
+    trigger: TRIGGER,
+    lifecycle: { status: "completed" },
+    timing: TIMING,
+    experiment_id: "exp_1",
+    block_id: "block_1",
+    block_kind: "extract",
+    n_consensus: 5,
     definition_fingerprint: "fp",
     documents_fingerprint: "fp_doc",
-    status: "completed",
-    block_kind: "extract",
     score: 0.83,
     total_document_count: 1,
     completed_document_count: 1,
     document_count: 1,
     error_count: 0,
-    n_consensus: 5,
-    created_at: NOW,
-    completed_at: NOW,
-    duration_ms: 100,
 };
 
 describe("workflows.experiments.list paginated envelope", () => {
@@ -112,11 +120,13 @@ describe("workflows.experiments.runs.list paginated envelope", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_1/experiments/exp_1/runs",
+            url: "/workflows/experiments/runs",
             method: "GET",
+            params: { workflow_id: "wf_1", experiment_id: "exp_1", limit: 20 },
         });
         expect(page.data).toHaveLength(1);
         expect(page.data[0]?.id).toBe("exprun_1");
+        expect(page.data[0]?.timing.started_at).toBe(NOW);
         expect(page.list_metadata.before).toBeNull();
         expect(page.list_metadata.after).toBeNull();
     });

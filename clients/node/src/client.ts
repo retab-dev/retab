@@ -36,8 +36,12 @@ const PYTHON_PUBLIC_PREPARE_METHODS: Record<string, string[]> = {
     'restart',
   ],
   APIWorkflowRunSteps: ['get', 'list'],
-  APIWorkflowTests: ['create', 'get', 'list', 'update', 'delete', 'execute'],
-  APIWorkflowTestRuns: ['list', 'get'],
+  APIWorkflowTests: ['create', 'get', 'list', 'update', 'delete'],
+  APIWorkflowTestRuns: ['create', 'list', 'get', 'cancel'],
+  APIWorkflowTestRunResults: ['list', 'get'],
+  APIWorkflowExperimentRuns: ['create', 'list', 'get', 'cancel'],
+  APIWorkflowExperimentRunResults: ['list', 'get'],
+  APIWorkflowExperimentRunMetrics: ['get'],
 };
 
 async function* streamResponse<ZodSchema extends z.ZodType<any, any, any>>(

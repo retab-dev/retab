@@ -10,13 +10,14 @@
  * SDK to internal structural details that are still evolving. We expose:
  *
  *   - typed wrappers for the simple/stable shapes (Experiment, runs,
- *     eligible blocks, run-batch, job)
+ *     eligible blocks, experiment run results)
  *   - `ExperimentMetricsResponse = Record<string, unknown>` — caller
  *     branches on the `view` field for view-specific payloads, or on
  *     `error` for stale/missing envelopes.
  */
 
 import * as z from "zod";
+import { ZWorkflowSnapshotRef } from "../../../generated_types.js";
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -36,14 +37,6 @@ export const ZExperimentRunStatus = z.enum([
     "cancelled",
 ]);
 export type ExperimentRunStatus = z.infer<typeof ZExperimentRunStatus>;
-
-export const ZExperimentJobStatus = z.enum([
-    "pending",
-    "running",
-    "completed",
-    "error",
-]);
-export type ExperimentJobStatus = z.infer<typeof ZExperimentJobStatus>;
 
 export const ZExperimentPublicStatus = z.enum([
     "draft",
@@ -132,75 +125,88 @@ export type ExperimentList = z.infer<typeof ZExperimentList>;
 // Run (response)
 // ---------------------------------------------------------------------------
 
-export const ZPreviousRunSummary = z
+export const ZExperimentRunTrigger = z
     .object({
-        run_id: z.string(),
-        definition_fingerprint: z.string().nullable().optional(),
-        score: z.number().nullable().optional(),
+        type: z.string().nullable().optional(),
     })
     .passthrough();
-export type PreviousRunSummary = z.infer<typeof ZPreviousRunSummary>;
+export type ExperimentRunTrigger = z.infer<typeof ZExperimentRunTrigger>;
 
-export const ZRunExperimentResponse = z
+export const ZExperimentRunLifecycle = z
     .object({
-        experiment_id: z.string(),
-        run_id: z.string(),
-        status: z.string(),
-        definition_fingerprint: z.string(),
-        total_document_count: z.number().default(0),
-        completed_document_count: z.number().default(0),
-        document_count: z.number(),
-        n_consensus: ZNConsensusValue,
-        previous_run: ZPreviousRunSummary.nullable().optional(),
-        noop: z.boolean().default(false),
+        status: ZExperimentRunStatus,
+        message: z.string().nullable().optional(),
     })
     .passthrough();
-export type RunExperimentResponse = z.infer<typeof ZRunExperimentResponse>;
+export type ExperimentRunLifecycle = z.infer<typeof ZExperimentRunLifecycle>;
 
-export const ZCancelExperimentResponse = z
+export const ZExperimentRunTiming = z
     .object({
-        status: z.string(),
-        run_id: z.string(),
+        created_at: z.string(),
+        started_at: z.string().nullable().optional(),
+        completed_at: z.string().nullable().optional(),
+        duration_ms: z.number().nullable().optional(),
     })
     .passthrough();
-export type CancelExperimentResponse = z.infer<typeof ZCancelExperimentResponse>;
+export type ExperimentRunTiming = z.infer<typeof ZExperimentRunTiming>;
 
-export const ZExperimentRunSummary = z
+export const ZExperimentRun = z
     .object({
         id: z.string(),
-        parent_run_id: z.string().nullable().optional(),
-        block_config: z.record(z.any()).nullable().optional(),
+        workflow: ZWorkflowSnapshotRef,
+        trigger: ZExperimentRunTrigger,
+        lifecycle: ZExperimentRunLifecycle,
+        timing: ZExperimentRunTiming,
+        experiment_id: z.string(),
+        block_id: z.string(),
+        block_kind: ZExperimentBlockKind,
+        n_consensus: ZNConsensusValue,
         definition_fingerprint: z.string(),
         documents_fingerprint: z.string(),
-        status: ZExperimentRunStatus,
-        block_kind: ZExperimentBlockKind,
         score: z.number().nullable().optional(),
         total_document_count: z.number().default(0),
         completed_document_count: z.number().default(0),
         document_count: z.number().default(0),
         error_count: z.number().default(0),
-        n_consensus: ZNConsensusValue,
-        created_at: z.string(),
-        completed_at: z.string().nullable().optional(),
-        duration_ms: z.number().nullable().optional(),
     })
     .passthrough();
-export type ExperimentRunSummary = z.infer<typeof ZExperimentRunSummary>;
+export type ExperimentRun = z.infer<typeof ZExperimentRun>;
 
 // Canonical PaginatedList envelope for `GET /experiments/{id}/runs`. The
 // route used to return `{"runs": [...]}`; the migration to
 // `{data, list_metadata}` matches the rest of the Retab list endpoints.
 export const ZExperimentRunListResponse = z
     .object({
-        data: z.array(ZExperimentRunSummary).default([]),
+        data: z.array(ZExperimentRun).default([]),
         list_metadata: ZListMetadata,
     })
     .passthrough();
 export type ExperimentRunListResponse = z.infer<typeof ZExperimentRunListResponse>;
 
 // ---------------------------------------------------------------------------
-// Per-document job + content
+// Per-document results
 // ---------------------------------------------------------------------------
+
+export const ZExperimentResultStatus = z.enum(["pending", "running", "completed", "error"]);
+export type ExperimentResultStatus = z.infer<typeof ZExperimentResultStatus>;
+
+export const ZExperimentResultLifecycle = z
+    .object({
+        status: ZExperimentResultStatus,
+        message: z.string().nullable().optional(),
+    })
+    .passthrough();
+export type ExperimentResultLifecycle = z.infer<typeof ZExperimentResultLifecycle>;
+
+export const ZExperimentResultTiming = z
+    .object({
+        created_at: z.string().nullable().optional(),
+        started_at: z.string().nullable().optional(),
+        completed_at: z.string().nullable().optional(),
+        duration_ms: z.number().nullable().optional(),
+    })
+    .passthrough();
+export type ExperimentResultTiming = z.infer<typeof ZExperimentResultTiming>;
 
 export const ZStepArtifactRefMini = z
     .object({
@@ -210,13 +216,14 @@ export const ZStepArtifactRefMini = z
     .passthrough();
 export type StepArtifactRefMini = z.infer<typeof ZStepArtifactRefMini>;
 
-export const ZExperimentJobResponse = z
+export const ZExperimentResult = z
     .object({
         id: z.string(),
         run_id: z.string(),
         experiment_id: z.string(),
         document_id: z.string(),
-        status: ZExperimentJobStatus,
+        lifecycle: ZExperimentResultLifecycle,
+        timing: ZExperimentResultTiming,
         block_kind: ZExperimentBlockKind,
         handle_inputs: z.record(z.any()).default({}),
         artifact: ZStepArtifactRefMini.nullable().optional(),
@@ -229,26 +236,18 @@ export const ZExperimentJobResponse = z
         is_placeholder: z.boolean().default(false),
     })
     .passthrough();
-export type ExperimentJobResponse = z.infer<typeof ZExperimentJobResponse>;
+export type ExperimentResult = z.infer<typeof ZExperimentResult>;
 
-export const ZExperimentContent = z
+export const ZExperimentResultListResponse = z
     .object({
-        jobs: z.array(ZExperimentJobResponse).default([]),
+        data: z.array(ZExperimentResult).default([]),
+        list_metadata: ZListMetadata,
     })
     .passthrough();
-export type ExperimentContent = z.infer<typeof ZExperimentContent>;
-
-export const ZExperimentContentResponse = z
-    .object({
-        experiment_id: z.string(),
-        run_id: z.string(),
-        content: ZExperimentContent,
-    })
-    .passthrough();
-export type ExperimentContentResponse = z.infer<typeof ZExperimentContentResponse>;
+export type ExperimentResultListResponse = z.infer<typeof ZExperimentResultListResponse>;
 
 // ---------------------------------------------------------------------------
-// Eligible blocks + run-batch
+// Eligible blocks
 // ---------------------------------------------------------------------------
 
 export const ZEligibleBlockSummary = z
@@ -271,15 +270,6 @@ export const ZEligibleBlockListResponse = z
     })
     .passthrough();
 export type EligibleBlockListResponse = z.infer<typeof ZEligibleBlockListResponse>;
-
-export const ZRunBatchResponse = z
-    .object({
-        block_id: z.string(),
-        experiment_count: z.number(),
-        runs: z.array(ZRunExperimentResponse).default([]),
-    })
-    .passthrough();
-export type RunBatchResponse = z.infer<typeof ZRunBatchResponse>;
 
 // ---------------------------------------------------------------------------
 // Metrics

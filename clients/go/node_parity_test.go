@@ -373,8 +373,16 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 			})
 		case "/workflows/wf_123/tests":
 			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "test_1"}}})
-		case "/workflows/wf_123/tests/test_1/runs":
-			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "testrun_1"}}})
+		case "/workflows/tests/runs":
+			_ = json.NewEncoder(w).Encode(Resource{
+				"data": []Resource{{
+					"id":        "testrun_1",
+					"workflow":  Resource{"workflow_id": "wf_123", "version_id": "draft_1", "name_at_run_time": "Workflow"},
+					"trigger":   Resource{"type": "api"},
+					"lifecycle": Resource{"status": "completed"},
+					"timing":    Resource{"created_at": "2026-05-18T10:00:00Z"},
+				}},
+			})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
@@ -394,11 +402,15 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 	if _, err := client.Workflows.Tests.List(context.Background(), ListWorkflowTestsRequest{WorkflowID: "wf_123"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Tests.Runs.List(context.Background(), "wf_123", "test_1", 10); err != nil {
+	if _, err := client.Workflows.Tests.Runs.List(context.Background(), ListWorkflowTestRunsParams{
+		WorkflowID: "wf_123",
+		TestID:     "test_1",
+		Limit:      10,
+	}); err != nil {
 		t.Fatal(err)
 	}
 
-	want := "GET /workflows/wf_123/blocks,GET /workflows/wf_123/edges,DELETE /workflows/wf_123/edges,GET /workflows/wf_123/tests,GET /workflows/wf_123/tests/test_1/runs"
+	want := "GET /workflows/wf_123/blocks,GET /workflows/wf_123/edges,DELETE /workflows/wf_123/edges,GET /workflows/wf_123/tests,GET /workflows/tests/runs"
 	if strings.Join(requests, ",") != want {
 		t.Fatalf("requests = %s", strings.Join(requests, ","))
 	}

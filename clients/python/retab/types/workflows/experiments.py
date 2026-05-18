@@ -20,6 +20,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
+from retab.types.workflows.model import WorkflowSnapshotRef
 
 
 # ---------------------------------------------------------------------------
@@ -29,7 +30,6 @@ from retab.types.base import RetabBaseModel
 NConsensusValue = Literal[3, 5, 7]
 ExperimentBlockKind = Literal["extract", "classifier", "split", "for_each"]
 ExperimentRunStatus = Literal["pending", "running", "completed", "error", "cancelled"]
-ExperimentJobStatus = Literal["pending", "running", "completed", "error"]
 ExperimentPublicStatus = Literal[
     "draft", "processing", "completed", "failed", "cancelled"
 ]
@@ -143,66 +143,89 @@ class ExperimentResponse(RetabBaseModel):
 # ---------------------------------------------------------------------------
 
 
-class PreviousRunSummary(RetabBaseModel):
-    """Slim summary of the previous completed run."""
+class ExperimentRunTrigger(RetabBaseModel):
+    """Experiment-run trigger source.
 
-    model_config = ConfigDict(extra="ignore")
-
-    run_id: str
-    definition_fingerprint: str | None = None
-    score: float | None = None
-
-
-class RunExperimentResponse(RetabBaseModel):
-    """Response from ``POST /experiments/{id}/runs``.
-
-    Async execution is tracked by ``run_id`` on the experiment runs surface.
+    Experiment runs keep the same top-level ``trigger`` concept as workflow
+    runs, but use experiment-specific trigger strings such as ``manual_run``,
+    and ``auto_retry:metrics``.
     """
 
     model_config = ConfigDict(extra="ignore")
 
-    experiment_id: str
-    run_id: str
-    status: str
-    definition_fingerprint: str
-    total_document_count: int = 0
-    completed_document_count: int = 0
-    document_count: int
-    n_consensus: NConsensusValue
-    previous_run: PreviousRunSummary | None = None
-    noop: bool = False
+    type: str | None = None
 
 
-class ExperimentRunSummary(RetabBaseModel):
-    """One row of ``GET /experiments/{id}/runs``."""
+class ExperimentRunLifecycle(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: ExperimentRunStatus
+    message: str | None = None
+
+
+class ExperimentRunTiming(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    created_at: datetime.datetime
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+    duration_ms: int | None = None
+
+
+class ExperimentRun(RetabBaseModel):
+    """Parent experiment run.
+
+    The run identity is ``id`` and lifecycle state lives under
+    ``lifecycle.status``, matching workflow runs.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
     id: str
-    parent_run_id: str | None = None
-    block_config: dict[str, Any] | None = None
+    workflow: WorkflowSnapshotRef
+    trigger: "ExperimentRunTrigger"
+    lifecycle: "ExperimentRunLifecycle"
+    timing: "ExperimentRunTiming"
+    experiment_id: str
+    block_id: str
+    block_kind: ExperimentBlockKind
+    n_consensus: NConsensusValue
     definition_fingerprint: str
     documents_fingerprint: str
-    status: ExperimentRunStatus
-    block_kind: ExperimentBlockKind
     score: float | None = None
     total_document_count: int = 0
     completed_document_count: int = 0
     document_count: int = 0
     error_count: int = 0
-    n_consensus: NConsensusValue
-    created_at: datetime.datetime
+
+
+# ---------------------------------------------------------------------------
+# Results (per-document execution)
+# ---------------------------------------------------------------------------
+
+
+class ExperimentResultLifecycle(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["pending", "running", "completed", "error"]
+    message: str | None = None
+
+
+class ExperimentResultTiming(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    created_at: datetime.datetime | None = None
+    started_at: datetime.datetime | None = None
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
 
 
-# ---------------------------------------------------------------------------
-# Content (per-run job execution)
-# ---------------------------------------------------------------------------
+class ExperimentResult(RetabBaseModel):
+    """Execution result for one document inside an experiment run.
 
-
-class ExperimentJobResponse(RetabBaseModel):
-    """Execution content for one document job inside an experiment run."""
+    Result rows are addressed by ``document_id`` inside their parent run. The
+    ``id`` field is retained as an internal row identifier.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
@@ -210,7 +233,8 @@ class ExperimentJobResponse(RetabBaseModel):
     run_id: str
     experiment_id: str
     document_id: str
-    status: ExperimentJobStatus
+    lifecycle: "ExperimentResultLifecycle"
+    timing: "ExperimentResultTiming"
     block_kind: ExperimentBlockKind
     handle_inputs: dict[str, Any] = Field(default_factory=dict)
     artifact: StepArtifactRefMini | None = None
@@ -221,22 +245,6 @@ class ExperimentJobResponse(RetabBaseModel):
     completed_at: datetime.datetime | None = None
     attempt: int = 0
     is_placeholder: bool = False
-
-
-class ExperimentContent(RetabBaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    jobs: list[ExperimentJobResponse] = Field(default_factory=list)
-
-
-class ExperimentContentResponse(RetabBaseModel):
-    """``GET /experiments/{id}/content`` — execution content for one run."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    experiment_id: str
-    run_id: str
-    content: ExperimentContent
 
 
 # ---------------------------------------------------------------------------
@@ -434,7 +442,7 @@ class ExperimentMetricsMissingError(RetabBaseModel):
     message: str
 
 
-# Full response surface from ``GET /experiments/{id}/metrics``.
+# Full response surface from ``GET /workflows/experiments/runs/{run_id}/metrics``.
 ExperimentMetricsResponse = Union[
     ExperimentMetricsViewResponse,
     ExperimentMetricsStaleError,
@@ -443,7 +451,7 @@ ExperimentMetricsResponse = Union[
 
 
 # ---------------------------------------------------------------------------
-# Eligible blocks + run batch
+# Eligible blocks
 # ---------------------------------------------------------------------------
 
 
@@ -466,19 +474,10 @@ class EligibleBlockListResponse(RetabBaseModel):
     blocks: list[EligibleBlockSummary] = Field(default_factory=list)
 
 
-class RunBatchResponse(RetabBaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    block_id: str
-    experiment_count: int
-    runs: list[RunExperimentResponse] = Field(default_factory=list)
-
-
 __all__ = [
     "NConsensusValue",
     "ExperimentBlockKind",
     "ExperimentRunStatus",
-    "ExperimentJobStatus",
     "ExperimentPublicStatus",
     "ExperimentTargetKind",
     "ExperimentMetricView",
@@ -489,12 +488,13 @@ __all__ = [
     "ExperimentDocument",
     "StepArtifactRefMini",
     "ExperimentResponse",
-    "PreviousRunSummary",
-    "RunExperimentResponse",
-    "ExperimentRunSummary",
-    "ExperimentJobResponse",
-    "ExperimentContent",
-    "ExperimentContentResponse",
+    "ExperimentRunTrigger",
+    "ExperimentRunLifecycle",
+    "ExperimentRunTiming",
+    "ExperimentRun",
+    "ExperimentResultLifecycle",
+    "ExperimentResultTiming",
+    "ExperimentResult",
     "ExperimentSummaryMetricDocument",
     "ExperimentConfusionFlowMetric",
     "ExperimentExtractSummaryAggregate",
@@ -517,5 +517,4 @@ __all__ = [
     "ExperimentMetricsResponse",
     "EligibleBlockSummary",
     "EligibleBlockListResponse",
-    "RunBatchResponse",
 ]

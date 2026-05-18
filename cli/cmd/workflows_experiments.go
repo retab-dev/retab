@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -21,9 +24,8 @@ against every document and stores the outputs in isolation —
 production traffic is never affected.
 
 Compare experiment outputs to a baseline via
-` + "`workflows experiments metrics`" + `. Run experiments for a whole
-block in one shot with ` + "`run-batch`" + `, or trigger a single run
-inside an experiment via ` + "`workflows experiments runs create`" + `.
+` + "`workflows experiments runs metrics get`" + `. Trigger a run inside an
+experiment via ` + "`workflows experiments runs create`" + `.
 
 For deterministic regression testing of a single pinned assertion, see
 ` + "`retab workflows tests --help`" + `.`,
@@ -37,7 +39,7 @@ For deterministic regression testing of a single pinned assertion, see
     --captures-file ./captures.json
 
   # Inspect quality metrics
-  retab workflows experiments metrics wf_abc123 exp_pqr678 --view summary`,
+  retab workflows experiments runs metrics get exprun_abc --view summary`,
 }
 
 func parseExperimentDocs(cmd *cobra.Command) ([]retab.ExperimentDocumentCaptureRequest, []retab.ExplicitExperimentDocumentRequest, error) {
@@ -130,8 +132,7 @@ documents in one of two ways:
   ` + `{"handle_inputs": ..., "provenance": ...}` + ` entries.
 
 After creation, trigger a run with
-` + "`workflows experiments runs create`" + ` or run the whole block's
-experiments together via ` + "`workflows experiments run-batch`" + `.`,
+` + "`workflows experiments runs create`" + `.`,
 	Example: `  # Capture documents from real production runs
   retab workflows experiments create wf_abc123 \
     --block-id blk_extract_1 \
@@ -326,76 +327,6 @@ the previous experiment's results.`,
 	}),
 }
 
-var workflowsExperimentsCancelCmd = &cobra.Command{
-	Use:   "cancel <workflow-id> <experiment-id>",
-	Short: "Cancel the latest in-flight run",
-	Long: `Stop the most recent experiment run mid-flight. Documents
-already processed retain their outputs; pending documents are skipped.`,
-	Example: `  # Stop a long-running experiment
-  retab workflows experiments cancel wf_abc123 exp_pqr678`,
-	Args: cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Experiments.Cancel(ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
-	}),
-}
-
-var workflowsExperimentsMetricsCmd = &cobra.Command{
-	Use:   "metrics <workflow-id> <experiment-id>",
-	Short: "Get experiment metrics",
-	Long: `Aggregate quality metrics for an experiment's runs. Pivot the
-view with ` + "`--view`" + ` (` + "`summary`" + ` | ` + "`by_document`" + ` |
-` + "`by_target`" + ` | ` + "`votes`" + `) to drill from headline
-numbers down to individual fields. Compare against a prior run with
-` + "`--prior-run-id`" + `.`,
-	Example: `  # Headline numbers
-  retab workflows experiments metrics wf_abc123 exp_pqr678 --view summary
-
-  # Per-document accuracy
-  retab workflows experiments metrics wf_abc123 exp_pqr678 --view by_document
-
-  # Compare two runs of the same experiment
-  retab workflows experiments metrics wf_abc123 exp_pqr678 \
-    --run-id exprun_aaa --prior-run-id exprun_bbb --view by_target`,
-	Args: cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		view, _ := cmd.Flags().GetString("view")
-		if err := validateExperimentMetricsView(view); err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		params := &retab.GetExperimentMetricsParams{}
-		params.View = view
-		params.RunID, _ = cmd.Flags().GetString("run-id")
-		params.DocumentID, _ = cmd.Flags().GetString("document-id")
-		params.TargetPath, _ = cmd.Flags().GetString("target-path")
-		params.PriorRunID, _ = cmd.Flags().GetString("prior-run-id")
-		if cmd.Flags().Changed("include-prior") {
-			v, _ := cmd.Flags().GetBool("include-prior")
-			params.IncludePrior = &v
-		}
-		result, err := client.Workflows.Experiments.GetMetrics(ctx, args[0], args[1], params)
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
-	}),
-}
-
 var workflowsExperimentsEligibleBlocksCmd = &cobra.Command{
 	Use:   "eligible-blocks <workflow-id>",
 	Short: "List blocks eligible for experiments",
@@ -435,42 +366,6 @@ func printEligibleBlocksResult(cmd *cobra.Command, result *retab.EligibleBlockLi
 	return printResult(cmd, map[string]any{"data": result.Blocks})
 }
 
-var workflowsExperimentsRunBatchCmd = &cobra.Command{
-	Use:   "run-batch <workflow-id> [flags]",
-	Short: "Run every experiment attached to a block",
-	Long: `Trigger a run for every experiment attached to one block, in one
-call. Use when iterating across multiple candidate configs for the same
-block — kick off the whole comparison sweep at once, then read metrics.`,
-	Example: `  # Run every experiment on a block
-  retab workflows experiments run-batch wf_abc123 \
-    --block-id blk_extract_1`,
-	Args: cobra.MaximumNArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		workflowID, err := resolveWorkflowIDArg(cmd, args)
-		if err != nil {
-			return err
-		}
-		blockID, err := requireNonBlankFlag(cmd, "block-id")
-		if err != nil {
-			return err
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		req := retab.RunBatchExperimentsRequest{}
-		req.WorkflowID = workflowID
-		req.BlockID = blockID
-		result, err := client.Workflows.Experiments.RunBatch(ctx, req)
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
-	}),
-}
-
 // ---- experiment runs subgroup ----
 
 var workflowsExperimentsRunsCmd = &cobra.Command{
@@ -486,26 +381,23 @@ consumers.`,
 	Example: `  # Trigger a new run on an experiment
   retab workflows experiments runs create wf_abc123 exp_pqr678
 
-  # Inspect the latest run's per-document content
-  retab workflows experiments runs get wf_abc123 exp_pqr678`,
+  # Inspect a run
+  retab workflows experiments runs get exprun_aaa
+
+  # Inspect run results
+  retab workflows experiments runs results list exprun_aaa`,
 }
 
 var workflowsExperimentsRunsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> <experiment-id>",
 	Short: "Trigger a new experiment run",
-	Long: `Execute the experiment's candidate config across every
+	Long: `Run the experiment's candidate config across every
 document in its set.`,
 	Example: `  # Trigger an experiment run
   retab workflows experiments runs create wf_abc123 exp_pqr678`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Experiments.Runs.Create(ctx, args[0], args[1], nil)
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/"+url.PathEscape(args[0])+"/experiments/"+url.PathEscape(args[1])+"/runs", nil, map[string]any{})
 		if err != nil {
 			return err
 		}
@@ -514,21 +406,23 @@ document in its set.`,
 }
 
 var workflowsExperimentsRunsListCmd = &cobra.Command{
-	Use:   "list <workflow-id> <experiment-id>",
-	Short: "List runs for an experiment",
+	Use:   "list [flags]",
+	Short: "List experiment runs",
 	Long: `List historical executions of one experiment, in reverse
 chronological order.`,
 	Example: `  # See the run history
-  retab workflows experiments runs list wf_abc123 exp_pqr678`,
-	Args: cobra.ExactArgs(2),
+  retab workflows experiments runs list --experiment-id exp_pqr678`,
+	Args: cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
+		query := url.Values{}
+		for _, name := range []string{"workflow-id", "experiment-id", "block-id", "status", "statuses", "exclude-status", "trigger-type", "trigger-types", "from-date", "to-date", "sort-by", "fields", "before", "after", "order"} {
+			if value, _ := cmd.Flags().GetString(name); value != "" {
+				query.Set(strings.ReplaceAll(name, "-", "_"), value)
+			}
 		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Workflows.Experiments.Runs.List(ctx, args[0], args[1])
+		limit := getIntFlagOrDefault(cmd, "limit", 20)
+		query.Set("limit", strconv.Itoa(limit))
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs", query, nil)
 		if err != nil {
 			return err
 		}
@@ -537,27 +431,101 @@ chronological order.`,
 }
 
 var workflowsExperimentsRunsGetCmd = &cobra.Command{
-	Use:   "get <workflow-id> <experiment-id>",
-	Short: "Get per-document content for an experiment run (latest by default)",
-	Long: `Return per-document outputs for one experiment run — the actual
-candidate-config output for every document in the experiment's set.
-Without ` + "`--run-id`" + ` the latest run's content is returned.`,
-	Example: `  # Latest run content
-  retab workflows experiments runs get wf_abc123 exp_pqr678
-
-  # A specific run
-  retab workflows experiments runs get wf_abc123 exp_pqr678 \
-    --run-id exprun_aaa`,
-	Args: cobra.ExactArgs(2),
+	Use:   "get <run-id>",
+	Short: "Get an experiment run",
+	Long:  `Fetch an experiment run by run id.`,
+	Example: `  # A specific run
+  retab workflows experiments runs get exprun_aaa`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(args[0]), nil, nil)
 		if err != nil {
 			return err
 		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		runID, _ := cmd.Flags().GetString("run-id")
-		result, err := client.Workflows.Experiments.Runs.Get(ctx, args[0], args[1], runID)
+		return printJSON(result)
+	}),
+}
+
+var workflowsExperimentsRunsCancelCmd = &cobra.Command{
+	Use:   "cancel <run-id>",
+	Short: "Cancel an experiment run",
+	Args:  cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/experiments/runs/"+url.PathEscape(args[0])+"/cancel", nil, map[string]any{})
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+var workflowsExperimentsRunsResultsCmd = &cobra.Command{
+	Use:   "results",
+	Short: "Inspect experiment run results",
+}
+
+var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
+	Use:   "list <run-id>",
+	Short: "List per-document results for an experiment run",
+	Args:  cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		query := url.Values{}
+		limit := getIntFlagOrDefault(cmd, "limit", 20)
+		query.Set("limit", strconv.Itoa(limit))
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(args[0])+"/results", query, nil)
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
+	Use:   "get <run-id> <document-id>",
+	Short: "Get one document result from an experiment run",
+	Args:  cobra.ExactArgs(2),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(args[0])+"/results/"+url.PathEscape(args[1]), nil, nil)
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+var workflowsExperimentsRunsMetricsCmd = &cobra.Command{
+	Use:   "metrics",
+	Short: "Inspect experiment run metrics",
+}
+
+var workflowsExperimentsRunsMetricsGetCmd = &cobra.Command{
+	Use:   "get <run-id>",
+	Short: "Get metrics for an experiment run",
+	Long: `Aggregate quality metrics for an experiment run. Pivot the
+view with ` + "`--view`" + ` (` + "`summary`" + ` | ` + "`by_document`" + ` |
+` + "`by_target`" + ` | ` + "`votes`" + `) to drill from headline
+numbers down to individual fields. Compare against a prior run with
+` + "`--prior-run-id`" + `.`,
+	Args: cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		view, _ := cmd.Flags().GetString("view")
+		if err := validateExperimentMetricsView(view); err != nil {
+			return err
+		}
+		query := url.Values{}
+		query.Set("view", view)
+		if value, _ := cmd.Flags().GetString("document-id"); value != "" {
+			query.Set("document_id", value)
+		}
+		if value, _ := cmd.Flags().GetString("target-path"); value != "" {
+			query.Set("target_path", value)
+		}
+		if value, _ := cmd.Flags().GetString("prior-run-id"); value != "" {
+			query.Set("prior_run_id", value)
+		}
+		includePrior, _ := cmd.Flags().GetBool("include-prior")
+		query.Set("include_prior", strconv.FormatBool(includePrior))
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(args[0])+"/metrics", query, nil)
 		if err != nil {
 			return err
 		}
@@ -586,23 +554,32 @@ func init() {
 	workflowsExperimentsUpdateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "new consensus count (3, 5, or 7)")
 	addExperimentDocFlags(workflowsExperimentsUpdateCmd)
 
-	workflowsExperimentsMetricsCmd.Flags().String("view", "", "view (summary | by_document | by_target | votes)")
-	workflowsExperimentsMetricsCmd.Flags().String("run-id", "", "run id")
-	workflowsExperimentsMetricsCmd.Flags().String("document-id", "", "document id")
-	workflowsExperimentsMetricsCmd.Flags().String("target-path", "", "target path")
-	workflowsExperimentsMetricsCmd.Flags().String("prior-run-id", "", "prior run id")
-	workflowsExperimentsMetricsCmd.Flags().Bool("include-prior", true, "include prior run metrics")
+	workflowsExperimentsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsExperimentsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
+	workflowsExperimentsRunsListCmd.Flags().String("experiment-id", "", "filter by experiment id")
+	workflowsExperimentsRunsListCmd.Flags().String("block-id", "", "filter by block id")
+	workflowsExperimentsRunsListCmd.Flags().String("status", "", "filter by lifecycle status")
+	workflowsExperimentsRunsListCmd.Flags().String("statuses", "", "comma-separated lifecycle statuses")
+	workflowsExperimentsRunsListCmd.Flags().String("exclude-status", "", "exclude lifecycle status")
+	workflowsExperimentsRunsListCmd.Flags().String("trigger-type", "", "filter by trigger type")
+	workflowsExperimentsRunsListCmd.Flags().String("trigger-types", "", "comma-separated trigger types")
+	workflowsExperimentsRunsListCmd.Flags().String("from-date", "", "created on or after YYYY-MM-DD")
+	workflowsExperimentsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
+	workflowsExperimentsRunsListCmd.Flags().String("sort-by", "", "sort field")
+	workflowsExperimentsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
+	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor")
+	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor")
+	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")
+	workflowsExperimentsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsExperimentsRunsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")
+	workflowsExperimentsRunsMetricsGetCmd.Flags().String("document-id", "", "document id")
+	workflowsExperimentsRunsMetricsGetCmd.Flags().String("target-path", "", "target path")
+	workflowsExperimentsRunsMetricsGetCmd.Flags().String("prior-run-id", "", "prior run id")
+	workflowsExperimentsRunsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
 
-	workflowsExperimentsRunBatchCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
-	workflowsExperimentsRunBatchCmd.Flags().String("block-id", "", "block id (required)")
-	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
-	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
-	_ = workflowsExperimentsRunBatchCmd.Flags().MarkHidden("workflow-id")
-	_ = workflowsExperimentsRunBatchCmd.MarkFlagRequired("block-id")
-
-	workflowsExperimentsRunsGetCmd.Flags().String("run-id", "", "specific run id (default: latest)")
-
-	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd)
-	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsDuplicateCmd, workflowsExperimentsCancelCmd, workflowsExperimentsMetricsCmd, workflowsExperimentsEligibleBlocksCmd, workflowsExperimentsRunBatchCmd, workflowsExperimentsRunsCmd)
+	workflowsExperimentsRunsResultsCmd.AddCommand(workflowsExperimentsRunsResultsListCmd, workflowsExperimentsRunsResultsGetCmd)
+	workflowsExperimentsRunsMetricsCmd.AddCommand(workflowsExperimentsRunsMetricsGetCmd)
+	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd, workflowsExperimentsRunsCancelCmd, workflowsExperimentsRunsResultsCmd, workflowsExperimentsRunsMetricsCmd)
+	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsDuplicateCmd, workflowsExperimentsEligibleBlocksCmd, workflowsExperimentsRunsCmd)
 	workflowsCmd.AddCommand(workflowsExperimentsCmd)
 }

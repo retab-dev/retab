@@ -2,7 +2,7 @@
 
 Mirrors the REST endpoints under ``/v1/workflows/{workflow_id}/experiments``.
 The MCP tool surface (``experiments_create``, ``experiments_runs_create``,
-``experiments_get_metrics``, ...) calls the same routes — this resource is
+``experiments_runs_metrics_get``, ...) calls the same routes — this resource is
 the SDK-side equivalent so callers don't have to construct raw requests.
 
 Argument shapes accept either the typed Pydantic models or plain dicts.
@@ -11,7 +11,7 @@ the API docs work without import gymnastics, and callers who want type
 checking can pass model instances.
 
 Sub-resource:
-    runs: per-experiment run history + run content inspection.
+    runs: experiment run lifecycle, child results, and metrics.
 
 Layout follows the sibling ``WorkflowTests`` resource (mixin → sync → async)
 so anyone reading this code recognizes the pattern.
@@ -28,16 +28,14 @@ from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows.experiments import (
     EligibleBlockListResponse,
-    ExperimentContentResponse,
     ExperimentDocumentCaptureRequest,
     ExperimentMetricsResponse,
     ExperimentMetricView,
+    ExperimentResult,
+    ExperimentRun,
     ExperimentResponse,
-    ExperimentRunSummary,
     ExplicitExperimentDocumentRequest,
     NConsensusValue,
-    RunBatchResponse,
-    RunExperimentResponse,
 )
 
 
@@ -169,62 +167,11 @@ class WorkflowExperimentsMixin:
             data={},
         )
 
-    def prepare_cancel(self, workflow_id: str, experiment_id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="POST",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/cancel",
-            data={},
-        )
-
-    def prepare_get_metrics(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        *,
-        view: ExperimentMetricView = "summary",
-        run_id: str | None = None,
-        document_id: str | None = None,
-        target_path: str | None = None,
-        include_prior: bool = True,
-        prior_run_id: str | None = None,
-    ) -> PreparedRequest:
-        # Always send ``view`` so the server doesn't have to fall back to a
-        # default — the four views return different shapes and an explicit
-        # value protects against accidental ``summary`` reads.
-        params: Dict[str, Any] = {"view": view, "include_prior": include_prior}
-        if run_id is not None:
-            params["run_id"] = run_id
-        if document_id is not None:
-            params["document_id"] = document_id
-        if target_path is not None:
-            params["target_path"] = target_path
-        if prior_run_id is not None:
-            params["prior_run_id"] = prior_run_id
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/metrics",
-            params=params,
-        )
-
     def prepare_list_eligible_blocks(self, workflow_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
             url=f"/workflows/{workflow_id}/experiments/eligible-blocks",
         )
-
-    def prepare_run_batch(
-        self,
-        workflow_id: str,
-        *,
-        block_id: str,
-    ) -> PreparedRequest:
-        data: Dict[str, Any] = {"block_id": block_id}
-        return PreparedRequest(
-            method="POST",
-            url=f"/workflows/{workflow_id}/experiments/run-batch",
-            data=data,
-        )
-
 
 class ExperimentRunsMixin:
     """Shared prepare_* methods for the runs sub-resource."""
@@ -244,41 +191,78 @@ class ExperimentRunsMixin:
             data=data,
         )
 
-    def prepare_list(self, workflow_id: str, experiment_id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/runs",
-        )
-
-    def prepare_get(
+    def prepare_list(
         self,
-        workflow_id: str,
-        experiment_id: str,
         *,
-        run_id: str | None = None,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
+        block_id: str | None = None,
+        limit: int = 20,
     ) -> PreparedRequest:
-        params: Dict[str, Any] = {}
-        if run_id is not None:
-            params["run_id"] = run_id
+        params: Dict[str, Any] = {"limit": limit}
+        if workflow_id is not None:
+            params["workflow_id"] = workflow_id
+        if experiment_id is not None:
+            params["experiment_id"] = experiment_id
+        if block_id is not None:
+            params["block_id"] = block_id
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/content",
-            params=params or None,
+            url="/workflows/experiments/runs",
+            params=params,
         )
 
-    def prepare_cancel_document(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        document_id: str,
-    ) -> PreparedRequest:
+    def prepare_get(self, run_id: str) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/experiments/runs/{run_id}",
+        )
+
+    def prepare_cancel(self, run_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="POST",
-            url=(
-                f"/workflows/{workflow_id}/experiments/{experiment_id}"
-                f"/documents/{document_id}/cancel"
-            ),
+            url=f"/workflows/experiments/runs/{run_id}/cancel",
             data={},
+        )
+
+
+class ExperimentRunResultsMixin:
+    def prepare_list(self, run_id: str, *, limit: int = 20) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/experiments/runs/{run_id}/results",
+            params={"limit": limit},
+        )
+
+    def prepare_get(self, run_id: str, document_id: str) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/experiments/runs/{run_id}/results/{document_id}",
+        )
+
+
+class ExperimentRunMetricsMixin:
+    def prepare_get(
+        self,
+        run_id: str,
+        *,
+        view: ExperimentMetricView = "summary",
+        document_id: str | None = None,
+        target_path: str | None = None,
+        include_prior: bool = True,
+        prior_run_id: str | None = None,
+    ) -> PreparedRequest:
+        params: Dict[str, Any] = {"view": view, "include_prior": include_prior}
+        if document_id is not None:
+            params["document_id"] = document_id
+        if target_path is not None:
+            params["target_path"] = target_path
+        if prior_run_id is not None:
+            params["prior_run_id"] = prior_run_id
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/experiments/runs/{run_id}/metrics",
+            params=params,
         )
 
 
@@ -288,13 +272,18 @@ class ExperimentRunsMixin:
 
 
 class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
-    """Per-experiment run history and per-document job inspection (sync)."""
+    """Experiment run lifecycle and per-document results (sync)."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.results = ExperimentRunResults(client=self._client)
+        self.metrics = ExperimentRunMetrics(client=self._client)
 
     def create(
         self,
         workflow_id: str,
         experiment_id: str,
-    ) -> RunExperimentResponse:
+    ) -> ExperimentRun:
         """Ensure the experiment has fresh results for the current draft config.
 
         Args:
@@ -302,59 +291,85 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
             experiment_id: Experiment to run
 
         Returns:
-            ``RunExperimentResponse``. Fresh completed jobs are reused, failed
-            or stale jobs are queued, and ``noop`` is true when no work was
-            needed.
+            ``ExperimentRun``. Inspect child result rows via
+            ``client.workflows.experiments.runs.results``.
         """
         request = self.prepare_create(
             workflow_id,
             experiment_id,
         )
         response = self._client._prepared_request(request)
-        return RunExperimentResponse.model_validate(response)
+        return ExperimentRun.model_validate(response)
 
     def list(
         self,
-        workflow_id: str,
-        experiment_id: str,
-    ) -> PaginatedList[ExperimentRunSummary]:
+        *,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
+        block_id: str | None = None,
+        limit: int = 20,
+    ) -> PaginatedList[ExperimentRun]:
         """List historical runs for one experiment, newest first."""
-        request = self.prepare_list(workflow_id, experiment_id)
+        request = self.prepare_list(
+            workflow_id=workflow_id,
+            experiment_id=experiment_id,
+            block_id=block_id,
+            limit=limit,
+        )
         response = self._client._prepared_request(request)
-        return PaginatedList[ExperimentRunSummary].model_validate(response)
+        return PaginatedList[ExperimentRun].model_validate(response)
 
+    def get(self, run_id: str) -> ExperimentRun:
+        request = self.prepare_get(run_id)
+        response = self._client._prepared_request(request)
+        return ExperimentRun.model_validate(response)
+
+    def cancel(self, run_id: str) -> ExperimentRun:
+        request = self.prepare_cancel(run_id)
+        response = self._client._prepared_request(request)
+        return ExperimentRun.model_validate(response)
+
+
+class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
+    def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[ExperimentResult]:
+        request = self.prepare_list(run_id, limit=limit)
+        response = self._client._prepared_request(request)
+        return PaginatedList[ExperimentResult].model_validate(response)
+
+    def get(self, run_id: str, document_id: str) -> ExperimentResult:
+        request = self.prepare_get(run_id, document_id)
+        response = self._client._prepared_request(request)
+        return ExperimentResult.model_validate(response)
+
+
+class ExperimentRunMetrics(SyncAPIResource, ExperimentRunMetricsMixin):
     def get(
         self,
-        workflow_id: str,
-        experiment_id: str,
+        run_id: str,
         *,
-        run_id: str | None = None,
-    ) -> ExperimentContentResponse:
-        """Get the per-document execution content of a run.
-
-        ``run_id`` defaults to the latest run when omitted.
-        """
-        request = self.prepare_get(workflow_id, experiment_id, run_id=run_id)
+        view: ExperimentMetricView = "summary",
+        document_id: str | None = None,
+        target_path: str | None = None,
+        include_prior: bool = True,
+        prior_run_id: str | None = None,
+    ) -> ExperimentMetricsResponse:
+        request = self.prepare_get(
+            run_id,
+            view=view,
+            document_id=document_id,
+            target_path=target_path,
+            include_prior=include_prior,
+            prior_run_id=prior_run_id,
+        )
         response = self._client._prepared_request(request)
-        return ExperimentContentResponse.model_validate(response)
-
-    def cancel_document(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        document_id: str,
-    ) -> Dict[str, str]:
-        """Cancel one pending/running document job in the latest active run."""
-        request = self.prepare_cancel_document(workflow_id, experiment_id, document_id)
-        response = self._client._prepared_request(request)
-        return dict(response) if isinstance(response, dict) else {"status": str(response)}
+        return _METRICS_RESPONSE_ADAPTER.validate_python(response)
 
 
 class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
     """Workflow experiments API client (synchronous).
 
     Sub-clients:
-        runs: per-experiment run history + per-document job inspection.
+        runs: experiment run lifecycle, child results, and metrics.
 
     Example:
         >>> from retab import Retab
@@ -373,11 +388,10 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         >>> run = client.workflows.experiments.runs.create(
         ...     workflow_id="wf_abc123", experiment_id=exp.id,
         ... )
-        >>> print(run.run_id, run.status)
+        >>> print(run.id, run.lifecycle.status)
         >>>
-        >>> metrics = client.workflows.experiments.get_metrics(
-        ...     workflow_id="wf_abc123",
-        ...     experiment_id=exp.id,
+        >>> metrics = client.workflows.experiments.runs.metrics.get(
+        ...     run.id,
         ...     view="summary",
         ... )
     """
@@ -459,7 +473,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         return ExperimentResponse.model_validate(response)
 
     def delete(self, workflow_id: str, experiment_id: str) -> None:
-        """Delete an experiment along with its runs and jobs."""
+        """Delete an experiment along with its runs and results."""
         request = self.prepare_delete(workflow_id, experiment_id)
         self._client._prepared_request(request)
 
@@ -469,76 +483,11 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         response = self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
-    def cancel(self, workflow_id: str, experiment_id: str) -> Dict[str, str]:
-        """Cancel the latest pending/running run for an experiment.
-
-        Returns a small ``{"status": "cancelled", "run_id": ...}`` dict.
-        """
-        request = self.prepare_cancel(workflow_id, experiment_id)
-        response = self._client._prepared_request(request)
-        return dict(response) if isinstance(response, dict) else {"status": str(response)}
-
-    def get_metrics(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        *,
-        view: ExperimentMetricView = "summary",
-        run_id: str | None = None,
-        document_id: str | None = None,
-        target_path: str | None = None,
-        include_prior: bool = True,
-        prior_run_id: str | None = None,
-    ) -> ExperimentMetricsResponse:
-        """Get experiment metrics — consensus likelihoods (0.0–1.0).
-
-        Views:
-        - ``summary``: overall score + block-specific diagnostics.
-        - ``by_document``: one document → all targets sorted ascending.
-            Requires ``document_id``.
-        - ``by_target``: one target → scores across all documents.
-            Requires ``target_path``.
-        - ``votes``: one document + selected target → consensus rows with
-            flat voter values. Requires both ``document_id`` and
-            ``target_path``.
-
-        If the latest run is stale relative to the current block config or
-        document set, the response carries an ``error="stale_metrics"``
-        envelope; call ``runs.create(...)`` to recompute.
-        """
-        request = self.prepare_get_metrics(
-            workflow_id,
-            experiment_id,
-            view=view,
-            run_id=run_id,
-            document_id=document_id,
-            target_path=target_path,
-            include_prior=include_prior,
-            prior_run_id=prior_run_id,
-        )
-        response = self._client._prepared_request(request)
-        return _METRICS_RESPONSE_ADAPTER.validate_python(response)
-
     def list_eligible_blocks(self, workflow_id: str) -> EligibleBlockListResponse:
         """List blocks in a workflow that support experiments, with rollups."""
         request = self.prepare_list_eligible_blocks(workflow_id)
         response = self._client._prepared_request(request)
         return EligibleBlockListResponse.model_validate(response)
-
-    def run_batch(
-        self,
-        workflow_id: str,
-        *,
-        block_id: str,
-    ) -> RunBatchResponse:
-        """Trigger a run for every experiment attached to one block."""
-        request = self.prepare_run_batch(
-            workflow_id,
-            block_id=block_id,
-        )
-        response = self._client._prepared_request(request)
-        return RunBatchResponse.model_validate(response)
-
 
 # ---------------------------------------------------------------------------
 # Async
@@ -546,49 +495,86 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
 
 
 class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
-    """Per-experiment run history and per-document job inspection (async)."""
+    """Experiment run lifecycle and per-document results (async)."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.results = AsyncExperimentRunResults(client=self._client)
+        self.metrics = AsyncExperimentRunMetrics(client=self._client)
 
     async def create(
         self,
         workflow_id: str,
         experiment_id: str,
-    ) -> RunExperimentResponse:
+    ) -> ExperimentRun:
         request = self.prepare_create(
             workflow_id,
             experiment_id,
         )
         response = await self._client._prepared_request(request)
-        return RunExperimentResponse.model_validate(response)
+        return ExperimentRun.model_validate(response)
 
     async def list(
         self,
-        workflow_id: str,
-        experiment_id: str,
-    ) -> PaginatedList[ExperimentRunSummary]:
-        request = self.prepare_list(workflow_id, experiment_id)
+        *,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
+        block_id: str | None = None,
+        limit: int = 20,
+    ) -> PaginatedList[ExperimentRun]:
+        request = self.prepare_list(
+            workflow_id=workflow_id,
+            experiment_id=experiment_id,
+            block_id=block_id,
+            limit=limit,
+        )
         response = await self._client._prepared_request(request)
-        return PaginatedList[ExperimentRunSummary].model_validate(response)
+        return PaginatedList[ExperimentRun].model_validate(response)
 
+    async def get(self, run_id: str) -> ExperimentRun:
+        request = self.prepare_get(run_id)
+        response = await self._client._prepared_request(request)
+        return ExperimentRun.model_validate(response)
+
+    async def cancel(self, run_id: str) -> ExperimentRun:
+        request = self.prepare_cancel(run_id)
+        response = await self._client._prepared_request(request)
+        return ExperimentRun.model_validate(response)
+
+
+class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):
+    async def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[ExperimentResult]:
+        request = self.prepare_list(run_id, limit=limit)
+        response = await self._client._prepared_request(request)
+        return PaginatedList[ExperimentResult].model_validate(response)
+
+    async def get(self, run_id: str, document_id: str) -> ExperimentResult:
+        request = self.prepare_get(run_id, document_id)
+        response = await self._client._prepared_request(request)
+        return ExperimentResult.model_validate(response)
+
+
+class AsyncExperimentRunMetrics(AsyncAPIResource, ExperimentRunMetricsMixin):
     async def get(
         self,
-        workflow_id: str,
-        experiment_id: str,
+        run_id: str,
         *,
-        run_id: str | None = None,
-    ) -> ExperimentContentResponse:
-        request = self.prepare_get(workflow_id, experiment_id, run_id=run_id)
+        view: ExperimentMetricView = "summary",
+        document_id: str | None = None,
+        target_path: str | None = None,
+        include_prior: bool = True,
+        prior_run_id: str | None = None,
+    ) -> ExperimentMetricsResponse:
+        request = self.prepare_get(
+            run_id,
+            view=view,
+            document_id=document_id,
+            target_path=target_path,
+            include_prior=include_prior,
+            prior_run_id=prior_run_id,
+        )
         response = await self._client._prepared_request(request)
-        return ExperimentContentResponse.model_validate(response)
-
-    async def cancel_document(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        document_id: str,
-    ) -> Dict[str, str]:
-        request = self.prepare_cancel_document(workflow_id, experiment_id, document_id)
-        response = await self._client._prepared_request(request)
-        return dict(response) if isinstance(response, dict) else {"status": str(response)}
+        return _METRICS_RESPONSE_ADAPTER.validate_python(response)
 
 
 class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
@@ -661,54 +647,9 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         response = await self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
-    async def cancel(
-        self, workflow_id: str, experiment_id: str
-    ) -> Dict[str, str]:
-        request = self.prepare_cancel(workflow_id, experiment_id)
-        response = await self._client._prepared_request(request)
-        return dict(response) if isinstance(response, dict) else {"status": str(response)}
-
-    async def get_metrics(
-        self,
-        workflow_id: str,
-        experiment_id: str,
-        *,
-        view: ExperimentMetricView = "summary",
-        run_id: str | None = None,
-        document_id: str | None = None,
-        target_path: str | None = None,
-        include_prior: bool = True,
-        prior_run_id: str | None = None,
-    ) -> ExperimentMetricsResponse:
-        request = self.prepare_get_metrics(
-            workflow_id,
-            experiment_id,
-            view=view,
-            run_id=run_id,
-            document_id=document_id,
-            target_path=target_path,
-            include_prior=include_prior,
-            prior_run_id=prior_run_id,
-        )
-        response = await self._client._prepared_request(request)
-        return _METRICS_RESPONSE_ADAPTER.validate_python(response)
-
     async def list_eligible_blocks(
         self, workflow_id: str
     ) -> EligibleBlockListResponse:
         request = self.prepare_list_eligible_blocks(workflow_id)
         response = await self._client._prepared_request(request)
         return EligibleBlockListResponse.model_validate(response)
-
-    async def run_batch(
-        self,
-        workflow_id: str,
-        *,
-        block_id: str,
-    ) -> RunBatchResponse:
-        request = self.prepare_run_batch(
-            workflow_id,
-            block_id=block_id,
-        )
-        response = await self._client._prepared_request(request)
-        return RunBatchResponse.model_validate(response)

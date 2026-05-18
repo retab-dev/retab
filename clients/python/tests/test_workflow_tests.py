@@ -19,6 +19,16 @@ from retab.resources.workflows.tests.client import (
 
 
 _NOW = "2026-05-01T14:30:00Z"
+_WORKFLOW_REF = {
+    "workflow_id": "wf_abc123",
+    "version_id": "draft_1",
+    "name_at_run_time": "Q1 workflow",
+    "requested_version": "draft",
+}
+_TRIGGER = {"type": "api"}
+_PENDING = {"status": "pending"}
+_COMPLETED = {"status": "completed"}
+_TIMING = {"created_at": _NOW, "started_at": _NOW, "completed_at": _NOW}
 
 _TEST_RESPONSE = {
     "id": "wfnodetest_abc",
@@ -283,31 +293,32 @@ def test_update_with_assertion_serializes_assertion_only() -> None:
 
 
 # ---------------------------------------------------------------------------
-# execute — three call patterns + n_consensus
+# runs.create — three call patterns + n_consensus
 # ---------------------------------------------------------------------------
 
 
-def _execute_response(**overrides: object) -> dict:
+def _run_response(**overrides: object) -> dict:
     base = {
-        "run_id": "wftestrun_q1z2",
-        "status": "queued",
-        "workflow_id": "wf_abc123",
+        "id": "wftestrun_q1z2",
+        "workflow": _WORKFLOW_REF,
+        "trigger": _TRIGGER,
+        "lifecycle": _PENDING,
+        "timing": _TIMING,
         "target": {"type": "block", "block_id": "block_extract"},
         "test_id": None,
         "total_tests": 4,
         "counts": {"queued": 4},
-        "created_at": _NOW,
     }
     base.update(overrides)
     return base
 
 
-def test_execute_with_test_id_only() -> None:
+def test_runs_create_with_test_id_only() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _execute_response()
+    client._prepared_request.return_value = _run_response()
 
-    response = Workflows(client=client).tests.execute(
-        workflow_id="wf_abc123",
+    response = Workflows(client=client).tests.runs.create(
+        "wf_abc123",
         test_id="wfnodetest_abc",
     )
 
@@ -315,16 +326,16 @@ def test_execute_with_test_id_only() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/wf_abc123/tests/runs"
     assert request.data == {"test_id": "wfnodetest_abc"}
-    assert response.status == "queued"
-    assert response.run_id == "wftestrun_q1z2"
+    assert response.lifecycle.status == "pending"
+    assert response.id == "wftestrun_q1z2"
 
 
-def test_execute_with_target_and_consensus() -> None:
+def test_runs_create_with_target_and_consensus() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _execute_response()
+    client._prepared_request.return_value = _run_response()
 
-    Workflows(client=client).tests.execute(
-        workflow_id="wf_abc123",
+    Workflows(client=client).tests.runs.create(
+        "wf_abc123",
         target={"type": "block", "block_id": "block_extract"},
         n_consensus=5,
     )
@@ -336,15 +347,15 @@ def test_execute_with_target_and_consensus() -> None:
     }
 
 
-def test_execute_no_args_runs_every_test_in_workflow() -> None:
+def test_runs_create_no_args_runs_every_test_in_workflow() -> None:
     """Empty body = run every test in the workflow. The backend
     distinguishes this from `target=None` because Pydantic accepts the
     empty dict as a valid request.
     """
     client = MagicMock()
-    client._prepared_request.return_value = _execute_response()
+    client._prepared_request.return_value = _run_response()
 
-    Workflows(client=client).tests.execute(workflow_id="wf_abc123")
+    Workflows(client=client).tests.runs.create("wf_abc123")
 
     request = client._prepared_request.call_args.args[0]
     assert request.data == {}
@@ -356,24 +367,26 @@ def test_execute_no_args_runs_every_test_in_workflow() -> None:
 
 
 _RUN_RESPONSE = {
-    "id": "wfnodetestrun_abc",
+    **_run_response(lifecycle=_COMPLETED, counts={"passed": 1}),
+}
+
+_RESULT_RESPONSE = {
+    "id": "wfresult_abc",
+    "run_id": "wftestrun_q1z2",
     "test_id": "wfnodetest_abc",
-    "workflow_id": "wf_abc123",
-    "organization_id": "org_x",
+    "lifecycle": _COMPLETED,
+    "timing": _TIMING,
     "target": {"type": "block", "block_id": "block_extract"},
     "source": {"type": "manual", "handle_inputs": {}},
-    "status": "passed",
     "execution_fingerprint": "f1",
-    "started_at": _NOW,
-    "completed_at": _NOW,
-    "duration_ms": 1234,
     "outputs": {"output-json-0": {"total": 1234.56}},
     "warnings": [],
     "skipped": False,
+    "verdict": {"status": "passed"},
 }
 
 
-def test_runs_list_uses_test_runs_route() -> None:
+def test_runs_list_uses_canonical_runs_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "data": [],
@@ -388,71 +401,81 @@ def test_runs_list_uses_test_runs_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc/runs"
-    assert request.params == {"limit": 10}
+    assert request.url == "/workflows/tests/runs"
+    assert request.params == {
+        "limit": 10,
+        "workflow_id": "wf_abc123",
+        "test_id": "wfnodetest_abc",
+    }
     assert result.data == []
     assert result.list_metadata.before is None
     assert result.list_metadata.after is None
 
 
-def test_runs_get_uses_run_detail_route() -> None:
+def test_runs_get_uses_run_id_first_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _RUN_RESPONSE
 
-    run = Workflows(client=client).tests.runs.get(
-        workflow_id="wf_abc123",
-        test_id="wfnodetest_abc",
-        run_id="wfnodetestrun_abc",
-    )
+    run = Workflows(client=client).tests.runs.get("wftestrun_q1z2")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert (
-        request.url
-        == "/workflows/wf_abc123/tests/wfnodetest_abc/runs/wfnodetestrun_abc"
-    )
-    assert run.status == "passed"
-    # The renamed `outputs` field (formerly `handle_outputs`) parses cleanly.
-    assert run.outputs == {"output-json-0": {"total": 1234.56}}
+    assert request.url == "/workflows/tests/runs/wftestrun_q1z2"
+    assert run.lifecycle.status == "completed"
 
 
-def test_runs_get_execution_uses_parent_run_route() -> None:
+def test_runs_cancel_uses_run_id_first_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _execute_response()
+    client._prepared_request.return_value = _run_response(lifecycle={"status": "cancelled"})
 
-    run = Workflows(client=client).tests.runs.get_execution(
-        workflow_id="wf_abc123",
-        run_id="wftestrun_q1z2",
-    )
+    run = Workflows(client=client).tests.runs.cancel("wftestrun_q1z2")
 
     request = client._prepared_request.call_args.args[0]
-    assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/tests/runs/wftestrun_q1z2"
-    assert run.run_id == "wftestrun_q1z2"
+    assert request.method == "POST"
+    assert request.url == "/workflows/tests/runs/wftestrun_q1z2/cancel"
+    assert request.data == {}
+    assert run.lifecycle.status == "cancelled"
 
 
-def test_runs_results_uses_parent_run_results_route() -> None:
+def test_runs_results_list_uses_run_id_first_results_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
-        "run_id": "wftestrun_q1z2",
-        "status": "completed",
-        "workflow_id": "wf_abc123",
-        "target": {"type": "block", "block_id": "block_extract"},
-        "test_id": None,
-        "total_tests": 1,
-        "counts": {"passed": 1},
-        "results": [_RUN_RESPONSE],
+        "data": [_RESULT_RESPONSE],
+        "list_metadata": {"before": None, "after": None},
     }
 
-    result = Workflows(client=client).tests.runs.results(
-        workflow_id="wf_abc123",
-        run_id="wftestrun_q1z2",
+    result = Workflows(client=client).tests.runs.results.list("wftestrun_q1z2")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/tests/runs/wftestrun_q1z2/results"
+    assert result.data[0].test_id == "wfnodetest_abc"
+    assert result.data[0].outputs == {"output-json-0": {"total": 1234.56}}
+
+
+def test_runs_results_get_uses_test_id_as_child_key() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _RESULT_RESPONSE
+
+    result = Workflows(client=client).tests.runs.results.get(
+        "wftestrun_q1z2",
+        "wfnodetest_abc",
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/tests/runs/wftestrun_q1z2/results"
-    assert result.results[0].id == "wfnodetestrun_abc"
+    assert request.url == "/workflows/tests/runs/wftestrun_q1z2/results/wfnodetest_abc"
+    assert result.test_id == "wfnodetest_abc"
+
+
+def test_tests_hard_cutover_removes_legacy_execute_and_scoped_run_aliases() -> None:
+    client = MagicMock()
+    tests = Workflows(client=client).tests
+
+    assert not hasattr(tests, "execute")
+    assert not hasattr(tests.runs, "get_execution")
+    assert hasattr(tests.runs, "results")
+    assert not callable(tests.runs.results)
 
 
 # ---------------------------------------------------------------------------
@@ -486,15 +509,10 @@ async def test_async_runs_get_returns_typed_record() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(return_value=_RUN_RESPONSE)
 
-    run = await AsyncWorkflows(client=client).tests.runs.get(
-        workflow_id="wf_abc123",
-        test_id="wfnodetest_abc",
-        run_id="wfnodetestrun_abc",
-    )
+    run = await AsyncWorkflows(client=client).tests.runs.get("wftestrun_q1z2")
 
-    assert run.outputs == {"output-json-0": {"total": 1234.56}}
-    # Re-validate the discriminated union on the source side.
-    assert run.source.type == "manual"
+    assert run.id == "wftestrun_q1z2"
+    assert run.lifecycle.status == "completed"
 
 
 # ---------------------------------------------------------------------------
@@ -558,8 +576,12 @@ def test_async_runs_list_uses_test_runs_route() -> None:
     asyncio.run(_go())
 
     request = client._prepared_request.call_args.args[0]
-    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc/runs"
-    assert request.params == {"limit": 10}
+    assert request.url == "/workflows/tests/runs"
+    assert request.params == {
+        "limit": 10,
+        "workflow_id": "wf_abc123",
+        "test_id": "wfnodetest_abc",
+    }
 
 
 def test_workflow_tests_do_not_expose_wait_for_completion() -> None:

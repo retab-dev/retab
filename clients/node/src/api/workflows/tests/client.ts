@@ -3,12 +3,10 @@ import APIWorkflowTestRuns from "./runs/client.js";
 import {
     AssertionSpec,
     WorkflowTestListResponse,
-    ExecuteWorkflowTestsResponse,
     WorkflowTest,
     WorkflowTestBlockTarget,
     WorkflowTestSource,
     ZWorkflowTestListResponse,
-    ZExecuteWorkflowTestsResponse,
     ZWorkflowTest,
 } from "./types.js";
 
@@ -34,10 +32,10 @@ import {
  * });
  *
  * // Run all tests for the workflow asynchronously.
- * const run = await client.workflows.tests.execute({
+ * const run = await client.workflows.tests.runs.create({
  *     workflowId: "wf_abc123",
  * });
- * console.log(run.run_id, run.status);
+ * console.log(run.id, run.lifecycle.status);
  * ```
  */
 export default class APIWorkflowTests extends CompositionClient {
@@ -203,49 +201,6 @@ export default class APIWorkflowTests extends CompositionClient {
         return this._fetchJson({
             url: `/workflows/${workflowId}/tests/${testId}`,
             method: "DELETE",
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Run one workflow test, all tests for a single block, or every test in
-     * a workflow.
-     *
-     * Provide EXACTLY ONE of:
-     * - `testId` — run a single test by id
-     * - `target` — run all tests for a single block
-     * - neither — run every test in the workflow
-     *
-     * `nConsensus` is optional; allowed values are 3, 5, or 7.
-     *
-     * Execution is asynchronous: the response carries `run_id`.
-     * Poll the workflow-test run by `run_id` for status and results.
-     */
-    async execute(
-        {
-            workflowId,
-            testId,
-            target,
-            nConsensus,
-        }: {
-            workflowId: string;
-            testId?: string;
-            target?: WorkflowTestBlockTarget;
-            nConsensus?: number;
-        },
-        options?: RequestOptions
-    ): Promise<ExecuteWorkflowTestsResponse> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {};
-        if (testId !== undefined) body.test_id = testId;
-        if (target !== undefined) body.target = target;
-        if (nConsensus !== undefined) body.n_consensus = nConsensus;
-
-        return this._fetchJson(ZExecuteWorkflowTestsResponse, {
-            url: `/workflows/${workflowId}/tests/runs`,
-            method: "POST",
-            body: { ...body, ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });

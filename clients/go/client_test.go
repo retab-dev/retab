@@ -329,22 +329,45 @@ func TestWorkflowBlocksPrepareSimulateMatchesPythonSurface(t *testing.T) {
 	}
 }
 
-func TestWorkflowExperimentRunsGetUsesContentRoute(t *testing.T) {
+func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	var rawQuery string
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/experiments/exp_123/documents/doc_123/cancel":
-			_ = json.NewEncoder(w).Encode(map[string]any{"status": "cancelled"})
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/experiments/exp_123/content":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/runs/exprun_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":            "exprun_123",
+				"experiment_id": "exp_123",
+				"lifecycle":     map[string]any{"status": "completed"},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/runs/exprun_123/results":
 			rawQuery = r.URL.RawQuery
 			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data":          []map[string]any{},
+				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/runs/exprun_123/results/doc_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":            "exprun_123_doc_123",
 				"experiment_id": "exp_123",
 				"run_id":        "exprun_123",
-				"content":       map[string]any{"jobs": []map[string]any{}},
+				"document_id":   "doc_123",
+				"lifecycle":     map[string]any{"status": "completed"},
+				"timing":        map[string]any{},
+				"block_kind":    "extract",
+				"handle_inputs": map[string]any{},
+				"attempt":       1,
 			})
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/experiments/runs/exprun_123/cancel":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":            "exprun_123",
+				"experiment_id": "exp_123",
+				"lifecycle":     map[string]any{"status": "cancelled"},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/runs/exprun_123/metrics":
+			_ = json.NewEncoder(w).Encode(map[string]any{"view": "summary"})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
@@ -356,32 +379,55 @@ func TestWorkflowExperimentRunsGetUsesContentRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := client.Workflows.Experiments.Runs.Get(context.Background(), "wf_123", "exp_123", "exprun_123")
+	result, err := client.Workflows.Experiments.Runs.Get(context.Background(), "exprun_123")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.RunID != "exprun_123" || rawQuery != "run_id=exprun_123" {
-		t.Fatalf("result = %#v rawQuery = %q", result, rawQuery)
+	if result.ID != "exprun_123" {
+		t.Fatalf("result = %#v", result)
 	}
-	cancelled, err := client.Workflows.Experiments.Runs.CancelDocument(context.Background(), "wf_123", "exp_123", "doc_123")
+	results, err := client.Workflows.Experiments.Runs.Results.List(context.Background(), "exprun_123", 25)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cancelled.Status != "cancelled" {
+	if len(results.Data) != 0 || rawQuery != "limit=25" {
+		t.Fatalf("results = %#v rawQuery = %q", results, rawQuery)
+	}
+	documentResult, err := client.Workflows.Experiments.Runs.Results.Get(context.Background(), "exprun_123", "doc_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if documentResult.DocumentID != "doc_123" {
+		t.Fatalf("documentResult = %#v", documentResult)
+	}
+	cancelled, err := client.Workflows.Experiments.Runs.Cancel(context.Background(), "exprun_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cancelled.Lifecycle.Status != "cancelled" {
 		t.Fatalf("cancelled = %#v", cancelled)
 	}
+	metrics, err := client.Workflows.Experiments.Runs.Metrics.Get(context.Background(), "exprun_123", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if metrics["view"] != "summary" {
+		t.Fatalf("result = %#v rawQuery = %q", result, rawQuery)
+	}
 	expected := []string{
-		"GET /workflows/wf_123/experiments/exp_123/content",
-		"POST /workflows/wf_123/experiments/exp_123/documents/doc_123/cancel",
+		"GET /workflows/experiments/runs/exprun_123",
+		"GET /workflows/experiments/runs/exprun_123/results",
+		"GET /workflows/experiments/runs/exprun_123/results/doc_123",
+		"POST /workflows/experiments/runs/exprun_123/cancel",
+		"GET /workflows/experiments/runs/exprun_123/metrics",
 	}
 	if strings.Join(requests, ",") != strings.Join(expected, ",") {
 		t.Fatalf("requests = %#v", requests)
 	}
 }
 
-func TestWorkflowExperimentRunRequestsDoNotSendUnsupportedOverrides(t *testing.T) {
+func TestWorkflowExperimentRunRequestsSendCanonicalBodies(t *testing.T) {
 	var runBody map[string]any
-	var batchBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
@@ -390,21 +436,12 @@ func TestWorkflowExperimentRunRequestsDoNotSendUnsupportedOverrides(t *testing.T
 				t.Fatal(err)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":                     "exprun_123",
 				"experiment_id":          "exp_123",
-				"run_id":                 "exprun_123",
-				"status":                 "queued",
+				"lifecycle":              map[string]any{"status": "queued"},
 				"definition_fingerprint": "fp",
 				"document_count":         1,
 				"n_consensus":            5,
-			})
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/experiments/run-batch":
-			if err := json.NewDecoder(r.Body).Decode(&batchBody); err != nil {
-				t.Fatal(err)
-			}
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"block_id":         "block_1",
-				"experiment_count": 0,
-				"runs":             []map[string]any{},
 			})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
@@ -417,28 +454,11 @@ func TestWorkflowExperimentRunRequestsDoNotSendUnsupportedOverrides(t *testing.T
 		t.Fatal(err)
 	}
 
-	if _, err := client.Workflows.Experiments.Runs.Create(context.Background(), "wf_123", "exp_123", &RunExperimentOptions{
-		NConsensus:      3,
-		RetryFailedOnly: true,
-	}); err != nil {
+	if _, err := client.Workflows.Experiments.Runs.Create(context.Background(), "wf_123", "exp_123"); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := runBody["n_consensus"]; ok {
-		t.Fatalf("run body should omit unsupported n_consensus override, got %#v", runBody)
-	}
-	if _, ok := runBody["retry_failed_only"]; ok {
-		t.Fatalf("run body should omit unsupported retry_failed_only override, got %#v", runBody)
-	}
-
-	if _, err := client.Workflows.Experiments.RunBatch(context.Background(), RunBatchExperimentsRequest{
-		WorkflowID: "wf_123",
-		BlockID:    "block_1",
-		NConsensus: 3,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := batchBody["n_consensus"]; ok {
-		t.Fatalf("run-batch body should omit unsupported n_consensus override, got %#v", batchBody)
+	if len(runBody) != 0 {
+		t.Fatalf("run body should be empty, got %#v", runBody)
 	}
 }
 

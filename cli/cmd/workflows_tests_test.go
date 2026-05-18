@@ -153,9 +153,7 @@ func TestWorkflowsTestsCreateCmd_NoCobraAutoDeprecation(t *testing.T) {
 		cmd  *cobra.Command
 	}{
 		{"workflowsTestsCreateCmd", workflowsTestsCreateCmd},
-		{"workflowsTestsExecuteCmd", workflowsTestsExecuteCmd},
 		{"workflowsExperimentsCreateCmd", workflowsExperimentsCreateCmd},
-		{"workflowsExperimentsRunBatchCmd", workflowsExperimentsRunBatchCmd},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			flag := tc.cmd.Flags().Lookup("workflow-id")
@@ -220,15 +218,15 @@ func TestWorkflowsTestsCreateCmd_NoCobraAutoDeprecation(t *testing.T) {
 	cmd.Flags().Lookup("workflow-id").Changed = false
 }
 
-func TestWorkflowsTestsExecuteRejectsUnsupportedConsensusLocally(t *testing.T) {
-	err := workflowsTestsExecuteCmd.Flags().Set("n-consensus", "2")
+func TestWorkflowsTestsRunsCreateRejectsUnsupportedConsensusLocally(t *testing.T) {
+	err := workflowsTestsRunsCreateCmd.Flags().Set("n-consensus", "2")
 	if err == nil {
 		t.Fatal("expected local parse error for --n-consensus=2")
 	}
 	if !strings.Contains(err.Error(), "3, 5, or 7") {
 		t.Fatalf("error %q does not mention allowed consensus counts", err.Error())
 	}
-	if resetErr := workflowsTestsExecuteCmd.Flags().Set("n-consensus", "0"); resetErr != nil {
+	if resetErr := workflowsTestsRunsCreateCmd.Flags().Set("n-consensus", "0"); resetErr != nil {
 		t.Fatalf("reset --n-consensus: %v", resetErr)
 	}
 }
@@ -240,6 +238,9 @@ func TestWorkflowsTestsListCommandsRejectNegativeLimitLocally(t *testing.T) {
 	}{
 		{name: "tests list", cmd: workflowsTestsListCmd},
 		{name: "test runs list", cmd: workflowsTestsRunsListCmd},
+		{name: "test run results list", cmd: workflowsTestsRunsResultsListCmd},
+		{name: "experiment runs list", cmd: workflowsExperimentsRunsListCmd},
+		{name: "experiment run results list", cmd: workflowsExperimentsRunsResultsListCmd},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.cmd.Flags().Set("limit", "-1")
@@ -263,6 +264,9 @@ func TestWorkflowsTestsListCommandsRejectOverLimitLocally(t *testing.T) {
 	}{
 		{name: "tests list", cmd: workflowsTestsListCmd},
 		{name: "test runs list", cmd: workflowsTestsRunsListCmd},
+		{name: "test run results list", cmd: workflowsTestsRunsResultsListCmd},
+		{name: "experiment runs list", cmd: workflowsExperimentsRunsListCmd},
+		{name: "experiment run results list", cmd: workflowsExperimentsRunsResultsListCmd},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.cmd.Flags().Set("limit", "101")
@@ -274,6 +278,149 @@ func TestWorkflowsTestsListCommandsRejectOverLimitLocally(t *testing.T) {
 			}
 			if resetErr := tc.cmd.Flags().Set("limit", "0"); resetErr != nil {
 				t.Fatalf("reset --limit: %v", resetErr)
+			}
+		})
+	}
+}
+
+func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	for _, tc := range []struct {
+		name     string
+		cmd      *cobra.Command
+		args     []string
+		wantPath string
+	}{
+		{
+			name:     "test runs list",
+			cmd:      workflowsTestsRunsListCmd,
+			wantPath: "/workflows/tests/runs",
+		},
+		{
+			name:     "test run results list",
+			cmd:      workflowsTestsRunsResultsListCmd,
+			args:     []string{"wftestrun_123"},
+			wantPath: "/workflows/tests/runs/wftestrun_123/results",
+		},
+		{
+			name:     "experiment runs list",
+			cmd:      workflowsExperimentsRunsListCmd,
+			wantPath: "/workflows/experiments/runs",
+		},
+		{
+			name:     "experiment run results list",
+			cmd:      workflowsExperimentsRunsResultsListCmd,
+			args:     []string{"exprun_123"},
+			wantPath: "/workflows/experiments/runs/exprun_123/results",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				if r.URL.Path != tc.wantPath {
+					t.Errorf("path = %q, want %q", r.URL.Path, tc.wantPath)
+				}
+				if got := r.URL.Query().Get("limit"); got != "7" {
+					t.Errorf("limit = %q, want 7", got)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"after":null,"before":null}}`))
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_BASE_URL", server.URL)
+
+			if err := tc.cmd.Flags().Set("limit", "7"); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				_ = tc.cmd.Flags().Set("limit", "0")
+				tc.cmd.Flags().Lookup("limit").Changed = false
+			})
+
+			var err error
+			captureStd(t, func() {
+				err = tc.cmd.RunE(tc.cmd, tc.args)
+			})
+			if err != nil {
+				t.Fatalf("RunE returned error: %v", err)
+			}
+			if got := hits.Load(); got != 1 {
+				t.Fatalf("server was hit %d time(s), want 1", got)
+			}
+		})
+	}
+}
+
+func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	for _, tc := range []struct {
+		name     string
+		cmd      *cobra.Command
+		args     []string
+		wantPath string
+	}{
+		{
+			name:     "test runs list",
+			cmd:      workflowsTestsRunsListCmd,
+			wantPath: "/workflows/tests/runs",
+		},
+		{
+			name:     "test run results list",
+			cmd:      workflowsTestsRunsResultsListCmd,
+			args:     []string{"wftestrun_123"},
+			wantPath: "/workflows/tests/runs/wftestrun_123/results",
+		},
+		{
+			name:     "experiment runs list",
+			cmd:      workflowsExperimentsRunsListCmd,
+			wantPath: "/workflows/experiments/runs",
+		},
+		{
+			name:     "experiment run results list",
+			cmd:      workflowsExperimentsRunsResultsListCmd,
+			args:     []string{"exprun_123"},
+			wantPath: "/workflows/experiments/runs/exprun_123/results",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				if r.URL.Path != tc.wantPath {
+					t.Errorf("path = %q, want %q", r.URL.Path, tc.wantPath)
+				}
+				if got := r.URL.Query().Get("limit"); got != "20" {
+					t.Errorf("limit = %q, want 20", got)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"data":[],"list_metadata":{"after":null,"before":null}}`))
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_BASE_URL", server.URL)
+
+			if err := tc.cmd.Flags().Set("limit", "0"); err != nil {
+				t.Fatal(err)
+			}
+			tc.cmd.Flags().Lookup("limit").Changed = false
+			t.Cleanup(func() {
+				_ = tc.cmd.Flags().Set("limit", "0")
+				tc.cmd.Flags().Lookup("limit").Changed = false
+			})
+
+			var err error
+			captureStd(t, func() {
+				err = tc.cmd.RunE(tc.cmd, tc.args)
+			})
+			if err != nil {
+				t.Fatalf("RunE returned error: %v", err)
+			}
+			if got := hits.Load(); got != 1 {
+				t.Fatalf("server was hit %d time(s), want 1", got)
 			}
 		})
 	}
@@ -346,8 +493,8 @@ func TestWorkflowsTestsRejectMalformedTargetAndSourceBeforeRequest(t *testing.T)
 			wantError: "--source-file",
 		},
 		{
-			name:      "execute invalid target",
-			cmd:       workflowsTestsExecuteCmd,
+			name:      "runs create invalid target",
+			cmd:       workflowsTestsRunsCreateCmd,
 			args:      []string{"wf_123"},
 			flags:     map[string]string{"target-file": invalidTarget},
 			wantError: "--target-file",
@@ -589,26 +736,15 @@ func TestWorkflowsExperimentsRejectBlankNameBeforeRequest(t *testing.T) {
 	}
 }
 
-func TestWorkflowsExperimentsCreateHelpDoesNotRepeatRunBatchSentence(t *testing.T) {
-	const repeated = "experiments together via `workflows experiments run-batch`"
-	if strings.Count(workflowsExperimentsCreateCmd.Long, repeated) != 1 {
-		t.Fatalf("experiments create help should mention run-batch once, got:\n%s", workflowsExperimentsCreateCmd.Long)
+func TestWorkflowsExperimentsCreateHelpDoesNotMentionRunBatch(t *testing.T) {
+	if strings.Contains(workflowsExperimentsCreateCmd.Long, "run-batch") {
+		t.Fatalf("experiments create help should not mention run-batch, got:\n%s", workflowsExperimentsCreateCmd.Long)
 	}
 }
 
 func TestWorkflowsExperimentsUnsupportedRunOverrideFlagsAreNotRegistered(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		cmd  *cobra.Command
-	}{
-		{name: "run-batch", cmd: workflowsExperimentsRunBatchCmd},
-		{name: "runs create", cmd: workflowsExperimentsRunsCreateCmd},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if flag := tc.cmd.Flags().Lookup("n-consensus"); flag != nil {
-				t.Fatalf("%s should not expose unsupported --n-consensus flag", tc.name)
-			}
-		})
+	if flag := workflowsExperimentsRunsCreateCmd.Flags().Lookup("n-consensus"); flag != nil {
+		t.Fatalf("runs create should not expose unsupported --n-consensus flag")
 	}
 	if flag := workflowsExperimentsRunsCreateCmd.Flags().Lookup("retry-failed-only"); flag != nil {
 		t.Fatalf("runs create should not expose unsupported --retry-failed-only flag")
@@ -627,16 +763,16 @@ func TestWorkflowsExperimentsMetricsRejectsInvalidViewBeforeRequest(t *testing.T
 	defer server.Close()
 	t.Setenv("RETAB_BASE_URL", server.URL)
 
-	workflowsExperimentsMetricsCmd.SetContext(context.Background())
-	t.Cleanup(func() { workflowsExperimentsMetricsCmd.SetContext(nil) })
-	if err := workflowsExperimentsMetricsCmd.Flags().Set("view", "banana"); err != nil {
+	workflowsExperimentsRunsMetricsGetCmd.SetContext(context.Background())
+	t.Cleanup(func() { workflowsExperimentsRunsMetricsGetCmd.SetContext(nil) })
+	if err := workflowsExperimentsRunsMetricsGetCmd.Flags().Set("view", "banana"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = workflowsExperimentsMetricsCmd.Flags().Set("view", "") })
+	t.Cleanup(func() { _ = workflowsExperimentsRunsMetricsGetCmd.Flags().Set("view", "summary") })
 
 	var err error
 	_, stderr := captureStd(t, func() {
-		err = workflowsExperimentsMetricsCmd.RunE(workflowsExperimentsMetricsCmd, []string{"wf_123", "exp_123"})
+		err = workflowsExperimentsRunsMetricsGetCmd.RunE(workflowsExperimentsRunsMetricsGetCmd, []string{"exprun_123"})
 	})
 	if err == nil {
 		t.Fatal("expected invalid view error")

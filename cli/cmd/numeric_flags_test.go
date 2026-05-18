@@ -27,7 +27,7 @@ func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 		{name: "files create-upload size", cmd: filesCreateUploadCmd, flag: "size-bytes"},
 		{name: "workflow tests limit", cmd: workflowsTestsListCmd, flag: "limit", wantError: "between"},
 		{name: "workflow test runs limit", cmd: workflowsTestsRunsListCmd, flag: "limit", wantError: "between"},
-		{name: "workflow tests consensus", cmd: workflowsTestsExecuteCmd, flag: "n-consensus"},
+		{name: "workflow tests consensus", cmd: workflowsTestsRunsCreateCmd, flag: "n-consensus"},
 		{name: "workflow experiments create consensus", cmd: workflowsExperimentsCreateCmd, flag: "n-consensus"},
 		{name: "workflow experiments update consensus", cmd: workflowsExperimentsUpdateCmd, flag: "n-consensus"},
 		{name: "workflow block simulate consensus", cmd: workflowsBlocksSimulateCmd, flag: "n-consensus"},
