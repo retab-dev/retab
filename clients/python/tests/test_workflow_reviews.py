@@ -1,4 +1,4 @@
-"""Smoke tests for `client.workflows.runs.reviews.*` — types + request builders.
+"""Smoke tests for `client.workflows.reviews.*` — types + request builders.
 
 Mirrors `test_workflow_steps.py`: mock `client._prepared_request` so we can
 assert on the constructed `PreparedRequest` without hitting the API, and
@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from retab.exceptions import NotFoundError
-from retab.resources.workflows.runs.reviews.client import (
+from retab.resources.workflows.reviews.client import (
     AsyncWorkflowReviews,
     WorkflowReviews,
 )

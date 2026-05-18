@@ -11,6 +11,7 @@ from ...types.workflows import (
     WorkflowWithEntities,
 )
 from .runs import WorkflowRuns, AsyncWorkflowRuns
+from .reviews import WorkflowReviews, AsyncWorkflowReviews
 from .artifacts import AsyncWorkflowArtifacts, WorkflowArtifacts
 from .blocks import WorkflowBlocks, AsyncWorkflowBlocks
 from .edges import WorkflowEdges, AsyncWorkflowEdges
@@ -139,6 +140,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
 
     Sub-clients:
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
+        reviews: HIL review overlay operations (queue, approve, reject, escalate)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
         artifacts: Workflow artifact dereference operations
@@ -148,6 +150,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.runs = WorkflowRuns(client=client)
+        self.reviews = WorkflowReviews(client=client)
         self.artifacts = WorkflowArtifacts(client=client)
         self.blocks = WorkflowBlocks(client=client)
         self.edges = WorkflowEdges(client=client)
@@ -339,6 +342,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
 
     Sub-clients:
         runs: Workflow run operations (create, get, list, cancel, restart, resume)
+        reviews: HIL review overlay operations (queue, approve, reject, escalate)
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
         specs: Declarative workflow YAML validation, planning, apply, and export
@@ -347,6 +351,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
     def __init__(self, client: Any) -> None:
         super().__init__(client=client)
         self.runs = AsyncWorkflowRuns(client=client)
+        self.reviews = AsyncWorkflowReviews(client=client)
         self.artifacts = AsyncWorkflowArtifacts(client=client)
         self.blocks = AsyncWorkflowBlocks(client=client)
         self.edges = AsyncWorkflowEdges(client=client)
