@@ -22,6 +22,7 @@ import {
 } from "../../../types.js";
 import { ZFileRef, type FileRef } from "../../../generated_types.js";
 import APIWorkflowRunSteps from "./steps/client.js";
+import APIWorkflowReviews from "./reviews/client.js";
 
 type WorkflowRunDocumentInput = MIMEDataInput | FileRef;
 
@@ -52,13 +53,16 @@ function normalizeDateParam(value?: string | Date): string | undefined {
  *
  * Sub-clients:
  * - steps: Step execution operations (get, list)
+ * - reviews: HIL review overlay operations (list, get, approve, reject, escalate, edit, claim, release, waitFor)
  */
 export default class APIWorkflowRuns extends CompositionClient {
     public steps: APIWorkflowRunSteps;
+    public reviews: APIWorkflowReviews;
 
     constructor(client: CompositionClient) {
         super(client);
         this.steps = new APIWorkflowRunSteps(this);
+        this.reviews = new APIWorkflowReviews(this);
     }
 
     /**
@@ -282,18 +286,26 @@ export default class APIWorkflowRuns extends CompositionClient {
 
     /**
      * Submit a human-in-the-loop (HIL) decision for a workflow run block.
+     *
+     * @param versionStamp - The HIL decision `rev` last observed (CAS token).
+     *   Required by the backend — the call fails with HTTP 422 without it.
+     * @param rejectReason - Optional reason recorded when rejecting the block.
      */
     async submitHilDecision(
         runId: string,
         {
             blockId,
             approved,
+            versionStamp,
             modifiedData,
+            rejectReason,
             commandId,
         }: {
             blockId: string;
             approved: boolean;
+            versionStamp: number;
             modifiedData?: Record<string, unknown> | null;
+            rejectReason?: string;
             commandId?: string;
         },
         options?: RequestOptions
@@ -302,8 +314,10 @@ export default class APIWorkflowRuns extends CompositionClient {
         const body: Record<string, any> = {
             block_id: blockId,
             approved,
+            version_stamp: versionStamp,
         };
         if (modifiedData !== undefined) body.modified_data = modifiedData;
+        if (rejectReason !== undefined) body.reject_reason = rejectReason;
         if (commandId !== undefined) body.command_id = commandId;
 
         return this._fetchJson(ZSubmitHILDecisionResponse, {
@@ -336,12 +350,16 @@ export default class APIWorkflowRuns extends CompositionClient {
         {
             block_id,
             approved,
+            version_stamp,
             modified_data,
+            reject_reason,
             command_id,
         }: {
             block_id: string;
             approved: boolean;
+            version_stamp: number;
             modified_data?: Record<string, unknown> | null;
+            reject_reason?: string;
             command_id?: string;
         },
         options?: RequestOptions
@@ -351,7 +369,9 @@ export default class APIWorkflowRuns extends CompositionClient {
             {
                 blockId: block_id,
                 approved,
+                versionStamp: version_stamp,
                 modifiedData: modified_data,
+                rejectReason: reject_reason,
                 commandId: command_id,
             },
             options
