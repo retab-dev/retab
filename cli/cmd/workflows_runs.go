@@ -179,10 +179,12 @@ subgroup to start runs (` + "`create`" + `), watch their lifecycle
 (` + "`restart`" + `), or submit human-in-the-loop decisions
 (` + "`submit-hil`" + `).
 
-Human-in-the-loop: when a run hits a ` + "`hil`" + ` block it pauses with
-status ` + "`waiting_for_human`" + `. Use ` + "`get-hil`" + ` to see what's
-pending, then ` + "`submit-hil`" + ` to approve, reject, or send back
-edited data — the run resumes from there.
+Human-in-the-loop: when a gated block pauses a run it enters status
+` + "`waiting_for_human`" + `. Use the ` + "`reviews`" + ` subgroup —
+` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
+a paused block run, then ` + "`reviews approve`" + ` / ` + "`reject`" + ` /
+` + "`escalate`" + ` to decide it. The legacy ` + "`get-hil`" + ` /
+` + "`submit-hil`" + ` commands remain for the pre-overlay HIL surface.
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
@@ -605,6 +607,8 @@ To see what's pending, query ` + "`workflows runs get-hil`" + ` or
 		req.BlockID, _ = cmd.Flags().GetString("block-id")
 		req.Approved, _ = cmd.Flags().GetBool("approved")
 		req.CommandID, _ = cmd.Flags().GetString("command-id")
+		req.VersionStamp, _ = cmd.Flags().GetInt("version-stamp")
+		req.RejectReason, _ = cmd.Flags().GetString("reject-reason")
 		if path, _ := cmd.Flags().GetString("modified-data-file"); path != "" {
 			data, err := readJSONMap(path)
 			if err != nil {
@@ -928,6 +932,8 @@ func init() {
 	workflowsRunsSubmitHILCmd.Flags().Bool("approved", false, "approve the block output")
 	workflowsRunsSubmitHILCmd.Flags().String("modified-data-file", "", "JSON file with modified data (or - for stdin)")
 	workflowsRunsSubmitHILCmd.Flags().String("command-id", "", "idempotency command id")
+	workflowsRunsSubmitHILCmd.Flags().Int("version-stamp", 0, "CAS token: the version_stamp last read from the block's HIL state")
+	workflowsRunsSubmitHILCmd.Flags().String("reject-reason", "", "free-text reason recorded on a reject (ignored when --approved)")
 	_ = workflowsRunsSubmitHILCmd.MarkFlagRequired("block-id")
 
 	workflowsRunsExportCmd.Flags().String("workflow-id", "", "workflow id (required)")

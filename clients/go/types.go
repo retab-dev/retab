@@ -484,3 +484,120 @@ type AgentHILReview struct {
 	CreatedAt             time.Time              `json:"created_at"`
 	UpdatedAt             time.Time              `json:"updated_at"`
 }
+
+// --- HIL review overlay (workflows.runs.reviews) ----------------------------
+//
+// The review overlay is the versioned sidecar attached to a gated block run:
+// every output version, every actor who touched it, every decision, and an
+// audit-of-attempts trail. Driven by optimistic CAS on the single Rev token.
+// Actor symmetry is a hard rule — model, agent, and human are one shape and
+// Kind is data, never branched on.
+
+// ReviewActor is who authored a version or made a decision.
+type ReviewActor struct {
+	Kind        string `json:"kind"` // model | agent | human
+	ID          string `json:"id"`
+	DisplayName string `json:"display_name"`
+}
+
+// ReviewOutputVersion is one immutable, full JSON snapshot of a block output.
+type ReviewOutputVersion struct {
+	Seq           int            `json:"seq"`
+	ParentSeq     *int           `json:"parent_seq,omitempty"`
+	Author        ReviewActor    `json:"author"`
+	Origin        string         `json:"origin"` // model_output | agent_edit | human_edit | revert
+	Snapshot      map[string]any `json:"snapshot"`
+	ContentSHA256 string         `json:"content_sha256"`
+	Note          *string        `json:"note,omitempty"`
+	CreatedAt     time.Time      `json:"created_at"`
+}
+
+// ReviewDecisionRecord is a typed verdict cast against one version.
+type ReviewDecisionRecord struct {
+	DecisionID           string      `json:"decision_id"`
+	Verdict              string      `json:"verdict"` // approved | rejected | escalated
+	DecidedBy            ReviewActor `json:"decided_by"`
+	DecidedAt            time.Time   `json:"decided_at"`
+	OnSeq                int         `json:"on_seq"`
+	EffectiveSeq         *int        `json:"effective_seq,omitempty"`
+	Reason               *string     `json:"reason,omitempty"`
+	EscalateTo           *string     `json:"escalate_to,omitempty"`
+	SupersedesDecisionID *string     `json:"supersedes_decision_id,omitempty"`
+}
+
+// ReviewAuditEntry records one act on the overlay — including rejected stale
+// writes, which leave no trace in Versions/Decisions.
+type ReviewAuditEntry struct {
+	EntryID     string         `json:"entry_id"`
+	Action      string         `json:"action"`
+	Actor       ReviewActor    `json:"actor"`
+	At          time.Time      `json:"at"`
+	RevObserved int            `json:"rev_observed"`
+	RevResult   *int           `json:"rev_result,omitempty"`
+	Detail      map[string]any `json:"detail,omitempty"`
+}
+
+// ReviewClaim is the advisory "who is reviewing this" lease — never a lock.
+type ReviewClaim struct {
+	Holder    ReviewActor `json:"holder"`
+	ClaimedAt time.Time   `json:"claimed_at"`
+	ExpiresAt time.Time   `json:"expires_at"`
+}
+
+// ReviewOverlay is the full HIL review sidecar for one gated block run.
+type ReviewOverlay struct {
+	ID                string                 `json:"_id"`
+	OrganizationID    string                 `json:"organization_id"`
+	WorkflowID        string                 `json:"workflow_id"`
+	WorkflowVersionID string                 `json:"workflow_version_id"`
+	WorkflowRunID     string                 `json:"workflow_run_id"`
+	BlockID           string                 `json:"block_id"`
+	BlockRunID        string                 `json:"block_run_id"`
+	BlockType         string                 `json:"block_type"`
+	TriggeredBy       map[string]any         `json:"triggered_by"`
+	Status            string                 `json:"status"` // awaiting_review | approved | rejected
+	AwaitingSince     time.Time              `json:"awaiting_since"`
+	DecidedAt         *time.Time             `json:"decided_at,omitempty"`
+	Priority          int                    `json:"priority"`
+	Rev               int                    `json:"rev"` // CAS token == version_stamp
+	Claim             *ReviewClaim           `json:"claim,omitempty"`
+	Versions          []ReviewOutputVersion  `json:"versions"`
+	Decisions         []ReviewDecisionRecord `json:"decisions"`
+	Audit             []ReviewAuditEntry     `json:"audit"`
+	HeadSeq           int                    `json:"head_seq"`
+	EffectiveSeq      *int                   `json:"effective_seq,omitempty"`
+}
+
+// ReviewQueueItem is the lightweight review-queue projection — the heavy
+// Versions/Decisions/Audit arrays are omitted by the server.
+type ReviewQueueItem struct {
+	ID                string         `json:"_id"`
+	OrganizationID    string         `json:"organization_id"`
+	WorkflowID        string         `json:"workflow_id"`
+	WorkflowVersionID string         `json:"workflow_version_id"`
+	WorkflowRunID     string         `json:"workflow_run_id"`
+	BlockID           string         `json:"block_id"`
+	BlockRunID        string         `json:"block_run_id"`
+	BlockType         string         `json:"block_type"`
+	TriggeredBy       map[string]any `json:"triggered_by"`
+	Status            string         `json:"status"`
+	AwaitingSince     time.Time      `json:"awaiting_since"`
+	DecidedAt         *time.Time     `json:"decided_at,omitempty"`
+	Priority          int            `json:"priority"`
+	Rev               int            `json:"rev"`
+	Claim             *ReviewClaim   `json:"claim,omitempty"`
+	HeadSeq           int            `json:"head_seq"`
+	EffectiveSeq      *int           `json:"effective_seq,omitempty"`
+}
+
+// ReviewQueueResponse is one page of the review queue.
+type ReviewQueueResponse struct {
+	Data    []ReviewQueueItem `json:"data"`
+	HasMore bool              `json:"has_more"`
+}
+
+// SubmitReviewDecisionResponse is the result of a verdict submission.
+type SubmitReviewDecisionResponse struct {
+	SubmissionStatus string        `json:"submission_status"` // accepted | already_received | already_applied
+	Overlay          ReviewOverlay `json:"overlay"`
+}
