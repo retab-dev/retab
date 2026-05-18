@@ -414,7 +414,7 @@ type WorkflowRunExportResponse struct {
 	Columns int    `json:"columns"`
 }
 
-// --- HIL review overlay (workflows.runs.reviews) ----------------------------
+// --- HIL review overlay (workflows.reviews) ----------------------------
 //
 // The review overlay is the versioned sidecar attached to a gated block run:
 // every output version, every actor who touched it, every decision, and an
