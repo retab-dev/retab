@@ -83,7 +83,7 @@ def test_tests_resource_exposes_runs_subresource() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_create_posts_to_block_tests_route_with_full_body() -> None:
+def test_create_posts_to_tests_route_with_full_body() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _TEST_RESPONSE
 
@@ -100,7 +100,7 @@ def test_create_posts_to_block_tests_route_with_full_body() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/block-tests"
+    assert request.url == "/workflows/wf_abc123/tests"
     # Pydantic dumps the discriminated union with `type` set explicitly.
     assert request.data["target"] == {"type": "block", "block_id": "block_extract"}
     assert request.data["source"] == {
@@ -182,10 +182,10 @@ def test_get_uses_test_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/block-tests/wfnodetest_abc"
+    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc"
 
 
-def test_list_uses_block_tests_route_with_filter() -> None:
+def test_list_uses_tests_route_with_filter() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "data": [],
@@ -200,7 +200,7 @@ def test_list_uses_block_tests_route_with_filter() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/block-tests"
+    assert request.url == "/workflows/wf_abc123/tests"
     assert request.params == {"limit": 25, "target_block_id": "block_extract"}
     assert result.data == []
     assert result.list_metadata.before is None
@@ -232,7 +232,7 @@ def test_delete_uses_test_detail_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "DELETE"
-    assert request.url == "/workflows/wf_abc123/block-tests/wfnodetest_abc"
+    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc"
 
 
 # ---------------------------------------------------------------------------
@@ -257,7 +257,7 @@ def test_update_only_includes_fields_the_caller_passed() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/wf_abc123/block-tests/wfnodetest_abc"
+    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc"
     assert request.data == {"name": "renamed"}, (
         f"PATCH body must only carry the field the caller passed; got {request.data!r}"
     )
@@ -289,13 +289,14 @@ def test_update_with_assertion_serializes_assertion_only() -> None:
 
 def _execute_response(**overrides: object) -> dict:
     base = {
-        "batch_id": "btbatch_q1z2",
-        "job_id": "job_abc",
+        "run_id": "wftestrun_q1z2",
         "status": "queued",
         "workflow_id": "wf_abc123",
         "target": {"type": "block", "block_id": "block_extract"},
         "test_id": None,
         "total_tests": 4,
+        "counts": {"queued": 4},
+        "created_at": _NOW,
     }
     base.update(overrides)
     return base
@@ -312,9 +313,10 @@ def test_execute_with_test_id_only() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/block-tests/execute"
+    assert request.url == "/workflows/wf_abc123/tests/runs"
     assert request.data == {"test_id": "wfnodetest_abc"}
     assert response.status == "queued"
+    assert response.run_id == "wftestrun_q1z2"
 
 
 def test_execute_with_target_and_consensus() -> None:
@@ -386,7 +388,7 @@ def test_runs_list_uses_test_runs_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/wf_abc123/block-tests/wfnodetest_abc/runs"
+    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc/runs"
     assert request.params == {"limit": 10}
     assert result.data == []
     assert result.list_metadata.before is None
@@ -407,11 +409,50 @@ def test_runs_get_uses_run_detail_route() -> None:
     assert request.method == "GET"
     assert (
         request.url
-        == "/workflows/wf_abc123/block-tests/wfnodetest_abc/runs/wfnodetestrun_abc"
+        == "/workflows/wf_abc123/tests/wfnodetest_abc/runs/wfnodetestrun_abc"
     )
     assert run.status == "passed"
     # The renamed `outputs` field (formerly `handle_outputs`) parses cleanly.
     assert run.outputs == {"output-json-0": {"total": 1234.56}}
+
+
+def test_runs_get_execution_uses_parent_run_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _execute_response()
+
+    run = Workflows(client=client).tests.runs.get_execution(
+        workflow_id="wf_abc123",
+        run_id="wftestrun_q1z2",
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/wf_abc123/tests/runs/wftestrun_q1z2"
+    assert run.run_id == "wftestrun_q1z2"
+
+
+def test_runs_results_uses_parent_run_results_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "run_id": "wftestrun_q1z2",
+        "status": "completed",
+        "workflow_id": "wf_abc123",
+        "target": {"type": "block", "block_id": "block_extract"},
+        "test_id": None,
+        "total_tests": 1,
+        "counts": {"passed": 1},
+        "results": [_RUN_RESPONSE],
+    }
+
+    result = Workflows(client=client).tests.runs.results(
+        workflow_id="wf_abc123",
+        run_id="wftestrun_q1z2",
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/wf_abc123/tests/runs/wftestrun_q1z2/results"
+    assert result.results[0].id == "wfnodetestrun_abc"
 
 
 # ---------------------------------------------------------------------------
@@ -420,7 +461,7 @@ def test_runs_get_uses_run_detail_route() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_create_posts_to_block_tests_route() -> None:
+async def test_async_create_posts_to_tests_route() -> None:
     client = MagicMock()
     client._prepared_request = AsyncMock(return_value=_TEST_RESPONSE)
 
@@ -436,7 +477,7 @@ async def test_async_create_posts_to_block_tests_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/block-tests"
+    assert request.url == "/workflows/wf_abc123/tests"
     assert test.id == "wfnodetest_abc"
 
 
@@ -517,7 +558,7 @@ def test_async_runs_list_uses_test_runs_route() -> None:
     asyncio.run(_go())
 
     request = client._prepared_request.call_args.args[0]
-    assert request.url == "/workflows/wf_abc123/block-tests/wfnodetest_abc/runs"
+    assert request.url == "/workflows/wf_abc123/tests/wfnodetest_abc/runs"
     assert request.params == {"limit": 10}
 
 

@@ -633,7 +633,7 @@ export const ZAssertionTarget = z.lazy(() => (z.object({
 })));
 export type AssertionTarget = z.infer<typeof ZAssertionTarget>;
 
-export const ZBlockTestBatchExecutionCounts = z.lazy(() => (z.object({
+export const ZWorkflowTestBatchExecutionCounts = z.lazy(() => (z.object({
     queued: z.number().default(0),
     running: z.number().default(0),
     passed: z.number().default(0),
@@ -642,9 +642,9 @@ export const ZBlockTestBatchExecutionCounts = z.lazy(() => (z.object({
     error: z.number().default(0),
     cancelled: z.number().default(0),
 })));
-export type BlockTestBatchExecutionCounts = z.infer<typeof ZBlockTestBatchExecutionCounts>;
+export type WorkflowTestBatchExecutionCounts = z.infer<typeof ZWorkflowTestBatchExecutionCounts>;
 
-export const ZBlockTestBatchExecutionItem = z.lazy(() => (z.object({
+export const ZWorkflowTestBatchExecutionItem = z.lazy(() => (z.object({
     test_id: z.string(),
     run_record_id: z.string(),
     status: z.union([z.literal("queued"), z.literal("running"), z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error"), z.literal("cancelled")]),
@@ -652,38 +652,43 @@ export const ZBlockTestBatchExecutionItem = z.lazy(() => (z.object({
     target: ZWorkflowTestBlockTarget,
     duration_ms: z.number().nullable().optional(),
 })));
-export type BlockTestBatchExecutionItem = z.infer<typeof ZBlockTestBatchExecutionItem>;
+export type WorkflowTestBatchExecutionItem = z.infer<typeof ZWorkflowTestBatchExecutionItem>;
 
-export const ZBlockTestBatchExecutionResult = z.lazy(() => (z.object({
+export const ZWorkflowTestBatchExecutionResult = z.lazy(() => (z.object({
     workflow_id: z.string(),
     target: ZWorkflowTestBlockTarget.nullable().optional(),
-    counts: ZBlockTestBatchExecutionCounts,
-    results: z.array(ZBlockTestBatchExecutionItem),
+    counts: ZWorkflowTestBatchExecutionCounts,
+    results: z.array(ZWorkflowTestBatchExecutionItem),
 })));
-export type BlockTestBatchExecutionResult = z.infer<typeof ZBlockTestBatchExecutionResult>;
+export type WorkflowTestBatchExecutionResult = z.infer<typeof ZWorkflowTestBatchExecutionResult>;
 
-export const ZBlockTestListResponse = z.lazy(() => (z.object({
+export const ZWorkflowTestListResponse = z.lazy(() => (z.object({
     tests: z.array(ZWorkflowTest),
 })));
-export type BlockTestListResponse = z.infer<typeof ZBlockTestListResponse>;
+export type WorkflowTestListResponse = z.infer<typeof ZWorkflowTestListResponse>;
 
-export const ZBlockTestRunListResponse = z.lazy(() => (z.object({
+export const ZWorkflowTestRunListResponse = z.lazy(() => (z.object({
     runs: z.array(ZWorkflowTestRunRecord),
 })));
-export type BlockTestRunListResponse = z.infer<typeof ZBlockTestRunListResponse>;
+export type WorkflowTestRunListResponse = z.infer<typeof ZWorkflowTestRunListResponse>;
 
-export const ZExecuteBlockTestsResponse = z.lazy(() => (z.object({
-    batch_id: z.string(),
-    job_id: z.string(),
-    status: z.literal("queued").default("queued"),
+export const ZExecuteWorkflowTestsResponse = z.lazy(() => (z.object({
+    run_id: z.string(),
+    status: z.union([z.literal("queued"), z.literal("running"), z.literal("completed"), z.literal("failed")]).default("queued"),
     workflow_id: z.string(),
     target: ZWorkflowTestBlockTarget.nullable().optional(),
     test_id: z.string().nullable().optional(),
     total_tests: z.number(),
+    counts: ZWorkflowTestBatchExecutionCounts,
+    created_at: z.string(),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+    error: z.string().nullable().optional(),
 })));
-export type ExecuteBlockTestsResponse = z.infer<typeof ZExecuteBlockTestsResponse>;
+export type ExecuteWorkflowTestsResponse = z.infer<typeof ZExecuteWorkflowTestsResponse>;
 
-export const ZLatestBlockTestRunSummary = z.lazy(() => (z.object({
+export const ZLatestWorkflowTestRunSummary = z.lazy(() => (z.object({
     run_record_id: z.string(),
     status: z.union([z.literal("queued"), z.literal("running"), z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error"), z.literal("cancelled")]),
     started_at: z.string(),
@@ -695,7 +700,7 @@ export const ZLatestBlockTestRunSummary = z.lazy(() => (z.object({
     assertions_failed: z.number().default(0),
     blocked_assertions: z.number().default(0),
 })));
-export type LatestBlockTestRunSummary = z.infer<typeof ZLatestBlockTestRunSummary>;
+export type LatestWorkflowTestRunSummary = z.infer<typeof ZLatestWorkflowTestRunSummary>;
 
 export const ZManualWorkflowTestSource = z.lazy(() => (z.object({
     type: z.literal("manual").default("manual"),
@@ -732,9 +737,9 @@ export const ZWorkflowTest = z.lazy(() => (z.object({
     schema_drift_detail: z.string().nullable().optional(),
     validation_status: z.string().default("valid"),
     validation_issues: z.array(z.any()),
-    latest_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
-    latest_passing_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
-    latest_failing_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
+    latest_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
+    latest_passing_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
+    latest_failing_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
     created_at: z.string(),
     updated_at: z.string(),
 })));

@@ -385,7 +385,7 @@ func TestWorkflowExperimentRunRequestsDoNotSendUnsupportedOverrides(t *testing.T
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/experiments/exp_123/run":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/experiments/exp_123/runs":
 			if err := json.NewDecoder(r.Body).Decode(&runBody); err != nil {
 				t.Fatal(err)
 			}
@@ -689,7 +689,7 @@ func TestWorkflowRunStepsGet(t *testing.T) {
 				"output-json-ref": map[string]any{
 					"type": "json_ref",
 					"artifact_ref": map[string]any{
-						"id": "artifact_123",
+						"id":  "artifact_123",
 						"uri": "gs://bucket/run/block/output.json",
 					},
 					"preview": map[string]any{"truncated": true},

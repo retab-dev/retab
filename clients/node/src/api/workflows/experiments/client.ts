@@ -45,7 +45,7 @@ import {
  *     workflowId: "wf_abc123",
  *     experimentId: exp.id,
  * });
- * await client.jobs.waitForCompletion(run.job_id);
+ * console.log(run.run_id, run.status);
  *
  * const metrics = await client.workflows.experiments.getMetrics({
  *     workflowId: "wf_abc123",

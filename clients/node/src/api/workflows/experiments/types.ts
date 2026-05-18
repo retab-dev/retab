@@ -102,7 +102,6 @@ export const ZExperimentResponse = z
         status: ZExperimentPublicStatus.default("draft"),
         block_kind: ZExperimentBlockKind,
         score: z.number().nullable().optional(),
-        job_id: z.string().nullable().optional(),
         is_stale: z.boolean().default(false),
         schema_drift: ZSchemaDriftStatus.default("unknown"),
         schema_drift_detail: z.string().nullable().optional(),
@@ -146,7 +145,6 @@ export const ZRunExperimentResponse = z
     .object({
         experiment_id: z.string(),
         run_id: z.string(),
-        job_id: z.string().nullable(),
         status: z.string(),
         definition_fingerprint: z.string(),
         total_document_count: z.number().default(0),
@@ -185,7 +183,6 @@ export const ZExperimentRunSummary = z
         created_at: z.string(),
         completed_at: z.string().nullable().optional(),
         duration_ms: z.number().nullable().optional(),
-        job_id: z.string().nullable().optional(),
     })
     .passthrough();
 export type ExperimentRunSummary = z.infer<typeof ZExperimentRunSummary>;

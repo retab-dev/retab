@@ -23,7 +23,7 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
         experimentId: string
     ): { url: string; method: string; body: Record<string, unknown> } {
         return {
-            url: `/workflows/${workflowId}/experiments/${experimentId}/run`,
+            url: `/workflows/${workflowId}/experiments/${experimentId}/runs`,
             method: "POST",
             body: {},
         };
@@ -65,8 +65,8 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
     /**
      * Ensure an experiment has fresh results for the current draft block config.
      *
-     * Async when work is needed — poll `job_id` with `client.jobs` unless
-     * `noop` is true.
+     * Async when work is needed — inspect the returned `run_id` through
+     * the experiment runs surface unless `noop` is true.
      *
      * @example
      * ```typescript
@@ -74,7 +74,7 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
      *     workflowId: "wf_abc123",
      *     experimentId: "exp_xyz",
      * });
-     * await client.jobs.waitForCompletion(run.job_id);
+     * console.log(run.run_id, run.status);
      * ```
      */
     async create(

@@ -411,7 +411,7 @@ describe("workflows client", () => {
             params: { run_id: "run_1" },
         });
         expect(workflowsClient.experiments.runs.prepare_create("wf_1", "exp_1")).toEqual({
-            url: "/workflows/wf_1/experiments/exp_1/run",
+            url: "/workflows/wf_1/experiments/exp_1/runs",
             method: "POST",
             body: {},
         });

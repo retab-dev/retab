@@ -240,7 +240,7 @@ class ExperimentRunsMixin:
         data: Dict[str, Any] = {}
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/run",
+            url=f"/workflows/{workflow_id}/experiments/{experiment_id}/runs",
             data=data,
         )
 
@@ -373,7 +373,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         >>> run = client.workflows.experiments.runs.create(
         ...     workflow_id="wf_abc123", experiment_id=exp.id,
         ... )
-        >>> client.jobs.wait_for_completion(run.job_id)
+        >>> print(run.run_id, run.status)
         >>>
         >>> metrics = client.workflows.experiments.get_metrics(
         ...     workflow_id="wf_abc123",

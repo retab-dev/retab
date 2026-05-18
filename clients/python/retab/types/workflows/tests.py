@@ -1,4 +1,4 @@
-"""Pydantic models mirroring `backend/main_server/main_server/services/v1/workflows/block_tests/models.py`.
+"""Pydantic models mirroring `backend/main_server/main_server/services/v1/workflows/tests/models.py`.
 
 Models stay in sync with the wire format the backend sends back so SDK
 callers get typed responses for `client.workflows.tests.*` calls.
@@ -22,9 +22,9 @@ AssertionResultStatus = Literal["passed", "failed", "blocked", "error"]
 #: Status of a TEST RUN — aggregates the assertion result with execution-side
 #: state. 7 values total; transient (``queued``, ``running``) only appear on
 #: in-flight records, terminal states appear on completed records and on
-#: ``latest_run_summary``. See `TerminalBlockTestRunStatus` for the
+#: ``latest_run_summary``. See `TerminalWorkflowTestRunStatus` for the
 #: terminal-only subset.
-BlockTestRunStatus = Literal[
+WorkflowTestRunStatus = Literal[
     "queued",
     "running",
     "passed",
@@ -34,12 +34,14 @@ BlockTestRunStatus = Literal[
     "cancelled",
 ]
 
-#: Strict subset of `BlockTestRunStatus` — values that can appear on a
+#: Strict subset of `WorkflowTestRunStatus` — values that can appear on a
 #: completed run record's `latest_run_summary`. Mirrors the backend's
-#: `TerminalBlockTestRunStatus` literal.
-TerminalBlockTestRunStatus = Literal[
+#: `TerminalWorkflowTestRunStatus` literal.
+TerminalWorkflowTestRunStatus = Literal[
     "passed", "failed", "blocked", "error", "cancelled"
 ]
+
+WorkflowTestExecutionRunStatus = Literal["queued", "running", "completed", "failed"]
 
 
 # ---------------------------------------------------------------------------
@@ -109,13 +111,13 @@ class AssertionTarget(RetabBaseModel):
 class AssertionSpec(RetabBaseModel):
     """One assertion against one declared output handle.
 
-    Block tests intentionally normalize to one assertion per test —
+    Workflow tests intentionally normalize to one assertion per test —
     multiple small tests beat one broad assertion when something breaks.
 
     `condition` is intentionally typed as ``dict[str, Any]`` because the
     operator-specific shape varies widely (``equals``, ``compare``,
     ``matches_regex``, ``similarity_gte``, ``llm_judged_as``, ``split_iou_gte``,
-    etc.). See `workflows/block-tests.mdx` in the docs for the catalog.
+    etc.). See `workflows/tests.mdx` in the docs for the catalog.
 
     `extra="ignore"` because `AssertionSpec` is used in BOTH directions —
     request body on create/update AND response body on `WorkflowTest.assertion`.
@@ -164,7 +166,7 @@ class VerdictSummary(RetabBaseModel):
     failed_assertion_ids: list[str] = Field(default_factory=list)
 
 
-class LatestBlockTestRunSummary(RetabBaseModel):
+class LatestWorkflowTestRunSummary(RetabBaseModel):
     """Compact summary attached to a `WorkflowTest` so list / get responses
     can show the most recent run state without a second fetch.
     """
@@ -172,11 +174,11 @@ class LatestBlockTestRunSummary(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_record_id: str
-    # Typed as the wider `BlockTestRunStatus` for back-compat with stored
-    # docs. In practice only `TerminalBlockTestRunStatus` values are
+    # Typed as the wider `WorkflowTestRunStatus` for back-compat with stored
+    # docs. In practice only `TerminalWorkflowTestRunStatus` values are
     # populated (the runner only writes summaries on terminal-state
     # transitions).
-    status: BlockTestRunStatus
+    status: WorkflowTestRunStatus
     started_at: datetime.datetime
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
@@ -220,7 +222,7 @@ class WorkflowTest(RetabBaseModel):
     source: WorkflowTestSource
     name: str | None = None
     # Optional because pre-rewrite tests in storage may have ``assertion=None``.
-    # Create / Update API still REQUIRE assertion via `CreateBlockTestRequest`;
+    # Create / Update API still REQUIRE assertion via `CreateWorkflowTestRequest`;
     # this field reflects what comes back on a list/get for a legacy test that
     # hasn't been re-saved yet.
     assertion: AssertionSpec | None = None
@@ -230,9 +232,9 @@ class WorkflowTest(RetabBaseModel):
     schema_drift_detail: str | None = None
     validation_status: str = "valid"
     validation_issues: list[Any] = Field(default_factory=list)
-    latest_run_summary: LatestBlockTestRunSummary | None = None
-    latest_passing_run_summary: LatestBlockTestRunSummary | None = None
-    latest_failing_run_summary: LatestBlockTestRunSummary | None = None
+    latest_run_summary: LatestWorkflowTestRunSummary | None = None
+    latest_passing_run_summary: LatestWorkflowTestRunSummary | None = None
+    latest_failing_run_summary: LatestWorkflowTestRunSummary | None = None
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
@@ -244,7 +246,7 @@ class WorkflowTestRunRecord(RetabBaseModel):
 
     id: str
     test_id: str
-    status: BlockTestRunStatus
+    status: WorkflowTestRunStatus
     workflow_id: str
     target: WorkflowTestBlockTarget
     execution_fingerprint: str = ""
@@ -264,8 +266,8 @@ class WorkflowTestRunRecord(RetabBaseModel):
     verdict_summary: VerdictSummary | None = None
 
 
-class BlockTestBatchExecutionCounts(RetabBaseModel):
-    """One bucket per `BlockTestRunStatus` value. Today only terminal
+class WorkflowTestBatchExecutionCounts(RetabBaseModel):
+    """One bucket per `WorkflowTestRunStatus` value. Today only terminal
     buckets are populated by the runner; transient ones are declared for
     forward-compat with any future code path that persists transient state.
     """
@@ -281,45 +283,70 @@ class BlockTestBatchExecutionCounts(RetabBaseModel):
     cancelled: int = 0
 
 
-class BlockTestBatchExecutionItem(RetabBaseModel):
+class WorkflowTestBatchExecutionItem(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     test_id: str
     run_record_id: str
-    status: BlockTestRunStatus
+    status: WorkflowTestRunStatus
     workflow_id: str
     target: WorkflowTestBlockTarget
     duration_ms: int | None = None
 
 
-class BlockTestBatchExecutionResult(RetabBaseModel):
+class WorkflowTestBatchExecutionResult(RetabBaseModel):
     """The payload that lands on `Job.result` after `tests.execute(...)`."""
 
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
     target: WorkflowTestBlockTarget | None = None
-    counts: BlockTestBatchExecutionCounts = Field(
-        default_factory=BlockTestBatchExecutionCounts
+    counts: WorkflowTestBatchExecutionCounts = Field(
+        default_factory=WorkflowTestBatchExecutionCounts
     )
-    results: list[BlockTestBatchExecutionItem] = Field(default_factory=list)
+    results: list[WorkflowTestBatchExecutionItem] = Field(default_factory=list)
 
 
-class ExecuteBlockTestsResponse(RetabBaseModel):
-    """Synchronous response from `tests.execute(...)`. Poll
-    `client.jobs.retrieve(job_id)` until terminal to fetch the
-    `BlockTestBatchExecutionResult`.
+class ExecuteWorkflowTestsResponse(RetabBaseModel):
+    """Synchronous response from `tests.execute(...)`.
+
+    Poll the workflow-test run by `run_id` until terminal, then fetch
+    run results from the workflow-test runs surface.
     """
 
     model_config = ConfigDict(extra="ignore")
 
-    batch_id: str
-    job_id: str
-    status: Literal["queued"] = "queued"
+    run_id: str
+    status: WorkflowTestExecutionRunStatus = "queued"
     workflow_id: str
     target: WorkflowTestBlockTarget | None = None
     test_id: str | None = None
     total_tests: int
+    counts: WorkflowTestBatchExecutionCounts = Field(
+        default_factory=WorkflowTestBatchExecutionCounts
+    )
+    created_at: datetime.datetime
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+    duration_ms: int | None = None
+    error: str | None = None
+
+
+class WorkflowTestExecutionRunResults(RetabBaseModel):
+    """Results for a parent workflow-test execution run."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    run_id: str
+    status: WorkflowTestExecutionRunStatus
+    workflow_id: str
+    target: WorkflowTestBlockTarget | None = None
+    test_id: str | None = None
+    total_tests: int
+    counts: WorkflowTestBatchExecutionCounts = Field(
+        default_factory=WorkflowTestBatchExecutionCounts
+    )
+    results: list[WorkflowTestRunRecord] = Field(default_factory=list)
 
 
 __all__ = [
@@ -330,19 +357,21 @@ __all__ = [
     "AssertionSchemaDep",
     "AssertionSpec",
     "AssertionTarget",
-    "BlockTestBatchExecutionCounts",
-    "BlockTestBatchExecutionItem",
-    "BlockTestBatchExecutionResult",
-    "BlockTestRunStatus",
-    "ExecuteBlockTestsResponse",
-    "LatestBlockTestRunSummary",
+    "WorkflowTestBatchExecutionCounts",
+    "WorkflowTestBatchExecutionItem",
+    "WorkflowTestBatchExecutionResult",
+    "WorkflowTestRunStatus",
+    "ExecuteWorkflowTestsResponse",
+    "LatestWorkflowTestRunSummary",
     "ManualWorkflowTestSource",
     "RunStepWorkflowTestSource",
     "SchemaDriftStatus",
-    "TerminalBlockTestRunStatus",
+    "TerminalWorkflowTestRunStatus",
     "VerdictSummary",
     "WorkflowTest",
     "WorkflowTestBlockTarget",
+    "WorkflowTestExecutionRunStatus",
+    "WorkflowTestExecutionRunResults",
     "WorkflowTestRunRecord",
     "WorkflowTestSource",
 ]
