@@ -1,4 +1,4 @@
-import { APIError, CompositionClient, RequestOptions } from "../../../../client.js";
+import { APIError, CompositionClient, RequestOptions } from "../../../client.js";
 import {
     ReviewOverlay,
     ReviewQueueResponse,
@@ -6,7 +6,7 @@ import {
     ZReviewOverlay,
     ZReviewQueueResponse,
     ZSubmitDecisionResponse,
-} from "../../../../types.js";
+} from "../../../types.js";
 
 /** Overlay lifecycle filter accepted by {@link APIWorkflowReviews.list}. */
 export type ReviewStatus = "awaiting_review" | "approved" | "rejected";
@@ -29,7 +29,7 @@ export type EditOrigin = "human_edit" | "agent_edit";
  * server's `rev` has advanced since the caller last read it, the request fails
  * with `APIError` whose `.status` is `409` — re-read with {@link get} and retry.
  *
- * Usage: `client.workflows.runs.reviews.list()`
+ * Usage: `client.workflows.reviews.list()`
  */
 export default class APIWorkflowReviews extends CompositionClient {
     constructor(client: CompositionClient) {
@@ -47,7 +47,7 @@ export default class APIWorkflowReviews extends CompositionClient {
      *
      * @example
      * ```typescript
-     * const queue = await client.workflows.runs.reviews.list({ mine: true });
+     * const queue = await client.workflows.reviews.list({ mine: true });
      * ```
      */
     async list(

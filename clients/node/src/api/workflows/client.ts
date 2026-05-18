@@ -12,6 +12,7 @@ import {
     ZWorkflowWithEntities,
 } from "../../types.js";
 import APIWorkflowRuns from "./runs/client.js";
+import APIWorkflowReviews from "./reviews/client.js";
 import APIWorkflowBlocks from "./blocks/client.js";
 import APIWorkflowEdges from "./edges/client.js";
 import APIWorkflowArtifacts from "./artifacts/client.js";
@@ -24,6 +25,7 @@ import APIWorkflowExperiments from "./experiments/client.js";
  *
  * Sub-clients:
  * - runs: Workflow run operations
+ * - reviews: HIL review overlay operations (list, get, approve, reject, escalate, edit, claim, release, waitFor)
  * - blocks: Workflow block CRUD + simulate
  * - edges: Workflow edge CRUD
  * - artifacts: Workflow artifact dereference operations
@@ -33,6 +35,7 @@ import APIWorkflowExperiments from "./experiments/client.js";
  */
 export default class APIWorkflows extends CompositionClient {
     public runs: APIWorkflowRuns;
+    public reviews: APIWorkflowReviews;
     public blocks: APIWorkflowBlocks;
     public edges: APIWorkflowEdges;
     public artifacts: APIWorkflowArtifacts;
@@ -43,6 +46,7 @@ export default class APIWorkflows extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
         this.runs = new APIWorkflowRuns(this);
+        this.reviews = new APIWorkflowReviews(this);
         this.blocks = new APIWorkflowBlocks(this);
         this.edges = new APIWorkflowEdges(this);
         this.artifacts = new APIWorkflowArtifacts(this);

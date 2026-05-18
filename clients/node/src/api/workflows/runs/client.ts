@@ -16,7 +16,6 @@ import {
 } from "../../../types.js";
 import { ZFileRef, type FileRef } from "../../../generated_types.js";
 import APIWorkflowRunSteps from "./steps/client.js";
-import APIWorkflowReviews from "./reviews/client.js";
 
 type WorkflowRunDocumentInput = MIMEDataInput | FileRef;
 
@@ -47,16 +46,13 @@ function normalizeDateParam(value?: string | Date): string | undefined {
  *
  * Sub-clients:
  * - steps: Step execution operations (get, list)
- * - reviews: HIL review overlay operations (list, get, approve, reject, escalate, edit, claim, release, waitFor)
  */
 export default class APIWorkflowRuns extends CompositionClient {
     public steps: APIWorkflowRunSteps;
-    public reviews: APIWorkflowReviews;
 
     constructor(client: CompositionClient) {
         super(client);
         this.steps = new APIWorkflowRunSteps(this);
-        this.reviews = new APIWorkflowReviews(this);
     }
 
     /**
