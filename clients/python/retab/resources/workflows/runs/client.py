@@ -19,7 +19,6 @@ from ....types.workflows import (
     WorkflowRunTriggerType,
 )
 from .steps import WorkflowSteps, AsyncWorkflowSteps
-from .reviews import WorkflowReviews, AsyncWorkflowReviews
 
 
 # Type alias for document inputs
@@ -222,7 +221,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.steps = WorkflowSteps(client=self._client)
-        self.reviews = WorkflowReviews(client=self._client)
 
     def create(
         self,
@@ -473,7 +471,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.steps = AsyncWorkflowSteps(client=self._client)
-        self.reviews = AsyncWorkflowReviews(client=self._client)
 
     async def create(
         self,

@@ -2,7 +2,7 @@
 
 Mirrors the backend "HIL review overlay" — a versioned sidecar attached to a
 gated workflow block run, served under ``/workflows/reviews``. The SDK drives
-the review loop through ``client.workflows.runs.reviews.*``.
+the review loop through ``client.workflows.reviews.*``.
 
 Actor-neutral by construction: a proposal authored by a model, an agent, or a
 human all flow through the SAME types. ``Actor.kind`` is data, never branched

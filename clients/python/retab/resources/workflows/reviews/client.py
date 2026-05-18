@@ -20,10 +20,10 @@ import asyncio
 import time
 from typing import Any, Dict
 
-from ....._resource import AsyncAPIResource, SyncAPIResource
-from .....exceptions import NotFoundError
-from .....types.standards import PreparedRequest
-from .....types.workflows.reviews import (
+from ...._resource import AsyncAPIResource, SyncAPIResource
+from ....exceptions import NotFoundError
+from ....types.standards import PreparedRequest
+from ....types.workflows.reviews import (
     EditOrigin,
     ReviewOverlay,
     ReviewQueueResponse,
@@ -144,12 +144,12 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
     """Workflow HIL review overlay API wrapper for synchronous operations.
 
     Usage:
-    - ``client.workflows.runs.reviews.list()`` for the review queue.
-    - ``client.workflows.runs.reviews.get(run_id, block_id)`` for one overlay.
-    - ``client.workflows.runs.reviews.approve(...)`` / ``reject(...)`` /
+    - ``client.workflows.reviews.list()`` for the review queue.
+    - ``client.workflows.reviews.get(run_id, block_id)`` for one overlay.
+    - ``client.workflows.reviews.approve(...)`` / ``reject(...)`` /
       ``escalate(...)`` to submit a verdict.
-    - ``client.workflows.runs.reviews.edit(...)`` to append a new output version.
-    - ``client.workflows.runs.reviews.claim(...)`` / ``release(...)`` for the
+    - ``client.workflows.reviews.edit(...)`` to append a new output version.
+    - ``client.workflows.reviews.claim(...)`` / ``release(...)`` for the
       advisory soft lock.
     """
 
@@ -452,12 +452,12 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
     """Workflow HIL review overlay API wrapper for asynchronous operations.
 
     Usage:
-    - ``await client.workflows.runs.reviews.list()`` for the review queue.
-    - ``await client.workflows.runs.reviews.get(run_id, block_id)`` for one overlay.
-    - ``await client.workflows.runs.reviews.approve(...)`` / ``reject(...)`` /
+    - ``await client.workflows.reviews.list()`` for the review queue.
+    - ``await client.workflows.reviews.get(run_id, block_id)`` for one overlay.
+    - ``await client.workflows.reviews.approve(...)`` / ``reject(...)`` /
       ``escalate(...)`` to submit a verdict.
-    - ``await client.workflows.runs.reviews.edit(...)`` to append an output version.
-    - ``await client.workflows.runs.reviews.claim(...)`` / ``release(...)`` for the
+    - ``await client.workflows.reviews.edit(...)`` to append an output version.
+    - ``await client.workflows.reviews.claim(...)`` / ``release(...)`` for the
       advisory soft lock.
     """
 
