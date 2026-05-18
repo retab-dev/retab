@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { AbstractClient } from '../src/client';
-import APIWorkflowReviews from '../src/api/workflows/runs/reviews/client';
+import APIWorkflowReviews from '../src/api/workflows/reviews/client';
 import {
   ZActor,
   ZAuditEntry,
