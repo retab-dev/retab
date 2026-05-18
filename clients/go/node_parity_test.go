@@ -371,9 +371,9 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 				"data":          []Resource{},
 				"list_metadata": Resource{"before": nil, "after": nil},
 			})
-		case "/workflows/wf_123/block-tests":
+		case "/workflows/wf_123/tests":
 			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "test_1"}}})
-		case "/workflows/wf_123/block-tests/test_1/runs":
+		case "/workflows/wf_123/tests/test_1/runs":
 			_ = json.NewEncoder(w).Encode(Resource{"data": []Resource{{"id": "testrun_1"}}})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
@@ -398,7 +398,7 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "GET /workflows/wf_123/blocks,GET /workflows/wf_123/edges,DELETE /workflows/wf_123/edges,GET /workflows/wf_123/block-tests,GET /workflows/wf_123/block-tests/test_1/runs"
+	want := "GET /workflows/wf_123/blocks,GET /workflows/wf_123/edges,DELETE /workflows/wf_123/edges,GET /workflows/wf_123/tests,GET /workflows/wf_123/tests/test_1/runs"
 	if strings.Join(requests, ",") != want {
 		t.Fatalf("requests = %s", strings.Join(requests, ","))
 	}

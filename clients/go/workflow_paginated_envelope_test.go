@@ -90,7 +90,7 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 }
 
 // TestWorkflowTestsListUsesPaginatedEnvelope pins the canonical envelope for
-// `GET /v1/workflows/{wf}/block-tests` (was `{"tests": [...]}`).
+// `GET /v1/workflows/{wf}/tests` (was `{"tests": [...]}`).
 func TestWorkflowTestsListUsesPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -117,7 +117,7 @@ func TestWorkflowTestsListUsesPaginatedEnvelope(t *testing.T) {
 }
 
 // TestWorkflowTestRunsListUsesPaginatedEnvelope pins the canonical envelope
-// for `GET /v1/workflows/{wf}/block-tests/{id}/runs` (was `{"runs": [...]}`).
+// for `GET /v1/workflows/{wf}/tests/{id}/runs` (was `{"runs": [...]}`).
 func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -145,13 +145,12 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 
 func TestWorkflowTestsExecuteDecodesFullQueuedResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_1/block-tests/execute" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_1/tests/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"batch_id":    "btbatch_1",
-			"job_id":      "job_1",
+			"run_id":      "wftestrun_1",
 			"status":      "queued",
 			"workflow_id": "wf_1",
 			"test_id":     "wfnodetest_1",
@@ -165,7 +164,7 @@ func TestWorkflowTestsExecuteDecodesFullQueuedResponse(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server)
 
-	result, err := client.Workflows.Tests.Execute(context.Background(), ExecuteBlockTestsRequest{
+	result, err := client.Workflows.Tests.Execute(context.Background(), ExecuteWorkflowTestsRequest{
 		WorkflowID: "wf_1",
 		TestID:     "wfnodetest_1",
 		NConsensus: 3,
@@ -175,6 +174,9 @@ func TestWorkflowTestsExecuteDecodesFullQueuedResponse(t *testing.T) {
 	}
 	if result.Status != "queued" || result.WorkflowID != "wf_1" || result.TestID != "wfnodetest_1" || result.TotalTests != 1 {
 		t.Fatalf("execute response lost fields: %#v", result)
+	}
+	if result.RunID != "wftestrun_1" {
+		t.Fatalf("run id = %q, want wftestrun_1", result.RunID)
 	}
 	if result.Target == nil || (*result.Target)["block_id"] != "block_transform" {
 		t.Fatalf("target = %#v, want block_transform", result.Target)

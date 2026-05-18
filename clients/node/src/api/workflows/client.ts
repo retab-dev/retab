@@ -30,7 +30,7 @@ import APIWorkflowExperiments from "./experiments/client.js";
  * - edges: Workflow edge CRUD
  * - artifacts: Workflow artifact dereference operations
  * - specs: Declarative workflow YAML validation, planning, apply, and export
- * - tests: Workflow block-tests CRUD + execution + run history
+ * - tests: Workflow tests CRUD + execution + run history
  * - experiments: Consensus-experiments CRUD + per-run + metrics
  */
 export default class APIWorkflows extends CompositionClient {

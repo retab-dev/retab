@@ -69,13 +69,22 @@ const RUN_RESPONSE = {
 };
 
 const EXECUTE_RESPONSE = {
-    batch_id: "btbatch_q1z2",
-    job_id: "job_abc",
+    run_id: "wftestrun_q1z2",
     status: "queued",
     workflow_id: "wf_abc123",
     target: { type: "block", block_id: "block_extract" },
     test_id: null,
     total_tests: 4,
+    counts: {
+        queued: 4,
+        running: 0,
+        passed: 0,
+        failed: 0,
+        blocked: 0,
+        error: 0,
+        cancelled: 0,
+    },
+    created_at: NOW,
 };
 
 describe("workflows.tests wiring", () => {
@@ -102,7 +111,7 @@ describe("workflows.tests wiring", () => {
 });
 
 describe("workflows.tests.create()", () => {
-    test("POSTs to the block-tests route with target/source/assertion/name in the body", async () => {
+    test("POSTs to the tests route with target/source/assertion/name in the body", async () => {
         const mockClient = new MockClient(TEST_RESPONSE);
         const tests = new APIWorkflowTests(mockClient);
 
@@ -118,7 +127,7 @@ describe("workflows.tests.create()", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/block-tests",
+            url: "/workflows/wf_abc123/tests",
             method: "POST",
             body: {
                 target: { type: "block", block_id: "block_extract" },
@@ -169,12 +178,12 @@ describe("workflows.tests CRUD URL shapes", () => {
         await tests.get({ workflowId: "wf_abc123", testId: "wfnodetest_abc" });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/block-tests/wfnodetest_abc",
+            url: "/workflows/wf_abc123/tests/wfnodetest_abc",
             method: "GET",
         });
     });
 
-    test("list() uses the block-tests route with `target_block_id` filter", async () => {
+    test("list() uses the tests route with `target_block_id` filter", async () => {
         const mockClient = new MockClient({
             data: [],
             list_metadata: { before: null, after: null },
@@ -188,7 +197,7 @@ describe("workflows.tests CRUD URL shapes", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/block-tests",
+            url: "/workflows/wf_abc123/tests",
             method: "GET",
             params: { limit: 25, target_block_id: "block_extract" },
         });
@@ -225,7 +234,7 @@ describe("workflows.tests CRUD URL shapes", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/block-tests/wfnodetest_abc",
+            url: "/workflows/wf_abc123/tests/wfnodetest_abc",
             method: "DELETE",
         });
     });
@@ -246,7 +255,7 @@ describe("workflows.tests.update()", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/block-tests/wfnodetest_abc",
+            url: "/workflows/wf_abc123/tests/wfnodetest_abc",
             method: "PATCH",
             body: { name: "renamed" },
         });
@@ -286,11 +295,12 @@ describe("workflows.tests.execute()", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/block-tests/execute",
+            url: "/workflows/wf_abc123/tests/runs",
             method: "POST",
             body: { test_id: "wfnodetest_abc" },
         });
         expect(response.status).toBe("queued");
+        expect(response.run_id).toBe("wftestrun_q1z2");
     });
 
     test("execute({target, nConsensus}) posts target + n_consensus snake_case", async () => {
@@ -337,7 +347,7 @@ describe("workflows.tests.runs", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/block-tests/wfnodetest_abc/runs",
+            url: "/workflows/wf_abc123/tests/wfnodetest_abc/runs",
             method: "GET",
             params: { limit: 10 },
         });
@@ -357,21 +367,62 @@ describe("workflows.tests.runs", () => {
         });
 
         expect(mockClient.lastFetchParams).toMatchObject({
-            url: "/workflows/wf_abc123/block-tests/wfnodetest_abc/runs/wfnodetestrun_abc",
+            url: "/workflows/wf_abc123/tests/wfnodetest_abc/runs/wfnodetestrun_abc",
             method: "GET",
         });
         // The renamed `outputs` field (formerly `handle_outputs`) parses cleanly.
         expect(run.outputs).toEqual({ "output-json-0": { total: 1234.56 } });
         expect(run.status).toBe("passed");
     });
+
+    test("runs.getExecution() uses the parent execution route", async () => {
+        const mockClient = new MockClient(EXECUTE_RESPONSE);
+        const tests = new APIWorkflowTests(mockClient);
+
+        const run = await tests.runs.getExecution({
+            workflowId: "wf_abc123",
+            runId: "wftestrun_q1z2",
+        });
+
+        expect(mockClient.lastFetchParams).toMatchObject({
+            url: "/workflows/wf_abc123/tests/runs/wftestrun_q1z2",
+            method: "GET",
+        });
+        expect(run.run_id).toBe("wftestrun_q1z2");
+    });
+
+    test("runs.results() uses the parent execution results route", async () => {
+        const mockClient = new MockClient({
+            run_id: "wftestrun_q1z2",
+            status: "completed",
+            workflow_id: "wf_abc123",
+            target: { type: "block", block_id: "block_extract" },
+            test_id: null,
+            total_tests: 1,
+            counts: { passed: 1 },
+            results: [RUN_RESPONSE],
+        });
+        const tests = new APIWorkflowTests(mockClient);
+
+        const result = await tests.runs.results({
+            workflowId: "wf_abc123",
+            runId: "wftestrun_q1z2",
+        });
+
+        expect(mockClient.lastFetchParams).toMatchObject({
+            url: "/workflows/wf_abc123/tests/runs/wftestrun_q1z2/results",
+            method: "GET",
+        });
+        expect(result.results[0].id).toBe("wfnodetestrun_abc");
+    });
 });
 
 describe("status enum coverage", () => {
-    test("Z* schemas accept all 7 BlockTestRunStatus values", async () => {
+    test("Z* schemas accept all 7 WorkflowTestRunStatus values", async () => {
         // Pin: a future status addition (or accidental shrinkage) trips
         // this test before it ships. Without this, a `cancelled` run
         // record from the backend would runtime-fail in the SDK.
-        const { ZBlockTestRunStatus } = await import(
+        const { ZWorkflowTestRunStatus } = await import(
             "../src/api/workflows/tests/types"
         );
         for (const value of [
@@ -383,15 +434,15 @@ describe("status enum coverage", () => {
             "error",
             "cancelled",
         ]) {
-            expect(() => ZBlockTestRunStatus.parse(value)).not.toThrow();
+            expect(() => ZWorkflowTestRunStatus.parse(value)).not.toThrow();
         }
     });
 
     test("Z* batch counts schema declares all 7 status buckets", async () => {
-        const { ZBlockTestBatchExecutionCounts } = await import(
+        const { ZWorkflowTestBatchExecutionCounts } = await import(
             "../src/api/workflows/tests/types"
         );
-        const parsed = ZBlockTestBatchExecutionCounts.parse({});
+        const parsed = ZWorkflowTestBatchExecutionCounts.parse({});
         for (const key of [
             "queued",
             "running",

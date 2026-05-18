@@ -50,7 +50,7 @@ func resolveWorkflowIDArgTo(cmd *cobra.Command, args []string, warnTo io.Writer)
 
 var workflowsTestsCmd = &cobra.Command{
 	Use:   "tests",
-	Short: "Manage block tests for a workflow",
+	Short: "Manage workflow tests",
 	Long: `Declarative regression tests for workflow blocks.
 
 A test pins a target block's expected output against a recorded input
@@ -175,7 +175,7 @@ func (v *consensusFlagValue) Set(raw string) error {
 
 var workflowsTestsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> [flags]",
-	Short: "Create a block test",
+	Short: "Create a workflow test",
 	Long: `Create a regression test pinning a block's expected output.
 You'll typically capture the three files from a successful past run:
 
@@ -380,7 +380,7 @@ var workflowsTestsDeleteCmd = &cobra.Command{
 
 var workflowsTestsExecuteCmd = &cobra.Command{
 	Use:   "execute <workflow-id> [flags]",
-	Short: "Execute one or more block tests",
+	Short: "Execute one or more workflow tests",
 	Long: `Re-run regression tests and compare current output to the pinned
 assertions. Without ` + "`--test-id`" + ` every test in the workflow runs;
 with ` + "`--test-id`" + ` only that one runs.
@@ -410,7 +410,7 @@ Inspect results with ` + "`workflows tests runs list`" + ` and
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req := retab.ExecuteBlockTestsRequest{}
+		req := retab.ExecuteWorkflowTestsRequest{}
 		req.WorkflowID = workflowID
 		req.TestID, _ = cmd.Flags().GetString("test-id")
 		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
@@ -436,14 +436,56 @@ Inspect results with ` + "`workflows tests runs list`" + ` and
 
 var workflowsTestsRunsCmd = &cobra.Command{
 	Use:   "runs",
-	Short: "Inspect test runs",
-	Long: `History of past test executions. Each ` + "`workflows tests execute`" + `
-call creates one run; this subgroup retrieves the records.`,
-	Example: `  # Recent runs for one test
+	Short: "Create and inspect test runs",
+	Long: `Create workflow-test runs, poll their status, and inspect child
+result records. Each ` + "`workflows tests execute`" + ` call is an alias for
+` + "`workflows tests runs create`" + `.`,
+	Example: `  # Create a run for the whole workflow
+  retab workflows tests runs create wf_abc123
+
+  # Poll a workflow-test run
+  retab workflows tests runs get wf_abc123 wftestrun_mno345
+
+  # Fetch child result rows for a workflow-test run
+  retab workflows tests runs results wf_abc123 wftestrun_mno345
+
+  # Recent result rows for one test
   retab workflows tests runs list wf_abc123 tst_jkl012
 
-  # Full record for one run
+  # Full child result record for one test
   retab workflows tests runs get wf_abc123 tst_jkl012 trun_mno345`,
+}
+
+var workflowsTestsRunsCreateCmd = &cobra.Command{
+	Use:   "create <workflow-id> [flags]",
+	Short: "Create a workflow-test run",
+	Args:  cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		req := retab.ExecuteWorkflowTestsRequest{WorkflowID: args[0]}
+		req.TestID, _ = cmd.Flags().GetString("test-id")
+		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
+		target, err := resolveJSONMap(cmd, "target-file")
+		if err != nil {
+			return err
+		}
+		if target != nil {
+			if err := validateWorkflowTestTarget(target); err != nil {
+				return fmt.Errorf("--target-file: %w", err)
+			}
+			req.Target = retab.Resource(target)
+		}
+		result, err := client.Workflows.Tests.Runs.Create(ctx, req)
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
 }
 
 var workflowsTestsRunsListCmd = &cobra.Command{
@@ -471,13 +513,17 @@ the 20 most recent.`,
 }
 
 var workflowsTestsRunsGetCmd = &cobra.Command{
-	Use:   "get <workflow-id> <test-id> <run-id>",
-	Short: "Get a test run",
-	Long: `Fetch the full record for one test execution: actual output,
-pass/fail per-assertion, diff against the pinned expectation, timing.`,
-	Example: `  # Inspect a test run
+	Use:   "get <workflow-id> <run-id> | <workflow-id> <test-id> <result-id>",
+	Short: "Get a workflow-test run or child result",
+	Long: `With two arguments, fetch a workflow-test execution run status by
+run_id. With three arguments, fetch one child result record for a specific
+test.`,
+	Example: `  # Poll a workflow-test run
+  retab workflows tests runs get wf_abc123 wftestrun_mno345
+
+  # Inspect a child test result
   retab workflows tests runs get wf_abc123 tst_jkl012 trun_mno345`,
-	Args: cobra.ExactArgs(3),
+	Args: cobra.RangeArgs(2, 3),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -485,7 +531,31 @@ pass/fail per-assertion, diff against the pinned expectation, timing.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Tests.Runs.Get(ctx, args[0], args[1], args[2])
+		var result any
+		if len(args) == 2 {
+			result, err = client.Workflows.Tests.Runs.GetExecution(ctx, args[0], args[1])
+		} else {
+			result, err = client.Workflows.Tests.Runs.Get(ctx, args[0], args[1], args[2])
+		}
+		if err != nil {
+			return err
+		}
+		return printJSON(result)
+	}),
+}
+
+var workflowsTestsRunsResultsCmd = &cobra.Command{
+	Use:   "results <workflow-id> <run-id>",
+	Short: "List child results for a workflow-test run",
+	Args:  cobra.ExactArgs(2),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		result, err := client.Workflows.Tests.Runs.Results(ctx, args[0], args[1])
 		if err != nil {
 			return err
 		}
@@ -519,8 +589,11 @@ func init() {
 	_ = workflowsTestsExecuteCmd.Flags().MarkHidden("workflow-id")
 
 	workflowsTestsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsTestsRunsCreateCmd.Flags().String("test-id", "", "single test to execute")
+	workflowsTestsRunsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
+	workflowsTestsRunsCreateCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
 
-	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd)
+	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsCreateCmd, workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd, workflowsTestsRunsResultsCmd)
 	workflowsTestsCmd.AddCommand(workflowsTestsCreateCmd, workflowsTestsGetCmd, workflowsTestsListCmd, workflowsTestsUpdateCmd, workflowsTestsDeleteCmd, workflowsTestsExecuteCmd, workflowsTestsRunsCmd)
 	workflowsCmd.AddCommand(workflowsTestsCmd)
 }

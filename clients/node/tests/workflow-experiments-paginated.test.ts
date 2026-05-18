@@ -53,7 +53,6 @@ const EXPERIMENT = {
     status: "draft",
     block_kind: "extract",
     score: null,
-    job_id: null,
     is_stale: false,
     schema_drift: "unknown",
     schema_drift_detail: null,
@@ -76,7 +75,6 @@ const RUN = {
     created_at: NOW,
     completed_at: NOW,
     duration_ms: 100,
-    job_id: "job_1",
 };
 
 describe("workflows.experiments.list paginated envelope", () => {

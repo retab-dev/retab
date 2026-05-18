@@ -2,19 +2,19 @@ import { CompositionClient, RequestOptions } from "../../../client.js";
 import APIWorkflowTestRuns from "./runs/client.js";
 import {
     AssertionSpec,
-    BlockTestListResponse,
-    ExecuteBlockTestsResponse,
+    WorkflowTestListResponse,
+    ExecuteWorkflowTestsResponse,
     WorkflowTest,
     WorkflowTestBlockTarget,
     WorkflowTestSource,
-    ZBlockTestListResponse,
-    ZExecuteBlockTestsResponse,
+    ZWorkflowTestListResponse,
+    ZExecuteWorkflowTestsResponse,
     ZWorkflowTest,
 } from "./types.js";
 
 /**
- * Workflow block-tests API client. Mirrors the eight backend endpoints
- * under `/v1/workflows/{workflow_id}/block-tests` plus the nested run
+ * Workflow tests API client. Mirrors the eight backend endpoints
+ * under `/v1/workflows/{workflow_id}/tests` plus the nested run
  * endpoints.
  *
  * Sub-clients:
@@ -34,10 +34,10 @@ import {
  * });
  *
  * // Run all tests for the workflow asynchronously.
- * const batch = await client.workflows.tests.execute({
+ * const run = await client.workflows.tests.execute({
  *     workflowId: "wf_abc123",
  * });
- * console.log(batch.batch_id, batch.job_id);
+ * console.log(run.run_id, run.status);
  * ```
  */
 export default class APIWorkflowTests extends CompositionClient {
@@ -49,7 +49,7 @@ export default class APIWorkflowTests extends CompositionClient {
     }
 
     /**
-     * Create a new block test against a single block in the workflow.
+     * Create a new workflow test against a single block in the workflow.
      *
      * `assertion` is required. Pass `target` and `source` as discriminated
      * union literals — see types.ts for the variants.
@@ -87,7 +87,7 @@ export default class APIWorkflowTests extends CompositionClient {
             body.name = name;
         }
         return this._fetchJson(ZWorkflowTest, {
-            url: `/workflows/${workflowId}/block-tests`,
+            url: `/workflows/${workflowId}/tests`,
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -96,7 +96,7 @@ export default class APIWorkflowTests extends CompositionClient {
     }
 
     /**
-     * Fetch a single block test by id (refreshes drift state).
+     * Fetch a single workflow test by id (refreshes drift state).
      */
     async get(
         {
@@ -109,7 +109,7 @@ export default class APIWorkflowTests extends CompositionClient {
         options?: RequestOptions
     ): Promise<WorkflowTest> {
         return this._fetchJson(ZWorkflowTest, {
-            url: `/workflows/${workflowId}/block-tests/${testId}`,
+            url: `/workflows/${workflowId}/tests/${testId}`,
             method: "GET",
             params: options?.params,
             headers: options?.headers,
@@ -117,7 +117,7 @@ export default class APIWorkflowTests extends CompositionClient {
     }
 
     /**
-     * List all block tests for a workflow.
+     * List all workflow tests for a workflow.
      */
     async list(
         {
@@ -130,7 +130,7 @@ export default class APIWorkflowTests extends CompositionClient {
             limit?: number;
         },
         options?: RequestOptions
-    ): Promise<BlockTestListResponse> {
+    ): Promise<WorkflowTestListResponse> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const baseParams: Record<string, any> = { limit };
         if (targetBlockId !== undefined) {
@@ -139,8 +139,8 @@ export default class APIWorkflowTests extends CompositionClient {
         // `options.params` wins so callers can override the typed args via
         // the escape hatch — matches sibling `APIWorkflowRuns.list`
         // precedence (runs/client.ts).
-        return this._fetchJson(ZBlockTestListResponse, {
-            url: `/workflows/${workflowId}/block-tests`,
+        return this._fetchJson(ZWorkflowTestListResponse, {
+            url: `/workflows/${workflowId}/tests`,
             method: "GET",
             params: { ...baseParams, ...(options?.params || {}) },
             headers: options?.headers,
@@ -148,7 +148,7 @@ export default class APIWorkflowTests extends CompositionClient {
     }
 
     /**
-     * Patch the name, assertion, and/or source of a block test. Each
+     * Patch the name, assertion, and/or source of a workflow test. Each
      * field is optional — fields you omit are left untouched. Setting
      * `assertion: null` is rejected by the backend; use `delete()` to
      * remove the test entirely.
@@ -179,7 +179,7 @@ export default class APIWorkflowTests extends CompositionClient {
         if (source !== undefined) body.source = source;
 
         return this._fetchJson(ZWorkflowTest, {
-            url: `/workflows/${workflowId}/block-tests/${testId}`,
+            url: `/workflows/${workflowId}/tests/${testId}`,
             method: "PATCH",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,
@@ -188,7 +188,7 @@ export default class APIWorkflowTests extends CompositionClient {
     }
 
     /**
-     * Delete a block test. Returns void on success.
+     * Delete a workflow test. Returns void on success.
      */
     async delete(
         {
@@ -201,7 +201,7 @@ export default class APIWorkflowTests extends CompositionClient {
         options?: RequestOptions
     ): Promise<void> {
         return this._fetchJson({
-            url: `/workflows/${workflowId}/block-tests/${testId}`,
+            url: `/workflows/${workflowId}/tests/${testId}`,
             method: "DELETE",
             params: options?.params,
             headers: options?.headers,
@@ -209,7 +209,7 @@ export default class APIWorkflowTests extends CompositionClient {
     }
 
     /**
-     * Run one block test, all tests for a single block, or every test in
+     * Run one workflow test, all tests for a single block, or every test in
      * a workflow.
      *
      * Provide EXACTLY ONE of:
@@ -219,9 +219,8 @@ export default class APIWorkflowTests extends CompositionClient {
      *
      * `nConsensus` is optional; allowed values are 3, 5, or 7.
      *
-     * Execution is asynchronous: the response carries `batch_id` + `job_id`.
-     * Poll `client.jobs.retrieve(jobId)` until terminal to fetch the
-     * per-test results.
+     * Execution is asynchronous: the response carries `run_id`.
+     * Poll the workflow-test run by `run_id` for status and results.
      */
     async execute(
         {
@@ -236,15 +235,15 @@ export default class APIWorkflowTests extends CompositionClient {
             nConsensus?: number;
         },
         options?: RequestOptions
-    ): Promise<ExecuteBlockTestsResponse> {
+    ): Promise<ExecuteWorkflowTestsResponse> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const body: Record<string, any> = {};
         if (testId !== undefined) body.test_id = testId;
         if (target !== undefined) body.target = target;
         if (nConsensus !== undefined) body.n_consensus = nConsensus;
 
-        return this._fetchJson(ZExecuteBlockTestsResponse, {
-            url: `/workflows/${workflowId}/block-tests/execute`,
+        return this._fetchJson(ZExecuteWorkflowTestsResponse, {
+            url: `/workflows/${workflowId}/tests/runs`,
             method: "POST",
             body: { ...body, ...(options?.body || {}) },
             params: options?.params,

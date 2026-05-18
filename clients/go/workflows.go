@@ -1422,7 +1422,7 @@ func newWorkflowTestsService(client *Client) *WorkflowTestsService {
 
 type WorkflowTest = Resource
 type WorkflowTestRunRecord = Resource
-type BlockTestBatchExecutionResult = Resource
+type WorkflowTestBatchExecutionResult = Resource
 
 type WorkflowTestCreateRequest struct {
 	WorkflowID string   `json:"-"`
@@ -1444,27 +1444,55 @@ type ListWorkflowTestsRequest struct {
 	Limit         int
 }
 
-// BlockTestListResponse is the canonical PaginatedList envelope for
-// `GET /v1/workflows/{wf}/block-tests`. Kept as a type alias so callers can
+// WorkflowTestListResponse is the canonical PaginatedList envelope for
+// `GET /v1/workflows/{wf}/tests`. Kept as a type alias so callers can
 // keep referring to the named type while the underlying shape rides the
 // shared `{data, list_metadata}` envelope.
-type BlockTestListResponse = PaginatedList[WorkflowTest]
+type WorkflowTestListResponse = PaginatedList[WorkflowTest]
 
-type ExecuteBlockTestsRequest struct {
+type ExecuteWorkflowTestsRequest struct {
 	WorkflowID string   `json:"-"`
 	TestID     string   `json:"test_id,omitempty"`
 	Target     Resource `json:"target,omitempty"`
 	NConsensus int      `json:"n_consensus,omitempty"`
 }
 
-type ExecuteBlockTestsResponse struct {
-	BatchID    string    `json:"batch_id"`
-	JobID      string    `json:"job_id"`
-	Status     string    `json:"status"`
-	WorkflowID string    `json:"workflow_id"`
-	Target     *Resource `json:"target,omitempty"`
-	TestID     string    `json:"test_id,omitempty"`
-	TotalTests int       `json:"total_tests"`
+type WorkflowTestRunCounts struct {
+	Queued    int `json:"queued,omitempty"`
+	Running   int `json:"running,omitempty"`
+	Passed    int `json:"passed,omitempty"`
+	Failed    int `json:"failed,omitempty"`
+	Blocked   int `json:"blocked,omitempty"`
+	Error     int `json:"error,omitempty"`
+	Cancelled int `json:"cancelled,omitempty"`
+}
+
+type WorkflowTestExecutionRunStatus struct {
+	RunID       string                `json:"run_id"`
+	Status      string                `json:"status"`
+	WorkflowID  string                `json:"workflow_id"`
+	Target      *Resource             `json:"target,omitempty"`
+	TestID      string                `json:"test_id,omitempty"`
+	TotalTests  int                   `json:"total_tests"`
+	Counts      WorkflowTestRunCounts `json:"counts,omitempty"`
+	CreatedAt   *time.Time            `json:"created_at,omitempty"`
+	StartedAt   *time.Time            `json:"started_at,omitempty"`
+	CompletedAt *time.Time            `json:"completed_at,omitempty"`
+	DurationMs  *int                  `json:"duration_ms,omitempty"`
+	Error       string                `json:"error,omitempty"`
+}
+
+type ExecuteWorkflowTestsResponse = WorkflowTestExecutionRunStatus
+
+type WorkflowTestExecutionRunResults struct {
+	RunID      string                  `json:"run_id"`
+	Status     string                  `json:"status"`
+	WorkflowID string                  `json:"workflow_id"`
+	Target     *Resource               `json:"target,omitempty"`
+	TestID     string                  `json:"test_id,omitempty"`
+	TotalTests int                     `json:"total_tests"`
+	Counts     WorkflowTestRunCounts   `json:"counts,omitempty"`
+	Results    []WorkflowTestRunRecord `json:"results"`
 }
 
 func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestCreateRequest, opts ...RequestOption) (*WorkflowTest, error) {
@@ -1474,7 +1502,7 @@ func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestC
 	body := resourceFromJSON(request)
 	delete(body, "WorkflowID")
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(request.WorkflowID)+"/block-tests", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(request.WorkflowID)+"/tests", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1486,7 +1514,7 @@ func (s *WorkflowTestsService) Get(ctx context.Context, workflowID string, testI
 		return nil, fmt.Errorf("retab: testID is required")
 	}
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/block-tests/"+url.PathEscape(testID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1502,7 +1530,7 @@ func (s *WorkflowTestsService) List(ctx context.Context, request ListWorkflowTes
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	addQuery(query, "target_block_id", request.TargetBlockID)
 	var result PaginatedList[WorkflowTest]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(request.WorkflowID)+"/block-tests", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(request.WorkflowID)+"/tests", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1514,7 +1542,7 @@ func (s *WorkflowTestsService) Update(ctx context.Context, workflowID string, te
 		return nil, fmt.Errorf("retab: testID is required")
 	}
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodPatch, "/workflows/"+url.PathEscape(workflowID)+"/block-tests/"+url.PathEscape(testID), nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID), nil, request, &result, opts...)
 	return &result, err
 }
 
@@ -1525,17 +1553,21 @@ func (s *WorkflowTestsService) Delete(ctx context.Context, workflowID string, te
 	if testID == "" {
 		return fmt.Errorf("retab: testID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID)+"/block-tests/"+url.PathEscape(testID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID), nil, nil, nil, opts...)
 }
 
-func (s *WorkflowTestsService) Execute(ctx context.Context, request ExecuteBlockTestsRequest, opts ...RequestOption) (*ExecuteBlockTestsResponse, error) {
+func (s *WorkflowTestsService) Execute(ctx context.Context, request ExecuteWorkflowTestsRequest, opts ...RequestOption) (*ExecuteWorkflowTestsResponse, error) {
+	return s.Runs.Create(ctx, request, opts...)
+}
+
+func (s *WorkflowTestRunsService) Create(ctx context.Context, request ExecuteWorkflowTestsRequest, opts ...RequestOption) (*WorkflowTestExecutionRunStatus, error) {
 	if request.WorkflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	body := resourceFromJSON(request)
 	delete(body, "WorkflowID")
-	var result ExecuteBlockTestsResponse
-	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(request.WorkflowID)+"/block-tests/execute", nil, body, &result, opts...)
+	var result WorkflowTestExecutionRunStatus
+	err := s.client.do(ctx, http.MethodPost, "/workflows/"+url.PathEscape(request.WorkflowID)+"/tests/runs", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1543,11 +1575,11 @@ type WorkflowTestRunsService struct {
 	client *Client
 }
 
-// BlockTestRunListResponse is the canonical PaginatedList envelope for
-// `GET /v1/workflows/{wf}/block-tests/{id}/runs`. Kept as a type alias for
-// the same reason `BlockTestListResponse` is — callers keep the named type,
+// WorkflowTestRunListResponse is the canonical PaginatedList envelope for
+// `GET /v1/workflows/{wf}/tests/{id}/runs`. Kept as a type alias for
+// the same reason `WorkflowTestListResponse` is — callers keep the named type,
 // the underlying shape rides the shared `{data, list_metadata}` envelope.
-type BlockTestRunListResponse = PaginatedList[WorkflowTestRunRecord]
+type WorkflowTestRunListResponse = PaginatedList[WorkflowTestRunRecord]
 
 func (s *WorkflowTestRunsService) List(ctx context.Context, workflowID string, testID string, limit int, opts ...RequestOption) (*PaginatedList[WorkflowTestRunRecord], error) {
 	if workflowID == "" {
@@ -1562,7 +1594,7 @@ func (s *WorkflowTestRunsService) List(ctx context.Context, workflowID string, t
 	query := url.Values{}
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	var result PaginatedList[WorkflowTestRunRecord]
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/block-tests/"+url.PathEscape(testID)+"/runs", query, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID)+"/runs", query, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1577,7 +1609,31 @@ func (s *WorkflowTestRunsService) Get(ctx context.Context, workflowID string, te
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	var result WorkflowTestRunRecord
-	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/block-tests/"+url.PathEscape(testID)+"/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/"+url.PathEscape(testID)+"/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowTestRunsService) GetExecution(ctx context.Context, workflowID string, runID string, opts ...RequestOption) (*WorkflowTestExecutionRunStatus, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	var result WorkflowTestExecutionRunStatus
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/runs/"+url.PathEscape(runID), nil, nil, &result, opts...)
+	return &result, err
+}
+
+func (s *WorkflowTestRunsService) Results(ctx context.Context, workflowID string, runID string, opts ...RequestOption) (*WorkflowTestExecutionRunResults, error) {
+	if workflowID == "" {
+		return nil, fmt.Errorf("retab: workflowID is required")
+	}
+	if runID == "" {
+		return nil, fmt.Errorf("retab: runID is required")
+	}
+	var result WorkflowTestExecutionRunResults
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/tests/runs/"+url.PathEscape(runID)+"/results", nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1651,7 +1707,6 @@ type ExperimentResponse struct {
 	Status            string    `json:"status"`
 	BlockKind         string    `json:"block_kind"`
 	Score             *float64  `json:"score,omitempty"`
-	JobID             string    `json:"job_id,omitempty"`
 	IsStale           bool      `json:"is_stale,omitempty"`
 	SchemaDrift       string    `json:"schema_drift,omitempty"`
 	SchemaDriftDetail string    `json:"schema_drift_detail,omitempty"`
@@ -1664,11 +1719,10 @@ type PreviousRunSummary struct {
 	Score                 *float64 `json:"score,omitempty"`
 }
 
-// RunExperimentResponse is returned by POST /experiments/{id}/run.
+// RunExperimentResponse is returned by POST /experiments/{id}/runs.
 type RunExperimentResponse struct {
 	ExperimentID          string              `json:"experiment_id"`
 	RunID                 string              `json:"run_id"`
-	JobID                 string              `json:"job_id"`
 	Status                string              `json:"status"`
 	DefinitionFingerprint string              `json:"definition_fingerprint"`
 	DocumentCount         int                 `json:"document_count"`
@@ -1698,7 +1752,6 @@ type ExperimentRunSummary struct {
 	CreatedAt             time.Time      `json:"created_at"`
 	CompletedAt           *time.Time     `json:"completed_at,omitempty"`
 	DurationMs            *int           `json:"duration_ms,omitempty"`
-	JobID                 string         `json:"job_id,omitempty"`
 }
 
 // ExperimentRunListResponse is the canonical PaginatedList envelope for
@@ -2015,7 +2068,6 @@ func (s *WorkflowExperimentsService) RunBatch(ctx context.Context, request RunBa
 }
 
 // Create triggers an experiment run with the current draft block config.
-// Async — returns a job_id; poll with client.Jobs.
 func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, experimentID string, params *RunExperimentOptions, opts ...RequestOption) (*RunExperimentResponse, error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
@@ -2026,7 +2078,7 @@ func (s *WorkflowExperimentRunsService) Create(ctx context.Context, workflowID, 
 	body := map[string]any{}
 	var result RunExperimentResponse
 	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/run",
+		"/workflows/"+url.PathEscape(workflowID)+"/experiments/"+url.PathEscape(experimentID)+"/runs",
 		nil, body, &result, opts...)
 	return &result, err
 }

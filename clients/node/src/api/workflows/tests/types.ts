@@ -1,7 +1,7 @@
 /**
- * Zod schemas + TS types for the workflow block-tests API.
+ * Zod schemas + TS types for the workflow tests API.
  *
- * Mirrors `backend/main_server/main_server/services/v1/workflows/block_tests/models.py`.
+ * Mirrors `backend/main_server/main_server/services/v1/workflows/tests/models.py`.
  * Wire-format field names are snake_case (matching what the Pydantic
  * models serialize); SDK callers use these as plain object literals.
  */
@@ -29,7 +29,7 @@ export type AssertionResultStatus = z.infer<typeof ZAssertionResultStatus>;
  * in-flight records; terminal states appear on completed records and on
  * `latest_run_summary`.
  */
-export const ZBlockTestRunStatus = z.enum([
+export const ZWorkflowTestRunStatus = z.enum([
     "queued",
     "running",
     "passed",
@@ -38,20 +38,28 @@ export const ZBlockTestRunStatus = z.enum([
     "error",
     "cancelled",
 ]);
-export type BlockTestRunStatus = z.infer<typeof ZBlockTestRunStatus>;
+export type WorkflowTestRunStatus = z.infer<typeof ZWorkflowTestRunStatus>;
 
 /**
- * Strict subset of `BlockTestRunStatus` — values that can appear on a
+ * Strict subset of `WorkflowTestRunStatus` — values that can appear on a
  * completed run record's `latest_run_summary`.
  */
-export const ZTerminalBlockTestRunStatus = z.enum([
+export const ZTerminalWorkflowTestRunStatus = z.enum([
     "passed",
     "failed",
     "blocked",
     "error",
     "cancelled",
 ]);
-export type TerminalBlockTestRunStatus = z.infer<typeof ZTerminalBlockTestRunStatus>;
+export type TerminalWorkflowTestRunStatus = z.infer<typeof ZTerminalWorkflowTestRunStatus>;
+
+export const ZWorkflowTestExecutionRunStatus = z.enum([
+    "queued",
+    "running",
+    "completed",
+    "failed",
+]);
+export type WorkflowTestExecutionRunStatus = z.infer<typeof ZWorkflowTestExecutionRunStatus>;
 
 // ---------------------------------------------------------------------------
 // Discriminated unions: target (what's tested) and source (where inputs come from)
@@ -154,11 +162,11 @@ export const ZVerdictSummary = z
     .passthrough();
 export type VerdictSummary = z.infer<typeof ZVerdictSummary>;
 
-export const ZLatestBlockTestRunSummary = z
+export const ZLatestWorkflowTestRunSummary = z
     .object({
         run_record_id: z.string(),
         // Wider type for back-compat — in practice only terminal values appear.
-        status: ZBlockTestRunStatus,
+        status: ZWorkflowTestRunStatus,
         started_at: z.string(),
         completed_at: z.string().nullable().optional(),
         duration_ms: z.number().nullable().optional(),
@@ -169,7 +177,7 @@ export const ZLatestBlockTestRunSummary = z
         blocked_assertions: z.number().default(0),
     })
     .passthrough();
-export type LatestBlockTestRunSummary = z.infer<typeof ZLatestBlockTestRunSummary>;
+export type LatestWorkflowTestRunSummary = z.infer<typeof ZLatestWorkflowTestRunSummary>;
 
 // ---------------------------------------------------------------------------
 // Drift / validation
@@ -212,9 +220,9 @@ export const ZWorkflowTest = z
         validation_status: z.string().default("valid"),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         validation_issues: z.array(z.any()).default([]),
-        latest_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
-        latest_passing_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
-        latest_failing_run_summary: ZLatestBlockTestRunSummary.nullable().optional(),
+        latest_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
+        latest_passing_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
+        latest_failing_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
         created_at: z.string(),
         updated_at: z.string(),
     })
@@ -225,7 +233,7 @@ export const ZWorkflowTestRunRecord = z
     .object({
         id: z.string(),
         test_id: z.string(),
-        status: ZBlockTestRunStatus,
+        status: ZWorkflowTestRunStatus,
         workflow_id: z.string(),
         target: ZWorkflowTestBlockTarget,
         execution_fingerprint: z.string().default(""),
@@ -249,12 +257,12 @@ export const ZWorkflowTestRunRecord = z
 export type WorkflowTestRunRecord = z.infer<typeof ZWorkflowTestRunRecord>;
 
 /**
- * One bucket per `BlockTestRunStatus` value. Today only terminal buckets
+ * One bucket per `WorkflowTestRunStatus` value. Today only terminal buckets
  * are populated by the runner; transient ones (`queued` / `running`) are
  * declared for forward-compat with any future code path that persists
  * transient state.
  */
-export const ZBlockTestBatchExecutionCounts = z
+export const ZWorkflowTestBatchExecutionCounts = z
     .object({
         queued: z.number().default(0),
         running: z.number().default(0),
@@ -265,25 +273,25 @@ export const ZBlockTestBatchExecutionCounts = z
         cancelled: z.number().default(0),
     })
     .passthrough();
-export type BlockTestBatchExecutionCounts = z.infer<typeof ZBlockTestBatchExecutionCounts>;
+export type WorkflowTestBatchExecutionCounts = z.infer<typeof ZWorkflowTestBatchExecutionCounts>;
 
-export const ZBlockTestBatchExecutionItem = z
+export const ZWorkflowTestBatchExecutionItem = z
     .object({
         test_id: z.string(),
         run_record_id: z.string(),
-        status: ZBlockTestRunStatus,
+        status: ZWorkflowTestRunStatus,
         workflow_id: z.string(),
         target: ZWorkflowTestBlockTarget,
         duration_ms: z.number().nullable().optional(),
     })
     .passthrough();
-export type BlockTestBatchExecutionItem = z.infer<typeof ZBlockTestBatchExecutionItem>;
+export type WorkflowTestBatchExecutionItem = z.infer<typeof ZWorkflowTestBatchExecutionItem>;
 
-export const ZBlockTestBatchExecutionResult = z
+export const ZWorkflowTestBatchExecutionResult = z
     .object({
         workflow_id: z.string(),
         target: ZWorkflowTestBlockTarget.nullable().optional(),
-        counts: ZBlockTestBatchExecutionCounts.default(() => ({
+        counts: ZWorkflowTestBatchExecutionCounts.default(() => ({
             queued: 0,
             running: 0,
             passed: 0,
@@ -292,23 +300,58 @@ export const ZBlockTestBatchExecutionResult = z
             error: 0,
             cancelled: 0,
         })),
-        results: z.array(ZBlockTestBatchExecutionItem).default([]),
+        results: z.array(ZWorkflowTestBatchExecutionItem).default([]),
     })
     .passthrough();
-export type BlockTestBatchExecutionResult = z.infer<typeof ZBlockTestBatchExecutionResult>;
+export type WorkflowTestBatchExecutionResult = z.infer<typeof ZWorkflowTestBatchExecutionResult>;
 
-export const ZExecuteBlockTestsResponse = z
+export const ZExecuteWorkflowTestsResponse = z
     .object({
-        batch_id: z.string(),
-        job_id: z.string(),
-        status: z.literal("queued"),
+        run_id: z.string(),
+        status: ZWorkflowTestExecutionRunStatus,
         workflow_id: z.string(),
         target: ZWorkflowTestBlockTarget.nullable().optional(),
         test_id: z.string().nullable().optional(),
         total_tests: z.number(),
+        counts: ZWorkflowTestBatchExecutionCounts.default(() => ({
+            queued: 0,
+            running: 0,
+            passed: 0,
+            failed: 0,
+            blocked: 0,
+            error: 0,
+            cancelled: 0,
+        })),
+        created_at: z.string(),
+        started_at: z.string().nullable().optional(),
+        completed_at: z.string().nullable().optional(),
+        duration_ms: z.number().nullable().optional(),
+        error: z.string().nullable().optional(),
     })
     .passthrough();
-export type ExecuteBlockTestsResponse = z.infer<typeof ZExecuteBlockTestsResponse>;
+export type ExecuteWorkflowTestsResponse = z.infer<typeof ZExecuteWorkflowTestsResponse>;
+
+export const ZWorkflowTestExecutionRunResults = z
+    .object({
+        run_id: z.string(),
+        status: ZWorkflowTestExecutionRunStatus,
+        workflow_id: z.string(),
+        target: ZWorkflowTestBlockTarget.nullable().optional(),
+        test_id: z.string().nullable().optional(),
+        total_tests: z.number(),
+        counts: ZWorkflowTestBatchExecutionCounts.default(() => ({
+            queued: 0,
+            running: 0,
+            passed: 0,
+            failed: 0,
+            blocked: 0,
+            error: 0,
+            cancelled: 0,
+        })),
+        results: z.array(ZWorkflowTestRunRecord).default([]),
+    })
+    .passthrough();
+export type WorkflowTestExecutionRunResults = z.infer<typeof ZWorkflowTestExecutionRunResults>;
 
 // Canonical PaginatedList envelope. The two list routes used to return
 // `{"tests": [...]}` and `{"runs": [...]}` respectively — the migration to
@@ -322,18 +365,18 @@ export const ZListMetadata = z
     .passthrough();
 export type ListMetadata = z.infer<typeof ZListMetadata>;
 
-export const ZBlockTestListResponse = z
+export const ZWorkflowTestListResponse = z
     .object({
         data: z.array(ZWorkflowTest).default([]),
         list_metadata: ZListMetadata,
     })
     .passthrough();
-export type BlockTestListResponse = z.infer<typeof ZBlockTestListResponse>;
+export type WorkflowTestListResponse = z.infer<typeof ZWorkflowTestListResponse>;
 
-export const ZBlockTestRunListResponse = z
+export const ZWorkflowTestRunListResponse = z
     .object({
         data: z.array(ZWorkflowTestRunRecord).default([]),
         list_metadata: ZListMetadata,
     })
     .passthrough();
-export type BlockTestRunListResponse = z.infer<typeof ZBlockTestRunListResponse>;
+export type WorkflowTestRunListResponse = z.infer<typeof ZWorkflowTestRunListResponse>;

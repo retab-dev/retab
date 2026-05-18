@@ -9,7 +9,7 @@ fields (e.g. ``last_run_config_fingerprint``) are intentionally omitted, and
 any forensic/diagnostic blob the backend may evolve uses
 ``model_config = ConfigDict(extra="ignore")`` so SDK pins don't break when
 the backend adds optional fields. ``handle_inputs`` is left as ``dict[str, Any]``
-to match the existing `block_tests` convention (the SDK does not model the
+to match the existing `tests` convention (the SDK does not model the
 ``HandleInput`` discriminated union internally).
 """
 
@@ -133,7 +133,6 @@ class ExperimentResponse(RetabBaseModel):
     status: ExperimentPublicStatus = "draft"
     block_kind: ExperimentBlockKind
     score: float | None = None
-    job_id: str | None = None
     is_stale: bool = False
     schema_drift: ExperimentSchemaDriftStatus = "unknown"
     schema_drift_detail: str | None = None
@@ -155,17 +154,15 @@ class PreviousRunSummary(RetabBaseModel):
 
 
 class RunExperimentResponse(RetabBaseModel):
-    """Response from ``POST /experiments/{id}/run``.
+    """Response from ``POST /experiments/{id}/runs``.
 
-    Async — execution proceeds in the background; poll
-    ``client.jobs.retrieve(job_id)`` (or call ``wait_for_run_completion``).
+    Async execution is tracked by ``run_id`` on the experiment runs surface.
     """
 
     model_config = ConfigDict(extra="ignore")
 
     experiment_id: str
     run_id: str
-    job_id: str | None
     status: str
     definition_fingerprint: str
     total_document_count: int = 0
@@ -197,7 +194,6 @@ class ExperimentRunSummary(RetabBaseModel):
     created_at: datetime.datetime
     completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
-    job_id: str | None = None
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 """Smoke tests for `client.workflows.experiments.*`, `client.workflows.diagnose`, and
 `client.workflows.blocks.simulate`.
 
-Mirrors the existing pattern from `test_workflow_block_tests.py`: mock the
+Mirrors the existing pattern from `test_workflow_tests.py`: mock the
 underlying `client._prepared_request` so we can assert on the constructed
 `PreparedRequest` without hitting the API.
 """
@@ -37,7 +37,6 @@ _EXPERIMENT_RESPONSE = {
     "status": "draft",
     "block_kind": "extract",
     "score": None,
-    "job_id": None,
     "is_stale": False,
     "schema_drift": "unknown",
     "schema_drift_detail": None,
@@ -253,7 +252,6 @@ def test_experiments_runs_create_posts_to_run_subroute() -> None:
     client._prepared_request.return_value = {
         "experiment_id": "exp_abc",
         "run_id": "exprun_1",
-        "job_id": "job_1",
         "status": "pending",
         "definition_fingerprint": "deadbeef",
         "document_count": 3,
@@ -268,7 +266,7 @@ def test_experiments_runs_create_posts_to_run_subroute() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/run"
+    assert request.url == "/workflows/wf_abc123/experiments/exp_abc/runs"
     assert request.data == {}
 
 
@@ -279,7 +277,6 @@ def test_experiments_runs_create_default_body_is_empty_dict() -> None:
     client._prepared_request.return_value = {
         "experiment_id": "exp_abc",
         "run_id": "exprun_1",
-        "job_id": "job_1",
         "status": "pending",
         "definition_fingerprint": "deadbeef",
         "document_count": 3,
@@ -301,7 +298,6 @@ def test_experiments_runs_create_does_not_expose_retry_or_stale_flags() -> None:
     client._prepared_request.return_value = {
         "experiment_id": "exp_abc",
         "run_id": "exprun_2",
-        "job_id": None,
         "status": "completed",
         "definition_fingerprint": "deadbeef",
         "document_count": 3,

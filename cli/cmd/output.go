@@ -166,7 +166,7 @@ func renderTable(w io.Writer, v any, columns []TableColumn) error {
 //
 //  1. Reflect on the top-level value (or its pointee) and look for a
 //     struct field named `Data`. This matches the SDK's typed responses
-//     (e.g. retab.FileListResponse, BlockTestListResponse) without an
+//     (e.g. retab.FileListResponse, WorkflowTestListResponse) without an
 //     extra serialize/deserialize roundtrip.
 //  2. Marshal to JSON, unmarshal into map[string]any, and read "data".
 //     Catches the map-shaped payloads readJSON produces and anything
