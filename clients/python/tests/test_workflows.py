@@ -903,6 +903,7 @@ def test_workflow_runs_submit_hil_decision_route() -> None:
         "run_1",
         block_id="hil-1",
         approved=True,
+        version_stamp=7,
         modified_data={"field": "value"},
         command_id="cmd_3",
     )
@@ -913,12 +914,44 @@ def test_workflow_runs_submit_hil_decision_route() -> None:
     assert request.data == {
         "block_id": "hil-1",
         "approved": True,
+        "version_stamp": 7,
         "modified_data": {"field": "value"},
         "command_id": "cmd_3",
     }
     assert result.submission_status == "accepted"
     assert result.decision.block_id == "hil-1"
     assert result.decision.block_status == "waiting_for_hil"
+
+
+def test_workflow_runs_submit_hil_decision_threads_reject_reason() -> None:
+    """A rejection threads version_stamp + reject_reason into the request body."""
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "submission_status": "accepted",
+        "decision": {
+            "run_id": "run_1",
+            "block_id": "hil-1",
+            "decision_received": True,
+            "decision_applied": False,
+            "approved": False,
+        },
+    }
+
+    WorkflowRuns(client=client).submit_hil_decision(
+        "run_1",
+        block_id="hil-1",
+        approved=False,
+        version_stamp=4,
+        reject_reason="vendor mismatch",
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.data == {
+        "block_id": "hil-1",
+        "approved": False,
+        "version_stamp": 4,
+        "reject_reason": "vendor mismatch",
+    }
 
 
 def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> None:
@@ -943,6 +976,7 @@ def test_workflow_runs_submit_hil_decision_accepts_already_applied_status() -> N
         "run_1",
         block_id="hil-1",
         approved=True,
+        version_stamp=7,
     )
 
     assert result.submission_status == "already_applied"

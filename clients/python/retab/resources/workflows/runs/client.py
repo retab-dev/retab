@@ -22,6 +22,7 @@ from ....types.workflows import (
     WorkflowRunTriggerType,
 )
 from .steps import WorkflowSteps, AsyncWorkflowSteps
+from .reviews import WorkflowReviews, AsyncWorkflowReviews
 
 
 # Type alias for document inputs
@@ -196,13 +197,34 @@ class WorkflowRunsMixin:
         run_id: str,
         block_id: str,
         approved: bool,
+        version_stamp: int,
         modified_data: dict | None = None,
+        reject_reason: str | None = None,
         command_id: str | None = None,
     ) -> PreparedRequest:
-        """Prepare a request to submit a HIL decision for a workflow run."""
-        data: Dict[str, Any] = {"block_id": block_id, "approved": approved}
+        """Prepare a request to submit a HIL decision for a workflow run.
+
+        Args:
+            run_id: The ID of the workflow run.
+            block_id: The ID of the HIL block being approved/rejected.
+            approved: Whether the human approved the data.
+            version_stamp: The block's current decision version stamp. The
+                backend requires this for compare-and-swap and rejects the
+                request (HTTP 422) if it is missing.
+            modified_data: Optional modified data if the human made changes.
+            reject_reason: Optional free-text reason, surfaced when the
+                decision is a rejection.
+            command_id: Optional idempotency key for deduplicating submissions.
+        """
+        data: Dict[str, Any] = {
+            "block_id": block_id,
+            "approved": approved,
+            "version_stamp": version_stamp,
+        }
         if modified_data is not None:
             data["modified_data"] = modified_data
+        if reject_reason is not None:
+            data["reject_reason"] = reject_reason
         if command_id is not None:
             data["command_id"] = command_id
         return PreparedRequest(
@@ -258,6 +280,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.steps = WorkflowSteps(client=self._client)
+        self.reviews = WorkflowReviews(client=self._client)
 
     def create(
         self,
@@ -430,7 +453,9 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         run_id: str,
         block_id: str,
         approved: bool,
+        version_stamp: int,
         modified_data: dict | None = None,
+        reject_reason: str | None = None,
         command_id: str | None = None,
     ) -> SubmitHILDecisionResponse:
         """Submit a human-in-the-loop (HIL) decision for a workflow run.
@@ -439,7 +464,12 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             run_id: The ID of the workflow run
             block_id: The ID of the HIL block being approved/rejected
             approved: Whether the human approved the data
+            version_stamp: The block's current decision version stamp. Required
+                by the backend for compare-and-swap; omitting it makes the
+                server reject the submission (HTTP 422).
             modified_data: Optional modified data if the human made changes
+            reject_reason: Optional free-text reason, surfaced when the
+                decision is a rejection
             command_id: Optional idempotency key for deduplicating decision submissions
 
         Returns:
@@ -449,7 +479,9 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             run_id,
             block_id=block_id,
             approved=approved,
+            version_stamp=version_stamp,
             modified_data=modified_data,
+            reject_reason=reject_reason,
             command_id=command_id,
         )
         response = self._client._prepared_request(request)
@@ -567,6 +599,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.steps = AsyncWorkflowSteps(client=self._client)
+        self.reviews = AsyncWorkflowReviews(client=self._client)
 
     async def create(
         self,
@@ -737,7 +770,9 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         run_id: str,
         block_id: str,
         approved: bool,
+        version_stamp: int,
         modified_data: dict | None = None,
+        reject_reason: str | None = None,
         command_id: str | None = None,
     ) -> SubmitHILDecisionResponse:
         """Submit a human-in-the-loop (HIL) decision for a workflow run.
@@ -746,7 +781,12 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             run_id: The ID of the workflow run
             block_id: The ID of the HIL block being approved/rejected
             approved: Whether the human approved the data
+            version_stamp: The block's current decision version stamp. Required
+                by the backend for compare-and-swap; omitting it makes the
+                server reject the submission (HTTP 422).
             modified_data: Optional modified data if the human made changes
+            reject_reason: Optional free-text reason, surfaced when the
+                decision is a rejection
             command_id: Optional idempotency key for deduplicating decision submissions
 
         Returns:
@@ -756,7 +796,9 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             run_id,
             block_id=block_id,
             approved=approved,
+            version_stamp=version_stamp,
             modified_data=modified_data,
+            reject_reason=reject_reason,
             command_id=command_id,
         )
         response = await self._client._prepared_request(request)

@@ -95,6 +95,11 @@ class NotFoundError(APIError):
     pass
 
 
+class ConflictError(APIError):
+    """HTTP 409 — a compare-and-swap conflict; re-read and retry."""
+    pass
+
+
 class ValidationError(APIError):
     """HTTP 422 — request body failed server-side validation."""
     pass

@@ -14,6 +14,7 @@ from .exceptions import (
     APIError,
     APITimeoutError,
     AuthenticationError,
+    ConflictError,
     InternalServerError,
     NotFoundError,
     PermissionDeniedError,
@@ -46,6 +47,7 @@ _STATUS_CODE_TO_EXCEPTION: dict[int, type[APIError]] = {
     401: AuthenticationError,
     403: PermissionDeniedError,
     404: NotFoundError,
+    409: ConflictError,
     422: ValidationError,
     429: RateLimitError,
 }
