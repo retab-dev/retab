@@ -60,7 +60,7 @@ func TestWorkflowReviewsList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Workflows.Runs.Reviews.List(context.Background(), &ListReviewsParams{
+	resp, err := client.Workflows.Reviews.List(context.Background(), &ListReviewsParams{
 		WorkflowID: "wf_1", Status: "awaiting_review", Mine: true, Limit: 25,
 	})
 	if err != nil {
@@ -98,7 +98,7 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	overlay, err := client.Workflows.Runs.Reviews.Get(context.Background(), "run_1", "blk_1")
+	overlay, err := client.Workflows.Reviews.Get(context.Background(), "run_1", "blk_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,10 +121,10 @@ func TestWorkflowReviewsGetRequiresIDs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Runs.Reviews.Get(context.Background(), "", "blk_1"); err == nil {
+	if _, err := client.Workflows.Reviews.Get(context.Background(), "", "blk_1"); err == nil {
 		t.Fatal("expected error for empty runID")
 	}
-	if _, err := client.Workflows.Runs.Reviews.Get(context.Background(), "run_1", ""); err == nil {
+	if _, err := client.Workflows.Reviews.Get(context.Background(), "run_1", ""); err == nil {
 		t.Fatal("expected error for empty blockID")
 	}
 }
@@ -148,7 +148,7 @@ func TestWorkflowReviewsApproveSendsVersionStamp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Workflows.Runs.Reviews.Approve(context.Background(), "run_1", "blk_1", ApproveReviewRequest{
+	resp, err := client.Workflows.Reviews.Approve(context.Background(), "run_1", "blk_1", ApproveReviewRequest{
 		VersionStamp: 0,
 		EditedOutput: map[string]any{"total": 110},
 	})
@@ -190,7 +190,7 @@ func TestWorkflowReviewsRejectAndEscalate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Runs.Reviews.Reject(context.Background(), "run_1", "blk_1", RejectReviewRequest{
+	if _, err := client.Workflows.Reviews.Reject(context.Background(), "run_1", "blk_1", RejectReviewRequest{
 		VersionStamp: 2, Reason: "wrong document",
 	}); err != nil {
 		t.Fatal(err)
@@ -199,7 +199,7 @@ func TestWorkflowReviewsRejectAndEscalate(t *testing.T) {
 		t.Fatalf("reject body = %#v", body)
 	}
 
-	if _, err := client.Workflows.Runs.Reviews.Escalate(context.Background(), "run_1", "blk_1", EscalateReviewRequest{
+	if _, err := client.Workflows.Reviews.Escalate(context.Background(), "run_1", "blk_1", EscalateReviewRequest{
 		VersionStamp: 2, Reason: "needs senior", EscalateTo: "queue_senior",
 	}); err != nil {
 		t.Fatal(err)
@@ -225,7 +225,7 @@ func TestWorkflowReviewsEditClaimRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Workflows.Runs.Reviews.Edit(context.Background(), "run_1", "blk_1", EditReviewRequest{
+	if _, err := client.Workflows.Reviews.Edit(context.Background(), "run_1", "blk_1", EditReviewRequest{
 		Snapshot: map[string]any{"total": 110}, VersionStamp: 0, Origin: "human_edit",
 	}); err != nil {
 		t.Fatal(err)
@@ -237,7 +237,7 @@ func TestWorkflowReviewsEditClaimRelease(t *testing.T) {
 		t.Fatalf("edit body = %#v", body)
 	}
 
-	if _, err := client.Workflows.Runs.Reviews.Claim(context.Background(), "run_1", "blk_1", 1, 600); err != nil {
+	if _, err := client.Workflows.Reviews.Claim(context.Background(), "run_1", "blk_1", 1, 600); err != nil {
 		t.Fatal(err)
 	}
 	if seenPath != "/workflows/reviews/run_1/blk_1/claim" {
@@ -247,7 +247,7 @@ func TestWorkflowReviewsEditClaimRelease(t *testing.T) {
 		t.Fatalf("claim body = %#v", body)
 	}
 
-	if _, err := client.Workflows.Runs.Reviews.Release(context.Background(), "run_1", "blk_1", 2); err != nil {
+	if _, err := client.Workflows.Reviews.Release(context.Background(), "run_1", "blk_1", 2); err != nil {
 		t.Fatal(err)
 	}
 	if seenPath != "/workflows/reviews/run_1/blk_1/release" {

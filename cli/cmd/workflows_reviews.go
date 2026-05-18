@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// The `workflows runs reviews` command group drives the HIL review overlay —
+// The `workflows reviews` command group drives the HIL review overlay —
 // the versioned sidecar attached to a gated block run. The surface is
 // actor-neutral: a correction proposed by a model, an agent, or a human all
 // flow through the same `edit` / `approve` pair.
@@ -21,7 +21,7 @@ import (
 // protection against a concurrent reviewer. Pass `--version-stamp`
 // explicitly to make the write fail loudly (HTTP 409) on a stale read.
 
-var workflowsRunsReviewsCmd = &cobra.Command{
+var workflowsReviewsCmd = &cobra.Command{
 	Use:   "reviews",
 	Short: "Review gated block runs (human-in-the-loop overlay)",
 	Long: `Drive the HIL review overlay: list the review queue, inspect a
@@ -34,26 +34,26 @@ overlay's ` + "`rev`" + ` is a compare-and-swap token: mutating commands
 take ` + "`--version-stamp`" + ` and fail with HTTP 409 if another reviewer
 moved the overlay first.`,
 	Example: `  # See what's waiting for review
-  retab workflows runs reviews list
+  retab workflows reviews list
 
   # Inspect one paused block run
-  retab workflows runs reviews get run_xyz789 blk_extract_1
+  retab workflows reviews get run_xyz789 blk_extract_1
 
   # Approve it as-is
-  retab workflows runs reviews approve run_xyz789 blk_extract_1 --version-stamp 0`,
+  retab workflows reviews approve run_xyz789 blk_extract_1 --version-stamp 0`,
 }
 
-var workflowsRunsReviewsListCmd = &cobra.Command{
+var workflowsReviewsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List block runs awaiting review",
 	Long: `List the review queue — gated block runs and their lifecycle,
 hottest first. The heavy version/decision/audit history is omitted; pull
 one item with ` + "`reviews get`" + ` to see it.`,
 	Example: `  # The whole org's awaiting-review queue
-  retab workflows runs reviews list
+  retab workflows reviews list
 
   # Only one workflow, only reviews you have claimed
-  retab workflows runs reviews list --workflow-id wf_abc123 --mine`,
+  retab workflows reviews list --workflow-id wf_abc123 --mine`,
 	Args: cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -69,7 +69,7 @@ one item with ` + "`reviews get`" + ` to see it.`,
 		if cmd.Flags().Changed("limit") {
 			params.Limit, _ = cmd.Flags().GetInt("limit")
 		}
-		result, err := client.Workflows.Runs.Reviews.List(ctx, params)
+		result, err := client.Workflows.Reviews.List(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -77,17 +77,17 @@ one item with ` + "`reviews get`" + ` to see it.`,
 	}),
 }
 
-var workflowsRunsReviewsGetCmd = &cobra.Command{
+var workflowsReviewsGetCmd = &cobra.Command{
 	Use:   "get <run-id> <block-id>",
 	Short: "Get the full review overlay for a gated block run",
 	Long: `Return the full review overlay: every output version (the
 model's original is seq 0), every decision, the audit trail, and the
 ` + "`rev`" + ` CAS token you pass back as ` + "`--version-stamp`" + `.`,
 	Example: `  # Inspect a paused block run
-  retab workflows runs reviews get run_xyz789 blk_extract_1
+  retab workflows reviews get run_xyz789 blk_extract_1
 
   # Read the current version_stamp for a follow-up decision
-  retab workflows runs reviews get run_xyz789 blk_extract_1 | jq .rev`,
+  retab workflows reviews get run_xyz789 blk_extract_1 | jq .rev`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -96,7 +96,7 @@ model's original is seq 0), every decision, the audit trail, and the
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Runs.Reviews.Get(ctx, args[0], args[1])
+		result, err := client.Workflows.Reviews.Get(ctx, args[0], args[1])
 		if err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ model's original is seq 0), every decision, the audit trail, and the
 	}),
 }
 
-var workflowsRunsReviewsApproveCmd = &cobra.Command{
+var workflowsReviewsApproveCmd = &cobra.Command{
 	Use:   "approve <run-id> <block-id>",
 	Short: "Approve a gated block output",
 	Long: `Approve the gated output so the run resumes. With
@@ -112,10 +112,10 @@ var workflowsRunsReviewsApproveCmd = &cobra.Command{
 version first, then approved — the model's original is preserved as
 seq 0 for audit.`,
 	Example: `  # Approve as-is
-  retab workflows runs reviews approve run_xyz789 blk_extract_1 --version-stamp 2
+  retab workflows reviews approve run_xyz789 blk_extract_1 --version-stamp 2
 
   # Approve with a correction
-  retab workflows runs reviews approve run_xyz789 blk_extract_1 \
+  retab workflows reviews approve run_xyz789 blk_extract_1 \
     --version-stamp 2 --edited-output-file ./fixed.json`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -140,7 +140,7 @@ seq 0 for audit.`,
 		}
 		req.OnSeq = optionalIntFlag(cmd, "on-seq")
 		req.EffectiveSeq = optionalIntFlag(cmd, "effective-seq")
-		result, err := client.Workflows.Runs.Reviews.Approve(ctx, args[0], args[1], req)
+		result, err := client.Workflows.Reviews.Approve(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
 		}
@@ -148,13 +148,13 @@ seq 0 for audit.`,
 	}),
 }
 
-var workflowsRunsReviewsRejectCmd = &cobra.Command{
+var workflowsReviewsRejectCmd = &cobra.Command{
 	Use:   "reject <run-id> <block-id>",
 	Short: "Reject a gated block output (cancels the run)",
 	Long: `Reject the gated output. Rejecting cancels the whole workflow
 run — downstream blocks never execute. A ` + "`--reason`" + ` is required
 so the cancellation is auditable.`,
-	Example: `  retab workflows runs reviews reject run_xyz789 blk_extract_1 \
+	Example: `  retab workflows reviews reject run_xyz789 blk_extract_1 \
     --version-stamp 2 --reason "wrong document type — packing slip, not invoice"`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -174,7 +174,7 @@ so the cancellation is auditable.`,
 		}
 		req := retab.RejectReviewRequest{VersionStamp: stamp, Reason: reason}
 		req.CommandID, _ = cmd.Flags().GetString("command-id")
-		result, err := client.Workflows.Runs.Reviews.Reject(ctx, args[0], args[1], req)
+		result, err := client.Workflows.Reviews.Reject(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
 		}
@@ -182,14 +182,14 @@ so the cancellation is auditable.`,
 	}),
 }
 
-var workflowsRunsReviewsEscalateCmd = &cobra.Command{
+var workflowsReviewsEscalateCmd = &cobra.Command{
 	Use:   "escalate <run-id> <block-id>",
 	Short: "Escalate a review to another queue",
 	Long: `Escalate the review instead of deciding it. Escalation is
 non-terminal — the overlay stays awaiting review, re-routed to the
 ` + "`--escalate-to`" + ` queue. Both ` + "`--reason`" + ` and
 ` + "`--escalate-to`" + ` are required.`,
-	Example: `  retab workflows runs reviews escalate run_xyz789 blk_extract_1 \
+	Example: `  retab workflows reviews escalate run_xyz789 blk_extract_1 \
     --version-stamp 2 --reason "needs senior sign-off" --escalate-to queue_senior`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -215,7 +215,7 @@ non-terminal — the overlay stays awaiting review, re-routed to the
 			VersionStamp: stamp, Reason: reason, EscalateTo: escalateTo,
 		}
 		req.CommandID, _ = cmd.Flags().GetString("command-id")
-		result, err := client.Workflows.Runs.Reviews.Escalate(ctx, args[0], args[1], req)
+		result, err := client.Workflows.Reviews.Escalate(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
 		}
@@ -223,13 +223,13 @@ non-terminal — the overlay stays awaiting review, re-routed to the
 	}),
 }
 
-var workflowsRunsReviewsEditCmd = &cobra.Command{
+var workflowsReviewsEditCmd = &cobra.Command{
 	Use:   "edit <run-id> <block-id>",
 	Short: "Append a corrective output version without deciding",
 	Long: `Append a new output version to the overlay's history, leaving
 it awaiting review. Use this to record a correction for another reviewer
 to approve. The snapshot must be the FULL output object, not a patch.`,
-	Example: `  retab workflows runs reviews edit run_xyz789 blk_extract_1 \
+	Example: `  retab workflows reviews edit run_xyz789 blk_extract_1 \
     --version-stamp 1 --snapshot-file ./corrected.json --note "fixed currency"`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -255,7 +255,7 @@ to approve. The snapshot must be the FULL output object, not a patch.`,
 		req.Origin, _ = cmd.Flags().GetString("origin")
 		req.Note, _ = cmd.Flags().GetString("note")
 		req.CommandID, _ = cmd.Flags().GetString("command-id")
-		result, err := client.Workflows.Runs.Reviews.Edit(ctx, args[0], args[1], req)
+		result, err := client.Workflows.Reviews.Edit(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
 		}
@@ -263,13 +263,13 @@ to approve. The snapshot must be the FULL output object, not a patch.`,
 	}),
 }
 
-var workflowsRunsReviewsClaimCmd = &cobra.Command{
+var workflowsReviewsClaimCmd = &cobra.Command{
 	Use:   "claim <run-id> <block-id>",
 	Short: "Take the advisory review claim",
 	Long: `Take the advisory claim on a review ("Dana is reviewing this").
 A claim is never a lock — it only powers the UI; correctness still rests
 on the ` + "`--version-stamp`" + ` CAS. Claims expire after ` + "`--ttl-seconds`" + `.`,
-	Example: `  retab workflows runs reviews claim run_xyz789 blk_extract_1 --version-stamp 0`,
+	Example: `  retab workflows reviews claim run_xyz789 blk_extract_1 --version-stamp 0`,
 	Args:    cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -283,7 +283,7 @@ on the ` + "`--version-stamp`" + ` CAS. Claims expire after ` + "`--ttl-seconds`
 			return err
 		}
 		ttl, _ := cmd.Flags().GetInt("ttl-seconds")
-		result, err := client.Workflows.Runs.Reviews.Claim(ctx, args[0], args[1], stamp, ttl)
+		result, err := client.Workflows.Reviews.Claim(ctx, args[0], args[1], stamp, ttl)
 		if err != nil {
 			return err
 		}
@@ -291,11 +291,11 @@ on the ` + "`--version-stamp`" + ` CAS. Claims expire after ` + "`--ttl-seconds`
 	}),
 }
 
-var workflowsRunsReviewsReleaseCmd = &cobra.Command{
+var workflowsReviewsReleaseCmd = &cobra.Command{
 	Use:   "release <run-id> <block-id>",
 	Short: "Release the advisory review claim",
 	Long:  `Clear the advisory review claim so another reviewer can take it.`,
-	Example: `  retab workflows runs reviews release run_xyz789 blk_extract_1 --version-stamp 1`,
+	Example: `  retab workflows reviews release run_xyz789 blk_extract_1 --version-stamp 1`,
 	Args:    cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -308,7 +308,7 @@ var workflowsRunsReviewsReleaseCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		result, err := client.Workflows.Runs.Reviews.Release(ctx, args[0], args[1], stamp)
+		result, err := client.Workflows.Reviews.Release(ctx, args[0], args[1], stamp)
 		if err != nil {
 			return err
 		}
@@ -316,14 +316,14 @@ var workflowsRunsReviewsReleaseCmd = &cobra.Command{
 	}),
 }
 
-var workflowsRunsReviewsWaitCmd = &cobra.Command{
+var workflowsReviewsWaitCmd = &cobra.Command{
 	Use:   "wait <run-id> <block-id>",
 	Short: "Poll until a block run is awaiting review",
 	Long: `Poll the overlay until the block run is gated and awaiting
 review, then print it. A 404 (the run has not reached the gate yet) is
 not an error — polling continues until ` + "`--timeout`" + `.`,
 	Example: `  # Block a script until the gate fires, then review
-  retab workflows runs reviews wait run_xyz789 blk_extract_1 --timeout 300`,
+  retab workflows reviews wait run_xyz789 blk_extract_1 --timeout 300`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -335,7 +335,7 @@ not an error — polling continues until ` + "`--timeout`" + `.`,
 		deadline := time.Now().Add(time.Duration(timeout) * time.Second)
 		for {
 			ctx, cancel := ctxFor(cmd)
-			overlay, err := client.Workflows.Runs.Reviews.Get(ctx, args[0], args[1])
+			overlay, err := client.Workflows.Reviews.Get(ctx, args[0], args[1])
 			cancel()
 			if err != nil {
 				if apiErr, ok := err.(*retab.APIError); !ok || apiErr.StatusCode != 404 {
@@ -359,7 +359,7 @@ func resolveVersionStamp(cmd *cobra.Command, client *retab.Client, ctx context.C
 	if cmd.Flags().Changed("version-stamp") {
 		return cmd.Flags().GetInt("version-stamp")
 	}
-	overlay, err := client.Workflows.Runs.Reviews.Get(ctx, runID, blockID)
+	overlay, err := client.Workflows.Reviews.Get(ctx, runID, blockID)
 	if err != nil {
 		return 0, err
 	}
@@ -383,58 +383,58 @@ func optionalIntFlag(cmd *cobra.Command, name string) *int {
 }
 
 func init() {
-	workflowsRunsReviewsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
-	workflowsRunsReviewsListCmd.Flags().Var(
+	workflowsReviewsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
+	workflowsReviewsListCmd.Flags().Var(
 		newEnumStringFlagValue("--status", "awaiting_review", "approved", "rejected"),
 		"status", "lifecycle filter: awaiting_review | approved | rejected")
-	workflowsRunsReviewsListCmd.Flags().Bool("mine", false, "only reviews you have claimed")
-	workflowsRunsReviewsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
+	workflowsReviewsListCmd.Flags().Bool("mine", false, "only reviews you have claimed")
+	workflowsReviewsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
-	workflowsRunsReviewsApproveCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token); read by --version-stamp omitted")
-	workflowsRunsReviewsApproveCmd.Flags().String("edited-output-file", "", "JSON file with the full corrected output (or - for stdin)")
-	workflowsRunsReviewsApproveCmd.Flags().Int("on-seq", 0, "version seq the decision is made against")
-	workflowsRunsReviewsApproveCmd.Flags().Int("effective-seq", 0, "version seq to ship downstream")
-	workflowsRunsReviewsApproveCmd.Flags().String("command-id", "", "idempotency command id")
+	workflowsReviewsApproveCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token); read by --version-stamp omitted")
+	workflowsReviewsApproveCmd.Flags().String("edited-output-file", "", "JSON file with the full corrected output (or - for stdin)")
+	workflowsReviewsApproveCmd.Flags().Int("on-seq", 0, "version seq the decision is made against")
+	workflowsReviewsApproveCmd.Flags().Int("effective-seq", 0, "version seq to ship downstream")
+	workflowsReviewsApproveCmd.Flags().String("command-id", "", "idempotency command id")
 
-	workflowsRunsReviewsRejectCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
-	workflowsRunsReviewsRejectCmd.Flags().String("reason", "", "why the output was rejected (required)")
-	workflowsRunsReviewsRejectCmd.Flags().String("command-id", "", "idempotency command id")
-	_ = workflowsRunsReviewsRejectCmd.MarkFlagRequired("reason")
+	workflowsReviewsRejectCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
+	workflowsReviewsRejectCmd.Flags().String("reason", "", "why the output was rejected (required)")
+	workflowsReviewsRejectCmd.Flags().String("command-id", "", "idempotency command id")
+	_ = workflowsReviewsRejectCmd.MarkFlagRequired("reason")
 
-	workflowsRunsReviewsEscalateCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
-	workflowsRunsReviewsEscalateCmd.Flags().String("reason", "", "why the review is escalated (required)")
-	workflowsRunsReviewsEscalateCmd.Flags().String("escalate-to", "", "target queue/team id (required)")
-	workflowsRunsReviewsEscalateCmd.Flags().String("command-id", "", "idempotency command id")
-	_ = workflowsRunsReviewsEscalateCmd.MarkFlagRequired("reason")
-	_ = workflowsRunsReviewsEscalateCmd.MarkFlagRequired("escalate-to")
+	workflowsReviewsEscalateCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
+	workflowsReviewsEscalateCmd.Flags().String("reason", "", "why the review is escalated (required)")
+	workflowsReviewsEscalateCmd.Flags().String("escalate-to", "", "target queue/team id (required)")
+	workflowsReviewsEscalateCmd.Flags().String("command-id", "", "idempotency command id")
+	_ = workflowsReviewsEscalateCmd.MarkFlagRequired("reason")
+	_ = workflowsReviewsEscalateCmd.MarkFlagRequired("escalate-to")
 
-	workflowsRunsReviewsEditCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
-	workflowsRunsReviewsEditCmd.Flags().String("snapshot-file", "", "JSON file with the full corrected output (required) — or - for stdin")
-	workflowsRunsReviewsEditCmd.Flags().Var(
+	workflowsReviewsEditCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
+	workflowsReviewsEditCmd.Flags().String("snapshot-file", "", "JSON file with the full corrected output (required) — or - for stdin")
+	workflowsReviewsEditCmd.Flags().Var(
 		newEnumStringFlagValue("--origin", "human_edit", "agent_edit"),
 		"origin", "edit provenance: human_edit | agent_edit")
-	workflowsRunsReviewsEditCmd.Flags().String("note", "", "free-text rationale for the edit")
-	workflowsRunsReviewsEditCmd.Flags().String("command-id", "", "idempotency command id")
-	_ = workflowsRunsReviewsEditCmd.MarkFlagRequired("snapshot-file")
+	workflowsReviewsEditCmd.Flags().String("note", "", "free-text rationale for the edit")
+	workflowsReviewsEditCmd.Flags().String("command-id", "", "idempotency command id")
+	_ = workflowsReviewsEditCmd.MarkFlagRequired("snapshot-file")
 
-	workflowsRunsReviewsClaimCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
-	workflowsRunsReviewsClaimCmd.Flags().Int("ttl-seconds", 900, "how long the advisory claim holds")
+	workflowsReviewsClaimCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
+	workflowsReviewsClaimCmd.Flags().Int("ttl-seconds", 900, "how long the advisory claim holds")
 
-	workflowsRunsReviewsReleaseCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
+	workflowsReviewsReleaseCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
 
-	workflowsRunsReviewsWaitCmd.Flags().Int("timeout", 120, "max seconds to wait for the gate to fire")
-	workflowsRunsReviewsWaitCmd.Flags().Int("poll-interval", 2, "seconds between polls")
+	workflowsReviewsWaitCmd.Flags().Int("timeout", 120, "max seconds to wait for the gate to fire")
+	workflowsReviewsWaitCmd.Flags().Int("poll-interval", 2, "seconds between polls")
 
-	workflowsRunsReviewsCmd.AddCommand(
-		workflowsRunsReviewsListCmd,
-		workflowsRunsReviewsGetCmd,
-		workflowsRunsReviewsApproveCmd,
-		workflowsRunsReviewsRejectCmd,
-		workflowsRunsReviewsEscalateCmd,
-		workflowsRunsReviewsEditCmd,
-		workflowsRunsReviewsClaimCmd,
-		workflowsRunsReviewsReleaseCmd,
-		workflowsRunsReviewsWaitCmd,
+	workflowsReviewsCmd.AddCommand(
+		workflowsReviewsListCmd,
+		workflowsReviewsGetCmd,
+		workflowsReviewsApproveCmd,
+		workflowsReviewsRejectCmd,
+		workflowsReviewsEscalateCmd,
+		workflowsReviewsEditCmd,
+		workflowsReviewsClaimCmd,
+		workflowsReviewsReleaseCmd,
+		workflowsReviewsWaitCmd,
 	)
-	workflowsRunsCmd.AddCommand(workflowsRunsReviewsCmd)
+	workflowsCmd.AddCommand(workflowsReviewsCmd)
 }

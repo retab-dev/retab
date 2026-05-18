@@ -175,11 +175,12 @@ var workflowsRunsCmd = &cobra.Command{
 
 A run is one execution of a workflow against a set of inputs. Use this
 subgroup to start runs (` + "`create`" + `), watch their lifecycle
-(` + "`get`" + `, ` + "`steps list`" + `), restart failed runs
-(` + "`restart`" + `), or review gated block runs (` + "`reviews`" + `).
+(` + "`get`" + `, ` + "`steps list`" + `), or restart failed runs
+(` + "`restart`" + `).
 
 Human-in-the-loop: when a gated block pauses a run it enters status
-` + "`waiting_for_human`" + `. Use the ` + "`reviews`" + ` subgroup —
+` + "`waiting_for_human`" + `. Decide gated block runs with the sibling
+` + "`retab workflows reviews`" + ` command group —
 ` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
 a paused block run, then ` + "`reviews approve`" + ` / ` + "`reject`" + ` /
 ` + "`escalate`" + ` to decide it.
@@ -200,7 +201,7 @@ For declarative regression testing of workflow outputs, see
   retab workflows runs cancel run_xyz789
 
   # Approve a paused (gated) block run
-  retab workflows runs reviews approve run_xyz789 blk_review_1 \
+  retab workflows reviews approve run_xyz789 blk_review_1 \
     --version-stamp 0`,
 }
 
@@ -573,7 +574,7 @@ or ` + "`--command-id`" + ` for idempotency.`,
 }
 
 // The v1 HIL commands (submit-hil / get-hil / get-agent-hil) were removed in
-// the hard cutover to the review overlay — see `workflows runs reviews`.
+// the hard cutover to the review overlay — see `workflows reviews`.
 
 var workflowsRunsConfigCmd = &cobra.Command{
 	Use:   "config <run-id>",

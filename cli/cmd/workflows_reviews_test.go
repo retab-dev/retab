@@ -56,7 +56,7 @@ func TestReviewsListCommand(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_BASE_URL", server.URL)
 
-	cmd := &cobra.Command{Use: "list", RunE: workflowsRunsReviewsListCmd.RunE}
+	cmd := &cobra.Command{Use: "list", RunE: workflowsReviewsListCmd.RunE}
 	cmd.Flags().String("workflow-id", "", "")
 	cmd.Flags().Var(newEnumStringFlagValue("--status", "awaiting_review", "approved", "rejected"), "status", "")
 	cmd.Flags().Bool("mine", false, "")
@@ -108,7 +108,7 @@ func TestReviewsGetCommand(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RETAB_BASE_URL", server.URL)
 
-	cmd := &cobra.Command{Use: "get", RunE: workflowsRunsReviewsGetCmd.RunE}
+	cmd := &cobra.Command{Use: "get", RunE: workflowsReviewsGetCmd.RunE}
 	stdout, _ := captureStd(t, func() {
 		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
 			t.Fatalf("reviews get: %v", err)
@@ -208,7 +208,7 @@ func TestReviewsRejectRequiresReason(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	cmd := &cobra.Command{Use: "reject", RunE: workflowsRunsReviewsRejectCmd.RunE}
+	cmd := &cobra.Command{Use: "reject", RunE: workflowsReviewsRejectCmd.RunE}
 	cmd.Flags().Int("version-stamp", 0, "")
 	cmd.Flags().String("reason", "", "")
 	cmd.Flags().String("command-id", "", "")
@@ -223,7 +223,7 @@ func TestReviewsRejectRequiresReason(t *testing.T) {
 }
 
 func newApproveTestCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "approve", RunE: workflowsRunsReviewsApproveCmd.RunE}
+	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsApproveCmd.RunE}
 	cmd.Flags().Int("version-stamp", 0, "")
 	cmd.Flags().String("edited-output-file", "", "")
 	cmd.Flags().Int("on-seq", 0, "")

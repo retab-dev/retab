@@ -14,6 +14,7 @@ import (
 type WorkflowsService struct {
 	client      *Client
 	Runs        *WorkflowRunsService
+	Reviews     *WorkflowReviewsService
 	Artifacts   *WorkflowArtifactsService
 	Blocks      *WorkflowBlocksService
 	Edges       *WorkflowEdgesService
@@ -25,10 +26,10 @@ type WorkflowsService struct {
 func newWorkflowsService(client *Client) *WorkflowsService {
 	service := &WorkflowsService{client: client}
 	service.Runs = &WorkflowRunsService{
-		client:  client,
-		Steps:   &WorkflowRunStepsService{client: client},
-		Reviews: &WorkflowReviewsService{client: client},
+		client: client,
+		Steps:  &WorkflowRunStepsService{client: client},
 	}
+	service.Reviews = &WorkflowReviewsService{client: client}
 	service.Artifacts = &WorkflowArtifactsService{client: client}
 	service.Blocks = &WorkflowBlocksService{client: client}
 	service.Edges = &WorkflowEdgesService{client: client}
@@ -816,9 +817,8 @@ func (s *WorkflowEdgesService) DeleteAll(ctx context.Context, workflowID string,
 }
 
 type WorkflowRunsService struct {
-	client  *Client
-	Steps   *WorkflowRunStepsService
-	Reviews *WorkflowReviewsService
+	client *Client
+	Steps  *WorkflowRunStepsService
 }
 
 type CreateWorkflowRunRequest struct {
@@ -1053,7 +1053,7 @@ func (s *WorkflowRunsService) Restart(ctx context.Context, runID string, request
 // The v1 HIL decision surface (SubmitHILDecision / GetHILDecision /
 // GetAgentHILReview) was removed in the hard cutover to the review overlay.
 // Drive human-in-the-loop reviews through WorkflowReviewsService instead —
-// see Workflows.Runs.Reviews.
+// see Workflows.Reviews.
 
 func (s *WorkflowRunsService) GetConfig(ctx context.Context, runID string, opts ...RequestOption) (map[string]any, error) {
 	if runID == "" {
