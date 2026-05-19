@@ -130,4 +130,70 @@ describe("workflows.experiments.runs.list paginated envelope", () => {
         expect(page.list_metadata.before).toBeNull();
         expect(page.list_metadata.after).toBeNull();
     });
+
+    test("serializes workflow-run-style filters", async () => {
+        const mockClient = new MockClient({
+            data: [],
+            list_metadata: { before: null, after: null },
+        });
+        const runs = new APIWorkflowExperimentRuns(mockClient);
+
+        await runs.list({
+            workflowId: "wf_1",
+            experimentId: "exp_1",
+            blockId: "block_1",
+            status: "completed",
+            statuses: ["completed", "error"],
+            excludeStatus: "cancelled",
+            triggerType: "api",
+            triggerTypes: ["api", "manual_run"],
+            fromDate: new Date("2026-05-01T00:00:00.000Z"),
+            toDate: "2026-05-18",
+            sortBy: "created_at",
+            fields: ["id", "lifecycle"],
+            before: "exprun_before",
+            after: "exprun_after",
+            limit: 10,
+            order: "asc",
+        });
+
+        expect(mockClient.lastFetchParams).toMatchObject({
+            url: "/workflows/experiments/runs",
+            method: "GET",
+            params: {
+                workflow_id: "wf_1",
+                experiment_id: "exp_1",
+                block_id: "block_1",
+                status: "completed",
+                statuses: "completed,error",
+                exclude_status: "cancelled",
+                trigger_type: "api",
+                trigger_types: "api,manual_run",
+                from_date: "2026-05-01",
+                to_date: "2026-05-18",
+                sort_by: "created_at",
+                fields: "id,lifecycle",
+                before: "exprun_before",
+                after: "exprun_after",
+                limit: 10,
+                order: "asc",
+            },
+        });
+    });
+
+    test("parent run schema strips legacy job and batch ids", async () => {
+        const { ZExperimentRun } = await import(
+            "../src/api/workflows/experiments/types"
+        );
+        const parsed = ZExperimentRun.parse({
+            ...RUN,
+            job_id: "job_legacy",
+            batch_id: "batch_legacy",
+        });
+
+        expect("job_id" in parsed).toBe(false);
+        expect("batch_id" in parsed).toBe(false);
+        expect(parsed.id).toBe("exprun_1");
+        expect(parsed.lifecycle.status).toBe("completed");
+    });
 });

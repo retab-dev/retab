@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // reviewOverlayJSON is a minimal awaiting-review overlay the stub server
@@ -126,6 +127,39 @@ func TestWorkflowReviewsGetRequiresIDs(t *testing.T) {
 	}
 	if _, err := client.Workflows.Reviews.Get(context.Background(), "run_1", ""); err == nil {
 		t.Fatal("expected error for empty blockID")
+	}
+}
+
+func TestWorkflowReviewsWaitForPollsUntilAwaitingReview(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		if calls == 1 {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "no overlay"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(reviewOverlayJSON(3, "awaiting_review"))
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	overlay, err := client.Workflows.Reviews.WaitFor(context.Background(), "run_1", "blk_1", &ReviewWaitForParams{
+		PollInterval: time.Millisecond,
+		Timeout:      time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 2 {
+		t.Fatalf("calls = %d", calls)
+	}
+	if overlay.Status != "awaiting_review" {
+		t.Fatalf("overlay = %#v", overlay)
 	}
 }
 

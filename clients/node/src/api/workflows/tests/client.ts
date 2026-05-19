@@ -46,6 +46,29 @@ export default class APIWorkflowTests extends CompositionClient {
         this.runs = new APIWorkflowTestRuns(this);
     }
 
+    prepare_create_run(
+        workflowId: string,
+        {
+            testId,
+            target,
+            nConsensus,
+        }: {
+            testId?: string;
+            target?: WorkflowTestBlockTarget;
+            nConsensus?: number;
+        } = {}
+    ): { url: string; method: string; body: Record<string, unknown> } {
+        const body: Record<string, unknown> = {};
+        if (testId !== undefined) body.test_id = testId;
+        if (target !== undefined) body.target = target;
+        if (nConsensus !== undefined) body.n_consensus = nConsensus;
+        return {
+            url: `/workflows/${workflowId}/tests/runs`,
+            method: "POST",
+            body,
+        };
+    }
+
     /**
      * Create a new workflow test against a single block in the workflow.
      *

@@ -13,6 +13,23 @@ import {
     ZExperimentRunListResponse,
 } from "../types.js";
 
+function normalizeCsvParam(value?: string | string[]): string | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+    return Array.isArray(value) ? value.join(",") : value;
+}
+
+function normalizeDateParam(value?: string | Date): string | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value instanceof Date) {
+        return value.toISOString().slice(0, 10);
+    }
+    return value;
+}
+
 /**
  * Experiment run lifecycle, child results, and metrics.
  */
@@ -41,19 +58,55 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
         workflowId,
         experimentId,
         blockId,
+        status,
+        statuses,
+        excludeStatus,
+        triggerType,
+        triggerTypes,
+        fromDate,
+        toDate,
+        sortBy,
+        fields,
+        before,
+        after,
         limit = 20,
+        order,
     }: {
         workflowId?: string;
         experimentId?: string;
         blockId?: string;
+        status?: string;
+        statuses?: string[] | string;
+        excludeStatus?: string;
+        triggerType?: string;
+        triggerTypes?: string[] | string;
+        fromDate?: string | Date;
+        toDate?: string | Date;
+        sortBy?: string;
+        fields?: string[] | string;
+        before?: string;
+        after?: string;
         limit?: number;
+        order?: "asc" | "desc";
     } = {}): { url: string; method: string; params: Record<string, unknown> } {
         const params = Object.fromEntries(
             Object.entries({
                 workflow_id: workflowId,
                 experiment_id: experimentId,
                 block_id: blockId,
+                status,
+                statuses: normalizeCsvParam(statuses),
+                exclude_status: excludeStatus,
+                trigger_type: triggerType,
+                trigger_types: normalizeCsvParam(triggerTypes),
+                from_date: normalizeDateParam(fromDate),
+                to_date: normalizeDateParam(toDate),
+                sort_by: sortBy,
+                fields: normalizeCsvParam(fields),
+                before,
+                after,
                 limit,
+                order,
             }).filter(([, value]) => value !== undefined)
         );
         return {
@@ -122,16 +175,57 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
             workflowId,
             experimentId,
             blockId,
+            status,
+            statuses,
+            excludeStatus,
+            triggerType,
+            triggerTypes,
+            fromDate,
+            toDate,
+            sortBy,
+            fields,
+            before,
+            after,
             limit = 20,
+            order,
         }: {
             workflowId?: string;
             experimentId?: string;
             blockId?: string;
+            status?: string;
+            statuses?: string[] | string;
+            excludeStatus?: string;
+            triggerType?: string;
+            triggerTypes?: string[] | string;
+            fromDate?: string | Date;
+            toDate?: string | Date;
+            sortBy?: string;
+            fields?: string[] | string;
+            before?: string;
+            after?: string;
             limit?: number;
+            order?: "asc" | "desc";
         },
         options?: RequestOptions
     ): Promise<ExperimentRunListResponse> {
-        const request = this.prepare_list({ workflowId, experimentId, blockId, limit });
+        const request = this.prepare_list({
+            workflowId,
+            experimentId,
+            blockId,
+            status,
+            statuses,
+            excludeStatus,
+            triggerType,
+            triggerTypes,
+            fromDate,
+            toDate,
+            sortBy,
+            fields,
+            before,
+            after,
+            limit,
+            order,
+        });
         return this._fetchJson(ZExperimentRunListResponse, {
             url: request.url,
             method: request.method,

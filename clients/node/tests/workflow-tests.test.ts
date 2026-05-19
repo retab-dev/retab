@@ -500,6 +500,7 @@ describe("workflows.tests parity bridge installation", () => {
             "prepare_list",
             "prepare_update",
             "prepare_delete",
+            "prepare_create_run",
         ]) {
             expect(typeof tests[name]).toBe("function");
         }
@@ -562,6 +563,22 @@ describe("workflows.tests response parsing edge cases", () => {
         expect(result.data[0]?.lifecycle.status).toBe("completed");
         expect(result.data[1]?.lifecycle.status).toBe("running");
         expect(result.data[2]?.lifecycle.status).toBe("cancelled");
+    });
+
+    test("parent run schema strips legacy job and batch ids", async () => {
+        const { ZWorkflowTestRun } = await import(
+            "../src/api/workflows/tests/types"
+        );
+        const parsed = ZWorkflowTestRun.parse({
+            ...RUN_RESPONSE,
+            job_id: "job_legacy",
+            batch_id: "batch_legacy",
+        });
+
+        expect("job_id" in parsed).toBe(false);
+        expect("batch_id" in parsed).toBe(false);
+        expect(parsed.id).toBe("wftestrun_q1z2");
+        expect(parsed.lifecycle.status).toBe("completed");
     });
 });
 

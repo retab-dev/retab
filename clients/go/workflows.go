@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -1185,6 +1186,11 @@ type WorkflowReviewsService struct {
 	client *Client
 }
 
+type ReviewWaitForParams struct {
+	PollInterval time.Duration
+	Timeout      time.Duration
+}
+
 // ListReviewsParams filters the review queue.
 type ListReviewsParams struct {
 	WorkflowID string // restrict to one workflow
@@ -1405,6 +1411,44 @@ func (s *WorkflowReviewsService) Release(ctx context.Context, runID string, bloc
 	return &overlay, nil
 }
 
+// WaitFor polls until the block is gated and awaiting review. A 404 means
+// the workflow has not reached the review gate yet, so polling continues.
+func (s *WorkflowReviewsService) WaitFor(ctx context.Context, runID string, blockID string, params *ReviewWaitForParams, opts ...RequestOption) (*ReviewOverlay, error) {
+	pollInterval := 2 * time.Second
+	timeout := 2 * time.Minute
+	if params != nil {
+		if params.PollInterval > 0 {
+			pollInterval = params.PollInterval
+		}
+		if params.Timeout > 0 {
+			timeout = params.Timeout
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	for {
+		overlay, err := s.Get(ctx, runID, blockID, opts...)
+		if err == nil && overlay.Status == "awaiting_review" {
+			return overlay, nil
+		}
+		if err != nil {
+			var apiErr *APIError
+			if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
+				return nil, err
+			}
+		}
+
+		timer := time.NewTimer(pollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
 func reviewsPath(runID, blockID string) string {
 	return "/workflows/reviews/" + url.PathEscape(runID) + "/" + url.PathEscape(blockID)
 }
@@ -1455,7 +1499,16 @@ type ListWorkflowTestRunsParams struct {
 	Status        string
 	Statuses      []string
 	ExcludeStatus string
+	TriggerType   string
+	TriggerTypes  []string
+	FromDate      string
+	ToDate        string
+	SortBy        string
+	Fields        []string
+	Before        string
+	After         string
 	Limit         int
+	Order         string
 }
 
 type ListWorkflowTestRunsRequest = ListWorkflowTestRunsParams
@@ -1589,6 +1642,15 @@ func (s *WorkflowTestRunsService) List(ctx context.Context, request ListWorkflow
 	addQuery(query, "status", request.Status)
 	addCSVQuery(query, "statuses", request.Statuses)
 	addQuery(query, "exclude_status", request.ExcludeStatus)
+	addQuery(query, "trigger_type", request.TriggerType)
+	addCSVQuery(query, "trigger_types", request.TriggerTypes)
+	addQuery(query, "from_date", request.FromDate)
+	addQuery(query, "to_date", request.ToDate)
+	addQuery(query, "sort_by", request.SortBy)
+	addCSVQuery(query, "fields", request.Fields)
+	addQuery(query, "before", request.Before)
+	addQuery(query, "after", request.After)
+	addQuery(query, "order", request.Order)
 	var result PaginatedList[WorkflowTestRun]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs", query, nil, &result, opts...)
 	return &result, err
@@ -1824,6 +1886,7 @@ type ListExperimentRunsParams struct {
 	FromDate      string
 	ToDate        string
 	SortBy        string
+	Fields        []string
 	Before        string
 	After         string
 	Limit         int
@@ -2005,6 +2068,7 @@ func (s *WorkflowExperimentRunsService) List(ctx context.Context, params *ListEx
 		addQuery(query, "from_date", params.FromDate)
 		addQuery(query, "to_date", params.ToDate)
 		addQuery(query, "sort_by", params.SortBy)
+		addCSVQuery(query, "fields", params.Fields)
 		addQuery(query, "before", params.Before)
 		addQuery(query, "after", params.After)
 		addQuery(query, "order", params.Order)

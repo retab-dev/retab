@@ -352,6 +352,54 @@ def test_experiments_runs_list_uses_canonical_runs_route() -> None:
     assert page.list_metadata.after is None
 
 
+def test_experiments_runs_list_exposes_workflow_run_style_filters() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "data": [],
+        "list_metadata": {"before": None, "after": None},
+    }
+
+    Workflows(client=client).experiments.runs.list(
+        workflow_id="wf_abc123",
+        experiment_id="exp_abc",
+        block_id="block_extract",
+        status="completed",
+        statuses=["completed", "error"],
+        exclude_status="cancelled",
+        trigger_type="api",
+        trigger_types=["api", "manual_run"],
+        from_date="2026-05-01",
+        to_date="2026-05-18",
+        sort_by="created_at",
+        fields=["id", "lifecycle"],
+        before="exprun_before",
+        after="exprun_after",
+        limit=10,
+        order="asc",
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.url == "/workflows/experiments/runs"
+    assert request.params == {
+        "workflow_id": "wf_abc123",
+        "experiment_id": "exp_abc",
+        "block_id": "block_extract",
+        "status": "completed",
+        "statuses": "completed,error",
+        "exclude_status": "cancelled",
+        "trigger_type": "api",
+        "trigger_types": "api,manual_run",
+        "from_date": "2026-05-01",
+        "to_date": "2026-05-18",
+        "sort_by": "created_at",
+        "fields": "id,lifecycle",
+        "before": "exprun_before",
+        "after": "exprun_after",
+        "limit": 10,
+        "order": "asc",
+    }
+
+
 def test_experiments_hard_cutover_removes_legacy_content_and_metrics_aliases() -> None:
     experiments = Workflows(client=MagicMock()).experiments
 
