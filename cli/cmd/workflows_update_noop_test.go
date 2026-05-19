@@ -51,6 +51,7 @@ func TestWorkflowsUpdateCommandsRejectNoOpBeforeRequest(t *testing.T) {
 				c.Flags().Var(&nonNegativeFloatFlagValue{}, "height", "")
 				c.Flags().String("parent-id", "", "")
 				c.Flags().String("config-file", "", "")
+				c.Flags().String("merge-config-file", "", "")
 			},
 		},
 		{

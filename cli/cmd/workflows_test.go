@@ -111,6 +111,237 @@ func TestWorkflowExamplesUseCurrentDocumentFlag(t *testing.T) {
 	}
 }
 
+func TestWorkflowHelpGuidesHumanInTheLoopToGates(t *testing.T) {
+	surfaces := []struct {
+		name string
+		text string
+	}{
+		{name: "workflows long", text: workflowsCmd.Long},
+		{name: "blocks long", text: workflowsBlocksCmd.Long},
+		{name: "blocks create long", text: workflowsBlocksCreateCmd.Long},
+		{name: "blocks update long", text: workflowsBlocksUpdateCmd.Long},
+		{name: "runs long", text: workflowsRunsCmd.Long},
+		{name: "reviews long", text: workflowsReviewsCmd.Long},
+	}
+	for _, surface := range surfaces {
+		t.Run(surface.name, func(t *testing.T) {
+			staleBacktick := "`hil` " + "block"
+			staleTitle := "HIL " + "block"
+			if strings.Contains(surface.text, staleBacktick) || strings.Contains(surface.text, staleTitle) {
+				t.Fatalf("%s should not describe HIL as a standalone block:\n%s", surface.name, surface.text)
+			}
+			if !strings.Contains(surface.text, "config.hil") && !strings.Contains(surface.text, "waiting_for_human") && !strings.Contains(surface.text, "gated block") {
+				t.Fatalf("%s should guide users toward gates/reviews, got:\n%s", surface.name, surface.text)
+			}
+		})
+	}
+}
+
+func TestParseBlockCreateRejectsStandaloneHILBlockType(t *testing.T) {
+	_, err := parseBlockCreate(map[string]any{
+		"id":   "review",
+		"type": "hil",
+	})
+	if err == nil {
+		t.Fatal("expected type=hil to be rejected locally")
+	}
+	for _, want := range []string{"config.hil", "extract", "retab workflows reviews"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("error %q should contain %q", err.Error(), want)
+		}
+	}
+}
+
+func TestMergeWorkflowBlockConfigPreservesExistingConfig(t *testing.T) {
+	existing := map[string]any{
+		"model": "retab-small",
+		"json_schema": map[string]any{
+			"type":     "object",
+			"required": []any{"total"},
+		},
+		"nested": map[string]any{
+			"keep": "yes",
+			"old":  "value",
+		},
+	}
+	patch := map[string]any{
+		"hil": map[string]any{
+			"predicate": map[string]any{"kind": "always"},
+		},
+		"nested": map[string]any{
+			"old": "new",
+		},
+	}
+
+	merged := mergeWorkflowBlockConfig(existing, patch)
+	if merged["model"] != "retab-small" {
+		t.Fatalf("model was not preserved: %#v", merged)
+	}
+	if _, ok := merged["json_schema"].(map[string]any); !ok {
+		t.Fatalf("json_schema was not preserved: %#v", merged)
+	}
+	nested := merged["nested"].(map[string]any)
+	if nested["keep"] != "yes" || nested["old"] != "new" {
+		t.Fatalf("nested merge = %#v", nested)
+	}
+	if _, ok := merged["hil"].(map[string]any); !ok {
+		t.Fatalf("hil patch was not applied: %#v", merged)
+	}
+}
+
+func TestWorkflowsBlocksGetUsesEntitiesGraph(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var sawEntities bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/wf_123/entities" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		sawEntities = true
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow": map[string]any{"id": "wf_123"},
+			"blocks": []map[string]any{
+				{
+					"id":     "blk_extract",
+					"type":   "extract",
+					"label":  "Extract",
+					"config": map[string]any{"model": "retab-small"},
+				},
+			},
+			"edges":    []map[string]any{},
+			"subflows": []map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "get", RunE: workflowsBlocksGetCmd.RunE}
+	if err := cmd.RunE(cmd, []string{"wf_123", "blk_extract"}); err != nil {
+		t.Fatalf("blocks get: %v", err)
+	}
+	if !sawEntities {
+		t.Fatal("expected blocks get to fetch workflow entities")
+	}
+}
+
+func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	patchPath := t.TempDir() + "/hil.json"
+	if err := os.WriteFile(
+		patchPath,
+		[]byte(`{"hil":{"predicate":{"kind":"always"},"skip_in_test_mode":false}}`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	var sawGet bool
+	var sawPatch bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/entities":
+			sawGet = true
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow": map[string]any{"id": "wf_123"},
+				"blocks": []map[string]any{
+					{
+						"id":   "blk_extract",
+						"type": "extract",
+						"config": map[string]any{
+							"model": "retab-small",
+							"json_schema": map[string]any{
+								"type":     "object",
+								"required": []string{"total"},
+							},
+						},
+					},
+				},
+				"edges":    []map[string]any{},
+				"subflows": []map[string]any{},
+			})
+		case r.Method == http.MethodPatch && r.URL.Path == "/workflows/wf_123/blocks/blk_extract":
+			sawPatch = true
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode patch: %v", err)
+			}
+			config := body["config"].(map[string]any)
+			if config["model"] != "retab-small" {
+				t.Fatalf("model not preserved in patch body: %#v", config)
+			}
+			if config["json_schema"] == nil {
+				t.Fatalf("json_schema not preserved in patch body: %#v", config)
+			}
+			if config["hil"] == nil {
+				t.Fatalf("hil not merged into patch body: %#v", config)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":     "blk_extract",
+				"type":   "extract",
+				"config": config,
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "update", RunE: workflowsBlocksUpdateCmd.RunE}
+	cmd.Flags().String("label", "", "")
+	cmd.Flags().Float64("position-x", 0, "")
+	cmd.Flags().Float64("position-y", 0, "")
+	cmd.Flags().Var(&nonNegativeFloatFlagValue{}, "width", "")
+	cmd.Flags().Var(&nonNegativeFloatFlagValue{}, "height", "")
+	cmd.Flags().String("parent-id", "", "")
+	cmd.Flags().String("config-file", "", "")
+	cmd.Flags().String("merge-config-file", "", "")
+	if err := cmd.Flags().Set("merge-config-file", patchPath); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cmd.RunE(cmd, []string{"wf_123", "blk_extract"}); err != nil {
+		t.Fatalf("blocks update: %v", err)
+	}
+	if !sawGet || !sawPatch {
+		t.Fatalf("expected GET then PATCH, sawGet=%v sawPatch=%v", sawGet, sawPatch)
+	}
+}
+
+func TestWorkflowsBlocksUpdateRejectsReplaceAndMergeConfigTogether(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "update", RunE: workflowsBlocksUpdateCmd.RunE}
+	cmd.Flags().String("label", "", "")
+	cmd.Flags().Float64("position-x", 0, "")
+	cmd.Flags().Float64("position-y", 0, "")
+	cmd.Flags().Var(&nonNegativeFloatFlagValue{}, "width", "")
+	cmd.Flags().Var(&nonNegativeFloatFlagValue{}, "height", "")
+	cmd.Flags().String("parent-id", "", "")
+	cmd.Flags().String("config-file", "", "")
+	cmd.Flags().String("merge-config-file", "", "")
+	if err := cmd.Flags().Set("config-file", "full.json"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("merge-config-file", "patch.json"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"wf_123", "blk_extract"})
+	if err == nil {
+		t.Fatal("expected mutually exclusive config flags to fail")
+	}
+	if !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
 func TestWorkflowsUpdateRejectsBlankEmailAllowlistValuesBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

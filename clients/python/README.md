@@ -88,7 +88,7 @@ run = client.workflows.runs.create_and_wait(
     documents={"start-node": "invoice.pdf"},
 )
 
-step = client.workflows.runs.steps.get(run.id, "hil-node")
+step = client.workflows.runs.steps.get(run.id, "gated-block-id")
 if step.artifact:
     artifact = client.workflows.artifacts.get(step.artifact)
     print(artifact.operation)

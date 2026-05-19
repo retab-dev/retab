@@ -182,8 +182,8 @@ Human-in-the-loop: when a gated block pauses a run it enters status
 ` + "`waiting_for_human`" + `. Decide gated block runs with the sibling
 ` + "`retab workflows reviews`" + ` command group —
 ` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
-a paused block run, then ` + "`reviews approve`" + ` / ` + "`reject`" + ` /
-` + "`escalate`" + ` to decide it.
+a paused block run, then ` + "`reviews approve`" + ` / ` + "`reject`" + ` to
+decide it.
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
@@ -197,11 +197,14 @@ For declarative regression testing of workflow outputs, see
   # Stream per-block execution records
   retab workflows runs steps list run_xyz789
 
+  # List runs that are paused at a HIL gate
+  retab workflows runs list --status waiting_for_human
+
   # Cancel an in-flight run
   retab workflows runs cancel run_xyz789
 
   # Approve a paused (gated) block run
-  retab workflows reviews approve run_xyz789 blk_review_1 \
+  retab workflows reviews approve run_xyz789 blk_extract_1 \
     --version-stamp 0`,
 }
 
@@ -229,6 +232,10 @@ JSON instead of (or alongside) documents.
 By default the workflow's latest published version runs; pin a specific
 version with ` + "`--version`" + `. Inspect the resulting run with
 ` + "`workflows runs get`" + ` or ` + "`workflows runs steps list`" + `.
+If it returns ` + "`waiting_for_human`" + `, use
+` + "`retab workflows reviews list`" + ` to find the gated block and
+` + "`retab workflows reviews approve`" + ` / ` + "`reject`" + ` to resume
+or cancel the run.
 
 The legacy ` + "`--document-file BLOCK=PATH`" + ` spelling is still
 accepted as a deprecated alias for ` + "`--document`" + ` and will be
@@ -573,8 +580,8 @@ or ` + "`--command-id`" + ` for idempotency.`,
 	}),
 }
 
-// The v1 HIL commands (submit-hil / get-hil / get-agent-hil) were removed in
-// the hard cutover to the review overlay — see `workflows reviews`.
+// The v1 step-level decision commands were removed in the hard cutover to the
+// review overlay — see `workflows reviews`.
 
 var workflowsRunsConfigCmd = &cobra.Command{
 	Use:   "config <run-id>",
@@ -730,6 +737,10 @@ steps and pull the offending one with ` + "`workflows runs steps get`" + `
 to see exactly what the block did.`,
 	Example: `  # List every step in a run
   retab workflows runs steps list run_xyz789
+
+  # Find the step currently waiting for a reviewer
+  retab workflows runs steps list run_xyz789 \
+    | jq '.data[] | select(.lifecycle.status == "waiting_for_human") | .block_id'
 
   # Pull the full execution record for one block
   retab workflows runs steps get run_xyz789 blk_extract_1`,

@@ -54,7 +54,6 @@ _DECISION = {
     "on_seq": 1,
     "effective_seq": 1,
     "reason": None,
-    "escalate_to": None,
     "supersedes_decision_id": None,
 }
 
@@ -313,19 +312,6 @@ def test_reject_requires_reason_and_sends_rejected_verdict() -> None:
     request = client._prepared_request.call_args.args[0]
     assert request.data["verdict"] == "rejected"
     assert request.data["reason"] == "bad data"
-
-
-def test_escalate_sends_escalated_verdict_and_target() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {"submission_status": "accepted", "overlay": _OVERLAY}
-
-    WorkflowReviews(client=client).escalate(
-        "run_1", "extract-1", version_stamp=3, reason="unsure", escalate_to="senior_team"
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.data["verdict"] == "escalated"
-    assert request.data["escalate_to"] == "senior_team"
 
 
 def test_edit_posts_version_and_returns_overlay() -> None:

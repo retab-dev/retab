@@ -384,6 +384,19 @@ func readJSONMap(path string) (map[string]any, error) {
 	return obj, nil
 }
 
+// parseJSONMap decodes an inline JSON object literal into a map[string]any.
+func parseJSONMap(raw string) (map[string]any, error) {
+	var value any
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return nil, err
+	}
+	obj, ok := value.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("expected JSON object")
+	}
+	return obj, nil
+}
+
 // readJSONArray decodes JSON into a []any.
 func readJSONArray(path string) ([]any, error) {
 	value, err := readJSON(path)

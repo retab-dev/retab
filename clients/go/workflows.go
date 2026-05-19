@@ -1241,11 +1241,12 @@ func (s *WorkflowReviewsService) Get(ctx context.Context, runID string, blockID 
 // ApproveReviewRequest approves the gated output, optionally with a
 // corrective edit applied as a new version before the approval lands.
 type ApproveReviewRequest struct {
-	VersionStamp int            // overlay Rev last observed (CAS token)
-	EditedOutput map[string]any // optional full corrected output
-	OnSeq        *int           // version the decision is made against (default: head)
-	EffectiveSeq *int           // version that ships downstream (default: OnSeq)
-	CommandID    string         // optional idempotency key
+	VersionStamp    int            // overlay Rev last observed (CAS token)
+	EditedOutput    map[string]any // optional full corrected output
+	ReviewableValue map[string]any // optional primitive-specific reviewed value
+	OnSeq           *int           // version the decision is made against (default: head)
+	EffectiveSeq    *int           // version that ships downstream (default: OnSeq)
+	CommandID       string         // optional idempotency key
 }
 
 // Approve approves a gated block output.
@@ -1256,6 +1257,9 @@ func (s *WorkflowReviewsService) Approve(ctx context.Context, runID string, bloc
 	}
 	if request.EditedOutput != nil {
 		body["edited_output"] = request.EditedOutput
+	}
+	if request.ReviewableValue != nil {
+		body["reviewable_value"] = request.ReviewableValue
 	}
 	if request.OnSeq != nil {
 		body["on_seq"] = *request.OnSeq
@@ -1291,33 +1295,6 @@ func (s *WorkflowReviewsService) Reject(ctx context.Context, runID string, block
 	return s.submitDecision(ctx, runID, blockID, body, opts...)
 }
 
-// EscalateReviewRequest hands the review to another queue/actor. Escalation
-// is non-terminal — the overlay stays awaiting review.
-type EscalateReviewRequest struct {
-	VersionStamp int    // overlay Rev last observed (CAS token)
-	Reason       string // required
-	EscalateTo   string // required — target queue/team id
-	CommandID    string // optional idempotency key
-}
-
-// Escalate escalates a review instead of deciding it.
-func (s *WorkflowReviewsService) Escalate(ctx context.Context, runID string, blockID string, request EscalateReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
-	body := map[string]any{
-		"verdict":       "escalated",
-		"version_stamp": request.VersionStamp,
-	}
-	if request.Reason != "" {
-		body["reason"] = request.Reason
-	}
-	if request.EscalateTo != "" {
-		body["escalate_to"] = request.EscalateTo
-	}
-	if request.CommandID != "" {
-		body["command_id"] = request.CommandID
-	}
-	return s.submitDecision(ctx, runID, blockID, body, opts...)
-}
-
 func (s *WorkflowReviewsService) submitDecision(ctx context.Context, runID string, blockID string, body map[string]any, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
@@ -1335,11 +1312,12 @@ func (s *WorkflowReviewsService) submitDecision(ctx context.Context, runID strin
 
 // EditReviewRequest appends a corrective output version without deciding.
 type EditReviewRequest struct {
-	Snapshot     map[string]any // required — the full corrected output
-	VersionStamp int            // overlay Rev last observed (CAS token)
-	Origin       string         // human_edit (default) | agent_edit
-	Note         string         // optional rationale
-	CommandID    string         // optional idempotency key
+	Snapshot        map[string]any // full corrected output
+	ReviewableValue map[string]any // primitive-specific reviewed value
+	VersionStamp    int            // overlay Rev last observed (CAS token)
+	Origin          string         // human_edit (default) | agent_edit
+	Note            string         // optional rationale
+	CommandID       string         // optional idempotency key
 }
 
 // Edit appends a new output version to the overlay's version history. A
@@ -1353,8 +1331,13 @@ func (s *WorkflowReviewsService) Edit(ctx context.Context, runID string, blockID
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	body := map[string]any{
-		"snapshot":      request.Snapshot,
 		"version_stamp": request.VersionStamp,
+	}
+	if request.Snapshot != nil {
+		body["snapshot"] = request.Snapshot
+	}
+	if request.ReviewableValue != nil {
+		body["reviewable_value"] = request.ReviewableValue
 	}
 	if request.Origin != "" {
 		body["origin"] = request.Origin
