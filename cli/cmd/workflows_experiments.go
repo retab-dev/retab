@@ -24,7 +24,7 @@ against every document and stores the outputs in isolation —
 production traffic is never affected.
 
 Compare experiment outputs to a baseline via
-` + "`workflows experiments runs metrics get`" + `. Trigger a run inside an
+` + "`workflows experiments runs metrics get`" + `. Create a run inside an
 experiment via ` + "`workflows experiments runs create`" + `.
 
 For deterministic regression testing of a single pinned assertion, see
@@ -131,7 +131,7 @@ documents in one of two ways:
   ` + "`--documents-file`" + ` — a JSON array of explicit
   ` + `{"handle_inputs": ..., "provenance": ...}` + ` entries.
 
-After creation, trigger a run with
+After creation, create a run with
 ` + "`workflows experiments runs create`" + `.`,
 	Example: `  # Capture documents from real production runs
   retab workflows experiments create wf_abc123 \
@@ -371,14 +371,14 @@ func printEligibleBlocksResult(cmd *cobra.Command, result *retab.EligibleBlockLi
 var workflowsExperimentsRunsCmd = &cobra.Command{
 	Use:   "runs",
 	Short: "Manage experiment runs",
-	Long: `Trigger, list, and inspect individual experiment executions.
+	Long: `Create, list, and inspect individual experiment runs.
 Each run processes every document in the experiment's document set
 against the candidate block config and stores per-document outputs.
 
 These runs are isolated from production workflow runs — they don't
 appear in ` + "`retab workflows runs list`" + ` and don't affect downstream
 consumers.`,
-	Example: `  # Trigger a new run on an experiment
+	Example: `  # Create a new experiment run
   retab workflows experiments runs create wf_abc123 exp_pqr678
 
   # Inspect a run
@@ -390,10 +390,10 @@ consumers.`,
 
 var workflowsExperimentsRunsCreateCmd = &cobra.Command{
 	Use:   "create <workflow-id> <experiment-id>",
-	Short: "Trigger a new experiment run",
-	Long: `Run the experiment's candidate config across every
+	Short: "Create a new experiment run",
+	Long: `Create an experiment run that evaluates the candidate config across every
 document in its set.`,
-	Example: `  # Trigger an experiment run
+	Example: `  # Create an experiment run
   retab workflows experiments runs create wf_abc123 exp_pqr678`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {

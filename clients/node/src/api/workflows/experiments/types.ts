@@ -169,11 +169,11 @@ export const ZExperimentRun = z
         document_count: z.number().default(0),
         error_count: z.number().default(0),
     })
-    .passthrough();
+    .strip();
 export type ExperimentRun = z.infer<typeof ZExperimentRun>;
 
-// Canonical PaginatedList envelope for `GET /experiments/{id}/runs`. The
-// route used to return `{"runs": [...]}`; the migration to
+// Canonical PaginatedList envelope for `GET /workflows/experiments/runs`.
+// The route used to return `{"runs": [...]}`; the migration to
 // `{data, list_metadata}` matches the rest of the Retab list endpoints.
 export const ZExperimentRunListResponse = z
     .object({

@@ -295,7 +295,7 @@ export const ZWorkflowTestRun = z
             cancelled: 0,
         })),
     })
-    .passthrough();
+    .strip();
 export type WorkflowTestRun = z.infer<typeof ZWorkflowTestRun>;
 
 // Canonical PaginatedList envelope. The two list routes used to return

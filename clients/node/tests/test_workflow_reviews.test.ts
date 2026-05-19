@@ -385,6 +385,16 @@ describe('APIWorkflowReviews request shapes', () => {
     });
   });
 
+  test('prepare_claim() exposes the Python-style request builder', () => {
+    const reviews = new APIWorkflowReviews(new MockClient(OVERLAY_JSON));
+
+    expect(reviews.prepare_claim('run_1', 'extract-1', { versionStamp: 3, ttlSeconds: 600 })).toEqual({
+      url: '/workflows/reviews/run_1/extract-1/claim',
+      method: 'POST',
+      body: { version_stamp: 3, ttl_seconds: 600 },
+    });
+  });
+
   test('release() posts version_stamp to /release', async () => {
     const mock = new MockClient(OVERLAY_JSON);
     const reviews = new APIWorkflowReviews(mock);
@@ -405,6 +415,16 @@ describe('APIWorkflowReviews request shapes', () => {
     const reviews = new APIWorkflowReviews(mock);
 
     const overlay = await reviews.waitFor('run_1', 'extract-1', { pollIntervalMs: 1 });
+
+    expect(overlay.status).toBe('awaiting_review');
+    expect(mock.lastFetchParams?.url).toBe('/workflows/reviews/run_1/extract-1');
+  });
+
+  test('wait_for() aliases waitFor() for Python parity', async () => {
+    const mock = new MockClient(OVERLAY_JSON);
+    const reviews = new APIWorkflowReviews(mock);
+
+    const overlay = await reviews.wait_for('run_1', 'extract-1', { pollIntervalMs: 1 });
 
     expect(overlay.status).toBe('awaiting_review');
     expect(mock.lastFetchParams?.url).toBe('/workflows/reviews/run_1/extract-1');

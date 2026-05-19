@@ -14,6 +14,13 @@ export type ReviewStatus = "awaiting_review" | "approved" | "rejected";
 /** Provenance accepted when posting a new version through {@link APIWorkflowReviews.edit}. */
 export type EditOrigin = "human_edit" | "agent_edit";
 
+type PreparedReviewRequest = {
+    url: string;
+    method: "GET" | "POST";
+    params?: Record<string, unknown>;
+    body?: Record<string, unknown>;
+};
+
 /**
  * Actor-neutral client for the workflow HIL review overlay.
  *
@@ -34,6 +41,127 @@ export type EditOrigin = "human_edit" | "agent_edit";
 export default class APIWorkflowReviews extends CompositionClient {
     constructor(client: CompositionClient) {
         super(client);
+    }
+
+    prepare_list(
+        workflowId?: string,
+        status: ReviewStatus = "awaiting_review",
+        mine = false,
+        limit = 50
+    ): PreparedReviewRequest {
+        const params: Record<string, unknown> = { status, mine, limit };
+        if (workflowId !== undefined) params.workflow_id = workflowId;
+        return { url: "/workflows/reviews", method: "GET", params };
+    }
+
+    prepare_get(runId: string, blockId: string): PreparedReviewRequest {
+        return { url: `/workflows/reviews/${runId}/${blockId}`, method: "GET" };
+    }
+
+    prepare_edit(
+        runId: string,
+        blockId: string,
+        {
+            snapshot,
+            versionStamp,
+            origin = "human_edit",
+            note,
+            commandId,
+        }: {
+            snapshot: Record<string, unknown>;
+            versionStamp: number;
+            origin?: EditOrigin;
+            note?: string | null;
+            commandId?: string;
+        }
+    ): PreparedReviewRequest {
+        return {
+            url: `/workflows/reviews/${runId}/${blockId}/versions`,
+            method: "POST",
+            body: {
+                snapshot,
+                version_stamp: versionStamp,
+                origin,
+                note: note ?? null,
+                command_id: commandId ?? null,
+            },
+        };
+    }
+
+    prepare_decision(
+        runId: string,
+        blockId: string,
+        {
+            verdict,
+            versionStamp,
+            editedOutput,
+            onSeq,
+            effectiveSeq,
+            reason,
+            escalateTo,
+            commandId,
+        }: {
+            verdict: "approved" | "rejected" | "escalated";
+            versionStamp: number;
+            editedOutput?: Record<string, unknown> | null;
+            onSeq?: number;
+            effectiveSeq?: number;
+            reason?: string;
+            escalateTo?: string;
+            commandId?: string;
+        }
+    ): PreparedReviewRequest {
+        return {
+            url: `/workflows/reviews/${runId}/${blockId}/decision`,
+            method: "POST",
+            body: {
+                verdict,
+                version_stamp: versionStamp,
+                edited_output: editedOutput ?? null,
+                on_seq: onSeq ?? null,
+                effective_seq: effectiveSeq ?? null,
+                reason: reason ?? null,
+                escalate_to: escalateTo ?? null,
+                command_id: commandId ?? null,
+            },
+        };
+    }
+
+    prepare_claim(
+        runId: string,
+        blockId: string,
+        {
+            versionStamp,
+            ttlSeconds = 900,
+        }: {
+            versionStamp: number;
+            ttlSeconds?: number;
+        }
+    ): PreparedReviewRequest {
+        return {
+            url: `/workflows/reviews/${runId}/${blockId}/claim`,
+            method: "POST",
+            body: {
+                version_stamp: versionStamp,
+                ttl_seconds: ttlSeconds,
+            },
+        };
+    }
+
+    prepare_release(
+        runId: string,
+        blockId: string,
+        {
+            versionStamp,
+        }: {
+            versionStamp: number;
+        }
+    ): PreparedReviewRequest {
+        return {
+            url: `/workflows/reviews/${runId}/${blockId}/release`,
+            method: "POST",
+            body: { version_stamp: versionStamp },
+        };
     }
 
     /**
@@ -64,14 +192,12 @@ export default class APIWorkflowReviews extends CompositionClient {
         } = {},
         options?: RequestOptions
     ): Promise<ReviewQueueResponse> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const params: Record<string, any> = { status, mine, limit };
-        if (workflowId !== undefined) params.workflow_id = workflowId;
+        const request = this.prepare_list(workflowId, status, mine, limit);
 
         return this._fetchJson(ZReviewQueueResponse, {
-            url: "/workflows/reviews",
-            method: "GET",
-            params: { ...params, ...(options?.params || {}) },
+            url: request.url,
+            method: request.method,
+            params: { ...request.params, ...(options?.params || {}) },
             headers: options?.headers,
         });
     }
@@ -89,9 +215,10 @@ export default class APIWorkflowReviews extends CompositionClient {
         blockId: string,
         options?: RequestOptions
     ): Promise<ReviewOverlay> {
+        const request = this.prepare_get(runId, blockId);
         return this._fetchJson(ZReviewOverlay, {
-            url: `/workflows/reviews/${runId}/${blockId}`,
-            method: "GET",
+            url: request.url,
+            method: request.method,
             params: options?.params,
             headers: options?.headers,
         });
@@ -247,19 +374,18 @@ export default class APIWorkflowReviews extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<ReviewOverlay> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {
+        const request = this.prepare_edit(runId, blockId, {
             snapshot,
-            version_stamp: versionStamp,
+            versionStamp,
             origin,
-            note: note ?? null,
-            command_id: commandId ?? null,
-        };
+            note,
+            commandId,
+        });
 
         return this._fetchJson(ZReviewOverlay, {
-            url: `/workflows/reviews/${runId}/${blockId}/versions`,
-            method: "POST",
-            body: { ...body, ...(options?.body || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -287,16 +413,12 @@ export default class APIWorkflowReviews extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<ReviewOverlay> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {
-            version_stamp: versionStamp,
-            ttl_seconds: ttlSeconds,
-        };
+        const request = this.prepare_claim(runId, blockId, { versionStamp, ttlSeconds });
 
         return this._fetchJson(ZReviewOverlay, {
-            url: `/workflows/reviews/${runId}/${blockId}/claim`,
-            method: "POST",
-            body: { ...body, ...(options?.body || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -321,13 +443,12 @@ export default class APIWorkflowReviews extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<ReviewOverlay> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = { version_stamp: versionStamp };
+        const request = this.prepare_release(runId, blockId, { versionStamp });
 
         return this._fetchJson(ZReviewOverlay, {
-            url: `/workflows/reviews/${runId}/${blockId}/release`,
-            method: "POST",
-            body: { ...body, ...(options?.body || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });
@@ -381,6 +502,18 @@ export default class APIWorkflowReviews extends CompositionClient {
         }
     }
 
+    async wait_for(
+        runId: string,
+        blockId: string,
+        options?: {
+            timeoutMs?: number;
+            pollIntervalMs?: number;
+        },
+        requestOptions?: RequestOptions
+    ): Promise<ReviewOverlay> {
+        return this.waitFor(runId, blockId, options, requestOptions);
+    }
+
     /** Shared verdict submission against `POST /workflows/reviews/{runId}/{blockId}/decision`. */
     private async _decision(
         runId: string,
@@ -406,22 +539,21 @@ export default class APIWorkflowReviews extends CompositionClient {
         },
         options?: RequestOptions
     ): Promise<SubmitDecisionResponse> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {
+        const request = this.prepare_decision(runId, blockId, {
             verdict,
-            version_stamp: versionStamp,
-            edited_output: editedOutput ?? null,
-            on_seq: onSeq ?? null,
-            effective_seq: effectiveSeq ?? null,
-            reason: reason ?? null,
-            escalate_to: escalateTo ?? null,
-            command_id: commandId ?? null,
-        };
+            versionStamp,
+            editedOutput,
+            onSeq,
+            effectiveSeq,
+            reason,
+            escalateTo,
+            commandId,
+        });
 
         return this._fetchJson(ZSubmitDecisionResponse, {
-            url: `/workflows/reviews/${runId}/${blockId}/decision`,
-            method: "POST",
-            body: { ...body, ...(options?.body || {}) },
+            url: request.url,
+            method: request.method,
+            body: { ...request.body, ...(options?.body || {}) },
             params: options?.params,
             headers: options?.headers,
         });

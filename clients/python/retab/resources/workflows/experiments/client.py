@@ -173,6 +173,13 @@ class WorkflowExperimentsMixin:
             url=f"/workflows/{workflow_id}/experiments/eligible-blocks",
         )
 
+
+def _join_csv(value: Sequence[str] | str | None) -> str | None:
+    if value is None or isinstance(value, str):
+        return value
+    return ",".join(value)
+
+
 class ExperimentRunsMixin:
     """Shared prepare_* methods for the runs sub-resource."""
 
@@ -197,15 +204,40 @@ class ExperimentRunsMixin:
         workflow_id: str | None = None,
         experiment_id: str | None = None,
         block_id: str | None = None,
+        status: str | None = None,
+        statuses: Sequence[str] | str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        trigger_types: Sequence[str] | str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = None,
+        fields: Sequence[str] | str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 20,
+        order: str | None = None,
     ) -> PreparedRequest:
         params: Dict[str, Any] = {"limit": limit}
-        if workflow_id is not None:
-            params["workflow_id"] = workflow_id
-        if experiment_id is not None:
-            params["experiment_id"] = experiment_id
-        if block_id is not None:
-            params["block_id"] = block_id
+        for key, value in {
+            "workflow_id": workflow_id,
+            "experiment_id": experiment_id,
+            "block_id": block_id,
+            "status": status,
+            "statuses": _join_csv(statuses),
+            "exclude_status": exclude_status,
+            "trigger_type": trigger_type,
+            "trigger_types": _join_csv(trigger_types),
+            "from_date": from_date,
+            "to_date": to_date,
+            "sort_by": sort_by,
+            "fields": _join_csv(fields),
+            "before": before,
+            "after": after,
+            "order": order,
+        }.items():
+            if value is not None:
+                params[key] = value
         return PreparedRequest(
             method="GET",
             url="/workflows/experiments/runs",
@@ -307,14 +339,38 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         workflow_id: str | None = None,
         experiment_id: str | None = None,
         block_id: str | None = None,
+        status: str | None = None,
+        statuses: Sequence[str] | str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        trigger_types: Sequence[str] | str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = None,
+        fields: Sequence[str] | str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 20,
+        order: str | None = None,
     ) -> PaginatedList[ExperimentRun]:
         """List historical runs for one experiment, newest first."""
         request = self.prepare_list(
             workflow_id=workflow_id,
             experiment_id=experiment_id,
             block_id=block_id,
+            status=status,
+            statuses=statuses,
+            exclude_status=exclude_status,
+            trigger_type=trigger_type,
+            trigger_types=trigger_types,
+            from_date=from_date,
+            to_date=to_date,
+            sort_by=sort_by,
+            fields=fields,
+            before=before,
+            after=after,
             limit=limit,
+            order=order,
         )
         response = self._client._prepared_request(request)
         return PaginatedList[ExperimentRun].model_validate(response)
@@ -520,13 +576,37 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         workflow_id: str | None = None,
         experiment_id: str | None = None,
         block_id: str | None = None,
+        status: str | None = None,
+        statuses: Sequence[str] | str | None = None,
+        exclude_status: str | None = None,
+        trigger_type: str | None = None,
+        trigger_types: Sequence[str] | str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        sort_by: str | None = None,
+        fields: Sequence[str] | str | None = None,
+        before: str | None = None,
+        after: str | None = None,
         limit: int = 20,
+        order: str | None = None,
     ) -> PaginatedList[ExperimentRun]:
         request = self.prepare_list(
             workflow_id=workflow_id,
             experiment_id=experiment_id,
             block_id=block_id,
+            status=status,
+            statuses=statuses,
+            exclude_status=exclude_status,
+            trigger_type=trigger_type,
+            trigger_types=trigger_types,
+            from_date=from_date,
+            to_date=to_date,
+            sort_by=sort_by,
+            fields=fields,
+            before=before,
+            after=after,
             limit=limit,
+            order=order,
         )
         response = await self._client._prepared_request(request)
         return PaginatedList[ExperimentRun].model_validate(response)

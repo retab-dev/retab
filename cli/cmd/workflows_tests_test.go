@@ -742,6 +742,38 @@ func TestWorkflowsExperimentsCreateHelpDoesNotMentionRunBatch(t *testing.T) {
 	}
 }
 
+func TestWorkflowsExperimentsRunsHelpUsesCreateRunTerminology(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		text string
+	}{
+		{name: "experiments long", text: workflowsExperimentsCmd.Long},
+		{name: "experiments create long", text: workflowsExperimentsCreateCmd.Long},
+		{name: "runs long", text: workflowsExperimentsRunsCmd.Long},
+		{name: "runs example", text: workflowsExperimentsRunsCmd.Example},
+		{name: "runs create short", text: workflowsExperimentsRunsCreateCmd.Short},
+		{name: "runs create long", text: workflowsExperimentsRunsCreateCmd.Long},
+		{name: "runs create example", text: workflowsExperimentsRunsCreateCmd.Example},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if strings.Contains(strings.ToLower(tc.text), "trigger") {
+				t.Fatalf("experiment run help should use create-run terminology, got:\n%s", tc.text)
+			}
+		})
+	}
+}
+
+func TestWorkflowsTestsRunsHelpSeparatesRunsAndResults(t *testing.T) {
+	if strings.Contains(workflowsTestsRunsCmd.Example, "Recent result rows") {
+		t.Fatalf("test runs list example should describe parent runs, got:\n%s", workflowsTestsRunsCmd.Example)
+	}
+	for _, stale := range []string{"tests execute", "job_id", "batch_id"} {
+		if strings.Contains(workflowsTestsRunsCmd.Long+workflowsTestsRunsCmd.Example, stale) {
+			t.Fatalf("test runs help should not expose %q, got:\n%s\n%s", stale, workflowsTestsRunsCmd.Long, workflowsTestsRunsCmd.Example)
+		}
+	}
+}
+
 func TestWorkflowsExperimentsUnsupportedRunOverrideFlagsAreNotRegistered(t *testing.T) {
 	if flag := workflowsExperimentsRunsCreateCmd.Flags().Lookup("n-consensus"); flag != nil {
 		t.Fatalf("runs create should not expose unsupported --n-consensus flag")

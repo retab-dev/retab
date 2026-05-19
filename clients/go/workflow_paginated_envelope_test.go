@@ -61,7 +61,23 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/workflows/experiments/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		if r.URL.Query().Get("workflow_id") != "wf_1" || r.URL.Query().Get("experiment_id") != "exp_1" {
+		query := r.URL.Query()
+		if query.Get("workflow_id") != "wf_1" ||
+			query.Get("experiment_id") != "exp_1" ||
+			query.Get("block_id") != "block_1" ||
+			query.Get("status") != "completed" ||
+			query.Get("statuses") != "completed,error" ||
+			query.Get("exclude_status") != "cancelled" ||
+			query.Get("trigger_type") != "api" ||
+			query.Get("trigger_types") != "api,manual_run" ||
+			query.Get("from_date") != "2026-05-01" ||
+			query.Get("to_date") != "2026-05-18" ||
+			query.Get("sort_by") != "created_at" ||
+			query.Get("fields") != "id,lifecycle" ||
+			query.Get("before") != "exprun_before" ||
+			query.Get("after") != "exprun_after" ||
+			query.Get("limit") != "10" ||
+			query.Get("order") != "asc" {
 			t.Fatalf("query = %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -83,8 +99,22 @@ func TestWorkflowExperimentRunsListUsesPaginatedEnvelope(t *testing.T) {
 	client := newTestClient(t, server)
 
 	page, err := client.Workflows.Experiments.Runs.List(context.Background(), &ListExperimentRunsParams{
-		WorkflowID:   "wf_1",
-		ExperimentID: "exp_1",
+		WorkflowID:    "wf_1",
+		ExperimentID:  "exp_1",
+		BlockID:       "block_1",
+		Status:        "completed",
+		Statuses:      []string{"completed", "error"},
+		ExcludeStatus: "cancelled",
+		TriggerType:   "api",
+		TriggerTypes:  []string{"api", "manual_run"},
+		FromDate:      "2026-05-01",
+		ToDate:        "2026-05-18",
+		SortBy:        "created_at",
+		Fields:        []string{"id", "lifecycle"},
+		Before:        "exprun_before",
+		After:         "exprun_after",
+		Limit:         10,
+		Order:         "asc",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -131,7 +161,23 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/workflows/tests/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		if r.URL.Query().Get("workflow_id") != "wf_1" || r.URL.Query().Get("test_id") != "wfnodetest_1" {
+		query := r.URL.Query()
+		if query.Get("workflow_id") != "wf_1" ||
+			query.Get("test_id") != "wfnodetest_1" ||
+			query.Get("target_block_id") != "block_1" ||
+			query.Get("status") != "passed" ||
+			query.Get("statuses") != "passed,failed" ||
+			query.Get("exclude_status") != "cancelled" ||
+			query.Get("trigger_type") != "api" ||
+			query.Get("trigger_types") != "api,manual_run" ||
+			query.Get("from_date") != "2026-05-01" ||
+			query.Get("to_date") != "2026-05-18" ||
+			query.Get("sort_by") != "created_at" ||
+			query.Get("fields") != "id,lifecycle" ||
+			query.Get("before") != "wftestrun_before" ||
+			query.Get("after") != "wftestrun_after" ||
+			query.Get("limit") != "10" ||
+			query.Get("order") != "asc" {
 			t.Fatalf("query = %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -153,9 +199,22 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 	client := newTestClient(t, server)
 
 	page, err := client.Workflows.Tests.Runs.List(context.Background(), ListWorkflowTestRunsParams{
-		WorkflowID: "wf_1",
-		TestID:     "wfnodetest_1",
-		Limit:      10,
+		WorkflowID:    "wf_1",
+		TestID:        "wfnodetest_1",
+		TargetBlockID: "block_1",
+		Status:        "passed",
+		Statuses:      []string{"passed", "failed"},
+		ExcludeStatus: "cancelled",
+		TriggerType:   "api",
+		TriggerTypes:  []string{"api", "manual_run"},
+		FromDate:      "2026-05-01",
+		ToDate:        "2026-05-18",
+		SortBy:        "created_at",
+		Fields:        []string{"id", "lifecycle"},
+		Before:        "wftestrun_before",
+		After:         "wftestrun_after",
+		Limit:         10,
+		Order:         "asc",
 	})
 	if err != nil {
 		t.Fatal(err)

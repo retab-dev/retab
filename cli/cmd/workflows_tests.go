@@ -82,7 +82,7 @@ For exploring multiple alternative block configurations side-by-side
     --source-file ./source.json \
     --assertion-file ./assertion.json
 
-  # Run every test in the workflow
+  # Create a run for every test in the workflow
   retab workflows tests runs create wf_abc123`,
 }
 
@@ -396,7 +396,7 @@ result records.`,
   # Fetch child result rows for a workflow-test run
   retab workflows tests runs results list wftestrun_mno345
 
-  # Recent result rows for one test
+  # Recent runs for one test
   retab workflows tests runs list --workflow-id wf_abc123 --test-id tst_jkl012
 
   # Full child result record for one test
