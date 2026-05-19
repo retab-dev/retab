@@ -23,7 +23,7 @@ Before implementing, install the relevant Retab tools, then read the docs.
 CLI:
 
 ```bash
-curl -fsSL https://retab.com/install.sh
+curl -fsSL https://retab.com/install.sh | sh
 ```
 
 SDKs:
