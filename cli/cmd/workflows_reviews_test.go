@@ -204,6 +204,292 @@ func TestReviewsApproveWithoutVersionStampFetchesAndWarns(t *testing.T) {
 	}
 }
 
+func TestReviewsApproveAcceptsInlineEditedOutput(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("edited-output-json", `{"output":[{"name":"invoice","pages":[1]}]}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		t.Fatalf("reviews approve: %v", err)
+	}
+	edited, ok := body["edited_output"].(map[string]any)
+	if !ok {
+		t.Fatalf("edited_output missing: %#v", body)
+	}
+	output, ok := edited["output"].([]any)
+	if !ok || len(output) != 1 {
+		t.Fatalf("edited output = %#v", edited)
+	}
+}
+
+func TestReviewsSplitApproveSendsReviewableValue(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newSplitApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "booking confirmation=1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "legal-mentions=2-3"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		t.Fatalf("reviews split approve: %v", err)
+	}
+
+	reviewable, ok := body["reviewable_value"].(map[string]any)
+	if !ok {
+		t.Fatalf("reviewable_value missing: %#v", body)
+	}
+	splits, ok := reviewable["splits"].([]any)
+	if !ok || len(splits) != 2 {
+		t.Fatalf("splits = %#v", reviewable["splits"])
+	}
+	second := splits[1].(map[string]any)
+	pages := second["pages"].([]any)
+	if pages[0] != float64(2) || pages[1] != float64(3) {
+		t.Fatalf("pages = %#v", pages)
+	}
+	if _, ok := body["edited_output"]; ok {
+		t.Fatalf("typed command must not send edited_output: %#v", body)
+	}
+}
+
+func TestReviewsSplitApproveRejectsDuplicatePageInSet(t *testing.T) {
+	cmd := newSplitApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "invoice=1,1"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected duplicate page to fail")
+	}
+	if !strings.Contains(err.Error(), "duplicate page 1") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsSplitApproveRejectsOverlappingPagesAcrossSets(t *testing.T) {
+	cmd := newSplitApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "booking confirmation=1-2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "legal-mentions=2-3"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected overlapping pages to fail")
+	}
+	if !strings.Contains(err.Error(), `page 2 appears in both "booking confirmation" and "legal-mentions"`) {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsSplitApproveRejectsDuplicateLabels(t *testing.T) {
+	cmd := newSplitApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "invoice=1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "invoice=2"); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected duplicate split labels to fail")
+	}
+	if !strings.Contains(err.Error(), `duplicate split label "invoice"`) {
+		t.Fatalf("error = %v", err)
+	}
+	if !strings.Contains(err.Error(), "case-sensitive") || !strings.Contains(err.Error(), "server") {
+		t.Fatalf("error should explain exact-label handling, got %v", err)
+	}
+}
+
+func TestReviewsSplitApproveRejectsDuplicateLabelsFromSplitsJSON(t *testing.T) {
+	cmd := newSplitApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("splits-json", `{"splits":[{"name":"invoice","pages":[1]},{"name":"invoice","pages":[2]}]}`); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected duplicate split labels to fail")
+	}
+	if !strings.Contains(err.Error(), `duplicate split label "invoice"`) {
+		t.Fatalf("error = %v", err)
+	}
+	if !strings.Contains(err.Error(), "case-sensitive") || !strings.Contains(err.Error(), "server") {
+		t.Fatalf("error should explain exact-label handling, got %v", err)
+	}
+}
+
+func TestReviewsSplitApproveKeepsSetLabelsExact(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newSplitApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", " Invoice Total =1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		t.Fatalf("reviews split approve: %v", err)
+	}
+
+	reviewable, ok := body["reviewable_value"].(map[string]any)
+	if !ok {
+		t.Fatalf("reviewable_value missing: %#v", body)
+	}
+	splits, ok := reviewable["splits"].([]any)
+	if !ok || len(splits) != 1 {
+		t.Fatalf("splits = %#v", reviewable["splits"])
+	}
+	first := splits[0].(map[string]any)
+	if first["name"] != " Invoice Total " {
+		t.Fatalf("split label was normalized: %#v", first["name"])
+	}
+}
+
+func TestReviewsSplitApproveRejectsInvalidSplitsJSONShape(t *testing.T) {
+	cmd := newSplitApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("splits-json", `{"splits":[{"name":"invoice","pages":[1,1]}]}`); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected invalid splits JSON to fail")
+	}
+	if !strings.Contains(err.Error(), "splits[0].pages: duplicate page 1") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsClassifierApproveSendsCategoryReviewableValue(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newClassifierApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("category", "Invoice"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		t.Fatalf("reviews classifier approve: %v", err)
+	}
+	reviewable := body["reviewable_value"].(map[string]any)
+	if reviewable["category"] != "Invoice" {
+		t.Fatalf("reviewable_value = %#v", reviewable)
+	}
+}
+
+func TestReviewsApproveRejectsFileAndInlineEditedOutputTogether(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := newApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("edited-output-file", "fixed.json"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("edited-output-json", `{"output":[]}`); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected mutually exclusive edited output flags to fail")
+	}
+	if !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
 func TestReviewsRejectRequiresReason(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -226,8 +512,108 @@ func newApproveTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsApproveCmd.RunE}
 	cmd.Flags().Int("version-stamp", 0, "")
 	cmd.Flags().String("edited-output-file", "", "")
+	cmd.Flags().String("edited-output-json", "", "")
 	cmd.Flags().Int("on-seq", 0, "")
 	cmd.Flags().Int("effective-seq", 0, "")
+	cmd.Flags().String("command-id", "", "")
+	return cmd
+}
+
+func newSplitApproveTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsSplitApproveCmd.RunE}
+	cmd.Flags().Int("version-stamp", 0, "")
+	cmd.Flags().String("value-file", "", "")
+	cmd.Flags().String("splits-json", "", "")
+	cmd.Flags().StringArray("set", nil, "")
+	cmd.Flags().String("command-id", "", "")
+	return cmd
+}
+
+func newClassifierApproveTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsClassifierApproveCmd.RunE}
+	cmd.Flags().Int("version-stamp", 0, "")
+	cmd.Flags().String("category", "", "")
+	cmd.Flags().String("command-id", "", "")
+	return cmd
+}
+
+func TestReviewsEditAcceptsInlineSnapshot(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(reviewOverlayBody(2, "awaiting_review"))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newEditTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("snapshot-json", `{"output":[{"name":"invoice","pages":[1]}]}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		t.Fatalf("reviews edit: %v", err)
+	}
+	if body["version_stamp"] != float64(1) {
+		t.Fatalf("version_stamp = %#v", body["version_stamp"])
+	}
+	snapshot, ok := body["snapshot"].(map[string]any)
+	if !ok {
+		t.Fatalf("snapshot missing: %#v", body)
+	}
+	if _, ok := snapshot["output"].([]any); !ok {
+		t.Fatalf("snapshot = %#v", snapshot)
+	}
+}
+
+func TestReviewsEditRequiresSnapshotFileOrInlineJSON(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := newEditTestCmd()
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected missing snapshot to fail")
+	}
+	if !strings.Contains(err.Error(), "--snapshot-file") || !strings.Contains(err.Error(), "--snapshot-json") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsEditRejectsFileAndInlineSnapshotTogether(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := newEditTestCmd()
+	if err := cmd.Flags().Set("snapshot-file", "corrected.json"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("snapshot-json", `{"output":[]}`); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	if err == nil {
+		t.Fatal("expected mutually exclusive snapshot flags to fail")
+	}
+	if !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func newEditTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "edit", RunE: workflowsReviewsEditCmd.RunE}
+	cmd.Flags().Int("version-stamp", 0, "")
+	cmd.Flags().String("snapshot-file", "", "")
+	cmd.Flags().String("snapshot-json", "", "")
+	cmd.Flags().Var(newEnumStringFlagValue("--origin", "human_edit", "agent_edit"), "origin", "")
+	cmd.Flags().String("note", "", "")
 	cmd.Flags().String("command-id", "", "")
 	return cmd
 }

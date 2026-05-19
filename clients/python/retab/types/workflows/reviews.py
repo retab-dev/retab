@@ -37,7 +37,7 @@ ReviewStatus = Literal["awaiting_review", "approved", "rejected"]
 OutputVersionOrigin = Literal["model_output", "agent_edit", "human_edit", "revert"]
 
 #: Verdict carried by a :class:`ReviewDecision`.
-ReviewVerdict = Literal["approved", "rejected", "escalated"]
+ReviewVerdict = Literal["approved", "rejected"]
 
 #: Origin accepted when posting a new version through ``reviews.edit(...)``.
 EditOrigin = Literal["human_edit", "agent_edit"]
@@ -97,13 +97,12 @@ class ReviewDecision(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     decision_id: str = Field(..., description="Stable identifier of this decision.")
-    verdict: ReviewVerdict = Field(..., description="approved / rejected / escalated.")
+    verdict: ReviewVerdict = Field(..., description="approved / rejected.")
     decided_by: Actor = Field(..., description="Who made the decision.")
     decided_at: datetime.datetime = Field(..., description="When the decision was recorded.")
     on_seq: int = Field(..., description="Version sequence the decision was made against.")
     effective_seq: int | None = Field(default=None, description="Version that becomes effective on apply.")
     reason: str | None = Field(default=None, description="Free-text reason; required for rejections.")
-    escalate_to: str | None = Field(default=None, description="Escalation target when verdict is 'escalated'.")
     supersedes_decision_id: str | None = Field(default=None, description="Decision id this one corrects, if any.")
 
 
@@ -227,7 +226,7 @@ class ReviewQueueResponse(RetabBaseModel):
 
 
 class SubmitDecisionResponse(RetabBaseModel):
-    """Envelope returned by ``reviews.approve/reject/escalate(...)``.
+    """Envelope returned by ``reviews.approve/reject(...)``.
 
     ``submission_status`` is ``accepted`` for a fresh decision, or one of the
     idempotent ``already_*`` values when a ``command_id`` replay is detected.

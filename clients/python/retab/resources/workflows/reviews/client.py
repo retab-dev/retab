@@ -88,7 +88,6 @@ class WorkflowReviewsMixin:
         on_seq: int | None = None,
         effective_seq: int | None = None,
         reason: str | None = None,
-        escalate_to: str | None = None,
         command_id: str | None = None,
     ) -> PreparedRequest:
         """Prepare a request to submit a verdict against the overlay."""
@@ -99,7 +98,6 @@ class WorkflowReviewsMixin:
             "on_seq": on_seq,
             "effective_seq": effective_seq,
             "reason": reason,
-            "escalate_to": escalate_to,
             "command_id": command_id,
         }
         return PreparedRequest(
@@ -146,8 +144,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
     Usage:
     - ``client.workflows.reviews.list()`` for the review queue.
     - ``client.workflows.reviews.get(run_id, block_id)`` for one overlay.
-    - ``client.workflows.reviews.approve(...)`` / ``reject(...)`` /
-      ``escalate(...)`` to submit a verdict.
+    - ``client.workflows.reviews.approve(...)`` / ``reject(...)`` to submit a verdict.
     - ``client.workflows.reviews.edit(...)`` to append a new output version.
     - ``client.workflows.reviews.claim(...)`` / ``release(...)`` for the
       advisory soft lock.
@@ -269,44 +266,6 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             verdict="rejected",
             version_stamp=version_stamp,
             reason=reason,
-            command_id=command_id,
-        )
-        response = self._client._prepared_request(request)
-        return SubmitDecisionResponse.model_validate(response)
-
-    def escalate(
-        self,
-        run_id: str,
-        block_id: str,
-        *,
-        version_stamp: int,
-        reason: str,
-        escalate_to: str,
-        command_id: str | None = None,
-    ) -> SubmitDecisionResponse:
-        """Escalate the review to another actor instead of deciding it.
-
-        Args:
-            run_id: The workflow run id.
-            block_id: The gated block id.
-            version_stamp: The overlay ``rev`` last observed (CAS token).
-            reason: Why the review is being handed off.
-            escalate_to: The target the review is escalated to.
-            command_id: Optional idempotency key for deduplicating submissions.
-
-        Returns:
-            SubmitDecisionResponse: Submission status and the updated overlay.
-
-        Raises:
-            ConflictError: HTTP 409 — ``version_stamp`` is stale; re-read and retry.
-        """
-        request = self.prepare_decision(
-            run_id,
-            block_id,
-            verdict="escalated",
-            version_stamp=version_stamp,
-            reason=reason,
-            escalate_to=escalate_to,
             command_id=command_id,
         )
         response = self._client._prepared_request(request)
@@ -454,8 +413,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
     Usage:
     - ``await client.workflows.reviews.list()`` for the review queue.
     - ``await client.workflows.reviews.get(run_id, block_id)`` for one overlay.
-    - ``await client.workflows.reviews.approve(...)`` / ``reject(...)`` /
-      ``escalate(...)`` to submit a verdict.
+    - ``await client.workflows.reviews.approve(...)`` / ``reject(...)`` to submit a verdict.
     - ``await client.workflows.reviews.edit(...)`` to append an output version.
     - ``await client.workflows.reviews.claim(...)`` / ``release(...)`` for the
       advisory soft lock.
@@ -577,44 +535,6 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             verdict="rejected",
             version_stamp=version_stamp,
             reason=reason,
-            command_id=command_id,
-        )
-        response = await self._client._prepared_request(request)
-        return SubmitDecisionResponse.model_validate(response)
-
-    async def escalate(
-        self,
-        run_id: str,
-        block_id: str,
-        *,
-        version_stamp: int,
-        reason: str,
-        escalate_to: str,
-        command_id: str | None = None,
-    ) -> SubmitDecisionResponse:
-        """Escalate the review to another actor instead of deciding it.
-
-        Args:
-            run_id: The workflow run id.
-            block_id: The gated block id.
-            version_stamp: The overlay ``rev`` last observed (CAS token).
-            reason: Why the review is being handed off.
-            escalate_to: The target the review is escalated to.
-            command_id: Optional idempotency key for deduplicating submissions.
-
-        Returns:
-            SubmitDecisionResponse: Submission status and the updated overlay.
-
-        Raises:
-            ConflictError: HTTP 409 — ``version_stamp`` is stale; re-read and retry.
-        """
-        request = self.prepare_decision(
-            run_id,
-            block_id,
-            verdict="escalated",
-            version_stamp=version_stamp,
-            reason=reason,
-            escalate_to=escalate_to,
             command_id=command_id,
         )
         response = await self._client._prepared_request(request)

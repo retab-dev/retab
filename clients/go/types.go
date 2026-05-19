@@ -445,13 +445,12 @@ type ReviewOutputVersion struct {
 // ReviewDecisionRecord is a typed verdict cast against one version.
 type ReviewDecisionRecord struct {
 	DecisionID           string      `json:"decision_id"`
-	Verdict              string      `json:"verdict"` // approved | rejected | escalated
+	Verdict              string      `json:"verdict"` // approved | rejected
 	DecidedBy            ReviewActor `json:"decided_by"`
 	DecidedAt            time.Time   `json:"decided_at"`
 	OnSeq                int         `json:"on_seq"`
 	EffectiveSeq         *int        `json:"effective_seq,omitempty"`
 	Reason               *string     `json:"reason,omitempty"`
-	EscalateTo           *string     `json:"escalate_to,omitempty"`
 	SupersedesDecisionID *string     `json:"supersedes_decision_id,omitempty"`
 }
 

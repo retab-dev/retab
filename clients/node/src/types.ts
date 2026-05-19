@@ -916,13 +916,12 @@ export type OutputVersion = z.infer<typeof ZOutputVersion>;
 export const ZReviewDecision = z
   .object({
     decision_id: z.string(),
-    verdict: z.enum(['approved', 'rejected', 'escalated']),
+    verdict: z.enum(['approved', 'rejected']),
     decided_by: ZActor,
     decided_at: z.string(),
     on_seq: z.number(),
     effective_seq: z.number().nullable().default(null),
     reason: z.string().nullable().default(null),
-    escalate_to: z.string().nullable().default(null),
     supersedes_decision_id: z.string().nullable().default(null),
   })
   .passthrough();
@@ -1012,7 +1011,7 @@ export const ZReviewQueueResponse = z
   .passthrough();
 export type ReviewQueueResponse = z.infer<typeof ZReviewQueueResponse>;
 
-/** Envelope returned by `reviews.approve/reject/escalate(...)`. */
+/** Envelope returned by `reviews.approve/reject(...)`. */
 export const ZSubmitDecisionResponse = z
   .object({
     submission_status: z.enum(['accepted', 'already_received', 'already_applied']),

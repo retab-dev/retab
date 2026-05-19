@@ -69,7 +69,6 @@ const DECISION_JSON = {
   on_seq: 1,
   effective_seq: 1,
   reason: null,
-  escalate_to: null,
   supersedes_decision_id: null,
 };
 
@@ -154,7 +153,7 @@ describe('review overlay zod schemas', () => {
   });
 
   test('ZReviewDecision round-trips and accepts every verdict', () => {
-    for (const verdict of ['approved', 'rejected', 'escalated'] as const) {
+    for (const verdict of ['approved', 'rejected'] as const) {
       const decision = ZReviewDecision.parse({ ...DECISION_JSON, verdict });
       expect(decision.verdict).toBe(verdict);
     }
@@ -276,7 +275,6 @@ describe('APIWorkflowReviews request shapes', () => {
         on_seq: 1,
         effective_seq: 2,
         reason: null,
-        escalate_to: null,
         command_id: 'cmd_1',
       },
       params: undefined,
@@ -298,29 +296,6 @@ describe('APIWorkflowReviews request shapes', () => {
       on_seq: null,
       effective_seq: null,
       reason: 'wrong total',
-      escalate_to: null,
-      command_id: null,
-    });
-  });
-
-  test('escalate() posts verdict=escalated with escalate_to', async () => {
-    const mock = new MockClient({ submission_status: 'accepted', overlay: OVERLAY_JSON });
-    const reviews = new APIWorkflowReviews(mock);
-
-    await reviews.escalate('run_1', 'extract-1', {
-      versionStamp: 3,
-      reason: 'needs a human',
-      escalateTo: 'team:senior',
-    });
-
-    expect(mock.lastFetchParams?.body).toEqual({
-      verdict: 'escalated',
-      version_stamp: 3,
-      edited_output: null,
-      on_seq: null,
-      effective_seq: null,
-      reason: 'needs a human',
-      escalate_to: 'team:senior',
       command_id: null,
     });
   });

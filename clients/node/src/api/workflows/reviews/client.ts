@@ -98,16 +98,14 @@ export default class APIWorkflowReviews extends CompositionClient {
             onSeq,
             effectiveSeq,
             reason,
-            escalateTo,
             commandId,
         }: {
-            verdict: "approved" | "rejected" | "escalated";
+            verdict: "approved" | "rejected";
             versionStamp: number;
             editedOutput?: Record<string, unknown> | null;
             onSeq?: number;
             effectiveSeq?: number;
             reason?: string;
-            escalateTo?: string;
             commandId?: string;
         }
     ): PreparedReviewRequest {
@@ -121,7 +119,6 @@ export default class APIWorkflowReviews extends CompositionClient {
                 on_seq: onSeq ?? null,
                 effective_seq: effectiveSeq ?? null,
                 reason: reason ?? null,
-                escalate_to: escalateTo ?? null,
                 command_id: commandId ?? null,
             },
         };
@@ -299,42 +296,6 @@ export default class APIWorkflowReviews extends CompositionClient {
             runId,
             blockId,
             { verdict: "rejected", versionStamp, reason, commandId },
-            options
-        );
-    }
-
-    /**
-     * Escalate the review to another actor instead of deciding it.
-     *
-     * @param runId - The workflow run id.
-     * @param blockId - The gated block id.
-     * @param versionStamp - The overlay `rev` last observed (CAS token).
-     * @param reason - Why the review is being handed off.
-     * @param escalateTo - The target the review is escalated to.
-     * @param commandId - Optional idempotency key for deduplicating submissions.
-     * @returns Submission status and the updated overlay.
-     * @throws `APIError` with `.status === 409` when `versionStamp` is stale — re-read and retry.
-     */
-    async escalate(
-        runId: string,
-        blockId: string,
-        {
-            versionStamp,
-            reason,
-            escalateTo,
-            commandId,
-        }: {
-            versionStamp: number;
-            reason: string;
-            escalateTo: string;
-            commandId?: string;
-        },
-        options?: RequestOptions
-    ): Promise<SubmitDecisionResponse> {
-        return this._decision(
-            runId,
-            blockId,
-            { verdict: "escalated", versionStamp, reason, escalateTo, commandId },
             options
         );
     }
@@ -525,16 +486,14 @@ export default class APIWorkflowReviews extends CompositionClient {
             onSeq,
             effectiveSeq,
             reason,
-            escalateTo,
             commandId,
         }: {
-            verdict: "approved" | "rejected" | "escalated";
+            verdict: "approved" | "rejected";
             versionStamp: number;
             editedOutput?: Record<string, unknown> | null;
             onSeq?: number;
             effectiveSeq?: number;
             reason?: string;
-            escalateTo?: string;
             commandId?: string;
         },
         options?: RequestOptions
@@ -546,7 +505,6 @@ export default class APIWorkflowReviews extends CompositionClient {
             onSeq,
             effectiveSeq,
             reason,
-            escalateTo,
             commandId,
         });
 

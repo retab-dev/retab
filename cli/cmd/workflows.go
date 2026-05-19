@@ -123,11 +123,17 @@ var workflowsCmd = &cobra.Command{
 	Long: `Build and run multi-step document-processing pipelines.
 
 A workflow is a DAG of blocks (` + "`extract`" + `, ` + "`split`" + `,
-` + "`classify`" + `, ` + "`edit`" + `, ` + "`hil`" + `, ` + "`conditional`" + `,
+` + "`classifier`" + `, ` + "`edit`" + `, ` + "`conditional`" + `,
 ` + "`api_call`" + `, ` + "`function`" + `, …) wired together by edges. Documents
 or JSON inputs flow through the graph; each block contributes to the final
 output. Workflows are versioned — drafts are mutable, published versions are
 immutable.
+
+Human-in-the-loop is configured as a gate on a block (` + "`config.hil`" + `),
+not as a standalone block. A gated run pauses with status
+` + "`waiting_for_human`" + ` and is resumed through
+` + "`retab workflows reviews approve`" + ` or cancelled through
+` + "`retab workflows reviews reject`" + `.
 
 Typical lifecycle:
 
@@ -146,6 +152,9 @@ Typical lifecycle:
   # Run a workflow against an uploaded file
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf
+
+  # See runs paused for human review
+  retab workflows runs list --status waiting_for_human
 
   # Publish the current draft as an immutable version
   retab workflows publish wf_abc123 --description "v1: invoice extraction"`,

@@ -122,6 +122,17 @@ func TestReadJSONMapAndArray(t *testing.T) {
 	if _, err := readJSONArray(mapPath); err == nil {
 		t.Fatalf("expected error for object → readJSONArray")
 	}
+
+	inline, err := parseJSONMap(`{"inline":true}`)
+	if err != nil {
+		t.Fatalf("parseJSONMap: %v", err)
+	}
+	if inline["inline"] != true {
+		t.Fatalf("inline = %#v", inline)
+	}
+	if _, err := parseJSONMap(`[1,2,3]`); err == nil {
+		t.Fatalf("expected error for array → parseJSONMap")
+	}
 }
 
 func TestResolveDocumentURL(t *testing.T) {

@@ -207,7 +207,45 @@ func TestWorkflowReviewsApproveSendsVersionStamp(t *testing.T) {
 	}
 }
 
-func TestWorkflowReviewsRejectAndEscalate(t *testing.T) {
+func TestWorkflowReviewsApproveSendsReviewableValue(t *testing.T) {
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayJSON(1, "approved"),
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Workflows.Reviews.Approve(context.Background(), "run_1", "blk_1", ApproveReviewRequest{
+		VersionStamp: 1,
+		ReviewableValue: map[string]any{
+			"category": "Invoice",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	reviewable, ok := body["reviewable_value"].(map[string]any)
+	if !ok {
+		t.Fatalf("reviewable_value missing: %#v", body)
+	}
+	if reviewable["category"] != "Invoice" {
+		t.Fatalf("reviewable_value = %#v", reviewable)
+	}
+	if _, ok := body["edited_output"]; ok {
+		t.Fatalf("reviewable approval must not send edited_output: %#v", body)
+	}
+}
+
+func TestWorkflowReviewsReject(t *testing.T) {
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		raw, _ := io.ReadAll(r.Body)
@@ -233,14 +271,6 @@ func TestWorkflowReviewsRejectAndEscalate(t *testing.T) {
 		t.Fatalf("reject body = %#v", body)
 	}
 
-	if _, err := client.Workflows.Reviews.Escalate(context.Background(), "run_1", "blk_1", EscalateReviewRequest{
-		VersionStamp: 2, Reason: "needs senior", EscalateTo: "queue_senior",
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if body["verdict"] != "escalated" || body["escalate_to"] != "queue_senior" {
-		t.Fatalf("escalate body = %#v", body)
-	}
 }
 
 func TestWorkflowReviewsEditClaimRelease(t *testing.T) {
