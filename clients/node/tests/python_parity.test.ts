@@ -422,7 +422,7 @@ function normalizeGoMethodName(value: string): string {
     value
       .replaceAll('API', 'Api')
       .replaceAll('CSV', 'Csv')
-      .replaceAll('HIL', 'Hil')
+      .replaceAll('review', 'Hil')
       .replaceAll('HTTP', 'Http')
       .replaceAll('ID', 'Id')
       .replaceAll('JSON', 'Json')

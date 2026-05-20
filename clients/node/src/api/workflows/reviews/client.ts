@@ -22,7 +22,7 @@ type PreparedReviewRequest = {
 };
 
 /**
- * Actor-neutral client for the workflow HIL review overlay.
+ * Actor-neutral client for the workflow review overlay.
  *
  * Drives the review loop served under `/workflows/reviews`: list the queue,
  * fetch an overlay, post new output versions, and submit verdicts.

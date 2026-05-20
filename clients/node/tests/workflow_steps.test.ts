@@ -57,7 +57,7 @@ describe('workflow run steps client', () => {
         this.lastFetchParams = params;
         return new Response(
           JSON.stringify({
-            operation: 'hil_evaluation',
+            operation: 'review_trigger_evaluation',
             id: 'heval_123',
             requires_human_review: true,
           }),
@@ -72,17 +72,17 @@ describe('workflow run steps client', () => {
     const mockClient = new ArtifactMockClient();
     const artifactsClient = new APIWorkflowArtifacts(mockClient);
     const artifact = await artifactsClient.get({
-      operation: 'hil_evaluation',
+      operation: 'review_trigger_evaluation',
       id: 'heval_123',
     });
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/artifacts/hil_evaluation/heval_123',
+      url: '/workflows/artifacts/review_trigger_evaluation/heval_123',
       method: 'GET',
       params: undefined,
       headers: undefined,
     });
-    expect(artifact.operation).toBe('hil_evaluation');
+    expect(artifact.operation).toBe('review_trigger_evaluation');
     expect(artifact.id).toBe('heval_123');
     expect(artifact.requires_human_review).toBe(true);
   });

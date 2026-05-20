@@ -10,7 +10,7 @@ from datetime import datetime, date
 from typing import Any, Type, get_args, get_origin, Union, Literal, is_typeddict
 import typing_extensions
 from pydantic import BaseModel
-from pydantic.fields import PydanticUndefined
+from pydantic_core import PydanticUndefined
 from typing_extensions import is_typeddict as is_typeddict_ext
 import PIL.Image
 
@@ -60,7 +60,7 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
         return args[0] if len(args) <= 1 else " | ".join(args)
 
     if isinstance(field_type, typing.ForwardRef):
-        return type_to_zod(typing._eval_type(field_type, globals(), locals(), []), ts=ts)
+        return type_to_zod(typing._eval_type(field_type, globals(), locals(), []), ts=ts)  # type: ignore[attr-defined]
     elif origin is typing.Annotated or origin is typing.Required or origin is typing_extensions.Required:
         return type_to_zod(get_args(field_type)[0], put_names, ts=ts)
     if origin is Union or origin is types.UnionType:

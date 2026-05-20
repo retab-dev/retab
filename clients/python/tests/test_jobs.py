@@ -20,10 +20,7 @@ from retab.types.jobs import Job
 
 INLINE_TEXT_DOCUMENT = {
     "filename": "test_invoice.txt",
-    "url": "data:text/plain;base64,"
-    + base64.b64encode(
-        b"Invoice #12345\nDate: 2025-01-15\nAmount: $99.99\nCustomer: Acme Corp\nDescription: Consulting services"
-    ).decode(),
+    "url": "data:text/plain;base64," + base64.b64encode(b"Invoice #12345\nDate: 2025-01-15\nAmount: $99.99\nCustomer: Acme Corp\nDescription: Consulting services").decode(),
 }
 
 SIMPLE_EXTRACT_SCHEMA = {
@@ -85,6 +82,7 @@ def test_job_extract(sync_client: Retab) -> None:
         job = _wait(client, job.id)
         _assert_completed(job)
 
+        assert job.response is not None
         body = job.response.body
         assert "id" in body, f"Extraction response should have 'id', got keys: {list(body.keys())}"
         assert "output" in body, f"Extraction response should have 'output', got keys: {list(body.keys())}"
@@ -105,6 +103,7 @@ def test_job_parse(sync_client: Retab) -> None:
         job = _wait(client, job.id)
         _assert_completed(job)
 
+        assert job.response is not None
         body = job.response.body
         assert "output" in body, f"Parse response should have 'output', got keys: {list(body.keys())}"
         assert "text" in body["output"], "Parse response output should contain text"
@@ -126,6 +125,7 @@ def test_job_parses_resource(sync_client: Retab) -> None:
         job = _wait(client, job.id)
         _assert_completed(job)
 
+        assert job.response is not None
         body = job.response.body
         assert "id" in body, f"Parse resource response should have 'id', got keys: {list(body.keys())}"
         assert "output" in body, f"Parse resource response should have 'output', got keys: {list(body.keys())}"
@@ -151,6 +151,7 @@ def test_job_split(sync_client: Retab) -> None:
         job = _wait(client, job.id)
         _assert_completed(job)
 
+        assert job.response is not None
         body = job.response.body
         assert "id" in body, f"Split response should have 'id', got keys: {list(body.keys())}"
         assert "output" in body, f"Split response should have 'output', got keys: {list(body.keys())}"

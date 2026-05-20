@@ -5,6 +5,7 @@ import datetime
 import os
 import time
 from collections.abc import Callable, Iterable
+from typing import NoReturn
 
 import pytest
 
@@ -26,10 +27,7 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 def _inline_text_document() -> MIMEData:
     return MIMEData(
         filename="test_invoice.txt",
-        url=(
-            "data:text/plain;base64,"
-            "SW52b2ljZSAjMTIzNDUKRGF0ZTogMjAyNS0wMS0xNQpBbW91bnQ6ICQ5OS45OQpDdXN0b21lcjogQWNtZSBDb3JwCkRlc2NyaXB0aW9uOiBDb25zdWx0aW5nIHNlcnZpY2Vz"
-        ),
+        url=("data:text/plain;base64,SW52b2ljZSAjMTIzNDUKRGF0ZTogMjAyNS0wMS0xNQpBbW91bnQ6ICQ5OS45OQpDdXN0b21lcjogQWNtZSBDb3JwCkRlc2NyaXB0aW9uOiBDb25zdWx0aW5nIHNlcnZpY2Vz"),
     )
 
 
@@ -108,7 +106,7 @@ def _assert_list_contains(page: PaginatedList, target_id: str) -> None:
     assert any(_item_id(item) == target_id for item in page.data), f"{target_id} not found in list response"
 
 
-def _skip_if_resource_route_unavailable(exc: InternalServerError, route_name: str) -> None:
+def _skip_if_resource_route_unavailable(exc: InternalServerError, route_name: str) -> NoReturn:
     pytest.skip(f"{route_name} unavailable in local stack: {exc.status_code} {exc.message}")
 
 

@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// The `workflows reviews` command group drives the HIL review overlay —
+// The `workflows reviews` command group drives the review overlay —
 // the versioned sidecar attached to a gated block run. The surface is
 // actor-neutral: a correction proposed by a model, an agent, or a human all
 // flow through the same `edit` / `approve` pair.
@@ -26,8 +26,8 @@ import (
 
 var workflowsReviewsCmd = &cobra.Command{
 	Use:   "reviews",
-	Short: "Review gated block runs (human-in-the-loop overlay)",
-	Long: `Drive the HIL review overlay: list the review queue, inspect a
+	Short: "Review gated block runs (review-based overlay)",
+	Long: `Drive the review overlay: list the review queue, inspect a
 gated block run's output history, post corrections, and submit a verdict
 (approve / reject).
 

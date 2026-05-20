@@ -1051,9 +1051,8 @@ func (s *WorkflowRunsService) Restart(ctx context.Context, runID string, request
 	return &run, err
 }
 
-// The v1 HIL decision surface (SubmitHILDecision / GetHILDecision /
-// GetAgentHILReview) was removed in the hard cutover to the review overlay.
-// Drive human-in-the-loop reviews through WorkflowReviewsService instead —
+// The v1 decision surface was removed in the hard cutover to the review
+// overlay. Drive review decisions through WorkflowReviewsService instead;
 // see Workflows.Reviews.
 
 func (s *WorkflowRunsService) GetConfig(ctx context.Context, runID string, opts ...RequestOption) (map[string]any, error) {
@@ -1174,7 +1173,7 @@ func (s *WorkflowRunStepsService) Get(ctx context.Context, runID string, blockID
 	return &step, err
 }
 
-// WorkflowReviewsService drives the HIL review overlay — the actor-neutral
+// WorkflowReviewsService drives the review overlay — the actor-neutral
 // review loop served under /workflows/reviews. A proposal authored by a
 // model, an agent, or a human flows through the SAME Approve/Edit pair;
 // ReviewActor.Kind is data on the overlay, never a behavioral switch.

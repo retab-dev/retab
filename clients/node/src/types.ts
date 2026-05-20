@@ -755,7 +755,7 @@ export type WorkflowRunStatus =
   | 'running'
   | 'completed'
   | 'error'
-  | 'waiting_for_human'
+  | 'awaiting_review'
   | 'cancelled';
 
 export type WorkflowRunTriggerType =
@@ -880,7 +880,7 @@ export const ZBlockSimulation = z
 export type BlockSimulation = z.infer<typeof ZBlockSimulation>;
 
 // ---------------------------------------------------------------------------
-// Workflow HIL review overlay (served under /workflows/reviews)
+// Workflow review overlay (served under /workflows/reviews)
 //
 // A versioned sidecar attached to a gated workflow block run. Actor-neutral by
 // construction: a proposal authored by a model, an agent, or a human all flow

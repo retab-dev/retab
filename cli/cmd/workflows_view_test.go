@@ -71,7 +71,7 @@ func TestRenderWorkflowASCIIViewBranchingWorkflowPreservesVerticalShape(t *testi
 		Blocks: []retab.WorkflowBlock{
 			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 220},
 			{ID: "route", Type: "conditional", Label: "Route invoice", PositionX: 400, PositionY: 220},
-			{ID: "review", Type: "hil", Label: "Manual review", PositionX: 900, PositionY: 0},
+			{ID: "review", Type: "review", Label: "Manual review", PositionX: 900, PositionY: 0},
 			{ID: "archive", Type: "api_call", Label: "Archive clean invoice", PositionX: 900, PositionY: 440},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
@@ -107,7 +107,7 @@ func TestRenderWorkflowASCIIViewMergedWorkflowKeepsVisualColumns(t *testing.T) {
 			{ID: "invoice", Type: "extract", Label: "Invoice fields", PositionX: 740, PositionY: 0},
 			{ID: "po", Type: "extract", Label: "PO fields", PositionX: 740, PositionY: 440},
 			{ID: "match", Type: "function", Label: "Match records", PositionX: 1120, PositionY: 220},
-			{ID: "approve", Type: "hil", Label: "Approve exception", PositionX: 1500, PositionY: 0},
+			{ID: "approve", Type: "review", Label: "Approve exception", PositionX: 1500, PositionY: 0},
 			{ID: "export", Type: "api_call", Label: "Export result", PositionX: 1500, PositionY: 440},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
@@ -182,7 +182,7 @@ func TestRenderWorkflowASCIIViewReportsIsolatedBlocks(t *testing.T) {
 		Blocks: []retab.WorkflowBlock{
 			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
 			{ID: "extract", Type: "extract", Label: "Extract", PositionX: 300, PositionY: 0},
-			{ID: "review", Type: "hil", Label: "Human Review", PositionX: 600, PositionY: 0},
+			{ID: "review", Type: "review", Label: "Human Review", PositionX: 600, PositionY: 0},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
 			{ID: "edge_start_extract", SourceBlock: "start", TargetBlock: "extract"},

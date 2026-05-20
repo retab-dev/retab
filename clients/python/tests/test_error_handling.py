@@ -1,7 +1,9 @@
 """Unit tests for SDK error handling: APIError formatting, structured parsing, and retry behavior."""
 
 import json
+from typing import cast
 
+import backoff.types
 import httpx
 import pytest
 
@@ -281,13 +283,15 @@ def _validate(response: httpx.Response) -> APIError:
 
 
 def test_validate_structured_json_detail_dict():
-    body = json.dumps({
-        "detail": {
-            "code": "INVALID_SCHEMA",
-            "message": "Schema validation failed",
-            "details": {"field": "json_schema"},
+    body = json.dumps(
+        {
+            "detail": {
+                "code": "INVALID_SCHEMA",
+                "message": "Schema validation failed",
+                "details": {"field": "json_schema"},
+            }
         }
-    })
+    )
     resp = _make_mock_response(422, body)
     err = _validate(resp)
     assert isinstance(err, ValidationError)
@@ -389,7 +393,7 @@ def test_raise_max_tries_preserves_api_error():
         url="/v1/extract",
         request_id="req_1",
     )
-    details = {"exception": original, "tries": 4}
+    details = cast(backoff.types.Details, {"exception": original, "tries": 4})
 
     with pytest.raises(InternalServerError) as exc_info:
         raise_max_tries_exceeded(details)
@@ -406,7 +410,7 @@ def test_raise_max_tries_wraps_non_api_error():
     from retab.client import raise_max_tries_exceeded
 
     original = ConnectionError("refused")
-    details = {"exception": original, "tries": 3}
+    details = cast(backoff.types.Details, {"exception": original, "tries": 3})
 
     with pytest.raises(Exception, match="Max tries exceeded after 3 tries"):
         raise_max_tries_exceeded(details)
@@ -415,7 +419,7 @@ def test_raise_max_tries_wraps_non_api_error():
 def test_raise_max_tries_no_exception():
     from retab.client import raise_max_tries_exceeded
 
-    details = {"tries": 2}
+    details = cast(backoff.types.Details, {"tries": 2})
 
     with pytest.raises(Exception, match="Max tries exceeded after 2 tries"):
         raise_max_tries_exceeded(details)

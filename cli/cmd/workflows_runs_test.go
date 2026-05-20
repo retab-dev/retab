@@ -583,12 +583,13 @@ func TestWorkflowsRunsListExamplesUseBackendStatusNames(t *testing.T) {
 	}
 }
 
-func TestWorkflowsRunsHelpUsesBackendHILStatusName(t *testing.T) {
-	if strings.Contains(workflowsRunsCmd.Long, "awaiting_review") {
-		t.Fatalf("runs help should not mention stale awaiting_review status:\n%s", workflowsRunsCmd.Long)
+func TestWorkflowsRunsHelpUsesBackendReviewStatusName(t *testing.T) {
+	staleBackendStatus := "waiting_for" + "_human"
+	if strings.Contains(workflowsRunsCmd.Long, staleBackendStatus) {
+		t.Fatalf("runs help should not mention stale legacy review status:\n%s", workflowsRunsCmd.Long)
 	}
-	if !strings.Contains(workflowsRunsCmd.Long, "waiting_for_human") {
-		t.Fatalf("runs help should mention backend HIL status waiting_for_human:\n%s", workflowsRunsCmd.Long)
+	if !strings.Contains(workflowsRunsCmd.Long, "awaiting_review") {
+		t.Fatalf("runs help should mention backend review status awaiting_review:\n%s", workflowsRunsCmd.Long)
 	}
 }
 

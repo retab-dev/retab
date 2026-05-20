@@ -1202,7 +1202,7 @@ export const ZHilEvaluation = z.lazy(() =>
     created_at: z.string(),
   })
 );
-export type HilEvaluation = z.infer<typeof ZHilEvaluation>;
+export type ReviewEvaluation = z.infer<typeof ZHilEvaluation>;
 
 export const ZErrorDetails = z.lazy(() =>
   z.object({
@@ -1236,7 +1236,7 @@ export const ZCompletedStepLifecycle = z.object({
 export type CompletedStepLifecycle = z.infer<typeof ZCompletedStepLifecycle>;
 
 export const ZWaitingForHumanStepLifecycle = z.object({
-  status: z.literal('waiting_for_human').default('waiting_for_human'),
+  status: z.literal('awaiting_review').default('awaiting_review'),
 });
 export type WaitingForHumanStepLifecycle = z.infer<typeof ZWaitingForHumanStepLifecycle>;
 
@@ -1292,7 +1292,7 @@ export const ZStepArtifactRef = z.lazy(() =>
       z.literal('edit'),
       z.literal('partition'),
       z.literal('conditional_evaluation'),
-      z.literal('hil_evaluation'),
+      z.literal('review_trigger_evaluation'),
       z.literal('while_loop_termination'),
       z.literal('api_call_invocation'),
       z.literal('function_invocation'),
@@ -1519,7 +1519,7 @@ export const ZRunningRun = z.object({
 export type RunningRun = z.infer<typeof ZRunningRun>;
 
 export const ZWaitingForHumanRun = z.object({
-  status: z.literal('waiting_for_human').default('waiting_for_human'),
+  status: z.literal('awaiting_review').default('awaiting_review'),
   waiting_for_block_ids: z.array(z.string()).default([]),
 });
 export type WaitingForHumanRun = z.infer<typeof ZWaitingForHumanRun>;
@@ -1560,8 +1560,8 @@ export const ZRunTiming = z.lazy(() =>
     created_at: z.string(),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
-    human_waiting_started_at: z.string().nullable().optional(),
-    accumulated_human_waiting_ms: z.number().default(0),
+    review_waiting_started_at: z.string().nullable().optional(),
+    accumulated_review_waiting_ms: z.number().default(0),
   })
 );
 export type RunTiming = z.infer<typeof ZRunTiming>;
@@ -1659,7 +1659,7 @@ export const ZRunCountsResponse = z.lazy(() =>
     running: z.number().default(0),
     error: z.number().default(0),
     pending: z.number().default(0),
-    waiting_for_human: z.number().default(0),
+    awaiting_review: z.number().default(0),
     cancelled: z.number().default(0),
   })
 );

@@ -79,7 +79,7 @@ edges:
 
 Workflow steps expose `artifact` as a stable `{operation, id}` pointer. Use
 `client.workflows.artifacts` to fetch the persisted record behind that pointer,
-including HIL evaluations, conditional matches, function outputs, and API-call
+including review evaluations, conditional matches, function outputs, and API-call
 attempts.
 
 ```python
@@ -88,7 +88,7 @@ run = client.workflows.runs.create_and_wait(
     documents={"start-node": "invoice.pdf"},
 )
 
-step = client.workflows.runs.steps.get(run.id, "gated-block-id")
+step = client.workflows.runs.steps.get(run.id, "review-node")
 if step.artifact:
     artifact = client.workflows.artifacts.get(step.artifact)
     print(artifact.operation)

@@ -79,12 +79,12 @@ func parseWorkflowRunConfigSource(value string) (string, error) {
 }
 
 var allowedWorkflowRunStatuses = map[string]bool{
-	"pending":           true,
-	"running":           true,
-	"completed":         true,
-	"error":             true,
-	"waiting_for_human": true,
-	"cancelled":         true,
+	"pending":         true,
+	"running":         true,
+	"completed":       true,
+	"error":           true,
+	"awaiting_review": true,
+	"cancelled":       true,
 }
 
 var allowedWorkflowRunTriggerTypes = map[string]bool{
@@ -101,7 +101,7 @@ var allowedWorkflowRunExportSources = map[string]bool{
 	"inputs":  true,
 }
 
-const workflowRunStatusValues = "pending, running, completed, error, waiting_for_human, cancelled"
+const workflowRunStatusValues = "pending, running, completed, error, awaiting_review, cancelled"
 const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, email, restart"
 const workflowRunExportSourceValues = "outputs, inputs"
 
@@ -178,8 +178,8 @@ subgroup to start runs (` + "`create`" + `), watch their lifecycle
 (` + "`get`" + `, ` + "`steps list`" + `), or restart failed runs
 (` + "`restart`" + `).
 
-Human-in-the-loop: when a gated block pauses a run it enters status
-` + "`waiting_for_human`" + `. Decide gated block runs with the sibling
+review-based: when a gated block pauses a run it enters status
+` + "`awaiting_review`" + `. Decide gated block runs with the sibling
 ` + "`retab workflows reviews`" + ` command group —
 ` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
 a paused block run, then ` + "`reviews approve`" + ` / ` + "`reject`" + ` to
@@ -580,8 +580,8 @@ or ` + "`--command-id`" + ` for idempotency.`,
 	}),
 }
 
-// The v1 step-level decision commands were removed in the hard cutover to the
-// review overlay — see `workflows reviews`.
+// The v1 review commands (submit-review / get-review / get-agent-review) were removed in
+// the hard cutover to the review overlay — see `workflows reviews`.
 
 var workflowsRunsConfigCmd = &cobra.Command{
 	Use:   "config <run-id>",

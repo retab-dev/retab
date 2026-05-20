@@ -123,7 +123,7 @@ var workflowsCmd = &cobra.Command{
 	Long: `Build and run multi-step document-processing pipelines.
 
 A workflow is a DAG of blocks (` + "`extract`" + `, ` + "`split`" + `,
-` + "`classifier`" + `, ` + "`edit`" + `, ` + "`conditional`" + `,
+` + "`classify`" + `, ` + "`edit`" + `, ` + "`review`" + `, ` + "`conditional`" + `,
 ` + "`api_call`" + `, ` + "`function`" + `, …) wired together by edges. Documents
 or JSON inputs flow through the graph; each block contributes to the final
 output. Workflows are versioned — drafts are mutable, published versions are
