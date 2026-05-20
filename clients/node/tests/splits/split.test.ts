@@ -100,4 +100,26 @@ describe('Node SDK splits resource', () => {
       headers: undefined,
     });
   });
+
+  test('splits.create defaults partition subdocument allow_overlap to true', async () => {
+    const mockClient = new MockClient();
+    const client = new APIV1(mockClient);
+
+    await client.splits.create({
+      document: SAMPLE_DOCUMENT,
+      model: 'retab-small',
+      subdocuments: [
+        {
+          name: 'invoice',
+          description: 'invoice pages',
+          partition_key: 'invoice_number',
+        },
+      ],
+    });
+
+    const subdocuments = mockClient.requests[0]?.body?.subdocuments as
+      | Record<string, unknown>[]
+      | undefined;
+    expect(subdocuments?.[0]?.allow_overlap).toBe(true);
+  });
 });

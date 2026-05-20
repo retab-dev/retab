@@ -47,6 +47,16 @@ def _split_subdocuments() -> list[Subdocument]:
     ]
 
 
+def test_split_subdocument_defaults_allow_overlap_to_true() -> None:
+    subdocument = Subdocument(
+        name="invoice",
+        description="Invoice pages",
+        partition_key="invoice_number",
+    )
+
+    assert subdocument.allow_overlap is True
+
+
 def _fidelity_form_path() -> str:
     return os.path.join(TEST_DIR, "data", "edit", "fidelity_original.pdf")
 

@@ -748,7 +748,7 @@ export const ZSubdocument = z.lazy(() =>
     name: z.string(),
     description: z.string().default(''),
     partition_key: z.string().nullable().optional(),
-    allow_overlap: z.boolean().default(false),
+    allow_overlap: z.boolean().default(true),
     allow_multiple_instances: z.boolean().default(false),
   })
 );
@@ -2580,7 +2580,7 @@ export const ZSplitSubdocument = z.lazy(() =>
     name: z.string(),
     description: z.string().default(''),
     partition_key: z.string().nullable().optional(),
-    allow_overlap: z.boolean().default(false),
+    allow_overlap: z.boolean().default(true),
     allow_multiple_instances: z.boolean().default(false),
   })
 );
@@ -2765,7 +2765,7 @@ export const ZSplitV2Subdocument = z.lazy(() =>
     name: z.string(),
     description: z.string().default(''),
     partition_key: z.string().nullable().optional(),
-    allow_overlap: z.boolean().default(false),
+    allow_overlap: z.boolean().default(true),
     allow_multiple_instances: z.boolean().default(false),
   })
 );
