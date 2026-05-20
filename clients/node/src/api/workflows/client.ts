@@ -364,12 +364,12 @@ export default class APIWorkflows extends CompositionClient {
     }
 
     /**
-     * Diagnose the workflow's draft graph for structural issues.
+     * Diagnose the workflow's draft graph for structural/config issues.
      *
      * Fetches the persisted draft entities first (via `getEntities`) and
      * POSTs them to `/v1/workflows/{workflow_id}/diagnose-graph`. Returns
      * a list of `issues` (errors must be fixed before publish; warnings
-     * are advisory) and `stats`.
+     * cover incomplete config and human-review guidance) and `stats`.
      *
      * To diagnose an in-memory editor graph that hasn't been saved yet,
      * call `diagnoseGraph` directly with your own `blocks` / `edges`.

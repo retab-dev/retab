@@ -568,9 +568,9 @@ For a single block, prefer ` + "`workflows blocks resolved-schemas`" + `.`,
 var workflowsDiagnoseCmd = &cobra.Command{
 	Use:   "diagnose <workflow-id>",
 	Short: "Diagnose the persisted draft graph (use --graph-file to send an in-memory graph)",
-	Long: `Validate a workflow's draft graph and report structural issues:
-disconnected blocks, type mismatches across edges, missing required
-config, unreachable paths.
+	Long: `Validate a workflow's draft graph and report structural/config issues:
+disconnected blocks, type mismatches across edges, incomplete configs,
+human-review gate warnings, unreachable paths.
 
 By default diagnoses the persisted draft. Pass ` + "`--graph-file`" + ` to
 diagnose an in-memory graph (e.g. before persisting changes) — the file

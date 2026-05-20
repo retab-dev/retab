@@ -174,6 +174,54 @@ func TestWorkflowsPrepareDiagnoseMatchesPythonSurface(t *testing.T) {
 	}
 }
 
+func TestWorkflowsDiagnoseGraphDecodesWarningOnlyIssues(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/diagnose-graph" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"is_valid": true,
+			"issues": []map[string]any{
+				{
+					"severity": "warning",
+					"code":     "MISSING_HIL_PREDICATE",
+					"message":  "Review gate needs a predicate",
+					"block_id": "extract_1",
+				},
+			},
+			"suggestions": []string{},
+			"stats": map[string]any{
+				"total_blocks": 1,
+				"total_edges":  0,
+				"block_types":  map[string]int{"start": 1},
+				"start_blocks": 1,
+			},
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	diagnosis, err := client.Workflows.DiagnoseGraph(context.Background(), "wf_123", DiagnoseWorkflowGraphRequest{
+		Blocks:      []map[string]any{{"id": "start-1", "type": "start"}},
+		Edges:       []map[string]any{},
+		RePropagate: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !diagnosis.IsValid || len(diagnosis.Issues) != 1 {
+		t.Fatalf("diagnosis = %#v", diagnosis)
+	}
+	if diagnosis.Issues[0].Severity != "warning" || diagnosis.Issues[0].Code != "MISSING_HIL_PREDICATE" {
+		t.Fatalf("issue = %#v", diagnosis.Issues[0])
+	}
+}
+
 func TestWorkflowSpecsRoutesMatchPythonAndNode(t *testing.T) {
 	var requests []string
 	var validateBody map[string]any

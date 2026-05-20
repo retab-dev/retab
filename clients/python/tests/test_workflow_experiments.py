@@ -595,7 +595,14 @@ def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
     }
     diagnose_payload = {
         "is_valid": True,
-        "issues": [],
+        "issues": [
+            {
+                "severity": "warning",
+                "code": "MISSING_HIL_PREDICATE",
+                "message": "Review gate needs a predicate",
+                "block_id": "extract_1",
+            }
+        ],
         "suggestions": [],
         "stats": {
             "total_blocks": 1,
@@ -611,6 +618,8 @@ def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
     result = Workflows(client=client).diagnose("wf_abc123")
 
     assert result.is_valid is True
+    assert result.issues[0].severity == "warning"
+    assert result.issues[0].code == "MISSING_HIL_PREDICATE"
     # Verify the second call was the diagnose-graph POST with the
     # unsaved-shape blocks/edges payload the backend expects.
     diagnose_call = client._prepared_request.call_args_list[1].args[0]

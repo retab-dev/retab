@@ -272,7 +272,7 @@ func (s *WorkflowsService) PrepareDiagnose(workflowID string, blocks []map[strin
 	})
 }
 
-// Diagnose runs the structural diagnosis on the persisted draft graph.
+// Diagnose runs structural/config diagnosis on the persisted draft graph.
 // It fetches workflow entities first, then POSTs them to diagnose-graph.
 //
 // To diagnose an in-memory graph that hasn't been saved, call DiagnoseGraph
