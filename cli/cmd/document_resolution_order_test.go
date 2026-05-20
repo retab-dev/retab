@@ -688,7 +688,7 @@ func TestPartitionCreateForwardsAllowOverlapFlag(t *testing.T) {
 	cmd.Flags().String("model", "", "")
 	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "")
 	cmd.Flags().Bool("bust-cache", false, "")
-	cmd.Flags().Bool("allow-overlap", false, "")
+	cmd.Flags().Bool("allow-overlap", true, "")
 
 	_ = cmd.Flags().Set("file-id", "file_123")
 	_ = cmd.Flags().Set("key", "invoice_number")
@@ -700,6 +700,62 @@ func TestPartitionCreateForwardsAllowOverlapFlag(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got, _ := capturedBody["allow_overlap"].(bool); got != true {
+		t.Fatalf("allow_overlap = %#v", capturedBody["allow_overlap"])
+	}
+}
+
+func TestPartitionCreateForwardsExplicitFalseAllowOverlapFlag(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var capturedBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/files/file_123/download-link":
+			_, _ = fmt.Fprint(w, `{"download_url":"https://storage.example.com/file_123.pdf","filename":"file.pdf"}`)
+		case r.Method == http.MethodPost && r.URL.Path == "/partitions":
+			defer r.Body.Close()
+			if err := json.NewDecoder(r.Body).Decode(&capturedBody); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			_, _ = fmt.Fprint(w, `{
+				"id":"prtn_123",
+				"file":{"id":"file_123","filename":"file.pdf","mime_type":"application/pdf"},
+				"model":"retab-small",
+				"key":"invoice_number",
+				"instructions":"split invoices",
+				"n_consensus":1,
+				"allow_overlap":false,
+				"output":[],
+				"consensus":{"choices":[],"likelihoods":null}
+			}`)
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "test-partition", RunE: partitionsCreateCmd.RunE}
+	addDocumentFlags(cmd)
+	cmd.Flags().String("key", "", "")
+	cmd.Flags().String("instructions", "", "")
+	cmd.Flags().String("model", "", "")
+	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "")
+	cmd.Flags().Bool("bust-cache", false, "")
+	cmd.Flags().Bool("allow-overlap", true, "")
+
+	_ = cmd.Flags().Set("file-id", "file_123")
+	_ = cmd.Flags().Set("key", "invoice_number")
+	_ = cmd.Flags().Set("instructions", "split invoices")
+	_ = cmd.Flags().Set("model", "retab-small")
+	_ = cmd.Flags().Set("allow-overlap", "false")
+
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := capturedBody["allow_overlap"].(bool); !ok || got {
 		t.Fatalf("allow_overlap = %#v", capturedBody["allow_overlap"])
 	}
 }
