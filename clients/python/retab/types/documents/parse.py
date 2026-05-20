@@ -4,13 +4,13 @@ from retab.types.base import RetabBaseModel
 
 from ..mime import MIMEData, FileRef
 from .usage import RetabUsage
+
 TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
-
-
 
 
 class ParseRequest(RetabBaseModel):
     """Request model for document parsing."""
+
     model_config = ConfigDict(extra="ignore")
 
     document: MIMEData = Field(..., description="Document to parse")

@@ -50,6 +50,7 @@ class SplitResult(RetabBaseModel):
     name: str = Field(..., description="The name of the subdocument")
     pages: list[int] = Field(..., description="The pages of the subdocument (1-indexed)")
 
+
 class SplitSubdocumentLikelihood(RetabBaseModel):
     name: float | None = Field(default=None, description="Confidence that this split label is correct")
     pages: list[float] = Field(

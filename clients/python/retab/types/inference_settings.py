@@ -14,6 +14,6 @@ class InferenceSettings(RetabBaseModel):
     n_consensus: int = Field(default=1, ge=1, le=8, description="Number of consensus rounds to perform")
     model_config = ConfigDict(extra="ignore")
 
+
 class ExtractionSettings(InferenceSettings):
     json_schema: dict[str, Any] = Field(..., description="JSON schema format used to validate the output data.")
-    

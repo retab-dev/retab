@@ -68,6 +68,7 @@ SUPPORTED_TYPES = Literal[EXCEL_TYPES, WORD_TYPES, PPT_TYPES, PDF_TYPES, IMAGE_T
 
 T = TypeVar("T")
 
+
 def convert_pil_image_to_mime_data(image: PIL.Image.Image) -> MIMEData:
     """Convert a PIL Image object to a MIMEData object.
 

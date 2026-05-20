@@ -23,7 +23,7 @@ class EditTemplate(RetabBaseModel):
 
 class CreateEditTemplateRequest(RetabBaseModel):
     """Request model for creating an edit template."""
-    
+
     name: str = Field(..., description="Name of the template")
     document: MIMEData = Field(..., description="The PDF document to use as the template")
     form_fields: list[FormField] = Field(..., description="List of form fields in the template")
@@ -31,14 +31,14 @@ class CreateEditTemplateRequest(RetabBaseModel):
 
 class UpdateEditTemplateRequest(RetabBaseModel):
     """Request model for updating an edit template."""
-    
+
     name: Optional[str] = Field(default=None, description="Name of the template")
     form_fields: Optional[list[FormField]] = Field(default=None, description="List of form fields")
 
 
 class DuplicateEditTemplateRequest(RetabBaseModel):
     """Request model for duplicating an edit template."""
-    
+
     name: Optional[str] = Field(default=None, description="Name for the duplicated template")
 
 
@@ -46,7 +46,11 @@ class FillTemplateRequest(RetabBaseModel):
     """Request for the fill endpoint.
     Uses pre-defined form fields from the template (PDF only)
     """
+
     model: str = Field(default="retab-small", description="LLM model to use for inference")
     instructions: str = Field(..., description="Instructions to fill the form")
-    template_id: str = Field(..., description="Template ID to use for filling. When provided, uses the template's pre-defined form fields and empty PDF. Only works for PDF documents. Mutually exclusive with document.")
+    template_id: str = Field(
+        ...,
+        description="Template ID to use for filling. When provided, uses the template's pre-defined form fields and empty PDF. Only works for PDF documents. Mutually exclusive with document.",
+    )
     config: EditConfig = Field(default_factory=EditConfig, description="Configuration for the fill request")

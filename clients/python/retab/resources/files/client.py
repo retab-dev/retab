@@ -108,9 +108,7 @@ async def _async_file_chunks(file_obj: IOBase):
         yield chunk
 
 
-
 class Files(SyncAPIResource, FilesMixin):
-
     def upload(self, mime_data: FileUploadInput) -> UploadFileResponse:
         if isinstance(mime_data, Path) or (isinstance(mime_data, str) and not _is_remote_string(mime_data)):
             path = Path(mime_data)
@@ -133,14 +131,16 @@ class Files(SyncAPIResource, FilesMixin):
 
     def _upload_file_obj(self, file_obj: IOBase, filename: str, content_type: str) -> dict[str, Any]:
         size_bytes, sha256 = _file_size_and_sha256(file_obj)
-        session = CreateUploadResponse(**self._client._prepared_request(
-            self.prepare_upload(
-                filename=filename,
-                content_type=content_type,
-                size_bytes=size_bytes,
-                sha256=sha256,
+        session = CreateUploadResponse(
+            **self._client._prepared_request(
+                self.prepare_upload(
+                    filename=filename,
+                    content_type=content_type,
+                    size_bytes=size_bytes,
+                    sha256=sha256,
+                )
             )
-        ))
+        )
         file_obj.seek(0)
         upload_response = self._client.client.put(
             session.upload_url,
@@ -175,9 +175,7 @@ class Files(SyncAPIResource, FilesMixin):
         return FileLink(**response)
 
 
-
 class AsyncFiles(AsyncAPIResource, FilesMixin):
-
     async def upload(self, mime_data: FileUploadInput) -> UploadFileResponse:
         if isinstance(mime_data, Path) or (isinstance(mime_data, str) and not _is_remote_string(mime_data)):
             path = Path(mime_data)
@@ -202,14 +200,16 @@ class AsyncFiles(AsyncAPIResource, FilesMixin):
         import asyncio
 
         size_bytes, sha256 = await asyncio.to_thread(_file_size_and_sha256, file_obj)
-        session = CreateUploadResponse(**await self._client._prepared_request(
-            self.prepare_upload(
-                filename=filename,
-                content_type=content_type,
-                size_bytes=size_bytes,
-                sha256=sha256,
+        session = CreateUploadResponse(
+            **await self._client._prepared_request(
+                self.prepare_upload(
+                    filename=filename,
+                    content_type=content_type,
+                    size_bytes=size_bytes,
+                    sha256=sha256,
+                )
             )
-        ))
+        )
         file_obj.seek(0)
         upload_response = await self._client.client.put(
             session.upload_url,

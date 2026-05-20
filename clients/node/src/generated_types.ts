@@ -1,23 +1,34 @@
 import * as z from 'zod';
 
-export const ZAttachmentMIMEData = z.lazy(() => (ZMIMEData.schema).merge(z.object({
-    metadata: ZAttachmentMetadata.default({}),
-})));
+export const ZAttachmentMIMEData = z.lazy(() =>
+  ZMIMEData.schema.merge(
+    z.object({
+      metadata: ZAttachmentMetadata.default({}),
+    })
+  )
+);
 export type AttachmentMIMEData = z.infer<typeof ZAttachmentMIMEData>;
 
-export const ZAttachmentMetadata = z.lazy(() => (z.object({
+export const ZAttachmentMetadata = z.lazy(() =>
+  z.object({
     is_inline: z.boolean().default(false),
     inline_cid: z.string().nullable().optional(),
     source: z.string().nullable().optional(),
-})));
+  })
+);
 export type AttachmentMetadata = z.infer<typeof ZAttachmentMetadata>;
 
-export const ZBaseAttachmentMIMEData = z.lazy(() => (ZFileRef.schema).merge(z.object({
-    metadata: ZAttachmentMetadata.default({}),
-})));
+export const ZBaseAttachmentMIMEData = z.lazy(() =>
+  ZFileRef.schema.merge(
+    z.object({
+      metadata: ZAttachmentMetadata.default({}),
+    })
+  )
+);
 export type BaseAttachmentMIMEData = z.infer<typeof ZBaseAttachmentMIMEData>;
 
-export const ZBaseEmailData = z.lazy(() => (z.object({
+export const ZBaseEmailData = z.lazy(() =>
+  z.object({
     id: z.string(),
     tree_id: z.string(),
     subject: z.string().nullable().optional(),
@@ -34,110 +45,137 @@ export const ZBaseEmailData = z.lazy(() => (z.object({
     headers: z.record(z.string(), z.string()).default({}),
     url: z.string().nullable().optional(),
     attachments: z.array(ZBaseAttachmentMIMEData).default([]),
-})));
+  })
+);
 export type BaseEmailData = z.infer<typeof ZBaseEmailData>;
 
-export const ZEmailAddressData = z.lazy(() => (z.object({
+export const ZEmailAddressData = z.lazy(() =>
+  z.object({
     email: z.string(),
     display_name: z.string().nullable().optional(),
-})));
+  })
+);
 export type EmailAddressData = z.infer<typeof ZEmailAddressData>;
 
-export const ZEmailData = z.lazy(() => (ZBaseEmailData.schema).merge(z.object({
-    attachments: z.array(ZAttachmentMIMEData).default([]),
-})));
+export const ZEmailData = z.lazy(() =>
+  ZBaseEmailData.schema.merge(
+    z.object({
+      attachments: z.array(ZAttachmentMIMEData).default([]),
+    })
+  )
+);
 export type EmailData = z.infer<typeof ZEmailData>;
 
-export const ZFileRef = z.lazy(() => (z.object({
+export const ZFileRef = z.lazy(() =>
+  z.object({
     id: z.string(),
     filename: z.string(),
     mime_type: z.string(),
-})));
+  })
+);
 export type FileRef = z.infer<typeof ZFileRef>;
 
-export const ZMIMEData = z.lazy(() => (z.object({
+export const ZMIMEData = z.lazy(() =>
+  z.object({
     filename: z.string(),
     url: z.string(),
-})));
+  })
+);
 export type MIMEData = z.infer<typeof ZMIMEData>;
 
-export const ZMatrix = z.lazy(() => (z.object({
+export const ZMatrix = z.lazy(() =>
+  z.object({
     rows: z.number(),
     cols: z.number(),
     type_: z.number(),
     data: z.string(),
-})));
+  })
+);
 export type Matrix = z.infer<typeof ZMatrix>;
 
-export const ZOCR = z.lazy(() => (z.object({
+export const ZOCR = z.lazy(() =>
+  z.object({
     pages: z.array(ZPage),
-})));
+  })
+);
 export type OCR = z.infer<typeof ZOCR>;
 
-export const ZPage = z.lazy(() => (z.object({
+export const ZPage = z.lazy(() =>
+  z.object({
     page_number: z.number(),
     width: z.number(),
     height: z.number(),
-    unit: z.string().default("pixels"),
+    unit: z.string().default('pixels'),
     blocks: z.array(ZTextBox),
     lines: z.array(ZTextBox),
     tokens: z.array(ZTextBox),
     transforms: z.array(ZMatrix).default([]),
-})));
+  })
+);
 export type Page = z.infer<typeof ZPage>;
 
-export const ZPoint = z.lazy(() => (z.object({
+export const ZPoint = z.lazy(() =>
+  z.object({
     x: z.number(),
     y: z.number(),
-})));
+  })
+);
 export type Point = z.infer<typeof ZPoint>;
 
-export const ZTextBox = z.lazy(() => (z.object({
+export const ZTextBox = z.lazy(() =>
+  z.object({
     width: z.number(),
     height: z.number(),
     center: ZPoint,
     vertices: z.tuple([ZPoint, ZPoint, ZPoint, ZPoint]),
     text: z.string(),
-})));
+  })
+);
 export type TextBox = z.infer<typeof ZTextBox>;
 
-export const ZCreateUploadResponse = z.lazy(() => (z.object({
+export const ZCreateUploadResponse = z.lazy(() =>
+  z.object({
     file_id: z.string(),
     upload_url: z.string(),
-    upload_method: z.string().default("PUT"),
+    upload_method: z.string().default('PUT'),
     upload_headers: z.record(z.string(), z.string()),
     mime_data: ZMIMEData,
     expires_at: z.string(),
-})));
+  })
+);
 export type CreateUploadResponse = z.infer<typeof ZCreateUploadResponse>;
 
-export const ZFile = z.lazy(() => (z.object({
-    object: z.literal("file").default("file"),
+export const ZFile = z.lazy(() =>
+  z.object({
+    object: z.literal('file').default('file'),
     id: z.string(),
     filename: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
     page_count: z.number().nullable().optional(),
-})));
+  })
+);
 export type File = z.infer<typeof ZFile>;
 
-export const ZFileLink = z.lazy(() => (z.object({
+export const ZFileLink = z.lazy(() =>
+  z.object({
     download_url: z.string(),
     expires_in: z.string(),
     filename: z.string(),
-})));
+  })
+);
 export type FileLink = z.infer<typeof ZFileLink>;
 
-export const ZUploadFileResponse = z.lazy(() => (ZMIMEData.schema).merge(z.object({
-})));
+export const ZUploadFileResponse = z.lazy(() => ZMIMEData.schema.merge(z.object({})));
 export type UploadFileResponse = z.infer<typeof ZUploadFileResponse>;
 
-export const ZPartition = z.lazy(() => (z.object({
+export const ZPartition = z.lazy(() =>
+  z.object({
     id: z.string(),
     file: ZFileRef,
     model: z.string(),
     key: z.string(),
-    instructions: z.string().default(""),
+    instructions: z.string().default(''),
     n_consensus: z.number().default(1),
     allow_overlap: z.boolean().default(false),
     output: z.array(ZPartitionChunk),
@@ -146,56 +184,72 @@ export const ZPartition = z.lazy(() => (z.object({
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type Partition = z.infer<typeof ZPartition>;
 
-export const ZPartitionChunk = z.lazy(() => (z.object({
+export const ZPartitionChunk = z.lazy(() =>
+  z.object({
     key: z.string(),
     pages: z.array(z.number()),
-})));
+  })
+);
 export type PartitionChunk = z.infer<typeof ZPartitionChunk>;
 
-export const ZPartitionChunkLikelihood = z.lazy(() => (z.object({
+export const ZPartitionChunkLikelihood = z.lazy(() =>
+  z.object({
     key: z.number().nullable().optional(),
     pages: z.array(z.number()),
-})));
+  })
+);
 export type PartitionChunkLikelihood = z.infer<typeof ZPartitionChunkLikelihood>;
 
-export const ZPartitionConsensus = z.lazy(() => (z.object({
+export const ZPartitionConsensus = z.lazy(() =>
+  z.object({
     choices: z.array(z.array(ZPartitionChunk)),
     likelihoods: z.array(ZPartitionChunkLikelihood).nullable().optional(),
-})));
+  })
+);
 export type PartitionConsensus = z.infer<typeof ZPartitionConsensus>;
 
-export const ZPartitionRequest = z.lazy(() => (z.object({
+export const ZPartitionRequest = z.lazy(() =>
+  z.object({
     document: z.union([ZMIMEData, ZFileRef]),
     key: z.string(),
     instructions: z.string(),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
     allow_overlap: z.boolean().default(false),
-})));
+  })
+);
 export type PartitionRequest = z.infer<typeof ZPartitionRequest>;
 
-export const ZProcessingRequestOrigin = z.lazy(() => (z.object({
+export const ZProcessingRequestOrigin = z.lazy(() =>
+  z.object({
     type: z.string(),
     id: z.string().nullable().optional(),
-})));
+  })
+);
 export type ProcessingRequestOrigin = z.infer<typeof ZProcessingRequestOrigin>;
 
-export const ZRetabUsage = z.lazy(() => (z.object({
+export const ZRetabUsage = z.lazy(() =>
+  z.object({
     credits: z.number(),
-})));
+  })
+);
 export type RetabUsage = z.infer<typeof ZRetabUsage>;
 
-export const ZCategory = z.lazy(() => (z.object({
+export const ZCategory = z.lazy(() =>
+  z.object({
     name: z.string(),
-    description: z.string().default(""),
-})));
+    description: z.string().default(''),
+  })
+);
 export type Category = z.infer<typeof ZCategory>;
 
-export const ZClassification = z.lazy(() => (z.object({
+export const ZClassification = z.lazy(() =>
+  z.object({
     id: z.string(),
     file: ZFileRef,
     model: z.string(),
@@ -208,33 +262,41 @@ export const ZClassification = z.lazy(() => (z.object({
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type Classification = z.infer<typeof ZClassification>;
 
-export const ZClassificationConsensus = z.lazy(() => (z.object({
+export const ZClassificationConsensus = z.lazy(() =>
+  z.object({
     choices: z.array(ZClassificationDecision),
     likelihood: z.number().nullable().optional(),
-})));
+  })
+);
 export type ClassificationConsensus = z.infer<typeof ZClassificationConsensus>;
 
-export const ZClassificationDecision = z.lazy(() => (z.object({
+export const ZClassificationDecision = z.lazy(() =>
+  z.object({
     reasoning: z.string(),
     category: z.string(),
-})));
+  })
+);
 export type ClassificationDecision = z.infer<typeof ZClassificationDecision>;
 
-export const ZClassificationRequest = z.lazy(() => (z.object({
+export const ZClassificationRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     categories: z.array(ZCategory),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     first_n_pages: z.number().nullable().optional(),
     instructions: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type ClassificationRequest = z.infer<typeof ZClassificationRequest>;
 
-export const ZExtraction = z.lazy(() => (z.object({
+export const ZExtraction = z.lazy(() =>
+  z.object({
     id: z.string(),
     file: ZFileRef,
     model: z.string(),
@@ -249,99 +311,147 @@ export const ZExtraction = z.lazy(() => (z.object({
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type Extraction = z.infer<typeof ZExtraction>;
 
-export const ZExtractionConsensus = z.lazy(() => (z.object({
+export const ZExtractionConsensus = z.lazy(() =>
+  z.object({
     choices: z.array(z.record(z.string(), z.any())),
     likelihoods: z.record(z.string(), z.any()).nullable().optional(),
-})));
+  })
+);
 export type ExtractionConsensus = z.infer<typeof ZExtractionConsensus>;
 
-export const ZExtractionRequest = z.lazy(() => (z.object({
+export const ZExtractionRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     json_schema: z.record(z.string(), z.any()),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     image_resolution_dpi: z.number().default(192),
     instructions: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
     metadata: z.record(z.string(), z.string()),
     additional_messages: z.array(z.record(z.string(), z.any())).nullable().optional(),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type ExtractionRequest = z.infer<typeof ZExtractionRequest>;
 
-export const ZSourcesResponse = z.lazy(() => (z.object({
-    object: z.literal("extraction.sources").default("extraction.sources"),
+export const ZSourcesResponse = z.lazy(() =>
+  z.object({
+    object: z.literal('extraction.sources').default('extraction.sources'),
     extraction_id: z.string(),
     document_type: z.string().nullable().optional(),
     file: ZFileRef.nullable().optional(),
     extraction: z.record(z.string(), z.any()),
     sources: z.record(z.string(), z.any()),
-})));
+  })
+);
 export type SourcesResponse = z.infer<typeof ZSourcesResponse>;
 
-export const ZDeleteResponse = z.lazy(() => (z.object({
+export const ZDeleteResponse = z.lazy(() =>
+  z.object({
     success: z.boolean(),
     id: z.string(),
-})));
+  })
+);
 export type DeleteResponse = z.infer<typeof ZDeleteResponse>;
 
-export const ZDocumentPreprocessResponseContent = z.lazy(() => (z.object({
+export const ZDocumentPreprocessResponseContent = z.lazy(() =>
+  z.object({
     messages: z.array(z.record(z.string(), z.any())),
     json_schema: z.record(z.string(), z.any()),
-})));
+  })
+);
 export type DocumentPreprocessResponseContent = z.infer<typeof ZDocumentPreprocessResponseContent>;
 
 export const ZEnum = z.lazy(() => z.any());
 export type Enum = z.infer<typeof ZEnum>;
 
-export const ZErrorDetail = z.lazy(() => (z.object({
+export const ZErrorDetail = z.lazy(() =>
+  z.object({
     code: z.string(),
     message: z.string(),
     details: z.record(z.any()).nullable().optional(),
-})));
+  })
+);
 export type ErrorDetail = z.infer<typeof ZErrorDetail>;
 
-export const ZExportResponse = z.lazy(() => (z.object({
+export const ZExportResponse = z.lazy(() =>
+  z.object({
     success: z.boolean(),
     path: z.string(),
-})));
+  })
+);
 export type ExportResponse = z.infer<typeof ZExportResponse>;
 
-export const ZPreparedRequest = z.lazy(() => (z.object({
-    method: z.union([z.literal("POST"), z.literal("GET"), z.literal("PUT"), z.literal("PATCH"), z.literal("DELETE"), z.literal("HEAD"), z.literal("OPTIONS"), z.literal("CONNECT"), z.literal("TRACE")]),
+export const ZPreparedRequest = z.lazy(() =>
+  z.object({
+    method: z.union([
+      z.literal('POST'),
+      z.literal('GET'),
+      z.literal('PUT'),
+      z.literal('PATCH'),
+      z.literal('DELETE'),
+      z.literal('HEAD'),
+      z.literal('OPTIONS'),
+      z.literal('CONNECT'),
+      z.literal('TRACE'),
+    ]),
     url: z.string(),
     data: z.any(),
     params: z.record(z.any()).nullable().optional(),
     form_data: z.record(z.any()).nullable().optional(),
-    files: z.union([z.record(z.any()), z.array(z.tuple([z.string(), z.tuple([z.string(), z.instanceof(Uint8Array), z.string()])]))]).nullable().optional(),
+    files: z
+      .union([
+        z.record(z.any()),
+        z.array(z.tuple([z.string(), z.tuple([z.string(), z.instanceof(Uint8Array), z.string()])])),
+      ])
+      .nullable()
+      .optional(),
     idempotency_key: z.string().nullable().optional(),
     raise_for_status: z.boolean().default(false),
-})));
+  })
+);
 export type PreparedRequest = z.infer<typeof ZPreparedRequest>;
 
-export const ZStandardErrorResponse = z.lazy(() => (z.object({
+export const ZStandardErrorResponse = z.lazy(() =>
+  z.object({
     detail: ZErrorDetail,
-})));
+  })
+);
 export type StandardErrorResponse = z.infer<typeof ZStandardErrorResponse>;
 
-export const ZStreamingBaseModel = z.lazy(() => (z.object({
+export const ZStreamingBaseModel = z.lazy(() =>
+  z.object({
     streaming_error: ZErrorDetail.nullable().optional(),
-})));
+  })
+);
 export type StreamingBaseModel = z.infer<typeof ZStreamingBaseModel>;
 
-export const ZCreateJobRequest = z.lazy(() => (z.object({
+export const ZCreateJobRequest = z.lazy(() =>
+  z.object({
     endpoint: z.string(),
     request: z.record(z.string(), z.any()),
     metadata: z.record(z.string(), z.string()).nullable().optional(),
-})));
+  })
+);
 export type CreateJobRequest = z.infer<typeof ZCreateJobRequest>;
 
-export const ZJob = z.lazy(() => (z.object({
+export const ZJob = z.lazy(() =>
+  z.object({
     id: z.string(),
-    object: z.literal("job").default("job"),
-    status: z.union([z.literal("validating"), z.literal("queued"), z.literal("in_progress"), z.literal("completed"), z.literal("failed"), z.literal("cancelled"), z.literal("expired")]),
+    object: z.literal('job').default('job'),
+    status: z.union([
+      z.literal('validating'),
+      z.literal('queued'),
+      z.literal('in_progress'),
+      z.literal('completed'),
+      z.literal('failed'),
+      z.literal('cancelled'),
+      z.literal('expired'),
+    ]),
     endpoint: z.string(),
     request: z.record(z.string(), z.any()).nullable().optional(),
     response: ZJobResponse.nullable().optional(),
@@ -351,72 +461,111 @@ export const ZJob = z.lazy(() => (z.object({
     completed_at: z.number().nullable().optional(),
     expires_at: z.number(),
     metadata: z.record(z.string(), z.string()).nullable().optional(),
-})));
+  })
+);
 export type Job = z.infer<typeof ZJob>;
 
-export const ZJobError = z.lazy(() => (z.object({
+export const ZJobError = z.lazy(() =>
+  z.object({
     code: z.string(),
     message: z.string(),
     details: z.record(z.string(), z.any()).nullable().optional(),
-})));
+  })
+);
 export type JobError = z.infer<typeof ZJobError>;
 
-export const ZJobListResponse = z.lazy(() => (z.object({
-    object: z.literal("list").default("list"),
+export const ZJobListResponse = z.lazy(() =>
+  z.object({
+    object: z.literal('list').default('list'),
     data: z.array(ZJob),
     first_id: z.string().nullable().optional(),
     last_id: z.string().nullable().optional(),
     has_more: z.boolean().default(false),
-})));
+  })
+);
 export type JobListResponse = z.infer<typeof ZJobListResponse>;
 
-export const ZJobResponse = z.lazy(() => (z.object({
+export const ZJobResponse = z.lazy(() =>
+  z.object({
     status_code: z.number(),
     body: z.record(z.string(), z.any()),
-})));
+  })
+);
 export type JobResponse = z.infer<typeof ZJobResponse>;
 
 export const Zstr = z.lazy(() => z.string());
 export type str = z.infer<typeof Zstr>;
 
-export const ZChatCompletionMessageFunctionToolCallParam = z.lazy(() => (z.object({
+export const ZChatCompletionMessageFunctionToolCallParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     function: ZFunction,
-    type: z.literal("function"),
-})));
-export type ChatCompletionMessageFunctionToolCallParam = z.infer<typeof ZChatCompletionMessageFunctionToolCallParam>;
+    type: z.literal('function'),
+  })
+);
+export type ChatCompletionMessageFunctionToolCallParam = z.infer<
+  typeof ZChatCompletionMessageFunctionToolCallParam
+>;
 
-export const ZChatCompletionRetabMessage = z.lazy(() => (z.object({
-    role: z.union([z.literal("user"), z.literal("system"), z.literal("assistant"), z.literal("developer"), z.literal("tool")]),
-    content: z.union([z.string(), z.array(z.union([ZChatCompletionContentPartTextParam, ZChatCompletionContentPartImageParam, ZChatCompletionContentPartInputAudioParam, ZChatCompletionContentPartParamFile]))]).nullable().optional(),
+export const ZChatCompletionRetabMessage = z.lazy(() =>
+  z.object({
+    role: z.union([
+      z.literal('user'),
+      z.literal('system'),
+      z.literal('assistant'),
+      z.literal('developer'),
+      z.literal('tool'),
+    ]),
+    content: z
+      .union([
+        z.string(),
+        z.array(
+          z.union([
+            ZChatCompletionContentPartTextParam,
+            ZChatCompletionContentPartImageParam,
+            ZChatCompletionContentPartInputAudioParam,
+            ZChatCompletionContentPartParamFile,
+          ])
+        ),
+      ])
+      .nullable()
+      .optional(),
     tool_call_id: z.string().nullable().optional(),
     tool_calls: z.array(ZChatCompletionMessageFunctionToolCallParam).nullable().optional(),
-})));
+  })
+);
 export type ChatCompletionRetabMessage = z.infer<typeof ZChatCompletionRetabMessage>;
 
-export const ZBBox = z.lazy(() => (z.object({
+export const ZBBox = z.lazy(() =>
+  z.object({
     left: z.number(),
     top: z.number(),
     width: z.number(),
     height: z.number(),
     page: z.number(),
-})));
+  })
+);
 export type BBox = z.infer<typeof ZBBox>;
 
-export const ZBaseFormField = z.lazy(() => (z.object({
+export const ZBaseFormField = z.lazy(() =>
+  z.object({
     bbox: ZBBox,
     description: z.string(),
     type: z.any(),
     key: z.string(),
-})));
+  })
+);
 export type BaseFormField = z.infer<typeof ZBaseFormField>;
 
-export const ZDuplicateEditTemplateRequest = z.lazy(() => (z.object({
+export const ZDuplicateEditTemplateRequest = z.lazy(() =>
+  z.object({
     name: z.string().nullable().optional(),
-})));
+  })
+);
 export type DuplicateEditTemplateRequest = z.infer<typeof ZDuplicateEditTemplateRequest>;
 
-export const ZEdit = z.lazy(() => (z.object({
+export const ZEdit = z.lazy(() =>
+  z.object({
     id: z.string(),
     file: ZFileRef,
     model: z.string(),
@@ -427,31 +576,39 @@ export const ZEdit = z.lazy(() => (z.object({
     usage: ZRetabUsage,
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type Edit = z.infer<typeof ZEdit>;
 
-export const ZEditConfig = z.lazy(() => (z.object({
-    color: z.string().default("#000080"),
-})));
+export const ZEditConfig = z.lazy(() =>
+  z.object({
+    color: z.string().default('#000080'),
+  })
+);
 export type EditConfig = z.infer<typeof ZEditConfig>;
 
-export const ZEditRequest = z.lazy(() => (z.object({
+export const ZEditRequest = z.lazy(() =>
+  z.object({
     instructions: z.string(),
     document: ZMIMEData.nullable().optional(),
     template_id: z.string().nullable().optional(),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     config: ZEditConfig,
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type EditRequest = z.infer<typeof ZEditRequest>;
 
-export const ZEditResult = z.lazy(() => (z.object({
+export const ZEditResult = z.lazy(() =>
+  z.object({
     form_data: z.array(ZFormField),
     filled_document: ZMIMEData,
-})));
+  })
+);
 export type EditResult = z.infer<typeof ZEditResult>;
 
-export const ZEditTemplate = z.lazy(() => (z.object({
+export const ZEditTemplate = z.lazy(() =>
+  z.object({
     id: z.string(),
     name: z.string(),
     file: ZFileRef,
@@ -459,66 +616,91 @@ export const ZEditTemplate = z.lazy(() => (z.object({
     field_count: z.number().default(0),
     created_at: z.string(),
     updated_at: z.string(),
-})));
+  })
+);
 export type EditTemplate = z.infer<typeof ZEditTemplate>;
 
-export const ZEditTemplateRequest = z.lazy(() => (z.object({
+export const ZEditTemplateRequest = z.lazy(() =>
+  z.object({
     name: z.string(),
     document: ZMIMEData,
     form_fields: z.array(ZFormField),
-})));
+  })
+);
 export type EditTemplateRequest = z.infer<typeof ZEditTemplateRequest>;
 
 export const ZFieldType = z.lazy(() => z.any());
 export type FieldType = z.infer<typeof ZFieldType>;
 
-export const ZFormField = z.lazy(() => (ZBaseFormField.schema).merge(z.object({
-    value: z.string().nullable().optional(),
-})));
+export const ZFormField = z.lazy(() =>
+  ZBaseFormField.schema.merge(
+    z.object({
+      value: z.string().nullable().optional(),
+    })
+  )
+);
 export type FormField = z.infer<typeof ZFormField>;
 
-export const ZFormSchema = z.lazy(() => (z.object({
+export const ZFormSchema = z.lazy(() =>
+  z.object({
     form_fields: z.array(ZFormField),
-})));
+  })
+);
 export type FormSchema = z.infer<typeof ZFormSchema>;
 
-export const ZUpdateEditTemplateRequest = z.lazy(() => (z.object({
+export const ZUpdateEditTemplateRequest = z.lazy(() =>
+  z.object({
     name: z.string().nullable().optional(),
     form_fields: z.array(ZFormField).nullable().optional(),
-})));
+  })
+);
 export type UpdateEditTemplateRequest = z.infer<typeof ZUpdateEditTemplateRequest>;
 
-export const ZParse = z.lazy(() => (z.object({
+export const ZParse = z.lazy(() =>
+  z.object({
     id: z.string(),
     file: ZFileRef,
     model: z.string(),
-    table_parsing_format: z.union([z.literal("markdown"), z.literal("yaml"), z.literal("html"), z.literal("json")]),
+    table_parsing_format: z.union([
+      z.literal('markdown'),
+      z.literal('yaml'),
+      z.literal('html'),
+      z.literal('json'),
+    ]),
     image_resolution_dpi: z.number(),
     instructions: z.string().nullable().optional(),
     output: ZParseOutput,
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type Parse = z.infer<typeof ZParse>;
 
-export const ZParseOutput = z.lazy(() => (z.object({
+export const ZParseOutput = z.lazy(() =>
+  z.object({
     pages: z.array(z.string()),
     text: z.string(),
-})));
+  })
+);
 export type ParseOutput = z.infer<typeof ZParseOutput>;
 
-export const ZParseRequest = z.lazy(() => (z.object({
+export const ZParseRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
-    model: z.string().default("retab-small"),
-    table_parsing_format: z.union([z.literal("markdown"), z.literal("yaml"), z.literal("html"), z.literal("json")]).default("html"),
+    model: z.string().default('retab-small'),
+    table_parsing_format: z
+      .union([z.literal('markdown'), z.literal('yaml'), z.literal('html'), z.literal('json')])
+      .default('html'),
     image_resolution_dpi: z.number().default(192),
     instructions: z.string().nullable().optional(),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type ParseRequest = z.infer<typeof ZParseRequest>;
 
-export const ZSplit = z.lazy(() => (z.object({
+export const ZSplit = z.lazy(() =>
+  z.object({
     id: z.string(),
     file: ZFileRef,
     model: z.string(),
@@ -531,81 +713,110 @@ export const ZSplit = z.lazy(() => (z.object({
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type Split = z.infer<typeof ZSplit>;
 
-export const ZSplitConsensus = z.lazy(() => (z.object({
+export const ZSplitConsensus = z.lazy(() =>
+  z.object({
     likelihoods: z.array(ZSplitSubdocumentLikelihood).nullable().optional(),
     choices: z.array(z.array(ZSplitResult)),
-})));
+  })
+);
 export type SplitConsensus = z.infer<typeof ZSplitConsensus>;
 
-export const ZSplitRequest = z.lazy(() => (z.object({
+export const ZSplitRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     subdocuments: z.array(ZSubdocument),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     instructions: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type SplitRequest = z.infer<typeof ZSplitRequest>;
 
-export const ZSplitResult = z.lazy(() => (z.object({
+export const ZSplitResult = z.lazy(() =>
+  z.object({
     name: z.string(),
     pages: z.array(z.number()),
-})));
+  })
+);
 export type SplitResult = z.infer<typeof ZSplitResult>;
 
-export const ZSplitSubdocumentLikelihood = z.lazy(() => (z.object({
+export const ZSplitSubdocumentLikelihood = z.lazy(() =>
+  z.object({
     name: z.number().nullable().optional(),
     pages: z.array(z.number()),
-})));
+  })
+);
 export type SplitSubdocumentLikelihood = z.infer<typeof ZSplitSubdocumentLikelihood>;
 
-export const ZSubdocument = z.lazy(() => (z.object({
+export const ZSubdocument = z.lazy(() =>
+  z.object({
     name: z.string(),
-    description: z.string().default(""),
+    description: z.string().default(''),
     partition_key: z.string().nullable().optional(),
     allow_overlap: z.boolean().default(false),
     allow_multiple_instances: z.boolean().default(false),
-})));
+  })
+);
 export type Subdocument = z.infer<typeof ZSubdocument>;
 
-export const ZListMetadata = z.lazy(() => (z.object({
+export const ZListMetadata = z.lazy(() =>
+  z.object({
     before: z.string().nullable(),
     after: z.string().nullable(),
-})));
+  })
+);
 export type ListMetadata = z.infer<typeof ZListMetadata>;
 
-export const ZPaginatedList = z.lazy(() => (z.object({
+export const ZPaginatedList = z.lazy(() =>
+  z.object({
     data: z.array(z.any()),
     list_metadata: ZListMetadata,
-})));
+  })
+);
 export type PaginatedList = z.infer<typeof ZPaginatedList>;
 
-export const ZExtractionSettings = z.lazy(() => (ZInferenceSettings.schema).merge(z.object({
-    json_schema: z.record(z.string(), z.any()),
-})));
+export const ZExtractionSettings = z.lazy(() =>
+  ZInferenceSettings.schema.merge(
+    z.object({
+      json_schema: z.record(z.string(), z.any()),
+    })
+  )
+);
 export type ExtractionSettings = z.infer<typeof ZExtractionSettings>;
 
-export const ZInferenceSettings = z.lazy(() => (z.object({
-    model: z.string().default("retab-small"),
+export const ZInferenceSettings = z.lazy(() =>
+  z.object({
+    model: z.string().default('retab-small'),
     image_resolution_dpi: z.number().default(192),
     n_consensus: z.number().default(1),
-})));
+  })
+);
 export type InferenceSettings = z.infer<typeof ZInferenceSettings>;
 
-export const ZAssertionFailure = z.lazy(() => (z.object({
+export const ZAssertionFailure = z.lazy(() =>
+  z.object({
     code: z.string(),
     message: z.string(),
     details: z.record(z.string(), z.any()),
-})));
+  })
+);
 export type AssertionFailure = z.infer<typeof ZAssertionFailure>;
 
-export const ZAssertionResult = z.lazy(() => (z.object({
+export const ZAssertionResult = z.lazy(() =>
+  z.object({
     assertion_id: z.string(),
     condition_kind: z.string(),
-    status: z.union([z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error")]),
+    status: z.union([
+      z.literal('passed'),
+      z.literal('failed'),
+      z.literal('blocked'),
+      z.literal('error'),
+    ]),
     actual_value: z.any(),
     expected_value: z.any(),
     score: z.number().nullable().optional(),
@@ -613,31 +824,39 @@ export const ZAssertionResult = z.lazy(() => (z.object({
     metric_kind: z.string().nullable().optional(),
     assertion_label: z.string().nullable().optional(),
     failure: ZAssertionFailure.nullable().optional(),
-})));
+  })
+);
 export type AssertionResult = z.infer<typeof ZAssertionResult>;
 
-export const ZAssertionSchemaDep = z.lazy(() => (z.object({
+export const ZAssertionSchemaDep = z.lazy(() =>
+  z.object({
     schema_path: z.string(),
     subtree_hash: z.string(),
     depends_on_root: z.boolean().default(false),
-})));
+  })
+);
 export type AssertionSchemaDep = z.infer<typeof ZAssertionSchemaDep>;
 
-export const ZAssertionSpec = z.lazy(() => (z.object({
+export const ZAssertionSpec = z.lazy(() =>
+  z.object({
     id: z.string().nullable().optional(),
     target: ZAssertionTarget,
     condition: z.record(z.string(), z.any()),
     label: z.string().nullable().optional(),
-})));
+  })
+);
 export type AssertionSpec = z.infer<typeof ZAssertionSpec>;
 
-export const ZAssertionTarget = z.lazy(() => (z.object({
+export const ZAssertionTarget = z.lazy(() =>
+  z.object({
     output_handle_id: z.string(),
-    path: z.string().default(""),
-})));
+    path: z.string().default(''),
+  })
+);
 export type AssertionTarget = z.infer<typeof ZAssertionTarget>;
 
-export const ZWorkflowTestBatchExecutionCounts = z.lazy(() => (z.object({
+export const ZWorkflowTestBatchExecutionCounts = z.lazy(() =>
+  z.object({
     queued: z.number().default(0),
     running: z.number().default(0),
     passed: z.number().default(0),
@@ -645,64 +864,88 @@ export const ZWorkflowTestBatchExecutionCounts = z.lazy(() => (z.object({
     blocked: z.number().default(0),
     error: z.number().default(0),
     cancelled: z.number().default(0),
-})));
+  })
+);
 export type WorkflowTestBatchExecutionCounts = z.infer<typeof ZWorkflowTestBatchExecutionCounts>;
 
-export const ZWorkflowTestListResponse = z.lazy(() => (z.object({
+export const ZWorkflowTestListResponse = z.lazy(() =>
+  z.object({
     data: z.array(ZWorkflowTest),
     list_metadata: ZListMetadata,
-})));
+  })
+);
 export type WorkflowTestListResponse = z.infer<typeof ZWorkflowTestListResponse>;
 
-export const ZWorkflowTestRunListResponse = z.lazy(() => (z.object({
+export const ZWorkflowTestRunListResponse = z.lazy(() =>
+  z.object({
     data: z.array(ZWorkflowTestRun),
     list_metadata: ZListMetadata,
-})));
+  })
+);
 export type WorkflowTestRunListResponse = z.infer<typeof ZWorkflowTestRunListResponse>;
 
-export const ZWorkflowTestResultListResponse = z.lazy(() => (z.object({
+export const ZWorkflowTestResultListResponse = z.lazy(() =>
+  z.object({
     data: z.array(ZWorkflowTestResult),
     list_metadata: ZListMetadata,
-})));
+  })
+);
 export type WorkflowTestResultListResponse = z.infer<typeof ZWorkflowTestResultListResponse>;
 
-export const ZLatestWorkflowTestRunSummary = z.lazy(() => (z.object({
+export const ZLatestWorkflowTestRunSummary = z.lazy(() =>
+  z.object({
     run_record_id: z.string(),
-    status: z.union([z.literal("queued"), z.literal("running"), z.literal("passed"), z.literal("failed"), z.literal("blocked"), z.literal("error"), z.literal("cancelled")]),
+    status: z.union([
+      z.literal('queued'),
+      z.literal('running'),
+      z.literal('passed'),
+      z.literal('failed'),
+      z.literal('blocked'),
+      z.literal('error'),
+      z.literal('cancelled'),
+    ]),
     started_at: z.string(),
     completed_at: z.string().nullable().optional(),
     duration_ms: z.number().nullable().optional(),
-    workflow_draft_fingerprint: z.string().default(""),
-    block_config_fingerprint: z.string().default(""),
+    workflow_draft_fingerprint: z.string().default(''),
+    block_config_fingerprint: z.string().default(''),
     assertions_passed: z.number().default(0),
     assertions_failed: z.number().default(0),
     blocked_assertions: z.number().default(0),
-})));
+  })
+);
 export type LatestWorkflowTestRunSummary = z.infer<typeof ZLatestWorkflowTestRunSummary>;
 
-export const ZManualWorkflowTestSource = z.lazy(() => (z.object({
-    type: z.literal("manual").default("manual"),
+export const ZManualWorkflowTestSource = z.lazy(() =>
+  z.object({
+    type: z.literal('manual').default('manual'),
     handle_inputs: z.record(z.string(), z.any()),
-})));
+  })
+);
 export type ManualWorkflowTestSource = z.infer<typeof ZManualWorkflowTestSource>;
 
-export const ZRunStepWorkflowTestSource = z.lazy(() => (z.object({
-    type: z.literal("run_step").default("run_step"),
+export const ZRunStepWorkflowTestSource = z.lazy(() =>
+  z.object({
+    type: z.literal('run_step').default('run_step'),
     run_id: z.string(),
     step_id: z.string().nullable().optional(),
-})));
+  })
+);
 export type RunStepWorkflowTestSource = z.infer<typeof ZRunStepWorkflowTestSource>;
 
-export const ZVerdictSummary = z.lazy(() => (z.object({
+export const ZVerdictSummary = z.lazy(() =>
+  z.object({
     result: z.boolean(),
     assertions_passed: z.number().default(0),
     assertions_failed: z.number().default(0),
     blocked_assertions: z.number().default(0),
     failed_assertion_ids: z.array(z.string()),
-})));
+  })
+);
 export type VerdictSummary = z.infer<typeof ZVerdictSummary>;
 
-export const ZWorkflowTest = z.lazy(() => (z.object({
+export const ZWorkflowTest = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow_id: z.string(),
     target: ZWorkflowTestBlockTarget,
@@ -710,26 +953,35 @@ export const ZWorkflowTest = z.lazy(() => (z.object({
     name: z.string().nullable().optional(),
     assertion: ZAssertionSpec.nullable().optional(),
     assertion_schema_dep: ZAssertionSchemaDep.nullable().optional(),
-    assertion_drift_status: z.union([z.literal("fresh"), z.literal("drifted"), z.literal("unknown")]).nullable().optional(),
-    schema_drift: z.union([z.literal("fresh"), z.literal("partial"), z.literal("drifted"), z.literal("unknown")]).default("unknown"),
+    assertion_drift_status: z
+      .union([z.literal('fresh'), z.literal('drifted'), z.literal('unknown')])
+      .nullable()
+      .optional(),
+    schema_drift: z
+      .union([z.literal('fresh'), z.literal('partial'), z.literal('drifted'), z.literal('unknown')])
+      .default('unknown'),
     schema_drift_detail: z.string().nullable().optional(),
-    validation_status: z.string().default("valid"),
+    validation_status: z.string().default('valid'),
     validation_issues: z.array(z.any()),
     latest_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
     latest_passing_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
     latest_failing_run_summary: ZLatestWorkflowTestRunSummary.nullable().optional(),
     created_at: z.string(),
     updated_at: z.string(),
-})));
+  })
+);
 export type WorkflowTest = z.infer<typeof ZWorkflowTest>;
 
-export const ZWorkflowTestBlockTarget = z.lazy(() => (z.object({
-    type: z.literal("block").default("block"),
+export const ZWorkflowTestBlockTarget = z.lazy(() =>
+  z.object({
+    type: z.literal('block').default('block'),
     block_id: z.string(),
-})));
+  })
+);
 export type WorkflowTestBlockTarget = z.infer<typeof ZWorkflowTestBlockTarget>;
 
-export const ZWorkflowTestRun = z.lazy(() => (z.object({
+export const ZWorkflowTestRun = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow: ZWorkflowSnapshotRef,
     trigger: ZTrigger,
@@ -739,20 +991,22 @@ export const ZWorkflowTestRun = z.lazy(() => (z.object({
     test_id: z.string().nullable().optional(),
     total_tests: z.number(),
     counts: ZWorkflowTestBatchExecutionCounts,
-})));
+  })
+);
 export type WorkflowTestRun = z.infer<typeof ZWorkflowTestRun>;
 
-export const ZWorkflowTestResult = z.lazy(() => (z.object({
+export const ZWorkflowTestResult = z.lazy(() =>
+  z.object({
     id: z.string(),
     run_id: z.string(),
     test_id: z.string(),
     lifecycle: ZRunLifecycle,
     timing: ZRunTiming,
     target: ZWorkflowTestBlockTarget,
-    execution_fingerprint: z.string().default(""),
-    handle_inputs_fingerprint: z.string().default(""),
-    workflow_draft_fingerprint: z.string().default(""),
-    block_config_fingerprint: z.string().default(""),
+    execution_fingerprint: z.string().default(''),
+    handle_inputs_fingerprint: z.string().default(''),
+    workflow_draft_fingerprint: z.string().default(''),
+    block_config_fingerprint: z.string().default(''),
     source: z.union([ZManualWorkflowTestSource, ZRunStepWorkflowTestSource]),
     outputs: z.record(z.string(), z.any()).nullable().optional(),
     routing_decision: z.array(z.string()).nullable().optional(),
@@ -762,10 +1016,12 @@ export const ZWorkflowTestResult = z.lazy(() => (z.object({
     assertion_result: ZAssertionResult.nullable().optional(),
     verdict_summary: ZVerdictSummary.nullable().optional(),
     verdict: z.record(z.string(), z.any()).nullable().optional(),
-})));
+  })
+);
 export type WorkflowTestResult = z.infer<typeof ZWorkflowTestResult>;
 
-export const ZApiCallAttempt = z.lazy(() => (z.object({
+export const ZApiCallAttempt = z.lazy(() =>
+  z.object({
     attempt_number: z.number(),
     request_method: z.string(),
     request_url: z.string(),
@@ -778,71 +1034,97 @@ export const ZApiCallAttempt = z.lazy(() => (z.object({
     error: z.string().nullable().optional(),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type ApiCallAttempt = z.infer<typeof ZApiCallAttempt>;
 
-export const ZApiCallInvocation = z.lazy(() => (z.object({
+export const ZApiCallInvocation = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
     attempts: z.array(ZApiCallAttempt),
     error: z.string().nullable().optional(),
     created_at: z.string(),
-})));
+  })
+);
 export type ApiCallInvocation = z.infer<typeof ZApiCallInvocation>;
 
-export const ZCancelWorkflowResponse = z.lazy(() => (z.object({
+export const ZCancelWorkflowResponse = z.lazy(() =>
+  z.object({
     run: ZWorkflowRun,
-    cancellation_status: z.union([z.literal("cancelled"), z.literal("cancellation_requested"), z.literal("cancellation_failed")]).default("cancellation_requested"),
-})));
+    cancellation_status: z
+      .union([
+        z.literal('cancelled'),
+        z.literal('cancellation_requested'),
+        z.literal('cancellation_failed'),
+      ])
+      .default('cancellation_requested'),
+  })
+);
 export type CancelWorkflowResponse = z.infer<typeof ZCancelWorkflowResponse>;
 
-export const ZConditionEvaluationDetails = z.lazy(() => (z.object({
-    path: z.string().default(""),
-    operator: z.string().default(""),
+export const ZConditionEvaluationDetails = z.lazy(() =>
+  z.object({
+    path: z.string().default(''),
+    operator: z.string().default(''),
     expected: z.any(),
     actual: z.any(),
     matched: z.boolean().default(false),
     per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
     sub_conditions: z.array(ZConditionEvaluationSubCondition).nullable().optional(),
-    logical_operator: z.union([z.literal("and"), z.literal("or")]).nullable().optional(),
-})));
+    logical_operator: z
+      .union([z.literal('and'), z.literal('or')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ConditionEvaluationDetails = z.infer<typeof ZConditionEvaluationDetails>;
 
-export const ZConditionEvaluationPerItem = z.lazy(() => (z.object({
+export const ZConditionEvaluationPerItem = z.lazy(() =>
+  z.object({
     indices: z.array(z.number()),
     actual: z.any(),
     matched: z.boolean().default(false),
-})));
+  })
+);
 export type ConditionEvaluationPerItem = z.infer<typeof ZConditionEvaluationPerItem>;
 
-export const ZConditionEvaluationResult = z.lazy(() => (z.object({
+export const ZConditionEvaluationResult = z.lazy(() =>
+  z.object({
     condition_id: z.string(),
-    path: z.string().default(""),
-    operator: z.string().default(""),
+    path: z.string().default(''),
+    operator: z.string().default(''),
     expected: z.any(),
     actual: z.any(),
     matched: z.boolean().default(false),
-    branch_name: z.string().default(""),
-    logical_operator: z.union([z.literal("and"), z.literal("or")]).nullable().optional(),
+    branch_name: z.string().default(''),
+    logical_operator: z
+      .union([z.literal('and'), z.literal('or')])
+      .nullable()
+      .optional(),
     per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
     sub_evaluations: z.array(ZConditionEvaluationSubCondition).nullable().optional(),
     details: ZConditionEvaluationDetails,
-})));
+  })
+);
 export type ConditionEvaluationResult = z.infer<typeof ZConditionEvaluationResult>;
 
-export const ZConditionEvaluationSubCondition = z.lazy(() => (z.object({
-    sub_condition_id: z.string().default(""),
-    path: z.string().default(""),
-    operator: z.string().default(""),
+export const ZConditionEvaluationSubCondition = z.lazy(() =>
+  z.object({
+    sub_condition_id: z.string().default(''),
+    path: z.string().default(''),
+    operator: z.string().default(''),
     expected: z.any(),
     actual: z.any(),
     matched: z.boolean().default(false),
     per_item: z.array(ZConditionEvaluationPerItem).nullable().optional(),
-})));
+  })
+);
 export type ConditionEvaluationSubCondition = z.infer<typeof ZConditionEvaluationSubCondition>;
 
-export const ZConditionalEvaluation = z.lazy(() => (z.object({
+export const ZConditionalEvaluation = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
@@ -851,25 +1133,31 @@ export const ZConditionalEvaluation = z.lazy(() => (z.object({
     matched_branch_id: z.string().nullable().optional(),
     matched_condition_ids: z.array(z.string()),
     created_at: z.string(),
-})));
+  })
+);
 export type ConditionalEvaluation = z.infer<typeof ZConditionalEvaluation>;
 
-export const ZContainerContextData = z.lazy(() => (z.object({
+export const ZContainerContextData = z.lazy(() =>
+  z.object({
     container_id: z.string(),
     iteration: z.number(),
     is_parallel: z.boolean().default(false),
     parallel_item_index: z.number().nullable().optional(),
-})));
+  })
+);
 export type ContainerContextData = z.infer<typeof ZContainerContextData>;
 
-export const ZModelExportResponse = z.lazy(() => (z.object({
+export const ZModelExportResponse = z.lazy(() =>
+  z.object({
     csv_data: z.string(),
     rows: z.number(),
     columns: z.number(),
-})));
+  })
+);
 export type ModelExportResponse = z.infer<typeof ZModelExportResponse>;
 
-export const ZFunctionInvocation = z.lazy(() => (z.object({
+export const ZFunctionInvocation = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
@@ -878,20 +1166,24 @@ export const ZFunctionInvocation = z.lazy(() => (z.object({
     duration_ms: z.number().nullable().optional(),
     error: z.string().nullable().optional(),
     created_at: z.string(),
-})));
+  })
+);
 export type FunctionInvocation = z.infer<typeof ZFunctionInvocation>;
 
-export const ZHandlePayload = z.lazy(() => (z.object({
-    type: z.union([z.literal("file"), z.literal("json"), z.literal("json_ref"), z.literal("text")]),
+export const ZHandlePayload = z.lazy(() =>
+  z.object({
+    type: z.union([z.literal('file'), z.literal('json'), z.literal('json_ref'), z.literal('text')]),
     document: ZFileRef.nullable().optional(),
     data: z.unknown().nullable().optional(),
     artifact_ref: z.record(z.string(), z.any()).nullable().optional(),
     preview: z.record(z.string(), z.any()).nullable().optional(),
     text: z.string().nullable().optional(),
-})));
+  })
+);
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
 
-export const ZHilEvaluation = z.lazy(() => (z.object({
+export const ZHilEvaluation = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
@@ -901,96 +1193,119 @@ export const ZHilEvaluation = z.lazy(() => (z.object({
     matched_condition_ids: z.array(z.string()),
     requires_human_review: z.boolean().default(false),
     reviewer_id: z.string().nullable().optional(),
-    review_decision: z.union([z.literal("approved"), z.literal("rejected"), z.literal("needs_changes")]).nullable().optional(),
+    review_decision: z
+      .union([z.literal('approved'), z.literal('rejected'), z.literal('needs_changes')])
+      .nullable()
+      .optional(),
     review_notes: z.string().nullable().optional(),
     reviewed_at: z.string().nullable().optional(),
     created_at: z.string(),
-})));
+  })
+);
 export type HilEvaluation = z.infer<typeof ZHilEvaluation>;
 
-export const ZErrorDetails = z.lazy(() => (z.object({
+export const ZErrorDetails = z.lazy(() =>
+  z.object({
     stack_trace: z.string().nullable().optional(),
     block_id: z.string().nullable().optional(),
     block_name: z.string().nullable().optional(),
     error_code: z.string().nullable().optional(),
     context: z.record(z.any()).nullable().optional(),
-})));
+  })
+);
 export type ErrorDetails = z.infer<typeof ZErrorDetails>;
 
 export const ZPendingStepLifecycle = z.object({
-    status: z.literal("pending").default("pending"),
+  status: z.literal('pending').default('pending'),
 });
 export type PendingStepLifecycle = z.infer<typeof ZPendingStepLifecycle>;
 
 export const ZQueuedStepLifecycle = z.object({
-    status: z.literal("queued").default("queued"),
+  status: z.literal('queued').default('queued'),
 });
 export type QueuedStepLifecycle = z.infer<typeof ZQueuedStepLifecycle>;
 
 export const ZRunningStepLifecycle = z.object({
-    status: z.literal("running").default("running"),
+  status: z.literal('running').default('running'),
 });
 export type RunningStepLifecycle = z.infer<typeof ZRunningStepLifecycle>;
 
 export const ZCompletedStepLifecycle = z.object({
-    status: z.literal("completed").default("completed"),
+  status: z.literal('completed').default('completed'),
 });
 export type CompletedStepLifecycle = z.infer<typeof ZCompletedStepLifecycle>;
 
 export const ZWaitingForHumanStepLifecycle = z.object({
-    status: z.literal("waiting_for_human").default("waiting_for_human"),
+  status: z.literal('waiting_for_human').default('waiting_for_human'),
 });
 export type WaitingForHumanStepLifecycle = z.infer<typeof ZWaitingForHumanStepLifecycle>;
 
 export const ZErrorStepLifecycle = z.object({
-    status: z.literal("error").default("error"),
-    message: z.string(),
-    stage: z.string().nullable().optional(),
-    category: z.string().nullable().optional(),
-    details: ZErrorDetails.nullable().optional(),
+  status: z.literal('error').default('error'),
+  message: z.string(),
+  stage: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
+  details: ZErrorDetails.nullable().optional(),
 });
 export type ErrorStepLifecycle = z.infer<typeof ZErrorStepLifecycle>;
 
 export const ZSkippedStepLifecycle = z.object({
-    status: z.literal("skipped").default("skipped"),
-    reason: z.string(),
+  status: z.literal('skipped').default('skipped'),
+  reason: z.string(),
 });
 export type SkippedStepLifecycle = z.infer<typeof ZSkippedStepLifecycle>;
 
 export const ZCancelledStepLifecycle = z.object({
-    status: z.literal("cancelled").default("cancelled"),
-    reason: z.string(),
+  status: z.literal('cancelled').default('cancelled'),
+  reason: z.string(),
 });
 export type CancelledStepLifecycle = z.infer<typeof ZCancelledStepLifecycle>;
 
-export const ZStepLifecycle = z.discriminatedUnion("status", [
-    ZPendingStepLifecycle,
-    ZQueuedStepLifecycle,
-    ZRunningStepLifecycle,
-    ZCompletedStepLifecycle,
-    ZWaitingForHumanStepLifecycle,
-    ZErrorStepLifecycle,
-    ZSkippedStepLifecycle,
-    ZCancelledStepLifecycle,
+export const ZStepLifecycle = z.discriminatedUnion('status', [
+  ZPendingStepLifecycle,
+  ZQueuedStepLifecycle,
+  ZRunningStepLifecycle,
+  ZCompletedStepLifecycle,
+  ZWaitingForHumanStepLifecycle,
+  ZErrorStepLifecycle,
+  ZSkippedStepLifecycle,
+  ZCancelledStepLifecycle,
 ]);
 export type StepLifecycle = z.infer<typeof ZStepLifecycle>;
 
-export const ZResolvedSchemas = z.lazy(() => (z.object({
+export const ZResolvedSchemas = z.lazy(() =>
+  z.object({
     input_schemas: z.record(z.string(), z.any()),
     output_schemas: z.record(z.string(), z.any()),
     field_ref_drift: z.record(z.any()).nullable().optional(),
-})));
+  })
+);
 export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
 
-export const ZStepArtifactRef = z.lazy(() => (z.object({
-    operation: z.union([z.literal("extraction"), z.literal("split"), z.literal("classification"), z.literal("parse"), z.literal("edit"), z.literal("partition"), z.literal("conditional_evaluation"), z.literal("hil_evaluation"), z.literal("while_loop_termination"), z.literal("api_call_invocation"), z.literal("function_invocation")]),
+export const ZStepArtifactRef = z.lazy(() =>
+  z.object({
+    operation: z.union([
+      z.literal('extraction'),
+      z.literal('split'),
+      z.literal('classification'),
+      z.literal('parse'),
+      z.literal('edit'),
+      z.literal('partition'),
+      z.literal('conditional_evaluation'),
+      z.literal('hil_evaluation'),
+      z.literal('while_loop_termination'),
+      z.literal('api_call_invocation'),
+      z.literal('function_invocation'),
+    ]),
     id: z.string(),
-})));
+  })
+);
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
 
-export const ZStepExecutionResponse = z.lazy(() => (z.object({
+export const ZStepExecutionResponse = z.lazy(() =>
+  z.object({
     block_id: z.string(),
-    step_id: z.string().default(""),
+    step_id: z.string().default(''),
     block_type: z.string(),
     block_label: z.string(),
     lifecycle: ZStepLifecycle,
@@ -1001,12 +1316,14 @@ export const ZStepExecutionResponse = z.lazy(() => (z.object({
     artifact: ZStepArtifactRef.nullable().optional(),
     handle_outputs: z.record(z.string(), ZHandlePayload),
     handle_inputs: z.record(z.string(), ZHandlePayload),
-})));
+  })
+);
 export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
 
-export const ZStepStatus = z.lazy(() => (z.object({
+export const ZStepStatus = z.lazy(() =>
+  z.object({
     block_id: z.string(),
-    step_id: z.string().default(""),
+    step_id: z.string().default(''),
     block_type: z.string(),
     block_label: z.string(),
     lifecycle: ZStepLifecycle,
@@ -1014,46 +1331,56 @@ export const ZStepStatus = z.lazy(() => (z.object({
     completed_at: z.string().nullable().optional(),
     model: z.string().nullable().optional(),
     loop_containers: z.array(ZContainerContextData).default([]),
-    run_id: z.string().default(""),
+    run_id: z.string().default(''),
     created_at: z.string().nullable().optional(),
     handle_inputs: z.record(z.string(), ZHandlePayload),
     handle_outputs: z.record(z.string(), ZHandlePayload),
     artifact: ZStepArtifactRef.nullable().optional(),
     retry_count: z.number().default(0),
-})));
+  })
+);
 export type StepStatus = z.infer<typeof ZStepStatus>;
 
 // `StepStatusSummary` was removed in the WorkflowRun v2 cutover. Listing
 // endpoints now return `StepStatus` instances with handle payloads
 // projected away server-side via Mongo `projection`.
 
-export const ZWhileLoopTermination = z.lazy(() => (z.object({
+export const ZWhileLoopTermination = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow_run_id: z.string(),
     step_id: z.string(),
-    termination_reason: z.union([z.literal("max_iterations_reached"), z.literal("condition_matched"), z.literal("error")]),
+    termination_reason: z.union([
+      z.literal('max_iterations_reached'),
+      z.literal('condition_matched'),
+      z.literal('error'),
+    ]),
     evaluations: z.array(ZConditionEvaluationResult),
     created_at: z.string(),
-})));
+  })
+);
 export type WhileLoopTermination = z.infer<typeof ZWhileLoopTermination>;
 
-export const ZWorkflow = z.lazy(() => (z.object({
+export const ZWorkflow = z.lazy(() =>
+  z.object({
     id: z.string(),
-    name: z.string().default("Untitled Workflow"),
-    description: z.string().default(""),
+    name: z.string().default('Untitled Workflow'),
+    description: z.string().default(''),
     published: ZPublished.nullable().optional(),
     email_trigger: ZEmailTrigger,
     created_at: z.string(),
     updated_at: z.string(),
-})));
+  })
+);
 export type Workflow = z.infer<typeof ZWorkflow>;
 
-export const ZWorkflowBlock = z.lazy(() => (z.object({
+export const ZWorkflowBlock = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow_id: z.string(),
     draft_version: z.string().nullable().optional(),
     type: z.string(),
-    label: z.string().default(""),
+    label: z.string().default(''),
     position_x: z.number().default(0),
     position_y: z.number().default(0),
     width: z.number().nullable().optional(),
@@ -1062,23 +1389,27 @@ export const ZWorkflowBlock = z.lazy(() => (z.object({
     field_ref_snapshot: z.record(z.string(), z.string()).nullable().optional(),
     parent_id: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
 
-export const ZWorkflowBlockCreateRequest = z.lazy(() => (z.object({
+export const ZWorkflowBlockCreateRequest = z.lazy(() =>
+  z.object({
     id: z.string(),
     type: z.string(),
-    label: z.string().default(""),
+    label: z.string().default(''),
     position_x: z.number().default(0),
     position_y: z.number().default(0),
     width: z.number().nullable().optional(),
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
     parent_id: z.string().nullable().optional(),
-})));
+  })
+);
 export type WorkflowBlockCreateRequest = z.infer<typeof ZWorkflowBlockCreateRequest>;
 
-export const ZWorkflowBlockUpdateRequest = z.lazy(() => (z.object({
+export const ZWorkflowBlockUpdateRequest = z.lazy(() =>
+  z.object({
     block_id: z.string(),
     label: z.string().nullable().optional(),
     position_x: z.number().nullable().optional(),
@@ -1087,19 +1418,23 @@ export const ZWorkflowBlockUpdateRequest = z.lazy(() => (z.object({
     height: z.number().nullable().optional(),
     config: z.record(z.any()).nullable().optional(),
     parent_id: z.string().nullable().optional(),
-})));
+  })
+);
 export type WorkflowBlockUpdateRequest = z.infer<typeof ZWorkflowBlockUpdateRequest>;
 
-export const ZWorkflowEdgeCreateRequest = z.lazy(() => (z.object({
+export const ZWorkflowEdgeCreateRequest = z.lazy(() =>
+  z.object({
     id: z.string(),
     source_block: z.string(),
     target_block: z.string(),
     source_handle: z.string().nullable().optional(),
     target_handle: z.string().nullable().optional(),
-})));
+  })
+);
 export type WorkflowEdgeCreateRequest = z.infer<typeof ZWorkflowEdgeCreateRequest>;
 
-export const ZWorkflowEdgeDoc = z.lazy(() => (z.object({
+export const ZWorkflowEdgeDoc = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow_id: z.string(),
     draft_version: z.string().nullable().optional(),
@@ -1108,143 +1443,153 @@ export const ZWorkflowEdgeDoc = z.lazy(() => (z.object({
     source_handle: z.string().nullable().optional(),
     target_handle: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type WorkflowEdgeDoc = z.infer<typeof ZWorkflowEdgeDoc>;
 
 // ---------------------------------------------------------------------------
 // WorkflowRun v2 typed sub-models (mirror of backend models)
 // ---------------------------------------------------------------------------
 
-export const ZWorkflowSnapshotRef = z.lazy(() => (z.object({
+export const ZWorkflowSnapshotRef = z.lazy(() =>
+  z.object({
     workflow_id: z.string(),
     version_id: z.string(),
     name_at_run_time: z.string(),
-    requested_version: z.string().default("production"),
-})));
+    requested_version: z.string().default('production'),
+  })
+);
 export type WorkflowSnapshotRef = z.infer<typeof ZWorkflowSnapshotRef>;
 
 export const ZManualTrigger = z.object({
-    type: z.literal("manual").default("manual"),
-    user_id: z.string().nullable().optional(),
+  type: z.literal('manual').default('manual'),
+  user_id: z.string().nullable().optional(),
 });
 export type ManualTrigger = z.infer<typeof ZManualTrigger>;
 
 export const ZApiTrigger = z.object({
-    type: z.literal("api").default("api"),
-    api_key_id: z.string().nullable().optional(),
+  type: z.literal('api').default('api'),
+  api_key_id: z.string().nullable().optional(),
 });
 export type ApiTrigger = z.infer<typeof ZApiTrigger>;
 
 export const ZScheduleTrigger = z.object({
-    type: z.literal("schedule").default("schedule"),
-    schedule_id: z.string(),
+  type: z.literal('schedule').default('schedule'),
+  schedule_id: z.string(),
 });
 export type ScheduleTrigger = z.infer<typeof ZScheduleTrigger>;
 
 export const ZWebhookTrigger = z.object({
-    type: z.literal("webhook").default("webhook"),
-    webhook_id: z.string().nullable().optional(),
+  type: z.literal('webhook').default('webhook'),
+  webhook_id: z.string().nullable().optional(),
 });
 export type WebhookTrigger = z.infer<typeof ZWebhookTrigger>;
 
 export const ZEmailTriggerVariant = z.object({
-    type: z.literal("email").default("email"),
-    sender: z.string(),
-    subject: z.string().nullable().optional(),
+  type: z.literal('email').default('email'),
+  sender: z.string(),
+  subject: z.string().nullable().optional(),
 });
 export type EmailTriggerVariant = z.infer<typeof ZEmailTriggerVariant>;
 
 export const ZRestartTrigger = z.object({
-    type: z.literal("restart").default("restart"),
-    parent_run_id: z.string(),
+  type: z.literal('restart').default('restart'),
+  parent_run_id: z.string(),
 });
 export type RestartTrigger = z.infer<typeof ZRestartTrigger>;
 
-export const ZTrigger = z.discriminatedUnion("type", [
-    ZManualTrigger,
-    ZApiTrigger,
-    ZScheduleTrigger,
-    ZWebhookTrigger,
-    ZEmailTriggerVariant,
-    ZRestartTrigger,
+export const ZTrigger = z.discriminatedUnion('type', [
+  ZManualTrigger,
+  ZApiTrigger,
+  ZScheduleTrigger,
+  ZWebhookTrigger,
+  ZEmailTriggerVariant,
+  ZRestartTrigger,
 ]);
 export type Trigger = z.infer<typeof ZTrigger>;
 
 export const ZPendingRun = z.object({
-    status: z.literal("pending").default("pending"),
+  status: z.literal('pending').default('pending'),
 });
 export type PendingRun = z.infer<typeof ZPendingRun>;
 
 export const ZRunningRun = z.object({
-    status: z.literal("running").default("running"),
+  status: z.literal('running').default('running'),
 });
 export type RunningRun = z.infer<typeof ZRunningRun>;
 
 export const ZWaitingForHumanRun = z.object({
-    status: z.literal("waiting_for_human").default("waiting_for_human"),
-    waiting_for_block_ids: z.array(z.string()).default([]),
+  status: z.literal('waiting_for_human').default('waiting_for_human'),
+  waiting_for_block_ids: z.array(z.string()).default([]),
 });
 export type WaitingForHumanRun = z.infer<typeof ZWaitingForHumanRun>;
 
 export const ZCompletedTerminal = z.object({
-    status: z.literal("completed").default("completed"),
+  status: z.literal('completed').default('completed'),
 });
 export type CompletedTerminal = z.infer<typeof ZCompletedTerminal>;
 
 export const ZErrorTerminal = z.object({
-    status: z.literal("error").default("error"),
-    message: z.string(),
-    stage: z.string().nullable().optional(),
-    category: z.string().nullable().optional(),
-    details: ZErrorDetails.nullable().optional(),
-    failing_step_id: z.string().nullable().optional(),
+  status: z.literal('error').default('error'),
+  message: z.string(),
+  stage: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
+  details: ZErrorDetails.nullable().optional(),
+  failing_step_id: z.string().nullable().optional(),
 });
 export type ErrorTerminal = z.infer<typeof ZErrorTerminal>;
 
 export const ZCancelledTerminal = z.object({
-    status: z.literal("cancelled").default("cancelled"),
-    reason: z.string().nullable().optional(),
+  status: z.literal('cancelled').default('cancelled'),
+  reason: z.string().nullable().optional(),
 });
 export type CancelledTerminal = z.infer<typeof ZCancelledTerminal>;
 
-export const ZRunLifecycle = z.discriminatedUnion("status", [
-    ZPendingRun,
-    ZRunningRun,
-    ZWaitingForHumanRun,
-    ZCompletedTerminal,
-    ZErrorTerminal,
-    ZCancelledTerminal,
+export const ZRunLifecycle = z.discriminatedUnion('status', [
+  ZPendingRun,
+  ZRunningRun,
+  ZWaitingForHumanRun,
+  ZCompletedTerminal,
+  ZErrorTerminal,
+  ZCancelledTerminal,
 ]);
 export type RunLifecycle = z.infer<typeof ZRunLifecycle>;
 
-export const ZRunTiming = z.lazy(() => (z.object({
+export const ZRunTiming = z.lazy(() =>
+  z.object({
     created_at: z.string(),
     started_at: z.string().nullable().optional(),
     completed_at: z.string().nullable().optional(),
     human_waiting_started_at: z.string().nullable().optional(),
     accumulated_human_waiting_ms: z.number().default(0),
-})));
+  })
+);
 export type RunTiming = z.infer<typeof ZRunTiming>;
 
-export const ZRunInputs = z.lazy(() => (z.object({
+export const ZRunInputs = z.lazy(() =>
+  z.object({
     documents: z.record(z.string(), ZFileRef).default({}),
     json_data: z.record(z.string(), z.unknown()).default({}),
-})));
+  })
+);
 export type RunInputs = z.infer<typeof ZRunInputs>;
 
-export const ZWorkflowRun = z.lazy(() => (z.object({
+export const ZWorkflowRun = z.lazy(() =>
+  z.object({
     id: z.string(),
     workflow: ZWorkflowSnapshotRef,
     trigger: ZTrigger,
     lifecycle: ZRunLifecycle,
     timing: ZRunTiming,
     inputs: ZRunInputs.default(() => ({ documents: {}, json_data: {} })),
-})));
+  })
+);
 export type WorkflowRun = z.infer<typeof ZWorkflowRun>;
 
-export const ZWorkflowRunStep = z.lazy(() => (z.object({
+export const ZWorkflowRunStep = z.lazy(() =>
+  z.object({
     block_id: z.string(),
-    step_id: z.string().default(""),
+    step_id: z.string().default(''),
     block_type: z.string(),
     block_label: z.string(),
     lifecycle: ZStepLifecycle,
@@ -1258,45 +1603,57 @@ export const ZWorkflowRunStep = z.lazy(() => (z.object({
     handle_inputs: z.record(z.string(), ZHandlePayload),
     retry_count: z.number().default(0),
     created_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
 
-export const ZWorkflowWithEntities = z.lazy(() => (z.object({
+export const ZWorkflowWithEntities = z.lazy(() =>
+  z.object({
     workflow: ZWorkflow,
     blocks: z.array(ZWorkflowBlock),
     edges: z.array(ZWorkflowEdgeDoc),
-})));
+  })
+);
 export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
 
-export const ZWorkflowResolvedSchemasResponse = z.lazy(() => (z.object({
+export const ZWorkflowResolvedSchemasResponse = z.lazy(() =>
+  z.object({
     workflow_id: z.string(),
     draft_version: z.string().nullable().optional(),
     schemas: z.record(z.string(), ZResolvedSchemas),
-})));
+  })
+);
 export type WorkflowResolvedSchemasResponse = z.infer<typeof ZWorkflowResolvedSchemasResponse>;
 
-export const ZBlockResolvedSchemasResponse = z.lazy(() => (z.object({
+export const ZBlockResolvedSchemasResponse = z.lazy(() =>
+  z.object({
     workflow_id: z.string(),
     block_id: z.string(),
     draft_version: z.string().nullable().optional(),
     schema: ZResolvedSchemas,
-})));
+  })
+);
 export type BlockResolvedSchemasResponse = z.infer<typeof ZBlockResolvedSchemasResponse>;
 
-export const ZDocumentSignedUrlResponse = z.lazy(() => (z.object({
+export const ZDocumentSignedUrlResponse = z.lazy(() =>
+  z.object({
     signed_url: z.string(),
     filename: z.string(),
     mime_type: z.string().nullable().optional(),
-})));
+  })
+);
 export type DocumentSignedUrlResponse = z.infer<typeof ZDocumentSignedUrlResponse>;
 
-export const ZExecutionOrderResponse = z.lazy(() => (z.object({
+export const ZExecutionOrderResponse = z.lazy(() =>
+  z.object({
     run_id: z.string(),
     ordered_step_ids: z.array(z.string()),
-})));
+  })
+);
 export type ExecutionOrderResponse = z.infer<typeof ZExecutionOrderResponse>;
 
-export const ZRunCountsResponse = z.lazy(() => (z.object({
+export const ZRunCountsResponse = z.lazy(() =>
+  z.object({
     total: z.number().default(0),
     completed: z.number().default(0),
     running: z.number().default(0),
@@ -1304,190 +1661,312 @@ export const ZRunCountsResponse = z.lazy(() => (z.object({
     pending: z.number().default(0),
     waiting_for_human: z.number().default(0),
     cancelled: z.number().default(0),
-})));
+  })
+);
 export type RunCountsResponse = z.infer<typeof ZRunCountsResponse>;
 
-export const ZGenerateSchemaRequest = z.lazy(() => (z.object({
+export const ZGenerateSchemaRequest = z.lazy(() =>
+  z.object({
     documents: z.array(ZMIMEData),
-    model: z.string().default("retab-small"),
-    reasoning_effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional().default("minimal"),
+    model: z.string().default('retab-small'),
+    reasoning_effort: z
+      .union([
+        z.literal('none'),
+        z.literal('minimal'),
+        z.literal('low'),
+        z.literal('medium'),
+        z.literal('high'),
+        z.literal('xhigh'),
+      ])
+      .nullable()
+      .optional()
+      .default('minimal'),
     instructions: z.string().nullable().optional(),
     image_resolution_dpi: z.number().default(192),
     stream: z.boolean().default(false),
-})));
+  })
+);
 export type GenerateSchemaRequest = z.infer<typeof ZGenerateSchemaRequest>;
 
-export const ZColumn = z.lazy(() => (z.object({
-    type: z.literal("column"),
+export const ZColumn = z.lazy(() =>
+  z.object({
+    type: z.literal('column'),
     size: z.number(),
     items: z.array(z.union([ZRow, ZFieldItem, ZRefObject, ZRowList])),
     name: z.string().nullable().optional(),
-})));
+  })
+);
 export type Column = z.infer<typeof ZColumn>;
 
-export const ZFieldItem = z.lazy(() => (z.object({
-    type: z.literal("field"),
+export const ZFieldItem = z.lazy(() =>
+  z.object({
+    type: z.literal('field'),
     name: z.string(),
     size: z.number().nullable().optional(),
-})));
+  })
+);
 export type FieldItem = z.infer<typeof ZFieldItem>;
 
-export const ZLayout = z.lazy(() => (z.object({
+export const ZLayout = z.lazy(() =>
+  z.object({
     defs: z.record(z.string(), ZColumn),
-    type: z.literal("column"),
+    type: z.literal('column'),
     size: z.number(),
     items: z.array(z.union([ZRow, ZRowList, ZFieldItem, ZRefObject])),
-})));
+  })
+);
 export type Layout = z.infer<typeof ZLayout>;
 
-export const ZRefObject = z.lazy(() => (z.object({
-    type: z.literal("object"),
+export const ZRefObject = z.lazy(() =>
+  z.object({
+    type: z.literal('object'),
     size: z.number().nullable().optional(),
     name: z.string().nullable().optional(),
     ref: z.string(),
-})));
+  })
+);
 export type RefObject = z.infer<typeof ZRefObject>;
 
-export const ZRow = z.lazy(() => (z.object({
-    type: z.literal("row"),
+export const ZRow = z.lazy(() =>
+  z.object({
+    type: z.literal('row'),
     name: z.string().nullable().optional(),
     items: z.array(z.union([ZColumn, ZFieldItem, ZRefObject])),
-})));
+  })
+);
 export type Row = z.infer<typeof ZRow>;
 
-export const ZRowList = z.lazy(() => (z.object({
-    type: z.literal("rowList"),
+export const ZRowList = z.lazy(() =>
+  z.object({
+    type: z.literal('rowList'),
     name: z.string().nullable().optional(),
     items: z.array(z.union([ZColumn, ZFieldItem, ZRefObject])),
-})));
+  })
+);
 export type RowList = z.infer<typeof ZRowList>;
 
-export const ZSchema = z.lazy(() => (ZSchemaGenerationResponse.schema).merge(z.object({
-    object: z.literal("schema").default("schema"),
-    created_at: z.string(),
-    json_schema: z.record(z.string(), z.any()).default({}),
-})));
+export const ZSchema = z.lazy(() =>
+  ZSchemaGenerationResponse.schema.merge(
+    z.object({
+      object: z.literal('schema').default('schema'),
+      created_at: z.string(),
+      json_schema: z.record(z.string(), z.any()).default({}),
+    })
+  )
+);
 export type Schema = z.infer<typeof ZSchema>;
 
-export const ZMessageParam = z.lazy(() => (z.object({
-    content: z.union([z.string(), z.array(z.union([ZTextBlockParam, ZImageBlockParam, ZDocumentBlockParam, ZSearchResultBlockParam, ZThinkingBlockParam, ZRedactedThinkingBlockParam, ZToolUseBlockParam, ZToolResultBlockParam, ZServerToolUseBlockParam, ZWebSearchToolResultBlockParam, ZWebFetchToolResultBlockParam, ZCodeExecutionToolResultBlockParam, ZBashCodeExecutionToolResultBlockParam, ZTextEditorCodeExecutionToolResultBlockParam, ZToolSearchToolResultBlockParam, ZContainerUploadBlockParam, z.union([ZTextBlock, ZThinkingBlock, ZRedactedThinkingBlock, ZToolUseBlock, ZServerToolUseBlock, ZWebSearchToolResultBlock, ZWebFetchToolResultBlock, ZCodeExecutionToolResultBlock, ZBashCodeExecutionToolResultBlock, ZTextEditorCodeExecutionToolResultBlock, ZToolSearchToolResultBlock, ZContainerUploadBlock])]))]),
-    role: z.union([z.literal("user"), z.literal("assistant")]),
-})));
+export const ZMessageParam = z.lazy(() =>
+  z.object({
+    content: z.union([
+      z.string(),
+      z.array(
+        z.union([
+          ZTextBlockParam,
+          ZImageBlockParam,
+          ZDocumentBlockParam,
+          ZSearchResultBlockParam,
+          ZThinkingBlockParam,
+          ZRedactedThinkingBlockParam,
+          ZToolUseBlockParam,
+          ZToolResultBlockParam,
+          ZServerToolUseBlockParam,
+          ZWebSearchToolResultBlockParam,
+          ZWebFetchToolResultBlockParam,
+          ZCodeExecutionToolResultBlockParam,
+          ZBashCodeExecutionToolResultBlockParam,
+          ZTextEditorCodeExecutionToolResultBlockParam,
+          ZToolSearchToolResultBlockParam,
+          ZContainerUploadBlockParam,
+          z.union([
+            ZTextBlock,
+            ZThinkingBlock,
+            ZRedactedThinkingBlock,
+            ZToolUseBlock,
+            ZServerToolUseBlock,
+            ZWebSearchToolResultBlock,
+            ZWebFetchToolResultBlock,
+            ZCodeExecutionToolResultBlock,
+            ZBashCodeExecutionToolResultBlock,
+            ZTextEditorCodeExecutionToolResultBlock,
+            ZToolSearchToolResultBlock,
+            ZContainerUploadBlock,
+          ]),
+        ])
+      ),
+    ]),
+    role: z.union([z.literal('user'), z.literal('assistant')]),
+  })
+);
 export type MessageParam = z.infer<typeof ZMessageParam>;
 
-export const ZSchemaGenerationResponse = z.lazy(() => (z.object({
-    object: z.literal("schema").default("schema"),
+export const ZSchemaGenerationResponse = z.lazy(() =>
+  z.object({
+    object: z.literal('schema').default('schema'),
     created_at: z.string(),
     json_schema: z.record(z.string(), z.any()).default({}),
     strict: z.boolean().default(true),
     usage: ZRetabUsage,
-})));
+  })
+);
 export type SchemaGenerationResponse = z.infer<typeof ZSchemaGenerationResponse>;
 
-export const ZPartialSchemaChunk = z.lazy(() => (ZStreamingBaseModel.schema).merge(z.object({
-    object: z.literal("schema.chunk").default("schema.chunk"),
-    created_at: z.string(),
-    delta_json_schema_flat: z.record(z.string(), z.any()).default({}),
-    delta_flat_deleted_keys: z.array(z.string()).default([]),
-})));
+export const ZPartialSchemaChunk = z.lazy(() =>
+  ZStreamingBaseModel.schema.merge(
+    z.object({
+      object: z.literal('schema.chunk').default('schema.chunk'),
+      created_at: z.string(),
+      delta_json_schema_flat: z.record(z.string(), z.any()).default({}),
+      delta_flat_deleted_keys: z.array(z.string()).default([]),
+    })
+  )
+);
 export type PartialSchemaChunk = z.infer<typeof ZPartialSchemaChunk>;
 
-export const ZTemplateSchema = z.lazy(() => (z.object({
+export const ZTemplateSchema = z.lazy(() =>
+  z.object({
     id: z.string(),
     name: z.string(),
-    object: z.literal("template").default("template"),
+    object: z.literal('template').default('template'),
     updated_at: z.string(),
     json_schema: z.record(z.string(), z.any()).default({}),
     python_code: z.string().nullable().optional(),
     sample_document_filename: z.string().nullable().optional(),
-})));
+  })
+);
 export type TemplateSchema = z.infer<typeof ZTemplateSchema>;
 
-export const ZUpdateTemplateRequest = z.lazy(() => (z.object({
+export const ZUpdateTemplateRequest = z.lazy(() =>
+  z.object({
     id: z.string(),
     name: z.string().nullable().optional(),
     json_schema: z.record(z.string(), z.any()).nullable().optional(),
     python_code: z.string().nullable().optional(),
     sample_document: ZMIMEData.nullable().optional(),
-})));
+  })
+);
 export type UpdateTemplateRequest = z.infer<typeof ZUpdateTemplateRequest>;
 
-export const ZBlobDict = z.lazy(() => (z.object({
+export const ZBlobDict = z.lazy(() =>
+  z.object({
     data: z.instanceof(Uint8Array).nullable().optional(),
     display_name: z.string().nullable().optional(),
     mime_type: z.string().nullable().optional(),
-})));
+  })
+);
 export type BlobDict = z.infer<typeof ZBlobDict>;
 
-export const ZChatCompletionContentPartImageParam = z.lazy(() => (z.object({
+export const ZChatCompletionContentPartImageParam = z.lazy(() =>
+  z.object({
     image_url: ZImageURL,
-    type: z.literal("image_url"),
-})));
-export type ChatCompletionContentPartImageParam = z.infer<typeof ZChatCompletionContentPartImageParam>;
+    type: z.literal('image_url'),
+  })
+);
+export type ChatCompletionContentPartImageParam = z.infer<
+  typeof ZChatCompletionContentPartImageParam
+>;
 
-export const ZChatCompletionContentPartInputAudioParam = z.lazy(() => (z.object({
+export const ZChatCompletionContentPartInputAudioParam = z.lazy(() =>
+  z.object({
     input_audio: ZInputAudio,
-    type: z.literal("input_audio"),
-})));
-export type ChatCompletionContentPartInputAudioParam = z.infer<typeof ZChatCompletionContentPartInputAudioParam>;
+    type: z.literal('input_audio'),
+  })
+);
+export type ChatCompletionContentPartInputAudioParam = z.infer<
+  typeof ZChatCompletionContentPartInputAudioParam
+>;
 
-export const ZChatCompletionContentPartTextParam = z.lazy(() => (z.object({
+export const ZChatCompletionContentPartTextParam = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("text"),
-})));
-export type ChatCompletionContentPartTextParam = z.infer<typeof ZChatCompletionContentPartTextParam>;
+    type: z.literal('text'),
+  })
+);
+export type ChatCompletionContentPartTextParam = z.infer<
+  typeof ZChatCompletionContentPartTextParam
+>;
 
-export const ZCompletionTokensDetails = z.lazy(() => (z.object({
+export const ZCompletionTokensDetails = z.lazy(() =>
+  z.object({
     accepted_prediction_tokens: z.number().nullable().optional(),
     audio_tokens: z.number().nullable().optional(),
     reasoning_tokens: z.number().nullable().optional(),
     rejected_prediction_tokens: z.number().nullable().optional(),
-})));
+  })
+);
 export type CompletionTokensDetails = z.infer<typeof ZCompletionTokensDetails>;
 
-export const ZCompletionUsage = z.lazy(() => (z.object({
+export const ZCompletionUsage = z.lazy(() =>
+  z.object({
     completion_tokens: z.number(),
     prompt_tokens: z.number(),
     total_tokens: z.number(),
     completion_tokens_details: ZCompletionTokensDetails.nullable().optional(),
     prompt_tokens_details: ZPromptTokensDetails.nullable().optional(),
-})));
+  })
+);
 export type CompletionUsage = z.infer<typeof ZCompletionUsage>;
 
-export const ZContentDict = z.lazy(() => (z.object({
+export const ZContentDict = z.lazy(() =>
+  z.object({
     parts: z.array(ZPartDict).nullable().optional(),
     role: z.string().nullable().optional(),
-})));
+  })
+);
 export type ContentDict = z.infer<typeof ZContentDict>;
 
-export const ZEasyInputMessageParam = z.lazy(() => (z.object({
-    content: z.union([z.string(), z.array(z.union([ZResponseInputTextParam, ZResponseInputImageParam, ZResponseInputFileParam]))]),
-    role: z.union([z.literal("user"), z.literal("assistant"), z.literal("system"), z.literal("developer")]),
-    phase: z.union([z.literal("commentary"), z.literal("final_answer")]).nullable().optional(),
-    type: z.literal("message"),
-})));
+export const ZEasyInputMessageParam = z.lazy(() =>
+  z.object({
+    content: z.union([
+      z.string(),
+      z.array(
+        z.union([ZResponseInputTextParam, ZResponseInputImageParam, ZResponseInputFileParam])
+      ),
+    ]),
+    role: z.union([
+      z.literal('user'),
+      z.literal('assistant'),
+      z.literal('system'),
+      z.literal('developer'),
+    ]),
+    phase: z
+      .union([z.literal('commentary'), z.literal('final_answer')])
+      .nullable()
+      .optional(),
+    type: z.literal('message'),
+  })
+);
 export type EasyInputMessageParam = z.infer<typeof ZEasyInputMessageParam>;
 
-export const ZImageBlockParam = z.lazy(() => (z.object({
+export const ZImageBlockParam = z.lazy(() =>
+  z.object({
     source: z.union([ZBase64ImageSourceParam, ZURLImageSourceParam]),
-    type: z.literal("image"),
+    type: z.literal('image'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-})));
+  })
+);
 export type ImageBlockParam = z.infer<typeof ZImageBlockParam>;
 
-export const ZImageURL = z.lazy(() => (z.object({
+export const ZImageURL = z.lazy(() =>
+  z.object({
     url: z.string(),
-    detail: z.union([z.literal("auto"), z.literal("low"), z.literal("high")]),
-})));
+    detail: z.union([z.literal('auto'), z.literal('low'), z.literal('high')]),
+  })
+);
 export type ImageURL = z.infer<typeof ZImageURL>;
 
-export const ZParsedChatCompletionMessage = z.lazy(() => (ZChatCompletionMessage.schema).merge(z.object({
-    tool_calls: z.array(ZParsedFunctionToolCall).nullable().optional(),
-    parsed: z.any().nullable().optional(),
-})));
+export const ZParsedChatCompletionMessage = z.lazy(() =>
+  ZChatCompletionMessage.schema.merge(
+    z.object({
+      tool_calls: z.array(ZParsedFunctionToolCall).nullable().optional(),
+      parsed: z.any().nullable().optional(),
+    })
+  )
+);
 export type ParsedChatCompletionMessage = z.infer<typeof ZParsedChatCompletionMessage>;
 
-export const ZPartDict = z.lazy(() => (z.object({
+export const ZPartDict = z.lazy(() =>
+  z.object({
     media_resolution: ZPartMediaResolutionDict.nullable().optional(),
     code_execution_result: ZCodeExecutionResultDict.nullable().optional(),
     executable_code: ZExecutableCodeDict.nullable().optional(),
@@ -1502,29 +1981,223 @@ export const ZPartDict = z.lazy(() => (z.object({
     tool_call: ZToolCallDict.nullable().optional(),
     tool_response: ZToolResponseDict.nullable().optional(),
     part_metadata: z.record(z.string(), z.any()).nullable().optional(),
-})));
+  })
+);
 export type PartDict = z.infer<typeof ZPartDict>;
 
-export const ZPromptTokensDetails = z.lazy(() => (z.object({
+export const ZPromptTokensDetails = z.lazy(() =>
+  z.object({
     audio_tokens: z.number().nullable().optional(),
     cached_tokens: z.number().nullable().optional(),
-})));
+  })
+);
 export type PromptTokensDetails = z.infer<typeof ZPromptTokensDetails>;
 
-export const ZResponse = z.lazy(() => (z.object({
+export const ZResponse = z.lazy(() =>
+  z.object({
     id: z.string(),
     created_at: z.number(),
     error: ZResponseError.nullable().optional(),
     incomplete_details: ZIncompleteDetails.nullable().optional(),
-    instructions: z.union([z.string(), z.array(z.union([ZEasyInputMessage, ZMessage, ZResponseOutputMessage, ZResponseFileSearchToolCall, ZResponseComputerToolCall, ZComputerCallOutput, ZResponseFunctionWebSearch, ZResponseFunctionToolCall, ZFunctionCallOutput, ZToolSearchCall, ZResponseToolSearchOutputItemParam, ZResponseReasoningItem, ZResponseCompactionItemParam, ZImageGenerationCall, ZResponseCodeInterpreterToolCall, ZLocalShellCall, ZLocalShellCallOutput, ZShellCall, ZShellCallOutput, ZApplyPatchCall, ZApplyPatchCallOutput, ZMcpListTools, ZMcpApprovalRequest, ZMcpApprovalResponse, ZMcpCall, ZResponseCustomToolCallOutput, ZResponseCustomToolCall, ZItemReference]))]).nullable().optional(),
+    instructions: z
+      .union([
+        z.string(),
+        z.array(
+          z.union([
+            ZEasyInputMessage,
+            ZMessage,
+            ZResponseOutputMessage,
+            ZResponseFileSearchToolCall,
+            ZResponseComputerToolCall,
+            ZComputerCallOutput,
+            ZResponseFunctionWebSearch,
+            ZResponseFunctionToolCall,
+            ZFunctionCallOutput,
+            ZToolSearchCall,
+            ZResponseToolSearchOutputItemParam,
+            ZResponseReasoningItem,
+            ZResponseCompactionItemParam,
+            ZImageGenerationCall,
+            ZResponseCodeInterpreterToolCall,
+            ZLocalShellCall,
+            ZLocalShellCallOutput,
+            ZShellCall,
+            ZShellCallOutput,
+            ZApplyPatchCall,
+            ZApplyPatchCallOutput,
+            ZMcpListTools,
+            ZMcpApprovalRequest,
+            ZMcpApprovalResponse,
+            ZMcpCall,
+            ZResponseCustomToolCallOutput,
+            ZResponseCustomToolCall,
+            ZItemReference,
+          ])
+        ),
+      ])
+      .nullable()
+      .optional(),
     metadata: z.record(z.string(), z.string()).nullable().optional(),
-    model: z.union([z.string(), z.union([z.literal("gpt-5.4"), z.literal("gpt-5.4-mini"), z.literal("gpt-5.4-nano"), z.literal("gpt-5.4-mini-2026-03-17"), z.literal("gpt-5.4-nano-2026-03-17"), z.literal("gpt-5.3-chat-latest"), z.literal("gpt-5.2"), z.literal("gpt-5.2-2025-12-11"), z.literal("gpt-5.2-chat-latest"), z.literal("gpt-5.2-pro"), z.literal("gpt-5.2-pro-2025-12-11"), z.literal("gpt-5.1"), z.literal("gpt-5.1-2025-11-13"), z.literal("gpt-5.1-codex"), z.literal("gpt-5.1-mini"), z.literal("gpt-5.1-chat-latest"), z.literal("gpt-5"), z.literal("gpt-5-mini"), z.literal("gpt-5-nano"), z.literal("gpt-5-2025-08-07"), z.literal("gpt-5-mini-2025-08-07"), z.literal("gpt-5-nano-2025-08-07"), z.literal("gpt-5-chat-latest"), z.literal("gpt-4.1"), z.literal("gpt-4.1-mini"), z.literal("gpt-4.1-nano"), z.literal("gpt-4.1-2025-04-14"), z.literal("gpt-4.1-mini-2025-04-14"), z.literal("gpt-4.1-nano-2025-04-14"), z.literal("o4-mini"), z.literal("o4-mini-2025-04-16"), z.literal("o3"), z.literal("o3-2025-04-16"), z.literal("o3-mini"), z.literal("o3-mini-2025-01-31"), z.literal("o1"), z.literal("o1-2024-12-17"), z.literal("o1-preview"), z.literal("o1-preview-2024-09-12"), z.literal("o1-mini"), z.literal("o1-mini-2024-09-12"), z.literal("gpt-4o"), z.literal("gpt-4o-2024-11-20"), z.literal("gpt-4o-2024-08-06"), z.literal("gpt-4o-2024-05-13"), z.literal("gpt-4o-audio-preview"), z.literal("gpt-4o-audio-preview-2024-10-01"), z.literal("gpt-4o-audio-preview-2024-12-17"), z.literal("gpt-4o-audio-preview-2025-06-03"), z.literal("gpt-4o-mini-audio-preview"), z.literal("gpt-4o-mini-audio-preview-2024-12-17"), z.literal("gpt-4o-search-preview"), z.literal("gpt-4o-mini-search-preview"), z.literal("gpt-4o-search-preview-2025-03-11"), z.literal("gpt-4o-mini-search-preview-2025-03-11"), z.literal("chatgpt-4o-latest"), z.literal("codex-mini-latest"), z.literal("gpt-4o-mini"), z.literal("gpt-4o-mini-2024-07-18"), z.literal("gpt-4-turbo"), z.literal("gpt-4-turbo-2024-04-09"), z.literal("gpt-4-0125-preview"), z.literal("gpt-4-turbo-preview"), z.literal("gpt-4-1106-preview"), z.literal("gpt-4-vision-preview"), z.literal("gpt-4"), z.literal("gpt-4-0314"), z.literal("gpt-4-0613"), z.literal("gpt-4-32k"), z.literal("gpt-4-32k-0314"), z.literal("gpt-4-32k-0613"), z.literal("gpt-3.5-turbo"), z.literal("gpt-3.5-turbo-16k"), z.literal("gpt-3.5-turbo-0301"), z.literal("gpt-3.5-turbo-0613"), z.literal("gpt-3.5-turbo-1106"), z.literal("gpt-3.5-turbo-0125"), z.literal("gpt-3.5-turbo-16k-0613")]), z.union([z.literal("o1-pro"), z.literal("o1-pro-2025-03-19"), z.literal("o3-pro"), z.literal("o3-pro-2025-06-10"), z.literal("o3-deep-research"), z.literal("o3-deep-research-2025-06-26"), z.literal("o4-mini-deep-research"), z.literal("o4-mini-deep-research-2025-06-26"), z.literal("computer-use-preview"), z.literal("computer-use-preview-2025-03-11"), z.literal("gpt-5-codex"), z.literal("gpt-5-pro"), z.literal("gpt-5-pro-2025-10-06"), z.literal("gpt-5.1-codex-max")])]),
-    object: z.literal("response"),
-    output: z.array(z.union([ZResponseOutputMessage, ZResponseFileSearchToolCall, ZResponseFunctionToolCall, ZResponseFunctionToolCallOutputItem, ZResponseFunctionWebSearch, ZResponseComputerToolCall, ZResponseComputerToolCallOutputItem, ZResponseReasoningItem, ZResponseToolSearchCall, ZResponseToolSearchOutputItem, ZResponseCompactionItem, ZResponseOutputItemImageGenerationCall, ZResponseCodeInterpreterToolCall, ZResponseOutputItemLocalShellCall, ZResponseOutputItemLocalShellCallOutput, ZResponseFunctionShellToolCall, ZResponseFunctionShellToolCallOutput, ZResponseApplyPatchToolCall, ZResponseApplyPatchToolCallOutput, ZResponseOutputItemMcpCall, ZResponseOutputItemMcpListTools, ZResponseOutputItemMcpApprovalRequest, ZResponseOutputItemMcpApprovalResponse, ZResponseCustomToolCall, ZResponseCustomToolCallOutputItem])),
+    model: z.union([
+      z.string(),
+      z.union([
+        z.literal('gpt-5.4'),
+        z.literal('gpt-5.4-mini'),
+        z.literal('gpt-5.4-nano'),
+        z.literal('gpt-5.4-mini-2026-03-17'),
+        z.literal('gpt-5.4-nano-2026-03-17'),
+        z.literal('gpt-5.3-chat-latest'),
+        z.literal('gpt-5.2'),
+        z.literal('gpt-5.2-2025-12-11'),
+        z.literal('gpt-5.2-chat-latest'),
+        z.literal('gpt-5.2-pro'),
+        z.literal('gpt-5.2-pro-2025-12-11'),
+        z.literal('gpt-5.1'),
+        z.literal('gpt-5.1-2025-11-13'),
+        z.literal('gpt-5.1-codex'),
+        z.literal('gpt-5.1-mini'),
+        z.literal('gpt-5.1-chat-latest'),
+        z.literal('gpt-5'),
+        z.literal('gpt-5-mini'),
+        z.literal('gpt-5-nano'),
+        z.literal('gpt-5-2025-08-07'),
+        z.literal('gpt-5-mini-2025-08-07'),
+        z.literal('gpt-5-nano-2025-08-07'),
+        z.literal('gpt-5-chat-latest'),
+        z.literal('gpt-4.1'),
+        z.literal('gpt-4.1-mini'),
+        z.literal('gpt-4.1-nano'),
+        z.literal('gpt-4.1-2025-04-14'),
+        z.literal('gpt-4.1-mini-2025-04-14'),
+        z.literal('gpt-4.1-nano-2025-04-14'),
+        z.literal('o4-mini'),
+        z.literal('o4-mini-2025-04-16'),
+        z.literal('o3'),
+        z.literal('o3-2025-04-16'),
+        z.literal('o3-mini'),
+        z.literal('o3-mini-2025-01-31'),
+        z.literal('o1'),
+        z.literal('o1-2024-12-17'),
+        z.literal('o1-preview'),
+        z.literal('o1-preview-2024-09-12'),
+        z.literal('o1-mini'),
+        z.literal('o1-mini-2024-09-12'),
+        z.literal('gpt-4o'),
+        z.literal('gpt-4o-2024-11-20'),
+        z.literal('gpt-4o-2024-08-06'),
+        z.literal('gpt-4o-2024-05-13'),
+        z.literal('gpt-4o-audio-preview'),
+        z.literal('gpt-4o-audio-preview-2024-10-01'),
+        z.literal('gpt-4o-audio-preview-2024-12-17'),
+        z.literal('gpt-4o-audio-preview-2025-06-03'),
+        z.literal('gpt-4o-mini-audio-preview'),
+        z.literal('gpt-4o-mini-audio-preview-2024-12-17'),
+        z.literal('gpt-4o-search-preview'),
+        z.literal('gpt-4o-mini-search-preview'),
+        z.literal('gpt-4o-search-preview-2025-03-11'),
+        z.literal('gpt-4o-mini-search-preview-2025-03-11'),
+        z.literal('chatgpt-4o-latest'),
+        z.literal('codex-mini-latest'),
+        z.literal('gpt-4o-mini'),
+        z.literal('gpt-4o-mini-2024-07-18'),
+        z.literal('gpt-4-turbo'),
+        z.literal('gpt-4-turbo-2024-04-09'),
+        z.literal('gpt-4-0125-preview'),
+        z.literal('gpt-4-turbo-preview'),
+        z.literal('gpt-4-1106-preview'),
+        z.literal('gpt-4-vision-preview'),
+        z.literal('gpt-4'),
+        z.literal('gpt-4-0314'),
+        z.literal('gpt-4-0613'),
+        z.literal('gpt-4-32k'),
+        z.literal('gpt-4-32k-0314'),
+        z.literal('gpt-4-32k-0613'),
+        z.literal('gpt-3.5-turbo'),
+        z.literal('gpt-3.5-turbo-16k'),
+        z.literal('gpt-3.5-turbo-0301'),
+        z.literal('gpt-3.5-turbo-0613'),
+        z.literal('gpt-3.5-turbo-1106'),
+        z.literal('gpt-3.5-turbo-0125'),
+        z.literal('gpt-3.5-turbo-16k-0613'),
+      ]),
+      z.union([
+        z.literal('o1-pro'),
+        z.literal('o1-pro-2025-03-19'),
+        z.literal('o3-pro'),
+        z.literal('o3-pro-2025-06-10'),
+        z.literal('o3-deep-research'),
+        z.literal('o3-deep-research-2025-06-26'),
+        z.literal('o4-mini-deep-research'),
+        z.literal('o4-mini-deep-research-2025-06-26'),
+        z.literal('computer-use-preview'),
+        z.literal('computer-use-preview-2025-03-11'),
+        z.literal('gpt-5-codex'),
+        z.literal('gpt-5-pro'),
+        z.literal('gpt-5-pro-2025-10-06'),
+        z.literal('gpt-5.1-codex-max'),
+      ]),
+    ]),
+    object: z.literal('response'),
+    output: z.array(
+      z.union([
+        ZResponseOutputMessage,
+        ZResponseFileSearchToolCall,
+        ZResponseFunctionToolCall,
+        ZResponseFunctionToolCallOutputItem,
+        ZResponseFunctionWebSearch,
+        ZResponseComputerToolCall,
+        ZResponseComputerToolCallOutputItem,
+        ZResponseReasoningItem,
+        ZResponseToolSearchCall,
+        ZResponseToolSearchOutputItem,
+        ZResponseCompactionItem,
+        ZResponseOutputItemImageGenerationCall,
+        ZResponseCodeInterpreterToolCall,
+        ZResponseOutputItemLocalShellCall,
+        ZResponseOutputItemLocalShellCallOutput,
+        ZResponseFunctionShellToolCall,
+        ZResponseFunctionShellToolCallOutput,
+        ZResponseApplyPatchToolCall,
+        ZResponseApplyPatchToolCallOutput,
+        ZResponseOutputItemMcpCall,
+        ZResponseOutputItemMcpListTools,
+        ZResponseOutputItemMcpApprovalRequest,
+        ZResponseOutputItemMcpApprovalResponse,
+        ZResponseCustomToolCall,
+        ZResponseCustomToolCallOutputItem,
+      ])
+    ),
     parallel_tool_calls: z.boolean(),
     temperature: z.number().nullable().optional(),
-    tool_choice: z.union([z.union([z.literal("none"), z.literal("auto"), z.literal("required")]), ZToolChoiceAllowed, ZToolChoiceTypes, ZToolChoiceFunction, ZToolChoiceMcp, ZToolChoiceCustom, ZToolChoiceApplyPatch, ZToolChoiceShell]),
-    tools: z.array(z.union([ZFunctionTool, ZFileSearchTool, ZComputerTool, ZComputerUsePreviewTool, ZWebSearchTool, ZMcp, ZCodeInterpreter, ZImageGeneration, ZLocalShell, ZFunctionShellTool, ZCustomTool, ZNamespaceTool, ZToolSearchTool, ZWebSearchPreviewTool, ZApplyPatchTool])),
+    tool_choice: z.union([
+      z.union([z.literal('none'), z.literal('auto'), z.literal('required')]),
+      ZToolChoiceAllowed,
+      ZToolChoiceTypes,
+      ZToolChoiceFunction,
+      ZToolChoiceMcp,
+      ZToolChoiceCustom,
+      ZToolChoiceApplyPatch,
+      ZToolChoiceShell,
+    ]),
+    tools: z.array(
+      z.union([
+        ZFunctionTool,
+        ZFileSearchTool,
+        ZComputerTool,
+        ZComputerUsePreviewTool,
+        ZWebSearchTool,
+        ZMcp,
+        ZCodeInterpreter,
+        ZImageGeneration,
+        ZLocalShell,
+        ZFunctionShellTool,
+        ZCustomTool,
+        ZNamespaceTool,
+        ZToolSearchTool,
+        ZWebSearchPreviewTool,
+        ZApplyPatchTool,
+      ])
+    ),
     top_p: z.number().nullable().optional(),
     background: z.boolean().nullable().optional(),
     completed_at: z.number().nullable().optional(),
@@ -1534,71 +2207,143 @@ export const ZResponse = z.lazy(() => (z.object({
     previous_response_id: z.string().nullable().optional(),
     prompt: ZResponsePrompt.nullable().optional(),
     prompt_cache_key: z.string().nullable().optional(),
-    prompt_cache_retention: z.union([z.literal("in_memory"), z.literal("24h")]).nullable().optional(),
+    prompt_cache_retention: z
+      .union([z.literal('in_memory'), z.literal('24h')])
+      .nullable()
+      .optional(),
     reasoning: ZReasoning.nullable().optional(),
     safety_identifier: z.string().nullable().optional(),
-    service_tier: z.union([z.literal("auto"), z.literal("default"), z.literal("flex"), z.literal("scale"), z.literal("priority")]).nullable().optional(),
-    status: z.union([z.literal("completed"), z.literal("failed"), z.literal("in_progress"), z.literal("cancelled"), z.literal("queued"), z.literal("incomplete")]).nullable().optional(),
+    service_tier: z
+      .union([
+        z.literal('auto'),
+        z.literal('default'),
+        z.literal('flex'),
+        z.literal('scale'),
+        z.literal('priority'),
+      ])
+      .nullable()
+      .optional(),
+    status: z
+      .union([
+        z.literal('completed'),
+        z.literal('failed'),
+        z.literal('in_progress'),
+        z.literal('cancelled'),
+        z.literal('queued'),
+        z.literal('incomplete'),
+      ])
+      .nullable()
+      .optional(),
     text: ZResponseTextConfig.nullable().optional(),
     top_logprobs: z.number().nullable().optional(),
-    truncation: z.union([z.literal("auto"), z.literal("disabled")]).nullable().optional(),
+    truncation: z
+      .union([z.literal('auto'), z.literal('disabled')])
+      .nullable()
+      .optional(),
     usage: ZResponseUsage.nullable().optional(),
     user: z.string().nullable().optional(),
-})));
+  })
+);
 export type Response = z.infer<typeof ZResponse>;
 
-export const ZResponseInputImageParam = z.lazy(() => (z.object({
-    detail: z.union([z.literal("low"), z.literal("high"), z.literal("auto"), z.literal("original")]),
-    type: z.literal("input_image"),
+export const ZResponseInputImageParam = z.lazy(() =>
+  z.object({
+    detail: z.union([
+      z.literal('low'),
+      z.literal('high'),
+      z.literal('auto'),
+      z.literal('original'),
+    ]),
+    type: z.literal('input_image'),
     file_id: z.string().nullable().optional(),
     image_url: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputImageParam = z.infer<typeof ZResponseInputImageParam>;
 
-export const ZResponseInputTextParam = z.lazy(() => (z.object({
+export const ZResponseInputTextParam = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("input_text"),
-})));
+    type: z.literal('input_text'),
+  })
+);
 export type ResponseInputTextParam = z.infer<typeof ZResponseInputTextParam>;
 
-export const ZRetabParsedChatCompletion = z.lazy(() => (ZParsedChatCompletion.schema).merge(z.object({
-    choices: z.array(ZRetabParsedChoice),
-    usage: z.union([ZCompletionUsage, ZRetabUsage]).nullable().optional(),
-    extraction_id: z.string().nullable().optional(),
-    likelihoods: z.record(z.string(), z.any()).nullable().optional(),
-    request_at: z.string().nullable().optional(),
-    first_token_at: z.string().nullable().optional(),
-    last_token_at: z.string().nullable().optional(),
-})));
+export const ZRetabParsedChatCompletion = z.lazy(() =>
+  ZParsedChatCompletion.schema.merge(
+    z.object({
+      choices: z.array(ZRetabParsedChoice),
+      usage: z.union([ZCompletionUsage, ZRetabUsage]).nullable().optional(),
+      extraction_id: z.string().nullable().optional(),
+      likelihoods: z.record(z.string(), z.any()).nullable().optional(),
+      request_at: z.string().nullable().optional(),
+      first_token_at: z.string().nullable().optional(),
+      last_token_at: z.string().nullable().optional(),
+    })
+  )
+);
 export type RetabParsedChatCompletion = z.infer<typeof ZRetabParsedChatCompletion>;
 
-export const ZRetabParsedChoice = z.lazy(() => (ZParsedChoice.schema).merge(z.object({
-    finish_reason: z.union([z.literal("stop"), z.literal("length"), z.literal("tool_calls"), z.literal("content_filter"), z.literal("function_call")]).nullable().optional(),
-    key_mapping: z.record(z.string(), z.string().nullable().optional()).nullable().optional(),
-})));
+export const ZRetabParsedChoice = z.lazy(() =>
+  ZParsedChoice.schema.merge(
+    z.object({
+      finish_reason: z
+        .union([
+          z.literal('stop'),
+          z.literal('length'),
+          z.literal('tool_calls'),
+          z.literal('content_filter'),
+          z.literal('function_call'),
+        ])
+        .nullable()
+        .optional(),
+      key_mapping: z.record(z.string(), z.string().nullable().optional()).nullable().optional(),
+    })
+  )
+);
 export type RetabParsedChoice = z.infer<typeof ZRetabParsedChoice>;
 
-export const ZTextBlockParam = z.lazy(() => (z.object({
+export const ZTextBlockParam = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("text"),
+    type: z.literal('text'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-    citations: z.array(z.union([ZCitationCharLocationParam, ZCitationPageLocationParam, ZCitationContentBlockLocationParam, ZCitationWebSearchResultLocationParam, ZCitationSearchResultLocationParam])).nullable().optional(),
-})));
+    citations: z
+      .array(
+        z.union([
+          ZCitationCharLocationParam,
+          ZCitationPageLocationParam,
+          ZCitationContentBlockLocationParam,
+          ZCitationWebSearchResultLocationParam,
+          ZCitationSearchResultLocationParam,
+        ])
+      )
+      .nullable()
+      .optional(),
+  })
+);
 export type TextBlockParam = z.infer<typeof ZTextBlockParam>;
 
-export const ZCreateEditTemplateRequest = z.lazy(() => (z.object({
+export const ZCreateEditTemplateRequest = z.lazy(() =>
+  z.object({
     name: z.string(),
     document: ZMIMEData,
     form_fields: z.array(ZEditFormField),
-})));
+  })
+);
 export type CreateEditTemplateRequest = z.infer<typeof ZCreateEditTemplateRequest>;
 
-export const ZTemplatesDuplicateEditTemplateRequest = z.lazy(() => (z.object({
+export const ZTemplatesDuplicateEditTemplateRequest = z.lazy(() =>
+  z.object({
     name: z.string().nullable().optional(),
-})));
-export type TemplatesDuplicateEditTemplateRequest = z.infer<typeof ZTemplatesDuplicateEditTemplateRequest>;
+  })
+);
+export type TemplatesDuplicateEditTemplateRequest = z.infer<
+  typeof ZTemplatesDuplicateEditTemplateRequest
+>;
 
-export const ZTemplatesEditTemplate = z.lazy(() => (z.object({
+export const ZTemplatesEditTemplate = z.lazy(() =>
+  z.object({
     id: z.string(),
     name: z.string(),
     file: ZFileRef,
@@ -1606,45 +2351,63 @@ export const ZTemplatesEditTemplate = z.lazy(() => (z.object({
     field_count: z.number().default(0),
     created_at: z.string(),
     updated_at: z.string(),
-})));
+  })
+);
 export type TemplatesEditTemplate = z.infer<typeof ZTemplatesEditTemplate>;
 
-export const ZFillTemplateRequest = z.lazy(() => (z.object({
-    model: z.string().default("retab-small"),
+export const ZFillTemplateRequest = z.lazy(() =>
+  z.object({
+    model: z.string().default('retab-small'),
     instructions: z.string(),
     template_id: z.string(),
     config: ZEditEditConfig,
-})));
+  })
+);
 export type FillTemplateRequest = z.infer<typeof ZFillTemplateRequest>;
 
-export const ZTemplatesUpdateEditTemplateRequest = z.lazy(() => (z.object({
+export const ZTemplatesUpdateEditTemplateRequest = z.lazy(() =>
+  z.object({
     name: z.string().nullable().optional(),
     form_fields: z.array(ZEditFormField).nullable().optional(),
-})));
-export type TemplatesUpdateEditTemplateRequest = z.infer<typeof ZTemplatesUpdateEditTemplateRequest>;
+  })
+);
+export type TemplatesUpdateEditTemplateRequest = z.infer<
+  typeof ZTemplatesUpdateEditTemplateRequest
+>;
 
-export const ZEditEditConfig = z.lazy(() => (z.object({
-    color: z.string().default("#000080"),
-})));
+export const ZEditEditConfig = z.lazy(() =>
+  z.object({
+    color: z.string().default('#000080'),
+  })
+);
 export type EditEditConfig = z.infer<typeof ZEditEditConfig>;
 
-export const ZEditFormField = z.lazy(() => (ZEditBaseFormField.schema).merge(z.object({
-    value: z.string().nullable().optional(),
-})));
+export const ZEditFormField = z.lazy(() =>
+  ZEditBaseFormField.schema.merge(
+    z.object({
+      value: z.string().nullable().optional(),
+    })
+  )
+);
 export type EditFormField = z.infer<typeof ZEditFormField>;
 
-export const ZExtractChoice = z.lazy(() => (z.object({
+export const ZExtractChoice = z.lazy(() =>
+  z.object({
     data: z.record(z.string(), z.any()),
-})));
+  })
+);
 export type ExtractChoice = z.infer<typeof ZExtractChoice>;
 
-export const ZExtractConsensus = z.lazy(() => (z.object({
+export const ZExtractConsensus = z.lazy(() =>
+  z.object({
     choices: z.array(ZExtractChoice),
     likelihoods: z.record(z.string(), z.any()).nullable().optional(),
-})));
+  })
+);
 export type ExtractConsensus = z.infer<typeof ZExtractConsensus>;
 
-export const ZExtractRequest = z.lazy(() => (z.object({
+export const ZExtractRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     json_schema: z.record(z.string(), z.any()),
     model: z.string(),
@@ -1654,10 +2417,12 @@ export const ZExtractRequest = z.lazy(() => (z.object({
     metadata: z.record(z.string(), z.string()),
     extraction_id: z.string().nullable().optional(),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type ExtractRequest = z.infer<typeof ZExtractRequest>;
 
-export const ZExtractResponse = z.lazy(() => (z.object({
+export const ZExtractResponse = z.lazy(() =>
+  z.object({
     data: z.record(z.string(), z.any()),
     consensus: ZExtractConsensus,
     usage: ZRetabUsage,
@@ -1666,10 +2431,12 @@ export const ZExtractResponse = z.lazy(() => (z.object({
     request_at: z.string().nullable().optional(),
     first_token_at: z.string().nullable().optional(),
     last_token_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type ExtractResponse = z.infer<typeof ZExtractResponse>;
 
-export const ZExtractResponseChunk = z.lazy(() => (z.object({
+export const ZExtractResponseChunk = z.lazy(() =>
+  z.object({
     data_delta: z.record(z.string(), z.any()),
     likelihoods_delta: z.record(z.string(), z.any()).nullable().optional(),
     deleted_keys: z.array(z.string()),
@@ -1679,378 +2446,522 @@ export const ZExtractResponseChunk = z.lazy(() => (z.object({
     request_at: z.string().nullable().optional(),
     first_token_at: z.string().nullable().optional(),
     last_token_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type ExtractResponseChunk = z.infer<typeof ZExtractResponseChunk>;
 
-export const ZDocumentTransformRequest = z.lazy(() => (z.object({
+export const ZDocumentTransformRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
-})));
+  })
+);
 export type DocumentTransformRequest = z.infer<typeof ZDocumentTransformRequest>;
 
-export const ZDocumentTransformResponse = z.lazy(() => (z.object({
+export const ZDocumentTransformResponse = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
-})));
+  })
+);
 export type DocumentTransformResponse = z.infer<typeof ZDocumentTransformResponse>;
 
-export const ZClassifyCategory = z.lazy(() => (z.object({
+export const ZClassifyCategory = z.lazy(() =>
+  z.object({
     name: z.string(),
-    description: z.string().default(""),
-})));
+    description: z.string().default(''),
+  })
+);
 export type ClassifyCategory = z.infer<typeof ZClassifyCategory>;
 
-export const ZClassifyChoice = z.lazy(() => (z.object({
+export const ZClassifyChoice = z.lazy(() =>
+  z.object({
     classification: ZClassifyDecision,
-})));
+  })
+);
 export type ClassifyChoice = z.infer<typeof ZClassifyChoice>;
 
-export const ZClassifyConsensus = z.lazy(() => (z.object({
+export const ZClassifyConsensus = z.lazy(() =>
+  z.object({
     choices: z.array(ZClassifyChoice),
     likelihood: z.number().nullable().optional(),
-})));
+  })
+);
 export type ClassifyConsensus = z.infer<typeof ZClassifyConsensus>;
 
-export const ZClassifyDecision = z.lazy(() => (z.object({
+export const ZClassifyDecision = z.lazy(() =>
+  z.object({
     reasoning: z.string(),
     category: z.string(),
-})));
+  })
+);
 export type ClassifyDecision = z.infer<typeof ZClassifyDecision>;
 
-export const ZClassifyRequest = z.lazy(() => (z.object({
+export const ZClassifyRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     categories: z.array(ZClassifyCategory),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     first_n_pages: z.number().nullable().optional(),
     context: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type ClassifyRequest = z.infer<typeof ZClassifyRequest>;
 
-export const ZClassifyResponse = z.lazy(() => (z.object({
+export const ZClassifyResponse = z.lazy(() =>
+  z.object({
     classification: ZClassifyDecision,
     consensus: ZClassifyConsensus,
     usage: ZRetabUsage,
-})));
+  })
+);
 export type ClassifyResponse = z.infer<typeof ZClassifyResponse>;
 
-export const ZParseParseRequest = z.lazy(() => (z.object({
+export const ZParseParseRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
-    model: z.string().default("retab-small"),
-    table_parsing_format: z.union([z.literal("markdown"), z.literal("yaml"), z.literal("html"), z.literal("json")]).default("html"),
+    model: z.string().default('retab-small'),
+    table_parsing_format: z
+      .union([z.literal('markdown'), z.literal('yaml'), z.literal('html'), z.literal('json')])
+      .default('html'),
     image_resolution_dpi: z.number().default(192),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type ParseParseRequest = z.infer<typeof ZParseParseRequest>;
 
-export const ZParseResponse = z.lazy(() => (z.object({
+export const ZParseResponse = z.lazy(() =>
+  z.object({
     document: ZFileRef,
     usage: ZRetabUsage,
     pages: z.array(z.string()),
     text: z.string(),
-})));
+  })
+);
 export type ParseResponse = z.infer<typeof ZParseResponse>;
 
-export const ZSplitChoice = z.lazy(() => (z.object({
+export const ZSplitChoice = z.lazy(() =>
+  z.object({
     splits: z.array(ZSplitSplitResult),
-})));
+  })
+);
 export type SplitChoice = z.infer<typeof ZSplitChoice>;
 
-export const ZSplitSplitConsensus = z.lazy(() => (z.object({
+export const ZSplitSplitConsensus = z.lazy(() =>
+  z.object({
     likelihoods: ZSplitLikelihoodTree.nullable().optional(),
     choices: z.array(ZSplitChoice),
-})));
+  })
+);
 export type SplitSplitConsensus = z.infer<typeof ZSplitSplitConsensus>;
 
-export const ZSplitSplitRequest = z.lazy(() => (z.object({
+export const ZSplitSplitRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     subdocuments: z.array(ZSplitSubdocument),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     context: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type SplitSplitRequest = z.infer<typeof ZSplitSplitRequest>;
 
-export const ZSplitResponse = z.lazy(() => (z.object({
+export const ZSplitResponse = z.lazy(() =>
+  z.object({
     splits: z.array(ZSplitSplitResult),
     consensus: ZSplitSplitConsensus.nullable().optional(),
     usage: ZRetabUsage,
-})));
+  })
+);
 export type SplitResponse = z.infer<typeof ZSplitResponse>;
 
-export const ZSplitSplitResult = z.lazy(() => (z.object({
+export const ZSplitSplitResult = z.lazy(() =>
+  z.object({
     name: z.string(),
     pages: z.array(z.number()),
     partitions: z.array(ZSplitPartition),
-})));
+  })
+);
 export type SplitSplitResult = z.infer<typeof ZSplitSplitResult>;
 
-export const ZSplitSubdocument = z.lazy(() => (z.object({
+export const ZSplitSubdocument = z.lazy(() =>
+  z.object({
     name: z.string(),
-    description: z.string().default(""),
+    description: z.string().default(''),
     partition_key: z.string().nullable().optional(),
     allow_overlap: z.boolean().default(false),
     allow_multiple_instances: z.boolean().default(false),
-})));
+  })
+);
 export type SplitSubdocument = z.infer<typeof ZSplitSubdocument>;
 
-export const ZEditBBox = z.lazy(() => (z.object({
+export const ZEditBBox = z.lazy(() =>
+  z.object({
     left: z.number(),
     top: z.number(),
     width: z.number(),
     height: z.number(),
     page: z.number(),
-})));
+  })
+);
 export type EditBBox = z.infer<typeof ZEditBBox>;
 
-export const ZEditBaseFormField = z.lazy(() => (z.object({
+export const ZEditBaseFormField = z.lazy(() =>
+  z.object({
     bbox: ZEditBBox,
     description: z.string(),
     type: z.any(),
     key: z.string(),
-})));
+  })
+);
 export type EditBaseFormField = z.infer<typeof ZEditBaseFormField>;
 
-export const ZEditEditRequest = z.lazy(() => (z.object({
+export const ZEditEditRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData.nullable().optional(),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     instructions: z.string(),
     template_id: z.string().nullable().optional(),
     config: ZEditEditConfig,
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type EditEditRequest = z.infer<typeof ZEditEditRequest>;
 
-export const ZEditResponse = z.lazy(() => (z.object({
+export const ZEditResponse = z.lazy(() =>
+  z.object({
     form_data: z.array(ZEditFormField),
     filled_document: ZMIMEData,
     usage: ZRetabUsage,
-})));
+  })
+);
 export type EditResponse = z.infer<typeof ZEditResponse>;
 
 export const ZEditFieldType = z.lazy(() => z.any());
 export type EditFieldType = z.infer<typeof ZEditFieldType>;
 
-export const ZEditFormSchema = z.lazy(() => (z.object({
+export const ZEditFormSchema = z.lazy(() =>
+  z.object({
     form_fields: z.array(ZEditFormField),
-})));
+  })
+);
 export type EditFormSchema = z.infer<typeof ZEditFormSchema>;
 
-export const ZInferFormSchemaRequest = z.lazy(() => (z.object({
+export const ZInferFormSchemaRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
-    model: z.string().default("retab-small"),
-})));
+    model: z.string().default('retab-small'),
+  })
+);
 export type InferFormSchemaRequest = z.infer<typeof ZInferFormSchemaRequest>;
 
-export const ZInferFormSchemaResponse = z.lazy(() => (z.object({
+export const ZInferFormSchemaResponse = z.lazy(() =>
+  z.object({
     form_schema: ZEditFormSchema,
     annotated_pdf: ZMIMEData,
     field_count: z.number(),
-})));
+  })
+);
 export type InferFormSchemaResponse = z.infer<typeof ZInferFormSchemaResponse>;
 
-export const ZOCRResult = z.lazy(() => (z.object({
+export const ZOCRResult = z.lazy(() =>
+  z.object({
     elements: z.array(ZOCRTextElement),
     formatted_text: z.string(),
     annotated_pdf: ZMIMEData,
-})));
+  })
+);
 export type OCRResult = z.infer<typeof ZOCRResult>;
 
-export const ZOCRTextElement = z.lazy(() => (z.object({
+export const ZOCRTextElement = z.lazy(() =>
+  z.object({
     text: z.string(),
     bbox: ZEditBBox,
     element_type: z.string(),
-})));
+  })
+);
 export type OCRTextElement = z.infer<typeof ZOCRTextElement>;
 
-export const ZProcessOCRRequest = z.lazy(() => (z.object({
+export const ZProcessOCRRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
-})));
+  })
+);
 export type ProcessOCRRequest = z.infer<typeof ZProcessOCRRequest>;
 
-export const ZGenerateSplitConfigRequest = z.lazy(() => (z.object({
+export const ZGenerateSplitConfigRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
-    model: z.string().default("retab-small"),
-})));
+    model: z.string().default('retab-small'),
+  })
+);
 export type GenerateSplitConfigRequest = z.infer<typeof ZGenerateSplitConfigRequest>;
 
-export const ZGenerateSplitConfigResponse = z.lazy(() => (z.object({
+export const ZGenerateSplitConfigResponse = z.lazy(() =>
+  z.object({
     subdocuments: z.array(ZSplitV2Subdocument),
-})));
+  })
+);
 export type GenerateSplitConfigResponse = z.infer<typeof ZGenerateSplitConfigResponse>;
 
-export const ZSplitV2Partition = z.lazy(() => (z.object({
+export const ZSplitV2Partition = z.lazy(() =>
+  z.object({
     key: z.string(),
     pages: z.array(z.number()),
-})));
+  })
+);
 export type SplitV2Partition = z.infer<typeof ZSplitV2Partition>;
 
-export const ZPartitionLikelihood = z.lazy(() => (z.object({
+export const ZPartitionLikelihood = z.lazy(() =>
+  z.object({
     likelihood: z.number().nullable().optional(),
     key: z.number().nullable().optional(),
     pages: z.array(z.number()),
-})));
+  })
+);
 export type PartitionLikelihood = z.infer<typeof ZPartitionLikelihood>;
 
-export const ZSplitV2SplitConsensus = z.lazy(() => (z.object({
+export const ZSplitV2SplitConsensus = z.lazy(() =>
+  z.object({
     likelihoods: z.array(ZSplitV2SplitSubdocumentLikelihood).nullable().optional(),
     choices: z.array(z.array(ZSplitV2SplitResult)),
-})));
+  })
+);
 export type SplitV2SplitConsensus = z.infer<typeof ZSplitV2SplitConsensus>;
 
-export const ZSplitV2SplitRequest = z.lazy(() => (z.object({
+export const ZSplitV2SplitRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     subdocuments: z.array(ZSplitV2Subdocument),
-    model: z.string().default("retab-small"),
+    model: z.string().default('retab-small'),
     context: z.string().nullable().optional(),
     n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type SplitV2SplitRequest = z.infer<typeof ZSplitV2SplitRequest>;
 
-export const ZSplitV2SplitResponse = z.lazy(() => (z.object({
+export const ZSplitV2SplitResponse = z.lazy(() =>
+  z.object({
     result: z.array(ZSplitV2SplitResult),
     consensus: ZSplitV2SplitConsensus.nullable().optional(),
     usage: ZRetabUsage,
-})));
+  })
+);
 export type SplitV2SplitResponse = z.infer<typeof ZSplitV2SplitResponse>;
 
-export const ZSplitV2SplitResult = z.lazy(() => (z.object({
+export const ZSplitV2SplitResult = z.lazy(() =>
+  z.object({
     name: z.string(),
     pages: z.array(z.number()),
     partitions: z.array(ZSplitV2Partition),
-})));
+  })
+);
 export type SplitV2SplitResult = z.infer<typeof ZSplitV2SplitResult>;
 
-export const ZSplitV2SplitSubdocumentLikelihood = z.lazy(() => (z.object({
+export const ZSplitV2SplitSubdocumentLikelihood = z.lazy(() =>
+  z.object({
     likelihood: z.number().nullable().optional(),
     name: z.number().nullable().optional(),
     pages: z.array(z.number()),
     partitions: z.array(ZPartitionLikelihood),
-})));
+  })
+);
 export type SplitV2SplitSubdocumentLikelihood = z.infer<typeof ZSplitV2SplitSubdocumentLikelihood>;
 
-export const ZSplitV2Subdocument = z.lazy(() => (z.object({
+export const ZSplitV2Subdocument = z.lazy(() =>
+  z.object({
     name: z.string(),
-    description: z.string().default(""),
+    description: z.string().default(''),
     partition_key: z.string().nullable().optional(),
     allow_overlap: z.boolean().default(false),
     allow_multiple_instances: z.boolean().default(false),
-})));
+  })
+);
 export type SplitV2Subdocument = z.infer<typeof ZSplitV2Subdocument>;
 
-export const ZSplitGenerateSplitConfigRequest = z.lazy(() => (z.object({
+export const ZSplitGenerateSplitConfigRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
-    model: z.string().default("retab-small"),
-})));
+    model: z.string().default('retab-small'),
+  })
+);
 export type SplitGenerateSplitConfigRequest = z.infer<typeof ZSplitGenerateSplitConfigRequest>;
 
-export const ZSplitGenerateSplitConfigResponse = z.lazy(() => (z.object({
+export const ZSplitGenerateSplitConfigResponse = z.lazy(() =>
+  z.object({
     subdocuments: z.array(ZSplitSubdocument),
-})));
+  })
+);
 export type SplitGenerateSplitConfigResponse = z.infer<typeof ZSplitGenerateSplitConfigResponse>;
 
-export const ZSplitPartition = z.lazy(() => (z.object({
+export const ZSplitPartition = z.lazy(() =>
+  z.object({
     key: z.string(),
     pages: z.array(z.number()),
-})));
+  })
+);
 export type SplitPartition = z.infer<typeof ZSplitPartition>;
 
-export const ZSplitPartitionLikelihood = z.lazy(() => (z.object({
+export const ZSplitPartitionLikelihood = z.lazy(() =>
+  z.object({
     likelihood: z.number().nullable().optional(),
     key: z.number().nullable().optional(),
     pages: z.array(z.number()),
-})));
+  })
+);
 export type SplitPartitionLikelihood = z.infer<typeof ZSplitPartitionLikelihood>;
 
-export const ZSplitLikelihoodTree = z.lazy(() => (z.object({
+export const ZSplitLikelihoodTree = z.lazy(() =>
+  z.object({
     splits: z.array(ZSplitSplitSubdocumentLikelihood),
-})));
+  })
+);
 export type SplitLikelihoodTree = z.infer<typeof ZSplitLikelihoodTree>;
 
-export const ZSplitSplitSubdocumentLikelihood = z.lazy(() => (z.object({
+export const ZSplitSplitSubdocumentLikelihood = z.lazy(() =>
+  z.object({
     likelihood: z.number().nullable().optional(),
     name: z.number().nullable().optional(),
     pages: z.array(z.number()),
     partitions: z.array(ZSplitPartitionLikelihood),
-})));
+  })
+);
 export type SplitSplitSubdocumentLikelihood = z.infer<typeof ZSplitSplitSubdocumentLikelihood>;
 
-export const ZDocumentCreateInputRequest = z.lazy(() => (ZDocumentCreateMessageRequest.schema).merge(z.object({
-    json_schema: z.record(z.string(), z.any()),
-})));
+export const ZDocumentCreateInputRequest = z.lazy(() =>
+  ZDocumentCreateMessageRequest.schema.merge(
+    z.object({
+      json_schema: z.record(z.string(), z.any()),
+    })
+  )
+);
 export type DocumentCreateInputRequest = z.infer<typeof ZDocumentCreateInputRequest>;
 
-export const ZDocumentCreateMessageRequest = z.lazy(() => (z.object({
+export const ZDocumentCreateMessageRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     image_resolution_dpi: z.number().default(192),
-    model: z.string().default("retab-small"),
-})));
+    model: z.string().default('retab-small'),
+  })
+);
 export type DocumentCreateMessageRequest = z.infer<typeof ZDocumentCreateMessageRequest>;
 
-export const ZDocumentMessage = z.lazy(() => (z.object({
+export const ZDocumentMessage = z.lazy(() =>
+  z.object({
     id: z.string(),
-    object: z.literal("document_message").default("document_message"),
+    object: z.literal('document_message').default('document_message'),
     messages: z.array(ZChatCompletionRetabMessage),
     created: z.number(),
-})));
+  })
+);
 export type DocumentMessage = z.infer<typeof ZDocumentMessage>;
 
-export const ZTokenCount = z.lazy(() => (z.object({
+export const ZTokenCount = z.lazy(() =>
+  z.object({
     total_tokens: z.number().default(0),
     developer_tokens: z.number().default(0),
     user_tokens: z.number().default(0),
-})));
+  })
+);
 export type TokenCount = z.infer<typeof ZTokenCount>;
 
-export const ZChatCompletion = z.lazy(() => (z.object({
+export const ZChatCompletion = z.lazy(() =>
+  z.object({
     id: z.string(),
     choices: z.array(ZChatCompletionChoice),
     created: z.number(),
     model: z.string(),
-    object: z.literal("chat.completion"),
-    service_tier: z.union([z.literal("auto"), z.literal("default"), z.literal("flex"), z.literal("scale"), z.literal("priority")]).nullable().optional(),
+    object: z.literal('chat.completion'),
+    service_tier: z
+      .union([
+        z.literal('auto'),
+        z.literal('default'),
+        z.literal('flex'),
+        z.literal('scale'),
+        z.literal('priority'),
+      ])
+      .nullable()
+      .optional(),
     system_fingerprint: z.string().nullable().optional(),
     usage: ZCompletionUsage.nullable().optional(),
-})));
+  })
+);
 export type ChatCompletion = z.infer<typeof ZChatCompletion>;
 
-export const ZChatCompletionChunk = z.lazy(() => (z.object({
+export const ZChatCompletionChunk = z.lazy(() =>
+  z.object({
     id: z.string(),
     choices: z.array(ZChoice),
     created: z.number(),
     model: z.string(),
-    object: z.literal("chat.completion.chunk"),
-    service_tier: z.union([z.literal("auto"), z.literal("default"), z.literal("flex"), z.literal("scale"), z.literal("priority")]).nullable().optional(),
+    object: z.literal('chat.completion.chunk'),
+    service_tier: z
+      .union([
+        z.literal('auto'),
+        z.literal('default'),
+        z.literal('flex'),
+        z.literal('scale'),
+        z.literal('priority'),
+      ])
+      .nullable()
+      .optional(),
     system_fingerprint: z.string().nullable().optional(),
     usage: ZCompletionUsage.nullable().optional(),
-})));
+  })
+);
 export type ChatCompletionChunk = z.infer<typeof ZChatCompletionChunk>;
 
-export const ZChoice = z.lazy(() => (z.object({
+export const ZChoice = z.lazy(() =>
+  z.object({
     delta: ZChoiceDelta,
-    finish_reason: z.union([z.literal("stop"), z.literal("length"), z.literal("tool_calls"), z.literal("content_filter"), z.literal("function_call")]).nullable().optional(),
+    finish_reason: z
+      .union([
+        z.literal('stop'),
+        z.literal('length'),
+        z.literal('tool_calls'),
+        z.literal('content_filter'),
+        z.literal('function_call'),
+      ])
+      .nullable()
+      .optional(),
     index: z.number(),
     logprobs: ZChoiceLogprobs.nullable().optional(),
-})));
+  })
+);
 export type Choice = z.infer<typeof ZChoice>;
 
-export const ZChoiceDelta = z.lazy(() => (z.object({
+export const ZChoiceDelta = z.lazy(() =>
+  z.object({
     content: z.string().nullable().optional(),
     function_call: ZChoiceDeltaFunctionCall.nullable().optional(),
     refusal: z.string().nullable().optional(),
-    role: z.union([z.literal("developer"), z.literal("system"), z.literal("user"), z.literal("assistant"), z.literal("tool")]).nullable().optional(),
+    role: z
+      .union([
+        z.literal('developer'),
+        z.literal('system'),
+        z.literal('user'),
+        z.literal('assistant'),
+        z.literal('tool'),
+      ])
+      .nullable()
+      .optional(),
     tool_calls: z.array(ZChoiceDeltaToolCall).nullable().optional(),
-})));
+  })
+);
 export type ChoiceDelta = z.infer<typeof ZChoiceDelta>;
 
-export const ZConsensusModel = z.lazy(() => (z.object({
+export const ZConsensusModel = z.lazy(() =>
+  z.object({
     model: z.string(),
     temperature: z.number().default(0.0),
-})));
+  })
+);
 export type ConsensusModel = z.infer<typeof ZConsensusModel>;
 
-export const ZDocumentExtractRequest = z.lazy(() => (z.object({
+export const ZDocumentExtractRequest = z.lazy(() =>
+  z.object({
     document: ZMIMEData,
     image_resolution_dpi: z.number().default(192),
     model: z.string(),
@@ -2062,3335 +2973,5292 @@ export const ZDocumentExtractRequest = z.lazy(() => (z.object({
     extraction_id: z.string().nullable().optional(),
     additional_messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
     bust_cache: z.boolean().default(false),
-})));
+  })
+);
 export type DocumentExtractRequest = z.infer<typeof ZDocumentExtractRequest>;
 
-export const ZLogExtractionRequest = z.lazy(() => (z.object({
+export const ZLogExtractionRequest = z.lazy(() =>
+  z.object({
     messages: z.array(ZChatCompletionRetabMessage).nullable().optional(),
-    openai_messages: z.array(z.union([ZChatCompletionDeveloperMessageParam, ZChatCompletionSystemMessageParam, ZChatCompletionUserMessageParam, ZChatCompletionAssistantMessageParam, ZChatCompletionToolMessageParam, ZChatCompletionFunctionMessageParam])).nullable().optional(),
-    openai_responses_input: z.array(z.union([ZEasyInputMessageParam, ZResponseInputParamMessage, ZResponseOutputMessageParam, ZResponseFileSearchToolCallParam, ZResponseComputerToolCallParam, ZResponseInputParamComputerCallOutput, ZResponseFunctionWebSearchParam, ZResponseFunctionToolCallParam, ZResponseInputParamFunctionCallOutput, ZResponseInputParamToolSearchCall, ZResponseToolSearchOutputItemParamParam, ZResponseReasoningItemParam, ZResponseCompactionItemParamParam, ZResponseInputParamImageGenerationCall, ZResponseCodeInterpreterToolCallParam, ZResponseInputParamLocalShellCall, ZResponseInputParamLocalShellCallOutput, ZResponseInputParamShellCall, ZResponseInputParamShellCallOutput, ZResponseInputParamApplyPatchCall, ZResponseInputParamApplyPatchCallOutput, ZResponseInputParamMcpListTools, ZResponseInputParamMcpApprovalRequest, ZResponseInputParamMcpApprovalResponse, ZResponseInputParamMcpCall, ZResponseCustomToolCallOutputParam, ZResponseCustomToolCallParam, ZResponseInputParamItemReference])).nullable().optional(),
-    document: ZMIMEData.default({"filename": "dummy.txt", "url": "data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ="}),
-    completion: z.union([z.record(z.any()), ZRetabParsedChatCompletion, ZParsedChatCompletion, ZChatCompletion]).nullable().optional(),
+    openai_messages: z
+      .array(
+        z.union([
+          ZChatCompletionDeveloperMessageParam,
+          ZChatCompletionSystemMessageParam,
+          ZChatCompletionUserMessageParam,
+          ZChatCompletionAssistantMessageParam,
+          ZChatCompletionToolMessageParam,
+          ZChatCompletionFunctionMessageParam,
+        ])
+      )
+      .nullable()
+      .optional(),
+    openai_responses_input: z
+      .array(
+        z.union([
+          ZEasyInputMessageParam,
+          ZResponseInputParamMessage,
+          ZResponseOutputMessageParam,
+          ZResponseFileSearchToolCallParam,
+          ZResponseComputerToolCallParam,
+          ZResponseInputParamComputerCallOutput,
+          ZResponseFunctionWebSearchParam,
+          ZResponseFunctionToolCallParam,
+          ZResponseInputParamFunctionCallOutput,
+          ZResponseInputParamToolSearchCall,
+          ZResponseToolSearchOutputItemParamParam,
+          ZResponseReasoningItemParam,
+          ZResponseCompactionItemParamParam,
+          ZResponseInputParamImageGenerationCall,
+          ZResponseCodeInterpreterToolCallParam,
+          ZResponseInputParamLocalShellCall,
+          ZResponseInputParamLocalShellCallOutput,
+          ZResponseInputParamShellCall,
+          ZResponseInputParamShellCallOutput,
+          ZResponseInputParamApplyPatchCall,
+          ZResponseInputParamApplyPatchCallOutput,
+          ZResponseInputParamMcpListTools,
+          ZResponseInputParamMcpApprovalRequest,
+          ZResponseInputParamMcpApprovalResponse,
+          ZResponseInputParamMcpCall,
+          ZResponseCustomToolCallOutputParam,
+          ZResponseCustomToolCallParam,
+          ZResponseInputParamItemReference,
+        ])
+      )
+      .nullable()
+      .optional(),
+    document: ZMIMEData.default({
+      filename: 'dummy.txt',
+      url: 'data:text/plain;base64,Tm8gZG9jdW1lbnQgcHJvdmlkZWQ=',
+    }),
+    completion: z
+      .union([
+        z.record(z.any()),
+        ZRetabParsedChatCompletion,
+        ZParsedChatCompletion,
+        ZChatCompletion,
+      ])
+      .nullable()
+      .optional(),
     openai_responses_output: ZResponse.nullable().optional(),
     json_schema: z.record(z.string(), z.any()),
     model: z.string(),
     temperature: z.number(),
-})));
+  })
+);
 export type LogExtractionRequest = z.infer<typeof ZLogExtractionRequest>;
 
-export const ZLogExtractionResponse = z.lazy(() => (z.object({
-    status: z.union([z.literal("success"), z.literal("error")]),
+export const ZLogExtractionResponse = z.lazy(() =>
+  z.object({
+    status: z.union([z.literal('success'), z.literal('error')]),
     error_message: z.string().nullable().optional(),
-})));
+  })
+);
 export type LogExtractionResponse = z.infer<typeof ZLogExtractionResponse>;
 
-export const ZParsedChatCompletion = z.lazy(() => (ZChatCompletion.schema).merge(z.object({
-    choices: z.array(ZParsedChoice),
-})));
+export const ZParsedChatCompletion = z.lazy(() =>
+  ZChatCompletion.schema.merge(
+    z.object({
+      choices: z.array(ZParsedChoice),
+    })
+  )
+);
 export type ParsedChatCompletion = z.infer<typeof ZParsedChatCompletion>;
 
-export const ZParsedChoice = z.lazy(() => (ZChatCompletionChoice.schema).merge(z.object({
-    message: ZParsedChatCompletionMessage,
-})));
+export const ZParsedChoice = z.lazy(() =>
+  ZChatCompletionChoice.schema.merge(
+    z.object({
+      message: ZParsedChatCompletionMessage,
+    })
+  )
+);
 export type ParsedChoice = z.infer<typeof ZParsedChoice>;
 
-export const ZRetabParsedChatCompletionChunk = z.lazy(() => (ZStreamingBaseModel.schema).merge(ZChatCompletionChunk.schema).merge(z.object({
-    choices: z.array(ZRetabParsedChoiceChunk),
-    extraction_id: z.string().nullable().optional(),
-    request_at: z.string().nullable().optional(),
-    first_token_at: z.string().nullable().optional(),
-    last_token_at: z.string().nullable().optional(),
-})));
+export const ZRetabParsedChatCompletionChunk = z.lazy(() =>
+  ZStreamingBaseModel.schema.merge(ZChatCompletionChunk.schema).merge(
+    z.object({
+      choices: z.array(ZRetabParsedChoiceChunk),
+      extraction_id: z.string().nullable().optional(),
+      request_at: z.string().nullable().optional(),
+      first_token_at: z.string().nullable().optional(),
+      last_token_at: z.string().nullable().optional(),
+    })
+  )
+);
 export type RetabParsedChatCompletionChunk = z.infer<typeof ZRetabParsedChatCompletionChunk>;
 
-export const ZRetabParsedChoiceChunk = z.lazy(() => (ZChoice.schema).merge(z.object({
-    delta: ZRetabParsedChoiceDeltaChunk,
-})));
+export const ZRetabParsedChoiceChunk = z.lazy(() =>
+  ZChoice.schema.merge(
+    z.object({
+      delta: ZRetabParsedChoiceDeltaChunk,
+    })
+  )
+);
 export type RetabParsedChoiceChunk = z.infer<typeof ZRetabParsedChoiceChunk>;
 
-export const ZRetabParsedChoiceDeltaChunk = z.lazy(() => (ZChoiceDelta.schema).merge(z.object({
-    flat_likelihoods: z.record(z.string(), z.number()).default({}),
-    flat_parsed: z.record(z.string(), z.any()).default({}),
-    flat_deleted_keys: z.array(z.string()).default([]),
-    is_valid_json: z.boolean().default(false),
-    key_mapping: z.record(z.string(), z.string().nullable().optional()).nullable().optional(),
-    full_parsed: z.record(z.string(), z.any()).nullable().optional(),
-})));
+export const ZRetabParsedChoiceDeltaChunk = z.lazy(() =>
+  ZChoiceDelta.schema.merge(
+    z.object({
+      flat_likelihoods: z.record(z.string(), z.number()).default({}),
+      flat_parsed: z.record(z.string(), z.any()).default({}),
+      flat_deleted_keys: z.array(z.string()).default([]),
+      is_valid_json: z.boolean().default(false),
+      key_mapping: z.record(z.string(), z.string().nullable().optional()).nullable().optional(),
+      full_parsed: z.record(z.string(), z.any()).nullable().optional(),
+    })
+  )
+);
 export type RetabParsedChoiceDeltaChunk = z.infer<typeof ZRetabParsedChoiceDeltaChunk>;
 
-export const ZFunction = z.lazy(() => (z.object({
+export const ZFunction = z.lazy(() =>
+  z.object({
     arguments: z.string(),
     name: z.string(),
-})));
+  })
+);
 export type Function = z.infer<typeof ZFunction>;
 
-export const ZChatCompletionContentPartParamFile = z.lazy(() => (z.object({
+export const ZChatCompletionContentPartParamFile = z.lazy(() =>
+  z.object({
     file: ZFileFile,
-    type: z.literal("file"),
-})));
-export type ChatCompletionContentPartParamFile = z.infer<typeof ZChatCompletionContentPartParamFile>;
+    type: z.literal('file'),
+  })
+);
+export type ChatCompletionContentPartParamFile = z.infer<
+  typeof ZChatCompletionContentPartParamFile
+>;
 
-export const ZPublished = z.lazy(() => (z.object({
+export const ZPublished = z.lazy(() =>
+  z.object({
     version_id: z.string().nullable().optional(),
     published_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type Published = z.infer<typeof ZPublished>;
 
-export const ZEmailTrigger = z.lazy(() => (z.object({
+export const ZEmailTrigger = z.lazy(() =>
+  z.object({
     allowed_senders: z.array(z.string()),
     allowed_domains: z.array(z.string()),
-})));
+  })
+);
 export type EmailTrigger = z.infer<typeof ZEmailTrigger>;
 
-export const ZDocumentBlockParam = z.lazy(() => (z.object({
-    source: z.union([ZBase64PDFSourceParam, ZPlainTextSourceParam, ZContentBlockSourceParam, ZURLPDFSourceParam]),
-    type: z.literal("document"),
+export const ZDocumentBlockParam = z.lazy(() =>
+  z.object({
+    source: z.union([
+      ZBase64PDFSourceParam,
+      ZPlainTextSourceParam,
+      ZContentBlockSourceParam,
+      ZURLPDFSourceParam,
+    ]),
+    type: z.literal('document'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
     citations: ZCitationsConfigParam.nullable().optional(),
     context: z.string().nullable().optional(),
     title: z.string().nullable().optional(),
-})));
+  })
+);
 export type DocumentBlockParam = z.infer<typeof ZDocumentBlockParam>;
 
-export const ZSearchResultBlockParam = z.lazy(() => (z.object({
+export const ZSearchResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.array(ZTextBlockParam),
     source: z.string(),
     title: z.string(),
-    type: z.literal("search_result"),
+    type: z.literal('search_result'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
     citations: ZCitationsConfigParam,
-})));
+  })
+);
 export type SearchResultBlockParam = z.infer<typeof ZSearchResultBlockParam>;
 
-export const ZThinkingBlockParam = z.lazy(() => (z.object({
+export const ZThinkingBlockParam = z.lazy(() =>
+  z.object({
     signature: z.string(),
     thinking: z.string(),
-    type: z.literal("thinking"),
-})));
+    type: z.literal('thinking'),
+  })
+);
 export type ThinkingBlockParam = z.infer<typeof ZThinkingBlockParam>;
 
-export const ZRedactedThinkingBlockParam = z.lazy(() => (z.object({
+export const ZRedactedThinkingBlockParam = z.lazy(() =>
+  z.object({
     data: z.string(),
-    type: z.literal("redacted_thinking"),
-})));
+    type: z.literal('redacted_thinking'),
+  })
+);
 export type RedactedThinkingBlockParam = z.infer<typeof ZRedactedThinkingBlockParam>;
 
-export const ZToolUseBlockParam = z.lazy(() => (z.object({
+export const ZToolUseBlockParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     input: z.record(z.string(), z.object({}).passthrough()),
     name: z.string(),
-    type: z.literal("tool_use"),
+    type: z.literal('tool_use'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
     caller: z.union([ZDirectCallerParam, ZServerToolCallerParam, ZServerToolCaller20260120Param]),
-})));
+  })
+);
 export type ToolUseBlockParam = z.infer<typeof ZToolUseBlockParam>;
 
-export const ZToolResultBlockParam = z.lazy(() => (z.object({
+export const ZToolResultBlockParam = z.lazy(() =>
+  z.object({
     tool_use_id: z.string(),
-    type: z.literal("tool_result"),
+    type: z.literal('tool_result'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-    content: z.union([z.string(), z.array(z.union([ZTextBlockParam, ZImageBlockParam, ZSearchResultBlockParam, ZDocumentBlockParam, ZToolReferenceBlockParam]))]),
+    content: z.union([
+      z.string(),
+      z.array(
+        z.union([
+          ZTextBlockParam,
+          ZImageBlockParam,
+          ZSearchResultBlockParam,
+          ZDocumentBlockParam,
+          ZToolReferenceBlockParam,
+        ])
+      ),
+    ]),
     is_error: z.boolean(),
-})));
+  })
+);
 export type ToolResultBlockParam = z.infer<typeof ZToolResultBlockParam>;
 
-export const ZServerToolUseBlockParam = z.lazy(() => (z.object({
+export const ZServerToolUseBlockParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     input: z.record(z.string(), z.object({}).passthrough()),
-    name: z.union([z.literal("web_search"), z.literal("web_fetch"), z.literal("code_execution"), z.literal("bash_code_execution"), z.literal("text_editor_code_execution"), z.literal("tool_search_tool_regex"), z.literal("tool_search_tool_bm25")]),
-    type: z.literal("server_tool_use"),
+    name: z.union([
+      z.literal('web_search'),
+      z.literal('web_fetch'),
+      z.literal('code_execution'),
+      z.literal('bash_code_execution'),
+      z.literal('text_editor_code_execution'),
+      z.literal('tool_search_tool_regex'),
+      z.literal('tool_search_tool_bm25'),
+    ]),
+    type: z.literal('server_tool_use'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
     caller: z.union([ZDirectCallerParam, ZServerToolCallerParam, ZServerToolCaller20260120Param]),
-})));
+  })
+);
 export type ServerToolUseBlockParam = z.infer<typeof ZServerToolUseBlockParam>;
 
-export const ZWebSearchToolResultBlockParam = z.lazy(() => (z.object({
+export const ZWebSearchToolResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.union([z.array(ZWebSearchResultBlockParam), ZWebSearchToolRequestErrorParam]),
     tool_use_id: z.string(),
-    type: z.literal("web_search_tool_result"),
+    type: z.literal('web_search_tool_result'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
     caller: z.union([ZDirectCallerParam, ZServerToolCallerParam, ZServerToolCaller20260120Param]),
-})));
+  })
+);
 export type WebSearchToolResultBlockParam = z.infer<typeof ZWebSearchToolResultBlockParam>;
 
-export const ZWebFetchToolResultBlockParam = z.lazy(() => (z.object({
+export const ZWebFetchToolResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.union([ZWebFetchToolResultErrorBlockParam, ZWebFetchBlockParam]),
     tool_use_id: z.string(),
-    type: z.literal("web_fetch_tool_result"),
+    type: z.literal('web_fetch_tool_result'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
     caller: z.union([ZDirectCallerParam, ZServerToolCallerParam, ZServerToolCaller20260120Param]),
-})));
+  })
+);
 export type WebFetchToolResultBlockParam = z.infer<typeof ZWebFetchToolResultBlockParam>;
 
-export const ZCodeExecutionToolResultBlockParam = z.lazy(() => (z.object({
-    content: z.union([ZCodeExecutionToolResultErrorParam, ZCodeExecutionResultBlockParam, ZEncryptedCodeExecutionResultBlockParam]),
+export const ZCodeExecutionToolResultBlockParam = z.lazy(() =>
+  z.object({
+    content: z.union([
+      ZCodeExecutionToolResultErrorParam,
+      ZCodeExecutionResultBlockParam,
+      ZEncryptedCodeExecutionResultBlockParam,
+    ]),
     tool_use_id: z.string(),
-    type: z.literal("code_execution_tool_result"),
+    type: z.literal('code_execution_tool_result'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-})));
+  })
+);
 export type CodeExecutionToolResultBlockParam = z.infer<typeof ZCodeExecutionToolResultBlockParam>;
 
-export const ZBashCodeExecutionToolResultBlockParam = z.lazy(() => (z.object({
+export const ZBashCodeExecutionToolResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.union([ZBashCodeExecutionToolResultErrorParam, ZBashCodeExecutionResultBlockParam]),
     tool_use_id: z.string(),
-    type: z.literal("bash_code_execution_tool_result"),
+    type: z.literal('bash_code_execution_tool_result'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-})));
-export type BashCodeExecutionToolResultBlockParam = z.infer<typeof ZBashCodeExecutionToolResultBlockParam>;
+  })
+);
+export type BashCodeExecutionToolResultBlockParam = z.infer<
+  typeof ZBashCodeExecutionToolResultBlockParam
+>;
 
-export const ZTextEditorCodeExecutionToolResultBlockParam = z.lazy(() => (z.object({
-    content: z.union([ZTextEditorCodeExecutionToolResultErrorParam, ZTextEditorCodeExecutionViewResultBlockParam, ZTextEditorCodeExecutionCreateResultBlockParam, ZTextEditorCodeExecutionStrReplaceResultBlockParam]),
+export const ZTextEditorCodeExecutionToolResultBlockParam = z.lazy(() =>
+  z.object({
+    content: z.union([
+      ZTextEditorCodeExecutionToolResultErrorParam,
+      ZTextEditorCodeExecutionViewResultBlockParam,
+      ZTextEditorCodeExecutionCreateResultBlockParam,
+      ZTextEditorCodeExecutionStrReplaceResultBlockParam,
+    ]),
     tool_use_id: z.string(),
-    type: z.literal("text_editor_code_execution_tool_result"),
+    type: z.literal('text_editor_code_execution_tool_result'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-})));
-export type TextEditorCodeExecutionToolResultBlockParam = z.infer<typeof ZTextEditorCodeExecutionToolResultBlockParam>;
+  })
+);
+export type TextEditorCodeExecutionToolResultBlockParam = z.infer<
+  typeof ZTextEditorCodeExecutionToolResultBlockParam
+>;
 
-export const ZToolSearchToolResultBlockParam = z.lazy(() => (z.object({
+export const ZToolSearchToolResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.union([ZToolSearchToolResultErrorParam, ZToolSearchToolSearchResultBlockParam]),
     tool_use_id: z.string(),
-    type: z.literal("tool_search_tool_result"),
+    type: z.literal('tool_search_tool_result'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-})));
+  })
+);
 export type ToolSearchToolResultBlockParam = z.infer<typeof ZToolSearchToolResultBlockParam>;
 
-export const ZContainerUploadBlockParam = z.lazy(() => (z.object({
+export const ZContainerUploadBlockParam = z.lazy(() =>
+  z.object({
     file_id: z.string(),
-    type: z.literal("container_upload"),
+    type: z.literal('container_upload'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-})));
+  })
+);
 export type ContainerUploadBlockParam = z.infer<typeof ZContainerUploadBlockParam>;
 
-export const ZTextBlock = z.lazy(() => (z.object({
-    citations: z.array(z.union([ZCitationCharLocation, ZCitationPageLocation, ZCitationContentBlockLocation, ZCitationsWebSearchResultLocation, ZCitationsSearchResultLocation])).nullable().optional(),
+export const ZTextBlock = z.lazy(() =>
+  z.object({
+    citations: z
+      .array(
+        z.union([
+          ZCitationCharLocation,
+          ZCitationPageLocation,
+          ZCitationContentBlockLocation,
+          ZCitationsWebSearchResultLocation,
+          ZCitationsSearchResultLocation,
+        ])
+      )
+      .nullable()
+      .optional(),
     text: z.string(),
-    type: z.literal("text"),
-})));
+    type: z.literal('text'),
+  })
+);
 export type TextBlock = z.infer<typeof ZTextBlock>;
 
-export const ZThinkingBlock = z.lazy(() => (z.object({
+export const ZThinkingBlock = z.lazy(() =>
+  z.object({
     signature: z.string(),
     thinking: z.string(),
-    type: z.literal("thinking"),
-})));
+    type: z.literal('thinking'),
+  })
+);
 export type ThinkingBlock = z.infer<typeof ZThinkingBlock>;
 
-export const ZRedactedThinkingBlock = z.lazy(() => (z.object({
+export const ZRedactedThinkingBlock = z.lazy(() =>
+  z.object({
     data: z.string(),
-    type: z.literal("redacted_thinking"),
-})));
+    type: z.literal('redacted_thinking'),
+  })
+);
 export type RedactedThinkingBlock = z.infer<typeof ZRedactedThinkingBlock>;
 
-export const ZToolUseBlock = z.lazy(() => (z.object({
+export const ZToolUseBlock = z.lazy(() =>
+  z.object({
     id: z.string(),
-    caller: z.union([ZDirectCaller, ZServerToolCaller, ZServerToolCaller20260120]).nullable().optional(),
+    caller: z
+      .union([ZDirectCaller, ZServerToolCaller, ZServerToolCaller20260120])
+      .nullable()
+      .optional(),
     input: z.record(z.string(), z.object({}).passthrough()),
     name: z.string(),
-    type: z.literal("tool_use"),
-})));
+    type: z.literal('tool_use'),
+  })
+);
 export type ToolUseBlock = z.infer<typeof ZToolUseBlock>;
 
-export const ZServerToolUseBlock = z.lazy(() => (z.object({
+export const ZServerToolUseBlock = z.lazy(() =>
+  z.object({
     id: z.string(),
-    caller: z.union([ZDirectCaller, ZServerToolCaller, ZServerToolCaller20260120]).nullable().optional(),
+    caller: z
+      .union([ZDirectCaller, ZServerToolCaller, ZServerToolCaller20260120])
+      .nullable()
+      .optional(),
     input: z.record(z.string(), z.object({}).passthrough()),
-    name: z.union([z.literal("web_search"), z.literal("web_fetch"), z.literal("code_execution"), z.literal("bash_code_execution"), z.literal("text_editor_code_execution"), z.literal("tool_search_tool_regex"), z.literal("tool_search_tool_bm25")]),
-    type: z.literal("server_tool_use"),
-})));
+    name: z.union([
+      z.literal('web_search'),
+      z.literal('web_fetch'),
+      z.literal('code_execution'),
+      z.literal('bash_code_execution'),
+      z.literal('text_editor_code_execution'),
+      z.literal('tool_search_tool_regex'),
+      z.literal('tool_search_tool_bm25'),
+    ]),
+    type: z.literal('server_tool_use'),
+  })
+);
 export type ServerToolUseBlock = z.infer<typeof ZServerToolUseBlock>;
 
-export const ZWebSearchToolResultBlock = z.lazy(() => (z.object({
-    caller: z.union([ZDirectCaller, ZServerToolCaller, ZServerToolCaller20260120]).nullable().optional(),
+export const ZWebSearchToolResultBlock = z.lazy(() =>
+  z.object({
+    caller: z
+      .union([ZDirectCaller, ZServerToolCaller, ZServerToolCaller20260120])
+      .nullable()
+      .optional(),
     content: z.union([ZWebSearchToolResultError, z.array(ZWebSearchResultBlock)]),
     tool_use_id: z.string(),
-    type: z.literal("web_search_tool_result"),
-})));
+    type: z.literal('web_search_tool_result'),
+  })
+);
 export type WebSearchToolResultBlock = z.infer<typeof ZWebSearchToolResultBlock>;
 
-export const ZWebFetchToolResultBlock = z.lazy(() => (z.object({
-    caller: z.union([ZDirectCaller, ZServerToolCaller, ZServerToolCaller20260120]).nullable().optional(),
+export const ZWebFetchToolResultBlock = z.lazy(() =>
+  z.object({
+    caller: z
+      .union([ZDirectCaller, ZServerToolCaller, ZServerToolCaller20260120])
+      .nullable()
+      .optional(),
     content: z.union([ZWebFetchToolResultErrorBlock, ZWebFetchBlock]),
     tool_use_id: z.string(),
-    type: z.literal("web_fetch_tool_result"),
-})));
+    type: z.literal('web_fetch_tool_result'),
+  })
+);
 export type WebFetchToolResultBlock = z.infer<typeof ZWebFetchToolResultBlock>;
 
-export const ZCodeExecutionToolResultBlock = z.lazy(() => (z.object({
-    content: z.union([ZCodeExecutionToolResultError, ZCodeExecutionResultBlock, ZEncryptedCodeExecutionResultBlock]),
+export const ZCodeExecutionToolResultBlock = z.lazy(() =>
+  z.object({
+    content: z.union([
+      ZCodeExecutionToolResultError,
+      ZCodeExecutionResultBlock,
+      ZEncryptedCodeExecutionResultBlock,
+    ]),
     tool_use_id: z.string(),
-    type: z.literal("code_execution_tool_result"),
-})));
+    type: z.literal('code_execution_tool_result'),
+  })
+);
 export type CodeExecutionToolResultBlock = z.infer<typeof ZCodeExecutionToolResultBlock>;
 
-export const ZBashCodeExecutionToolResultBlock = z.lazy(() => (z.object({
+export const ZBashCodeExecutionToolResultBlock = z.lazy(() =>
+  z.object({
     content: z.union([ZBashCodeExecutionToolResultError, ZBashCodeExecutionResultBlock]),
     tool_use_id: z.string(),
-    type: z.literal("bash_code_execution_tool_result"),
-})));
+    type: z.literal('bash_code_execution_tool_result'),
+  })
+);
 export type BashCodeExecutionToolResultBlock = z.infer<typeof ZBashCodeExecutionToolResultBlock>;
 
-export const ZTextEditorCodeExecutionToolResultBlock = z.lazy(() => (z.object({
-    content: z.union([ZTextEditorCodeExecutionToolResultError, ZTextEditorCodeExecutionViewResultBlock, ZTextEditorCodeExecutionCreateResultBlock, ZTextEditorCodeExecutionStrReplaceResultBlock]),
+export const ZTextEditorCodeExecutionToolResultBlock = z.lazy(() =>
+  z.object({
+    content: z.union([
+      ZTextEditorCodeExecutionToolResultError,
+      ZTextEditorCodeExecutionViewResultBlock,
+      ZTextEditorCodeExecutionCreateResultBlock,
+      ZTextEditorCodeExecutionStrReplaceResultBlock,
+    ]),
     tool_use_id: z.string(),
-    type: z.literal("text_editor_code_execution_tool_result"),
-})));
-export type TextEditorCodeExecutionToolResultBlock = z.infer<typeof ZTextEditorCodeExecutionToolResultBlock>;
+    type: z.literal('text_editor_code_execution_tool_result'),
+  })
+);
+export type TextEditorCodeExecutionToolResultBlock = z.infer<
+  typeof ZTextEditorCodeExecutionToolResultBlock
+>;
 
-export const ZToolSearchToolResultBlock = z.lazy(() => (z.object({
+export const ZToolSearchToolResultBlock = z.lazy(() =>
+  z.object({
     content: z.union([ZToolSearchToolResultError, ZToolSearchToolSearchResultBlock]),
     tool_use_id: z.string(),
-    type: z.literal("tool_search_tool_result"),
-})));
+    type: z.literal('tool_search_tool_result'),
+  })
+);
 export type ToolSearchToolResultBlock = z.infer<typeof ZToolSearchToolResultBlock>;
 
-export const ZContainerUploadBlock = z.lazy(() => (z.object({
+export const ZContainerUploadBlock = z.lazy(() =>
+  z.object({
     file_id: z.string(),
-    type: z.literal("container_upload"),
-})));
+    type: z.literal('container_upload'),
+  })
+);
 export type ContainerUploadBlock = z.infer<typeof ZContainerUploadBlock>;
 
-export const ZInputAudio = z.lazy(() => (z.object({
+export const ZInputAudio = z.lazy(() =>
+  z.object({
     data: z.string(),
-    format: z.union([z.literal("wav"), z.literal("mp3")]),
-})));
+    format: z.union([z.literal('wav'), z.literal('mp3')]),
+  })
+);
 export type InputAudio = z.infer<typeof ZInputAudio>;
 
-export const ZResponseInputFileParam = z.lazy(() => (z.object({
-    type: z.literal("input_file"),
-    detail: z.union([z.literal("low"), z.literal("high")]),
+export const ZResponseInputFileParam = z.lazy(() =>
+  z.object({
+    type: z.literal('input_file'),
+    detail: z.union([z.literal('low'), z.literal('high')]),
     file_data: z.string(),
     file_id: z.string().nullable().optional(),
     file_url: z.string(),
     filename: z.string(),
-})));
+  })
+);
 export type ResponseInputFileParam = z.infer<typeof ZResponseInputFileParam>;
 
-export const ZBase64ImageSourceParam = z.lazy(() => (z.object({
+export const ZBase64ImageSourceParam = z.lazy(() =>
+  z.object({
     data: z.union([z.string(), z.instanceof(Uint8Array), z.string()]),
-    media_type: z.union([z.literal("image/jpeg"), z.literal("image/png"), z.literal("image/gif"), z.literal("image/webp")]),
-    type: z.literal("base64"),
-})));
+    media_type: z.union([
+      z.literal('image/jpeg'),
+      z.literal('image/png'),
+      z.literal('image/gif'),
+      z.literal('image/webp'),
+    ]),
+    type: z.literal('base64'),
+  })
+);
 export type Base64ImageSourceParam = z.infer<typeof ZBase64ImageSourceParam>;
 
-export const ZURLImageSourceParam = z.lazy(() => (z.object({
-    type: z.literal("url"),
+export const ZURLImageSourceParam = z.lazy(() =>
+  z.object({
+    type: z.literal('url'),
     url: z.string(),
-})));
+  })
+);
 export type URLImageSourceParam = z.infer<typeof ZURLImageSourceParam>;
 
-export const ZCacheControlEphemeralParam = z.lazy(() => (z.object({
-    type: z.literal("ephemeral"),
-    ttl: z.union([z.literal("5m"), z.literal("1h")]),
-})));
+export const ZCacheControlEphemeralParam = z.lazy(() =>
+  z.object({
+    type: z.literal('ephemeral'),
+    ttl: z.union([z.literal('5m'), z.literal('1h')]),
+  })
+);
 export type CacheControlEphemeralParam = z.infer<typeof ZCacheControlEphemeralParam>;
 
-export const ZParsedFunctionToolCall = z.lazy(() => (ZChatCompletionMessageFunctionToolCall.schema).merge(z.object({
-    function: ZParsedFunction,
-})));
+export const ZParsedFunctionToolCall = z.lazy(() =>
+  ZChatCompletionMessageFunctionToolCall.schema.merge(
+    z.object({
+      function: ZParsedFunction,
+    })
+  )
+);
 export type ParsedFunctionToolCall = z.infer<typeof ZParsedFunctionToolCall>;
 
-export const ZPartMediaResolutionDict = z.lazy(() => (z.object({
+export const ZPartMediaResolutionDict = z.lazy(() =>
+  z.object({
     level: z.any().nullable().optional(),
     num_tokens: z.number().nullable().optional(),
-})));
+  })
+);
 export type PartMediaResolutionDict = z.infer<typeof ZPartMediaResolutionDict>;
 
-export const ZCodeExecutionResultDict = z.lazy(() => (z.object({
+export const ZCodeExecutionResultDict = z.lazy(() =>
+  z.object({
     outcome: z.any().nullable().optional(),
     output: z.string().nullable().optional(),
     id: z.string().nullable().optional(),
-})));
+  })
+);
 export type CodeExecutionResultDict = z.infer<typeof ZCodeExecutionResultDict>;
 
-export const ZExecutableCodeDict = z.lazy(() => (z.object({
+export const ZExecutableCodeDict = z.lazy(() =>
+  z.object({
     code: z.string().nullable().optional(),
     language: z.any().nullable().optional(),
     id: z.string().nullable().optional(),
-})));
+  })
+);
 export type ExecutableCodeDict = z.infer<typeof ZExecutableCodeDict>;
 
-export const ZFileDataDict = z.lazy(() => (z.object({
+export const ZFileDataDict = z.lazy(() =>
+  z.object({
     display_name: z.string().nullable().optional(),
     file_uri: z.string().nullable().optional(),
     mime_type: z.string().nullable().optional(),
-})));
+  })
+);
 export type FileDataDict = z.infer<typeof ZFileDataDict>;
 
-export const ZFunctionCallDict = z.lazy(() => (z.object({
+export const ZFunctionCallDict = z.lazy(() =>
+  z.object({
     id: z.string().nullable().optional(),
     args: z.record(z.string(), z.any()).nullable().optional(),
     name: z.string().nullable().optional(),
     partial_args: z.array(ZPartialArgDict).nullable().optional(),
     will_continue: z.boolean().nullable().optional(),
-})));
+  })
+);
 export type FunctionCallDict = z.infer<typeof ZFunctionCallDict>;
 
-export const ZFunctionResponseDict = z.lazy(() => (z.object({
+export const ZFunctionResponseDict = z.lazy(() =>
+  z.object({
     will_continue: z.boolean().nullable().optional(),
     scheduling: z.any().nullable().optional(),
     parts: z.array(ZFunctionResponsePartDict).nullable().optional(),
     id: z.string().nullable().optional(),
     name: z.string().nullable().optional(),
     response: z.record(z.string(), z.any()).nullable().optional(),
-})));
+  })
+);
 export type FunctionResponseDict = z.infer<typeof ZFunctionResponseDict>;
 
-export const ZVideoMetadataDict = z.lazy(() => (z.object({
+export const ZVideoMetadataDict = z.lazy(() =>
+  z.object({
     end_offset: z.string().nullable().optional(),
     fps: z.number().nullable().optional(),
     start_offset: z.string().nullable().optional(),
-})));
+  })
+);
 export type VideoMetadataDict = z.infer<typeof ZVideoMetadataDict>;
 
-export const ZToolCallDict = z.lazy(() => (z.object({
+export const ZToolCallDict = z.lazy(() =>
+  z.object({
     id: z.string().nullable().optional(),
     tool_type: z.any().nullable().optional(),
     args: z.record(z.string(), z.any()).nullable().optional(),
-})));
+  })
+);
 export type ToolCallDict = z.infer<typeof ZToolCallDict>;
 
-export const ZToolResponseDict = z.lazy(() => (z.object({
+export const ZToolResponseDict = z.lazy(() =>
+  z.object({
     id: z.string().nullable().optional(),
     tool_type: z.any().nullable().optional(),
     response: z.record(z.string(), z.any()).nullable().optional(),
-})));
+  })
+);
 export type ToolResponseDict = z.infer<typeof ZToolResponseDict>;
 
-export const ZResponseError = z.lazy(() => (z.object({
-    code: z.union([z.literal("server_error"), z.literal("rate_limit_exceeded"), z.literal("invalid_prompt"), z.literal("vector_store_timeout"), z.literal("invalid_image"), z.literal("invalid_image_format"), z.literal("invalid_base64_image"), z.literal("invalid_image_url"), z.literal("image_too_large"), z.literal("image_too_small"), z.literal("image_parse_error"), z.literal("image_content_policy_violation"), z.literal("invalid_image_mode"), z.literal("image_file_too_large"), z.literal("unsupported_image_media_type"), z.literal("empty_image_file"), z.literal("failed_to_download_image"), z.literal("image_file_not_found")]),
+export const ZResponseError = z.lazy(() =>
+  z.object({
+    code: z.union([
+      z.literal('server_error'),
+      z.literal('rate_limit_exceeded'),
+      z.literal('invalid_prompt'),
+      z.literal('vector_store_timeout'),
+      z.literal('invalid_image'),
+      z.literal('invalid_image_format'),
+      z.literal('invalid_base64_image'),
+      z.literal('invalid_image_url'),
+      z.literal('image_too_large'),
+      z.literal('image_too_small'),
+      z.literal('image_parse_error'),
+      z.literal('image_content_policy_violation'),
+      z.literal('invalid_image_mode'),
+      z.literal('image_file_too_large'),
+      z.literal('unsupported_image_media_type'),
+      z.literal('empty_image_file'),
+      z.literal('failed_to_download_image'),
+      z.literal('image_file_not_found'),
+    ]),
     message: z.string(),
-})));
+  })
+);
 export type ResponseError = z.infer<typeof ZResponseError>;
 
-export const ZIncompleteDetails = z.lazy(() => (z.object({
-    reason: z.union([z.literal("max_output_tokens"), z.literal("content_filter")]).nullable().optional(),
-})));
+export const ZIncompleteDetails = z.lazy(() =>
+  z.object({
+    reason: z
+      .union([z.literal('max_output_tokens'), z.literal('content_filter')])
+      .nullable()
+      .optional(),
+  })
+);
 export type IncompleteDetails = z.infer<typeof ZIncompleteDetails>;
 
-export const ZEasyInputMessage = z.lazy(() => (z.object({
-    content: z.union([z.string(), z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile]))]),
-    role: z.union([z.literal("user"), z.literal("assistant"), z.literal("system"), z.literal("developer")]),
-    phase: z.union([z.literal("commentary"), z.literal("final_answer")]).nullable().optional(),
-    type: z.literal("message").nullable().optional(),
-})));
+export const ZEasyInputMessage = z.lazy(() =>
+  z.object({
+    content: z.union([
+      z.string(),
+      z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile])),
+    ]),
+    role: z.union([
+      z.literal('user'),
+      z.literal('assistant'),
+      z.literal('system'),
+      z.literal('developer'),
+    ]),
+    phase: z
+      .union([z.literal('commentary'), z.literal('final_answer')])
+      .nullable()
+      .optional(),
+    type: z.literal('message').nullable().optional(),
+  })
+);
 export type EasyInputMessage = z.infer<typeof ZEasyInputMessage>;
 
-export const ZMessage = z.lazy(() => (z.object({
+export const ZMessage = z.lazy(() =>
+  z.object({
     content: z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile])),
-    role: z.union([z.literal("user"), z.literal("system"), z.literal("developer")]),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-    type: z.literal("message").nullable().optional(),
-})));
+    role: z.union([z.literal('user'), z.literal('system'), z.literal('developer')]),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+    type: z.literal('message').nullable().optional(),
+  })
+);
 export type Message = z.infer<typeof ZMessage>;
 
-export const ZResponseOutputMessage = z.lazy(() => (z.object({
+export const ZResponseOutputMessage = z.lazy(() =>
+  z.object({
     id: z.string(),
     content: z.array(z.union([ZResponseOutputText, ZResponseOutputRefusal])),
-    role: z.literal("assistant"),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("message"),
-    phase: z.union([z.literal("commentary"), z.literal("final_answer")]).nullable().optional(),
-})));
+    role: z.literal('assistant'),
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('message'),
+    phase: z
+      .union([z.literal('commentary'), z.literal('final_answer')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseOutputMessage = z.infer<typeof ZResponseOutputMessage>;
 
-export const ZResponseFileSearchToolCall = z.lazy(() => (z.object({
+export const ZResponseFileSearchToolCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     queries: z.array(z.string()),
-    status: z.union([z.literal("in_progress"), z.literal("searching"), z.literal("completed"), z.literal("incomplete"), z.literal("failed")]),
-    type: z.literal("file_search_call"),
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('searching'),
+      z.literal('completed'),
+      z.literal('incomplete'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('file_search_call'),
     results: z.array(ZResult).nullable().optional(),
-})));
+  })
+);
 export type ResponseFileSearchToolCall = z.infer<typeof ZResponseFileSearchToolCall>;
 
-export const ZResponseComputerToolCall = z.lazy(() => (z.object({
+export const ZResponseComputerToolCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     call_id: z.string(),
     pending_safety_checks: z.array(ZPendingSafetyCheck),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("computer_call"),
-    action: z.union([ZActionClick, ZActionDoubleClick, ZActionDrag, ZActionKeypress, ZActionMove, ZActionScreenshot, ZActionScroll, ZActionType, ZActionWait]).nullable().optional(),
-    actions: z.array(z.union([ZClick, ZDoubleClick, ZDrag, ZKeypress, ZMove, ZScreenshot, ZScroll, ZType, ZWait])).nullable().optional(),
-})));
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('computer_call'),
+    action: z
+      .union([
+        ZActionClick,
+        ZActionDoubleClick,
+        ZActionDrag,
+        ZActionKeypress,
+        ZActionMove,
+        ZActionScreenshot,
+        ZActionScroll,
+        ZActionType,
+        ZActionWait,
+      ])
+      .nullable()
+      .optional(),
+    actions: z
+      .array(
+        z.union([ZClick, ZDoubleClick, ZDrag, ZKeypress, ZMove, ZScreenshot, ZScroll, ZType, ZWait])
+      )
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseComputerToolCall = z.infer<typeof ZResponseComputerToolCall>;
 
-export const ZComputerCallOutput = z.lazy(() => (z.object({
+export const ZComputerCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
     output: ZResponseComputerToolCallOutputScreenshot,
-    type: z.literal("computer_call_output"),
+    type: z.literal('computer_call_output'),
     id: z.string().nullable().optional(),
-    acknowledged_safety_checks: z.array(ZComputerCallOutputAcknowledgedSafetyCheck).nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    acknowledged_safety_checks: z
+      .array(ZComputerCallOutputAcknowledgedSafetyCheck)
+      .nullable()
+      .optional(),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ComputerCallOutput = z.infer<typeof ZComputerCallOutput>;
 
-export const ZResponseFunctionWebSearch = z.lazy(() => (z.object({
+export const ZResponseFunctionWebSearch = z.lazy(() =>
+  z.object({
     id: z.string(),
     action: z.union([ZActionSearch, ZActionOpenPage, ZActionFind]),
-    status: z.union([z.literal("in_progress"), z.literal("searching"), z.literal("completed"), z.literal("failed")]),
-    type: z.literal("web_search_call"),
-})));
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('searching'),
+      z.literal('completed'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('web_search_call'),
+  })
+);
 export type ResponseFunctionWebSearch = z.infer<typeof ZResponseFunctionWebSearch>;
 
-export const ZResponseFunctionToolCall = z.lazy(() => (z.object({
+export const ZResponseFunctionToolCall = z.lazy(() =>
+  z.object({
     arguments: z.string(),
     call_id: z.string(),
     name: z.string(),
-    type: z.literal("function_call"),
+    type: z.literal('function_call'),
     id: z.string().nullable().optional(),
     namespace: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseFunctionToolCall = z.infer<typeof ZResponseFunctionToolCall>;
 
-export const ZFunctionCallOutput = z.lazy(() => (z.object({
+export const ZFunctionCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
-    output: z.union([z.string(), z.array(z.union([ZResponseInputTextContent, ZResponseInputImageContent, ZResponseInputFileContent]))]),
-    type: z.literal("function_call_output"),
+    output: z.union([
+      z.string(),
+      z.array(
+        z.union([ZResponseInputTextContent, ZResponseInputImageContent, ZResponseInputFileContent])
+      ),
+    ]),
+    type: z.literal('function_call_output'),
     id: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type FunctionCallOutput = z.infer<typeof ZFunctionCallOutput>;
 
-export const ZToolSearchCall = z.lazy(() => (z.object({
+export const ZToolSearchCall = z.lazy(() =>
+  z.object({
     arguments: z.object({}).passthrough(),
-    type: z.literal("tool_search_call"),
+    type: z.literal('tool_search_call'),
     id: z.string().nullable().optional(),
     call_id: z.string().nullable().optional(),
-    execution: z.union([z.literal("server"), z.literal("client")]).nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    execution: z
+      .union([z.literal('server'), z.literal('client')])
+      .nullable()
+      .optional(),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ToolSearchCall = z.infer<typeof ZToolSearchCall>;
 
-export const ZResponseToolSearchOutputItemParam = z.lazy(() => (z.object({
-    tools: z.array(z.union([ZFunctionTool, ZFileSearchTool, ZComputerTool, ZComputerUsePreviewTool, ZWebSearchTool, ZMcp, ZCodeInterpreter, ZImageGeneration, ZLocalShell, ZFunctionShellTool, ZCustomTool, ZNamespaceTool, ZToolSearchTool, ZWebSearchPreviewTool, ZApplyPatchTool])),
-    type: z.literal("tool_search_output"),
+export const ZResponseToolSearchOutputItemParam = z.lazy(() =>
+  z.object({
+    tools: z.array(
+      z.union([
+        ZFunctionTool,
+        ZFileSearchTool,
+        ZComputerTool,
+        ZComputerUsePreviewTool,
+        ZWebSearchTool,
+        ZMcp,
+        ZCodeInterpreter,
+        ZImageGeneration,
+        ZLocalShell,
+        ZFunctionShellTool,
+        ZCustomTool,
+        ZNamespaceTool,
+        ZToolSearchTool,
+        ZWebSearchPreviewTool,
+        ZApplyPatchTool,
+      ])
+    ),
+    type: z.literal('tool_search_output'),
     id: z.string().nullable().optional(),
     call_id: z.string().nullable().optional(),
-    execution: z.union([z.literal("server"), z.literal("client")]).nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    execution: z
+      .union([z.literal('server'), z.literal('client')])
+      .nullable()
+      .optional(),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseToolSearchOutputItemParam = z.infer<typeof ZResponseToolSearchOutputItemParam>;
 
-export const ZResponseReasoningItem = z.lazy(() => (z.object({
+export const ZResponseReasoningItem = z.lazy(() =>
+  z.object({
     id: z.string(),
     summary: z.array(ZSummary),
-    type: z.literal("reasoning"),
+    type: z.literal('reasoning'),
     content: z.array(ZContent).nullable().optional(),
     encrypted_content: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseReasoningItem = z.infer<typeof ZResponseReasoningItem>;
 
-export const ZResponseCompactionItemParam = z.lazy(() => (z.object({
+export const ZResponseCompactionItemParam = z.lazy(() =>
+  z.object({
     encrypted_content: z.string(),
-    type: z.literal("compaction"),
+    type: z.literal('compaction'),
     id: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseCompactionItemParam = z.infer<typeof ZResponseCompactionItemParam>;
 
-export const ZImageGenerationCall = z.lazy(() => (z.object({
+export const ZImageGenerationCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     result: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("generating"), z.literal("failed")]),
-    type: z.literal("image_generation_call"),
-})));
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('completed'),
+      z.literal('generating'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('image_generation_call'),
+  })
+);
 export type ImageGenerationCall = z.infer<typeof ZImageGenerationCall>;
 
-export const ZResponseCodeInterpreterToolCall = z.lazy(() => (z.object({
+export const ZResponseCodeInterpreterToolCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     code: z.string().nullable().optional(),
     container_id: z.string(),
-    outputs: z.array(z.union([ZOutputLogs, ZOutputImage])).nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete"), z.literal("interpreting"), z.literal("failed")]),
-    type: z.literal("code_interpreter_call"),
-})));
+    outputs: z
+      .array(z.union([ZOutputLogs, ZOutputImage]))
+      .nullable()
+      .optional(),
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('completed'),
+      z.literal('incomplete'),
+      z.literal('interpreting'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('code_interpreter_call'),
+  })
+);
 export type ResponseCodeInterpreterToolCall = z.infer<typeof ZResponseCodeInterpreterToolCall>;
 
-export const ZLocalShellCall = z.lazy(() => (z.object({
+export const ZLocalShellCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     action: ZLocalShellCallAction,
     call_id: z.string(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("local_shell_call"),
-})));
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('local_shell_call'),
+  })
+);
 export type LocalShellCall = z.infer<typeof ZLocalShellCall>;
 
-export const ZLocalShellCallOutput = z.lazy(() => (z.object({
+export const ZLocalShellCallOutput = z.lazy(() =>
+  z.object({
     id: z.string(),
     output: z.string(),
-    type: z.literal("local_shell_call_output"),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    type: z.literal('local_shell_call_output'),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type LocalShellCallOutput = z.infer<typeof ZLocalShellCallOutput>;
 
-export const ZShellCall = z.lazy(() => (z.object({
+export const ZShellCall = z.lazy(() =>
+  z.object({
     action: ZShellCallAction,
     call_id: z.string(),
-    type: z.literal("shell_call"),
+    type: z.literal('shell_call'),
     id: z.string().nullable().optional(),
-    environment: z.union([ZLocalEnvironment, ZContainerReference]).nullable().optional().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    environment: z
+      .union([ZLocalEnvironment, ZContainerReference])
+      .nullable()
+      .optional()
+      .nullable()
+      .optional(),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ShellCall = z.infer<typeof ZShellCall>;
 
-export const ZShellCallOutput = z.lazy(() => (z.object({
+export const ZShellCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
     output: z.array(ZResponseFunctionShellCallOutputContent),
-    type: z.literal("shell_call_output"),
+    type: z.literal('shell_call_output'),
     id: z.string().nullable().optional(),
     max_output_length: z.number().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ShellCallOutput = z.infer<typeof ZShellCallOutput>;
 
-export const ZApplyPatchCall = z.lazy(() => (z.object({
+export const ZApplyPatchCall = z.lazy(() =>
+  z.object({
     call_id: z.string(),
-    operation: z.union([ZApplyPatchCallOperationCreateFile, ZApplyPatchCallOperationDeleteFile, ZApplyPatchCallOperationUpdateFile]),
-    status: z.union([z.literal("in_progress"), z.literal("completed")]),
-    type: z.literal("apply_patch_call"),
+    operation: z.union([
+      ZApplyPatchCallOperationCreateFile,
+      ZApplyPatchCallOperationDeleteFile,
+      ZApplyPatchCallOperationUpdateFile,
+    ]),
+    status: z.union([z.literal('in_progress'), z.literal('completed')]),
+    type: z.literal('apply_patch_call'),
     id: z.string().nullable().optional(),
-})));
+  })
+);
 export type ApplyPatchCall = z.infer<typeof ZApplyPatchCall>;
 
-export const ZApplyPatchCallOutput = z.lazy(() => (z.object({
+export const ZApplyPatchCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
-    status: z.union([z.literal("completed"), z.literal("failed")]),
-    type: z.literal("apply_patch_call_output"),
+    status: z.union([z.literal('completed'), z.literal('failed')]),
+    type: z.literal('apply_patch_call_output'),
     id: z.string().nullable().optional(),
     output: z.string().nullable().optional(),
-})));
+  })
+);
 export type ApplyPatchCallOutput = z.infer<typeof ZApplyPatchCallOutput>;
 
-export const ZMcpListTools = z.lazy(() => (z.object({
+export const ZMcpListTools = z.lazy(() =>
+  z.object({
     id: z.string(),
     server_label: z.string(),
     tools: z.array(ZMcpListToolsTool),
-    type: z.literal("mcp_list_tools"),
+    type: z.literal('mcp_list_tools'),
     error: z.string().nullable().optional(),
-})));
+  })
+);
 export type McpListTools = z.infer<typeof ZMcpListTools>;
 
-export const ZMcpApprovalRequest = z.lazy(() => (z.object({
+export const ZMcpApprovalRequest = z.lazy(() =>
+  z.object({
     id: z.string(),
     arguments: z.string(),
     name: z.string(),
     server_label: z.string(),
-    type: z.literal("mcp_approval_request"),
-})));
+    type: z.literal('mcp_approval_request'),
+  })
+);
 export type McpApprovalRequest = z.infer<typeof ZMcpApprovalRequest>;
 
-export const ZMcpApprovalResponse = z.lazy(() => (z.object({
+export const ZMcpApprovalResponse = z.lazy(() =>
+  z.object({
     approval_request_id: z.string(),
     approve: z.boolean(),
-    type: z.literal("mcp_approval_response"),
+    type: z.literal('mcp_approval_response'),
     id: z.string().nullable().optional(),
     reason: z.string().nullable().optional(),
-})));
+  })
+);
 export type McpApprovalResponse = z.infer<typeof ZMcpApprovalResponse>;
 
-export const ZMcpCall = z.lazy(() => (z.object({
+export const ZMcpCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     arguments: z.string(),
     name: z.string(),
     server_label: z.string(),
-    type: z.literal("mcp_call"),
+    type: z.literal('mcp_call'),
     approval_request_id: z.string().nullable().optional(),
     error: z.string().nullable().optional(),
     output: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete"), z.literal("calling"), z.literal("failed")]).nullable().optional(),
-})));
+    status: z
+      .union([
+        z.literal('in_progress'),
+        z.literal('completed'),
+        z.literal('incomplete'),
+        z.literal('calling'),
+        z.literal('failed'),
+      ])
+      .nullable()
+      .optional(),
+  })
+);
 export type McpCall = z.infer<typeof ZMcpCall>;
 
-export const ZResponseCustomToolCallOutput = z.lazy(() => (z.object({
+export const ZResponseCustomToolCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
-    output: z.union([z.string(), z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile]))]),
-    type: z.literal("custom_tool_call_output"),
+    output: z.union([
+      z.string(),
+      z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile])),
+    ]),
+    type: z.literal('custom_tool_call_output'),
     id: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseCustomToolCallOutput = z.infer<typeof ZResponseCustomToolCallOutput>;
 
-export const ZResponseCustomToolCall = z.lazy(() => (z.object({
+export const ZResponseCustomToolCall = z.lazy(() =>
+  z.object({
     call_id: z.string(),
     input: z.string(),
     name: z.string(),
-    type: z.literal("custom_tool_call"),
+    type: z.literal('custom_tool_call'),
     id: z.string().nullable().optional(),
     namespace: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseCustomToolCall = z.infer<typeof ZResponseCustomToolCall>;
 
-export const ZItemReference = z.lazy(() => (z.object({
+export const ZItemReference = z.lazy(() =>
+  z.object({
     id: z.string(),
-    type: z.literal("item_reference").nullable().optional(),
-})));
+    type: z.literal('item_reference').nullable().optional(),
+  })
+);
 export type ItemReference = z.infer<typeof ZItemReference>;
 
-export const ZResponseFunctionToolCallOutputItem = z.lazy(() => (z.object({
+export const ZResponseFunctionToolCallOutputItem = z.lazy(() =>
+  z.object({
     id: z.string(),
     call_id: z.string(),
-    output: z.union([z.string(), z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile]))]),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("function_call_output"),
+    output: z.union([
+      z.string(),
+      z.array(z.union([ZResponseInputText, ZResponseInputImage, ZResponseInputFile])),
+    ]),
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('function_call_output'),
     created_by: z.string().nullable().optional(),
-})));
-export type ResponseFunctionToolCallOutputItem = z.infer<typeof ZResponseFunctionToolCallOutputItem>;
+  })
+);
+export type ResponseFunctionToolCallOutputItem = z.infer<
+  typeof ZResponseFunctionToolCallOutputItem
+>;
 
-export const ZResponseComputerToolCallOutputItem = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallOutputItem = z.lazy(() =>
+  z.object({
     id: z.string(),
     call_id: z.string(),
     output: ZResponseComputerToolCallOutputScreenshot,
-    status: z.union([z.literal("completed"), z.literal("incomplete"), z.literal("failed"), z.literal("in_progress")]),
-    type: z.literal("computer_call_output"),
+    status: z.union([
+      z.literal('completed'),
+      z.literal('incomplete'),
+      z.literal('failed'),
+      z.literal('in_progress'),
+    ]),
+    type: z.literal('computer_call_output'),
     acknowledged_safety_checks: z.array(ZAcknowledgedSafetyCheck).nullable().optional(),
     created_by: z.string().nullable().optional(),
-})));
-export type ResponseComputerToolCallOutputItem = z.infer<typeof ZResponseComputerToolCallOutputItem>;
+  })
+);
+export type ResponseComputerToolCallOutputItem = z.infer<
+  typeof ZResponseComputerToolCallOutputItem
+>;
 
-export const ZResponseToolSearchCall = z.lazy(() => (z.object({
+export const ZResponseToolSearchCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     arguments: z.object({}).passthrough(),
     call_id: z.string().nullable().optional(),
-    execution: z.union([z.literal("server"), z.literal("client")]),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("tool_search_call"),
+    execution: z.union([z.literal('server'), z.literal('client')]),
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('tool_search_call'),
     created_by: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseToolSearchCall = z.infer<typeof ZResponseToolSearchCall>;
 
-export const ZResponseToolSearchOutputItem = z.lazy(() => (z.object({
+export const ZResponseToolSearchOutputItem = z.lazy(() =>
+  z.object({
     id: z.string(),
     call_id: z.string().nullable().optional(),
-    execution: z.union([z.literal("server"), z.literal("client")]),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    tools: z.array(z.union([ZFunctionTool, ZFileSearchTool, ZComputerTool, ZComputerUsePreviewTool, ZWebSearchTool, ZMcp, ZCodeInterpreter, ZImageGeneration, ZLocalShell, ZFunctionShellTool, ZCustomTool, ZNamespaceTool, ZToolSearchTool, ZWebSearchPreviewTool, ZApplyPatchTool])),
-    type: z.literal("tool_search_output"),
+    execution: z.union([z.literal('server'), z.literal('client')]),
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    tools: z.array(
+      z.union([
+        ZFunctionTool,
+        ZFileSearchTool,
+        ZComputerTool,
+        ZComputerUsePreviewTool,
+        ZWebSearchTool,
+        ZMcp,
+        ZCodeInterpreter,
+        ZImageGeneration,
+        ZLocalShell,
+        ZFunctionShellTool,
+        ZCustomTool,
+        ZNamespaceTool,
+        ZToolSearchTool,
+        ZWebSearchPreviewTool,
+        ZApplyPatchTool,
+      ])
+    ),
+    type: z.literal('tool_search_output'),
     created_by: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseToolSearchOutputItem = z.infer<typeof ZResponseToolSearchOutputItem>;
 
-export const ZResponseCompactionItem = z.lazy(() => (z.object({
+export const ZResponseCompactionItem = z.lazy(() =>
+  z.object({
     id: z.string(),
     encrypted_content: z.string(),
-    type: z.literal("compaction"),
+    type: z.literal('compaction'),
     created_by: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseCompactionItem = z.infer<typeof ZResponseCompactionItem>;
 
-export const ZResponseOutputItemImageGenerationCall = z.lazy(() => (z.object({
+export const ZResponseOutputItemImageGenerationCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     result: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("generating"), z.literal("failed")]),
-    type: z.literal("image_generation_call"),
-})));
-export type ResponseOutputItemImageGenerationCall = z.infer<typeof ZResponseOutputItemImageGenerationCall>;
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('completed'),
+      z.literal('generating'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('image_generation_call'),
+  })
+);
+export type ResponseOutputItemImageGenerationCall = z.infer<
+  typeof ZResponseOutputItemImageGenerationCall
+>;
 
-export const ZResponseOutputItemLocalShellCall = z.lazy(() => (z.object({
+export const ZResponseOutputItemLocalShellCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     action: ZResponseOutputItemLocalShellCallAction,
     call_id: z.string(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("local_shell_call"),
-})));
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('local_shell_call'),
+  })
+);
 export type ResponseOutputItemLocalShellCall = z.infer<typeof ZResponseOutputItemLocalShellCall>;
 
-export const ZResponseOutputItemLocalShellCallOutput = z.lazy(() => (z.object({
+export const ZResponseOutputItemLocalShellCallOutput = z.lazy(() =>
+  z.object({
     id: z.string(),
     output: z.string(),
-    type: z.literal("local_shell_call_output"),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
-export type ResponseOutputItemLocalShellCallOutput = z.infer<typeof ZResponseOutputItemLocalShellCallOutput>;
+    type: z.literal('local_shell_call_output'),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
+export type ResponseOutputItemLocalShellCallOutput = z.infer<
+  typeof ZResponseOutputItemLocalShellCallOutput
+>;
 
-export const ZResponseFunctionShellToolCall = z.lazy(() => (z.object({
+export const ZResponseFunctionShellToolCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     action: ZAction,
     call_id: z.string(),
-    environment: z.union([ZResponseLocalEnvironment, ZResponseContainerReference]).nullable().optional().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("shell_call"),
+    environment: z
+      .union([ZResponseLocalEnvironment, ZResponseContainerReference])
+      .nullable()
+      .optional()
+      .nullable()
+      .optional(),
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('shell_call'),
     created_by: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseFunctionShellToolCall = z.infer<typeof ZResponseFunctionShellToolCall>;
 
-export const ZResponseFunctionShellToolCallOutput = z.lazy(() => (z.object({
+export const ZResponseFunctionShellToolCallOutput = z.lazy(() =>
+  z.object({
     id: z.string(),
     call_id: z.string(),
     max_output_length: z.number().nullable().optional(),
     output: z.array(ZOutput),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("shell_call_output"),
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('shell_call_output'),
     created_by: z.string().nullable().optional(),
-})));
-export type ResponseFunctionShellToolCallOutput = z.infer<typeof ZResponseFunctionShellToolCallOutput>;
+  })
+);
+export type ResponseFunctionShellToolCallOutput = z.infer<
+  typeof ZResponseFunctionShellToolCallOutput
+>;
 
-export const ZResponseApplyPatchToolCall = z.lazy(() => (z.object({
+export const ZResponseApplyPatchToolCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     call_id: z.string(),
     operation: z.union([ZOperationCreateFile, ZOperationDeleteFile, ZOperationUpdateFile]),
-    status: z.union([z.literal("in_progress"), z.literal("completed")]),
-    type: z.literal("apply_patch_call"),
+    status: z.union([z.literal('in_progress'), z.literal('completed')]),
+    type: z.literal('apply_patch_call'),
     created_by: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseApplyPatchToolCall = z.infer<typeof ZResponseApplyPatchToolCall>;
 
-export const ZResponseApplyPatchToolCallOutput = z.lazy(() => (z.object({
+export const ZResponseApplyPatchToolCallOutput = z.lazy(() =>
+  z.object({
     id: z.string(),
     call_id: z.string(),
-    status: z.union([z.literal("completed"), z.literal("failed")]),
-    type: z.literal("apply_patch_call_output"),
+    status: z.union([z.literal('completed'), z.literal('failed')]),
+    type: z.literal('apply_patch_call_output'),
     created_by: z.string().nullable().optional(),
     output: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseApplyPatchToolCallOutput = z.infer<typeof ZResponseApplyPatchToolCallOutput>;
 
-export const ZResponseOutputItemMcpCall = z.lazy(() => (z.object({
+export const ZResponseOutputItemMcpCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     arguments: z.string(),
     name: z.string(),
     server_label: z.string(),
-    type: z.literal("mcp_call"),
+    type: z.literal('mcp_call'),
     approval_request_id: z.string().nullable().optional(),
     error: z.string().nullable().optional(),
     output: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete"), z.literal("calling"), z.literal("failed")]).nullable().optional(),
-})));
+    status: z
+      .union([
+        z.literal('in_progress'),
+        z.literal('completed'),
+        z.literal('incomplete'),
+        z.literal('calling'),
+        z.literal('failed'),
+      ])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseOutputItemMcpCall = z.infer<typeof ZResponseOutputItemMcpCall>;
 
-export const ZResponseOutputItemMcpListTools = z.lazy(() => (z.object({
+export const ZResponseOutputItemMcpListTools = z.lazy(() =>
+  z.object({
     id: z.string(),
     server_label: z.string(),
     tools: z.array(ZResponseOutputItemMcpListToolsTool),
-    type: z.literal("mcp_list_tools"),
+    type: z.literal('mcp_list_tools'),
     error: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseOutputItemMcpListTools = z.infer<typeof ZResponseOutputItemMcpListTools>;
 
-export const ZResponseOutputItemMcpApprovalRequest = z.lazy(() => (z.object({
+export const ZResponseOutputItemMcpApprovalRequest = z.lazy(() =>
+  z.object({
     id: z.string(),
     arguments: z.string(),
     name: z.string(),
     server_label: z.string(),
-    type: z.literal("mcp_approval_request"),
-})));
-export type ResponseOutputItemMcpApprovalRequest = z.infer<typeof ZResponseOutputItemMcpApprovalRequest>;
+    type: z.literal('mcp_approval_request'),
+  })
+);
+export type ResponseOutputItemMcpApprovalRequest = z.infer<
+  typeof ZResponseOutputItemMcpApprovalRequest
+>;
 
-export const ZResponseOutputItemMcpApprovalResponse = z.lazy(() => (z.object({
+export const ZResponseOutputItemMcpApprovalResponse = z.lazy(() =>
+  z.object({
     id: z.string(),
     approval_request_id: z.string(),
     approve: z.boolean(),
-    type: z.literal("mcp_approval_response"),
+    type: z.literal('mcp_approval_response'),
     reason: z.string().nullable().optional(),
-})));
-export type ResponseOutputItemMcpApprovalResponse = z.infer<typeof ZResponseOutputItemMcpApprovalResponse>;
+  })
+);
+export type ResponseOutputItemMcpApprovalResponse = z.infer<
+  typeof ZResponseOutputItemMcpApprovalResponse
+>;
 
-export const ZResponseCustomToolCallOutputItem = z.lazy(() => (ZResponseCustomToolCallOutput.schema).merge(z.object({
-    id: z.string(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    created_by: z.string().nullable().optional(),
-})));
+export const ZResponseCustomToolCallOutputItem = z.lazy(() =>
+  ZResponseCustomToolCallOutput.schema.merge(
+    z.object({
+      id: z.string(),
+      status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+      created_by: z.string().nullable().optional(),
+    })
+  )
+);
 export type ResponseCustomToolCallOutputItem = z.infer<typeof ZResponseCustomToolCallOutputItem>;
 
-export const ZToolChoiceAllowed = z.lazy(() => (z.object({
-    mode: z.union([z.literal("auto"), z.literal("required")]),
+export const ZToolChoiceAllowed = z.lazy(() =>
+  z.object({
+    mode: z.union([z.literal('auto'), z.literal('required')]),
     tools: z.array(z.record(z.string(), z.object({}).passthrough())),
-    type: z.literal("allowed_tools"),
-})));
+    type: z.literal('allowed_tools'),
+  })
+);
 export type ToolChoiceAllowed = z.infer<typeof ZToolChoiceAllowed>;
 
-export const ZToolChoiceTypes = z.lazy(() => (z.object({
-    type: z.union([z.literal("file_search"), z.literal("web_search_preview"), z.literal("computer"), z.literal("computer_use_preview"), z.literal("computer_use"), z.literal("web_search_preview_2025_03_11"), z.literal("image_generation"), z.literal("code_interpreter")]),
-})));
+export const ZToolChoiceTypes = z.lazy(() =>
+  z.object({
+    type: z.union([
+      z.literal('file_search'),
+      z.literal('web_search_preview'),
+      z.literal('computer'),
+      z.literal('computer_use_preview'),
+      z.literal('computer_use'),
+      z.literal('web_search_preview_2025_03_11'),
+      z.literal('image_generation'),
+      z.literal('code_interpreter'),
+    ]),
+  })
+);
 export type ToolChoiceTypes = z.infer<typeof ZToolChoiceTypes>;
 
-export const ZToolChoiceFunction = z.lazy(() => (z.object({
+export const ZToolChoiceFunction = z.lazy(() =>
+  z.object({
     name: z.string(),
-    type: z.literal("function"),
-})));
+    type: z.literal('function'),
+  })
+);
 export type ToolChoiceFunction = z.infer<typeof ZToolChoiceFunction>;
 
-export const ZToolChoiceMcp = z.lazy(() => (z.object({
+export const ZToolChoiceMcp = z.lazy(() =>
+  z.object({
     server_label: z.string(),
-    type: z.literal("mcp"),
+    type: z.literal('mcp'),
     name: z.string().nullable().optional(),
-})));
+  })
+);
 export type ToolChoiceMcp = z.infer<typeof ZToolChoiceMcp>;
 
-export const ZToolChoiceCustom = z.lazy(() => (z.object({
+export const ZToolChoiceCustom = z.lazy(() =>
+  z.object({
     name: z.string(),
-    type: z.literal("custom"),
-})));
+    type: z.literal('custom'),
+  })
+);
 export type ToolChoiceCustom = z.infer<typeof ZToolChoiceCustom>;
 
-export const ZToolChoiceApplyPatch = z.lazy(() => (z.object({
-    type: z.literal("apply_patch"),
-})));
+export const ZToolChoiceApplyPatch = z.lazy(() =>
+  z.object({
+    type: z.literal('apply_patch'),
+  })
+);
 export type ToolChoiceApplyPatch = z.infer<typeof ZToolChoiceApplyPatch>;
 
-export const ZToolChoiceShell = z.lazy(() => (z.object({
-    type: z.literal("shell"),
-})));
+export const ZToolChoiceShell = z.lazy(() =>
+  z.object({
+    type: z.literal('shell'),
+  })
+);
 export type ToolChoiceShell = z.infer<typeof ZToolChoiceShell>;
 
-export const ZFunctionTool = z.lazy(() => (z.object({
+export const ZFunctionTool = z.lazy(() =>
+  z.object({
     name: z.string(),
     parameters: z.record(z.string(), z.object({}).passthrough()).nullable().optional(),
     strict: z.boolean().nullable().optional(),
-    type: z.literal("function"),
+    type: z.literal('function'),
     defer_loading: z.boolean().nullable().optional(),
     description: z.string().nullable().optional(),
-})));
+  })
+);
 export type FunctionTool = z.infer<typeof ZFunctionTool>;
 
-export const ZFileSearchTool = z.lazy(() => (z.object({
-    type: z.literal("file_search"),
+export const ZFileSearchTool = z.lazy(() =>
+  z.object({
+    type: z.literal('file_search'),
     vector_store_ids: z.array(z.string()),
     filters: z.union([ZComparisonFilter, ZCompoundFilter]).nullable().optional(),
     max_num_results: z.number().nullable().optional(),
     ranking_options: ZRankingOptions.nullable().optional(),
-})));
+  })
+);
 export type FileSearchTool = z.infer<typeof ZFileSearchTool>;
 
-export const ZComputerTool = z.lazy(() => (z.object({
-    type: z.literal("computer"),
-})));
+export const ZComputerTool = z.lazy(() =>
+  z.object({
+    type: z.literal('computer'),
+  })
+);
 export type ComputerTool = z.infer<typeof ZComputerTool>;
 
-export const ZComputerUsePreviewTool = z.lazy(() => (z.object({
+export const ZComputerUsePreviewTool = z.lazy(() =>
+  z.object({
     display_height: z.number(),
     display_width: z.number(),
-    environment: z.union([z.literal("windows"), z.literal("mac"), z.literal("linux"), z.literal("ubuntu"), z.literal("browser")]),
-    type: z.literal("computer_use_preview"),
-})));
+    environment: z.union([
+      z.literal('windows'),
+      z.literal('mac'),
+      z.literal('linux'),
+      z.literal('ubuntu'),
+      z.literal('browser'),
+    ]),
+    type: z.literal('computer_use_preview'),
+  })
+);
 export type ComputerUsePreviewTool = z.infer<typeof ZComputerUsePreviewTool>;
 
-export const ZWebSearchTool = z.lazy(() => (z.object({
-    type: z.union([z.literal("web_search"), z.literal("web_search_2025_08_26")]),
+export const ZWebSearchTool = z.lazy(() =>
+  z.object({
+    type: z.union([z.literal('web_search'), z.literal('web_search_2025_08_26')]),
     filters: ZFilters.nullable().optional(),
-    search_context_size: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional(),
+    search_context_size: z
+      .union([z.literal('low'), z.literal('medium'), z.literal('high')])
+      .nullable()
+      .optional(),
     user_location: ZUserLocation.nullable().optional(),
-})));
+  })
+);
 export type WebSearchTool = z.infer<typeof ZWebSearchTool>;
 
-export const ZMcp = z.lazy(() => (z.object({
+export const ZMcp = z.lazy(() =>
+  z.object({
     server_label: z.string(),
-    type: z.literal("mcp"),
-    allowed_tools: z.union([z.array(z.string()), ZMcpAllowedToolsMcpToolFilter]).nullable().optional(),
+    type: z.literal('mcp'),
+    allowed_tools: z
+      .union([z.array(z.string()), ZMcpAllowedToolsMcpToolFilter])
+      .nullable()
+      .optional(),
     authorization: z.string().nullable().optional(),
-    connector_id: z.union([z.literal("connector_dropbox"), z.literal("connector_gmail"), z.literal("connector_googlecalendar"), z.literal("connector_googledrive"), z.literal("connector_microsoftteams"), z.literal("connector_outlookcalendar"), z.literal("connector_outlookemail"), z.literal("connector_sharepoint")]).nullable().optional(),
+    connector_id: z
+      .union([
+        z.literal('connector_dropbox'),
+        z.literal('connector_gmail'),
+        z.literal('connector_googlecalendar'),
+        z.literal('connector_googledrive'),
+        z.literal('connector_microsoftteams'),
+        z.literal('connector_outlookcalendar'),
+        z.literal('connector_outlookemail'),
+        z.literal('connector_sharepoint'),
+      ])
+      .nullable()
+      .optional(),
     defer_loading: z.boolean().nullable().optional(),
     headers: z.record(z.string(), z.string()).nullable().optional(),
-    require_approval: z.union([ZMcpRequireApprovalMcpToolApprovalFilter, z.union([z.literal("always"), z.literal("never")])]).nullable().optional(),
+    require_approval: z
+      .union([
+        ZMcpRequireApprovalMcpToolApprovalFilter,
+        z.union([z.literal('always'), z.literal('never')]),
+      ])
+      .nullable()
+      .optional(),
     server_description: z.string().nullable().optional(),
     server_url: z.string().nullable().optional(),
-})));
+  })
+);
 export type Mcp = z.infer<typeof ZMcp>;
 
-export const ZCodeInterpreter = z.lazy(() => (z.object({
+export const ZCodeInterpreter = z.lazy(() =>
+  z.object({
     container: z.union([z.string(), ZCodeInterpreterContainerCodeInterpreterToolAuto]),
-    type: z.literal("code_interpreter"),
-})));
+    type: z.literal('code_interpreter'),
+  })
+);
 export type CodeInterpreter = z.infer<typeof ZCodeInterpreter>;
 
-export const ZImageGeneration = z.lazy(() => (z.object({
-    type: z.literal("image_generation"),
-    action: z.union([z.literal("generate"), z.literal("edit"), z.literal("auto")]).nullable().optional(),
-    background: z.union([z.literal("transparent"), z.literal("opaque"), z.literal("auto")]).nullable().optional(),
-    input_fidelity: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
+export const ZImageGeneration = z.lazy(() =>
+  z.object({
+    type: z.literal('image_generation'),
+    action: z
+      .union([z.literal('generate'), z.literal('edit'), z.literal('auto')])
+      .nullable()
+      .optional(),
+    background: z
+      .union([z.literal('transparent'), z.literal('opaque'), z.literal('auto')])
+      .nullable()
+      .optional(),
+    input_fidelity: z
+      .union([z.literal('high'), z.literal('low')])
+      .nullable()
+      .optional(),
     input_image_mask: ZImageGenerationInputImageMask.nullable().optional(),
-    model: z.union([z.string(), z.union([z.literal("gpt-image-1"), z.literal("gpt-image-1-mini"), z.literal("gpt-image-1.5")])]).nullable().optional(),
-    moderation: z.union([z.literal("auto"), z.literal("low")]).nullable().optional(),
+    model: z
+      .union([
+        z.string(),
+        z.union([
+          z.literal('gpt-image-1'),
+          z.literal('gpt-image-1-mini'),
+          z.literal('gpt-image-1.5'),
+        ]),
+      ])
+      .nullable()
+      .optional(),
+    moderation: z
+      .union([z.literal('auto'), z.literal('low')])
+      .nullable()
+      .optional(),
     output_compression: z.number().nullable().optional(),
-    output_format: z.union([z.literal("png"), z.literal("webp"), z.literal("jpeg")]).nullable().optional(),
+    output_format: z
+      .union([z.literal('png'), z.literal('webp'), z.literal('jpeg')])
+      .nullable()
+      .optional(),
     partial_images: z.number().nullable().optional(),
-    quality: z.union([z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("auto")]).nullable().optional(),
-    size: z.union([z.literal("1024x1024"), z.literal("1024x1536"), z.literal("1536x1024"), z.literal("auto")]).nullable().optional(),
-})));
+    quality: z
+      .union([z.literal('low'), z.literal('medium'), z.literal('high'), z.literal('auto')])
+      .nullable()
+      .optional(),
+    size: z
+      .union([
+        z.literal('1024x1024'),
+        z.literal('1024x1536'),
+        z.literal('1536x1024'),
+        z.literal('auto'),
+      ])
+      .nullable()
+      .optional(),
+  })
+);
 export type ImageGeneration = z.infer<typeof ZImageGeneration>;
 
-export const ZLocalShell = z.lazy(() => (z.object({
-    type: z.literal("local_shell"),
-})));
+export const ZLocalShell = z.lazy(() =>
+  z.object({
+    type: z.literal('local_shell'),
+  })
+);
 export type LocalShell = z.infer<typeof ZLocalShell>;
 
-export const ZFunctionShellTool = z.lazy(() => (z.object({
-    type: z.literal("shell"),
-    environment: z.union([ZContainerAuto, ZLocalEnvironment, ZContainerReference]).nullable().optional().nullable().optional(),
-})));
+export const ZFunctionShellTool = z.lazy(() =>
+  z.object({
+    type: z.literal('shell'),
+    environment: z
+      .union([ZContainerAuto, ZLocalEnvironment, ZContainerReference])
+      .nullable()
+      .optional()
+      .nullable()
+      .optional(),
+  })
+);
 export type FunctionShellTool = z.infer<typeof ZFunctionShellTool>;
 
-export const ZCustomTool = z.lazy(() => (z.object({
+export const ZCustomTool = z.lazy(() =>
+  z.object({
     name: z.string(),
-    type: z.literal("custom"),
+    type: z.literal('custom'),
     defer_loading: z.boolean().nullable().optional(),
     description: z.string().nullable().optional(),
     format: z.union([ZText, ZGrammar]).nullable().optional(),
-})));
+  })
+);
 export type CustomTool = z.infer<typeof ZCustomTool>;
 
-export const ZNamespaceTool = z.lazy(() => (z.object({
+export const ZNamespaceTool = z.lazy(() =>
+  z.object({
     description: z.string(),
     name: z.string(),
     tools: z.array(z.union([ZToolFunction, ZCustomTool])),
-    type: z.literal("namespace"),
-})));
+    type: z.literal('namespace'),
+  })
+);
 export type NamespaceTool = z.infer<typeof ZNamespaceTool>;
 
-export const ZToolSearchTool = z.lazy(() => (z.object({
-    type: z.literal("tool_search"),
+export const ZToolSearchTool = z.lazy(() =>
+  z.object({
+    type: z.literal('tool_search'),
     description: z.string().nullable().optional(),
-    execution: z.union([z.literal("server"), z.literal("client")]).nullable().optional(),
+    execution: z
+      .union([z.literal('server'), z.literal('client')])
+      .nullable()
+      .optional(),
     parameters: z.object({}).passthrough().nullable().optional(),
-})));
+  })
+);
 export type ToolSearchTool = z.infer<typeof ZToolSearchTool>;
 
-export const ZWebSearchPreviewTool = z.lazy(() => (z.object({
-    type: z.union([z.literal("web_search_preview"), z.literal("web_search_preview_2025_03_11")]),
-    search_content_types: z.array(z.union([z.literal("text"), z.literal("image")])).nullable().optional(),
-    search_context_size: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional(),
+export const ZWebSearchPreviewTool = z.lazy(() =>
+  z.object({
+    type: z.union([z.literal('web_search_preview'), z.literal('web_search_preview_2025_03_11')]),
+    search_content_types: z
+      .array(z.union([z.literal('text'), z.literal('image')]))
+      .nullable()
+      .optional(),
+    search_context_size: z
+      .union([z.literal('low'), z.literal('medium'), z.literal('high')])
+      .nullable()
+      .optional(),
     user_location: ZWebSearchPreviewToolUserLocation.nullable().optional(),
-})));
+  })
+);
 export type WebSearchPreviewTool = z.infer<typeof ZWebSearchPreviewTool>;
 
-export const ZApplyPatchTool = z.lazy(() => (z.object({
-    type: z.literal("apply_patch"),
-})));
+export const ZApplyPatchTool = z.lazy(() =>
+  z.object({
+    type: z.literal('apply_patch'),
+  })
+);
 export type ApplyPatchTool = z.infer<typeof ZApplyPatchTool>;
 
-export const ZConversation = z.lazy(() => (z.object({
+export const ZConversation = z.lazy(() =>
+  z.object({
     id: z.string(),
-})));
+  })
+);
 export type Conversation = z.infer<typeof ZConversation>;
 
-export const ZResponsePrompt = z.lazy(() => (z.object({
+export const ZResponsePrompt = z.lazy(() =>
+  z.object({
     id: z.string(),
-    variables: z.record(z.string(), z.union([z.string(), ZResponseInputText, ZResponseInputImage, ZResponseInputFile])).nullable().optional(),
+    variables: z
+      .record(
+        z.string(),
+        z.union([z.string(), ZResponseInputText, ZResponseInputImage, ZResponseInputFile])
+      )
+      .nullable()
+      .optional(),
     version: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponsePrompt = z.infer<typeof ZResponsePrompt>;
 
-export const ZReasoning = z.lazy(() => (z.object({
-    effort: z.union([z.literal("none"), z.literal("minimal"), z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("xhigh")]).nullable().optional(),
-    generate_summary: z.union([z.literal("auto"), z.literal("concise"), z.literal("detailed")]).nullable().optional(),
-    summary: z.union([z.literal("auto"), z.literal("concise"), z.literal("detailed")]).nullable().optional(),
-})));
+export const ZReasoning = z.lazy(() =>
+  z.object({
+    effort: z
+      .union([
+        z.literal('none'),
+        z.literal('minimal'),
+        z.literal('low'),
+        z.literal('medium'),
+        z.literal('high'),
+        z.literal('xhigh'),
+      ])
+      .nullable()
+      .optional(),
+    generate_summary: z
+      .union([z.literal('auto'), z.literal('concise'), z.literal('detailed')])
+      .nullable()
+      .optional(),
+    summary: z
+      .union([z.literal('auto'), z.literal('concise'), z.literal('detailed')])
+      .nullable()
+      .optional(),
+  })
+);
 export type Reasoning = z.infer<typeof ZReasoning>;
 
-export const ZResponseTextConfig = z.lazy(() => (z.object({
-    format: z.union([ZResponseFormatText, ZResponseFormatTextJSONSchemaConfig, ZResponseFormatJSONObject]).nullable().optional(),
-    verbosity: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]).nullable().optional(),
-})));
+export const ZResponseTextConfig = z.lazy(() =>
+  z.object({
+    format: z
+      .union([ZResponseFormatText, ZResponseFormatTextJSONSchemaConfig, ZResponseFormatJSONObject])
+      .nullable()
+      .optional(),
+    verbosity: z
+      .union([z.literal('low'), z.literal('medium'), z.literal('high')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseTextConfig = z.infer<typeof ZResponseTextConfig>;
 
-export const ZResponseUsage = z.lazy(() => (z.object({
+export const ZResponseUsage = z.lazy(() =>
+  z.object({
     input_tokens: z.number(),
     input_tokens_details: ZInputTokensDetails,
     output_tokens: z.number(),
     output_tokens_details: ZOutputTokensDetails,
     total_tokens: z.number(),
-})));
+  })
+);
 export type ResponseUsage = z.infer<typeof ZResponseUsage>;
 
-export const ZCitationCharLocationParam = z.lazy(() => (z.object({
+export const ZCitationCharLocationParam = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     document_index: z.number(),
     document_title: z.string().nullable().optional(),
     end_char_index: z.number(),
     start_char_index: z.number(),
-    type: z.literal("char_location"),
-})));
+    type: z.literal('char_location'),
+  })
+);
 export type CitationCharLocationParam = z.infer<typeof ZCitationCharLocationParam>;
 
-export const ZCitationPageLocationParam = z.lazy(() => (z.object({
+export const ZCitationPageLocationParam = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     document_index: z.number(),
     document_title: z.string().nullable().optional(),
     end_page_number: z.number(),
     start_page_number: z.number(),
-    type: z.literal("page_location"),
-})));
+    type: z.literal('page_location'),
+  })
+);
 export type CitationPageLocationParam = z.infer<typeof ZCitationPageLocationParam>;
 
-export const ZCitationContentBlockLocationParam = z.lazy(() => (z.object({
+export const ZCitationContentBlockLocationParam = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     document_index: z.number(),
     document_title: z.string().nullable().optional(),
     end_block_index: z.number(),
     start_block_index: z.number(),
-    type: z.literal("content_block_location"),
-})));
+    type: z.literal('content_block_location'),
+  })
+);
 export type CitationContentBlockLocationParam = z.infer<typeof ZCitationContentBlockLocationParam>;
 
-export const ZCitationWebSearchResultLocationParam = z.lazy(() => (z.object({
+export const ZCitationWebSearchResultLocationParam = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     encrypted_index: z.string(),
     title: z.string().nullable().optional(),
-    type: z.literal("web_search_result_location"),
+    type: z.literal('web_search_result_location'),
     url: z.string(),
-})));
-export type CitationWebSearchResultLocationParam = z.infer<typeof ZCitationWebSearchResultLocationParam>;
+  })
+);
+export type CitationWebSearchResultLocationParam = z.infer<
+  typeof ZCitationWebSearchResultLocationParam
+>;
 
-export const ZCitationSearchResultLocationParam = z.lazy(() => (z.object({
+export const ZCitationSearchResultLocationParam = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     end_block_index: z.number(),
     search_result_index: z.number(),
     source: z.string(),
     start_block_index: z.number(),
     title: z.string().nullable().optional(),
-    type: z.literal("search_result_location"),
-})));
+    type: z.literal('search_result_location'),
+  })
+);
 export type CitationSearchResultLocationParam = z.infer<typeof ZCitationSearchResultLocationParam>;
 
-export const ZChatCompletionChoice = z.lazy(() => (z.object({
-    finish_reason: z.union([z.literal("stop"), z.literal("length"), z.literal("tool_calls"), z.literal("content_filter"), z.literal("function_call")]),
+export const ZChatCompletionChoice = z.lazy(() =>
+  z.object({
+    finish_reason: z.union([
+      z.literal('stop'),
+      z.literal('length'),
+      z.literal('tool_calls'),
+      z.literal('content_filter'),
+      z.literal('function_call'),
+    ]),
     index: z.number(),
     logprobs: ZChatCompletionChoiceLogprobs.nullable().optional(),
     message: ZChatCompletionMessage,
-})));
+  })
+);
 export type ChatCompletionChoice = z.infer<typeof ZChatCompletionChoice>;
 
-export const ZChoiceLogprobs = z.lazy(() => (z.object({
+export const ZChoiceLogprobs = z.lazy(() =>
+  z.object({
     content: z.array(ZChatCompletionTokenLogprob).nullable().optional(),
     refusal: z.array(ZChatCompletionTokenLogprob).nullable().optional(),
-})));
+  })
+);
 export type ChoiceLogprobs = z.infer<typeof ZChoiceLogprobs>;
 
-export const ZChoiceDeltaFunctionCall = z.lazy(() => (z.object({
+export const ZChoiceDeltaFunctionCall = z.lazy(() =>
+  z.object({
     arguments: z.string().nullable().optional(),
     name: z.string().nullable().optional(),
-})));
+  })
+);
 export type ChoiceDeltaFunctionCall = z.infer<typeof ZChoiceDeltaFunctionCall>;
 
-export const ZChoiceDeltaToolCall = z.lazy(() => (z.object({
+export const ZChoiceDeltaToolCall = z.lazy(() =>
+  z.object({
     index: z.number(),
     id: z.string().nullable().optional(),
     function: ZChoiceDeltaToolCallFunction.nullable().optional(),
-    type: z.literal("function").nullable().optional(),
-})));
+    type: z.literal('function').nullable().optional(),
+  })
+);
 export type ChoiceDeltaToolCall = z.infer<typeof ZChoiceDeltaToolCall>;
 
-export const ZChatCompletionDeveloperMessageParam = z.lazy(() => (z.object({
+export const ZChatCompletionDeveloperMessageParam = z.lazy(() =>
+  z.object({
     content: z.union([z.string(), z.array(ZChatCompletionContentPartTextParam)]),
-    role: z.literal("developer"),
+    role: z.literal('developer'),
     name: z.string(),
-})));
-export type ChatCompletionDeveloperMessageParam = z.infer<typeof ZChatCompletionDeveloperMessageParam>;
+  })
+);
+export type ChatCompletionDeveloperMessageParam = z.infer<
+  typeof ZChatCompletionDeveloperMessageParam
+>;
 
-export const ZChatCompletionSystemMessageParam = z.lazy(() => (z.object({
+export const ZChatCompletionSystemMessageParam = z.lazy(() =>
+  z.object({
     content: z.union([z.string(), z.array(ZChatCompletionContentPartTextParam)]),
-    role: z.literal("system"),
+    role: z.literal('system'),
     name: z.string(),
-})));
+  })
+);
 export type ChatCompletionSystemMessageParam = z.infer<typeof ZChatCompletionSystemMessageParam>;
 
-export const ZChatCompletionUserMessageParam = z.lazy(() => (z.object({
-    content: z.union([z.string(), z.array(z.union([ZChatCompletionContentPartTextParam, ZChatCompletionContentPartImageParam, ZChatCompletionContentPartInputAudioParam, ZChatCompletionContentPartParamFile]))]),
-    role: z.literal("user"),
+export const ZChatCompletionUserMessageParam = z.lazy(() =>
+  z.object({
+    content: z.union([
+      z.string(),
+      z.array(
+        z.union([
+          ZChatCompletionContentPartTextParam,
+          ZChatCompletionContentPartImageParam,
+          ZChatCompletionContentPartInputAudioParam,
+          ZChatCompletionContentPartParamFile,
+        ])
+      ),
+    ]),
+    role: z.literal('user'),
     name: z.string(),
-})));
+  })
+);
 export type ChatCompletionUserMessageParam = z.infer<typeof ZChatCompletionUserMessageParam>;
 
-export const ZChatCompletionAssistantMessageParam = z.lazy(() => (z.object({
-    role: z.literal("assistant"),
+export const ZChatCompletionAssistantMessageParam = z.lazy(() =>
+  z.object({
+    role: z.literal('assistant'),
     audio: ZAudio.nullable().optional(),
-    content: z.union([z.string(), z.array(z.union([ZChatCompletionContentPartTextParam, ZChatCompletionContentPartRefusalParam]))]).nullable().optional(),
+    content: z
+      .union([
+        z.string(),
+        z.array(
+          z.union([ZChatCompletionContentPartTextParam, ZChatCompletionContentPartRefusalParam])
+        ),
+      ])
+      .nullable()
+      .optional(),
     function_call: ZFunctionCall.nullable().optional(),
     name: z.string(),
     refusal: z.string().nullable().optional(),
-    tool_calls: z.array(z.union([ZChatCompletionMessageFunctionToolCallParam, ZChatCompletionMessageCustomToolCallParam])),
-})));
-export type ChatCompletionAssistantMessageParam = z.infer<typeof ZChatCompletionAssistantMessageParam>;
+    tool_calls: z.array(
+      z.union([
+        ZChatCompletionMessageFunctionToolCallParam,
+        ZChatCompletionMessageCustomToolCallParam,
+      ])
+    ),
+  })
+);
+export type ChatCompletionAssistantMessageParam = z.infer<
+  typeof ZChatCompletionAssistantMessageParam
+>;
 
-export const ZChatCompletionToolMessageParam = z.lazy(() => (z.object({
+export const ZChatCompletionToolMessageParam = z.lazy(() =>
+  z.object({
     content: z.union([z.string(), z.array(ZChatCompletionContentPartTextParam)]),
-    role: z.literal("tool"),
+    role: z.literal('tool'),
     tool_call_id: z.string(),
-})));
+  })
+);
 export type ChatCompletionToolMessageParam = z.infer<typeof ZChatCompletionToolMessageParam>;
 
-export const ZChatCompletionFunctionMessageParam = z.lazy(() => (z.object({
+export const ZChatCompletionFunctionMessageParam = z.lazy(() =>
+  z.object({
     content: z.string().nullable().optional(),
     name: z.string(),
-    role: z.literal("function"),
-})));
-export type ChatCompletionFunctionMessageParam = z.infer<typeof ZChatCompletionFunctionMessageParam>;
+    role: z.literal('function'),
+  })
+);
+export type ChatCompletionFunctionMessageParam = z.infer<
+  typeof ZChatCompletionFunctionMessageParam
+>;
 
-export const ZResponseInputParamMessage = z.lazy(() => (z.object({
-    content: z.array(z.union([ZResponseInputTextParam, ZResponseInputImageParam, ZResponseInputFileParam])),
-    role: z.union([z.literal("user"), z.literal("system"), z.literal("developer")]),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("message"),
-})));
+export const ZResponseInputParamMessage = z.lazy(() =>
+  z.object({
+    content: z.array(
+      z.union([ZResponseInputTextParam, ZResponseInputImageParam, ZResponseInputFileParam])
+    ),
+    role: z.union([z.literal('user'), z.literal('system'), z.literal('developer')]),
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('message'),
+  })
+);
 export type ResponseInputParamMessage = z.infer<typeof ZResponseInputParamMessage>;
 
-export const ZResponseOutputMessageParam = z.lazy(() => (z.object({
+export const ZResponseOutputMessageParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     content: z.array(z.union([ZResponseOutputTextParam, ZResponseOutputRefusalParam])),
-    role: z.literal("assistant"),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("message"),
-    phase: z.union([z.literal("commentary"), z.literal("final_answer")]).nullable().optional(),
-})));
+    role: z.literal('assistant'),
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('message'),
+    phase: z
+      .union([z.literal('commentary'), z.literal('final_answer')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseOutputMessageParam = z.infer<typeof ZResponseOutputMessageParam>;
 
-export const ZResponseFileSearchToolCallParam = z.lazy(() => (z.object({
+export const ZResponseFileSearchToolCallParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     queries: z.array(z.string()),
-    status: z.union([z.literal("in_progress"), z.literal("searching"), z.literal("completed"), z.literal("incomplete"), z.literal("failed")]),
-    type: z.literal("file_search_call"),
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('searching'),
+      z.literal('completed'),
+      z.literal('incomplete'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('file_search_call'),
     results: z.array(ZResponseFileSearchToolCallParamResult).nullable().optional(),
-})));
+  })
+);
 export type ResponseFileSearchToolCallParam = z.infer<typeof ZResponseFileSearchToolCallParam>;
 
-export const ZResponseComputerToolCallParam = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     call_id: z.string(),
     pending_safety_checks: z.array(ZResponseComputerToolCallParamPendingSafetyCheck),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("computer_call"),
-    action: z.union([ZResponseComputerToolCallParamActionClick, ZResponseComputerToolCallParamActionDoubleClick, ZResponseComputerToolCallParamActionDrag, ZResponseComputerToolCallParamActionKeypress, ZResponseComputerToolCallParamActionMove, ZResponseComputerToolCallParamActionScreenshot, ZResponseComputerToolCallParamActionScroll, ZResponseComputerToolCallParamActionType, ZResponseComputerToolCallParamActionWait]),
-    actions: z.array(z.union([ZComputerActionListParamClick, ZComputerActionListParamDoubleClick, ZComputerActionListParamDrag, ZComputerActionListParamKeypress, ZComputerActionListParamMove, ZComputerActionListParamScreenshot, ZComputerActionListParamScroll, ZComputerActionListParamType, ZComputerActionListParamWait])),
-})));
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('computer_call'),
+    action: z.union([
+      ZResponseComputerToolCallParamActionClick,
+      ZResponseComputerToolCallParamActionDoubleClick,
+      ZResponseComputerToolCallParamActionDrag,
+      ZResponseComputerToolCallParamActionKeypress,
+      ZResponseComputerToolCallParamActionMove,
+      ZResponseComputerToolCallParamActionScreenshot,
+      ZResponseComputerToolCallParamActionScroll,
+      ZResponseComputerToolCallParamActionType,
+      ZResponseComputerToolCallParamActionWait,
+    ]),
+    actions: z.array(
+      z.union([
+        ZComputerActionListParamClick,
+        ZComputerActionListParamDoubleClick,
+        ZComputerActionListParamDrag,
+        ZComputerActionListParamKeypress,
+        ZComputerActionListParamMove,
+        ZComputerActionListParamScreenshot,
+        ZComputerActionListParamScroll,
+        ZComputerActionListParamType,
+        ZComputerActionListParamWait,
+      ])
+    ),
+  })
+);
 export type ResponseComputerToolCallParam = z.infer<typeof ZResponseComputerToolCallParam>;
 
-export const ZResponseInputParamComputerCallOutput = z.lazy(() => (z.object({
+export const ZResponseInputParamComputerCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
     output: ZResponseComputerToolCallOutputScreenshotParam,
-    type: z.literal("computer_call_output"),
+    type: z.literal('computer_call_output'),
     id: z.string().nullable().optional(),
-    acknowledged_safety_checks: z.array(ZResponseInputParamComputerCallOutputAcknowledgedSafetyCheck).nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
-export type ResponseInputParamComputerCallOutput = z.infer<typeof ZResponseInputParamComputerCallOutput>;
+    acknowledged_safety_checks: z
+      .array(ZResponseInputParamComputerCallOutputAcknowledgedSafetyCheck)
+      .nullable()
+      .optional(),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
+export type ResponseInputParamComputerCallOutput = z.infer<
+  typeof ZResponseInputParamComputerCallOutput
+>;
 
-export const ZResponseFunctionWebSearchParam = z.lazy(() => (z.object({
+export const ZResponseFunctionWebSearchParam = z.lazy(() =>
+  z.object({
     id: z.string(),
-    action: z.union([ZResponseFunctionWebSearchParamActionSearch, ZResponseFunctionWebSearchParamActionOpenPage, ZResponseFunctionWebSearchParamActionFind]),
-    status: z.union([z.literal("in_progress"), z.literal("searching"), z.literal("completed"), z.literal("failed")]),
-    type: z.literal("web_search_call"),
-})));
+    action: z.union([
+      ZResponseFunctionWebSearchParamActionSearch,
+      ZResponseFunctionWebSearchParamActionOpenPage,
+      ZResponseFunctionWebSearchParamActionFind,
+    ]),
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('searching'),
+      z.literal('completed'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('web_search_call'),
+  })
+);
 export type ResponseFunctionWebSearchParam = z.infer<typeof ZResponseFunctionWebSearchParam>;
 
-export const ZResponseFunctionToolCallParam = z.lazy(() => (z.object({
+export const ZResponseFunctionToolCallParam = z.lazy(() =>
+  z.object({
     arguments: z.string(),
     call_id: z.string(),
     name: z.string(),
-    type: z.literal("function_call"),
+    type: z.literal('function_call'),
     id: z.string(),
     namespace: z.string(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-})));
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+  })
+);
 export type ResponseFunctionToolCallParam = z.infer<typeof ZResponseFunctionToolCallParam>;
 
-export const ZResponseInputParamFunctionCallOutput = z.lazy(() => (z.object({
+export const ZResponseInputParamFunctionCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
-    output: z.union([z.string(), z.array(z.union([ZResponseInputTextContentParam, ZResponseInputImageContentParam, ZResponseInputFileContentParam]))]),
-    type: z.literal("function_call_output"),
+    output: z.union([
+      z.string(),
+      z.array(
+        z.union([
+          ZResponseInputTextContentParam,
+          ZResponseInputImageContentParam,
+          ZResponseInputFileContentParam,
+        ])
+      ),
+    ]),
+    type: z.literal('function_call_output'),
     id: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
-export type ResponseInputParamFunctionCallOutput = z.infer<typeof ZResponseInputParamFunctionCallOutput>;
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
+export type ResponseInputParamFunctionCallOutput = z.infer<
+  typeof ZResponseInputParamFunctionCallOutput
+>;
 
-export const ZResponseInputParamToolSearchCall = z.lazy(() => (z.object({
+export const ZResponseInputParamToolSearchCall = z.lazy(() =>
+  z.object({
     arguments: z.object({}).passthrough(),
-    type: z.literal("tool_search_call"),
+    type: z.literal('tool_search_call'),
     id: z.string().nullable().optional(),
     call_id: z.string().nullable().optional(),
-    execution: z.union([z.literal("server"), z.literal("client")]),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    execution: z.union([z.literal('server'), z.literal('client')]),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseInputParamToolSearchCall = z.infer<typeof ZResponseInputParamToolSearchCall>;
 
-export const ZResponseToolSearchOutputItemParamParam = z.lazy(() => (z.object({
-    tools: z.array(z.union([ZFunctionToolParam, ZFileSearchToolParam, ZComputerToolParam, ZComputerUsePreviewToolParam, ZWebSearchToolParam, ZToolParamMcp, ZToolParamCodeInterpreter, ZToolParamImageGeneration, ZToolParamLocalShell, ZFunctionShellToolParam, ZCustomToolParam, ZNamespaceToolParam, ZToolSearchToolParam, ZWebSearchPreviewToolParam, ZApplyPatchToolParam])),
-    type: z.literal("tool_search_output"),
+export const ZResponseToolSearchOutputItemParamParam = z.lazy(() =>
+  z.object({
+    tools: z.array(
+      z.union([
+        ZFunctionToolParam,
+        ZFileSearchToolParam,
+        ZComputerToolParam,
+        ZComputerUsePreviewToolParam,
+        ZWebSearchToolParam,
+        ZToolParamMcp,
+        ZToolParamCodeInterpreter,
+        ZToolParamImageGeneration,
+        ZToolParamLocalShell,
+        ZFunctionShellToolParam,
+        ZCustomToolParam,
+        ZNamespaceToolParam,
+        ZToolSearchToolParam,
+        ZWebSearchPreviewToolParam,
+        ZApplyPatchToolParam,
+      ])
+    ),
+    type: z.literal('tool_search_output'),
     id: z.string().nullable().optional(),
     call_id: z.string().nullable().optional(),
-    execution: z.union([z.literal("server"), z.literal("client")]),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
-export type ResponseToolSearchOutputItemParamParam = z.infer<typeof ZResponseToolSearchOutputItemParamParam>;
+    execution: z.union([z.literal('server'), z.literal('client')]),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
+export type ResponseToolSearchOutputItemParamParam = z.infer<
+  typeof ZResponseToolSearchOutputItemParamParam
+>;
 
-export const ZResponseReasoningItemParam = z.lazy(() => (z.object({
+export const ZResponseReasoningItemParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     summary: z.array(ZResponseReasoningItemParamSummary),
-    type: z.literal("reasoning"),
+    type: z.literal('reasoning'),
     content: z.array(ZResponseReasoningItemParamContent),
     encrypted_content: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-})));
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+  })
+);
 export type ResponseReasoningItemParam = z.infer<typeof ZResponseReasoningItemParam>;
 
-export const ZResponseCompactionItemParamParam = z.lazy(() => (z.object({
+export const ZResponseCompactionItemParamParam = z.lazy(() =>
+  z.object({
     encrypted_content: z.string(),
-    type: z.literal("compaction"),
+    type: z.literal('compaction'),
     id: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseCompactionItemParamParam = z.infer<typeof ZResponseCompactionItemParamParam>;
 
-export const ZResponseInputParamImageGenerationCall = z.lazy(() => (z.object({
+export const ZResponseInputParamImageGenerationCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     result: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("generating"), z.literal("failed")]),
-    type: z.literal("image_generation_call"),
-})));
-export type ResponseInputParamImageGenerationCall = z.infer<typeof ZResponseInputParamImageGenerationCall>;
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('completed'),
+      z.literal('generating'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('image_generation_call'),
+  })
+);
+export type ResponseInputParamImageGenerationCall = z.infer<
+  typeof ZResponseInputParamImageGenerationCall
+>;
 
-export const ZResponseCodeInterpreterToolCallParam = z.lazy(() => (z.object({
+export const ZResponseCodeInterpreterToolCallParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     code: z.string().nullable().optional(),
     container_id: z.string(),
-    outputs: z.array(z.union([ZResponseCodeInterpreterToolCallParamOutputLogs, ZResponseCodeInterpreterToolCallParamOutputImage])).nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete"), z.literal("interpreting"), z.literal("failed")]),
-    type: z.literal("code_interpreter_call"),
-})));
-export type ResponseCodeInterpreterToolCallParam = z.infer<typeof ZResponseCodeInterpreterToolCallParam>;
+    outputs: z
+      .array(
+        z.union([
+          ZResponseCodeInterpreterToolCallParamOutputLogs,
+          ZResponseCodeInterpreterToolCallParamOutputImage,
+        ])
+      )
+      .nullable()
+      .optional(),
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('completed'),
+      z.literal('incomplete'),
+      z.literal('interpreting'),
+      z.literal('failed'),
+    ]),
+    type: z.literal('code_interpreter_call'),
+  })
+);
+export type ResponseCodeInterpreterToolCallParam = z.infer<
+  typeof ZResponseCodeInterpreterToolCallParam
+>;
 
-export const ZResponseInputParamLocalShellCall = z.lazy(() => (z.object({
+export const ZResponseInputParamLocalShellCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     action: ZResponseInputParamLocalShellCallAction,
     call_id: z.string(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]),
-    type: z.literal("local_shell_call"),
-})));
+    status: z.union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')]),
+    type: z.literal('local_shell_call'),
+  })
+);
 export type ResponseInputParamLocalShellCall = z.infer<typeof ZResponseInputParamLocalShellCall>;
 
-export const ZResponseInputParamLocalShellCallOutput = z.lazy(() => (z.object({
+export const ZResponseInputParamLocalShellCallOutput = z.lazy(() =>
+  z.object({
     id: z.string(),
     output: z.string(),
-    type: z.literal("local_shell_call_output"),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
-export type ResponseInputParamLocalShellCallOutput = z.infer<typeof ZResponseInputParamLocalShellCallOutput>;
+    type: z.literal('local_shell_call_output'),
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
+export type ResponseInputParamLocalShellCallOutput = z.infer<
+  typeof ZResponseInputParamLocalShellCallOutput
+>;
 
-export const ZResponseInputParamShellCall = z.lazy(() => (z.object({
+export const ZResponseInputParamShellCall = z.lazy(() =>
+  z.object({
     action: ZResponseInputParamShellCallAction,
     call_id: z.string(),
-    type: z.literal("shell_call"),
+    type: z.literal('shell_call'),
     id: z.string().nullable().optional(),
     environment: z.union([ZLocalEnvironmentParam, ZContainerReferenceParam]).nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseInputParamShellCall = z.infer<typeof ZResponseInputParamShellCall>;
 
-export const ZResponseInputParamShellCallOutput = z.lazy(() => (z.object({
+export const ZResponseInputParamShellCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
     output: z.array(ZResponseFunctionShellCallOutputContentParam),
-    type: z.literal("shell_call_output"),
+    type: z.literal('shell_call_output'),
     id: z.string().nullable().optional(),
     max_output_length: z.number().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete")]).nullable().optional(),
-})));
+    status: z
+      .union([z.literal('in_progress'), z.literal('completed'), z.literal('incomplete')])
+      .nullable()
+      .optional(),
+  })
+);
 export type ResponseInputParamShellCallOutput = z.infer<typeof ZResponseInputParamShellCallOutput>;
 
-export const ZResponseInputParamApplyPatchCall = z.lazy(() => (z.object({
+export const ZResponseInputParamApplyPatchCall = z.lazy(() =>
+  z.object({
     call_id: z.string(),
-    operation: z.union([ZResponseInputParamApplyPatchCallOperationCreateFile, ZResponseInputParamApplyPatchCallOperationDeleteFile, ZResponseInputParamApplyPatchCallOperationUpdateFile]),
-    status: z.union([z.literal("in_progress"), z.literal("completed")]),
-    type: z.literal("apply_patch_call"),
+    operation: z.union([
+      ZResponseInputParamApplyPatchCallOperationCreateFile,
+      ZResponseInputParamApplyPatchCallOperationDeleteFile,
+      ZResponseInputParamApplyPatchCallOperationUpdateFile,
+    ]),
+    status: z.union([z.literal('in_progress'), z.literal('completed')]),
+    type: z.literal('apply_patch_call'),
     id: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputParamApplyPatchCall = z.infer<typeof ZResponseInputParamApplyPatchCall>;
 
-export const ZResponseInputParamApplyPatchCallOutput = z.lazy(() => (z.object({
+export const ZResponseInputParamApplyPatchCallOutput = z.lazy(() =>
+  z.object({
     call_id: z.string(),
-    status: z.union([z.literal("completed"), z.literal("failed")]),
-    type: z.literal("apply_patch_call_output"),
+    status: z.union([z.literal('completed'), z.literal('failed')]),
+    type: z.literal('apply_patch_call_output'),
     id: z.string().nullable().optional(),
     output: z.string().nullable().optional(),
-})));
-export type ResponseInputParamApplyPatchCallOutput = z.infer<typeof ZResponseInputParamApplyPatchCallOutput>;
+  })
+);
+export type ResponseInputParamApplyPatchCallOutput = z.infer<
+  typeof ZResponseInputParamApplyPatchCallOutput
+>;
 
-export const ZResponseInputParamMcpListTools = z.lazy(() => (z.object({
+export const ZResponseInputParamMcpListTools = z.lazy(() =>
+  z.object({
     id: z.string(),
     server_label: z.string(),
     tools: z.array(ZResponseInputParamMcpListToolsTool),
-    type: z.literal("mcp_list_tools"),
+    type: z.literal('mcp_list_tools'),
     error: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputParamMcpListTools = z.infer<typeof ZResponseInputParamMcpListTools>;
 
-export const ZResponseInputParamMcpApprovalRequest = z.lazy(() => (z.object({
+export const ZResponseInputParamMcpApprovalRequest = z.lazy(() =>
+  z.object({
     id: z.string(),
     arguments: z.string(),
     name: z.string(),
     server_label: z.string(),
-    type: z.literal("mcp_approval_request"),
-})));
-export type ResponseInputParamMcpApprovalRequest = z.infer<typeof ZResponseInputParamMcpApprovalRequest>;
+    type: z.literal('mcp_approval_request'),
+  })
+);
+export type ResponseInputParamMcpApprovalRequest = z.infer<
+  typeof ZResponseInputParamMcpApprovalRequest
+>;
 
-export const ZResponseInputParamMcpApprovalResponse = z.lazy(() => (z.object({
+export const ZResponseInputParamMcpApprovalResponse = z.lazy(() =>
+  z.object({
     approval_request_id: z.string(),
     approve: z.boolean(),
-    type: z.literal("mcp_approval_response"),
+    type: z.literal('mcp_approval_response'),
     id: z.string().nullable().optional(),
     reason: z.string().nullable().optional(),
-})));
-export type ResponseInputParamMcpApprovalResponse = z.infer<typeof ZResponseInputParamMcpApprovalResponse>;
+  })
+);
+export type ResponseInputParamMcpApprovalResponse = z.infer<
+  typeof ZResponseInputParamMcpApprovalResponse
+>;
 
-export const ZResponseInputParamMcpCall = z.lazy(() => (z.object({
+export const ZResponseInputParamMcpCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     arguments: z.string(),
     name: z.string(),
     server_label: z.string(),
-    type: z.literal("mcp_call"),
+    type: z.literal('mcp_call'),
     approval_request_id: z.string().nullable().optional(),
     error: z.string().nullable().optional(),
     output: z.string().nullable().optional(),
-    status: z.union([z.literal("in_progress"), z.literal("completed"), z.literal("incomplete"), z.literal("calling"), z.literal("failed")]),
-})));
+    status: z.union([
+      z.literal('in_progress'),
+      z.literal('completed'),
+      z.literal('incomplete'),
+      z.literal('calling'),
+      z.literal('failed'),
+    ]),
+  })
+);
 export type ResponseInputParamMcpCall = z.infer<typeof ZResponseInputParamMcpCall>;
 
-export const ZResponseCustomToolCallOutputParam = z.lazy(() => (z.object({
+export const ZResponseCustomToolCallOutputParam = z.lazy(() =>
+  z.object({
     call_id: z.string(),
-    output: z.union([z.string(), z.array(z.union([ZResponseInputTextParam, ZResponseInputImageParam, ZResponseInputFileParam]))]),
-    type: z.literal("custom_tool_call_output"),
+    output: z.union([
+      z.string(),
+      z.array(
+        z.union([ZResponseInputTextParam, ZResponseInputImageParam, ZResponseInputFileParam])
+      ),
+    ]),
+    type: z.literal('custom_tool_call_output'),
     id: z.string(),
-})));
+  })
+);
 export type ResponseCustomToolCallOutputParam = z.infer<typeof ZResponseCustomToolCallOutputParam>;
 
-export const ZResponseCustomToolCallParam = z.lazy(() => (z.object({
+export const ZResponseCustomToolCallParam = z.lazy(() =>
+  z.object({
     call_id: z.string(),
     input: z.string(),
     name: z.string(),
-    type: z.literal("custom_tool_call"),
+    type: z.literal('custom_tool_call'),
     id: z.string(),
     namespace: z.string(),
-})));
+  })
+);
 export type ResponseCustomToolCallParam = z.infer<typeof ZResponseCustomToolCallParam>;
 
-export const ZResponseInputParamItemReference = z.lazy(() => (z.object({
+export const ZResponseInputParamItemReference = z.lazy(() =>
+  z.object({
     id: z.string(),
-    type: z.literal("item_reference").nullable().optional(),
-})));
+    type: z.literal('item_reference').nullable().optional(),
+  })
+);
 export type ResponseInputParamItemReference = z.infer<typeof ZResponseInputParamItemReference>;
 
-export const ZFileFile = z.lazy(() => (z.object({
+export const ZFileFile = z.lazy(() =>
+  z.object({
     file_data: z.string(),
     file_id: z.string(),
     filename: z.string(),
-})));
+  })
+);
 export type FileFile = z.infer<typeof ZFileFile>;
 
-export const ZBase64PDFSourceParam = z.lazy(() => (z.object({
+export const ZBase64PDFSourceParam = z.lazy(() =>
+  z.object({
     data: z.union([z.string(), z.instanceof(Uint8Array), z.string()]),
-    media_type: z.literal("application/pdf"),
-    type: z.literal("base64"),
-})));
+    media_type: z.literal('application/pdf'),
+    type: z.literal('base64'),
+  })
+);
 export type Base64PDFSourceParam = z.infer<typeof ZBase64PDFSourceParam>;
 
-export const ZPlainTextSourceParam = z.lazy(() => (z.object({
+export const ZPlainTextSourceParam = z.lazy(() =>
+  z.object({
     data: z.string(),
-    media_type: z.literal("text/plain"),
-    type: z.literal("text"),
-})));
+    media_type: z.literal('text/plain'),
+    type: z.literal('text'),
+  })
+);
 export type PlainTextSourceParam = z.infer<typeof ZPlainTextSourceParam>;
 
-export const ZContentBlockSourceParam = z.lazy(() => (z.object({
+export const ZContentBlockSourceParam = z.lazy(() =>
+  z.object({
     content: z.union([z.string(), z.array(z.union([ZTextBlockParam, ZImageBlockParam]))]),
-    type: z.literal("content"),
-})));
+    type: z.literal('content'),
+  })
+);
 export type ContentBlockSourceParam = z.infer<typeof ZContentBlockSourceParam>;
 
-export const ZURLPDFSourceParam = z.lazy(() => (z.object({
-    type: z.literal("url"),
+export const ZURLPDFSourceParam = z.lazy(() =>
+  z.object({
+    type: z.literal('url'),
     url: z.string(),
-})));
+  })
+);
 export type URLPDFSourceParam = z.infer<typeof ZURLPDFSourceParam>;
 
-export const ZCitationsConfigParam = z.lazy(() => (z.object({
+export const ZCitationsConfigParam = z.lazy(() =>
+  z.object({
     enabled: z.boolean(),
-})));
+  })
+);
 export type CitationsConfigParam = z.infer<typeof ZCitationsConfigParam>;
 
-export const ZDirectCallerParam = z.lazy(() => (z.object({
-    type: z.literal("direct"),
-})));
+export const ZDirectCallerParam = z.lazy(() =>
+  z.object({
+    type: z.literal('direct'),
+  })
+);
 export type DirectCallerParam = z.infer<typeof ZDirectCallerParam>;
 
-export const ZServerToolCallerParam = z.lazy(() => (z.object({
+export const ZServerToolCallerParam = z.lazy(() =>
+  z.object({
     tool_id: z.string(),
-    type: z.literal("code_execution_20250825"),
-})));
+    type: z.literal('code_execution_20250825'),
+  })
+);
 export type ServerToolCallerParam = z.infer<typeof ZServerToolCallerParam>;
 
-export const ZServerToolCaller20260120Param = z.lazy(() => (z.object({
+export const ZServerToolCaller20260120Param = z.lazy(() =>
+  z.object({
     tool_id: z.string(),
-    type: z.literal("code_execution_20260120"),
-})));
+    type: z.literal('code_execution_20260120'),
+  })
+);
 export type ServerToolCaller20260120Param = z.infer<typeof ZServerToolCaller20260120Param>;
 
-export const ZToolReferenceBlockParam = z.lazy(() => (z.object({
+export const ZToolReferenceBlockParam = z.lazy(() =>
+  z.object({
     tool_name: z.string(),
-    type: z.literal("tool_reference"),
+    type: z.literal('tool_reference'),
     cache_control: ZCacheControlEphemeralParam.nullable().optional(),
-})));
+  })
+);
 export type ToolReferenceBlockParam = z.infer<typeof ZToolReferenceBlockParam>;
 
-export const ZWebSearchResultBlockParam = z.lazy(() => (z.object({
+export const ZWebSearchResultBlockParam = z.lazy(() =>
+  z.object({
     encrypted_content: z.string(),
     title: z.string(),
-    type: z.literal("web_search_result"),
+    type: z.literal('web_search_result'),
     url: z.string(),
     page_age: z.string().nullable().optional(),
-})));
+  })
+);
 export type WebSearchResultBlockParam = z.infer<typeof ZWebSearchResultBlockParam>;
 
-export const ZWebSearchToolRequestErrorParam = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("max_uses_exceeded"), z.literal("too_many_requests"), z.literal("query_too_long"), z.literal("request_too_large")]),
-    type: z.literal("web_search_tool_result_error"),
-})));
+export const ZWebSearchToolRequestErrorParam = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('max_uses_exceeded'),
+      z.literal('too_many_requests'),
+      z.literal('query_too_long'),
+      z.literal('request_too_large'),
+    ]),
+    type: z.literal('web_search_tool_result_error'),
+  })
+);
 export type WebSearchToolRequestErrorParam = z.infer<typeof ZWebSearchToolRequestErrorParam>;
 
-export const ZWebFetchToolResultErrorBlockParam = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("url_too_long"), z.literal("url_not_allowed"), z.literal("url_not_accessible"), z.literal("unsupported_content_type"), z.literal("too_many_requests"), z.literal("max_uses_exceeded"), z.literal("unavailable")]),
-    type: z.literal("web_fetch_tool_result_error"),
-})));
+export const ZWebFetchToolResultErrorBlockParam = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('url_too_long'),
+      z.literal('url_not_allowed'),
+      z.literal('url_not_accessible'),
+      z.literal('unsupported_content_type'),
+      z.literal('too_many_requests'),
+      z.literal('max_uses_exceeded'),
+      z.literal('unavailable'),
+    ]),
+    type: z.literal('web_fetch_tool_result_error'),
+  })
+);
 export type WebFetchToolResultErrorBlockParam = z.infer<typeof ZWebFetchToolResultErrorBlockParam>;
 
-export const ZWebFetchBlockParam = z.lazy(() => (z.object({
+export const ZWebFetchBlockParam = z.lazy(() =>
+  z.object({
     content: ZDocumentBlockParam,
-    type: z.literal("web_fetch_result"),
+    type: z.literal('web_fetch_result'),
     url: z.string(),
     retrieved_at: z.string().nullable().optional(),
-})));
+  })
+);
 export type WebFetchBlockParam = z.infer<typeof ZWebFetchBlockParam>;
 
-export const ZCodeExecutionToolResultErrorParam = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("too_many_requests"), z.literal("execution_time_exceeded")]),
-    type: z.literal("code_execution_tool_result_error"),
-})));
+export const ZCodeExecutionToolResultErrorParam = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('too_many_requests'),
+      z.literal('execution_time_exceeded'),
+    ]),
+    type: z.literal('code_execution_tool_result_error'),
+  })
+);
 export type CodeExecutionToolResultErrorParam = z.infer<typeof ZCodeExecutionToolResultErrorParam>;
 
-export const ZCodeExecutionResultBlockParam = z.lazy(() => (z.object({
+export const ZCodeExecutionResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.array(ZCodeExecutionOutputBlockParam),
     return_code: z.number(),
     stderr: z.string(),
     stdout: z.string(),
-    type: z.literal("code_execution_result"),
-})));
+    type: z.literal('code_execution_result'),
+  })
+);
 export type CodeExecutionResultBlockParam = z.infer<typeof ZCodeExecutionResultBlockParam>;
 
-export const ZEncryptedCodeExecutionResultBlockParam = z.lazy(() => (z.object({
+export const ZEncryptedCodeExecutionResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.array(ZCodeExecutionOutputBlockParam),
     encrypted_stdout: z.string(),
     return_code: z.number(),
     stderr: z.string(),
-    type: z.literal("encrypted_code_execution_result"),
-})));
-export type EncryptedCodeExecutionResultBlockParam = z.infer<typeof ZEncryptedCodeExecutionResultBlockParam>;
+    type: z.literal('encrypted_code_execution_result'),
+  })
+);
+export type EncryptedCodeExecutionResultBlockParam = z.infer<
+  typeof ZEncryptedCodeExecutionResultBlockParam
+>;
 
-export const ZBashCodeExecutionToolResultErrorParam = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("too_many_requests"), z.literal("execution_time_exceeded"), z.literal("output_file_too_large")]),
-    type: z.literal("bash_code_execution_tool_result_error"),
-})));
-export type BashCodeExecutionToolResultErrorParam = z.infer<typeof ZBashCodeExecutionToolResultErrorParam>;
+export const ZBashCodeExecutionToolResultErrorParam = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('too_many_requests'),
+      z.literal('execution_time_exceeded'),
+      z.literal('output_file_too_large'),
+    ]),
+    type: z.literal('bash_code_execution_tool_result_error'),
+  })
+);
+export type BashCodeExecutionToolResultErrorParam = z.infer<
+  typeof ZBashCodeExecutionToolResultErrorParam
+>;
 
-export const ZBashCodeExecutionResultBlockParam = z.lazy(() => (z.object({
+export const ZBashCodeExecutionResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.array(ZBashCodeExecutionOutputBlockParam),
     return_code: z.number(),
     stderr: z.string(),
     stdout: z.string(),
-    type: z.literal("bash_code_execution_result"),
-})));
+    type: z.literal('bash_code_execution_result'),
+  })
+);
 export type BashCodeExecutionResultBlockParam = z.infer<typeof ZBashCodeExecutionResultBlockParam>;
 
-export const ZTextEditorCodeExecutionToolResultErrorParam = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("too_many_requests"), z.literal("execution_time_exceeded"), z.literal("file_not_found")]),
-    type: z.literal("text_editor_code_execution_tool_result_error"),
+export const ZTextEditorCodeExecutionToolResultErrorParam = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('too_many_requests'),
+      z.literal('execution_time_exceeded'),
+      z.literal('file_not_found'),
+    ]),
+    type: z.literal('text_editor_code_execution_tool_result_error'),
     error_message: z.string().nullable().optional(),
-})));
-export type TextEditorCodeExecutionToolResultErrorParam = z.infer<typeof ZTextEditorCodeExecutionToolResultErrorParam>;
+  })
+);
+export type TextEditorCodeExecutionToolResultErrorParam = z.infer<
+  typeof ZTextEditorCodeExecutionToolResultErrorParam
+>;
 
-export const ZTextEditorCodeExecutionViewResultBlockParam = z.lazy(() => (z.object({
+export const ZTextEditorCodeExecutionViewResultBlockParam = z.lazy(() =>
+  z.object({
     content: z.string(),
-    file_type: z.union([z.literal("text"), z.literal("image"), z.literal("pdf")]),
-    type: z.literal("text_editor_code_execution_view_result"),
+    file_type: z.union([z.literal('text'), z.literal('image'), z.literal('pdf')]),
+    type: z.literal('text_editor_code_execution_view_result'),
     num_lines: z.number().nullable().optional(),
     start_line: z.number().nullable().optional(),
     total_lines: z.number().nullable().optional(),
-})));
-export type TextEditorCodeExecutionViewResultBlockParam = z.infer<typeof ZTextEditorCodeExecutionViewResultBlockParam>;
+  })
+);
+export type TextEditorCodeExecutionViewResultBlockParam = z.infer<
+  typeof ZTextEditorCodeExecutionViewResultBlockParam
+>;
 
-export const ZTextEditorCodeExecutionCreateResultBlockParam = z.lazy(() => (z.object({
+export const ZTextEditorCodeExecutionCreateResultBlockParam = z.lazy(() =>
+  z.object({
     is_file_update: z.boolean(),
-    type: z.literal("text_editor_code_execution_create_result"),
-})));
-export type TextEditorCodeExecutionCreateResultBlockParam = z.infer<typeof ZTextEditorCodeExecutionCreateResultBlockParam>;
+    type: z.literal('text_editor_code_execution_create_result'),
+  })
+);
+export type TextEditorCodeExecutionCreateResultBlockParam = z.infer<
+  typeof ZTextEditorCodeExecutionCreateResultBlockParam
+>;
 
-export const ZTextEditorCodeExecutionStrReplaceResultBlockParam = z.lazy(() => (z.object({
-    type: z.literal("text_editor_code_execution_str_replace_result"),
+export const ZTextEditorCodeExecutionStrReplaceResultBlockParam = z.lazy(() =>
+  z.object({
+    type: z.literal('text_editor_code_execution_str_replace_result'),
     lines: z.array(z.string()).nullable().optional(),
     new_lines: z.number().nullable().optional(),
     new_start: z.number().nullable().optional(),
     old_lines: z.number().nullable().optional(),
     old_start: z.number().nullable().optional(),
-})));
-export type TextEditorCodeExecutionStrReplaceResultBlockParam = z.infer<typeof ZTextEditorCodeExecutionStrReplaceResultBlockParam>;
+  })
+);
+export type TextEditorCodeExecutionStrReplaceResultBlockParam = z.infer<
+  typeof ZTextEditorCodeExecutionStrReplaceResultBlockParam
+>;
 
-export const ZToolSearchToolResultErrorParam = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("too_many_requests"), z.literal("execution_time_exceeded")]),
-    type: z.literal("tool_search_tool_result_error"),
-})));
+export const ZToolSearchToolResultErrorParam = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('too_many_requests'),
+      z.literal('execution_time_exceeded'),
+    ]),
+    type: z.literal('tool_search_tool_result_error'),
+  })
+);
 export type ToolSearchToolResultErrorParam = z.infer<typeof ZToolSearchToolResultErrorParam>;
 
-export const ZToolSearchToolSearchResultBlockParam = z.lazy(() => (z.object({
+export const ZToolSearchToolSearchResultBlockParam = z.lazy(() =>
+  z.object({
     tool_references: z.array(ZToolReferenceBlockParam),
-    type: z.literal("tool_search_tool_search_result"),
-})));
-export type ToolSearchToolSearchResultBlockParam = z.infer<typeof ZToolSearchToolSearchResultBlockParam>;
+    type: z.literal('tool_search_tool_search_result'),
+  })
+);
+export type ToolSearchToolSearchResultBlockParam = z.infer<
+  typeof ZToolSearchToolSearchResultBlockParam
+>;
 
-export const ZCitationCharLocation = z.lazy(() => (z.object({
+export const ZCitationCharLocation = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     document_index: z.number(),
     document_title: z.string().nullable().optional(),
     end_char_index: z.number(),
     file_id: z.string().nullable().optional(),
     start_char_index: z.number(),
-    type: z.literal("char_location"),
-})));
+    type: z.literal('char_location'),
+  })
+);
 export type CitationCharLocation = z.infer<typeof ZCitationCharLocation>;
 
-export const ZCitationPageLocation = z.lazy(() => (z.object({
+export const ZCitationPageLocation = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     document_index: z.number(),
     document_title: z.string().nullable().optional(),
     end_page_number: z.number(),
     file_id: z.string().nullable().optional(),
     start_page_number: z.number(),
-    type: z.literal("page_location"),
-})));
+    type: z.literal('page_location'),
+  })
+);
 export type CitationPageLocation = z.infer<typeof ZCitationPageLocation>;
 
-export const ZCitationContentBlockLocation = z.lazy(() => (z.object({
+export const ZCitationContentBlockLocation = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     document_index: z.number(),
     document_title: z.string().nullable().optional(),
     end_block_index: z.number(),
     file_id: z.string().nullable().optional(),
     start_block_index: z.number(),
-    type: z.literal("content_block_location"),
-})));
+    type: z.literal('content_block_location'),
+  })
+);
 export type CitationContentBlockLocation = z.infer<typeof ZCitationContentBlockLocation>;
 
-export const ZCitationsWebSearchResultLocation = z.lazy(() => (z.object({
+export const ZCitationsWebSearchResultLocation = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     encrypted_index: z.string(),
     title: z.string().nullable().optional(),
-    type: z.literal("web_search_result_location"),
+    type: z.literal('web_search_result_location'),
     url: z.string(),
-})));
+  })
+);
 export type CitationsWebSearchResultLocation = z.infer<typeof ZCitationsWebSearchResultLocation>;
 
-export const ZCitationsSearchResultLocation = z.lazy(() => (z.object({
+export const ZCitationsSearchResultLocation = z.lazy(() =>
+  z.object({
     cited_text: z.string(),
     end_block_index: z.number(),
     search_result_index: z.number(),
     source: z.string(),
     start_block_index: z.number(),
     title: z.string().nullable().optional(),
-    type: z.literal("search_result_location"),
-})));
+    type: z.literal('search_result_location'),
+  })
+);
 export type CitationsSearchResultLocation = z.infer<typeof ZCitationsSearchResultLocation>;
 
-export const ZDirectCaller = z.lazy(() => (z.object({
-    type: z.literal("direct"),
-})));
+export const ZDirectCaller = z.lazy(() =>
+  z.object({
+    type: z.literal('direct'),
+  })
+);
 export type DirectCaller = z.infer<typeof ZDirectCaller>;
 
-export const ZServerToolCaller = z.lazy(() => (z.object({
+export const ZServerToolCaller = z.lazy(() =>
+  z.object({
     tool_id: z.string(),
-    type: z.literal("code_execution_20250825"),
-})));
+    type: z.literal('code_execution_20250825'),
+  })
+);
 export type ServerToolCaller = z.infer<typeof ZServerToolCaller>;
 
-export const ZServerToolCaller20260120 = z.lazy(() => (z.object({
+export const ZServerToolCaller20260120 = z.lazy(() =>
+  z.object({
     tool_id: z.string(),
-    type: z.literal("code_execution_20260120"),
-})));
+    type: z.literal('code_execution_20260120'),
+  })
+);
 export type ServerToolCaller20260120 = z.infer<typeof ZServerToolCaller20260120>;
 
-export const ZWebSearchToolResultError = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("max_uses_exceeded"), z.literal("too_many_requests"), z.literal("query_too_long"), z.literal("request_too_large")]),
-    type: z.literal("web_search_tool_result_error"),
-})));
+export const ZWebSearchToolResultError = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('max_uses_exceeded'),
+      z.literal('too_many_requests'),
+      z.literal('query_too_long'),
+      z.literal('request_too_large'),
+    ]),
+    type: z.literal('web_search_tool_result_error'),
+  })
+);
 export type WebSearchToolResultError = z.infer<typeof ZWebSearchToolResultError>;
 
-export const ZWebSearchResultBlock = z.lazy(() => (z.object({
+export const ZWebSearchResultBlock = z.lazy(() =>
+  z.object({
     encrypted_content: z.string(),
     page_age: z.string().nullable().optional(),
     title: z.string(),
-    type: z.literal("web_search_result"),
+    type: z.literal('web_search_result'),
     url: z.string(),
-})));
+  })
+);
 export type WebSearchResultBlock = z.infer<typeof ZWebSearchResultBlock>;
 
-export const ZWebFetchToolResultErrorBlock = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("url_too_long"), z.literal("url_not_allowed"), z.literal("url_not_accessible"), z.literal("unsupported_content_type"), z.literal("too_many_requests"), z.literal("max_uses_exceeded"), z.literal("unavailable")]),
-    type: z.literal("web_fetch_tool_result_error"),
-})));
+export const ZWebFetchToolResultErrorBlock = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('url_too_long'),
+      z.literal('url_not_allowed'),
+      z.literal('url_not_accessible'),
+      z.literal('unsupported_content_type'),
+      z.literal('too_many_requests'),
+      z.literal('max_uses_exceeded'),
+      z.literal('unavailable'),
+    ]),
+    type: z.literal('web_fetch_tool_result_error'),
+  })
+);
 export type WebFetchToolResultErrorBlock = z.infer<typeof ZWebFetchToolResultErrorBlock>;
 
-export const ZWebFetchBlock = z.lazy(() => (z.object({
+export const ZWebFetchBlock = z.lazy(() =>
+  z.object({
     content: ZDocumentBlock,
     retrieved_at: z.string().nullable().optional(),
-    type: z.literal("web_fetch_result"),
+    type: z.literal('web_fetch_result'),
     url: z.string(),
-})));
+  })
+);
 export type WebFetchBlock = z.infer<typeof ZWebFetchBlock>;
 
-export const ZCodeExecutionToolResultError = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("too_many_requests"), z.literal("execution_time_exceeded")]),
-    type: z.literal("code_execution_tool_result_error"),
-})));
+export const ZCodeExecutionToolResultError = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('too_many_requests'),
+      z.literal('execution_time_exceeded'),
+    ]),
+    type: z.literal('code_execution_tool_result_error'),
+  })
+);
 export type CodeExecutionToolResultError = z.infer<typeof ZCodeExecutionToolResultError>;
 
-export const ZCodeExecutionResultBlock = z.lazy(() => (z.object({
+export const ZCodeExecutionResultBlock = z.lazy(() =>
+  z.object({
     content: z.array(ZCodeExecutionOutputBlock),
     return_code: z.number(),
     stderr: z.string(),
     stdout: z.string(),
-    type: z.literal("code_execution_result"),
-})));
+    type: z.literal('code_execution_result'),
+  })
+);
 export type CodeExecutionResultBlock = z.infer<typeof ZCodeExecutionResultBlock>;
 
-export const ZEncryptedCodeExecutionResultBlock = z.lazy(() => (z.object({
+export const ZEncryptedCodeExecutionResultBlock = z.lazy(() =>
+  z.object({
     content: z.array(ZCodeExecutionOutputBlock),
     encrypted_stdout: z.string(),
     return_code: z.number(),
     stderr: z.string(),
-    type: z.literal("encrypted_code_execution_result"),
-})));
+    type: z.literal('encrypted_code_execution_result'),
+  })
+);
 export type EncryptedCodeExecutionResultBlock = z.infer<typeof ZEncryptedCodeExecutionResultBlock>;
 
-export const ZBashCodeExecutionToolResultError = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("too_many_requests"), z.literal("execution_time_exceeded"), z.literal("output_file_too_large")]),
-    type: z.literal("bash_code_execution_tool_result_error"),
-})));
+export const ZBashCodeExecutionToolResultError = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('too_many_requests'),
+      z.literal('execution_time_exceeded'),
+      z.literal('output_file_too_large'),
+    ]),
+    type: z.literal('bash_code_execution_tool_result_error'),
+  })
+);
 export type BashCodeExecutionToolResultError = z.infer<typeof ZBashCodeExecutionToolResultError>;
 
-export const ZBashCodeExecutionResultBlock = z.lazy(() => (z.object({
+export const ZBashCodeExecutionResultBlock = z.lazy(() =>
+  z.object({
     content: z.array(ZBashCodeExecutionOutputBlock),
     return_code: z.number(),
     stderr: z.string(),
     stdout: z.string(),
-    type: z.literal("bash_code_execution_result"),
-})));
+    type: z.literal('bash_code_execution_result'),
+  })
+);
 export type BashCodeExecutionResultBlock = z.infer<typeof ZBashCodeExecutionResultBlock>;
 
-export const ZTextEditorCodeExecutionToolResultError = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("too_many_requests"), z.literal("execution_time_exceeded"), z.literal("file_not_found")]),
+export const ZTextEditorCodeExecutionToolResultError = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('too_many_requests'),
+      z.literal('execution_time_exceeded'),
+      z.literal('file_not_found'),
+    ]),
     error_message: z.string().nullable().optional(),
-    type: z.literal("text_editor_code_execution_tool_result_error"),
-})));
-export type TextEditorCodeExecutionToolResultError = z.infer<typeof ZTextEditorCodeExecutionToolResultError>;
+    type: z.literal('text_editor_code_execution_tool_result_error'),
+  })
+);
+export type TextEditorCodeExecutionToolResultError = z.infer<
+  typeof ZTextEditorCodeExecutionToolResultError
+>;
 
-export const ZTextEditorCodeExecutionViewResultBlock = z.lazy(() => (z.object({
+export const ZTextEditorCodeExecutionViewResultBlock = z.lazy(() =>
+  z.object({
     content: z.string(),
-    file_type: z.union([z.literal("text"), z.literal("image"), z.literal("pdf")]),
+    file_type: z.union([z.literal('text'), z.literal('image'), z.literal('pdf')]),
     num_lines: z.number().nullable().optional(),
     start_line: z.number().nullable().optional(),
     total_lines: z.number().nullable().optional(),
-    type: z.literal("text_editor_code_execution_view_result"),
-})));
-export type TextEditorCodeExecutionViewResultBlock = z.infer<typeof ZTextEditorCodeExecutionViewResultBlock>;
+    type: z.literal('text_editor_code_execution_view_result'),
+  })
+);
+export type TextEditorCodeExecutionViewResultBlock = z.infer<
+  typeof ZTextEditorCodeExecutionViewResultBlock
+>;
 
-export const ZTextEditorCodeExecutionCreateResultBlock = z.lazy(() => (z.object({
+export const ZTextEditorCodeExecutionCreateResultBlock = z.lazy(() =>
+  z.object({
     is_file_update: z.boolean(),
-    type: z.literal("text_editor_code_execution_create_result"),
-})));
-export type TextEditorCodeExecutionCreateResultBlock = z.infer<typeof ZTextEditorCodeExecutionCreateResultBlock>;
+    type: z.literal('text_editor_code_execution_create_result'),
+  })
+);
+export type TextEditorCodeExecutionCreateResultBlock = z.infer<
+  typeof ZTextEditorCodeExecutionCreateResultBlock
+>;
 
-export const ZTextEditorCodeExecutionStrReplaceResultBlock = z.lazy(() => (z.object({
+export const ZTextEditorCodeExecutionStrReplaceResultBlock = z.lazy(() =>
+  z.object({
     lines: z.array(z.string()).nullable().optional(),
     new_lines: z.number().nullable().optional(),
     new_start: z.number().nullable().optional(),
     old_lines: z.number().nullable().optional(),
     old_start: z.number().nullable().optional(),
-    type: z.literal("text_editor_code_execution_str_replace_result"),
-})));
-export type TextEditorCodeExecutionStrReplaceResultBlock = z.infer<typeof ZTextEditorCodeExecutionStrReplaceResultBlock>;
+    type: z.literal('text_editor_code_execution_str_replace_result'),
+  })
+);
+export type TextEditorCodeExecutionStrReplaceResultBlock = z.infer<
+  typeof ZTextEditorCodeExecutionStrReplaceResultBlock
+>;
 
-export const ZToolSearchToolResultError = z.lazy(() => (z.object({
-    error_code: z.union([z.literal("invalid_tool_input"), z.literal("unavailable"), z.literal("too_many_requests"), z.literal("execution_time_exceeded")]),
+export const ZToolSearchToolResultError = z.lazy(() =>
+  z.object({
+    error_code: z.union([
+      z.literal('invalid_tool_input'),
+      z.literal('unavailable'),
+      z.literal('too_many_requests'),
+      z.literal('execution_time_exceeded'),
+    ]),
     error_message: z.string().nullable().optional(),
-    type: z.literal("tool_search_tool_result_error"),
-})));
+    type: z.literal('tool_search_tool_result_error'),
+  })
+);
 export type ToolSearchToolResultError = z.infer<typeof ZToolSearchToolResultError>;
 
-export const ZToolSearchToolSearchResultBlock = z.lazy(() => (z.object({
+export const ZToolSearchToolSearchResultBlock = z.lazy(() =>
+  z.object({
     tool_references: z.array(ZToolReferenceBlock),
-    type: z.literal("tool_search_tool_search_result"),
-})));
+    type: z.literal('tool_search_tool_search_result'),
+  })
+);
 export type ToolSearchToolSearchResultBlock = z.infer<typeof ZToolSearchToolSearchResultBlock>;
 
-export const ZParsedFunction = z.lazy(() => (ZChatCompletionMessageFunctionToolCallFunction.schema).merge(z.object({
-    parsed_arguments: z.object({}).passthrough().nullable().optional(),
-})));
+export const ZParsedFunction = z.lazy(() =>
+  ZChatCompletionMessageFunctionToolCallFunction.schema.merge(
+    z.object({
+      parsed_arguments: z.object({}).passthrough().nullable().optional(),
+    })
+  )
+);
 export type ParsedFunction = z.infer<typeof ZParsedFunction>;
 
-export const ZPartialArgDict = z.lazy(() => (z.object({
+export const ZPartialArgDict = z.lazy(() =>
+  z.object({
     bool_value: z.boolean().nullable().optional(),
     json_path: z.string().nullable().optional(),
-    null_value: z.literal("NULL_VALUE").nullable().optional(),
+    null_value: z.literal('NULL_VALUE').nullable().optional(),
     number_value: z.number().nullable().optional(),
     string_value: z.string().nullable().optional(),
     will_continue: z.boolean().nullable().optional(),
-})));
+  })
+);
 export type PartialArgDict = z.infer<typeof ZPartialArgDict>;
 
-export const ZFunctionResponsePartDict = z.lazy(() => (z.object({
+export const ZFunctionResponsePartDict = z.lazy(() =>
+  z.object({
     inline_data: ZFunctionResponseBlobDict.nullable().optional(),
     file_data: ZFunctionResponseFileDataDict.nullable().optional(),
-})));
+  })
+);
 export type FunctionResponsePartDict = z.infer<typeof ZFunctionResponsePartDict>;
 
-export const ZResponseInputText = z.lazy(() => (z.object({
+export const ZResponseInputText = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("input_text"),
-})));
+    type: z.literal('input_text'),
+  })
+);
 export type ResponseInputText = z.infer<typeof ZResponseInputText>;
 
-export const ZResponseInputImage = z.lazy(() => (z.object({
-    detail: z.union([z.literal("low"), z.literal("high"), z.literal("auto"), z.literal("original")]),
-    type: z.literal("input_image"),
+export const ZResponseInputImage = z.lazy(() =>
+  z.object({
+    detail: z.union([
+      z.literal('low'),
+      z.literal('high'),
+      z.literal('auto'),
+      z.literal('original'),
+    ]),
+    type: z.literal('input_image'),
     file_id: z.string().nullable().optional(),
     image_url: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputImage = z.infer<typeof ZResponseInputImage>;
 
-export const ZResponseInputFile = z.lazy(() => (z.object({
-    type: z.literal("input_file"),
-    detail: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
+export const ZResponseInputFile = z.lazy(() =>
+  z.object({
+    type: z.literal('input_file'),
+    detail: z
+      .union([z.literal('high'), z.literal('low')])
+      .nullable()
+      .optional(),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
     filename: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputFile = z.infer<typeof ZResponseInputFile>;
 
-export const ZResponseOutputText = z.lazy(() => (z.object({
-    annotations: z.array(z.union([ZAnnotationFileCitation, ZAnnotationURLCitation, ZAnnotationContainerFileCitation, ZAnnotationFilePath])),
+export const ZResponseOutputText = z.lazy(() =>
+  z.object({
+    annotations: z.array(
+      z.union([
+        ZAnnotationFileCitation,
+        ZAnnotationURLCitation,
+        ZAnnotationContainerFileCitation,
+        ZAnnotationFilePath,
+      ])
+    ),
     text: z.string(),
-    type: z.literal("output_text"),
+    type: z.literal('output_text'),
     logprobs: z.array(ZLogprob).nullable().optional(),
-})));
+  })
+);
 export type ResponseOutputText = z.infer<typeof ZResponseOutputText>;
 
-export const ZResponseOutputRefusal = z.lazy(() => (z.object({
+export const ZResponseOutputRefusal = z.lazy(() =>
+  z.object({
     refusal: z.string(),
-    type: z.literal("refusal"),
-})));
+    type: z.literal('refusal'),
+  })
+);
 export type ResponseOutputRefusal = z.infer<typeof ZResponseOutputRefusal>;
 
-export const ZResult = z.lazy(() => (z.object({
-    attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).nullable().optional(),
+export const ZResult = z.lazy(() =>
+  z.object({
+    attributes: z
+      .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+      .nullable()
+      .optional(),
     file_id: z.string().nullable().optional(),
     filename: z.string().nullable().optional(),
     score: z.number().nullable().optional(),
     text: z.string().nullable().optional(),
-})));
+  })
+);
 export type Result = z.infer<typeof ZResult>;
 
-export const ZPendingSafetyCheck = z.lazy(() => (z.object({
+export const ZPendingSafetyCheck = z.lazy(() =>
+  z.object({
     id: z.string(),
     code: z.string().nullable().optional(),
     message: z.string().nullable().optional(),
-})));
+  })
+);
 export type PendingSafetyCheck = z.infer<typeof ZPendingSafetyCheck>;
 
-export const ZActionClick = z.lazy(() => (z.object({
-    button: z.union([z.literal("left"), z.literal("right"), z.literal("wheel"), z.literal("back"), z.literal("forward")]),
-    type: z.literal("click"),
+export const ZActionClick = z.lazy(() =>
+  z.object({
+    button: z.union([
+      z.literal('left'),
+      z.literal('right'),
+      z.literal('wheel'),
+      z.literal('back'),
+      z.literal('forward'),
+    ]),
+    type: z.literal('click'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type ActionClick = z.infer<typeof ZActionClick>;
 
-export const ZActionDoubleClick = z.lazy(() => (z.object({
+export const ZActionDoubleClick = z.lazy(() =>
+  z.object({
     keys: z.array(z.string()).nullable().optional(),
-    type: z.literal("double_click"),
+    type: z.literal('double_click'),
     x: z.number(),
     y: z.number(),
-})));
+  })
+);
 export type ActionDoubleClick = z.infer<typeof ZActionDoubleClick>;
 
-export const ZActionDrag = z.lazy(() => (z.object({
+export const ZActionDrag = z.lazy(() =>
+  z.object({
     path: z.array(ZActionDragPath),
-    type: z.literal("drag"),
+    type: z.literal('drag'),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type ActionDrag = z.infer<typeof ZActionDrag>;
 
-export const ZActionKeypress = z.lazy(() => (z.object({
+export const ZActionKeypress = z.lazy(() =>
+  z.object({
     keys: z.array(z.string()),
-    type: z.literal("keypress"),
-})));
+    type: z.literal('keypress'),
+  })
+);
 export type ActionKeypress = z.infer<typeof ZActionKeypress>;
 
-export const ZActionMove = z.lazy(() => (z.object({
-    type: z.literal("move"),
+export const ZActionMove = z.lazy(() =>
+  z.object({
+    type: z.literal('move'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type ActionMove = z.infer<typeof ZActionMove>;
 
-export const ZActionScreenshot = z.lazy(() => (z.object({
-    type: z.literal("screenshot"),
-})));
+export const ZActionScreenshot = z.lazy(() =>
+  z.object({
+    type: z.literal('screenshot'),
+  })
+);
 export type ActionScreenshot = z.infer<typeof ZActionScreenshot>;
 
-export const ZActionScroll = z.lazy(() => (z.object({
+export const ZActionScroll = z.lazy(() =>
+  z.object({
     scroll_x: z.number(),
     scroll_y: z.number(),
-    type: z.literal("scroll"),
+    type: z.literal('scroll'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type ActionScroll = z.infer<typeof ZActionScroll>;
 
-export const ZActionType = z.lazy(() => (z.object({
+export const ZActionType = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("type"),
-})));
+    type: z.literal('type'),
+  })
+);
 export type ActionType = z.infer<typeof ZActionType>;
 
-export const ZActionWait = z.lazy(() => (z.object({
-    type: z.literal("wait"),
-})));
+export const ZActionWait = z.lazy(() =>
+  z.object({
+    type: z.literal('wait'),
+  })
+);
 export type ActionWait = z.infer<typeof ZActionWait>;
 
-export const ZClick = z.lazy(() => (z.object({
-    button: z.union([z.literal("left"), z.literal("right"), z.literal("wheel"), z.literal("back"), z.literal("forward")]),
-    type: z.literal("click"),
+export const ZClick = z.lazy(() =>
+  z.object({
+    button: z.union([
+      z.literal('left'),
+      z.literal('right'),
+      z.literal('wheel'),
+      z.literal('back'),
+      z.literal('forward'),
+    ]),
+    type: z.literal('click'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type Click = z.infer<typeof ZClick>;
 
-export const ZDoubleClick = z.lazy(() => (z.object({
+export const ZDoubleClick = z.lazy(() =>
+  z.object({
     keys: z.array(z.string()).nullable().optional(),
-    type: z.literal("double_click"),
+    type: z.literal('double_click'),
     x: z.number(),
     y: z.number(),
-})));
+  })
+);
 export type DoubleClick = z.infer<typeof ZDoubleClick>;
 
-export const ZDrag = z.lazy(() => (z.object({
+export const ZDrag = z.lazy(() =>
+  z.object({
     path: z.array(ZDragPath),
-    type: z.literal("drag"),
+    type: z.literal('drag'),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type Drag = z.infer<typeof ZDrag>;
 
-export const ZKeypress = z.lazy(() => (z.object({
+export const ZKeypress = z.lazy(() =>
+  z.object({
     keys: z.array(z.string()),
-    type: z.literal("keypress"),
-})));
+    type: z.literal('keypress'),
+  })
+);
 export type Keypress = z.infer<typeof ZKeypress>;
 
-export const ZMove = z.lazy(() => (z.object({
-    type: z.literal("move"),
+export const ZMove = z.lazy(() =>
+  z.object({
+    type: z.literal('move'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type Move = z.infer<typeof ZMove>;
 
-export const ZScreenshot = z.lazy(() => (z.object({
-    type: z.literal("screenshot"),
-})));
+export const ZScreenshot = z.lazy(() =>
+  z.object({
+    type: z.literal('screenshot'),
+  })
+);
 export type Screenshot = z.infer<typeof ZScreenshot>;
 
-export const ZScroll = z.lazy(() => (z.object({
+export const ZScroll = z.lazy(() =>
+  z.object({
     scroll_x: z.number(),
     scroll_y: z.number(),
-    type: z.literal("scroll"),
+    type: z.literal('scroll'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type Scroll = z.infer<typeof ZScroll>;
 
-export const ZType = z.lazy(() => (z.object({
+export const ZType = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("type"),
-})));
+    type: z.literal('type'),
+  })
+);
 export type Type = z.infer<typeof ZType>;
 
-export const ZWait = z.lazy(() => (z.object({
-    type: z.literal("wait"),
-})));
+export const ZWait = z.lazy(() =>
+  z.object({
+    type: z.literal('wait'),
+  })
+);
 export type Wait = z.infer<typeof ZWait>;
 
-export const ZResponseComputerToolCallOutputScreenshot = z.lazy(() => (z.object({
-    type: z.literal("computer_screenshot"),
+export const ZResponseComputerToolCallOutputScreenshot = z.lazy(() =>
+  z.object({
+    type: z.literal('computer_screenshot'),
     file_id: z.string().nullable().optional(),
     image_url: z.string().nullable().optional(),
-})));
-export type ResponseComputerToolCallOutputScreenshot = z.infer<typeof ZResponseComputerToolCallOutputScreenshot>;
+  })
+);
+export type ResponseComputerToolCallOutputScreenshot = z.infer<
+  typeof ZResponseComputerToolCallOutputScreenshot
+>;
 
-export const ZComputerCallOutputAcknowledgedSafetyCheck = z.lazy(() => (z.object({
+export const ZComputerCallOutputAcknowledgedSafetyCheck = z.lazy(() =>
+  z.object({
     id: z.string(),
     code: z.string().nullable().optional(),
     message: z.string().nullable().optional(),
-})));
-export type ComputerCallOutputAcknowledgedSafetyCheck = z.infer<typeof ZComputerCallOutputAcknowledgedSafetyCheck>;
+  })
+);
+export type ComputerCallOutputAcknowledgedSafetyCheck = z.infer<
+  typeof ZComputerCallOutputAcknowledgedSafetyCheck
+>;
 
-export const ZActionSearch = z.lazy(() => (z.object({
+export const ZActionSearch = z.lazy(() =>
+  z.object({
     query: z.string(),
-    type: z.literal("search"),
+    type: z.literal('search'),
     queries: z.array(z.string()).nullable().optional(),
     sources: z.array(ZActionSearchSource).nullable().optional(),
-})));
+  })
+);
 export type ActionSearch = z.infer<typeof ZActionSearch>;
 
-export const ZActionOpenPage = z.lazy(() => (z.object({
-    type: z.literal("open_page"),
+export const ZActionOpenPage = z.lazy(() =>
+  z.object({
+    type: z.literal('open_page'),
     url: z.string().nullable().optional(),
-})));
+  })
+);
 export type ActionOpenPage = z.infer<typeof ZActionOpenPage>;
 
-export const ZActionFind = z.lazy(() => (z.object({
+export const ZActionFind = z.lazy(() =>
+  z.object({
     pattern: z.string(),
-    type: z.literal("find_in_page"),
+    type: z.literal('find_in_page'),
     url: z.string(),
-})));
+  })
+);
 export type ActionFind = z.infer<typeof ZActionFind>;
 
-export const ZResponseInputTextContent = z.lazy(() => (z.object({
+export const ZResponseInputTextContent = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("input_text"),
-})));
+    type: z.literal('input_text'),
+  })
+);
 export type ResponseInputTextContent = z.infer<typeof ZResponseInputTextContent>;
 
-export const ZResponseInputImageContent = z.lazy(() => (z.object({
-    type: z.literal("input_image"),
-    detail: z.union([z.literal("low"), z.literal("high"), z.literal("auto"), z.literal("original")]).nullable().optional(),
+export const ZResponseInputImageContent = z.lazy(() =>
+  z.object({
+    type: z.literal('input_image'),
+    detail: z
+      .union([z.literal('low'), z.literal('high'), z.literal('auto'), z.literal('original')])
+      .nullable()
+      .optional(),
     file_id: z.string().nullable().optional(),
     image_url: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputImageContent = z.infer<typeof ZResponseInputImageContent>;
 
-export const ZResponseInputFileContent = z.lazy(() => (z.object({
-    type: z.literal("input_file"),
-    detail: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
+export const ZResponseInputFileContent = z.lazy(() =>
+  z.object({
+    type: z.literal('input_file'),
+    detail: z
+      .union([z.literal('high'), z.literal('low')])
+      .nullable()
+      .optional(),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
     filename: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputFileContent = z.infer<typeof ZResponseInputFileContent>;
 
-export const ZSummary = z.lazy(() => (z.object({
+export const ZSummary = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("summary_text"),
-})));
+    type: z.literal('summary_text'),
+  })
+);
 export type Summary = z.infer<typeof ZSummary>;
 
-export const ZContent = z.lazy(() => (z.object({
+export const ZContent = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("reasoning_text"),
-})));
+    type: z.literal('reasoning_text'),
+  })
+);
 export type Content = z.infer<typeof ZContent>;
 
-export const ZOutputLogs = z.lazy(() => (z.object({
+export const ZOutputLogs = z.lazy(() =>
+  z.object({
     logs: z.string(),
-    type: z.literal("logs"),
-})));
+    type: z.literal('logs'),
+  })
+);
 export type OutputLogs = z.infer<typeof ZOutputLogs>;
 
-export const ZOutputImage = z.lazy(() => (z.object({
-    type: z.literal("image"),
+export const ZOutputImage = z.lazy(() =>
+  z.object({
+    type: z.literal('image'),
     url: z.string(),
-})));
+  })
+);
 export type OutputImage = z.infer<typeof ZOutputImage>;
 
-export const ZLocalShellCallAction = z.lazy(() => (z.object({
+export const ZLocalShellCallAction = z.lazy(() =>
+  z.object({
     command: z.array(z.string()),
     env: z.record(z.string(), z.string()),
-    type: z.literal("exec"),
+    type: z.literal('exec'),
     timeout_ms: z.number().nullable().optional(),
     user: z.string().nullable().optional(),
     working_directory: z.string().nullable().optional(),
-})));
+  })
+);
 export type LocalShellCallAction = z.infer<typeof ZLocalShellCallAction>;
 
-export const ZShellCallAction = z.lazy(() => (z.object({
+export const ZShellCallAction = z.lazy(() =>
+  z.object({
     commands: z.array(z.string()),
     max_output_length: z.number().nullable().optional(),
     timeout_ms: z.number().nullable().optional(),
-})));
+  })
+);
 export type ShellCallAction = z.infer<typeof ZShellCallAction>;
 
-export const ZLocalEnvironment = z.lazy(() => (z.object({
-    type: z.literal("local"),
+export const ZLocalEnvironment = z.lazy(() =>
+  z.object({
+    type: z.literal('local'),
     skills: z.array(ZLocalSkill).nullable().optional(),
-})));
+  })
+);
 export type LocalEnvironment = z.infer<typeof ZLocalEnvironment>;
 
-export const ZContainerReference = z.lazy(() => (z.object({
+export const ZContainerReference = z.lazy(() =>
+  z.object({
     container_id: z.string(),
-    type: z.literal("container_reference"),
-})));
+    type: z.literal('container_reference'),
+  })
+);
 export type ContainerReference = z.infer<typeof ZContainerReference>;
 
-export const ZResponseFunctionShellCallOutputContent = z.lazy(() => (z.object({
+export const ZResponseFunctionShellCallOutputContent = z.lazy(() =>
+  z.object({
     outcome: z.union([ZOutcomeTimeout, ZOutcomeExit]),
     stderr: z.string(),
     stdout: z.string(),
-})));
-export type ResponseFunctionShellCallOutputContent = z.infer<typeof ZResponseFunctionShellCallOutputContent>;
+  })
+);
+export type ResponseFunctionShellCallOutputContent = z.infer<
+  typeof ZResponseFunctionShellCallOutputContent
+>;
 
-export const ZApplyPatchCallOperationCreateFile = z.lazy(() => (z.object({
+export const ZApplyPatchCallOperationCreateFile = z.lazy(() =>
+  z.object({
     diff: z.string(),
     path: z.string(),
-    type: z.literal("create_file"),
-})));
+    type: z.literal('create_file'),
+  })
+);
 export type ApplyPatchCallOperationCreateFile = z.infer<typeof ZApplyPatchCallOperationCreateFile>;
 
-export const ZApplyPatchCallOperationDeleteFile = z.lazy(() => (z.object({
+export const ZApplyPatchCallOperationDeleteFile = z.lazy(() =>
+  z.object({
     path: z.string(),
-    type: z.literal("delete_file"),
-})));
+    type: z.literal('delete_file'),
+  })
+);
 export type ApplyPatchCallOperationDeleteFile = z.infer<typeof ZApplyPatchCallOperationDeleteFile>;
 
-export const ZApplyPatchCallOperationUpdateFile = z.lazy(() => (z.object({
+export const ZApplyPatchCallOperationUpdateFile = z.lazy(() =>
+  z.object({
     diff: z.string(),
     path: z.string(),
-    type: z.literal("update_file"),
-})));
+    type: z.literal('update_file'),
+  })
+);
 export type ApplyPatchCallOperationUpdateFile = z.infer<typeof ZApplyPatchCallOperationUpdateFile>;
 
-export const ZMcpListToolsTool = z.lazy(() => (z.object({
+export const ZMcpListToolsTool = z.lazy(() =>
+  z.object({
     input_schema: z.object({}).passthrough(),
     name: z.string(),
     annotations: z.object({}).passthrough().nullable().optional(),
     description: z.string().nullable().optional(),
-})));
+  })
+);
 export type McpListToolsTool = z.infer<typeof ZMcpListToolsTool>;
 
-export const ZAcknowledgedSafetyCheck = z.lazy(() => (z.object({
+export const ZAcknowledgedSafetyCheck = z.lazy(() =>
+  z.object({
     id: z.string(),
     code: z.string().nullable().optional(),
     message: z.string().nullable().optional(),
-})));
+  })
+);
 export type AcknowledgedSafetyCheck = z.infer<typeof ZAcknowledgedSafetyCheck>;
 
-export const ZResponseOutputItemLocalShellCallAction = z.lazy(() => (z.object({
+export const ZResponseOutputItemLocalShellCallAction = z.lazy(() =>
+  z.object({
     command: z.array(z.string()),
     env: z.record(z.string(), z.string()),
-    type: z.literal("exec"),
+    type: z.literal('exec'),
     timeout_ms: z.number().nullable().optional(),
     user: z.string().nullable().optional(),
     working_directory: z.string().nullable().optional(),
-})));
-export type ResponseOutputItemLocalShellCallAction = z.infer<typeof ZResponseOutputItemLocalShellCallAction>;
+  })
+);
+export type ResponseOutputItemLocalShellCallAction = z.infer<
+  typeof ZResponseOutputItemLocalShellCallAction
+>;
 
-export const ZAction = z.lazy(() => (z.object({
+export const ZAction = z.lazy(() =>
+  z.object({
     commands: z.array(z.string()),
     max_output_length: z.number().nullable().optional(),
     timeout_ms: z.number().nullable().optional(),
-})));
+  })
+);
 export type Action = z.infer<typeof ZAction>;
 
-export const ZResponseLocalEnvironment = z.lazy(() => (z.object({
-    type: z.literal("local"),
-})));
+export const ZResponseLocalEnvironment = z.lazy(() =>
+  z.object({
+    type: z.literal('local'),
+  })
+);
 export type ResponseLocalEnvironment = z.infer<typeof ZResponseLocalEnvironment>;
 
-export const ZResponseContainerReference = z.lazy(() => (z.object({
+export const ZResponseContainerReference = z.lazy(() =>
+  z.object({
     container_id: z.string(),
-    type: z.literal("container_reference"),
-})));
+    type: z.literal('container_reference'),
+  })
+);
 export type ResponseContainerReference = z.infer<typeof ZResponseContainerReference>;
 
-export const ZOutput = z.lazy(() => (z.object({
+export const ZOutput = z.lazy(() =>
+  z.object({
     outcome: z.union([ZOutputOutcomeTimeout, ZOutputOutcomeExit]),
     stderr: z.string(),
     stdout: z.string(),
     created_by: z.string().nullable().optional(),
-})));
+  })
+);
 export type Output = z.infer<typeof ZOutput>;
 
-export const ZOperationCreateFile = z.lazy(() => (z.object({
+export const ZOperationCreateFile = z.lazy(() =>
+  z.object({
     diff: z.string(),
     path: z.string(),
-    type: z.literal("create_file"),
-})));
+    type: z.literal('create_file'),
+  })
+);
 export type OperationCreateFile = z.infer<typeof ZOperationCreateFile>;
 
-export const ZOperationDeleteFile = z.lazy(() => (z.object({
+export const ZOperationDeleteFile = z.lazy(() =>
+  z.object({
     path: z.string(),
-    type: z.literal("delete_file"),
-})));
+    type: z.literal('delete_file'),
+  })
+);
 export type OperationDeleteFile = z.infer<typeof ZOperationDeleteFile>;
 
-export const ZOperationUpdateFile = z.lazy(() => (z.object({
+export const ZOperationUpdateFile = z.lazy(() =>
+  z.object({
     diff: z.string(),
     path: z.string(),
-    type: z.literal("update_file"),
-})));
+    type: z.literal('update_file'),
+  })
+);
 export type OperationUpdateFile = z.infer<typeof ZOperationUpdateFile>;
 
-export const ZResponseOutputItemMcpListToolsTool = z.lazy(() => (z.object({
+export const ZResponseOutputItemMcpListToolsTool = z.lazy(() =>
+  z.object({
     input_schema: z.object({}).passthrough(),
     name: z.string(),
     annotations: z.object({}).passthrough().nullable().optional(),
     description: z.string().nullable().optional(),
-})));
-export type ResponseOutputItemMcpListToolsTool = z.infer<typeof ZResponseOutputItemMcpListToolsTool>;
+  })
+);
+export type ResponseOutputItemMcpListToolsTool = z.infer<
+  typeof ZResponseOutputItemMcpListToolsTool
+>;
 
-export const ZComparisonFilter = z.lazy(() => (z.object({
+export const ZComparisonFilter = z.lazy(() =>
+  z.object({
     key: z.string(),
-    type: z.union([z.literal("eq"), z.literal("ne"), z.literal("gt"), z.literal("gte"), z.literal("lt"), z.literal("lte"), z.literal("in"), z.literal("nin")]),
-    value: z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))]),
-})));
+    type: z.union([
+      z.literal('eq'),
+      z.literal('ne'),
+      z.literal('gt'),
+      z.literal('gte'),
+      z.literal('lt'),
+      z.literal('lte'),
+      z.literal('in'),
+      z.literal('nin'),
+    ]),
+    value: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.array(z.union([z.string(), z.number()])),
+    ]),
+  })
+);
 export type ComparisonFilter = z.infer<typeof ZComparisonFilter>;
 
-export const ZCompoundFilter = z.lazy(() => (z.object({
+export const ZCompoundFilter = z.lazy(() =>
+  z.object({
     filters: z.array(z.union([ZComparisonFilter, z.object({}).passthrough()])),
-    type: z.union([z.literal("and"), z.literal("or")]),
-})));
+    type: z.union([z.literal('and'), z.literal('or')]),
+  })
+);
 export type CompoundFilter = z.infer<typeof ZCompoundFilter>;
 
-export const ZRankingOptions = z.lazy(() => (z.object({
+export const ZRankingOptions = z.lazy(() =>
+  z.object({
     hybrid_search: ZRankingOptionsHybridSearch.nullable().optional(),
-    ranker: z.union([z.literal("auto"), z.literal("default-2024-11-15")]).nullable().optional(),
+    ranker: z
+      .union([z.literal('auto'), z.literal('default-2024-11-15')])
+      .nullable()
+      .optional(),
     score_threshold: z.number().nullable().optional(),
-})));
+  })
+);
 export type RankingOptions = z.infer<typeof ZRankingOptions>;
 
-export const ZFilters = z.lazy(() => (z.object({
+export const ZFilters = z.lazy(() =>
+  z.object({
     allowed_domains: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type Filters = z.infer<typeof ZFilters>;
 
-export const ZUserLocation = z.lazy(() => (z.object({
+export const ZUserLocation = z.lazy(() =>
+  z.object({
     city: z.string().nullable().optional(),
     country: z.string().nullable().optional(),
     region: z.string().nullable().optional(),
     timezone: z.string().nullable().optional(),
-    type: z.literal("approximate").nullable().optional(),
-})));
+    type: z.literal('approximate').nullable().optional(),
+  })
+);
 export type UserLocation = z.infer<typeof ZUserLocation>;
 
-export const ZMcpAllowedToolsMcpToolFilter = z.lazy(() => (z.object({
+export const ZMcpAllowedToolsMcpToolFilter = z.lazy(() =>
+  z.object({
     read_only: z.boolean().nullable().optional(),
     tool_names: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type McpAllowedToolsMcpToolFilter = z.infer<typeof ZMcpAllowedToolsMcpToolFilter>;
 
-export const ZMcpRequireApprovalMcpToolApprovalFilter = z.lazy(() => (z.object({
+export const ZMcpRequireApprovalMcpToolApprovalFilter = z.lazy(() =>
+  z.object({
     always: ZMcpRequireApprovalMcpToolApprovalFilterAlways.nullable().optional(),
     never: ZMcpRequireApprovalMcpToolApprovalFilterNever.nullable().optional(),
-})));
-export type McpRequireApprovalMcpToolApprovalFilter = z.infer<typeof ZMcpRequireApprovalMcpToolApprovalFilter>;
+  })
+);
+export type McpRequireApprovalMcpToolApprovalFilter = z.infer<
+  typeof ZMcpRequireApprovalMcpToolApprovalFilter
+>;
 
-export const ZCodeInterpreterContainerCodeInterpreterToolAuto = z.lazy(() => (z.object({
-    type: z.literal("auto"),
+export const ZCodeInterpreterContainerCodeInterpreterToolAuto = z.lazy(() =>
+  z.object({
+    type: z.literal('auto'),
     file_ids: z.array(z.string()).nullable().optional(),
-    memory_limit: z.union([z.literal("1g"), z.literal("4g"), z.literal("16g"), z.literal("64g")]).nullable().optional(),
-    network_policy: z.union([ZContainerNetworkPolicyDisabled, ZContainerNetworkPolicyAllowlist]).nullable().optional(),
-})));
-export type CodeInterpreterContainerCodeInterpreterToolAuto = z.infer<typeof ZCodeInterpreterContainerCodeInterpreterToolAuto>;
+    memory_limit: z
+      .union([z.literal('1g'), z.literal('4g'), z.literal('16g'), z.literal('64g')])
+      .nullable()
+      .optional(),
+    network_policy: z
+      .union([ZContainerNetworkPolicyDisabled, ZContainerNetworkPolicyAllowlist])
+      .nullable()
+      .optional(),
+  })
+);
+export type CodeInterpreterContainerCodeInterpreterToolAuto = z.infer<
+  typeof ZCodeInterpreterContainerCodeInterpreterToolAuto
+>;
 
-export const ZImageGenerationInputImageMask = z.lazy(() => (z.object({
+export const ZImageGenerationInputImageMask = z.lazy(() =>
+  z.object({
     file_id: z.string().nullable().optional(),
     image_url: z.string().nullable().optional(),
-})));
+  })
+);
 export type ImageGenerationInputImageMask = z.infer<typeof ZImageGenerationInputImageMask>;
 
-export const ZContainerAuto = z.lazy(() => (z.object({
-    type: z.literal("container_auto"),
+export const ZContainerAuto = z.lazy(() =>
+  z.object({
+    type: z.literal('container_auto'),
     file_ids: z.array(z.string()).nullable().optional(),
-    memory_limit: z.union([z.literal("1g"), z.literal("4g"), z.literal("16g"), z.literal("64g")]).nullable().optional(),
-    network_policy: z.union([ZContainerNetworkPolicyDisabled, ZContainerNetworkPolicyAllowlist]).nullable().optional(),
-    skills: z.array(z.union([ZSkillReference, ZInlineSkill])).nullable().optional(),
-})));
+    memory_limit: z
+      .union([z.literal('1g'), z.literal('4g'), z.literal('16g'), z.literal('64g')])
+      .nullable()
+      .optional(),
+    network_policy: z
+      .union([ZContainerNetworkPolicyDisabled, ZContainerNetworkPolicyAllowlist])
+      .nullable()
+      .optional(),
+    skills: z
+      .array(z.union([ZSkillReference, ZInlineSkill]))
+      .nullable()
+      .optional(),
+  })
+);
 export type ContainerAuto = z.infer<typeof ZContainerAuto>;
 
-export const ZText = z.lazy(() => (z.object({
-    type: z.literal("text"),
-})));
+export const ZText = z.lazy(() =>
+  z.object({
+    type: z.literal('text'),
+  })
+);
 export type Text = z.infer<typeof ZText>;
 
-export const ZGrammar = z.lazy(() => (z.object({
+export const ZGrammar = z.lazy(() =>
+  z.object({
     definition: z.string(),
-    syntax: z.union([z.literal("lark"), z.literal("regex")]),
-    type: z.literal("grammar"),
-})));
+    syntax: z.union([z.literal('lark'), z.literal('regex')]),
+    type: z.literal('grammar'),
+  })
+);
 export type Grammar = z.infer<typeof ZGrammar>;
 
-export const ZToolFunction = z.lazy(() => (z.object({
+export const ZToolFunction = z.lazy(() =>
+  z.object({
     name: z.string(),
-    type: z.literal("function"),
+    type: z.literal('function'),
     defer_loading: z.boolean().nullable().optional(),
     description: z.string().nullable().optional(),
     parameters: z.object({}).passthrough().nullable().optional(),
     strict: z.boolean().nullable().optional(),
-})));
+  })
+);
 export type ToolFunction = z.infer<typeof ZToolFunction>;
 
-export const ZWebSearchPreviewToolUserLocation = z.lazy(() => (z.object({
-    type: z.literal("approximate"),
+export const ZWebSearchPreviewToolUserLocation = z.lazy(() =>
+  z.object({
+    type: z.literal('approximate'),
     city: z.string().nullable().optional(),
     country: z.string().nullable().optional(),
     region: z.string().nullable().optional(),
     timezone: z.string().nullable().optional(),
-})));
+  })
+);
 export type WebSearchPreviewToolUserLocation = z.infer<typeof ZWebSearchPreviewToolUserLocation>;
 
-export const ZResponseFormatText = z.lazy(() => (z.object({
-    type: z.literal("text"),
-})));
+export const ZResponseFormatText = z.lazy(() =>
+  z.object({
+    type: z.literal('text'),
+  })
+);
 export type ResponseFormatText = z.infer<typeof ZResponseFormatText>;
 
-export const ZResponseFormatTextJSONSchemaConfig = z.lazy(() => (z.object({
+export const ZResponseFormatTextJSONSchemaConfig = z.lazy(() =>
+  z.object({
     name: z.string(),
     schema_: z.record(z.string(), z.object({}).passthrough()),
-    type: z.literal("json_schema"),
+    type: z.literal('json_schema'),
     description: z.string().nullable().optional(),
     strict: z.boolean().nullable().optional(),
-})));
-export type ResponseFormatTextJSONSchemaConfig = z.infer<typeof ZResponseFormatTextJSONSchemaConfig>;
+  })
+);
+export type ResponseFormatTextJSONSchemaConfig = z.infer<
+  typeof ZResponseFormatTextJSONSchemaConfig
+>;
 
-export const ZResponseFormatJSONObject = z.lazy(() => (z.object({
-    type: z.literal("json_object"),
-})));
+export const ZResponseFormatJSONObject = z.lazy(() =>
+  z.object({
+    type: z.literal('json_object'),
+  })
+);
 export type ResponseFormatJSONObject = z.infer<typeof ZResponseFormatJSONObject>;
 
-export const ZInputTokensDetails = z.lazy(() => (z.object({
+export const ZInputTokensDetails = z.lazy(() =>
+  z.object({
     cached_tokens: z.number(),
-})));
+  })
+);
 export type InputTokensDetails = z.infer<typeof ZInputTokensDetails>;
 
-export const ZOutputTokensDetails = z.lazy(() => (z.object({
+export const ZOutputTokensDetails = z.lazy(() =>
+  z.object({
     reasoning_tokens: z.number(),
-})));
+  })
+);
 export type OutputTokensDetails = z.infer<typeof ZOutputTokensDetails>;
 
-export const ZChatCompletionChoiceLogprobs = z.lazy(() => (z.object({
+export const ZChatCompletionChoiceLogprobs = z.lazy(() =>
+  z.object({
     content: z.array(ZChatCompletionTokenLogprob).nullable().optional(),
     refusal: z.array(ZChatCompletionTokenLogprob).nullable().optional(),
-})));
+  })
+);
 export type ChatCompletionChoiceLogprobs = z.infer<typeof ZChatCompletionChoiceLogprobs>;
 
-export const ZChatCompletionMessage = z.lazy(() => (z.object({
+export const ZChatCompletionMessage = z.lazy(() =>
+  z.object({
     content: z.string().nullable().optional(),
     refusal: z.string().nullable().optional(),
-    role: z.literal("assistant"),
+    role: z.literal('assistant'),
     annotations: z.array(ZAnnotation).nullable().optional(),
     audio: ZChatCompletionAudio.nullable().optional(),
     function_call: ZChatCompletionMessageFunctionCall.nullable().optional(),
-    tool_calls: z.array(z.union([ZChatCompletionMessageFunctionToolCall, ZChatCompletionMessageCustomToolCall])).nullable().optional(),
-})));
+    tool_calls: z
+      .array(
+        z.union([ZChatCompletionMessageFunctionToolCall, ZChatCompletionMessageCustomToolCall])
+      )
+      .nullable()
+      .optional(),
+  })
+);
 export type ChatCompletionMessage = z.infer<typeof ZChatCompletionMessage>;
 
-export const ZChatCompletionTokenLogprob = z.lazy(() => (z.object({
+export const ZChatCompletionTokenLogprob = z.lazy(() =>
+  z.object({
     token: z.string(),
     bytes: z.array(z.number()).nullable().optional(),
     logprob: z.number(),
     top_logprobs: z.array(ZTopLogprob),
-})));
+  })
+);
 export type ChatCompletionTokenLogprob = z.infer<typeof ZChatCompletionTokenLogprob>;
 
-export const ZChoiceDeltaToolCallFunction = z.lazy(() => (z.object({
+export const ZChoiceDeltaToolCallFunction = z.lazy(() =>
+  z.object({
     arguments: z.string().nullable().optional(),
     name: z.string().nullable().optional(),
-})));
+  })
+);
 export type ChoiceDeltaToolCallFunction = z.infer<typeof ZChoiceDeltaToolCallFunction>;
 
-export const ZAudio = z.lazy(() => (z.object({
+export const ZAudio = z.lazy(() =>
+  z.object({
     id: z.string(),
-})));
+  })
+);
 export type Audio = z.infer<typeof ZAudio>;
 
-export const ZChatCompletionContentPartRefusalParam = z.lazy(() => (z.object({
+export const ZChatCompletionContentPartRefusalParam = z.lazy(() =>
+  z.object({
     refusal: z.string(),
-    type: z.literal("refusal"),
-})));
-export type ChatCompletionContentPartRefusalParam = z.infer<typeof ZChatCompletionContentPartRefusalParam>;
+    type: z.literal('refusal'),
+  })
+);
+export type ChatCompletionContentPartRefusalParam = z.infer<
+  typeof ZChatCompletionContentPartRefusalParam
+>;
 
-export const ZFunctionCall = z.lazy(() => (z.object({
+export const ZFunctionCall = z.lazy(() =>
+  z.object({
     arguments: z.string(),
     name: z.string(),
-})));
+  })
+);
 export type FunctionCall = z.infer<typeof ZFunctionCall>;
 
-export const ZChatCompletionMessageCustomToolCallParam = z.lazy(() => (z.object({
+export const ZChatCompletionMessageCustomToolCallParam = z.lazy(() =>
+  z.object({
     id: z.string(),
     custom: ZCustom,
-    type: z.literal("custom"),
-})));
-export type ChatCompletionMessageCustomToolCallParam = z.infer<typeof ZChatCompletionMessageCustomToolCallParam>;
+    type: z.literal('custom'),
+  })
+);
+export type ChatCompletionMessageCustomToolCallParam = z.infer<
+  typeof ZChatCompletionMessageCustomToolCallParam
+>;
 
-export const ZResponseOutputTextParam = z.lazy(() => (z.object({
-    annotations: z.array(z.union([ZResponseOutputTextParamAnnotationFileCitation, ZResponseOutputTextParamAnnotationURLCitation, ZResponseOutputTextParamAnnotationContainerFileCitation, ZResponseOutputTextParamAnnotationFilePath])),
+export const ZResponseOutputTextParam = z.lazy(() =>
+  z.object({
+    annotations: z.array(
+      z.union([
+        ZResponseOutputTextParamAnnotationFileCitation,
+        ZResponseOutputTextParamAnnotationURLCitation,
+        ZResponseOutputTextParamAnnotationContainerFileCitation,
+        ZResponseOutputTextParamAnnotationFilePath,
+      ])
+    ),
     text: z.string(),
-    type: z.literal("output_text"),
+    type: z.literal('output_text'),
     logprobs: z.array(ZResponseOutputTextParamLogprob),
-})));
+  })
+);
 export type ResponseOutputTextParam = z.infer<typeof ZResponseOutputTextParam>;
 
-export const ZResponseOutputRefusalParam = z.lazy(() => (z.object({
+export const ZResponseOutputRefusalParam = z.lazy(() =>
+  z.object({
     refusal: z.string(),
-    type: z.literal("refusal"),
-})));
+    type: z.literal('refusal'),
+  })
+);
 export type ResponseOutputRefusalParam = z.infer<typeof ZResponseOutputRefusalParam>;
 
-export const ZResponseFileSearchToolCallParamResult = z.lazy(() => (z.object({
-    attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).nullable().optional(),
+export const ZResponseFileSearchToolCallParamResult = z.lazy(() =>
+  z.object({
+    attributes: z
+      .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+      .nullable()
+      .optional(),
     file_id: z.string(),
     filename: z.string(),
     score: z.number(),
     text: z.string(),
-})));
-export type ResponseFileSearchToolCallParamResult = z.infer<typeof ZResponseFileSearchToolCallParamResult>;
+  })
+);
+export type ResponseFileSearchToolCallParamResult = z.infer<
+  typeof ZResponseFileSearchToolCallParamResult
+>;
 
-export const ZResponseComputerToolCallParamPendingSafetyCheck = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallParamPendingSafetyCheck = z.lazy(() =>
+  z.object({
     id: z.string(),
     code: z.string().nullable().optional(),
     message: z.string().nullable().optional(),
-})));
-export type ResponseComputerToolCallParamPendingSafetyCheck = z.infer<typeof ZResponseComputerToolCallParamPendingSafetyCheck>;
+  })
+);
+export type ResponseComputerToolCallParamPendingSafetyCheck = z.infer<
+  typeof ZResponseComputerToolCallParamPendingSafetyCheck
+>;
 
-export const ZResponseComputerToolCallParamActionClick = z.lazy(() => (z.object({
-    button: z.union([z.literal("left"), z.literal("right"), z.literal("wheel"), z.literal("back"), z.literal("forward")]),
-    type: z.literal("click"),
+export const ZResponseComputerToolCallParamActionClick = z.lazy(() =>
+  z.object({
+    button: z.union([
+      z.literal('left'),
+      z.literal('right'),
+      z.literal('wheel'),
+      z.literal('back'),
+      z.literal('forward'),
+    ]),
+    type: z.literal('click'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
-export type ResponseComputerToolCallParamActionClick = z.infer<typeof ZResponseComputerToolCallParamActionClick>;
+  })
+);
+export type ResponseComputerToolCallParamActionClick = z.infer<
+  typeof ZResponseComputerToolCallParamActionClick
+>;
 
-export const ZResponseComputerToolCallParamActionDoubleClick = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallParamActionDoubleClick = z.lazy(() =>
+  z.object({
     keys: z.array(z.string()).nullable().optional(),
-    type: z.literal("double_click"),
+    type: z.literal('double_click'),
     x: z.number(),
     y: z.number(),
-})));
-export type ResponseComputerToolCallParamActionDoubleClick = z.infer<typeof ZResponseComputerToolCallParamActionDoubleClick>;
+  })
+);
+export type ResponseComputerToolCallParamActionDoubleClick = z.infer<
+  typeof ZResponseComputerToolCallParamActionDoubleClick
+>;
 
-export const ZResponseComputerToolCallParamActionDrag = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallParamActionDrag = z.lazy(() =>
+  z.object({
     path: z.array(ZResponseComputerToolCallParamActionDragPath),
-    type: z.literal("drag"),
+    type: z.literal('drag'),
     keys: z.array(z.string()).nullable().optional(),
-})));
-export type ResponseComputerToolCallParamActionDrag = z.infer<typeof ZResponseComputerToolCallParamActionDrag>;
+  })
+);
+export type ResponseComputerToolCallParamActionDrag = z.infer<
+  typeof ZResponseComputerToolCallParamActionDrag
+>;
 
-export const ZResponseComputerToolCallParamActionKeypress = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallParamActionKeypress = z.lazy(() =>
+  z.object({
     keys: z.array(z.string()),
-    type: z.literal("keypress"),
-})));
-export type ResponseComputerToolCallParamActionKeypress = z.infer<typeof ZResponseComputerToolCallParamActionKeypress>;
+    type: z.literal('keypress'),
+  })
+);
+export type ResponseComputerToolCallParamActionKeypress = z.infer<
+  typeof ZResponseComputerToolCallParamActionKeypress
+>;
 
-export const ZResponseComputerToolCallParamActionMove = z.lazy(() => (z.object({
-    type: z.literal("move"),
+export const ZResponseComputerToolCallParamActionMove = z.lazy(() =>
+  z.object({
+    type: z.literal('move'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
-export type ResponseComputerToolCallParamActionMove = z.infer<typeof ZResponseComputerToolCallParamActionMove>;
+  })
+);
+export type ResponseComputerToolCallParamActionMove = z.infer<
+  typeof ZResponseComputerToolCallParamActionMove
+>;
 
-export const ZResponseComputerToolCallParamActionScreenshot = z.lazy(() => (z.object({
-    type: z.literal("screenshot"),
-})));
-export type ResponseComputerToolCallParamActionScreenshot = z.infer<typeof ZResponseComputerToolCallParamActionScreenshot>;
+export const ZResponseComputerToolCallParamActionScreenshot = z.lazy(() =>
+  z.object({
+    type: z.literal('screenshot'),
+  })
+);
+export type ResponseComputerToolCallParamActionScreenshot = z.infer<
+  typeof ZResponseComputerToolCallParamActionScreenshot
+>;
 
-export const ZResponseComputerToolCallParamActionScroll = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallParamActionScroll = z.lazy(() =>
+  z.object({
     scroll_x: z.number(),
     scroll_y: z.number(),
-    type: z.literal("scroll"),
+    type: z.literal('scroll'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
-export type ResponseComputerToolCallParamActionScroll = z.infer<typeof ZResponseComputerToolCallParamActionScroll>;
+  })
+);
+export type ResponseComputerToolCallParamActionScroll = z.infer<
+  typeof ZResponseComputerToolCallParamActionScroll
+>;
 
-export const ZResponseComputerToolCallParamActionType = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallParamActionType = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("type"),
-})));
-export type ResponseComputerToolCallParamActionType = z.infer<typeof ZResponseComputerToolCallParamActionType>;
+    type: z.literal('type'),
+  })
+);
+export type ResponseComputerToolCallParamActionType = z.infer<
+  typeof ZResponseComputerToolCallParamActionType
+>;
 
-export const ZResponseComputerToolCallParamActionWait = z.lazy(() => (z.object({
-    type: z.literal("wait"),
-})));
-export type ResponseComputerToolCallParamActionWait = z.infer<typeof ZResponseComputerToolCallParamActionWait>;
+export const ZResponseComputerToolCallParamActionWait = z.lazy(() =>
+  z.object({
+    type: z.literal('wait'),
+  })
+);
+export type ResponseComputerToolCallParamActionWait = z.infer<
+  typeof ZResponseComputerToolCallParamActionWait
+>;
 
-export const ZComputerActionListParamClick = z.lazy(() => (z.object({
-    button: z.union([z.literal("left"), z.literal("right"), z.literal("wheel"), z.literal("back"), z.literal("forward")]),
-    type: z.literal("click"),
+export const ZComputerActionListParamClick = z.lazy(() =>
+  z.object({
+    button: z.union([
+      z.literal('left'),
+      z.literal('right'),
+      z.literal('wheel'),
+      z.literal('back'),
+      z.literal('forward'),
+    ]),
+    type: z.literal('click'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type ComputerActionListParamClick = z.infer<typeof ZComputerActionListParamClick>;
 
-export const ZComputerActionListParamDoubleClick = z.lazy(() => (z.object({
+export const ZComputerActionListParamDoubleClick = z.lazy(() =>
+  z.object({
     keys: z.array(z.string()).nullable().optional(),
-    type: z.literal("double_click"),
+    type: z.literal('double_click'),
     x: z.number(),
     y: z.number(),
-})));
-export type ComputerActionListParamDoubleClick = z.infer<typeof ZComputerActionListParamDoubleClick>;
+  })
+);
+export type ComputerActionListParamDoubleClick = z.infer<
+  typeof ZComputerActionListParamDoubleClick
+>;
 
-export const ZComputerActionListParamDrag = z.lazy(() => (z.object({
+export const ZComputerActionListParamDrag = z.lazy(() =>
+  z.object({
     path: z.array(ZComputerActionListParamDragPath),
-    type: z.literal("drag"),
+    type: z.literal('drag'),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type ComputerActionListParamDrag = z.infer<typeof ZComputerActionListParamDrag>;
 
-export const ZComputerActionListParamKeypress = z.lazy(() => (z.object({
+export const ZComputerActionListParamKeypress = z.lazy(() =>
+  z.object({
     keys: z.array(z.string()),
-    type: z.literal("keypress"),
-})));
+    type: z.literal('keypress'),
+  })
+);
 export type ComputerActionListParamKeypress = z.infer<typeof ZComputerActionListParamKeypress>;
 
-export const ZComputerActionListParamMove = z.lazy(() => (z.object({
-    type: z.literal("move"),
+export const ZComputerActionListParamMove = z.lazy(() =>
+  z.object({
+    type: z.literal('move'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type ComputerActionListParamMove = z.infer<typeof ZComputerActionListParamMove>;
 
-export const ZComputerActionListParamScreenshot = z.lazy(() => (z.object({
-    type: z.literal("screenshot"),
-})));
+export const ZComputerActionListParamScreenshot = z.lazy(() =>
+  z.object({
+    type: z.literal('screenshot'),
+  })
+);
 export type ComputerActionListParamScreenshot = z.infer<typeof ZComputerActionListParamScreenshot>;
 
-export const ZComputerActionListParamScroll = z.lazy(() => (z.object({
+export const ZComputerActionListParamScroll = z.lazy(() =>
+  z.object({
     scroll_x: z.number(),
     scroll_y: z.number(),
-    type: z.literal("scroll"),
+    type: z.literal('scroll'),
     x: z.number(),
     y: z.number(),
     keys: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type ComputerActionListParamScroll = z.infer<typeof ZComputerActionListParamScroll>;
 
-export const ZComputerActionListParamType = z.lazy(() => (z.object({
+export const ZComputerActionListParamType = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("type"),
-})));
+    type: z.literal('type'),
+  })
+);
 export type ComputerActionListParamType = z.infer<typeof ZComputerActionListParamType>;
 
-export const ZComputerActionListParamWait = z.lazy(() => (z.object({
-    type: z.literal("wait"),
-})));
+export const ZComputerActionListParamWait = z.lazy(() =>
+  z.object({
+    type: z.literal('wait'),
+  })
+);
 export type ComputerActionListParamWait = z.infer<typeof ZComputerActionListParamWait>;
 
-export const ZResponseComputerToolCallOutputScreenshotParam = z.lazy(() => (z.object({
-    type: z.literal("computer_screenshot"),
+export const ZResponseComputerToolCallOutputScreenshotParam = z.lazy(() =>
+  z.object({
+    type: z.literal('computer_screenshot'),
     file_id: z.string(),
     image_url: z.string(),
-})));
-export type ResponseComputerToolCallOutputScreenshotParam = z.infer<typeof ZResponseComputerToolCallOutputScreenshotParam>;
+  })
+);
+export type ResponseComputerToolCallOutputScreenshotParam = z.infer<
+  typeof ZResponseComputerToolCallOutputScreenshotParam
+>;
 
-export const ZResponseInputParamComputerCallOutputAcknowledgedSafetyCheck = z.lazy(() => (z.object({
+export const ZResponseInputParamComputerCallOutputAcknowledgedSafetyCheck = z.lazy(() =>
+  z.object({
     id: z.string(),
     code: z.string().nullable().optional(),
     message: z.string().nullable().optional(),
-})));
-export type ResponseInputParamComputerCallOutputAcknowledgedSafetyCheck = z.infer<typeof ZResponseInputParamComputerCallOutputAcknowledgedSafetyCheck>;
+  })
+);
+export type ResponseInputParamComputerCallOutputAcknowledgedSafetyCheck = z.infer<
+  typeof ZResponseInputParamComputerCallOutputAcknowledgedSafetyCheck
+>;
 
-export const ZResponseFunctionWebSearchParamActionSearch = z.lazy(() => (z.object({
+export const ZResponseFunctionWebSearchParamActionSearch = z.lazy(() =>
+  z.object({
     query: z.string(),
-    type: z.literal("search"),
+    type: z.literal('search'),
     queries: z.array(z.string()),
     sources: z.array(ZResponseFunctionWebSearchParamActionSearchSource),
-})));
-export type ResponseFunctionWebSearchParamActionSearch = z.infer<typeof ZResponseFunctionWebSearchParamActionSearch>;
+  })
+);
+export type ResponseFunctionWebSearchParamActionSearch = z.infer<
+  typeof ZResponseFunctionWebSearchParamActionSearch
+>;
 
-export const ZResponseFunctionWebSearchParamActionOpenPage = z.lazy(() => (z.object({
-    type: z.literal("open_page"),
+export const ZResponseFunctionWebSearchParamActionOpenPage = z.lazy(() =>
+  z.object({
+    type: z.literal('open_page'),
     url: z.string().nullable().optional(),
-})));
-export type ResponseFunctionWebSearchParamActionOpenPage = z.infer<typeof ZResponseFunctionWebSearchParamActionOpenPage>;
+  })
+);
+export type ResponseFunctionWebSearchParamActionOpenPage = z.infer<
+  typeof ZResponseFunctionWebSearchParamActionOpenPage
+>;
 
-export const ZResponseFunctionWebSearchParamActionFind = z.lazy(() => (z.object({
+export const ZResponseFunctionWebSearchParamActionFind = z.lazy(() =>
+  z.object({
     pattern: z.string(),
-    type: z.literal("find_in_page"),
+    type: z.literal('find_in_page'),
     url: z.string(),
-})));
-export type ResponseFunctionWebSearchParamActionFind = z.infer<typeof ZResponseFunctionWebSearchParamActionFind>;
+  })
+);
+export type ResponseFunctionWebSearchParamActionFind = z.infer<
+  typeof ZResponseFunctionWebSearchParamActionFind
+>;
 
-export const ZResponseInputTextContentParam = z.lazy(() => (z.object({
+export const ZResponseInputTextContentParam = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("input_text"),
-})));
+    type: z.literal('input_text'),
+  })
+);
 export type ResponseInputTextContentParam = z.infer<typeof ZResponseInputTextContentParam>;
 
-export const ZResponseInputImageContentParam = z.lazy(() => (z.object({
-    type: z.literal("input_image"),
-    detail: z.union([z.literal("low"), z.literal("high"), z.literal("auto"), z.literal("original")]).nullable().optional(),
+export const ZResponseInputImageContentParam = z.lazy(() =>
+  z.object({
+    type: z.literal('input_image'),
+    detail: z
+      .union([z.literal('low'), z.literal('high'), z.literal('auto'), z.literal('original')])
+      .nullable()
+      .optional(),
     file_id: z.string().nullable().optional(),
     image_url: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputImageContentParam = z.infer<typeof ZResponseInputImageContentParam>;
 
-export const ZResponseInputFileContentParam = z.lazy(() => (z.object({
-    type: z.literal("input_file"),
-    detail: z.union([z.literal("low"), z.literal("high")]),
+export const ZResponseInputFileContentParam = z.lazy(() =>
+  z.object({
+    type: z.literal('input_file'),
+    detail: z.union([z.literal('low'), z.literal('high')]),
     file_data: z.string().nullable().optional(),
     file_id: z.string().nullable().optional(),
     file_url: z.string().nullable().optional(),
     filename: z.string().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputFileContentParam = z.infer<typeof ZResponseInputFileContentParam>;
 
-export const ZFunctionToolParam = z.lazy(() => (z.object({
+export const ZFunctionToolParam = z.lazy(() =>
+  z.object({
     name: z.string(),
     parameters: z.record(z.string(), z.object({}).passthrough()).nullable().optional(),
     strict: z.boolean().nullable().optional(),
-    type: z.literal("function"),
+    type: z.literal('function'),
     defer_loading: z.boolean(),
     description: z.string().nullable().optional(),
-})));
+  })
+);
 export type FunctionToolParam = z.infer<typeof ZFunctionToolParam>;
 
-export const ZFileSearchToolParam = z.lazy(() => (z.object({
-    type: z.literal("file_search"),
+export const ZFileSearchToolParam = z.lazy(() =>
+  z.object({
+    type: z.literal('file_search'),
     vector_store_ids: z.array(z.string()),
-    filters: z.union([ZComparisonFilterComparisonFilter, ZCompoundFilterCompoundFilter]).nullable().optional(),
+    filters: z
+      .union([ZComparisonFilterComparisonFilter, ZCompoundFilterCompoundFilter])
+      .nullable()
+      .optional(),
     max_num_results: z.number(),
     ranking_options: ZFileSearchToolParamRankingOptions,
-})));
+  })
+);
 export type FileSearchToolParam = z.infer<typeof ZFileSearchToolParam>;
 
-export const ZComputerToolParam = z.lazy(() => (z.object({
-    type: z.literal("computer"),
-})));
+export const ZComputerToolParam = z.lazy(() =>
+  z.object({
+    type: z.literal('computer'),
+  })
+);
 export type ComputerToolParam = z.infer<typeof ZComputerToolParam>;
 
-export const ZComputerUsePreviewToolParam = z.lazy(() => (z.object({
+export const ZComputerUsePreviewToolParam = z.lazy(() =>
+  z.object({
     display_height: z.number(),
     display_width: z.number(),
-    environment: z.union([z.literal("windows"), z.literal("mac"), z.literal("linux"), z.literal("ubuntu"), z.literal("browser")]),
-    type: z.literal("computer_use_preview"),
-})));
+    environment: z.union([
+      z.literal('windows'),
+      z.literal('mac'),
+      z.literal('linux'),
+      z.literal('ubuntu'),
+      z.literal('browser'),
+    ]),
+    type: z.literal('computer_use_preview'),
+  })
+);
 export type ComputerUsePreviewToolParam = z.infer<typeof ZComputerUsePreviewToolParam>;
 
-export const ZWebSearchToolParam = z.lazy(() => (z.object({
-    type: z.union([z.literal("web_search"), z.literal("web_search_2025_08_26")]),
+export const ZWebSearchToolParam = z.lazy(() =>
+  z.object({
+    type: z.union([z.literal('web_search'), z.literal('web_search_2025_08_26')]),
     filters: ZWebSearchToolParamFilters.nullable().optional(),
-    search_context_size: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]),
+    search_context_size: z.union([z.literal('low'), z.literal('medium'), z.literal('high')]),
     user_location: ZWebSearchToolParamUserLocation.nullable().optional(),
-})));
+  })
+);
 export type WebSearchToolParam = z.infer<typeof ZWebSearchToolParam>;
 
-export const ZToolParamMcp = z.lazy(() => (z.object({
+export const ZToolParamMcp = z.lazy(() =>
+  z.object({
     server_label: z.string(),
-    type: z.literal("mcp"),
-    allowed_tools: z.union([z.array(z.string()), ZToolParamMcpAllowedToolsMcpToolFilter]).nullable().optional(),
+    type: z.literal('mcp'),
+    allowed_tools: z
+      .union([z.array(z.string()), ZToolParamMcpAllowedToolsMcpToolFilter])
+      .nullable()
+      .optional(),
     authorization: z.string(),
-    connector_id: z.union([z.literal("connector_dropbox"), z.literal("connector_gmail"), z.literal("connector_googlecalendar"), z.literal("connector_googledrive"), z.literal("connector_microsoftteams"), z.literal("connector_outlookcalendar"), z.literal("connector_outlookemail"), z.literal("connector_sharepoint")]),
+    connector_id: z.union([
+      z.literal('connector_dropbox'),
+      z.literal('connector_gmail'),
+      z.literal('connector_googlecalendar'),
+      z.literal('connector_googledrive'),
+      z.literal('connector_microsoftteams'),
+      z.literal('connector_outlookcalendar'),
+      z.literal('connector_outlookemail'),
+      z.literal('connector_sharepoint'),
+    ]),
     defer_loading: z.boolean(),
     headers: z.record(z.string(), z.string()).nullable().optional(),
-    require_approval: z.union([ZToolParamMcpRequireApprovalMcpToolApprovalFilter, z.union([z.literal("always"), z.literal("never")])]).nullable().optional(),
+    require_approval: z
+      .union([
+        ZToolParamMcpRequireApprovalMcpToolApprovalFilter,
+        z.union([z.literal('always'), z.literal('never')]),
+      ])
+      .nullable()
+      .optional(),
     server_description: z.string(),
     server_url: z.string(),
-})));
+  })
+);
 export type ToolParamMcp = z.infer<typeof ZToolParamMcp>;
 
-export const ZToolParamCodeInterpreter = z.lazy(() => (z.object({
+export const ZToolParamCodeInterpreter = z.lazy(() =>
+  z.object({
     container: z.union([z.string(), ZToolParamCodeInterpreterContainerCodeInterpreterToolAuto]),
-    type: z.literal("code_interpreter"),
-})));
+    type: z.literal('code_interpreter'),
+  })
+);
 export type ToolParamCodeInterpreter = z.infer<typeof ZToolParamCodeInterpreter>;
 
-export const ZToolParamImageGeneration = z.lazy(() => (z.object({
-    type: z.literal("image_generation"),
-    action: z.union([z.literal("generate"), z.literal("edit"), z.literal("auto")]),
-    background: z.union([z.literal("transparent"), z.literal("opaque"), z.literal("auto")]),
-    input_fidelity: z.union([z.literal("high"), z.literal("low")]).nullable().optional(),
+export const ZToolParamImageGeneration = z.lazy(() =>
+  z.object({
+    type: z.literal('image_generation'),
+    action: z.union([z.literal('generate'), z.literal('edit'), z.literal('auto')]),
+    background: z.union([z.literal('transparent'), z.literal('opaque'), z.literal('auto')]),
+    input_fidelity: z
+      .union([z.literal('high'), z.literal('low')])
+      .nullable()
+      .optional(),
     input_image_mask: ZToolParamImageGenerationInputImageMask,
-    model: z.union([z.string(), z.union([z.literal("gpt-image-1"), z.literal("gpt-image-1-mini"), z.literal("gpt-image-1.5")])]),
-    moderation: z.union([z.literal("auto"), z.literal("low")]),
+    model: z.union([
+      z.string(),
+      z.union([
+        z.literal('gpt-image-1'),
+        z.literal('gpt-image-1-mini'),
+        z.literal('gpt-image-1.5'),
+      ]),
+    ]),
+    moderation: z.union([z.literal('auto'), z.literal('low')]),
     output_compression: z.number(),
-    output_format: z.union([z.literal("png"), z.literal("webp"), z.literal("jpeg")]),
+    output_format: z.union([z.literal('png'), z.literal('webp'), z.literal('jpeg')]),
     partial_images: z.number(),
-    quality: z.union([z.literal("low"), z.literal("medium"), z.literal("high"), z.literal("auto")]),
-    size: z.union([z.literal("1024x1024"), z.literal("1024x1536"), z.literal("1536x1024"), z.literal("auto")]),
-})));
+    quality: z.union([z.literal('low'), z.literal('medium'), z.literal('high'), z.literal('auto')]),
+    size: z.union([
+      z.literal('1024x1024'),
+      z.literal('1024x1536'),
+      z.literal('1536x1024'),
+      z.literal('auto'),
+    ]),
+  })
+);
 export type ToolParamImageGeneration = z.infer<typeof ZToolParamImageGeneration>;
 
-export const ZToolParamLocalShell = z.lazy(() => (z.object({
-    type: z.literal("local_shell"),
-})));
+export const ZToolParamLocalShell = z.lazy(() =>
+  z.object({
+    type: z.literal('local_shell'),
+  })
+);
 export type ToolParamLocalShell = z.infer<typeof ZToolParamLocalShell>;
 
-export const ZFunctionShellToolParam = z.lazy(() => (z.object({
-    type: z.literal("shell"),
-    environment: z.union([ZContainerAutoParam, ZLocalEnvironmentParam, ZContainerReferenceParam]).nullable().optional(),
-})));
+export const ZFunctionShellToolParam = z.lazy(() =>
+  z.object({
+    type: z.literal('shell'),
+    environment: z
+      .union([ZContainerAutoParam, ZLocalEnvironmentParam, ZContainerReferenceParam])
+      .nullable()
+      .optional(),
+  })
+);
 export type FunctionShellToolParam = z.infer<typeof ZFunctionShellToolParam>;
 
-export const ZCustomToolParam = z.lazy(() => (z.object({
+export const ZCustomToolParam = z.lazy(() =>
+  z.object({
     name: z.string(),
-    type: z.literal("custom"),
+    type: z.literal('custom'),
     defer_loading: z.boolean(),
     description: z.string(),
     format: z.union([ZCustomToolInputFormatText, ZCustomToolInputFormatGrammar]),
-})));
+  })
+);
 export type CustomToolParam = z.infer<typeof ZCustomToolParam>;
 
-export const ZNamespaceToolParam = z.lazy(() => (z.object({
+export const ZNamespaceToolParam = z.lazy(() =>
+  z.object({
     description: z.string(),
     name: z.string(),
     tools: z.array(z.union([ZNamespaceToolParamToolFunction, ZCustomToolParam])),
-    type: z.literal("namespace"),
-})));
+    type: z.literal('namespace'),
+  })
+);
 export type NamespaceToolParam = z.infer<typeof ZNamespaceToolParam>;
 
-export const ZToolSearchToolParam = z.lazy(() => (z.object({
-    type: z.literal("tool_search"),
+export const ZToolSearchToolParam = z.lazy(() =>
+  z.object({
+    type: z.literal('tool_search'),
     description: z.string().nullable().optional(),
-    execution: z.union([z.literal("server"), z.literal("client")]),
+    execution: z.union([z.literal('server'), z.literal('client')]),
     parameters: z.object({}).passthrough().nullable().optional(),
-})));
+  })
+);
 export type ToolSearchToolParam = z.infer<typeof ZToolSearchToolParam>;
 
-export const ZWebSearchPreviewToolParam = z.lazy(() => (z.object({
-    type: z.union([z.literal("web_search_preview"), z.literal("web_search_preview_2025_03_11")]),
-    search_content_types: z.array(z.union([z.literal("text"), z.literal("image")])),
-    search_context_size: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]),
+export const ZWebSearchPreviewToolParam = z.lazy(() =>
+  z.object({
+    type: z.union([z.literal('web_search_preview'), z.literal('web_search_preview_2025_03_11')]),
+    search_content_types: z.array(z.union([z.literal('text'), z.literal('image')])),
+    search_context_size: z.union([z.literal('low'), z.literal('medium'), z.literal('high')]),
     user_location: ZWebSearchPreviewToolParamUserLocation.nullable().optional(),
-})));
+  })
+);
 export type WebSearchPreviewToolParam = z.infer<typeof ZWebSearchPreviewToolParam>;
 
-export const ZApplyPatchToolParam = z.lazy(() => (z.object({
-    type: z.literal("apply_patch"),
-})));
+export const ZApplyPatchToolParam = z.lazy(() =>
+  z.object({
+    type: z.literal('apply_patch'),
+  })
+);
 export type ApplyPatchToolParam = z.infer<typeof ZApplyPatchToolParam>;
 
-export const ZResponseReasoningItemParamSummary = z.lazy(() => (z.object({
+export const ZResponseReasoningItemParamSummary = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("summary_text"),
-})));
+    type: z.literal('summary_text'),
+  })
+);
 export type ResponseReasoningItemParamSummary = z.infer<typeof ZResponseReasoningItemParamSummary>;
 
-export const ZResponseReasoningItemParamContent = z.lazy(() => (z.object({
+export const ZResponseReasoningItemParamContent = z.lazy(() =>
+  z.object({
     text: z.string(),
-    type: z.literal("reasoning_text"),
-})));
+    type: z.literal('reasoning_text'),
+  })
+);
 export type ResponseReasoningItemParamContent = z.infer<typeof ZResponseReasoningItemParamContent>;
 
-export const ZResponseCodeInterpreterToolCallParamOutputLogs = z.lazy(() => (z.object({
+export const ZResponseCodeInterpreterToolCallParamOutputLogs = z.lazy(() =>
+  z.object({
     logs: z.string(),
-    type: z.literal("logs"),
-})));
-export type ResponseCodeInterpreterToolCallParamOutputLogs = z.infer<typeof ZResponseCodeInterpreterToolCallParamOutputLogs>;
+    type: z.literal('logs'),
+  })
+);
+export type ResponseCodeInterpreterToolCallParamOutputLogs = z.infer<
+  typeof ZResponseCodeInterpreterToolCallParamOutputLogs
+>;
 
-export const ZResponseCodeInterpreterToolCallParamOutputImage = z.lazy(() => (z.object({
-    type: z.literal("image"),
+export const ZResponseCodeInterpreterToolCallParamOutputImage = z.lazy(() =>
+  z.object({
+    type: z.literal('image'),
     url: z.string(),
-})));
-export type ResponseCodeInterpreterToolCallParamOutputImage = z.infer<typeof ZResponseCodeInterpreterToolCallParamOutputImage>;
+  })
+);
+export type ResponseCodeInterpreterToolCallParamOutputImage = z.infer<
+  typeof ZResponseCodeInterpreterToolCallParamOutputImage
+>;
 
-export const ZResponseInputParamLocalShellCallAction = z.lazy(() => (z.object({
+export const ZResponseInputParamLocalShellCallAction = z.lazy(() =>
+  z.object({
     command: z.array(z.string()),
     env: z.record(z.string(), z.string()),
-    type: z.literal("exec"),
+    type: z.literal('exec'),
     timeout_ms: z.number().nullable().optional(),
     user: z.string().nullable().optional(),
     working_directory: z.string().nullable().optional(),
-})));
-export type ResponseInputParamLocalShellCallAction = z.infer<typeof ZResponseInputParamLocalShellCallAction>;
+  })
+);
+export type ResponseInputParamLocalShellCallAction = z.infer<
+  typeof ZResponseInputParamLocalShellCallAction
+>;
 
-export const ZResponseInputParamShellCallAction = z.lazy(() => (z.object({
+export const ZResponseInputParamShellCallAction = z.lazy(() =>
+  z.object({
     commands: z.array(z.string()),
     max_output_length: z.number().nullable().optional(),
     timeout_ms: z.number().nullable().optional(),
-})));
+  })
+);
 export type ResponseInputParamShellCallAction = z.infer<typeof ZResponseInputParamShellCallAction>;
 
-export const ZLocalEnvironmentParam = z.lazy(() => (z.object({
-    type: z.literal("local"),
+export const ZLocalEnvironmentParam = z.lazy(() =>
+  z.object({
+    type: z.literal('local'),
     skills: z.array(ZLocalSkillParam),
-})));
+  })
+);
 export type LocalEnvironmentParam = z.infer<typeof ZLocalEnvironmentParam>;
 
-export const ZContainerReferenceParam = z.lazy(() => (z.object({
+export const ZContainerReferenceParam = z.lazy(() =>
+  z.object({
     container_id: z.string(),
-    type: z.literal("container_reference"),
-})));
+    type: z.literal('container_reference'),
+  })
+);
 export type ContainerReferenceParam = z.infer<typeof ZContainerReferenceParam>;
 
-export const ZResponseFunctionShellCallOutputContentParam = z.lazy(() => (z.object({
-    outcome: z.union([ZResponseFunctionShellCallOutputContentParamOutcomeTimeout, ZResponseFunctionShellCallOutputContentParamOutcomeExit]),
+export const ZResponseFunctionShellCallOutputContentParam = z.lazy(() =>
+  z.object({
+    outcome: z.union([
+      ZResponseFunctionShellCallOutputContentParamOutcomeTimeout,
+      ZResponseFunctionShellCallOutputContentParamOutcomeExit,
+    ]),
     stderr: z.string(),
     stdout: z.string(),
-})));
-export type ResponseFunctionShellCallOutputContentParam = z.infer<typeof ZResponseFunctionShellCallOutputContentParam>;
+  })
+);
+export type ResponseFunctionShellCallOutputContentParam = z.infer<
+  typeof ZResponseFunctionShellCallOutputContentParam
+>;
 
-export const ZResponseInputParamApplyPatchCallOperationCreateFile = z.lazy(() => (z.object({
+export const ZResponseInputParamApplyPatchCallOperationCreateFile = z.lazy(() =>
+  z.object({
     diff: z.string(),
     path: z.string(),
-    type: z.literal("create_file"),
-})));
-export type ResponseInputParamApplyPatchCallOperationCreateFile = z.infer<typeof ZResponseInputParamApplyPatchCallOperationCreateFile>;
+    type: z.literal('create_file'),
+  })
+);
+export type ResponseInputParamApplyPatchCallOperationCreateFile = z.infer<
+  typeof ZResponseInputParamApplyPatchCallOperationCreateFile
+>;
 
-export const ZResponseInputParamApplyPatchCallOperationDeleteFile = z.lazy(() => (z.object({
+export const ZResponseInputParamApplyPatchCallOperationDeleteFile = z.lazy(() =>
+  z.object({
     path: z.string(),
-    type: z.literal("delete_file"),
-})));
-export type ResponseInputParamApplyPatchCallOperationDeleteFile = z.infer<typeof ZResponseInputParamApplyPatchCallOperationDeleteFile>;
+    type: z.literal('delete_file'),
+  })
+);
+export type ResponseInputParamApplyPatchCallOperationDeleteFile = z.infer<
+  typeof ZResponseInputParamApplyPatchCallOperationDeleteFile
+>;
 
-export const ZResponseInputParamApplyPatchCallOperationUpdateFile = z.lazy(() => (z.object({
+export const ZResponseInputParamApplyPatchCallOperationUpdateFile = z.lazy(() =>
+  z.object({
     diff: z.string(),
     path: z.string(),
-    type: z.literal("update_file"),
-})));
-export type ResponseInputParamApplyPatchCallOperationUpdateFile = z.infer<typeof ZResponseInputParamApplyPatchCallOperationUpdateFile>;
+    type: z.literal('update_file'),
+  })
+);
+export type ResponseInputParamApplyPatchCallOperationUpdateFile = z.infer<
+  typeof ZResponseInputParamApplyPatchCallOperationUpdateFile
+>;
 
-export const ZResponseInputParamMcpListToolsTool = z.lazy(() => (z.object({
+export const ZResponseInputParamMcpListToolsTool = z.lazy(() =>
+  z.object({
     input_schema: z.object({}).passthrough(),
     name: z.string(),
     annotations: z.object({}).passthrough().nullable().optional(),
     description: z.string().nullable().optional(),
-})));
-export type ResponseInputParamMcpListToolsTool = z.infer<typeof ZResponseInputParamMcpListToolsTool>;
+  })
+);
+export type ResponseInputParamMcpListToolsTool = z.infer<
+  typeof ZResponseInputParamMcpListToolsTool
+>;
 
-export const ZCodeExecutionOutputBlockParam = z.lazy(() => (z.object({
+export const ZCodeExecutionOutputBlockParam = z.lazy(() =>
+  z.object({
     file_id: z.string(),
-    type: z.literal("code_execution_output"),
-})));
+    type: z.literal('code_execution_output'),
+  })
+);
 export type CodeExecutionOutputBlockParam = z.infer<typeof ZCodeExecutionOutputBlockParam>;
 
-export const ZBashCodeExecutionOutputBlockParam = z.lazy(() => (z.object({
+export const ZBashCodeExecutionOutputBlockParam = z.lazy(() =>
+  z.object({
     file_id: z.string(),
-    type: z.literal("bash_code_execution_output"),
-})));
+    type: z.literal('bash_code_execution_output'),
+  })
+);
 export type BashCodeExecutionOutputBlockParam = z.infer<typeof ZBashCodeExecutionOutputBlockParam>;
 
-export const ZDocumentBlock = z.lazy(() => (z.object({
+export const ZDocumentBlock = z.lazy(() =>
+  z.object({
     citations: ZCitationsConfig.nullable().optional(),
     source: z.union([ZBase64PDFSource, ZPlainTextSource]),
     title: z.string().nullable().optional(),
-    type: z.literal("document"),
-})));
+    type: z.literal('document'),
+  })
+);
 export type DocumentBlock = z.infer<typeof ZDocumentBlock>;
 
-export const ZCodeExecutionOutputBlock = z.lazy(() => (z.object({
+export const ZCodeExecutionOutputBlock = z.lazy(() =>
+  z.object({
     file_id: z.string(),
-    type: z.literal("code_execution_output"),
-})));
+    type: z.literal('code_execution_output'),
+  })
+);
 export type CodeExecutionOutputBlock = z.infer<typeof ZCodeExecutionOutputBlock>;
 
-export const ZBashCodeExecutionOutputBlock = z.lazy(() => (z.object({
+export const ZBashCodeExecutionOutputBlock = z.lazy(() =>
+  z.object({
     file_id: z.string(),
-    type: z.literal("bash_code_execution_output"),
-})));
+    type: z.literal('bash_code_execution_output'),
+  })
+);
 export type BashCodeExecutionOutputBlock = z.infer<typeof ZBashCodeExecutionOutputBlock>;
 
-export const ZToolReferenceBlock = z.lazy(() => (z.object({
+export const ZToolReferenceBlock = z.lazy(() =>
+  z.object({
     tool_name: z.string(),
-    type: z.literal("tool_reference"),
-})));
+    type: z.literal('tool_reference'),
+  })
+);
 export type ToolReferenceBlock = z.infer<typeof ZToolReferenceBlock>;
 
-export const ZFunctionResponseBlobDict = z.lazy(() => (z.object({
+export const ZFunctionResponseBlobDict = z.lazy(() =>
+  z.object({
     mime_type: z.string().nullable().optional(),
     data: z.instanceof(Uint8Array).nullable().optional(),
     display_name: z.string().nullable().optional(),
-})));
+  })
+);
 export type FunctionResponseBlobDict = z.infer<typeof ZFunctionResponseBlobDict>;
 
-export const ZFunctionResponseFileDataDict = z.lazy(() => (z.object({
+export const ZFunctionResponseFileDataDict = z.lazy(() =>
+  z.object({
     file_uri: z.string().nullable().optional(),
     mime_type: z.string().nullable().optional(),
     display_name: z.string().nullable().optional(),
-})));
+  })
+);
 export type FunctionResponseFileDataDict = z.infer<typeof ZFunctionResponseFileDataDict>;
 
-export const ZAnnotationFileCitation = z.lazy(() => (z.object({
+export const ZAnnotationFileCitation = z.lazy(() =>
+  z.object({
     file_id: z.string(),
     filename: z.string(),
     index: z.number(),
-    type: z.literal("file_citation"),
-})));
+    type: z.literal('file_citation'),
+  })
+);
 export type AnnotationFileCitation = z.infer<typeof ZAnnotationFileCitation>;
 
-export const ZAnnotationURLCitation = z.lazy(() => (z.object({
+export const ZAnnotationURLCitation = z.lazy(() =>
+  z.object({
     end_index: z.number(),
     start_index: z.number(),
     title: z.string(),
-    type: z.literal("url_citation"),
+    type: z.literal('url_citation'),
     url: z.string(),
-})));
+  })
+);
 export type AnnotationURLCitation = z.infer<typeof ZAnnotationURLCitation>;
 
-export const ZAnnotationContainerFileCitation = z.lazy(() => (z.object({
+export const ZAnnotationContainerFileCitation = z.lazy(() =>
+  z.object({
     container_id: z.string(),
     end_index: z.number(),
     file_id: z.string(),
     filename: z.string(),
     start_index: z.number(),
-    type: z.literal("container_file_citation"),
-})));
+    type: z.literal('container_file_citation'),
+  })
+);
 export type AnnotationContainerFileCitation = z.infer<typeof ZAnnotationContainerFileCitation>;
 
-export const ZAnnotationFilePath = z.lazy(() => (z.object({
+export const ZAnnotationFilePath = z.lazy(() =>
+  z.object({
     file_id: z.string(),
     index: z.number(),
-    type: z.literal("file_path"),
-})));
+    type: z.literal('file_path'),
+  })
+);
 export type AnnotationFilePath = z.infer<typeof ZAnnotationFilePath>;
 
-export const ZLogprob = z.lazy(() => (z.object({
+export const ZLogprob = z.lazy(() =>
+  z.object({
     token: z.string(),
     bytes: z.array(z.number()),
     logprob: z.number(),
     top_logprobs: z.array(ZLogprobTopLogprob),
-})));
+  })
+);
 export type Logprob = z.infer<typeof ZLogprob>;
 
-export const ZActionDragPath = z.lazy(() => (z.object({
+export const ZActionDragPath = z.lazy(() =>
+  z.object({
     x: z.number(),
     y: z.number(),
-})));
+  })
+);
 export type ActionDragPath = z.infer<typeof ZActionDragPath>;
 
-export const ZDragPath = z.lazy(() => (z.object({
+export const ZDragPath = z.lazy(() =>
+  z.object({
     x: z.number(),
     y: z.number(),
-})));
+  })
+);
 export type DragPath = z.infer<typeof ZDragPath>;
 
-export const ZActionSearchSource = z.lazy(() => (z.object({
-    type: z.literal("url"),
+export const ZActionSearchSource = z.lazy(() =>
+  z.object({
+    type: z.literal('url'),
     url: z.string(),
-})));
+  })
+);
 export type ActionSearchSource = z.infer<typeof ZActionSearchSource>;
 
-export const ZLocalSkill = z.lazy(() => (z.object({
+export const ZLocalSkill = z.lazy(() =>
+  z.object({
     description: z.string(),
     name: z.string(),
     path: z.string(),
-})));
+  })
+);
 export type LocalSkill = z.infer<typeof ZLocalSkill>;
 
-export const ZOutcomeTimeout = z.lazy(() => (z.object({
-    type: z.literal("timeout"),
-})));
+export const ZOutcomeTimeout = z.lazy(() =>
+  z.object({
+    type: z.literal('timeout'),
+  })
+);
 export type OutcomeTimeout = z.infer<typeof ZOutcomeTimeout>;
 
-export const ZOutcomeExit = z.lazy(() => (z.object({
+export const ZOutcomeExit = z.lazy(() =>
+  z.object({
     exit_code: z.number(),
-    type: z.literal("exit"),
-})));
+    type: z.literal('exit'),
+  })
+);
 export type OutcomeExit = z.infer<typeof ZOutcomeExit>;
 
-export const ZOutputOutcomeTimeout = z.lazy(() => (z.object({
-    type: z.literal("timeout"),
-})));
+export const ZOutputOutcomeTimeout = z.lazy(() =>
+  z.object({
+    type: z.literal('timeout'),
+  })
+);
 export type OutputOutcomeTimeout = z.infer<typeof ZOutputOutcomeTimeout>;
 
-export const ZOutputOutcomeExit = z.lazy(() => (z.object({
+export const ZOutputOutcomeExit = z.lazy(() =>
+  z.object({
     exit_code: z.number(),
-    type: z.literal("exit"),
-})));
+    type: z.literal('exit'),
+  })
+);
 export type OutputOutcomeExit = z.infer<typeof ZOutputOutcomeExit>;
 
-export const ZRankingOptionsHybridSearch = z.lazy(() => (z.object({
+export const ZRankingOptionsHybridSearch = z.lazy(() =>
+  z.object({
     embedding_weight: z.number(),
     text_weight: z.number(),
-})));
+  })
+);
 export type RankingOptionsHybridSearch = z.infer<typeof ZRankingOptionsHybridSearch>;
 
-export const ZMcpRequireApprovalMcpToolApprovalFilterAlways = z.lazy(() => (z.object({
+export const ZMcpRequireApprovalMcpToolApprovalFilterAlways = z.lazy(() =>
+  z.object({
     read_only: z.boolean().nullable().optional(),
     tool_names: z.array(z.string()).nullable().optional(),
-})));
-export type McpRequireApprovalMcpToolApprovalFilterAlways = z.infer<typeof ZMcpRequireApprovalMcpToolApprovalFilterAlways>;
+  })
+);
+export type McpRequireApprovalMcpToolApprovalFilterAlways = z.infer<
+  typeof ZMcpRequireApprovalMcpToolApprovalFilterAlways
+>;
 
-export const ZMcpRequireApprovalMcpToolApprovalFilterNever = z.lazy(() => (z.object({
+export const ZMcpRequireApprovalMcpToolApprovalFilterNever = z.lazy(() =>
+  z.object({
     read_only: z.boolean().nullable().optional(),
     tool_names: z.array(z.string()).nullable().optional(),
-})));
-export type McpRequireApprovalMcpToolApprovalFilterNever = z.infer<typeof ZMcpRequireApprovalMcpToolApprovalFilterNever>;
+  })
+);
+export type McpRequireApprovalMcpToolApprovalFilterNever = z.infer<
+  typeof ZMcpRequireApprovalMcpToolApprovalFilterNever
+>;
 
-export const ZContainerNetworkPolicyDisabled = z.lazy(() => (z.object({
-    type: z.literal("disabled"),
-})));
+export const ZContainerNetworkPolicyDisabled = z.lazy(() =>
+  z.object({
+    type: z.literal('disabled'),
+  })
+);
 export type ContainerNetworkPolicyDisabled = z.infer<typeof ZContainerNetworkPolicyDisabled>;
 
-export const ZContainerNetworkPolicyAllowlist = z.lazy(() => (z.object({
+export const ZContainerNetworkPolicyAllowlist = z.lazy(() =>
+  z.object({
     allowed_domains: z.array(z.string()),
-    type: z.literal("allowlist"),
+    type: z.literal('allowlist'),
     domain_secrets: z.array(ZContainerNetworkPolicyDomainSecret).nullable().optional(),
-})));
+  })
+);
 export type ContainerNetworkPolicyAllowlist = z.infer<typeof ZContainerNetworkPolicyAllowlist>;
 
-export const ZSkillReference = z.lazy(() => (z.object({
+export const ZSkillReference = z.lazy(() =>
+  z.object({
     skill_id: z.string(),
-    type: z.literal("skill_reference"),
+    type: z.literal('skill_reference'),
     version: z.string().nullable().optional(),
-})));
+  })
+);
 export type SkillReference = z.infer<typeof ZSkillReference>;
 
-export const ZInlineSkill = z.lazy(() => (z.object({
+export const ZInlineSkill = z.lazy(() =>
+  z.object({
     description: z.string(),
     name: z.string(),
     source: ZInlineSkillSource,
-    type: z.literal("inline"),
-})));
+    type: z.literal('inline'),
+  })
+);
 export type InlineSkill = z.infer<typeof ZInlineSkill>;
 
-export const ZAnnotation = z.lazy(() => (z.object({
-    type: z.literal("url_citation"),
+export const ZAnnotation = z.lazy(() =>
+  z.object({
+    type: z.literal('url_citation'),
     url_citation: ZChatCompletionMessageAnnotationURLCitation,
-})));
+  })
+);
 export type Annotation = z.infer<typeof ZAnnotation>;
 
-export const ZChatCompletionAudio = z.lazy(() => (z.object({
+export const ZChatCompletionAudio = z.lazy(() =>
+  z.object({
     id: z.string(),
     data: z.string(),
     expires_at: z.number(),
     transcript: z.string(),
-})));
+  })
+);
 export type ChatCompletionAudio = z.infer<typeof ZChatCompletionAudio>;
 
-export const ZChatCompletionMessageFunctionCall = z.lazy(() => (z.object({
+export const ZChatCompletionMessageFunctionCall = z.lazy(() =>
+  z.object({
     arguments: z.string(),
     name: z.string(),
-})));
+  })
+);
 export type ChatCompletionMessageFunctionCall = z.infer<typeof ZChatCompletionMessageFunctionCall>;
 
-export const ZChatCompletionMessageFunctionToolCall = z.lazy(() => (z.object({
+export const ZChatCompletionMessageFunctionToolCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     function: ZChatCompletionMessageFunctionToolCallFunction,
-    type: z.literal("function"),
-})));
-export type ChatCompletionMessageFunctionToolCall = z.infer<typeof ZChatCompletionMessageFunctionToolCall>;
+    type: z.literal('function'),
+  })
+);
+export type ChatCompletionMessageFunctionToolCall = z.infer<
+  typeof ZChatCompletionMessageFunctionToolCall
+>;
 
-export const ZChatCompletionMessageCustomToolCall = z.lazy(() => (z.object({
+export const ZChatCompletionMessageCustomToolCall = z.lazy(() =>
+  z.object({
     id: z.string(),
     custom: ZChatCompletionMessageCustomToolCallCustom,
-    type: z.literal("custom"),
-})));
-export type ChatCompletionMessageCustomToolCall = z.infer<typeof ZChatCompletionMessageCustomToolCall>;
+    type: z.literal('custom'),
+  })
+);
+export type ChatCompletionMessageCustomToolCall = z.infer<
+  typeof ZChatCompletionMessageCustomToolCall
+>;
 
-export const ZTopLogprob = z.lazy(() => (z.object({
+export const ZTopLogprob = z.lazy(() =>
+  z.object({
     token: z.string(),
     bytes: z.array(z.number()).nullable().optional(),
     logprob: z.number(),
-})));
+  })
+);
 export type TopLogprob = z.infer<typeof ZTopLogprob>;
 
-export const ZCustom = z.lazy(() => (z.object({
+export const ZCustom = z.lazy(() =>
+  z.object({
     input: z.string(),
     name: z.string(),
-})));
+  })
+);
 export type Custom = z.infer<typeof ZCustom>;
 
-export const ZResponseOutputTextParamAnnotationFileCitation = z.lazy(() => (z.object({
+export const ZResponseOutputTextParamAnnotationFileCitation = z.lazy(() =>
+  z.object({
     file_id: z.string(),
     filename: z.string(),
     index: z.number(),
-    type: z.literal("file_citation"),
-})));
-export type ResponseOutputTextParamAnnotationFileCitation = z.infer<typeof ZResponseOutputTextParamAnnotationFileCitation>;
+    type: z.literal('file_citation'),
+  })
+);
+export type ResponseOutputTextParamAnnotationFileCitation = z.infer<
+  typeof ZResponseOutputTextParamAnnotationFileCitation
+>;
 
-export const ZResponseOutputTextParamAnnotationURLCitation = z.lazy(() => (z.object({
+export const ZResponseOutputTextParamAnnotationURLCitation = z.lazy(() =>
+  z.object({
     end_index: z.number(),
     start_index: z.number(),
     title: z.string(),
-    type: z.literal("url_citation"),
+    type: z.literal('url_citation'),
     url: z.string(),
-})));
-export type ResponseOutputTextParamAnnotationURLCitation = z.infer<typeof ZResponseOutputTextParamAnnotationURLCitation>;
+  })
+);
+export type ResponseOutputTextParamAnnotationURLCitation = z.infer<
+  typeof ZResponseOutputTextParamAnnotationURLCitation
+>;
 
-export const ZResponseOutputTextParamAnnotationContainerFileCitation = z.lazy(() => (z.object({
+export const ZResponseOutputTextParamAnnotationContainerFileCitation = z.lazy(() =>
+  z.object({
     container_id: z.string(),
     end_index: z.number(),
     file_id: z.string(),
     filename: z.string(),
     start_index: z.number(),
-    type: z.literal("container_file_citation"),
-})));
-export type ResponseOutputTextParamAnnotationContainerFileCitation = z.infer<typeof ZResponseOutputTextParamAnnotationContainerFileCitation>;
+    type: z.literal('container_file_citation'),
+  })
+);
+export type ResponseOutputTextParamAnnotationContainerFileCitation = z.infer<
+  typeof ZResponseOutputTextParamAnnotationContainerFileCitation
+>;
 
-export const ZResponseOutputTextParamAnnotationFilePath = z.lazy(() => (z.object({
+export const ZResponseOutputTextParamAnnotationFilePath = z.lazy(() =>
+  z.object({
     file_id: z.string(),
     index: z.number(),
-    type: z.literal("file_path"),
-})));
-export type ResponseOutputTextParamAnnotationFilePath = z.infer<typeof ZResponseOutputTextParamAnnotationFilePath>;
+    type: z.literal('file_path'),
+  })
+);
+export type ResponseOutputTextParamAnnotationFilePath = z.infer<
+  typeof ZResponseOutputTextParamAnnotationFilePath
+>;
 
-export const ZResponseOutputTextParamLogprob = z.lazy(() => (z.object({
+export const ZResponseOutputTextParamLogprob = z.lazy(() =>
+  z.object({
     token: z.string(),
     bytes: z.array(z.number()),
     logprob: z.number(),
     top_logprobs: z.array(ZResponseOutputTextParamLogprobTopLogprob),
-})));
+  })
+);
 export type ResponseOutputTextParamLogprob = z.infer<typeof ZResponseOutputTextParamLogprob>;
 
-export const ZResponseComputerToolCallParamActionDragPath = z.lazy(() => (z.object({
+export const ZResponseComputerToolCallParamActionDragPath = z.lazy(() =>
+  z.object({
     x: z.number(),
     y: z.number(),
-})));
-export type ResponseComputerToolCallParamActionDragPath = z.infer<typeof ZResponseComputerToolCallParamActionDragPath>;
+  })
+);
+export type ResponseComputerToolCallParamActionDragPath = z.infer<
+  typeof ZResponseComputerToolCallParamActionDragPath
+>;
 
-export const ZComputerActionListParamDragPath = z.lazy(() => (z.object({
+export const ZComputerActionListParamDragPath = z.lazy(() =>
+  z.object({
     x: z.number(),
     y: z.number(),
-})));
+  })
+);
 export type ComputerActionListParamDragPath = z.infer<typeof ZComputerActionListParamDragPath>;
 
-export const ZResponseFunctionWebSearchParamActionSearchSource = z.lazy(() => (z.object({
-    type: z.literal("url"),
+export const ZResponseFunctionWebSearchParamActionSearchSource = z.lazy(() =>
+  z.object({
+    type: z.literal('url'),
     url: z.string(),
-})));
-export type ResponseFunctionWebSearchParamActionSearchSource = z.infer<typeof ZResponseFunctionWebSearchParamActionSearchSource>;
+  })
+);
+export type ResponseFunctionWebSearchParamActionSearchSource = z.infer<
+  typeof ZResponseFunctionWebSearchParamActionSearchSource
+>;
 
-export const ZComparisonFilterComparisonFilter = z.lazy(() => (z.object({
+export const ZComparisonFilterComparisonFilter = z.lazy(() =>
+  z.object({
     key: z.string(),
-    type: z.union([z.literal("eq"), z.literal("ne"), z.literal("gt"), z.literal("gte"), z.literal("lt"), z.literal("lte"), z.literal("in"), z.literal("nin")]),
-    value: z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))]),
-})));
+    type: z.union([
+      z.literal('eq'),
+      z.literal('ne'),
+      z.literal('gt'),
+      z.literal('gte'),
+      z.literal('lt'),
+      z.literal('lte'),
+      z.literal('in'),
+      z.literal('nin'),
+    ]),
+    value: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.array(z.union([z.string(), z.number()])),
+    ]),
+  })
+);
 export type ComparisonFilterComparisonFilter = z.infer<typeof ZComparisonFilterComparisonFilter>;
 
-export const ZCompoundFilterCompoundFilter = z.lazy(() => (z.object({
+export const ZCompoundFilterCompoundFilter = z.lazy(() =>
+  z.object({
     filters: z.array(z.union([ZComparisonFilterComparisonFilter, z.object({}).passthrough()])),
-    type: z.union([z.literal("and"), z.literal("or")]),
-})));
+    type: z.union([z.literal('and'), z.literal('or')]),
+  })
+);
 export type CompoundFilterCompoundFilter = z.infer<typeof ZCompoundFilterCompoundFilter>;
 
-export const ZFileSearchToolParamRankingOptions = z.lazy(() => (z.object({
+export const ZFileSearchToolParamRankingOptions = z.lazy(() =>
+  z.object({
     hybrid_search: ZFileSearchToolParamRankingOptionsHybridSearch,
-    ranker: z.union([z.literal("auto"), z.literal("default-2024-11-15")]),
+    ranker: z.union([z.literal('auto'), z.literal('default-2024-11-15')]),
     score_threshold: z.number(),
-})));
+  })
+);
 export type FileSearchToolParamRankingOptions = z.infer<typeof ZFileSearchToolParamRankingOptions>;
 
-export const ZWebSearchToolParamFilters = z.lazy(() => (z.object({
+export const ZWebSearchToolParamFilters = z.lazy(() =>
+  z.object({
     allowed_domains: z.array(z.string()).nullable().optional(),
-})));
+  })
+);
 export type WebSearchToolParamFilters = z.infer<typeof ZWebSearchToolParamFilters>;
 
-export const ZWebSearchToolParamUserLocation = z.lazy(() => (z.object({
+export const ZWebSearchToolParamUserLocation = z.lazy(() =>
+  z.object({
     city: z.string().nullable().optional(),
     country: z.string().nullable().optional(),
     region: z.string().nullable().optional(),
     timezone: z.string().nullable().optional(),
-    type: z.literal("approximate"),
-})));
+    type: z.literal('approximate'),
+  })
+);
 export type WebSearchToolParamUserLocation = z.infer<typeof ZWebSearchToolParamUserLocation>;
 
-export const ZToolParamMcpAllowedToolsMcpToolFilter = z.lazy(() => (z.object({
+export const ZToolParamMcpAllowedToolsMcpToolFilter = z.lazy(() =>
+  z.object({
     read_only: z.boolean(),
     tool_names: z.array(z.string()),
-})));
-export type ToolParamMcpAllowedToolsMcpToolFilter = z.infer<typeof ZToolParamMcpAllowedToolsMcpToolFilter>;
+  })
+);
+export type ToolParamMcpAllowedToolsMcpToolFilter = z.infer<
+  typeof ZToolParamMcpAllowedToolsMcpToolFilter
+>;
 
-export const ZToolParamMcpRequireApprovalMcpToolApprovalFilter = z.lazy(() => (z.object({
+export const ZToolParamMcpRequireApprovalMcpToolApprovalFilter = z.lazy(() =>
+  z.object({
     always: ZToolParamMcpRequireApprovalMcpToolApprovalFilterAlways,
     never: ZToolParamMcpRequireApprovalMcpToolApprovalFilterNever,
-})));
-export type ToolParamMcpRequireApprovalMcpToolApprovalFilter = z.infer<typeof ZToolParamMcpRequireApprovalMcpToolApprovalFilter>;
+  })
+);
+export type ToolParamMcpRequireApprovalMcpToolApprovalFilter = z.infer<
+  typeof ZToolParamMcpRequireApprovalMcpToolApprovalFilter
+>;
 
-export const ZToolParamCodeInterpreterContainerCodeInterpreterToolAuto = z.lazy(() => (z.object({
-    type: z.literal("auto"),
+export const ZToolParamCodeInterpreterContainerCodeInterpreterToolAuto = z.lazy(() =>
+  z.object({
+    type: z.literal('auto'),
     file_ids: z.array(z.string()),
-    memory_limit: z.union([z.literal("1g"), z.literal("4g"), z.literal("16g"), z.literal("64g")]).nullable().optional(),
-    network_policy: z.union([ZContainerNetworkPolicyDisabledParam, ZContainerNetworkPolicyAllowlistParam]),
-})));
-export type ToolParamCodeInterpreterContainerCodeInterpreterToolAuto = z.infer<typeof ZToolParamCodeInterpreterContainerCodeInterpreterToolAuto>;
+    memory_limit: z
+      .union([z.literal('1g'), z.literal('4g'), z.literal('16g'), z.literal('64g')])
+      .nullable()
+      .optional(),
+    network_policy: z.union([
+      ZContainerNetworkPolicyDisabledParam,
+      ZContainerNetworkPolicyAllowlistParam,
+    ]),
+  })
+);
+export type ToolParamCodeInterpreterContainerCodeInterpreterToolAuto = z.infer<
+  typeof ZToolParamCodeInterpreterContainerCodeInterpreterToolAuto
+>;
 
-export const ZToolParamImageGenerationInputImageMask = z.lazy(() => (z.object({
+export const ZToolParamImageGenerationInputImageMask = z.lazy(() =>
+  z.object({
     file_id: z.string(),
     image_url: z.string(),
-})));
-export type ToolParamImageGenerationInputImageMask = z.infer<typeof ZToolParamImageGenerationInputImageMask>;
+  })
+);
+export type ToolParamImageGenerationInputImageMask = z.infer<
+  typeof ZToolParamImageGenerationInputImageMask
+>;
 
-export const ZContainerAutoParam = z.lazy(() => (z.object({
-    type: z.literal("container_auto"),
+export const ZContainerAutoParam = z.lazy(() =>
+  z.object({
+    type: z.literal('container_auto'),
     file_ids: z.array(z.string()),
-    memory_limit: z.union([z.literal("1g"), z.literal("4g"), z.literal("16g"), z.literal("64g")]).nullable().optional(),
-    network_policy: z.union([ZContainerNetworkPolicyDisabledParam, ZContainerNetworkPolicyAllowlistParam]),
+    memory_limit: z
+      .union([z.literal('1g'), z.literal('4g'), z.literal('16g'), z.literal('64g')])
+      .nullable()
+      .optional(),
+    network_policy: z.union([
+      ZContainerNetworkPolicyDisabledParam,
+      ZContainerNetworkPolicyAllowlistParam,
+    ]),
     skills: z.array(z.union([ZSkillReferenceParam, ZInlineSkillParam])),
-})));
+  })
+);
 export type ContainerAutoParam = z.infer<typeof ZContainerAutoParam>;
 
-export const ZCustomToolInputFormatText = z.lazy(() => (z.object({
-    type: z.literal("text"),
-})));
+export const ZCustomToolInputFormatText = z.lazy(() =>
+  z.object({
+    type: z.literal('text'),
+  })
+);
 export type CustomToolInputFormatText = z.infer<typeof ZCustomToolInputFormatText>;
 
-export const ZCustomToolInputFormatGrammar = z.lazy(() => (z.object({
+export const ZCustomToolInputFormatGrammar = z.lazy(() =>
+  z.object({
     definition: z.string(),
-    syntax: z.union([z.literal("lark"), z.literal("regex")]),
-    type: z.literal("grammar"),
-})));
+    syntax: z.union([z.literal('lark'), z.literal('regex')]),
+    type: z.literal('grammar'),
+  })
+);
 export type CustomToolInputFormatGrammar = z.infer<typeof ZCustomToolInputFormatGrammar>;
 
-export const ZNamespaceToolParamToolFunction = z.lazy(() => (z.object({
+export const ZNamespaceToolParamToolFunction = z.lazy(() =>
+  z.object({
     name: z.string(),
-    type: z.literal("function"),
+    type: z.literal('function'),
     defer_loading: z.boolean(),
     description: z.string().nullable().optional(),
     parameters: z.object({}).passthrough().nullable().optional(),
     strict: z.boolean().nullable().optional(),
-})));
+  })
+);
 export type NamespaceToolParamToolFunction = z.infer<typeof ZNamespaceToolParamToolFunction>;
 
-export const ZWebSearchPreviewToolParamUserLocation = z.lazy(() => (z.object({
-    type: z.literal("approximate"),
+export const ZWebSearchPreviewToolParamUserLocation = z.lazy(() =>
+  z.object({
+    type: z.literal('approximate'),
     city: z.string().nullable().optional(),
     country: z.string().nullable().optional(),
     region: z.string().nullable().optional(),
     timezone: z.string().nullable().optional(),
-})));
-export type WebSearchPreviewToolParamUserLocation = z.infer<typeof ZWebSearchPreviewToolParamUserLocation>;
+  })
+);
+export type WebSearchPreviewToolParamUserLocation = z.infer<
+  typeof ZWebSearchPreviewToolParamUserLocation
+>;
 
-export const ZLocalSkillParam = z.lazy(() => (z.object({
+export const ZLocalSkillParam = z.lazy(() =>
+  z.object({
     description: z.string(),
     name: z.string(),
     path: z.string(),
-})));
+  })
+);
 export type LocalSkillParam = z.infer<typeof ZLocalSkillParam>;
 
-export const ZResponseFunctionShellCallOutputContentParamOutcomeTimeout = z.lazy(() => (z.object({
-    type: z.literal("timeout"),
-})));
-export type ResponseFunctionShellCallOutputContentParamOutcomeTimeout = z.infer<typeof ZResponseFunctionShellCallOutputContentParamOutcomeTimeout>;
+export const ZResponseFunctionShellCallOutputContentParamOutcomeTimeout = z.lazy(() =>
+  z.object({
+    type: z.literal('timeout'),
+  })
+);
+export type ResponseFunctionShellCallOutputContentParamOutcomeTimeout = z.infer<
+  typeof ZResponseFunctionShellCallOutputContentParamOutcomeTimeout
+>;
 
-export const ZResponseFunctionShellCallOutputContentParamOutcomeExit = z.lazy(() => (z.object({
+export const ZResponseFunctionShellCallOutputContentParamOutcomeExit = z.lazy(() =>
+  z.object({
     exit_code: z.number(),
-    type: z.literal("exit"),
-})));
-export type ResponseFunctionShellCallOutputContentParamOutcomeExit = z.infer<typeof ZResponseFunctionShellCallOutputContentParamOutcomeExit>;
+    type: z.literal('exit'),
+  })
+);
+export type ResponseFunctionShellCallOutputContentParamOutcomeExit = z.infer<
+  typeof ZResponseFunctionShellCallOutputContentParamOutcomeExit
+>;
 
-export const ZCitationsConfig = z.lazy(() => (z.object({
+export const ZCitationsConfig = z.lazy(() =>
+  z.object({
     enabled: z.boolean(),
-})));
+  })
+);
 export type CitationsConfig = z.infer<typeof ZCitationsConfig>;
 
-export const ZBase64PDFSource = z.lazy(() => (z.object({
+export const ZBase64PDFSource = z.lazy(() =>
+  z.object({
     data: z.string(),
-    media_type: z.literal("application/pdf"),
-    type: z.literal("base64"),
-})));
+    media_type: z.literal('application/pdf'),
+    type: z.literal('base64'),
+  })
+);
 export type Base64PDFSource = z.infer<typeof ZBase64PDFSource>;
 
-export const ZPlainTextSource = z.lazy(() => (z.object({
+export const ZPlainTextSource = z.lazy(() =>
+  z.object({
     data: z.string(),
-    media_type: z.literal("text/plain"),
-    type: z.literal("text"),
-})));
+    media_type: z.literal('text/plain'),
+    type: z.literal('text'),
+  })
+);
 export type PlainTextSource = z.infer<typeof ZPlainTextSource>;
 
-export const ZLogprobTopLogprob = z.lazy(() => (z.object({
+export const ZLogprobTopLogprob = z.lazy(() =>
+  z.object({
     token: z.string(),
     bytes: z.array(z.number()),
     logprob: z.number(),
-})));
+  })
+);
 export type LogprobTopLogprob = z.infer<typeof ZLogprobTopLogprob>;
 
-export const ZContainerNetworkPolicyDomainSecret = z.lazy(() => (z.object({
+export const ZContainerNetworkPolicyDomainSecret = z.lazy(() =>
+  z.object({
     domain: z.string(),
     name: z.string(),
     value: z.string(),
-})));
-export type ContainerNetworkPolicyDomainSecret = z.infer<typeof ZContainerNetworkPolicyDomainSecret>;
+  })
+);
+export type ContainerNetworkPolicyDomainSecret = z.infer<
+  typeof ZContainerNetworkPolicyDomainSecret
+>;
 
-export const ZInlineSkillSource = z.lazy(() => (z.object({
+export const ZInlineSkillSource = z.lazy(() =>
+  z.object({
     data: z.string(),
-    media_type: z.literal("application/zip"),
-    type: z.literal("base64"),
-})));
+    media_type: z.literal('application/zip'),
+    type: z.literal('base64'),
+  })
+);
 export type InlineSkillSource = z.infer<typeof ZInlineSkillSource>;
 
-export const ZChatCompletionMessageAnnotationURLCitation = z.lazy(() => (z.object({
+export const ZChatCompletionMessageAnnotationURLCitation = z.lazy(() =>
+  z.object({
     end_index: z.number(),
     start_index: z.number(),
     title: z.string(),
     url: z.string(),
-})));
-export type ChatCompletionMessageAnnotationURLCitation = z.infer<typeof ZChatCompletionMessageAnnotationURLCitation>;
+  })
+);
+export type ChatCompletionMessageAnnotationURLCitation = z.infer<
+  typeof ZChatCompletionMessageAnnotationURLCitation
+>;
 
-export const ZChatCompletionMessageFunctionToolCallFunction = z.lazy(() => (z.object({
+export const ZChatCompletionMessageFunctionToolCallFunction = z.lazy(() =>
+  z.object({
     arguments: z.string(),
     name: z.string(),
-})));
-export type ChatCompletionMessageFunctionToolCallFunction = z.infer<typeof ZChatCompletionMessageFunctionToolCallFunction>;
+  })
+);
+export type ChatCompletionMessageFunctionToolCallFunction = z.infer<
+  typeof ZChatCompletionMessageFunctionToolCallFunction
+>;
 
-export const ZChatCompletionMessageCustomToolCallCustom = z.lazy(() => (z.object({
+export const ZChatCompletionMessageCustomToolCallCustom = z.lazy(() =>
+  z.object({
     input: z.string(),
     name: z.string(),
-})));
-export type ChatCompletionMessageCustomToolCallCustom = z.infer<typeof ZChatCompletionMessageCustomToolCallCustom>;
+  })
+);
+export type ChatCompletionMessageCustomToolCallCustom = z.infer<
+  typeof ZChatCompletionMessageCustomToolCallCustom
+>;
 
-export const ZResponseOutputTextParamLogprobTopLogprob = z.lazy(() => (z.object({
+export const ZResponseOutputTextParamLogprobTopLogprob = z.lazy(() =>
+  z.object({
     token: z.string(),
     bytes: z.array(z.number()),
     logprob: z.number(),
-})));
-export type ResponseOutputTextParamLogprobTopLogprob = z.infer<typeof ZResponseOutputTextParamLogprobTopLogprob>;
+  })
+);
+export type ResponseOutputTextParamLogprobTopLogprob = z.infer<
+  typeof ZResponseOutputTextParamLogprobTopLogprob
+>;
 
-export const ZFileSearchToolParamRankingOptionsHybridSearch = z.lazy(() => (z.object({
+export const ZFileSearchToolParamRankingOptionsHybridSearch = z.lazy(() =>
+  z.object({
     embedding_weight: z.number(),
     text_weight: z.number(),
-})));
-export type FileSearchToolParamRankingOptionsHybridSearch = z.infer<typeof ZFileSearchToolParamRankingOptionsHybridSearch>;
+  })
+);
+export type FileSearchToolParamRankingOptionsHybridSearch = z.infer<
+  typeof ZFileSearchToolParamRankingOptionsHybridSearch
+>;
 
-export const ZToolParamMcpRequireApprovalMcpToolApprovalFilterAlways = z.lazy(() => (z.object({
+export const ZToolParamMcpRequireApprovalMcpToolApprovalFilterAlways = z.lazy(() =>
+  z.object({
     read_only: z.boolean(),
     tool_names: z.array(z.string()),
-})));
-export type ToolParamMcpRequireApprovalMcpToolApprovalFilterAlways = z.infer<typeof ZToolParamMcpRequireApprovalMcpToolApprovalFilterAlways>;
+  })
+);
+export type ToolParamMcpRequireApprovalMcpToolApprovalFilterAlways = z.infer<
+  typeof ZToolParamMcpRequireApprovalMcpToolApprovalFilterAlways
+>;
 
-export const ZToolParamMcpRequireApprovalMcpToolApprovalFilterNever = z.lazy(() => (z.object({
+export const ZToolParamMcpRequireApprovalMcpToolApprovalFilterNever = z.lazy(() =>
+  z.object({
     read_only: z.boolean(),
     tool_names: z.array(z.string()),
-})));
-export type ToolParamMcpRequireApprovalMcpToolApprovalFilterNever = z.infer<typeof ZToolParamMcpRequireApprovalMcpToolApprovalFilterNever>;
+  })
+);
+export type ToolParamMcpRequireApprovalMcpToolApprovalFilterNever = z.infer<
+  typeof ZToolParamMcpRequireApprovalMcpToolApprovalFilterNever
+>;
 
-export const ZContainerNetworkPolicyDisabledParam = z.lazy(() => (z.object({
-    type: z.literal("disabled"),
-})));
-export type ContainerNetworkPolicyDisabledParam = z.infer<typeof ZContainerNetworkPolicyDisabledParam>;
+export const ZContainerNetworkPolicyDisabledParam = z.lazy(() =>
+  z.object({
+    type: z.literal('disabled'),
+  })
+);
+export type ContainerNetworkPolicyDisabledParam = z.infer<
+  typeof ZContainerNetworkPolicyDisabledParam
+>;
 
-export const ZContainerNetworkPolicyAllowlistParam = z.lazy(() => (z.object({
+export const ZContainerNetworkPolicyAllowlistParam = z.lazy(() =>
+  z.object({
     allowed_domains: z.array(z.string()),
-    type: z.literal("allowlist"),
+    type: z.literal('allowlist'),
     domain_secrets: z.array(ZContainerNetworkPolicyDomainSecretParam),
-})));
-export type ContainerNetworkPolicyAllowlistParam = z.infer<typeof ZContainerNetworkPolicyAllowlistParam>;
+  })
+);
+export type ContainerNetworkPolicyAllowlistParam = z.infer<
+  typeof ZContainerNetworkPolicyAllowlistParam
+>;
 
-export const ZSkillReferenceParam = z.lazy(() => (z.object({
+export const ZSkillReferenceParam = z.lazy(() =>
+  z.object({
     skill_id: z.string(),
-    type: z.literal("skill_reference"),
+    type: z.literal('skill_reference'),
     version: z.string(),
-})));
+  })
+);
 export type SkillReferenceParam = z.infer<typeof ZSkillReferenceParam>;
 
-export const ZInlineSkillParam = z.lazy(() => (z.object({
+export const ZInlineSkillParam = z.lazy(() =>
+  z.object({
     description: z.string(),
     name: z.string(),
     source: ZInlineSkillSourceParam,
-    type: z.literal("inline"),
-})));
+    type: z.literal('inline'),
+  })
+);
 export type InlineSkillParam = z.infer<typeof ZInlineSkillParam>;
 
-export const ZContainerNetworkPolicyDomainSecretParam = z.lazy(() => (z.object({
+export const ZContainerNetworkPolicyDomainSecretParam = z.lazy(() =>
+  z.object({
     domain: z.string(),
     name: z.string(),
     value: z.string(),
-})));
-export type ContainerNetworkPolicyDomainSecretParam = z.infer<typeof ZContainerNetworkPolicyDomainSecretParam>;
+  })
+);
+export type ContainerNetworkPolicyDomainSecretParam = z.infer<
+  typeof ZContainerNetworkPolicyDomainSecretParam
+>;
 
-export const ZInlineSkillSourceParam = z.lazy(() => (z.object({
+export const ZInlineSkillSourceParam = z.lazy(() =>
+  z.object({
     data: z.string(),
-    media_type: z.literal("application/zip"),
-    type: z.literal("base64"),
-})));
+    media_type: z.literal('application/zip'),
+    type: z.literal('base64'),
+  })
+);
 export type InlineSkillSourceParam = z.infer<typeof ZInlineSkillSourceParam>;

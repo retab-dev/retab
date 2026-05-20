@@ -550,6 +550,7 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         request = self.prepare_delete(workflow_id, test_id)
         self._client._prepared_request(request)
 
+
 class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
     """Workflow tests API client (asynchronous)."""
 

@@ -393,7 +393,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         workflow_id: str,
         block_id: str,
         export_source: Literal["outputs", "inputs"] = "outputs",
-
         selected_run_ids: List[str] | None = None,
         status: str | None = None,
         exclude_status: str | None = None,
@@ -641,7 +640,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         workflow_id: str,
         block_id: str,
         export_source: Literal["outputs", "inputs"] = "outputs",
-
         selected_run_ids: List[str] | None = None,
         status: str | None = None,
         exclude_status: str | None = None,

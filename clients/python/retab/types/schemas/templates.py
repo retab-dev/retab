@@ -31,8 +31,6 @@ class TemplateSchema(RetabBaseModel):
     sample_document_filename: Optional[str] = None
     """The filename of the sample document to use for creating the Schema."""
 
-
-
     pydantic_model: type[BaseModel] = Field(default=None, exclude=True, repr=False)  # type: ignore
 
     _partial_pydantic_model: type[BaseModel] = PrivateAttr()

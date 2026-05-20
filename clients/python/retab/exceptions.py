@@ -82,44 +82,53 @@ class APIError(RetabError, RuntimeError):
 
 class AuthenticationError(APIError):
     """HTTP 401 — invalid or missing API key."""
+
     pass
 
 
 class PermissionDeniedError(APIError):
     """HTTP 403 — valid API key but insufficient permissions."""
+
     pass
 
 
 class NotFoundError(APIError):
     """HTTP 404 — the requested resource does not exist."""
+
     pass
 
 
 class ConflictError(APIError):
     """HTTP 409 — a compare-and-swap conflict; re-read and retry."""
+
     pass
 
 
 class ValidationError(APIError):
     """HTTP 422 — request body failed server-side validation."""
+
     pass
 
 
 class RateLimitError(APIError):
     """HTTP 429 — too many requests."""
+
     pass
 
 
 class InternalServerError(APIError):
     """HTTP 5xx — server-side error."""
+
     pass
 
 
 class APIConnectionError(RetabError):
     """Network-level error (DNS failure, refused connection, etc.)."""
+
     pass
 
 
 class APITimeoutError(APIConnectionError):
     """The request timed out."""
+
     pass

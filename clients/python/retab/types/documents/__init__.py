@@ -4,8 +4,8 @@ from .classify import Category, ClassifyChoice, ClassifyConsensus, ClassifyDecis
 
 
 __all__ = [
-    "ParseRequest", 
-    "ParseResponse", 
+    "ParseRequest",
+    "ParseResponse",
     "RetabUsage",
     "Category",
     "Subdocument",

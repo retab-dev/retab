@@ -29,10 +29,7 @@ class SplitsMixin:
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
             "document": prepare_mime_document(document),
-            "subdocuments": [
-                Subdocument(**subdocument) if isinstance(subdocument, dict) else subdocument
-                for subdocument in subdocuments
-            ],
+            "subdocuments": [Subdocument(**subdocument) if isinstance(subdocument, dict) else subdocument for subdocument in subdocuments],
             "model": model,
         }
         if instructions is not None:

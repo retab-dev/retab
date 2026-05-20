@@ -36,12 +36,14 @@ SupportedEndpoint = str
 
 class JobResponse(RetabBaseModel):
     """Response stored when job completes successfully."""
+
     status_code: int
     body: dict[str, Any]
 
 
 class JobError(RetabBaseModel):
     """Error details when job fails."""
+
     code: str
     message: str
     details: dict[str, Any] | None = None
@@ -54,6 +56,7 @@ class Job(RetabBaseModel):
     Use this to track the status of long-running operations like extract, parse,
     split, classify, schema generation, and template operations.
     """
+
     id: str
     object: Literal["job"] = "job"
     status: JobStatus
@@ -73,16 +76,15 @@ class Job(RetabBaseModel):
 
 class CreateJobRequest(RetabBaseModel):
     """Request body for creating a new job."""
+
     endpoint: SupportedEndpoint
     request: dict[str, Any]
-    metadata: dict[str, str] | None = Field(
-        default=None,
-        description="Max 16 pairs; keys ≤64 chars, values ≤512 chars"
-    )
+    metadata: dict[str, str] | None = Field(default=None, description="Max 16 pairs; keys ≤64 chars, values ≤512 chars")
 
 
 class JobListResponse(RetabBaseModel):
     """Response for listing jobs."""
+
     object: Literal["list"] = "list"
     data: list[Job]
     first_id: str | None = None

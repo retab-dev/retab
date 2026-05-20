@@ -30,9 +30,7 @@ from retab.types.workflows.model import WorkflowSnapshotRef
 NConsensusValue = Literal[3, 5, 7]
 ExperimentBlockKind = Literal["extract", "classifier", "split", "for_each"]
 ExperimentRunStatus = Literal["pending", "running", "completed", "error", "cancelled"]
-ExperimentPublicStatus = Literal[
-    "draft", "processing", "completed", "failed", "cancelled"
-]
+ExperimentPublicStatus = Literal["draft", "processing", "completed", "failed", "cancelled"]
 ExperimentTargetKind = Literal["field", "subdocument", "category", "key"]
 ExperimentMetricView = Literal["summary", "by_document", "by_target", "votes"]
 ExperimentSchemaDriftStatus = Literal["none", "drifted", "unknown"]
@@ -286,9 +284,7 @@ class ExperimentConfusionSummaryAggregate(RetabBaseModel):
     flows: list[ExperimentConfusionFlowMetric] = Field(default_factory=list)
 
 
-ExperimentSummaryAggregate = (
-    ExperimentExtractSummaryAggregate | ExperimentConfusionSummaryAggregate
-)
+ExperimentSummaryAggregate = ExperimentExtractSummaryAggregate | ExperimentConfusionSummaryAggregate
 
 
 class ExperimentSummaryMetricsResponse(RetabBaseModel):

@@ -38,9 +38,7 @@ WorkflowTestRunStatus = Literal[
 #: Strict subset of `WorkflowTestRunStatus` — values that can appear on a
 #: completed run record's `latest_run_summary`. Mirrors the backend's
 #: `TerminalWorkflowTestRunStatus` literal.
-TerminalWorkflowTestRunStatus = Literal[
-    "passed", "failed", "blocked", "error", "cancelled"
-]
+TerminalWorkflowTestRunStatus = Literal["passed", "failed", "blocked", "error", "cancelled"]
 
 # ---------------------------------------------------------------------------
 # Discriminated unions: `target` (what's tested) and `source` (where inputs come from)
@@ -305,9 +303,7 @@ class WorkflowTestRun(RetabBaseModel):
     target: WorkflowTestBlockTarget | None = None
     test_id: str | None = None
     total_tests: int
-    counts: WorkflowTestBatchExecutionCounts = Field(
-        default_factory=WorkflowTestBatchExecutionCounts
-    )
+    counts: WorkflowTestBatchExecutionCounts = Field(default_factory=WorkflowTestBatchExecutionCounts)
 
 
 __all__ = [

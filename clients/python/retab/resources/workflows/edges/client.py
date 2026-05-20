@@ -88,15 +88,11 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
     def _coerce_batch_requests(
         edges: Sequence[WorkflowEdgeCreateRequest | Dict[str, Any]],
     ) -> List[WorkflowEdgeCreateRequest]:
-        return [
-            edge if isinstance(edge, WorkflowEdgeCreateRequest) else WorkflowEdgeCreateRequest.model_validate(edge)
-            for edge in edges
-        ]
+        return [edge if isinstance(edge, WorkflowEdgeCreateRequest) else WorkflowEdgeCreateRequest.model_validate(edge) for edge in edges]
 
     def list(
         self,
         workflow_id: str,
-
         source_block: str | None = None,
         target_block: str | None = None,
     ) -> PaginatedList[WorkflowEdgeDoc]:
@@ -199,7 +195,6 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
     async def list(
         self,
         workflow_id: str,
-
         source_block: str | None = None,
         target_block: str | None = None,
     ) -> PaginatedList[WorkflowEdgeDoc]:
