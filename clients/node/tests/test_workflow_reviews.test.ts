@@ -182,6 +182,18 @@ describe('review overlay zod schemas', () => {
     expect(overlay.claim?.holder.kind).toBe('agent');
   });
 
+  test('ZReviewOverlay accepts for_each overlays without runtime projection identity', () => {
+    const overlay = ZReviewOverlay.parse({
+      ...OVERLAY_JSON,
+      block_id: 'blk_for_each',
+      runtime_block_id: 'blk_for_each__map_partition',
+      block_type: 'for_each',
+    });
+    expect(overlay.block_type).toBe('for_each');
+    expect(overlay.block_id).toBe('blk_for_each');
+    expect('runtime_block_id' in overlay).toBe(false);
+  });
+
   test('ZReviewQueueItem round-trips and ZReviewQueueResponse wraps it', () => {
     const response = ZReviewQueueResponse.parse({
       data: [QUEUE_ITEM_JSON],
@@ -191,6 +203,18 @@ describe('review overlay zod schemas', () => {
     expect(response.data).toHaveLength(1);
     expect(response.data[0]?.block_id).toBe('extract-1');
     expect(ZReviewQueueItem.parse(QUEUE_ITEM_JSON).rev).toBe(3);
+  });
+
+  test('ZReviewQueueItem accepts for_each items without runtime projection identity', () => {
+    const item = ZReviewQueueItem.parse({
+      ...QUEUE_ITEM_JSON,
+      block_id: 'blk_for_each',
+      runtime_block_id: 'blk_for_each__map_partition',
+      block_type: 'for_each',
+    });
+    expect(item.block_type).toBe('for_each');
+    expect(item.block_id).toBe('blk_for_each');
+    expect('runtime_block_id' in item).toBe(false);
   });
 
   test('ZSubmitDecisionResponse round-trips submission status + overlay', () => {
@@ -272,6 +296,7 @@ describe('APIWorkflowReviews request shapes', () => {
         verdict: 'approved',
         version_stamp: 3,
         edited_output: { invoice_number: 'INV-002' },
+        reviewable_value: null,
         on_seq: 1,
         effective_seq: 2,
         reason: null,
@@ -281,6 +306,27 @@ describe('APIWorkflowReviews request shapes', () => {
       headers: undefined,
     });
     expect(result.submission_status).toBe('accepted');
+  });
+
+  test('approve() can post reviewable_value instead of edited_output', async () => {
+    const mock = new MockClient({ submission_status: 'accepted', overlay: OVERLAY_JSON });
+    const reviews = new APIWorkflowReviews(mock);
+
+    await reviews.approve('run_1', 'extract-1', {
+      versionStamp: 3,
+      reviewableValue: { chunks: [{ key: 'legal-mentions', pages: [1] }] },
+    });
+
+    expect(mock.lastFetchParams?.body).toEqual({
+      verdict: 'approved',
+      version_stamp: 3,
+      edited_output: null,
+      reviewable_value: { chunks: [{ key: 'legal-mentions', pages: [1] }] },
+      on_seq: null,
+      effective_seq: null,
+      reason: null,
+      command_id: null,
+    });
   });
 
   test('reject() posts verdict=rejected with the required reason', async () => {
@@ -293,6 +339,7 @@ describe('APIWorkflowReviews request shapes', () => {
       verdict: 'rejected',
       version_stamp: 3,
       edited_output: null,
+      reviewable_value: null,
       on_seq: null,
       effective_seq: null,
       reason: 'wrong total',
@@ -314,6 +361,7 @@ describe('APIWorkflowReviews request shapes', () => {
       method: 'POST',
       body: {
         snapshot: { invoice_number: 'INV-003' },
+        reviewable_value: null,
         version_stamp: 3,
         origin: 'human_edit',
         note: null,
@@ -338,6 +386,7 @@ describe('APIWorkflowReviews request shapes', () => {
 
     expect(mock.lastFetchParams?.body).toEqual({
       snapshot: { invoice_number: 'INV-004' },
+      reviewable_value: null,
       version_stamp: 3,
       origin: 'agent_edit',
       note: 'agent proposal',

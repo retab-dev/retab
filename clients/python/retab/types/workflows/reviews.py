@@ -28,7 +28,7 @@ from retab.types.base import RetabBaseModel
 ActorKind = Literal["model", "agent", "human"]
 
 #: Block type the gated run belongs to.
-ReviewBlockType = Literal["extract", "classifier", "split", "conditional"]
+ReviewBlockType = Literal["extract", "classifier", "split", "for_each"]
 
 #: Overlay lifecycle status.
 ReviewStatus = Literal["awaiting_review", "approved", "rejected"]

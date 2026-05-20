@@ -47,11 +47,14 @@ func reviewOverlayJSON(rev int, status string) map[string]any {
 
 func TestWorkflowReviewsList(t *testing.T) {
 	var seenMethod, seenPath, seenQuery string
+	item := reviewOverlayJSON(0, "awaiting_review")
+	item["block_id"] = "blk_for_each"
+	item["block_type"] = "for_each"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenMethod, seenPath, seenQuery = r.Method, r.URL.Path, r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"data":     []any{reviewOverlayJSON(0, "awaiting_review")},
+			"data":     []any{item},
 			"has_more": true,
 		})
 	}))
@@ -81,7 +84,7 @@ func TestWorkflowReviewsList(t *testing.T) {
 	if !resp.HasMore || len(resp.Data) != 1 {
 		t.Fatalf("resp = %#v", resp)
 	}
-	if resp.Data[0].ID != "blockrun_1" || resp.Data[0].BlockType != "extract" {
+	if resp.Data[0].ID != "blockrun_1" || resp.Data[0].BlockType != "for_each" {
 		t.Fatalf("queue item = %#v", resp.Data[0])
 	}
 }
@@ -114,6 +117,29 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	}
 	if len(overlay.Versions) != 1 || overlay.Versions[0].Origin != "model_output" {
 		t.Fatalf("versions = %#v", overlay.Versions)
+	}
+}
+
+func TestWorkflowReviewsGetParsesForEachOverlayWithoutRuntimeBlockID(t *testing.T) {
+	body := reviewOverlayJSON(3, "awaiting_review")
+	body["block_id"] = "blk_for_each"
+	body["block_type"] = "for_each"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(body)
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	overlay, err := client.Workflows.Reviews.Get(context.Background(), "run_1", "blk_for_each")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if overlay.BlockType != "for_each" {
+		t.Fatalf("block type = %s", overlay.BlockType)
 	}
 }
 

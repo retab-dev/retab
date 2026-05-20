@@ -32,7 +32,8 @@ gated block run's output history, post corrections, and submit a verdict
 (approve / reject).
 
 Setup happens on the block config: add ` + "`config.hil`" + ` to an
-` + "`extract`" + `, ` + "`split`" + `, or ` + "`classifier`" + ` block. When
+` + "`extract`" + `, ` + "`split`" + `, ` + "`classifier`" + `, or split-by-key
+` + "`for_each`" + ` block. When
 the gate predicate fires, the run status is
 ` + "`waiting_for_human`" + ` and this command group is the review surface.
 
@@ -137,6 +138,42 @@ var workflowsReviewsClassifierApproveCmd = &cobra.Command{
 	}),
 }
 
+var workflowsReviewsForEachCmd = &cobra.Command{
+	Use:   "for-each",
+	Short: "Review for_each partition chunks",
+}
+
+var workflowsReviewsForEachApproveCmd = &cobra.Command{
+	Use:   "approve <run-id> <block-id>",
+	Short: "Approve a split_by_key for_each reviewable value",
+	Long: `Approve a split_by_key for_each map-phase review with partition chunks.
+
+Use --set "key=1-3,5" for inline edits or --chunks-json / --value-file
+for the JSON shape {"chunks":[{"key":"booking confirmation","pages":[1]}]}.
+Partition keys passed through --set cannot contain "="; use --chunks-json or
+--value-file for those keys.
+
+This command is only for for_each blocks configured with map_method=split_by_key.
+The CLI checks local shape errors such as duplicate keys or duplicate pages
+inside one chunk. Different keys may share a page when several items appear on
+the same source page; the backend validates the block config and document page
+bounds.`,
+	Example: `  retab workflows reviews for-each approve run_123 blk_for_each \
+    --set "legal-mentions=1" \
+    --set "booking confirmation=2-3"
+
+  retab workflows reviews for-each approve run_123 blk_for_each \
+    --chunks-json '{"chunks":[{"key":"legal-mentions","pages":[1]}]}'`,
+	Args: cobra.ExactArgs(2),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		value, err := partitionReviewableValueFromFlags(cmd)
+		if err != nil {
+			return err
+		}
+		return approveReviewableValue(cmd, args[0], args[1], value)
+	}),
+}
+
 var workflowsReviewsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List block runs awaiting review",
@@ -238,14 +275,22 @@ the model's original is preserved as seq 0 for audit.`,
 		if cmd.Flags().Changed("edited-output-file") && cmd.Flags().Changed("edited-output-json") {
 			return fmt.Errorf("--edited-output-file and --edited-output-json are mutually exclusive")
 		}
-		if path, _ := cmd.Flags().GetString("edited-output-file"); path != "" {
+		if cmd.Flags().Changed("edited-output-file") {
+			path, _ := cmd.Flags().GetString("edited-output-file")
+			if strings.TrimSpace(path) == "" {
+				return fmt.Errorf("--edited-output-file must not be blank")
+			}
 			data, err := readJSONMap(path)
 			if err != nil {
 				return fmt.Errorf("--edited-output-file: %w", err)
 			}
 			req.EditedOutput = data
 		}
-		if raw, _ := cmd.Flags().GetString("edited-output-json"); raw != "" {
+		if cmd.Flags().Changed("edited-output-json") {
+			raw, _ := cmd.Flags().GetString("edited-output-json")
+			if strings.TrimSpace(raw) == "" {
+				return fmt.Errorf("--edited-output-json must not be blank")
+			}
 			data, err := parseJSONMap(raw)
 			if err != nil {
 				return fmt.Errorf("--edited-output-json: %w", err)
@@ -322,14 +367,22 @@ Pass it with ` + "`--snapshot-file`" + ` for larger payloads or
 			return fmt.Errorf("--snapshot-file and --snapshot-json are mutually exclusive")
 		}
 		var snapshot map[string]any
-		if path, _ := cmd.Flags().GetString("snapshot-file"); path != "" {
+		if cmd.Flags().Changed("snapshot-file") {
+			path, _ := cmd.Flags().GetString("snapshot-file")
+			if strings.TrimSpace(path) == "" {
+				return fmt.Errorf("--snapshot-file must not be blank")
+			}
 			data, err := readJSONMap(path)
 			if err != nil {
 				return fmt.Errorf("--snapshot-file: %w", err)
 			}
 			snapshot = data
 		}
-		if raw, _ := cmd.Flags().GetString("snapshot-json"); raw != "" {
+		if cmd.Flags().Changed("snapshot-json") {
+			raw, _ := cmd.Flags().GetString("snapshot-json")
+			if strings.TrimSpace(raw) == "" {
+				return fmt.Errorf("--snapshot-json must not be blank")
+			}
 			data, err := parseJSONMap(raw)
 			if err != nil {
 				return fmt.Errorf("--snapshot-json: %w", err)
@@ -514,10 +567,18 @@ func extractReviewableValueFromFlags(cmd *cobra.Command) (map[string]any, error)
 	if changed != 1 {
 		return nil, fmt.Errorf("exactly one of --value-file, --value-json, or --set is required")
 	}
-	if path, _ := cmd.Flags().GetString("value-file"); path != "" {
+	if cmd.Flags().Changed("value-file") {
+		path, _ := cmd.Flags().GetString("value-file")
+		if strings.TrimSpace(path) == "" {
+			return nil, fmt.Errorf("--value-file must not be blank")
+		}
 		return readJSONMap(path)
 	}
-	if raw, _ := cmd.Flags().GetString("value-json"); raw != "" {
+	if cmd.Flags().Changed("value-json") {
+		raw, _ := cmd.Flags().GetString("value-json")
+		if strings.TrimSpace(raw) == "" {
+			return nil, fmt.Errorf("--value-json must not be blank")
+		}
 		return parseJSONMap(raw)
 	}
 	sets, _ := cmd.Flags().GetStringArray("set")
@@ -552,14 +613,22 @@ func splitReviewableValueFromFlags(cmd *cobra.Command) (map[string]any, error) {
 	if changed != 1 {
 		return nil, fmt.Errorf("exactly one of --value-file, --splits-json, or --set is required")
 	}
-	if path, _ := cmd.Flags().GetString("value-file"); path != "" {
+	if cmd.Flags().Changed("value-file") {
+		path, _ := cmd.Flags().GetString("value-file")
+		if strings.TrimSpace(path) == "" {
+			return nil, fmt.Errorf("--value-file must not be blank")
+		}
 		value, err := readJSONMap(path)
 		if err != nil {
 			return nil, err
 		}
 		return value, validateSplitReviewableValue(value)
 	}
-	if raw, _ := cmd.Flags().GetString("splits-json"); raw != "" {
+	if cmd.Flags().Changed("splits-json") {
+		raw, _ := cmd.Flags().GetString("splits-json")
+		if strings.TrimSpace(raw) == "" {
+			return nil, fmt.Errorf("--splits-json must not be blank")
+		}
 		value, err := parseJSONMap(raw)
 		if err != nil {
 			return nil, err
@@ -584,6 +653,63 @@ func splitReviewableValueFromFlags(cmd *cobra.Command) (map[string]any, error) {
 	}
 	value := map[string]any{"splits": splits}
 	return value, validateSplitReviewableValue(value)
+}
+
+func partitionReviewableValueFromFlags(cmd *cobra.Command) (map[string]any, error) {
+	changed := 0
+	if cmd.Flags().Changed("value-file") {
+		changed++
+	}
+	if cmd.Flags().Changed("chunks-json") {
+		changed++
+	}
+	if cmd.Flags().Changed("set") {
+		changed++
+	}
+	if changed != 1 {
+		return nil, fmt.Errorf("exactly one of --value-file, --chunks-json, or --set is required")
+	}
+	if cmd.Flags().Changed("value-file") {
+		path, _ := cmd.Flags().GetString("value-file")
+		if strings.TrimSpace(path) == "" {
+			return nil, fmt.Errorf("--value-file must not be blank")
+		}
+		value, err := readJSONMap(path)
+		if err != nil {
+			return nil, err
+		}
+		return value, validatePartitionReviewableValue(value)
+	}
+	if cmd.Flags().Changed("chunks-json") {
+		raw, _ := cmd.Flags().GetString("chunks-json")
+		if strings.TrimSpace(raw) == "" {
+			return nil, fmt.Errorf("--chunks-json must not be blank")
+		}
+		value, err := parseJSONMap(raw)
+		if err != nil {
+			return nil, err
+		}
+		return value, validatePartitionReviewableValue(value)
+	}
+	sets, _ := cmd.Flags().GetStringArray("set")
+	chunks := make([]any, 0, len(sets))
+	for _, item := range sets {
+		key, rawPages, ok := strings.Cut(item, "=")
+		key = strings.TrimSpace(key)
+		if !ok || key == "" {
+			return nil, fmt.Errorf("--set must be key=pages, got %q", item)
+		}
+		pages, err := parsePageList(rawPages)
+		if err != nil {
+			return nil, fmt.Errorf("--set %q: %w", item, err)
+		}
+		chunks = append(chunks, map[string]any{
+			"key":   key,
+			"pages": pages,
+		})
+	}
+	value := map[string]any{"chunks": chunks}
+	return value, validatePartitionReviewableValue(value)
 }
 
 func parseReviewLiteral(raw string) (any, error) {
@@ -705,6 +831,34 @@ func validateSplitReviewableValue(value map[string]any) error {
 	return nil
 }
 
+func validatePartitionReviewableValue(value map[string]any) error {
+	rawChunks, ok := value["chunks"].([]any)
+	if !ok {
+		return fmt.Errorf("chunks must be an array")
+	}
+	seenKeys := map[string]bool{}
+	for index, rawChunk := range rawChunks {
+		chunk, ok := rawChunk.(map[string]any)
+		if !ok {
+			return fmt.Errorf("chunks[%d] must be an object", index)
+		}
+		keyRaw, ok := chunk["key"].(string)
+		if !ok || strings.TrimSpace(keyRaw) == "" {
+			return fmt.Errorf("chunks[%d].key must be a non-empty string", index)
+		}
+		key := strings.TrimSpace(keyRaw)
+		chunk["key"] = key
+		if seenKeys[key] {
+			return fmt.Errorf("duplicate partition key %q (keys are trimmed and case-sensitive)", key)
+		}
+		seenKeys[key] = true
+		if _, err := reviewPagesFromValue(chunk["pages"]); err != nil {
+			return fmt.Errorf("chunks[%d].pages: %w", index, err)
+		}
+	}
+	return nil
+}
+
 func reviewPagesFromValue(raw any) ([]int, error) {
 	if intPages, ok := raw.([]int); ok {
 		if len(intPages) == 0 {
@@ -810,9 +964,16 @@ func init() {
 	workflowsReviewsClassifierApproveCmd.Flags().String("command-id", "", "idempotency command id")
 	_ = workflowsReviewsClassifierApproveCmd.MarkFlagRequired("category")
 
+	workflowsReviewsForEachApproveCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token)")
+	workflowsReviewsForEachApproveCmd.Flags().String("value-file", "", "JSON file with the for_each partition reviewable value (or - for stdin)")
+	workflowsReviewsForEachApproveCmd.Flags().String("chunks-json", "", "inline for_each partition reviewable value JSON")
+	workflowsReviewsForEachApproveCmd.Flags().StringArray("set", nil, "set partition pages as key=1-3,5; repeatable")
+	workflowsReviewsForEachApproveCmd.Flags().String("command-id", "", "idempotency command id")
+
 	workflowsReviewsExtractCmd.AddCommand(workflowsReviewsExtractApproveCmd)
 	workflowsReviewsSplitCmd.AddCommand(workflowsReviewsSplitApproveCmd)
 	workflowsReviewsClassifierCmd.AddCommand(workflowsReviewsClassifierApproveCmd)
+	workflowsReviewsForEachCmd.AddCommand(workflowsReviewsForEachApproveCmd)
 
 	workflowsReviewsCmd.AddCommand(
 		workflowsReviewsListCmd,
@@ -821,6 +982,7 @@ func init() {
 		workflowsReviewsExtractCmd,
 		workflowsReviewsSplitCmd,
 		workflowsReviewsClassifierCmd,
+		workflowsReviewsForEachCmd,
 		workflowsReviewsRejectCmd,
 		workflowsReviewsEditCmd,
 		workflowsReviewsClaimCmd,
