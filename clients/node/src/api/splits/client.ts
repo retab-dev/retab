@@ -56,7 +56,7 @@ export default class APISplits extends CompositionClient {
         name: sd.name,
         description: sd.description ?? '',
         partition_key: sd.partition_key ?? null,
-        allow_overlap: sd.allow_overlap === true,
+        allow_overlap: sd.allow_overlap ?? true,
         allow_multiple_instances: sd.allow_multiple_instances ?? false,
       })),
       model: params.model,
