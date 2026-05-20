@@ -220,7 +220,7 @@ the model's original is preserved as seq 0 for audit.`,
 
   # Approve with a small inline correction
   retab workflows reviews approve run_xyz789 blk_extract_1 \
-    --version-stamp 2 --edited-output-json '{"output":[{"name":"invoice","pages":[1]}]}'`,
+    --version-stamp 2 --edited-output-json '{"splits":[{"name":"invoice","pages":[1]}]}'`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -309,7 +309,7 @@ Pass it with ` + "`--snapshot-file`" + ` for larger payloads or
     --version-stamp 1 --snapshot-file ./corrected.json --note "fixed currency"
 
   retab workflows reviews edit run_xyz789 blk_extract_1 \
-    --version-stamp 1 --snapshot-json '{"output":[{"name":"invoice","pages":[1]}]}'`,
+    --version-stamp 1 --snapshot-json '{"splits":[{"name":"invoice","pages":[1]}]}'`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
