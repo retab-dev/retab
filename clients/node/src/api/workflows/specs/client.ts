@@ -61,7 +61,7 @@ export default class APIWorkflowSpecs extends CompositionClient {
    */
   async export(workflowId: string, options?: RequestOptions): Promise<DeclarativeExportResponse> {
     return this._fetchJson(ZDeclarativeExportResponse, {
-      url: `/workflows/spec/${workflowId}`,
+      url: `/workflows/${workflowId}/spec`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,

@@ -91,6 +91,124 @@ func TestConfirmDeletedHonorsJSONOutputFlag(t *testing.T) {
 	}
 }
 
+func TestRenderAPIErrorForCLIDefaultHidesRawHTTPDebug(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, false)
+	apiErr := &retab.APIError{
+		StatusCode: http.StatusBadRequest,
+		Code:       "HTTP_EXCEPTION",
+		Message:    "An HTTP exception occurred.",
+		Method:     http.MethodPost,
+		URL:        "http://localhost:4000/v1/workflows/wf_1/blocks",
+		Details: map[string]any{
+			"error": "Invalid config for for_each block. Problem: review is only available for map_method='split_by_key'.",
+		},
+		Body: `{"detail":{"code":"HTTP_EXCEPTION","message":"An HTTP exception occurred.","details":{"error":"Invalid config for for_each block."}}}`,
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	if !strings.Contains(got, "Invalid config for for_each block") {
+		t.Fatalf("rendered error should surface the useful message:\n%s", got)
+	}
+	for _, raw := range []string{"URL:", "Code:", "Details:", "Body:", "HTTP_EXCEPTION", "/workflows/wf_1/blocks"} {
+		if strings.Contains(got, raw) {
+			t.Fatalf("default CLI error should hide raw HTTP detail %q:\n%s", raw, got)
+		}
+	}
+}
+
+func TestRenderAPIErrorForCLISurfacesNestedErrorMessage(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, false)
+	apiErr := &retab.APIError{
+		StatusCode: http.StatusConflict,
+		Code:       "HTTP_EXCEPTION",
+		Message:    "An HTTP exception occurred.",
+		Method:     http.MethodPost,
+		URL:        "http://localhost:4000/v1/workflows/wf_1/run",
+		Details: map[string]any{
+			"error": map[string]any{
+				"code":    "production_required_but_unpublished",
+				"message": "Workflow wf_1 has no published version. Publish it, or pass version='draft' to run the current draft.",
+			},
+		},
+		Body: `{"detail":{"code":"HTTP_EXCEPTION","message":"An HTTP exception occurred.","details":{"error":{"message":"Workflow wf_1 has no published version."}}}}`,
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	if !strings.Contains(got, "has no published version") || !strings.Contains(got, "version='draft'") {
+		t.Fatalf("rendered error should surface nested server message:\n%s", got)
+	}
+	for _, raw := range []string{"URL:", "Details:", "Body:", "HTTP_EXCEPTION", "production_required_but_unpublished"} {
+		if strings.Contains(got, raw) {
+			t.Fatalf("default CLI error should hide raw HTTP detail %q:\n%s", raw, got)
+		}
+	}
+}
+
+func TestRenderAPIErrorForCLIDebugKeepsRawHTTPDebug(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, true)
+	apiErr := &retab.APIError{
+		StatusCode: http.StatusBadRequest,
+		Code:       "HTTP_EXCEPTION",
+		Message:    "An HTTP exception occurred.",
+		Method:     http.MethodPost,
+		URL:        "http://localhost:4000/v1/workflows/wf_1/blocks",
+		Details:    map[string]any{"error": "Invalid config for for_each block."},
+		Body:       `{"detail":{"code":"HTTP_EXCEPTION"}}`,
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	for _, raw := range []string{"URL:", "Code:", "Details:", "Body:", "HTTP_EXCEPTION", "/workflows/wf_1/blocks"} {
+		if !strings.Contains(got, raw) {
+			t.Fatalf("--debug CLI error should include raw HTTP detail %q:\n%s", raw, got)
+		}
+	}
+}
+
+func TestRenderAPIErrorForCLIFormatsFlatValidationEnvelope(t *testing.T) {
+	cmd := commandWithDebugFlagForTest(t, false)
+	apiErr := &retab.APIError{
+		StatusCode: http.StatusUnprocessableEntity,
+		Message:    `[{"type":"missing","loc":["body","blocks",0,"label"],"msg":"Field required"},{"type":"missing","loc":["body","edges",1,"source_block"],"msg":"Field required"}]`,
+		Method:     http.MethodPost,
+		URL:        "http://localhost:4000/v1/workflows/wf_1/diagnose-graph",
+		Body:       `{"status_code":10422,"message":"[...]","data":null}`,
+	}
+
+	got := renderAPIErrorForCLI(cmd, apiErr)
+
+	for _, want := range []string{
+		"422 — Invalid request.",
+		"blocks[0].label: Field required",
+		"edges[1].source_block: Field required",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("rendered validation error should contain %q:\n%s", want, got)
+		}
+	}
+	for _, raw := range []string{"\"loc\"", "\"type\"", "Body:", "URL:"} {
+		if strings.Contains(got, raw) {
+			t.Fatalf("default validation error should hide raw detail %q:\n%s", raw, got)
+		}
+	}
+}
+
+func commandWithDebugFlagForTest(t *testing.T, debug bool) *cobra.Command {
+	t.Helper()
+	root := &cobra.Command{Use: "retab"}
+	root.PersistentFlags().Bool("debug", false, "")
+	cmd := &cobra.Command{Use: "test"}
+	root.AddCommand(cmd)
+	if debug {
+		if err := root.PersistentFlags().Set("debug", "true"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return cmd
+}
+
 func TestReadJSONMapAndArray(t *testing.T) {
 	dir := t.TempDir()
 	mapPath := filepath.Join(dir, "obj.json")

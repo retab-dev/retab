@@ -13,21 +13,14 @@ var workflowsBlocksCmd = &cobra.Command{
 	Long: `Add, configure, and inspect the nodes of a workflow graph.
 
 A block is one processing step — ` + "`extract`" + `, ` + "`split`" + `,
-` + "`classify`" + `, ` + "`edit`" + `, ` + "`review`" + `, ` + "`conditional`" + `,
+` + "`classify`" + `, ` + "`edit`" + `, ` + "`conditional`" + `,
 ` + "`api_call`" + `, ` + "`function`" + `, etc. Each block has a typed input,
 typed output, and a JSON ` + "`config`" + ` blob shaped by its type.
 
-Human-in-the-loop is not a separate block. Add ` + "`config.hil`" + ` to a
-supported block (` + "`extract`" + `, ` + "`split`" + `, ` + "`classifier`" + `,
-or ` + "`for_each`" + ` with ` + "`map_method=split_by_key`" + `). When the predicate fires, the run pauses at that
-same block with status ` + "`waiting_for_human`" + `; decide it with
-` + "`retab workflows reviews`" + `.
-
 The workhorse here is ` + "`update`" + ` — once a block is on the graph, tune
-its config with ` + "`workflows blocks update --config-file ./cfg.json`" + `.
-For additive changes such as adding a human review gate, use
-` + "`--merge-config-file`" + ` so existing schema/model settings are preserved.
-To test a config change without
+its config with ` + "`workflows blocks update --config-file ./cfg.json`" + `
+or deep-merge review gates with ` + "`--merge-config-file`" + ` rather than
+deleting and re-creating. To test a config change without
 re-running the whole workflow, use ` + "`workflows blocks simulate`" + ` to
 replay one block against a past run's input.`,
 	Example: `  # List blocks
@@ -40,18 +33,10 @@ replay one block against a past run's input.`,
   retab workflows blocks update wf_abc123 blk_def456 \
     --config-file ./new-config.json
 
-  # Add a human review gate to an existing extract block
-  printf '%s\n' '{"hil":{"predicate":{"kind":"any_required_field_null"}}}' \
-    > hil-config.json
-  retab workflows blocks update wf_abc123 blk_extract_1 \
-    --merge-config-file ./hil-config.json
-
   # Test that config change against an existing run, without a full re-run
   retab workflows blocks simulate \
     --run-id run_xyz789 --block-id blk_def456`,
 }
-
-const hilGateGuidance = "standalone review blocks are no longer supported; add config.hil to an extract, split, classifier, or split_by_key for_each block, then decide paused runs with `retab workflows reviews`"
 
 func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, error) {
 	req := retab.WorkflowBlockCreateRequest{}
@@ -82,42 +67,46 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, err
 	if v, ok := obj["config"].(map[string]any); ok {
 		req.Config = v
 	}
+	if err := rejectLegacyReviewConfig(req.Config); err != nil {
+		return req, err
+	}
 	if req.ID == "" {
 		return req, fmt.Errorf("block id is required")
 	}
 	if req.Type == "" {
 		return req, fmt.Errorf("block type is required")
 	}
-	if req.Type == "hil" {
-		return req, fmt.Errorf("%s", hilGateGuidance)
+	if req.Type == "review" || req.Type == "hil" {
+		return req, fmt.Errorf("standalone review blocks are no longer supported; add config.review to a reviewable block instead")
 	}
 	return req, nil
 }
 
-func mergeWorkflowBlockConfig(existing map[string]any, patch map[string]any) map[string]any {
-	out := make(map[string]any, len(existing)+len(patch))
-	for key, value := range existing {
-		out[key] = value
+func rejectLegacyReviewConfig(config map[string]any) error {
+	if config == nil {
+		return nil
 	}
-	for key, value := range patch {
-		patchMap, patchIsMap := value.(map[string]any)
-		existingMap, existingIsMap := out[key].(map[string]any)
-		if patchIsMap && existingIsMap {
-			out[key] = mergeWorkflowBlockConfig(existingMap, patchMap)
-			continue
-		}
-		out[key] = value
+	if _, ok := config["hil"]; ok {
+		return fmt.Errorf("legacy config.hil is no longer supported; use config.review instead")
 	}
-	return out
+	return nil
 }
 
-func findWorkflowBlock(graph *retab.WorkflowWithEntities, blockID string) (retab.WorkflowBlock, bool) {
-	for _, block := range graph.Blocks {
-		if block.ID == blockID {
-			return block, true
-		}
+func mergeWorkflowBlockConfig(existing map[string]any, patch map[string]any) map[string]any {
+	merged := make(map[string]any, len(existing)+len(patch))
+	for key, value := range existing {
+		merged[key] = value
 	}
-	return retab.WorkflowBlock{}, false
+	for key, patchValue := range patch {
+		existingChild, existingIsMap := merged[key].(map[string]any)
+		patchChild, patchIsMap := patchValue.(map[string]any)
+		if existingIsMap && patchIsMap {
+			merged[key] = mergeWorkflowBlockConfig(existingChild, patchChild)
+			continue
+		}
+		merged[key] = patchValue
+	}
+	return merged
 }
 
 var workflowsBlocksListCmd = &cobra.Command{
@@ -165,15 +154,11 @@ parent group, and the typed config blob.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		graph, err := client.Workflows.GetEntities(ctx, args[0])
+		result, err := client.Workflows.Blocks.Get(ctx, args[0], args[1])
 		if err != nil {
 			return err
 		}
-		block, ok := findWorkflowBlock(graph, args[1])
-		if !ok {
-			return fmt.Errorf("block %q not found in workflow %q", args[1], args[0])
-		}
-		return printJSON(block)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -199,7 +184,7 @@ For all blocks at once, use ` + "`workflows resolved-schemas`" + `.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -214,12 +199,21 @@ JSON object with the keys ` + "`id`" + ` (required), ` + "`type`" + ` (required)
 Review is configured inside the block's typed config as
 ` + "`config.review.predicate`" + `. For example, an extract block can pause
 every run with ` + "`{\"review\":{\"predicate\":{\"kind\":\"always\"}}}`" + `.
+Reviewable block types are ` + "`extract`" + `, ` + "`split`" + `, ` + "`classifier`" + `,
+and ` + "`for_each`" + ` only when ` + "`config.map_method`" + ` is ` + "`split_by_key`" + ` and
+` + "`config.key`" + ` is set.
+Common review predicates are ` + "`always`" + ` and ` + "`validation_failed`" + `.
+Extract also supports ` + "`any_required_field_null`" + ` and ` + "`field_confidence_lt`" + `;
+split and split-by-key ` + "`for_each`" + ` support ` + "`split_count_neq`" + `,
+` + "`any_split_pages_lt`" + `, and ` + "`boundary_confidence_lt`" + `; classifier
+supports ` + "`category_in`" + ` and ` + "`top_margin_lt`" + `.
+Review is not a standalone block type.
 
 For batch creation, see ` + "`workflows blocks create-batch`" + `.`,
 	Example: `  # Add one block from a JSON file
   retab workflows blocks create wf_abc123 --block-file ./extract.json
 
-  # Minimal extract block with a review gate
+  # Minimal extract block with review
   cat > extract-review.json <<'JSON'
   {
     "id": "extract_review",
@@ -250,12 +244,6 @@ For batch creation, see ` + "`workflows blocks create-batch`" + `.`,
   cat block.json | retab workflows blocks create wf_abc123 --block-file -`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		path, _ := cmd.Flags().GetString("block-file")
 		if path == "" {
 			return fmt.Errorf("--block-file is required")
@@ -268,11 +256,17 @@ For batch creation, see ` + "`workflows blocks create-batch`" + `.`,
 		if err != nil {
 			return err
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Workflows.Blocks.Create(ctx, args[0], req)
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -283,22 +277,16 @@ var workflowsBlocksCreateBatchCmd = &cobra.Command{
 objects, each shaped like the ` + "`--block-file`" + ` payload accepted by
 ` + "`workflows blocks create`" + `.
 
-Preferred when scaffolding an entire workflow programmatically — fewer
-round-trips and atomic from the caller's perspective.
+Each block can include ` + "`config.review`" + ` when its type supports review.
+Review is not a standalone block type.
 
-Human review gates belong inside each block's ` + "`config.hil`" + ` field;
-there is no standalone review block type to add to the array.`,
+Preferred when scaffolding an entire workflow programmatically — fewer
+round-trips and atomic from the caller's perspective.`,
 	Example: `  # Bulk-create a graph from a manifest
   retab workflows blocks create-batch wf_abc123 \
     --blocks-file ./graph/blocks.json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		path, _ := cmd.Flags().GetString("blocks-file")
 		if path == "" {
 			return fmt.Errorf("--blocks-file is required")
@@ -322,49 +310,41 @@ there is no standalone review block type to add to the array.`,
 			}
 			reqs = append(reqs, r)
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Workflows.Blocks.CreateBatch(ctx, args[0], reqs)
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
 var workflowsBlocksUpdateCmd = &cobra.Command{
 	Use:   "update <workflow-id> <block-id>",
 	Short: "Update a workflow block",
-	Long: `Tune an existing block in place.
+	Long: `Tune an existing block in place. The most common use is swapping
+the typed config blob (` + "`--config-file`" + `) to adjust the prompt,
+schema, model, or thresholds without re-creating the block — your
+upstream/downstream wiring is preserved.
 
-Use ` + "`--config-file`" + ` when you want to replace the block's config
-with a full config object.
-
-Use ` + "`--merge-config-file`" + ` for additive edits. The CLI fetches the
-current block config, recursively merges your JSON object into it, and sends
-the merged config back. This is the safest way to add ` + "`config.hil`" + `
-without losing an extract block's schema/model settings.
+To add or change review, include ` + "`review`" + ` inside the config file, for
+example ` + "`{\"review\":{\"predicate\":{\"kind\":\"always\"}}}`" + `. Use
+` + "`null`" + ` as the review value to remove review from the block.
 
 Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
-` + "`parent-id`" + `) only affect the visual editor.
-
-To add human review, merge a ` + "`hil`" + ` object into the block config:
-` + "`{\"hil\":{\"predicate\":{\"kind\":\"always\"}}}`" + `.
-Supported gated block types are ` + "`extract`" + `, ` + "`split`" + `,
-` + "`classifier`" + `, and ` + "`for_each`" + ` with ` + "`map_method=split_by_key`" + `.`,
+` + "`parent-id`" + `) only affect the visual editor.`,
 	Example: `  # Swap the config blob
   retab workflows blocks update wf_abc123 blk_def456 \
     --config-file ./new-config.json
 
-  # Gate an extract block when a required field is missing/null
-  printf '%s\n' '{"hil":{"predicate":{"kind":"any_required_field_null"}}}' \
-    > extract-hil.json
-  retab workflows blocks update wf_abc123 blk_extract_1 \
-    --merge-config-file ./extract-hil.json
-
-  # Gate a split_by_key for_each block when a boundary is low-confidence
-  printf '%s\n' '{"hil":{"predicate":{"kind":"boundary_confidence_lt","threshold":0.8}}}' \
-    > for-each-hil.json
-  retab workflows blocks update wf_abc123 blk_for_each_1 \
-    --merge-config-file ./for-each-hil.json
+  # Add review to an existing block
+  printf '{"review":{"predicate":{"kind":"always"}}}' |
+    retab workflows blocks update wf_abc123 blk_def456 --config-file -
 
   # Rename a block's label
   retab workflows blocks update wf_abc123 blk_def456 \
@@ -373,21 +353,17 @@ Supported gated block types are ` + "`extract`" + `, ` + "`split`" + `,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
+		configPath, _ := cmd.Flags().GetString("config-file")
+		mergeConfigPath, _ := cmd.Flags().GetString("merge-config-file")
+		if configPath != "" && mergeConfigPath != "" {
+			return fmt.Errorf("--config-file and --merge-config-file are mutually exclusive")
+		}
 		if !cmd.Flags().Changed("label") && !cmd.Flags().Changed("position-x") &&
 			!cmd.Flags().Changed("position-y") && !cmd.Flags().Changed("width") &&
 			!cmd.Flags().Changed("height") && !cmd.Flags().Changed("parent-id") &&
 			!cmd.Flags().Changed("config-file") && !cmd.Flags().Changed("merge-config-file") {
 			return fmt.Errorf("nothing to update: pass at least one of --label, --position-x, --position-y, --width, --height, --parent-id, --config-file, or --merge-config-file")
 		}
-		if cmd.Flags().Changed("config-file") && cmd.Flags().Changed("merge-config-file") {
-			return fmt.Errorf("--config-file and --merge-config-file are mutually exclusive")
-		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		req := retab.WorkflowBlockUpdateRequest{}
 		if cmd.Flags().Changed("label") {
 			v, _ := cmd.Flags().GetString("label")
@@ -413,41 +389,41 @@ Supported gated block types are ` + "`extract`" + `, ` + "`split`" + `,
 			v, _ := cmd.Flags().GetString("parent-id")
 			req.ParentID = &v
 		}
-		if cmd.Flags().Changed("config-file") {
-			path, _ := cmd.Flags().GetString("config-file")
-			if path == "" {
-				return fmt.Errorf("--config-file must not be blank")
-			}
-			cfg, err := readJSONMap(path)
+		if configPath != "" {
+			cfg, err := readJSONMap(configPath)
 			if err != nil {
+				return fmt.Errorf("--config-file: %w", err)
+			}
+			if err := rejectLegacyReviewConfig(cfg); err != nil {
 				return fmt.Errorf("--config-file: %w", err)
 			}
 			req.Config = cfg
 		}
-		if cmd.Flags().Changed("merge-config-file") {
-			path, _ := cmd.Flags().GetString("merge-config-file")
-			if path == "" {
-				return fmt.Errorf("--merge-config-file must not be blank")
-			}
-			patch, err := readJSONMap(path)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		if mergeConfigPath != "" {
+			patch, err := readJSONMap(mergeConfigPath)
 			if err != nil {
 				return fmt.Errorf("--merge-config-file: %w", err)
 			}
-			graph, err := client.Workflows.GetEntities(ctx, args[0])
+			if err := rejectLegacyReviewConfig(patch); err != nil {
+				return fmt.Errorf("--merge-config-file: %w", err)
+			}
+			existing, err := client.Workflows.Blocks.Get(ctx, args[0], args[1])
 			if err != nil {
 				return err
 			}
-			block, ok := findWorkflowBlock(graph, args[1])
-			if !ok {
-				return fmt.Errorf("block %q not found in workflow %q", args[1], args[0])
-			}
-			req.Config = mergeWorkflowBlockConfig(block.Config, patch)
+			req.Config = mergeWorkflowBlockConfig(existing.Config, patch)
 		}
 		result, err := client.Workflows.Blocks.Update(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -523,7 +499,7 @@ testing.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -537,8 +513,8 @@ func init() {
 	workflowsBlocksUpdateCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "width", "update width")
 	workflowsBlocksUpdateCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "height", "update height")
 	workflowsBlocksUpdateCmd.Flags().String("parent-id", "", "update parent id")
-	workflowsBlocksUpdateCmd.Flags().String("config-file", "", "JSON file that replaces the full config (or - for stdin)")
-	workflowsBlocksUpdateCmd.Flags().String("merge-config-file", "", "JSON object to merge into existing config (or - for stdin)")
+	workflowsBlocksUpdateCmd.Flags().String("config-file", "", "JSON file with new config (or - for stdin)")
+	workflowsBlocksUpdateCmd.Flags().String("merge-config-file", "", "JSON file to deep-merge into the existing config (or - for stdin)")
 
 	workflowsBlocksSimulateCmd.Flags().String("run-id", "", "run id (required)")
 	workflowsBlocksSimulateCmd.Flags().String("block-id", "", "block id (required)")

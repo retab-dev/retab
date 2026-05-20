@@ -85,7 +85,6 @@ class Edit(RetabBaseModel):
     data: EditResult = Field(..., description="The edit result: filled form fields and the rendered PDF.")
     usage: RetabUsage = Field(..., description="Usage information for the edit operation.")
     created_at: Optional[datetime.datetime] = None
-    updated_at: Optional[datetime.datetime] = None
 
 
 class EditTemplateRequest(RetabBaseModel):

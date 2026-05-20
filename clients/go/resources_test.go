@@ -486,9 +486,7 @@ func TestListQueryShapes(t *testing.T) {
 						FromDate: &fromDate,
 						ToDate:   &toDate,
 					},
-					OriginType: "api",
-					OriginID:   "origin_123",
-					Metadata:   map[string]string{"tenant": "acme"},
+					Metadata: map[string]string{"tenant": "acme"},
 				})
 				return err
 			},

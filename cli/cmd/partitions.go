@@ -59,16 +59,16 @@ extraction.`,
 		if err != nil {
 			return err
 		}
+		doc, err := resolveDocument(cmd)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		doc, err := resolveDocument(cmd)
-		if err != nil {
-			return err
-		}
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		allowOverlap, _ := cmd.Flags().GetBool("allow-overlap")

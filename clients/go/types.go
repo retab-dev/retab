@@ -416,9 +416,9 @@ type WorkflowRunExportResponse struct {
 
 // --- review overlay (workflows.reviews) ----------------------------
 //
-// The review overlay is the versioned sidecar attached to a gated block run:
-// every output version, every actor who touched it, every decision, and an
-// audit-of-attempts trail. Driven by optimistic CAS on the single Rev token.
+// The review overlay is the versioned sidecar attached to a block run awaiting
+// review: every output version, every actor who touched it, every decision,
+// and an audit-of-attempts trail. Driven by optimistic CAS on the single Rev token.
 // Actor symmetry is a hard rule — model, agent, and human are one shape and
 // Kind is data, never branched on.
 
@@ -472,7 +472,17 @@ type ReviewClaim struct {
 	ExpiresAt time.Time   `json:"expires_at"`
 }
 
-// ReviewOverlay is the full review sidecar for one gated block run.
+// ReviewableValue is the primitive-specific value reviewers edit, projected
+// from the full output snapshot.
+type ReviewableValue struct {
+	Kind            string         `json:"kind"`
+	SourceSeq       int            `json:"source_seq"`
+	SnapshotPath    []string       `json:"snapshot_path"`
+	Value           map[string]any `json:"value"`
+	EffectiveOutput map[string]any `json:"effective_output"`
+}
+
+// ReviewOverlay is the full review sidecar for one reviewed block run.
 type ReviewOverlay struct {
 	ID                string                 `json:"_id"`
 	OrganizationID    string                 `json:"organization_id"`
@@ -494,6 +504,7 @@ type ReviewOverlay struct {
 	Audit             []ReviewAuditEntry     `json:"audit"`
 	HeadSeq           int                    `json:"head_seq"`
 	EffectiveSeq      *int                   `json:"effective_seq,omitempty"`
+	ReviewableValue   *ReviewableValue       `json:"reviewable_value,omitempty"`
 }
 
 // ReviewQueueItem is the lightweight review-queue projection — the heavy

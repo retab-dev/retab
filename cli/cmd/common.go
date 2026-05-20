@@ -24,10 +24,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// runE wraps a command body so APIErrors render with full context
-// (request id, method, url, status, code, body) and other errors render as a
-// single line. Returned sentinel errors keep the process exit non-zero without
-// asking cobra to print the same message a second time.
+// runE wraps a command body so APIErrors render as concise user-facing
+// messages by default and as full HTTP diagnostics with --debug. Other errors
+// render as a single line. Returned sentinel errors keep the process exit
+// non-zero without asking cobra to print the same message a second time.
 func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		err := fn(cmd, args)
@@ -36,11 +36,111 @@ func runE(fn func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Comm
 		}
 		var apiErr *retab.APIError
 		if errors.As(err, &apiErr) {
-			fmt.Fprintln(os.Stderr, apiErr.String())
+			fmt.Fprintln(os.Stderr, renderAPIErrorForCLI(cmd, apiErr))
 			return errSilent
 		}
 		fmt.Fprintln(os.Stderr, "error: "+err.Error())
 		return renderedError{err: err}
+	}
+}
+
+func renderAPIErrorForCLI(cmd *cobra.Command, apiErr *retab.APIError) string {
+	if debug, _ := cmd.Root().PersistentFlags().GetBool("debug"); debug {
+		return apiErr.String()
+	}
+	if validationLines := formatValidationErrorLines(apiErr.Message); len(validationLines) > 0 {
+		lines := []string{fmt.Sprintf("%d — Invalid request.", apiErr.StatusCode)}
+		lines = append(lines, validationLines...)
+		if apiErr.RequestID != "" {
+			lines = append(lines, "  Request-ID: "+apiErr.RequestID)
+		}
+		return strings.Join(lines, "\n")
+	}
+	message := apiErr.Message
+	if detail := usefulAPIErrorDetail(apiErr.Details); detail != "" && isGenericAPIErrorMessage(message) {
+		message = detail
+	}
+	if strings.TrimSpace(message) == "" {
+		message = fmt.Sprintf("Request failed (%d)", apiErr.StatusCode)
+	}
+	lines := []string{fmt.Sprintf("%d — %s", apiErr.StatusCode, message)}
+	if apiErr.RequestID != "" {
+		lines = append(lines, "  Request-ID: "+apiErr.RequestID)
+	}
+	return strings.Join(lines, "\n")
+}
+
+func usefulAPIErrorDetail(details map[string]any) string {
+	raw, ok := details["error"]
+	if !ok {
+		return ""
+	}
+	switch value := raw.(type) {
+	case string:
+		return strings.TrimSpace(value)
+	case map[string]any:
+		if message, ok := value["message"].(string); ok {
+			return strings.TrimSpace(message)
+		}
+	}
+	return ""
+}
+
+type validationErrorLine struct {
+	Location []any  `json:"loc"`
+	Message  string `json:"msg"`
+}
+
+func formatValidationErrorLines(raw string) []string {
+	var errors []validationErrorLine
+	if err := json.Unmarshal([]byte(raw), &errors); err != nil || len(errors) == 0 {
+		return nil
+	}
+
+	lines := make([]string, 0, len(errors))
+	for _, err := range errors {
+		location := formatValidationLocation(err.Location)
+		message := strings.TrimSpace(err.Message)
+		if message == "" {
+			message = "Invalid value"
+		}
+		if location == "" {
+			lines = append(lines, "  - "+message)
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("  - %s: %s", location, message))
+	}
+	return lines
+}
+
+func formatValidationLocation(location []any) string {
+	parts := make([]string, 0, len(location))
+	for _, value := range location {
+		switch typed := value.(type) {
+		case string:
+			if typed == "body" || typed == "query" || typed == "path" {
+				continue
+			}
+			if typed != "" {
+				parts = append(parts, typed)
+			}
+		case float64:
+			if len(parts) == 0 {
+				parts = append(parts, strconv.Itoa(int(typed)))
+				continue
+			}
+			parts[len(parts)-1] = fmt.Sprintf("%s[%d]", parts[len(parts)-1], int(typed))
+		}
+	}
+	return strings.Join(parts, ".")
+}
+
+func isGenericAPIErrorMessage(message string) bool {
+	switch strings.TrimSpace(message) {
+	case "", "An HTTP exception occurred.":
+		return true
+	default:
+		return strings.HasPrefix(message, "Request failed (")
 	}
 }
 
@@ -502,6 +602,32 @@ func (v *positiveIntFlagValue) Set(raw string) error {
 	return nil
 }
 
+type minIntFlagValue struct {
+	value string
+	min   int
+}
+
+func (v *minIntFlagValue) String() string {
+	if v.value == "" {
+		return "0"
+	}
+	return v.value
+}
+
+func (v *minIntFlagValue) Type() string { return "int" }
+
+func (v *minIntFlagValue) Set(raw string) error {
+	parsed, err := strconv.Atoi(raw)
+	if err != nil {
+		return err
+	}
+	if parsed < v.min {
+		return fmt.Errorf("must be at least %d", v.min)
+	}
+	v.value = raw
+	return nil
+}
+
 type nonNegativeInt64FlagValue struct{ value string }
 
 func (v *nonNegativeInt64FlagValue) String() string {
@@ -629,6 +755,7 @@ func (v *orderFlagValue) Set(raw string) error {
 type enumStringFlagValue struct {
 	value   string
 	allowed map[string]bool
+	values  []string
 	label   string
 }
 
@@ -637,7 +764,7 @@ func newEnumStringFlagValue(label string, allowedValues ...string) *enumStringFl
 	for _, value := range allowedValues {
 		allowed[value] = true
 	}
-	return &enumStringFlagValue{allowed: allowed, label: label}
+	return &enumStringFlagValue{allowed: allowed, values: allowedValues, label: label}
 }
 
 func (v *enumStringFlagValue) String() string { return v.value }
@@ -649,7 +776,7 @@ func (v *enumStringFlagValue) Set(raw string) error {
 		v.value = raw
 		return nil
 	}
-	return fmt.Errorf("invalid %s %q", v.label, raw)
+	return fmt.Errorf("invalid %s %q (want: %s)", v.label, raw, strings.Join(v.values, " | "))
 }
 
 var sha256HexPattern = regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
@@ -880,7 +1007,11 @@ func resolveSchema(cmd *cobra.Command) (any, error) {
 		}
 		return v, nil
 	}
-	return readJSON(path)
+	value, err := readJSON(path)
+	if err != nil {
+		return nil, fmt.Errorf("--json-schema-file: %w", err)
+	}
+	return value, nil
 }
 
 // addSchemaFlags adds the JSON-schema source flags used by extractions.

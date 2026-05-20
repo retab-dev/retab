@@ -211,6 +211,9 @@ plus ` + "`files complete-upload`" + ` to upload directly to storage.`,
       --json-schema-file ./schema.json --model gpt-4o`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if _, err := inferFileMIMEData(args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err

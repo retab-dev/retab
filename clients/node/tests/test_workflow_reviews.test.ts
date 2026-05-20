@@ -55,7 +55,7 @@ const OUTPUT_VERSION_JSON = {
   parent_seq: 0,
   author: ACTOR_JSON,
   origin: 'agent_edit',
-  snapshot: { invoice_number: 'INV-001' },
+  snapshot: { output: { invoice_number: 'INV-001', total: 100 } },
   content_sha256: 'abc123',
   note: 'tweaked the total',
   created_at: '2026-05-18T10:00:00Z',
@@ -109,6 +109,13 @@ const OVERLAY_JSON = {
   audit: [AUDIT_JSON],
   head_seq: 1,
   effective_seq: null,
+  reviewable_value: {
+    kind: 'extract',
+    source_seq: 1,
+    snapshot_path: ['output'],
+    value: { invoice_number: 'INV-001', total: 100 },
+    effective_output: { output: { invoice_number: 'INV-001', total: 100 } },
+  },
 };
 
 const QUEUE_ITEM_JSON = {
@@ -148,7 +155,7 @@ describe('review overlay zod schemas', () => {
     expect(version.seq).toBe(1);
     expect(version.parent_seq).toBe(0);
     expect(version.origin).toBe('agent_edit');
-    expect(version.snapshot).toEqual({ invoice_number: 'INV-001' });
+    expect(version.snapshot).toEqual({ output: { invoice_number: 'INV-001', total: 100 } });
     expect(version.content_sha256).toBe('abc123');
   });
 
@@ -180,6 +187,12 @@ describe('review overlay zod schemas', () => {
     expect(overlay.decisions).toHaveLength(1);
     expect(overlay.audit).toHaveLength(1);
     expect(overlay.claim?.holder.kind).toBe('agent');
+    expect(overlay.reviewable_value?.kind).toBe('extract');
+    expect(overlay.reviewable_value?.snapshot_path).toEqual(['output']);
+    expect(overlay.reviewable_value?.value).toEqual({ invoice_number: 'INV-001', total: 100 });
+    expect(overlay.reviewable_value?.effective_output).toEqual({
+      output: { invoice_number: 'INV-001', total: 100 },
+    });
   });
 
   test('ZReviewOverlay accepts for_each overlays without runtime projection identity', () => {

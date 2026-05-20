@@ -40,7 +40,7 @@ _OUTPUT_VERSION = {
     "parent_seq": None,
     "author": _ACTOR_MODEL,
     "origin": "model_output",
-    "snapshot": {"total": 100},
+    "snapshot": {"output": {"total": 100, "currency": "USD"}},
     "content_sha256": "abc123",
     "note": None,
     "created_at": _NOW,
@@ -54,6 +54,7 @@ _DECISION = {
     "on_seq": 1,
     "effective_seq": 1,
     "reason": None,
+    "escalate_to": None,
     "supersedes_decision_id": None,
 }
 
@@ -88,6 +89,13 @@ _OVERLAY = {
     "audit": [_AUDIT_ENTRY],
     "head_seq": 1,
     "effective_seq": None,
+    "reviewable_value": {
+        "kind": "extract",
+        "source_seq": 1,
+        "snapshot_path": ["output"],
+        "value": {"total": 100, "currency": "USD"},
+        "effective_output": {"output": {"total": 100, "currency": "USD"}},
+    },
 }
 
 _QUEUE_ITEM = {
@@ -128,25 +136,16 @@ def test_review_overlay_round_trips() -> None:
     assert len(overlay.audit) == 1
     assert overlay.claim is not None
     assert overlay.claim.holder.kind == "human"
+    assert overlay.reviewable_value is not None
+    assert overlay.reviewable_value.kind == "extract"
+    assert overlay.reviewable_value.source_seq == 1
+    assert overlay.reviewable_value.snapshot_path == ["output"]
+    assert overlay.reviewable_value.value == {"total": 100, "currency": "USD"}
+    assert overlay.reviewable_value.effective_output == {"output": {"total": 100, "currency": "USD"}}
     # dumping by alias yields _id again
     dumped = overlay.model_dump(by_alias=True)
     assert dumped["_id"] == "ovl_abc"
     assert ReviewOverlay.model_validate(dumped).rev == 3
-
-
-def test_review_overlay_ignores_internal_for_each_projection_identity() -> None:
-    overlay = ReviewOverlay.model_validate(
-        {
-            **_OVERLAY,
-            "block_id": "blk_for_each",
-            "runtime_block_id": "blk_for_each__map_partition",
-            "block_type": "for_each",
-        }
-    )
-
-    assert overlay.block_type == "for_each"
-    assert overlay.block_id == "blk_for_each"
-    assert "runtime_block_id" not in overlay.model_dump()
 
 
 def test_review_queue_item_round_trips_without_heavy_arrays() -> None:
@@ -159,21 +158,6 @@ def test_review_queue_item_round_trips_without_heavy_arrays() -> None:
     assert "audit" not in item.model_dump()
 
 
-def test_review_queue_item_ignores_internal_for_each_projection_identity() -> None:
-    item = ReviewQueueItem.model_validate(
-        {
-            **_QUEUE_ITEM,
-            "block_id": "blk_for_each",
-            "runtime_block_id": "blk_for_each__map_partition",
-            "block_type": "for_each",
-        }
-    )
-
-    assert item.block_type == "for_each"
-    assert item.block_id == "blk_for_each"
-    assert "runtime_block_id" not in item.model_dump()
-
-
 def test_review_queue_response_round_trips() -> None:
     resp = ReviewQueueResponse.model_validate({"data": [_QUEUE_ITEM], "has_more": True})
     assert resp.has_more is True
@@ -182,9 +166,7 @@ def test_review_queue_response_round_trips() -> None:
 
 
 def test_submit_decision_response_round_trips() -> None:
-    resp = SubmitDecisionResponse.model_validate(
-        {"submission_status": "accepted", "overlay": _OVERLAY}
-    )
+    resp = SubmitDecisionResponse.model_validate({"submission_status": "accepted", "overlay": _OVERLAY})
     assert resp.submission_status == "accepted"
     assert resp.overlay.rev == 3
 
@@ -201,7 +183,7 @@ def test_output_version_and_decision_and_audit_round_trip() -> None:
     version = OutputVersion.model_validate(_OUTPUT_VERSION)
     assert version.seq == 1
     assert version.parent_seq is None
-    assert version.snapshot == {"total": 100}
+    assert version.snapshot == {"output": {"total": 100, "currency": "USD"}}
 
     decision = ReviewDecision.model_validate(_DECISION)
     assert decision.verdict == "approved"
@@ -253,7 +235,6 @@ def test_prepare_edit_posts_to_versions() -> None:
     assert request.url == "/workflows/reviews/run_1/extract-1/versions"
     assert request.data == {
         "snapshot": {"total": 200},
-        "reviewable_value": None,
         "version_stamp": 3,
         "origin": "agent_edit",
         "note": "bumped total",
@@ -323,33 +304,13 @@ def test_approve_sends_approved_verdict() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {"submission_status": "accepted", "overlay": _OVERLAY}
 
-    resp = WorkflowReviews(client=client).approve(
-        "run_1", "extract-1", version_stamp=3, edited_output={"total": 150}
-    )
+    resp = WorkflowReviews(client=client).approve("run_1", "extract-1", version_stamp=3, edited_output={"total": 150})
 
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/reviews/run_1/extract-1/decision"
     assert request.data["verdict"] == "approved"
     assert request.data["edited_output"] == {"total": 150}
     assert resp.submission_status == "accepted"
-
-
-def test_approve_can_send_reviewable_value_without_edited_output() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {"submission_status": "accepted", "overlay": _OVERLAY}
-
-    WorkflowReviews(client=client).approve(
-        "run_1",
-        "extract-1",
-        version_stamp=3,
-        reviewable_value={"chunks": [{"key": "legal-mentions", "pages": [1]}]},
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.data["reviewable_value"] == {
-        "chunks": [{"key": "legal-mentions", "pages": [1]}]
-    }
-    assert request.data["edited_output"] is None
 
 
 def test_reject_requires_reason_and_sends_rejected_verdict() -> None:
@@ -363,13 +324,22 @@ def test_reject_requires_reason_and_sends_rejected_verdict() -> None:
     assert request.data["reason"] == "bad data"
 
 
+def test_escalate_sends_escalated_verdict_and_target() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {"submission_status": "accepted", "overlay": _OVERLAY}
+
+    WorkflowReviews(client=client).escalate("run_1", "extract-1", version_stamp=3, reason="unsure", escalate_to="senior_team")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.data["verdict"] == "escalated"
+    assert request.data["escalate_to"] == "senior_team"
+
+
 def test_edit_posts_version_and_returns_overlay() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _OVERLAY
 
-    overlay = WorkflowReviews(client=client).edit(
-        "run_1", "extract-1", snapshot={"total": 200}, version_stamp=3
-    )
+    overlay = WorkflowReviews(client=client).edit("run_1", "extract-1", snapshot={"total": 200}, version_stamp=3)
 
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/reviews/run_1/extract-1/versions"
@@ -392,9 +362,7 @@ def test_wait_for_returns_when_awaiting_review() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _OVERLAY
 
-    overlay = WorkflowReviews(client=client).wait_for(
-        "run_1", "extract-1", timeout=5.0, poll_interval=0.01
-    )
+    overlay = WorkflowReviews(client=client).wait_for("run_1", "extract-1", timeout=5.0, poll_interval=0.01)
     assert overlay.status == "awaiting_review"
 
 
@@ -403,9 +371,7 @@ def test_wait_for_times_out_when_overlay_never_appears() -> None:
     client._prepared_request.side_effect = NotFoundError("nope", status_code=404)
 
     with pytest.raises(TimeoutError):
-        WorkflowReviews(client=client).wait_for(
-            "run_1", "extract-1", timeout=0.05, poll_interval=0.01
-        )
+        WorkflowReviews(client=client).wait_for("run_1", "extract-1", timeout=0.05, poll_interval=0.01)
 
 
 # ---------------------------------------------------------------------------
@@ -428,13 +394,9 @@ async def test_async_get_parses_overlay() -> None:
 @pytest.mark.asyncio
 async def test_async_approve_sends_approved_verdict() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(
-        return_value={"submission_status": "already_applied", "overlay": _OVERLAY}
-    )
+    client._prepared_request = AsyncMock(return_value={"submission_status": "already_applied", "overlay": _OVERLAY})
 
-    resp = await AsyncWorkflowReviews(client=client).approve(
-        "run_1", "extract-1", version_stamp=3
-    )
+    resp = await AsyncWorkflowReviews(client=client).approve("run_1", "extract-1", version_stamp=3)
 
     request = client._prepared_request.call_args.args[0]
     assert request.data["verdict"] == "approved"
@@ -447,6 +409,4 @@ async def test_async_wait_for_times_out() -> None:
     client._prepared_request = AsyncMock(side_effect=NotFoundError("nope", status_code=404))
 
     with pytest.raises(TimeoutError):
-        await AsyncWorkflowReviews(client=client).wait_for(
-            "run_1", "extract-1", timeout=0.05, poll_interval=0.01
-        )
+        await AsyncWorkflowReviews(client=client).wait_for("run_1", "extract-1", timeout=0.05, poll_interval=0.01)

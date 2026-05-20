@@ -53,12 +53,6 @@ returned subdocument references can be fed back into per-section
 		if err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		subdocsFile, _ := cmd.Flags().GetString("subdocuments-file")
 		if subdocsFile == "" {
 			return fmt.Errorf("--subdocuments-file is required")
@@ -109,6 +103,12 @@ returned subdocument references can be fed back into per-section
 		if err != nil {
 			return err
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		instructions, _ := cmd.Flags().GetString("instructions")

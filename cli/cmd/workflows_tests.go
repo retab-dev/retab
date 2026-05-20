@@ -203,12 +203,6 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 		if err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		req := retab.WorkflowTestCreateRequest{}
 		req.WorkflowID = workflowID
 		req.Name, _ = cmd.Flags().GetString("name")
@@ -239,11 +233,17 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 		req.Target = retab.Resource(target)
 		req.Source = retab.Resource(source)
 		req.Assertion = retab.Resource(assertion)
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Workflows.Tests.Create(ctx, req)
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -266,7 +266,7 @@ output, name, timestamps.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -322,12 +322,6 @@ flaky runs.`,
 			!cmd.Flags().Changed("source-file") {
 			return fmt.Errorf("nothing to update: pass at least one of --name, --assertion-file, or --source-file")
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		req := retab.WorkflowTestUpdateRequest{}
 		req.Name, _ = cmd.Flags().GetString("name")
 		assertion, err := resolveJSONMap(cmd, "assertion-file")
@@ -350,11 +344,17 @@ flaky runs.`,
 			}
 			req.Source = retab.Resource(source)
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Workflows.Tests.Update(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -429,7 +429,7 @@ var workflowsTestsRunsCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -470,7 +470,7 @@ var workflowsTestsRunsGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -483,7 +483,7 @@ var workflowsTestsRunsCancelCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -504,7 +504,7 @@ var workflowsTestsRunsResultsListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -517,7 +517,7 @@ var workflowsTestsRunsResultsGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

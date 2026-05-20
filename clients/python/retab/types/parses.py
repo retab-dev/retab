@@ -13,7 +13,7 @@ TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 
 
 class ParseRequest(RetabBaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
 
     document: MIMEData = Field(..., description="The document to parse")
     model: str = Field(default="retab-small", description="The model to use for parsing")
@@ -55,4 +55,3 @@ class Parse(RetabBaseModel):
     output: ParseOutput = Field(..., description="The parsed document content")
     usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the parse operation")
     created_at: Optional[datetime.datetime] = None
-    updated_at: Optional[datetime.datetime] = None

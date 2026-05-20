@@ -74,6 +74,40 @@ func TestClassificationValidatesCategoriesFileBeforeResolvingFileID(t *testing.T
 	}
 }
 
+func TestClassificationReadsCategoriesFileBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-classification", RunE: classificationsCreateCmd.RunE}
+	addDocumentFlags(cmd)
+	cmd.Flags().String("model", "", "")
+	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "")
+	cmd.Flags().Bool("bust-cache", false, "")
+	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "first-n-pages", "")
+	cmd.Flags().String("instructions", "", "")
+	cmd.Flags().StringArray("category", nil, "")
+	cmd.Flags().String("categories-file", "", "")
+
+	_ = cmd.Flags().Set("file-id", "file_123")
+	_ = cmd.Flags().Set("model", "retab-small")
+	_ = cmd.Flags().Set("categories-file", "/does/not/exist.json")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected categories-file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--categories-file") {
+		t.Fatalf("error %q does not mention --categories-file", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --categories-file", err.Error())
+	}
+}
+
 func TestClassificationRejectsMalformedCategoriesBeforeResolvingFileID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -150,6 +184,38 @@ func TestSplitValidatesSubdocumentsFileBeforeResolvingFileID(t *testing.T) {
 	}
 }
 
+func TestSplitReadsSubdocumentsFileBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-split", RunE: splitsCreateCmd.RunE}
+	addDocumentFlags(cmd)
+	cmd.Flags().String("subdocuments-file", "", "")
+	cmd.Flags().String("model", "", "")
+	cmd.Flags().Var(&nonNegativeIntFlagValue{}, "n-consensus", "")
+	cmd.Flags().Bool("bust-cache", false, "")
+	cmd.Flags().String("instructions", "", "")
+
+	_ = cmd.Flags().Set("file-id", "file_123")
+	_ = cmd.Flags().Set("model", "retab-small")
+	_ = cmd.Flags().Set("subdocuments-file", "/does/not/exist.json")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected subdocuments-file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--subdocuments-file") {
+		t.Fatalf("error %q does not mention --subdocuments-file", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --subdocuments-file", err.Error())
+	}
+}
+
 func TestSplitRejectsMalformedSubdocumentsBeforeResolvingFileID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -221,6 +287,35 @@ func TestEditTemplateCreateValidatesFormFieldsBeforeResolvingFileID(t *testing.T
 	}
 }
 
+func TestEditTemplateCreateReadsFormFieldsBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-edit-template", RunE: editsTemplatesCreateCmd.RunE}
+	addDocumentFlags(cmd)
+	cmd.Flags().String("name", "", "")
+	cmd.Flags().String("form-fields-file", "", "")
+
+	_ = cmd.Flags().Set("file-id", "file_123")
+	_ = cmd.Flags().Set("name", "bad-template")
+	_ = cmd.Flags().Set("form-fields-file", "/does/not/exist.json")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected form-fields-file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--form-fields-file") {
+		t.Fatalf("error %q does not mention --form-fields-file", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --form-fields-file", err.Error())
+	}
+}
+
 func TestEditTemplateCreateRejectsBlankNameBeforeResolvingFileID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -253,6 +348,156 @@ func TestEditTemplateCreateRejectsBlankNameBeforeResolvingFileID(t *testing.T) {
 	}
 	if got := hits.Load(); got != 0 {
 		t.Fatalf("server was hit %d time(s), want name validation before file-id resolution", got)
+	}
+}
+
+func TestParseCreateReadsDocumentBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-parse", RunE: parsesCreateCmd.RunE}
+	addDocumentFlags(cmd)
+	cmd.Flags().String("model", "", "")
+	cmd.Flags().String("table-parsing-format", "", "")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 96, max: 300}, "image-resolution-dpi", "")
+	cmd.Flags().String("instructions", "", "")
+	cmd.Flags().Bool("bust-cache", false, "")
+
+	_ = cmd.Flags().Set("file", "/tmp/missing.pdf")
+	_ = cmd.Flags().Set("model", "retab-small")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected document file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "/tmp/missing.pdf") {
+		t.Fatalf("error %q does not mention missing document", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --file", err.Error())
+	}
+}
+
+func TestPartitionCreateReadsDocumentBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-partition", RunE: partitionsCreateCmd.RunE}
+	addDocumentFlags(cmd)
+	cmd.Flags().String("key", "", "")
+	cmd.Flags().String("instructions", "", "")
+	cmd.Flags().String("model", "", "")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "")
+	cmd.Flags().Bool("bust-cache", false, "")
+
+	_ = cmd.Flags().Set("file", "/tmp/missing.pdf")
+	_ = cmd.Flags().Set("key", "invoice number")
+	_ = cmd.Flags().Set("instructions", "one record per invoice")
+	_ = cmd.Flags().Set("model", "retab-small")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected document file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "/tmp/missing.pdf") {
+		t.Fatalf("error %q does not mention missing document", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --file", err.Error())
+	}
+}
+
+func TestEditCreateReadsDocumentBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-edit", RunE: editsCreateCmd.RunE}
+	addDocumentFlags(cmd)
+	cmd.Flags().String("instructions", "", "")
+	cmd.Flags().String("template-id", "", "")
+	cmd.Flags().String("model", "", "")
+	cmd.Flags().String("color", "", "")
+	cmd.Flags().Bool("bust-cache", false, "")
+
+	_ = cmd.Flags().Set("file", "/tmp/missing.pdf")
+	_ = cmd.Flags().Set("instructions", "redact")
+	_ = cmd.Flags().Set("model", "retab-small")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected document file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "/tmp/missing.pdf") {
+		t.Fatalf("error %q does not mention missing document", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --file", err.Error())
+	}
+}
+
+func TestExtractionCreateReadsSchemaBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-extraction", RunE: extractionsCreateCmd.RunE}
+	addExtractionBodyFlags(cmd)
+
+	_ = cmd.Flags().Set("file", "/tmp/missing.pdf")
+	_ = cmd.Flags().Set("model", "retab-small")
+	_ = cmd.Flags().Set("json-schema-file", "/tmp/missing-schema.json")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected schema file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--json-schema-file") {
+		t.Fatalf("error %q does not mention --json-schema-file", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --json-schema-file", err.Error())
+	}
+}
+
+func TestExtractionStreamReadsSchemaBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-extraction-stream", RunE: extractionsStreamCmd.RunE}
+	addExtractionBodyFlags(cmd)
+
+	_ = cmd.Flags().Set("file", "/tmp/missing.pdf")
+	_ = cmd.Flags().Set("model", "retab-small")
+	_ = cmd.Flags().Set("json-schema-file", "/tmp/missing-schema.json")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected schema file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--json-schema-file") {
+		t.Fatalf("error %q does not mention --json-schema-file", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --json-schema-file", err.Error())
 	}
 }
 

@@ -57,12 +57,6 @@ when the type is obvious from the cover.`,
 		if err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		categoriesFile, _ := cmd.Flags().GetString("categories-file")
 		categoryFlags, _ := cmd.Flags().GetStringArray("category")
 		var categories []retab.ClassificationCategory
@@ -114,6 +108,12 @@ when the type is obvious from the cover.`,
 		if err != nil {
 			return err
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")

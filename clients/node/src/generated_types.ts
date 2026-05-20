@@ -180,10 +180,8 @@ export const ZPartition = z.lazy(() =>
     allow_overlap: z.boolean().default(false),
     output: z.array(ZPartitionChunk),
     consensus: ZPartitionConsensus,
-    origin: ZProcessingRequestOrigin.nullable().optional(),
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
 );
 export type Partition = z.infer<typeof ZPartition>;
@@ -258,10 +256,8 @@ export const ZClassification = z.lazy(() =>
     instructions: z.string().nullable().optional(),
     output: ZClassificationDecision,
     consensus: ZClassificationConsensus,
-    origin: ZProcessingRequestOrigin.nullable().optional(),
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
 );
 export type Classification = z.infer<typeof ZClassification>;
@@ -306,11 +302,9 @@ export const ZExtraction = z.lazy(() =>
     instructions: z.string().nullable().optional(),
     output: z.record(z.string(), z.any()),
     consensus: ZExtractionConsensus,
-    origin: ZProcessingRequestOrigin.nullable().optional(),
     metadata: z.record(z.string(), z.string()),
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
 );
 export type Extraction = z.infer<typeof ZExtraction>;
@@ -575,7 +569,6 @@ export const ZEdit = z.lazy(() =>
     data: ZEditResult,
     usage: ZRetabUsage,
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
 );
 export type Edit = z.infer<typeof ZEdit>;
@@ -672,7 +665,6 @@ export const ZParse = z.lazy(() =>
     output: ZParseOutput,
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
 );
 export type Parse = z.infer<typeof ZParse>;
@@ -709,10 +701,8 @@ export const ZSplit = z.lazy(() =>
     instructions: z.string().nullable().optional(),
     output: z.array(ZSplitResult),
     consensus: ZSplitConsensus.nullable().optional(),
-    origin: ZProcessingRequestOrigin.nullable().optional(),
     usage: ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
 );
 export type Split = z.infer<typeof ZSplit>;

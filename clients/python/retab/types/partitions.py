@@ -7,7 +7,6 @@ from pydantic import Field
 from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
-from .extractions import ProcessingRequestOrigin
 from .mime import FileRef, MIMEData
 
 
@@ -75,13 +74,8 @@ class Partition(RetabBaseModel):
         default_factory=PartitionConsensus,
         description="Consensus metadata for multi-vote partition runs",
     )
-    origin: Optional[ProcessingRequestOrigin] = Field(
-        default=None,
-        description="Origin of the partition request",
-    )
     usage: Optional[RetabUsage] = Field(
         default=None,
         description="Usage information for the partition operation",
     )
     created_at: Optional[datetime.datetime] = None
-    updated_at: Optional[datetime.datetime] = None

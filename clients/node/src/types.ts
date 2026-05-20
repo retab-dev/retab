@@ -180,9 +180,8 @@ export const ZParse = z
     output: ZParseOutput,
     usage: generated.ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
-  .passthrough();
+  .strip();
 export type Parse = z.infer<typeof ZParse>;
 
 // ---------------------------------------------------------------------------
@@ -216,9 +215,8 @@ export const ZClassification = z
     consensus: ZClassificationConsensus.default({ choices: [] }),
     usage: generated.ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
-  .passthrough();
+  .strip();
 export type Classification = z.infer<typeof ZClassification>;
 
 // Split resource
@@ -261,9 +259,8 @@ export const ZSplit = z
     consensus: ZSplitConsensus.nullable().optional(),
     usage: generated.ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
-  .passthrough();
+  .strip();
 export type Split = z.infer<typeof ZSplit>;
 
 export const ZProcessingRequestOrigin = z.object({
@@ -302,12 +299,10 @@ export const ZPartition = z
     allow_overlap: z.boolean().default(false),
     output: z.array(ZPartitionChunk).default([]),
     consensus: ZPartitionConsensus.default({ choices: [] }),
-    origin: ZProcessingRequestOrigin.nullable().optional(),
     usage: generated.ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
-  .passthrough();
+  .strip();
 export type Partition = z.infer<typeof ZPartition>;
 
 // Edit resource (canonical stored record from /v1/edits). NOTE: the generated
@@ -331,9 +326,8 @@ export const ZEdit = z
     data: ZEditResult,
     usage: generated.ZRetabUsage,
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
-  .passthrough();
+  .strip();
 export type Edit = z.infer<typeof ZEdit>;
 
 // Extraction resource (new v2 shape from /v1/extractions). Mirrors
@@ -357,13 +351,11 @@ export const ZExtractionV2 = z
     instructions: z.string().nullable().optional(),
     output: z.record(z.any()),
     consensus: ZExtractionConsensus.default({ choices: [] }),
-    origin: ZProcessingRequestOrigin.nullable().optional(),
     metadata: z.record(z.string()).default({}),
     usage: generated.ZRetabUsage.nullable().optional(),
     created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
   })
-  .passthrough();
+  .strip();
 export type ExtractionV2 = z.infer<typeof ZExtractionV2>;
 
 export const ZGenerateSchemaRequest = z.object({
@@ -953,6 +945,18 @@ export const ZReviewClaim = z
   .passthrough();
 export type ReviewClaim = z.infer<typeof ZReviewClaim>;
 
+/** The block-specific JSON value a reviewer edits. */
+export const ZReviewableValue = z
+  .object({
+    kind: z.enum(['extract', 'split', 'classifier', 'for_each', 'partition']),
+    source_seq: z.number(),
+    snapshot_path: z.array(z.string()),
+    value: z.record(z.unknown()),
+    effective_output: z.record(z.unknown()),
+  })
+  .passthrough();
+export type ReviewableValue = z.infer<typeof ZReviewableValue>;
+
 /** The full versioned review sidecar for one gated block run. */
 export const ZReviewOverlay = z
   .object({
@@ -976,6 +980,7 @@ export const ZReviewOverlay = z
     audit: z.array(ZAuditEntry).default([]),
     head_seq: z.number(),
     effective_seq: z.number().nullable().default(null),
+    reviewable_value: ZReviewableValue.nullable().default(null),
   })
   .strip();
 export type ReviewOverlay = z.infer<typeof ZReviewOverlay>;

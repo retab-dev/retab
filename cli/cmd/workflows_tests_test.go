@@ -661,6 +661,62 @@ func TestWorkflowsExperimentsCreateRejectsInvalidDocumentInputsBeforeRequest(t *
 	}
 }
 
+func TestWorkflowsExperimentsCreateReadsDocumentFilesBeforeCredentials(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	missingPath := filepath.Join(t.TempDir(), "missing-captures.json")
+	if err := workflowsExperimentsCreateCmd.Flags().Set("block-id", "blk_123"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsExperimentsCreateCmd.Flags().Set("name", "experiment"); err != nil {
+		t.Fatal(err)
+	}
+	if err := workflowsExperimentsCreateCmd.Flags().Set("captures-file", missingPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = workflowsExperimentsCreateCmd.Flags().Set("block-id", "")
+		_ = workflowsExperimentsCreateCmd.Flags().Set("name", "")
+		_ = workflowsExperimentsCreateCmd.Flags().Set("captures-file", "")
+	})
+
+	err := workflowsExperimentsCreateCmd.RunE(workflowsExperimentsCreateCmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected missing captures file error")
+	}
+	if strings.Contains(err.Error(), "no credentials") {
+		t.Fatalf("local file validation should run before credentials, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "--captures-file") || !strings.Contains(err.Error(), "missing-captures.json") {
+		t.Fatalf("error should mention missing captures file, got %q", err.Error())
+	}
+}
+
+func TestWorkflowsExperimentsUpdateReadsDocumentFilesBeforeCredentials(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	missingPath := filepath.Join(t.TempDir(), "missing-documents.json")
+	if err := workflowsExperimentsUpdateCmd.Flags().Set("documents-file", missingPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsExperimentsUpdateCmd.Flags().Set("documents-file", "") })
+
+	err := workflowsExperimentsUpdateCmd.RunE(workflowsExperimentsUpdateCmd, []string{"wf_123", "exp_123"})
+	if err == nil {
+		t.Fatal("expected missing documents file error")
+	}
+	if strings.Contains(err.Error(), "no credentials") {
+		t.Fatalf("local file validation should run before credentials, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "--documents-file") || !strings.Contains(err.Error(), "missing-documents.json") {
+		t.Fatalf("error should mention missing documents file, got %q", err.Error())
+	}
+}
+
 func TestWorkflowsExperimentsRejectBlankNameBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -926,6 +982,68 @@ func TestWorkflowsTestsCreateRejectsAssertionMissingTargetBeforeRequest(t *testi
 	}
 	if got := hits.Load(); got != 0 {
 		t.Fatalf("server was hit %d time(s), want no requests", got)
+	}
+}
+
+func TestWorkflowsTestsCreateReadsLocalFilesBeforeCredentials(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	dir := t.TempDir()
+	targetPath := filepath.Join(dir, "target.json")
+	assertionPath := filepath.Join(dir, "assertion.json")
+	missingPath := filepath.Join(dir, "missing-source.json")
+	if err := os.WriteFile(targetPath, []byte(`{"type":"block","block_id":"block_123"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(assertionPath, []byte(`{"target":{"output_handle_id":"output-json-0"},"condition":{"kind":"exists"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for flag, value := range map[string]string{
+		"name":           "baseline",
+		"target-file":    targetPath,
+		"source-file":    missingPath,
+		"assertion-file": assertionPath,
+	} {
+		if err := workflowsTestsCreateCmd.Flags().Set(flag, value); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = workflowsTestsCreateCmd.Flags().Set(flag, "") })
+	}
+
+	err := workflowsTestsCreateCmd.RunE(workflowsTestsCreateCmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected missing source file error")
+	}
+	if strings.Contains(err.Error(), "no credentials") {
+		t.Fatalf("local file validation should run before credentials, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "--source-file") || !strings.Contains(err.Error(), "missing-source.json") {
+		t.Fatalf("error should mention missing source file, got %q", err.Error())
+	}
+}
+
+func TestWorkflowsTestsUpdateReadsLocalFilesBeforeCredentials(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	missingPath := filepath.Join(t.TempDir(), "missing-assertion.json")
+	if err := workflowsTestsUpdateCmd.Flags().Set("assertion-file", missingPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsTestsUpdateCmd.Flags().Set("assertion-file", "") })
+
+	err := workflowsTestsUpdateCmd.RunE(workflowsTestsUpdateCmd, []string{"wf_123", "test_123"})
+	if err == nil {
+		t.Fatal("expected missing assertion file error")
+	}
+	if strings.Contains(err.Error(), "no credentials") {
+		t.Fatalf("local file validation should run before credentials, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "--assertion-file") || !strings.Contains(err.Error(), "missing-assertion.json") {
+		t.Fatalf("error should mention missing assertion file, got %q", err.Error())
 	}
 }
 

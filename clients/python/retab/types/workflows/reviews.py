@@ -44,6 +44,7 @@ EditOrigin = Literal["human_edit", "agent_edit"]
 
 #: Result of submitting a decision; ``already_*`` values are idempotent replays.
 SubmissionStatus = Literal["accepted", "already_received", "already_applied"]
+ReviewableKind = Literal["extract", "split", "classifier", "for_each", "partition"]
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +140,18 @@ class ReviewClaim(RetabBaseModel):
     expires_at: datetime.datetime = Field(..., description="When the claim lapses.")
 
 
+class ReviewableValue(RetabBaseModel):
+    """The block-specific JSON value a reviewer edits."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    kind: ReviewableKind = Field(..., description="Primitive reviewable value kind.")
+    source_seq: int = Field(..., description="Overlay version sequence this value was projected from.")
+    snapshot_path: list[str] = Field(..., description="Path in the full output snapshot that contains this value.")
+    value: dict[str, Any] = Field(..., description="The JSON value to review or edit.")
+    effective_output: dict[str, Any] = Field(..., description="Full output snapshot compiled from this reviewable value.")
+
+
 # ---------------------------------------------------------------------------
 # Top-level overlay shapes
 # ---------------------------------------------------------------------------
@@ -175,6 +188,7 @@ class ReviewOverlay(RetabBaseModel):
     audit: list[AuditEntry] = Field(default_factory=list, description="Append-only audit log.")
     head_seq: int = Field(..., description="Sequence of the latest version.")
     effective_seq: int | None = Field(default=None, description="Sequence of the effective version, if decided.")
+    reviewable_value: ReviewableValue | None = Field(default=None, description="Current block-specific value to review or edit.")
 
     @property
     def version_stamp(self) -> int:
@@ -246,11 +260,13 @@ __all__ = [
     "ReviewVerdict",
     "EditOrigin",
     "SubmissionStatus",
+    "ReviewableKind",
     "Actor",
     "OutputVersion",
     "ReviewDecision",
     "AuditEntry",
     "ReviewClaim",
+    "ReviewableValue",
     "ReviewOverlay",
     "ReviewQueueItem",
     "ReviewQueueResponse",

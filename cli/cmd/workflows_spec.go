@@ -15,7 +15,7 @@ import (
 //
 // Mirrors the four methods on `WorkflowSpecsService` in the Go SDK:
 // validate, plan, apply (POST a YAML body), and export (GET an existing
-// workflow back to YAML by id). Aimed at the Terraform-style flow:
+// workflow back to YAML by id). Aimed at the declarative workflow flow:
 // edit YAML in your repo, plan, apply, commit.
 
 var workflowsSpecCmd = &cobra.Command{
@@ -24,7 +24,7 @@ var workflowsSpecCmd = &cobra.Command{
 	Long: `Validate, plan, apply, and export YAML workflow specs.
 
 A spec is a single YAML file describing a workflow's blocks, edges, and
-metadata. The four verbs form a Terraform-style loop:
+metadata. The four verbs form a declarative workflow loop:
 
   validate   parse + type-check the spec, no server changes
   plan       diff the spec against the live workflow without applying
@@ -96,7 +96,7 @@ of main.`,
 		if err := failIfSpecValidationInvalid(result); err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -107,7 +107,7 @@ var workflowsSpecPlanCmd = &cobra.Command{
 blocks would be created, updated, deleted; which edges would be re-wired.
 
 Plan is read-only — safe to run on production specs. Pair it with
-` + "`apply`" + ` for a Terraform-style review-then-apply loop.`,
+` + "`apply`" + ` for a declarative workflow review-then-apply loop.`,
 	Example: `  retab workflows spec plan ./workflow.yaml
   cat workflow.yaml | retab workflows spec plan - | jq .changes`,
 	Args: cobra.ExactArgs(1),
@@ -129,7 +129,7 @@ Plan is read-only — safe to run on production specs. Pair it with
 		if err := failIfSpecValidationInvalid(result); err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -162,7 +162,7 @@ Mutating — gate behind ` + "`plan`" + ` in CI if the workflow is in production
 		if err := failIfSpecValidationInvalid(result); err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
