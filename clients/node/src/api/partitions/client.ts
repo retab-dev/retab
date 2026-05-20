@@ -52,7 +52,7 @@ export default class APIPartitions extends CompositionClient {
       instructions: params.instructions,
       model: params.model,
       n_consensus: params.n_consensus ?? 1,
-      allow_overlap: params.allow_overlap === true,
+      allow_overlap: params.allow_overlap ?? true,
     };
     if (params.bust_cache) {
       body['bust_cache'] = true;

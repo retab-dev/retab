@@ -21,7 +21,7 @@ into ` + "`target_block.input`" + `, with optional handles
 multiple ports.
 
 Most workflows don't need direct edge management: when you add a block
-from a start block in the visual editor, edges are auto-created. Reach
+from a start-document block in the visual editor, edges are auto-created. Reach
 for ` + "`workflows edges create`" + ` when scaffolding a graph from JSON,
 re-wiring after a refactor, or fixing a disconnected node flagged by
 ` + "`workflows diagnose`" + `.
@@ -34,7 +34,7 @@ dynamic ports.`,
 	Example: `  # Inspect every edge
   retab workflows edges list wf_abc123
 
-  # Wire two blocks; "start" resolves to the workflow's single start block
+  # Wire two blocks; "start" resolves to the workflow's single start-document block
   retab workflows edges create wf_abc123 \
     --source-block start --target-block blk_extract_1
 
@@ -107,10 +107,10 @@ func resolveWorkflowEdgeStartAliasesFromBlocks(blocks []retab.WorkflowBlock, req
 		return nil
 	}
 	if len(startBlockIDs) == 0 {
-		return fmt.Errorf("start alias requested, but workflow has no start block")
+		return fmt.Errorf("start alias requested, but workflow has no start-document block")
 	}
 	if len(startBlockIDs) > 1 {
-		return fmt.Errorf("start alias is ambiguous: workflow has multiple start blocks")
+		return fmt.Errorf("start alias is ambiguous: workflow has multiple start-document blocks")
 	}
 	if req.SourceBlock == "start" {
 		req.SourceBlock = startBlockIDs[0]
@@ -276,9 +276,9 @@ for conditional JSON routes. If a route omits ` + "`handle_key`" + `, Retab
 derives one from the human label by lowercasing it and replacing spaces with
 hyphens.
 
-For ` + "`--source-block start`" + ` or ` + "`--target-block start`" + `, ` + "`start`" + `
-is an alias for the workflow's single block of type ` + "`start`" + ` unless a
-block with id ` + "`start`" + ` already exists. For ` + "`--target-handle`" + `,
+For ` + "`--source-block start`" + ` or ` + "`--target-block start`" + `, ` + "`start-document`" + `
+is an alias for the workflow's single block of type ` + "`start-document`" + ` unless a
+block with id ` + "`start-document`" + ` already exists. For ` + "`--target-handle`" + `,
 you may pass the friendly input name from the block config, such as
 ` + "`document`" + `. The CLI resolves ` + "`document`" + ` to
 ` + "`input-file-document`" + ` for extract/classifier blocks and
@@ -336,7 +336,7 @@ objects with ` + "`source_block`" + `, ` + "`target_block`" + `, and optional
 ` + "`source_handle`" + `, ` + "`target_handle`" + `, ` + "`id`" + `.
 
 Batch creation supports the same friendly aliases as ` + "`edges create`" + `:
-` + "`source_block: \"start\"`" + ` resolves to the generated start block, and
+` + "`source_block: \"start\"`" + ` resolves to the generated start-document block, and
 ` + "`target_handle: \"document\"`" + ` resolves to the target block's document
 input handle.`,
 	Example: `  # Bulk-wire a graph from a manifest
@@ -442,8 +442,8 @@ func init() {
 	workflowsEdgesListCmd.Flags().String("target-block", "", "filter by target block")
 
 	workflowsEdgesCreateCmd.Flags().String("id", "", "edge id (optional)")
-	workflowsEdgesCreateCmd.Flags().String("source-block", "", "source block id (required) (use start for the single start block)")
-	workflowsEdgesCreateCmd.Flags().String("target-block", "", "target block id (required) (use start for the single start block)")
+	workflowsEdgesCreateCmd.Flags().String("source-block", "", "source block id (required) (use start for the single start-document block)")
+	workflowsEdgesCreateCmd.Flags().String("target-block", "", "target block id (required) (use start for the single start-document block)")
 	workflowsEdgesCreateCmd.Flags().String("source-handle", "", "source handle")
 	workflowsEdgesCreateCmd.Flags().String("target-handle", "", "target handle")
 	_ = workflowsEdgesCreateCmd.MarkFlagRequired("source-block")

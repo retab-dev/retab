@@ -28,8 +28,8 @@ func TestIsEffectivelyEmptyDraft(t *testing.T) {
 	}{
 		{name: "no blocks", blocks: nil, want: true},
 		{name: "empty slice", blocks: []retab.WorkflowBlock{}, want: true},
-		{name: "single start block — freshly-created shape", blocks: []retab.WorkflowBlock{{Type: "start"}}, want: true},
-		{name: "single non-start block", blocks: []retab.WorkflowBlock{{Type: "extract"}}, want: false},
+		{name: "single start-document block — freshly-created shape", blocks: []retab.WorkflowBlock{{Type: "start"}}, want: true},
+		{name: "single non-start-document block", blocks: []retab.WorkflowBlock{{Type: "extract"}}, want: false},
 		{name: "two blocks", blocks: []retab.WorkflowBlock{{Type: "start"}, {Type: "extract"}}, want: false},
 	}
 	for _, tc := range cases {
@@ -615,10 +615,10 @@ func TestWorkflowsDiagnoseGraphFileAcceptsEntitiesShape(t *testing.T) {
 			"issues":      []any{},
 			"suggestions": []any{},
 			"stats": map[string]any{
-				"total_blocks": 1,
-				"total_edges":  1,
-				"block_types":  map[string]any{"start": 1},
-				"start_blocks": 1,
+				"total_blocks":          1,
+				"total_edges":           1,
+				"block_types":           map[string]any{"start": 1},
+				"start_document_blocks": 1,
 			},
 		})
 	}))
@@ -631,7 +631,7 @@ func TestWorkflowsDiagnoseGraphFileAcceptsEntitiesShape(t *testing.T) {
 		"blocks": [
 			{
 				"id": "start",
-				"type": "start",
+				"type": "start-document",
 				"label": "Start",
 				"config": {},
 				"position_x": 11,
@@ -738,7 +738,7 @@ func TestWorkflowsGetExampleUsesPublishedObjectShape(t *testing.T) {
 }
 
 // TestWarnIfEmptyWorkflowOnPublish_StartOnly mocks Blocks.List against a
-// fake HTTP server returning a single `start` block, then asserts the
+// fake HTTP server returning a single `start-document` block, then asserts the
 // warning text — and only that text — lands on the provided writer.
 // This is the canonical "user fat-fingered `workflows publish` on a
 // fresh draft" scenario.
@@ -750,7 +750,7 @@ func TestWarnIfEmptyWorkflowOnPublish_StartOnly(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
-				{"id": "start_1", "workflow_id": "wf_abc", "type": "start", "label": "Start"},
+				{"id": "start_1", "workflow_id": "wf_abc", "type": "start-document", "label": "Start"},
 			},
 			"list_metadata": map[string]any{},
 		})
@@ -766,7 +766,7 @@ func TestWarnIfEmptyWorkflowOnPublish_StartOnly(t *testing.T) {
 	warnIfEmptyWorkflowOnPublish(context.Background(), client, "wf_abc", &buf)
 
 	out := buf.String()
-	if !strings.Contains(out, "warning: workflow has only a start block") {
+	if !strings.Contains(out, "warning: workflow has only a start-document block") {
 		t.Errorf("missing primary warning. got:\n%s", out)
 	}
 	if !strings.Contains(out, "add blocks with `retab workflows blocks create`") {
@@ -781,7 +781,7 @@ func TestWarnIfEmptyWorkflowOnPublish_NonEmpty(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
-				{"id": "start_1", "type": "start"},
+				{"id": "start_1", "type": "start-document"},
 				{"id": "blk_extract_1", "type": "extract"},
 			},
 			"list_metadata": map[string]any{},

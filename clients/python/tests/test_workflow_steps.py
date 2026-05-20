@@ -368,7 +368,7 @@ def test_workflow_steps_get_empty_handle_outputs() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "block_id": "start-1",
-        "block_type": "start",
+        "block_type": "start-document",
         "block_label": "Start",
         "lifecycle": {"status": "completed"},
         "handle_outputs": None,

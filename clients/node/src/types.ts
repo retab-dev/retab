@@ -296,7 +296,7 @@ export const ZPartition = z
     key: z.string(),
     instructions: z.string().default(''),
     n_consensus: z.number().default(1),
-    allow_overlap: z.boolean().default(false),
+    allow_overlap: z.boolean().default(true),
     output: z.array(ZPartitionChunk).default([]),
     consensus: ZPartitionConsensus.default({ choices: [] }),
     usage: generated.ZRetabUsage.nullable().optional(),
@@ -816,7 +816,7 @@ export const ZWorkflowDiagnosisStats = z
     total_blocks: z.number().default(0),
     total_edges: z.number().default(0),
     block_types: z.record(z.number()).default({}),
-    start_blocks: z.number().default(0),
+    start_document_blocks: z.number().default(0),
   })
   .passthrough();
 export type WorkflowDiagnosisStats = z.infer<typeof ZWorkflowDiagnosisStats>;
@@ -830,7 +830,7 @@ export const ZWorkflowDiagnosisResponse = z
       total_blocks: 0,
       total_edges: 0,
       block_types: {},
-      start_blocks: 0,
+      start_document_blocks: 0,
     }),
   })
   .passthrough();

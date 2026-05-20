@@ -367,7 +367,7 @@ def test_workflow_run_v2_typed_fields() -> None:
 
 
 def test_workflow_with_entities_parsing() -> None:
-    """WorkflowWithEntities parses blocks and edges and exposes start_blocks."""
+    """WorkflowWithEntities parses blocks and edges and exposes start_document_blocks."""
     wfe = WorkflowWithEntities.model_validate(
         {
             "workflow": {
@@ -377,7 +377,7 @@ def test_workflow_with_entities_parsing() -> None:
                 "updated_at": "2026-01-01T00:00:00Z",
             },
             "blocks": [
-                {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start", "label": "Document Input"},
+                {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start-document", "label": "Document Input"},
                 {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract", "label": "Extract"},
                 {"id": "json-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_json", "label": "JSON Input"},
             ],
@@ -400,9 +400,9 @@ def test_workflow_with_entities_parsing() -> None:
     assert len(wfe.blocks) == 3
     assert len(wfe.edges) == 1
 
-    start_blocks = wfe.start_blocks
-    assert len(start_blocks) == 1
-    assert start_blocks[0].id == "start-1"
+    start_document_blocks = wfe.start_document_blocks
+    assert len(start_document_blocks) == 1
+    assert start_document_blocks[0].id == "start-1"
 
     json_blocks = wfe.start_json_blocks
     assert len(json_blocks) == 1
@@ -537,14 +537,14 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
 def test_workflow_blocks_create_batch_accepts_typed_requests() -> None:
     client = MagicMock()
     client._prepared_request.return_value = [
-        {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start"},
+        {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start-document"},
         {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract"},
     ]
 
     blocks = WorkflowBlocks(client=client).create_batch(
         "wf_1",
         [
-            WorkflowBlockCreateRequest(id="start-1", type="start"),
+            WorkflowBlockCreateRequest(id="start-1", type="start-document"),
             WorkflowBlockCreateRequest(id="extract-1", type="extract"),
         ],
     )
@@ -553,7 +553,7 @@ def test_workflow_blocks_create_batch_accepts_typed_requests() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/wf_1/blocks/batch"
     assert request.data == [
-        {"id": "start-1", "type": "start", "label": "", "position_x": 0.0, "position_y": 0.0},
+        {"id": "start-1", "type": "start-document", "label": "", "position_x": 0.0, "position_y": 0.0},
         {"id": "extract-1", "type": "extract", "label": "", "position_x": 0.0, "position_y": 0.0},
     ]
     assert [block.id for block in blocks] == ["start-1", "extract-1"]
@@ -726,7 +726,7 @@ def test_workflows_get_entities_route() -> None:
             "created_at": "2026-01-01T00:00:00Z",
             "updated_at": "2026-01-01T00:00:00Z",
         },
-        "blocks": [{"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start"}],
+        "blocks": [{"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start-document"}],
         "edges": [],
     }
 
@@ -736,7 +736,7 @@ def test_workflows_get_entities_route() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/wf_1/entities"
     assert isinstance(wfe, WorkflowWithEntities)
-    assert len(wfe.start_blocks) == 1
+    assert len(wfe.start_document_blocks) == 1
 
 
 def test_workflows_list_returns_typed_items() -> None:

@@ -62,7 +62,7 @@ func TestWorkflowsEdgesCreateResolvesSourceStartAliasBeforeGeneratingID(t *testi
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`[{"id":"blk_generated_start","type":"start"},{"id":"extract_1","type":"extract"}]`))
+			_, _ = w.Write([]byte(`[{"id":"blk_generated_start","type":"start-document"},{"id":"extract_1","type":"extract"}]`))
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
@@ -155,7 +155,7 @@ func TestWorkflowsEdgesCreateResolvesTargetStartAlias(t *testing.T) {
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`[{"id":"extract_1","type":"extract"},{"id":"blk_generated_start","type":"start"}]`))
+			_, _ = w.Write([]byte(`[{"id":"extract_1","type":"extract"},{"id":"blk_generated_start","type":"start-document"}]`))
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)
@@ -199,7 +199,7 @@ func TestWorkflowsEdgesCreateResolvesFriendlyTargetInputHandle(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
-				{"id":"blk_generated_start","type":"start"},
+				{"id":"blk_generated_start","type":"start-document"},
 				{"id":"extract_1","type":"extract","config":{"inputs":[{"name":"document","type":"file","is_primary":true}]}}
 			]`))
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
@@ -263,7 +263,7 @@ func TestWorkflowsEdgesCreateResolvesDocumentHandleForDefaultFileInput(t *testin
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
-				{"id":"blk_generated_start","type":"start"},
+				{"id":"blk_generated_start","type":"start-document"},
 				{"id":"split_1","type":"split","config":{"subdocuments":[{"name":"invoice"}]}}
 			]`))
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
@@ -315,7 +315,7 @@ func TestWorkflowsEdgesCreateResolvesDocumentHandleForClassifier(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
-				{"id":"blk_generated_start","type":"start"},
+				{"id":"blk_generated_start","type":"start-document"},
 				{"id":"classifier_1","type":"classifier","config":{"categories":[{"name":"invoice"}]}}
 			]`))
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
@@ -443,7 +443,7 @@ func TestWorkflowsEdgesCreateBatchResolvesFriendlyAliasesBeforeGeneratingIDs(t *
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
-				{"id":"blk_generated_start","type":"start"},
+				{"id":"blk_generated_start","type":"start-document"},
 				{"id":"extract_1","type":"extract","config":{"inputs":[{"name":"document","type":"file","is_primary":true}]}},
 				{"id":"split_1","type":"split","config":{"subdocuments":[{"name":"invoice"}]}}
 			]`))
@@ -516,7 +516,7 @@ func TestWorkflowsEdgesCreateRejectsAmbiguousStartAlias(t *testing.T) {
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`[{"id":"start_a","type":"start"},{"id":"start_b","type":"start"},{"id":"extract_1","type":"extract"}]`))
+			_, _ = w.Write([]byte(`[{"id":"start_a","type":"start-document"},{"id":"start_b","type":"start-document"},{"id":"extract_1","type":"extract"}]`))
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
 			postHits.Add(1)
 			http.Error(w, "server should not be reached", http.StatusInternalServerError)
@@ -542,8 +542,8 @@ func TestWorkflowsEdgesCreateRejectsAmbiguousStartAlias(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected ambiguous start alias error")
 	}
-	if !strings.Contains(stderr, "multiple start blocks") {
-		t.Fatalf("stderr %q does not mention multiple start blocks", stderr)
+	if !strings.Contains(stderr, "multiple start-document blocks") {
+		t.Fatalf("stderr %q does not mention multiple start-document blocks", stderr)
 	}
 	if got := postHits.Load(); got != 0 {
 		t.Fatalf("edge create endpoint was hit %d time(s), want 0", got)
@@ -559,7 +559,7 @@ func TestWorkflowsEdgesCreateKeepsLiteralStartBlockID(t *testing.T) {
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`[{"id":"start","type":"document"},{"id":"generated_start","type":"start"},{"id":"extract_1","type":"extract"}]`))
+			_, _ = w.Write([]byte(`[{"id":"start","type":"document"},{"id":"generated_start","type":"start-document"},{"id":"extract_1","type":"extract"}]`))
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/edges":
 			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
 				t.Fatalf("decode request: %v", err)

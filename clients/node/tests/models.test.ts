@@ -82,6 +82,7 @@ describe('processing resource schemas', () => {
       origin: { type: 'project', id: 'proj_123' },
       updated_at: '2026-05-20T10:00:00Z',
     });
+    expect(partition.allow_overlap).toBe(true);
 
     const edit = ZEdit.parse({
       id: 'edt_123',

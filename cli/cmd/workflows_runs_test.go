@@ -104,7 +104,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
-					{"id": "block_generated", "type": "start", "label": "Document"},
+					{"id": "block_generated", "type": "start-document", "label": "Document"},
 					{"id": "parse", "type": "parse", "label": "Parse"},
 				},
 				"list_metadata": map[string]any{},
@@ -290,7 +290,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
-					{"id": "block_generated", "type": "start", "label": "Document"},
+					{"id": "block_generated", "type": "start-document", "label": "Document"},
 					{"id": "extract", "type": "extract", "label": "Extract"},
 				},
 				"list_metadata": map[string]any{},
@@ -356,7 +356,7 @@ func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *test
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
-				{"id": "block_generated", "type": "start", "label": "Document"},
+				{"id": "block_generated", "type": "start-document", "label": "Document"},
 			},
 			"list_metadata": map[string]any{},
 		})

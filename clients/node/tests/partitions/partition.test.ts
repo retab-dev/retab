@@ -50,7 +50,7 @@ class MockClient extends AbstractClient {
         key: 'invoice_number',
         instructions: 'Group all pages belonging to the same invoice number.',
         n_consensus: 3,
-        allow_overlap: false,
+        allow_overlap: true,
         output: [
           {
             key: 'INV-001',
@@ -124,7 +124,7 @@ describe('Node SDK partitions resource', () => {
       key: 'invoice_number',
       instructions: 'Group all pages belonging to the same invoice number.',
       n_consensus: 3,
-      allow_overlap: false,
+      allow_overlap: true,
       output: [
         {
           key: 'INV-001',
@@ -139,6 +139,21 @@ describe('Node SDK partitions resource', () => {
         credits: 1.0,
       },
     });
+  });
+
+  test('partitions.create defaults allow_overlap to true', async () => {
+    const mockClient = new MockClient();
+    const client = new APIV1(mockClient);
+
+    await client.partitions.create({
+      document: SAMPLE_DOCUMENT,
+      key: 'invoice_number',
+      instructions: 'Group all pages belonging to the same invoice number.',
+      model: 'retab-small',
+      n_consensus: 3,
+    });
+
+    expect(mockClient.requests[0]?.body?.allow_overlap).toBe(true);
   });
 
   test('partitions.list and delete use resource routes', async () => {

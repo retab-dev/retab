@@ -751,3 +751,43 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
         "n_consensus": 3,
         "allow_overlap": True,
     }
+
+
+def test_partitions_create_defaults_allow_overlap_to_true(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_prepared_request(request: object) -> dict[str, object]:
+        captured["request"] = request
+        return {
+            "id": "prtn_123",
+            "file": {
+                "id": "file_123",
+                "filename": "invoice.txt",
+                "mime_type": "text/plain",
+            },
+            "model": "retab-small",
+            "key": "invoice_number",
+            "instructions": "Split the document into one chunk per invoice number.",
+            "n_consensus": 3,
+            "output": [],
+            "consensus": {
+                "choices": [],
+                "likelihoods": None,
+            },
+            "usage": None,
+        }
+
+    with Retab(api_key="test", base_url="http://example.com/v1") as client:
+        monkeypatch.setattr(client, "_prepared_request", fake_prepared_request)
+        result = client.partitions.create(
+            document=_sample_document(),
+            key="invoice_number",
+            instructions="Split the document into one chunk per invoice number.",
+            model="retab-small",
+            n_consensus=3,
+        )
+
+    assert result.allow_overlap is True
+    assert getattr(captured["request"], "data")["allow_overlap"] is True
