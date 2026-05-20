@@ -32,6 +32,23 @@ func TestParseEdgeCreatePreservesExplicitID(t *testing.T) {
 	}
 }
 
+func TestWorkflowsEdgesHelpExplainsDynamicHandleKeys(t *testing.T) {
+	helpText := workflowsEdgesCmd.Long + "\n" + workflowsEdgesCreateCmd.Long + "\n" + workflowsEdgesCreateCmd.Example
+	for _, want := range []string{
+		"handle_key",
+		"output-file-booking-confirmation",
+		"output-json-needs-review",
+		"workflows blocks get",
+	} {
+		if !strings.Contains(helpText, want) {
+			t.Fatalf("edges help should contain %q:\n%s", want, helpText)
+		}
+	}
+	if strings.Contains(workflowsEdgesCreateCmd.Example, "--source-handle true") {
+		t.Fatalf("edge create example should use a full canonical output handle:\n%s", workflowsEdgesCreateCmd.Example)
+	}
+}
+
 func TestWorkflowsEdgesCreateRejectsEmptyEndpointsBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

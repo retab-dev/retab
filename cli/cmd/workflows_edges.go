@@ -22,7 +22,13 @@ Most workflows don't need direct edge management: when you add a block
 from a start block in the visual editor, edges are auto-created. Reach
 for ` + "`workflows edges create`" + ` when scaffolding a graph from JSON,
 re-wiring after a refactor, or fixing a disconnected node flagged by
-` + "`workflows diagnose`" + `.`,
+` + "`workflows diagnose`" + `.
+
+Dynamic split, classifier, and conditional outputs use ` + "`handle_key`" + `
+values, not display labels. For example, a subdocument named "booking
+confirmation" exposes ` + "`output-file-booking-confirmation`" + `. Use
+` + "`workflows blocks get`" + ` to inspect the block config before wiring
+dynamic ports.`,
 	Example: `  # Inspect every edge
   retab workflows edges list wf_abc123
 
@@ -135,17 +141,22 @@ var workflowsEdgesCreateCmd = &cobra.Command{
 	Short: "Create an edge",
 	Long: `Connect two blocks: data flows from ` + "`--source-block`" + ` into
 ` + "`--target-block`" + `. Use ` + "`--source-handle`" + ` /
-` + "`--target-handle`" + ` for blocks with multiple named ports (e.g. a
-` + "`conditional`" + ` block exposing ` + "`true`" + ` / ` + "`false`" + `
-branches).`,
+` + "`--target-handle`" + ` for blocks with multiple named ports.
+
+For dynamic routing blocks, source handles are built from route
+` + "`handle_key`" + ` values: ` + "`output-file-booking-confirmation`" + `
+for split/classifier file routes and ` + "`output-json-needs-review`" + `
+for conditional JSON routes. If a route omits ` + "`handle_key`" + `, Retab
+derives one from the human label by lowercasing it and replacing spaces with
+hyphens.`,
 	Example: `  # Connect extractor output to a classifier
   retab workflows edges create wf_abc123 \
     --source-block blk_extract_1 \
     --target-block blk_classify_1
 
-  # Connect a conditional's "true" branch
+  # Connect a conditional branch whose handle_key is "needs-review"
   retab workflows edges create wf_abc123 \
-    --source-block blk_cond_1 --source-handle true \
+    --source-block blk_cond_1 --source-handle output-json-needs-review \
     --target-block blk_extract_2`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {

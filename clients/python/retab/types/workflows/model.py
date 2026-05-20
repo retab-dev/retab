@@ -307,7 +307,7 @@ class ConditionalEvaluation(RetabBaseModel):
 
 
 class HilEvaluation(RetabBaseModel):
-    """Persisted record of a HIL block's branch evaluation.
+    """Persisted record of an embedded human-review gate evaluation.
 
     Same evaluation core as :class:`ConditionalEvaluation`, plus human-review
     state. Backing record for :data:`StepArtifactRef` with
