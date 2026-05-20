@@ -225,7 +225,7 @@ func TestReviewsApproveAcceptsInlineEditedOutput(t *testing.T) {
 	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("edited-output-json", `{"output":[{"name":"invoice","pages":[1]}]}`); err != nil {
+	if err := cmd.Flags().Set("edited-output-json", `{"splits":[{"name":"invoice","pages":[1]}]}`); err != nil {
 		t.Fatal(err)
 	}
 	if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
@@ -235,8 +235,8 @@ func TestReviewsApproveAcceptsInlineEditedOutput(t *testing.T) {
 	if !ok {
 		t.Fatalf("edited_output missing: %#v", body)
 	}
-	output, ok := edited["output"].([]any)
-	if !ok || len(output) != 1 {
+	splits, ok := edited["splits"].([]any)
+	if !ok || len(splits) != 1 {
 		t.Fatalf("edited output = %#v", edited)
 	}
 }
@@ -478,7 +478,7 @@ func TestReviewsApproveRejectsFileAndInlineEditedOutputTogether(t *testing.T) {
 	if err := cmd.Flags().Set("edited-output-file", "fixed.json"); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("edited-output-json", `{"output":[]}`); err != nil {
+	if err := cmd.Flags().Set("edited-output-json", `{"splits":[]}`); err != nil {
 		t.Fatal(err)
 	}
 	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
@@ -555,7 +555,7 @@ func TestReviewsEditAcceptsInlineSnapshot(t *testing.T) {
 	if err := cmd.Flags().Set("version-stamp", "1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("snapshot-json", `{"output":[{"name":"invoice","pages":[1]}]}`); err != nil {
+	if err := cmd.Flags().Set("snapshot-json", `{"splits":[{"name":"invoice","pages":[1]}]}`); err != nil {
 		t.Fatal(err)
 	}
 	if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
@@ -568,7 +568,7 @@ func TestReviewsEditAcceptsInlineSnapshot(t *testing.T) {
 	if !ok {
 		t.Fatalf("snapshot missing: %#v", body)
 	}
-	if _, ok := snapshot["output"].([]any); !ok {
+	if _, ok := snapshot["splits"].([]any); !ok {
 		t.Fatalf("snapshot = %#v", snapshot)
 	}
 }
@@ -595,7 +595,7 @@ func TestReviewsEditRejectsFileAndInlineSnapshotTogether(t *testing.T) {
 	if err := cmd.Flags().Set("snapshot-file", "corrected.json"); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("snapshot-json", `{"output":[]}`); err != nil {
+	if err := cmd.Flags().Set("snapshot-json", `{"splits":[]}`); err != nil {
 		t.Fatal(err)
 	}
 	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
