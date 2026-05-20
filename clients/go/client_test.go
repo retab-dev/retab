@@ -59,7 +59,7 @@ func TestWorkflowsCreateUpdatePublishDuplicateGetEntitiesAndDelete(t *testing.T)
 					"id":              "start-1",
 					"workflow_id":     "wf_123",
 					"organization_id": "org_123",
-					"type":            "start",
+					"type":            "start-document",
 				}},
 				"edges": []map[string]any{},
 			})
@@ -152,7 +152,7 @@ func TestWorkflowsPrepareDiagnoseMatchesPythonSurface(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	blocks := []map[string]any{{"id": "start-1", "type": "start"}}
+	blocks := []map[string]any{{"id": "start-1", "type": "start-document"}}
 	edges := []map[string]any{{"id": "edge-1", "source": "start-1", "target": "extract-1"}}
 
 	prepared := client.Workflows.PrepareDiagnose("wf_123", blocks, edges)
@@ -192,10 +192,10 @@ func TestWorkflowsDiagnoseGraphDecodesWarningOnlyIssues(t *testing.T) {
 			},
 			"suggestions": []string{},
 			"stats": map[string]any{
-				"total_blocks": 1,
-				"total_edges":  0,
-				"block_types":  map[string]int{"start": 1},
-				"start_blocks": 1,
+				"total_blocks":          1,
+				"total_edges":           0,
+				"block_types":           map[string]int{"start": 1},
+				"start_document_blocks": 1,
 			},
 		})
 	}))
@@ -207,7 +207,7 @@ func TestWorkflowsDiagnoseGraphDecodesWarningOnlyIssues(t *testing.T) {
 	}
 
 	diagnosis, err := client.Workflows.DiagnoseGraph(context.Background(), "wf_123", DiagnoseWorkflowGraphRequest{
-		Blocks:      []map[string]any{{"id": "start-1", "type": "start"}},
+		Blocks:      []map[string]any{{"id": "start-1", "type": "start-document"}},
 		Edges:       []map[string]any{},
 		RePropagate: true,
 	})
@@ -827,7 +827,7 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 					"organization_id": "org_123",
 					"block_id": "start-1",
 					"step_id": "start-1",
-					"block_type": "start",
+					"block_type": "start-document",
 					"block_label": "Start",
 					"lifecycle": {"status": "completed"},
 					"handle_inputs": null,

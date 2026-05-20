@@ -607,7 +607,6 @@ class RunTiming(RetabBaseModel):
     accumulated_review_waiting_ms: int = Field(default=0, ge=0)
 
 
-
 class RunInputs(RetabBaseModel):
     documents: Dict[str, FileRef] = Field(default_factory=dict)
     json_data: Dict[str, Any] = Field(default_factory=dict)
@@ -929,13 +928,13 @@ class WorkflowWithEntities(RetabBaseModel):
     edges: List[WorkflowEdgeDoc] = Field(default_factory=list)
 
     @property
-    def start_blocks(self) -> List[WorkflowBlock]:
-        """Document input start blocks."""
-        return [b for b in self.blocks if b.type == "start"]
+    def start_document_blocks(self) -> List[WorkflowBlock]:
+        """Document input start-document blocks."""
+        return [b for b in self.blocks if b.type == "start-document"]
 
     @property
     def start_json_blocks(self) -> List[WorkflowBlock]:
-        """JSON input start blocks."""
+        """JSON input start-document blocks."""
         return [b for b in self.blocks if b.type == "start_json"]
 
 
@@ -1074,7 +1073,7 @@ class WorkflowDiagnosisStats(RetabBaseModel):
     total_blocks: int = 0
     total_edges: int = 0
     block_types: Dict[str, int] = Field(default_factory=dict)
-    start_blocks: int = 0
+    start_document_blocks: int = 0
 
 
 class WorkflowDiagnosisResponse(RetabBaseModel):

@@ -242,7 +242,7 @@ func TestWorkflowsViewCommandFetchesEntitiesAndPrintsASCII(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"workflow": map[string]any{"id": "wf_graph", "name": "Invoice flow"},
 			"blocks": []map[string]any{
-				{"id": "start", "type": "start", "label": "Start", "position_x": 0, "position_y": 0},
+				{"id": "start", "type": "start-document", "label": "Start", "position_x": 0, "position_y": 0},
 				{"id": "extract", "type": "extract", "label": "Extract totals", "position_x": 300, "position_y": 0},
 			},
 			"edges": []map[string]any{

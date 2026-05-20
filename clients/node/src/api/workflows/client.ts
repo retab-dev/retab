@@ -113,7 +113,7 @@ export default class APIWorkflows extends CompositionClient {
    *
    * @param name - Workflow name (default: "Untitled Workflow")
    * @param description - Workflow description (default: "")
-   * @returns The created workflow (unpublished, with a default start block)
+   * @returns The created workflow (unpublished, with a default start-document block)
    *
    * @example
    * ```typescript
@@ -240,10 +240,10 @@ export default class APIWorkflows extends CompositionClient {
   /**
    * Get a workflow with all its entities (blocks and edges).
    *
-   * Use the returned `blocks` array to discover start blocks:
+   * Use the returned `blocks` array to discover start-document blocks:
    * ```typescript
    * const entities = await client.workflows.getEntities("wf_abc123");
-   * const startBlocks = entities.blocks.filter(b => b.type === "start");
+   * const startDocumentBlocks = entities.blocks.filter(b => b.type === "start-document");
    * ```
    */
   async getEntities(workflowId: string, options?: RequestOptions): Promise<WorkflowWithEntities> {

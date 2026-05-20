@@ -203,9 +203,7 @@ def test_experiments_get_uses_detail_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _EXPERIMENT_RESPONSE
 
-    Workflows(client=client).experiments.get(
-        workflow_id="wf_abc123", experiment_id="exp_abc"
-    )
+    Workflows(client=client).experiments.get(workflow_id="wf_abc123", experiment_id="exp_abc")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
@@ -216,9 +214,7 @@ def test_experiments_delete_uses_delete_method() -> None:
     client = MagicMock()
     client._prepared_request.return_value = None
 
-    Workflows(client=client).experiments.delete(
-        workflow_id="wf_abc123", experiment_id="exp_abc"
-    )
+    Workflows(client=client).experiments.delete(workflow_id="wf_abc123", experiment_id="exp_abc")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "DELETE"
@@ -229,9 +225,7 @@ def test_experiments_duplicate_posts_to_duplicate_subroute() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {**_EXPERIMENT_RESPONSE, "id": "exp_copy"}
 
-    Workflows(client=client).experiments.duplicate(
-        workflow_id="wf_abc123", experiment_id="exp_abc"
-    )
+    Workflows(client=client).experiments.duplicate(workflow_id="wf_abc123", experiment_id="exp_abc")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
@@ -335,9 +329,7 @@ def test_experiments_runs_list_uses_canonical_runs_route() -> None:
         "list_metadata": {"before": None, "after": None},
     }
 
-    page = Workflows(client=client).experiments.runs.list(
-        workflow_id="wf_abc123", experiment_id="exp_abc"
-    )
+    page = Workflows(client=client).experiments.runs.list(workflow_id="wf_abc123", experiment_id="exp_abc")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
@@ -584,7 +576,7 @@ def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
                 "id": "start-1",
                 "workflow_id": "wf_abc123",
                 "organization_id": "org_x",
-                "type": "start",
+                "type": "start-document",
                 "label": "Start",
                 "position_x": 0,
                 "position_y": 0,
@@ -608,7 +600,7 @@ def test_workflows_diagnose_fetches_entities_then_posts_graph() -> None:
             "total_blocks": 1,
             "total_edges": 0,
             "block_types": {"start": 1},
-            "start_blocks": 1,
+            "start_document_blocks": 1,
         },
     }
 
@@ -652,7 +644,7 @@ async def test_async_workflows_diagnose_fetches_entities_then_posts_graph() -> N
         "is_valid": False,
         "issues": [{"severity": "error", "code": "NO_START_BLOCK", "message": "no start"}],
         "suggestions": [],
-        "stats": {"total_blocks": 0, "total_edges": 0, "block_types": {}, "start_blocks": 0},
+        "stats": {"total_blocks": 0, "total_edges": 0, "block_types": {}, "start_document_blocks": 0},
     }
     client._prepared_request = AsyncMock(side_effect=[entities_payload, diagnose_payload])
 

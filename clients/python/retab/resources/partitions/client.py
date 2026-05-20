@@ -25,7 +25,7 @@ class PartitionsMixin:
         model: str,
         n_consensus: int = 1,
         bust_cache: bool = False,
-        allow_overlap: bool = False,
+        allow_overlap: bool = True,
     ) -> PreparedRequest:
         request_dict: dict[str, Any] = {
             "document": prepare_mime_document(document),
@@ -83,7 +83,7 @@ class Partitions(SyncAPIResource, PartitionsMixin):
         model: str,
         n_consensus: int = 1,
         bust_cache: bool = False,
-        allow_overlap: bool = False,
+        allow_overlap: bool = True,
     ) -> Partition:
         request = self._prepare_create(
             document=document,
@@ -155,7 +155,7 @@ class AsyncPartitions(AsyncAPIResource, PartitionsMixin):
         model: str,
         n_consensus: int = 1,
         bust_cache: bool = False,
-        allow_overlap: bool = False,
+        allow_overlap: bool = True,
     ) -> Partition:
         request = self._prepare_create(
             document=document,

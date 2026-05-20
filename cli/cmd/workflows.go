@@ -12,7 +12,7 @@ import (
 )
 
 // warnIfEmptyWorkflowOnPublish prints a stderr warning when the workflow has
-// 0 or 1 blocks and the single block (if any) is the auto-added `start`
+// 0 or 1 blocks and the single block (if any) is the auto-added `start-document`
 // placeholder. A freshly-`workflows create`d draft is exactly that shape —
 // publishing it produces a version that does nothing. The user might still
 // want to (CI stub, scaffolding), so the warning never blocks; --force on
@@ -30,14 +30,14 @@ func warnIfEmptyWorkflowOnPublish(ctx context.Context, client *retab.Client, wor
 	if !isEffectivelyEmptyDraft(blocks.Data) {
 		return
 	}
-	fmt.Fprintln(w, "warning: workflow has only a start block — publishing an empty workflow.")
+	fmt.Fprintln(w, "warning: workflow has only a start-document block — publishing an empty workflow.")
 	fmt.Fprintln(w, "warning: add blocks with `retab workflows blocks create` before publishing.")
 }
 
 // isEffectivelyEmptyDraft returns true for the two empty-ish shapes that
 // produce a no-op published version: a fully empty block list (shouldn't
 // happen via the UI but is possible via the API), and the canonical
-// freshly-created-workflow shape of exactly one `start` block.
+// freshly-created-workflow shape of exactly one `start-document` block.
 func isEffectivelyEmptyDraft(blocks []retab.WorkflowBlock) bool {
 	switch len(blocks) {
 	case 0:
@@ -268,7 +268,7 @@ var workflowsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a workflow",
 	Long: `Scaffold a new draft workflow. Fresh drafts include the default
-start block; add processing blocks (` + "`workflows blocks create`" + `) and
+start-document block; add processing blocks (` + "`workflows blocks create`" + `) and
 wire them with edges (` + "`workflows edges create`" + `) to make the workflow
 functional.`,
 	Example: `  # Create a draft workflow
@@ -416,7 +416,7 @@ Subsequent ` + "`workflows runs create`" + ` calls without an explicit
 The draft remains editable after publishing; iterate freely, then publish
 again to cut a new version.
 
-By default, publishing a draft that contains only the auto-added ` + "`start`" + `
+By default, publishing a draft that contains only the auto-added ` + "`start-document`" + `
 block (i.e. an effectively empty workflow) prints a warning to stderr but
 proceeds — the publish itself succeeds. Pass ` + "`--force`" + ` to skip
 the warning.`,

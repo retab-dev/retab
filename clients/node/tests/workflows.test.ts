@@ -332,7 +332,7 @@ describe('workflows client', () => {
           id: 'start-1',
           workflow_id: 'wf_1',
           draft_version: 'draft_1',
-          type: 'start',
+          type: 'start-document',
           label: 'Doc Input',
         },
         {
@@ -361,12 +361,12 @@ describe('workflows client', () => {
     expect(entities.blocks).toHaveLength(2);
     expect(entities.edges).toHaveLength(1);
     expect(entities.edges[0]?.draft_version).toBe('draft_1');
-    expect(entities.blocks.filter((b) => b.type === 'start')).toHaveLength(1);
+    expect(entities.blocks.filter((b) => b.type === 'start-document')).toHaveLength(1);
   });
 
   test('prepare_diagnose exposes the Python prepared-request surface', () => {
     const workflowsClient = new APIWorkflows(new MockClient({}));
-    const blocks = [{ id: 'start-1', type: 'start' }];
+    const blocks = [{ id: 'start-1', type: 'start-document' }];
     const edges = [{ id: 'edge-1', source: 'start-1', target: 'extract-1' }];
 
     expect(workflowsClient.prepare_diagnose('wf_1', blocks, edges, false)).toEqual({
@@ -398,13 +398,13 @@ describe('workflows client', () => {
           total_blocks: 1,
           total_edges: 0,
           block_types: { start: 1 },
-          start_blocks: 1,
+          start_document_blocks: 1,
         },
       })
     );
 
     const diagnosis = await workflowsClient.diagnoseGraph('wf_1', {
-      blocks: [{ id: 'start-1', type: 'start' }],
+      blocks: [{ id: 'start-1', type: 'start-document' }],
       edges: [],
     });
 
@@ -615,13 +615,13 @@ describe('workflows client', () => {
 
   test('blocks.createBatch() accepts camelCase request objects', async () => {
     const mockClient = new MockClient([
-      { id: 'start-1', workflow_id: 'wf_1', draft_version: 'draft_1', type: 'start' },
+      { id: 'start-1', workflow_id: 'wf_1', draft_version: 'draft_1', type: 'start-document' },
       { id: 'extract-1', workflow_id: 'wf_1', draft_version: 'draft_1', type: 'extract' },
     ]);
     const blocksClient = new APIWorkflowBlocks(mockClient);
 
     const blocks = await blocksClient.createBatch('wf_1', [
-      { id: 'start-1', type: 'start' },
+      { id: 'start-1', type: 'start-document' },
       { id: 'extract-1', type: 'extract', positionX: 120, positionY: 80 },
     ]);
 
@@ -631,7 +631,7 @@ describe('workflows client', () => {
       body: [
         {
           id: 'start-1',
-          type: 'start',
+          type: 'start-document',
           label: '',
           position_x: 0,
           position_y: 0,

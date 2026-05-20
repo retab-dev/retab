@@ -188,7 +188,7 @@ to decide it. Use ` + "`reviews edit`" + ` to append a corrected output before a
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
-	Example: `  # Start a run by uploading a document into the start block
+	Example: `  # Start a run by uploading a document into the start-document block
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf
 
@@ -234,7 +234,7 @@ version with ` + "`--version`" + `. Inspect the resulting run with
 The legacy ` + "`--document-file BLOCK=PATH`" + ` spelling is still
 accepted as a deprecated alias for ` + "`--document`" + ` and will be
 removed in a future release.`,
-	Example: `  # Upload a local file into the start block
+	Example: `  # Upload a local file into the start-document block
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf
 
@@ -340,22 +340,22 @@ func resolveWorkflowRunDocumentAliases(
 			return documents, nil
 		}
 	}
-	var startBlocks []retab.WorkflowBlock
+	var startDocumentBlocks []retab.WorkflowBlock
 	for _, block := range blocks.Data {
 		if block.Type == "start" {
-			startBlocks = append(startBlocks, block)
+			startDocumentBlocks = append(startDocumentBlocks, block)
 		}
 	}
-	if len(startBlocks) == 0 {
+	if len(startDocumentBlocks) == 0 {
 		return documents, nil
 	}
-	if len(startBlocks) > 1 {
-		return nil, fmt.Errorf("--document start=... is ambiguous: workflow has %d start blocks; use the concrete block id", len(startBlocks))
+	if len(startDocumentBlocks) > 1 {
+		return nil, fmt.Errorf("--document start=... is ambiguous: workflow has %d start-document blocks; use the concrete block id", len(startDocumentBlocks))
 	}
 	resolved := make(map[string]any, len(documents))
 	for key, value := range documents {
 		if key == "start" {
-			resolved[startBlocks[0].ID] = value
+			resolved[startDocumentBlocks[0].ID] = value
 			continue
 		}
 		resolved[key] = value

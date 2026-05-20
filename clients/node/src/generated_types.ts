@@ -177,7 +177,7 @@ export const ZPartition = z.lazy(() =>
     key: z.string(),
     instructions: z.string().default(''),
     n_consensus: z.number().default(1),
-    allow_overlap: z.boolean().default(false),
+    allow_overlap: z.boolean().default(true),
     output: z.array(ZPartitionChunk),
     consensus: ZPartitionConsensus,
     usage: ZRetabUsage.nullable().optional(),
@@ -218,7 +218,7 @@ export const ZPartitionRequest = z.lazy(() =>
     model: z.string().default('retab-small'),
     n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
-    allow_overlap: z.boolean().default(false),
+    allow_overlap: z.boolean().default(true),
   })
 );
 export type PartitionRequest = z.infer<typeof ZPartitionRequest>;

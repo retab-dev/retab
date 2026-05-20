@@ -23,8 +23,8 @@ class PartitionRequest(RetabBaseModel):
     )
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
     allow_overlap: bool = Field(
-        default=False,
-        description="When true, allow partition chunks to share pages. Defaults to exclusive split-like chunks.",
+        default=True,
+        description="When true, allow partition chunks to share pages.",
     )
 
 
@@ -63,7 +63,7 @@ class Partition(RetabBaseModel):
     )
     n_consensus: int = Field(default=1, description="Number of consensus votes used")
     allow_overlap: bool = Field(
-        default=False,
+        default=True,
         description="Whether partition chunks were allowed to share pages.",
     )
     output: list[PartitionChunk] = Field(

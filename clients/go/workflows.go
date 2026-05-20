@@ -231,7 +231,7 @@ type WorkflowDiagnosisStats struct {
 	TotalBlocks int            `json:"total_blocks"`
 	TotalEdges  int            `json:"total_edges"`
 	BlockTypes  map[string]int `json:"block_types"`
-	StartBlocks int            `json:"start_blocks"`
+	StartBlocks int            `json:"start_document_blocks"`
 }
 
 // WorkflowDiagnosisResponse is the result of POST /workflows/{id}/diagnose-graph.

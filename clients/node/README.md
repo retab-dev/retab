@@ -62,7 +62,7 @@ const retab = new Retab({
 
 const run = await retab.workflows.runs.create({
   workflowId: "wf_abc123",
-  documents: { "start-node-1": "invoice.pdf" },
+  documents: { "start-document-node-1": "invoice.pdf" },
 });
 
 const currentRun = await retab.workflows.runs.get(run.id);
@@ -104,7 +104,7 @@ Declarative specs use `apiVersion: workflows.retab.com/v1alpha2` and explicit ed
 ```yaml
 edges:
   - from:
-      block: start-node
+      block: start-document-node
       handle: output-file-0
     to:
       block: extract-node

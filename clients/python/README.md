@@ -68,7 +68,7 @@ Declarative specs use `apiVersion: workflows.retab.com/v1alpha2` and explicit ed
 ```yaml
 edges:
   - from:
-      block: start-node
+      block: start-document-node
       handle: output-file-0
     to:
       block: extract-node
@@ -85,7 +85,7 @@ attempts.
 ```python
 run = client.workflows.runs.create_and_wait(
     workflow_id="workflow_abc123",
-    documents={"start-node": "invoice.pdf"},
+    documents={"start-document-node": "invoice.pdf"},
 )
 
 step = client.workflows.runs.steps.get(run.id, "review-node")
