@@ -57,8 +57,9 @@ class WorkflowReviewsMixin:
         run_id: str,
         block_id: str,
         *,
-        snapshot: dict,
         version_stamp: int,
+        snapshot: dict | None = None,
+        reviewable_value: dict | None = None,
         origin: EditOrigin = "human_edit",
         note: str | None = None,
         command_id: str | None = None,
@@ -66,6 +67,7 @@ class WorkflowReviewsMixin:
         """Prepare a request to append a new output version to the overlay."""
         data: Dict[str, Any] = {
             "snapshot": snapshot,
+            "reviewable_value": reviewable_value,
             "version_stamp": version_stamp,
             "origin": origin,
             "note": note,
@@ -85,6 +87,7 @@ class WorkflowReviewsMixin:
         verdict: str,
         version_stamp: int,
         edited_output: dict | None = None,
+        reviewable_value: dict | None = None,
         on_seq: int | None = None,
         effective_seq: int | None = None,
         reason: str | None = None,
@@ -95,6 +98,7 @@ class WorkflowReviewsMixin:
             "verdict": verdict,
             "version_stamp": version_stamp,
             "edited_output": edited_output,
+            "reviewable_value": reviewable_value,
             "on_seq": on_seq,
             "effective_seq": effective_seq,
             "reason": reason,
@@ -201,6 +205,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         *,
         version_stamp: int,
         edited_output: dict | None = None,
+        reviewable_value: dict | None = None,
         on_seq: int | None = None,
         effective_seq: int | None = None,
         command_id: str | None = None,
@@ -212,6 +217,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             block_id: The gated block id.
             version_stamp: The overlay ``rev`` last observed (CAS token).
             edited_output: Optional replacement output applied with the approval.
+            reviewable_value: Optional primitive-specific value compiled by the server.
             on_seq: Version sequence the decision is made against.
             effective_seq: Version that becomes effective on apply.
             command_id: Optional idempotency key for deduplicating submissions.
@@ -228,6 +234,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             verdict="approved",
             version_stamp=version_stamp,
             edited_output=edited_output,
+            reviewable_value=reviewable_value,
             on_seq=on_seq,
             effective_seq=effective_seq,
             command_id=command_id,
@@ -276,8 +283,9 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         run_id: str,
         block_id: str,
         *,
-        snapshot: dict,
         version_stamp: int,
+        snapshot: dict | None = None,
+        reviewable_value: dict | None = None,
         origin: EditOrigin = "human_edit",
         note: str | None = None,
         command_id: str | None = None,
@@ -292,6 +300,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             run_id: The workflow run id.
             block_id: The gated block id.
             snapshot: The new output payload to record as a version.
+            reviewable_value: Primitive-specific reviewed value compiled by the server.
             version_stamp: The overlay ``rev`` last observed (CAS token).
             origin: Provenance of the snapshot — ``human_edit`` or ``agent_edit``.
             note: Optional free-text note attached to the version.
@@ -307,6 +316,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             run_id,
             block_id,
             snapshot=snapshot,
+            reviewable_value=reviewable_value,
             version_stamp=version_stamp,
             origin=origin,
             note=note,
@@ -470,6 +480,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         *,
         version_stamp: int,
         edited_output: dict | None = None,
+        reviewable_value: dict | None = None,
         on_seq: int | None = None,
         effective_seq: int | None = None,
         command_id: str | None = None,
@@ -481,6 +492,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             block_id: The gated block id.
             version_stamp: The overlay ``rev`` last observed (CAS token).
             edited_output: Optional replacement output applied with the approval.
+            reviewable_value: Optional primitive-specific value compiled by the server.
             on_seq: Version sequence the decision is made against.
             effective_seq: Version that becomes effective on apply.
             command_id: Optional idempotency key for deduplicating submissions.
@@ -497,6 +509,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             verdict="approved",
             version_stamp=version_stamp,
             edited_output=edited_output,
+            reviewable_value=reviewable_value,
             on_seq=on_seq,
             effective_seq=effective_seq,
             command_id=command_id,
@@ -545,8 +558,9 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         run_id: str,
         block_id: str,
         *,
-        snapshot: dict,
         version_stamp: int,
+        snapshot: dict | None = None,
+        reviewable_value: dict | None = None,
         origin: EditOrigin = "human_edit",
         note: str | None = None,
         command_id: str | None = None,
@@ -561,6 +575,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             run_id: The workflow run id.
             block_id: The gated block id.
             snapshot: The new output payload to record as a version.
+            reviewable_value: Primitive-specific reviewed value compiled by the server.
             version_stamp: The overlay ``rev`` last observed (CAS token).
             origin: Provenance of the snapshot — ``human_edit`` or ``agent_edit``.
             note: Optional free-text note attached to the version.
@@ -576,6 +591,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             run_id,
             block_id,
             snapshot=snapshot,
+            reviewable_value=reviewable_value,
             version_stamp=version_stamp,
             origin=origin,
             note=note,

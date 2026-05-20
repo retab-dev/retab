@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -467,6 +468,294 @@ func TestReviewsClassifierApproveSendsCategoryReviewableValue(t *testing.T) {
 	}
 }
 
+func TestReviewsForEachApproveSendsPartitionReviewableValue(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "legal-mentions=1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "booking confirmation=2-3"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"}); err != nil {
+		t.Fatalf("reviews for-each approve: %v", err)
+	}
+
+	reviewable, ok := body["reviewable_value"].(map[string]any)
+	if !ok {
+		t.Fatalf("reviewable_value missing: %#v", body)
+	}
+	chunks, ok := reviewable["chunks"].([]any)
+	if !ok || len(chunks) != 2 {
+		t.Fatalf("chunks = %#v", reviewable["chunks"])
+	}
+	first := chunks[0].(map[string]any)
+	if first["key"] != "legal-mentions" {
+		t.Fatalf("chunk key = %#v", first["key"])
+	}
+	second := chunks[1].(map[string]any)
+	pages := second["pages"].([]any)
+	if pages[0] != float64(2) || pages[1] != float64(3) {
+		t.Fatalf("pages = %#v", pages)
+	}
+	if _, ok := body["edited_output"]; ok {
+		t.Fatalf("typed command must not send edited_output: %#v", body)
+	}
+}
+
+func TestReviewsForEachApproveAllowsOverlappingPagesAcrossKeys(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "10*310365=1-2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", "10*315944=2-3"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"}); err != nil {
+		t.Fatalf("reviews for-each approve: %v", err)
+	}
+
+	reviewable, ok := body["reviewable_value"].(map[string]any)
+	if !ok {
+		t.Fatalf("reviewable_value missing: %#v", body)
+	}
+	chunks, ok := reviewable["chunks"].([]any)
+	if !ok || len(chunks) != 2 {
+		t.Fatalf("chunks = %#v", reviewable["chunks"])
+	}
+	second := chunks[1].(map[string]any)
+	pages := second["pages"].([]any)
+	if pages[0] != float64(2) || pages[1] != float64(3) {
+		t.Fatalf("pages = %#v", pages)
+	}
+}
+
+func TestReviewsForEachApproveRejectsDuplicateKeysFromChunksJSON(t *testing.T) {
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("chunks-json", `{"chunks":[{"key":"invoice","pages":[1]},{"key":"invoice","pages":[2]}]}`); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"})
+	if err == nil {
+		t.Fatal("expected duplicate partition keys to fail")
+	}
+	if !strings.Contains(err.Error(), `duplicate partition key "invoice"`) {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsForEachApproveRejectsBlankChunksJSON(t *testing.T) {
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("chunks-json", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"})
+	if err == nil {
+		t.Fatal("expected blank chunks-json to fail")
+	}
+	if !strings.Contains(err.Error(), "--chunks-json must not be blank") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsForEachApproveRejectsBlankValueFile(t *testing.T) {
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("value-file", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"})
+	if err == nil {
+		t.Fatal("expected blank value-file to fail")
+	}
+	if !strings.Contains(err.Error(), "--value-file must not be blank") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsForEachApproveRejectsWhitespaceNormalizedDuplicateKeys(t *testing.T) {
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("chunks-json", `{"chunks":[{"key":"invoice","pages":[1]},{"key":" invoice ","pages":[2]}]}`); err != nil {
+		t.Fatal(err)
+	}
+
+	err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"})
+	if err == nil {
+		t.Fatal("expected normalized duplicate partition keys to fail")
+	}
+	if !strings.Contains(err.Error(), `duplicate partition key "invoice"`) {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsForEachApproveTrimsSetKeys(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("set", " invoice =1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"}); err != nil {
+		t.Fatalf("reviews for-each approve: %v", err)
+	}
+
+	reviewable := body["reviewable_value"].(map[string]any)
+	chunks := reviewable["chunks"].([]any)
+	first := chunks[0].(map[string]any)
+	if first["key"] != "invoice" {
+		t.Fatalf("chunk key was not trimmed: %#v", first["key"])
+	}
+}
+
+func TestReviewsForEachApproveAcceptsValueFile(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	tempFile := t.TempDir() + "/chunks.json"
+	if err := os.WriteFile(tempFile, []byte(`{"chunks":[{"key":"a=b","pages":[1]}]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("value-file", tempFile); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"}); err != nil {
+		t.Fatalf("reviews for-each approve: %v", err)
+	}
+
+	reviewable := body["reviewable_value"].(map[string]any)
+	chunks := reviewable["chunks"].([]any)
+	first := chunks[0].(map[string]any)
+	if first["key"] != "a=b" {
+		t.Fatalf("chunk key = %#v", first["key"])
+	}
+}
+
+func TestReviewsForEachApproveAllowsEmptyChunks(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"submission_status": "accepted",
+			"overlay":           reviewOverlayBody(1, "approved"),
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	cmd := newForEachApproveTestCmd()
+	if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("chunks-json", `{"chunks":[]}`); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cmd.RunE(cmd, []string{"run_1", "blk_for_each"}); err != nil {
+		t.Fatalf("reviews for-each approve: %v", err)
+	}
+
+	reviewable, ok := body["reviewable_value"].(map[string]any)
+	if !ok {
+		t.Fatalf("reviewable_value missing: %#v", body)
+	}
+	chunks, ok := reviewable["chunks"].([]any)
+	if !ok || len(chunks) != 0 {
+		t.Fatalf("chunks = %#v", reviewable["chunks"])
+	}
+}
+
 func TestReviewsApproveRejectsFileAndInlineEditedOutputTogether(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -490,6 +779,37 @@ func TestReviewsApproveRejectsFileAndInlineEditedOutputTogether(t *testing.T) {
 	}
 }
 
+func TestReviewsApproveRejectsBlankEditedOutputFlags(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		flag      string
+		wantError string
+	}{
+		{name: "file", flag: "edited-output-file", wantError: "--edited-output-file must not be blank"},
+		{name: "json", flag: "edited-output-json", wantError: "--edited-output-json must not be blank"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("HOME", t.TempDir())
+
+			cmd := newApproveTestCmd()
+			if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+				t.Fatal(err)
+			}
+			if err := cmd.Flags().Set(tc.flag, ""); err != nil {
+				t.Fatal(err)
+			}
+			err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+			if err == nil {
+				t.Fatal("expected blank edited output flag to fail")
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error = %v", err)
+			}
+		})
+	}
+}
+
 func TestReviewsRejectRequiresReason(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -508,6 +828,62 @@ func TestReviewsRejectRequiresReason(t *testing.T) {
 	}
 }
 
+func TestReviewsExtractApproveRejectsBlankValueFlags(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		flag      string
+		wantError string
+	}{
+		{name: "file", flag: "value-file", wantError: "--value-file must not be blank"},
+		{name: "json", flag: "value-json", wantError: "--value-json must not be blank"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := newExtractApproveTestCmd()
+			if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+				t.Fatal(err)
+			}
+			if err := cmd.Flags().Set(tc.flag, ""); err != nil {
+				t.Fatal(err)
+			}
+			err := cmd.RunE(cmd, []string{"run_1", "blk_extract"})
+			if err == nil {
+				t.Fatal("expected blank value flag to fail")
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error = %v", err)
+			}
+		})
+	}
+}
+
+func TestReviewsSplitApproveRejectsBlankValueFlags(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		flag      string
+		wantError string
+	}{
+		{name: "file", flag: "value-file", wantError: "--value-file must not be blank"},
+		{name: "json", flag: "splits-json", wantError: "--splits-json must not be blank"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := newSplitApproveTestCmd()
+			if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+				t.Fatal(err)
+			}
+			if err := cmd.Flags().Set(tc.flag, ""); err != nil {
+				t.Fatal(err)
+			}
+			err := cmd.RunE(cmd, []string{"run_1", "blk_split"})
+			if err == nil {
+				t.Fatal("expected blank value flag to fail")
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error = %v", err)
+			}
+		})
+	}
+}
+
 func newApproveTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsApproveCmd.RunE}
 	cmd.Flags().Int("version-stamp", 0, "")
@@ -515,6 +891,16 @@ func newApproveTestCmd() *cobra.Command {
 	cmd.Flags().String("edited-output-json", "", "")
 	cmd.Flags().Int("on-seq", 0, "")
 	cmd.Flags().Int("effective-seq", 0, "")
+	cmd.Flags().String("command-id", "", "")
+	return cmd
+}
+
+func newExtractApproveTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsExtractApproveCmd.RunE}
+	cmd.Flags().Int("version-stamp", 0, "")
+	cmd.Flags().String("value-file", "", "")
+	cmd.Flags().String("value-json", "", "")
+	cmd.Flags().StringArray("set", nil, "")
 	cmd.Flags().String("command-id", "", "")
 	return cmd
 }
@@ -533,6 +919,16 @@ func newClassifierApproveTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsClassifierApproveCmd.RunE}
 	cmd.Flags().Int("version-stamp", 0, "")
 	cmd.Flags().String("category", "", "")
+	cmd.Flags().String("command-id", "", "")
+	return cmd
+}
+
+func newForEachApproveTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsForEachApproveCmd.RunE}
+	cmd.Flags().Int("version-stamp", 0, "")
+	cmd.Flags().String("value-file", "", "")
+	cmd.Flags().String("chunks-json", "", "")
+	cmd.Flags().StringArray("set", nil, "")
 	cmd.Flags().String("command-id", "", "")
 	return cmd
 }
@@ -604,6 +1000,37 @@ func TestReviewsEditRejectsFileAndInlineSnapshotTogether(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "mutually exclusive") {
 		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestReviewsEditRejectsBlankSnapshotFlags(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		flag      string
+		wantError string
+	}{
+		{name: "file", flag: "snapshot-file", wantError: "--snapshot-file must not be blank"},
+		{name: "json", flag: "snapshot-json", wantError: "--snapshot-json must not be blank"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("HOME", t.TempDir())
+
+			cmd := newEditTestCmd()
+			if err := cmd.Flags().Set("version-stamp", "2"); err != nil {
+				t.Fatal(err)
+			}
+			if err := cmd.Flags().Set(tc.flag, ""); err != nil {
+				t.Fatal(err)
+			}
+			err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+			if err == nil {
+				t.Fatal("expected blank snapshot flag to fail")
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error = %v", err)
+			}
+		})
 	}
 }
 

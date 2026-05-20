@@ -19,7 +19,7 @@ typed output, and a JSON ` + "`config`" + ` blob shaped by its type.
 
 Human-in-the-loop is not a separate block. Add ` + "`config.hil`" + ` to a
 supported block (` + "`extract`" + `, ` + "`split`" + `, ` + "`classifier`" + `,
-or ` + "`conditional`" + `). When the predicate fires, the run pauses at that
+or ` + "`for_each`" + ` with ` + "`map_method=split_by_key`" + `). When the predicate fires, the run pauses at that
 same block with status ` + "`waiting_for_human`" + `; decide it with
 ` + "`retab workflows reviews`" + `.
 
@@ -51,7 +51,7 @@ replay one block against a past run's input.`,
     --run-id run_xyz789 --block-id blk_def456`,
 }
 
-const hilGateGuidance = "standalone review blocks are no longer supported; add config.hil to an extract, split, classifier, or conditional block, then decide paused runs with `retab workflows reviews`"
+const hilGateGuidance = "standalone review blocks are no longer supported; add config.hil to an extract, split, classifier, or split_by_key for_each block, then decide paused runs with `retab workflows reviews`"
 
 func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, error) {
 	req := retab.WorkflowBlockCreateRequest{}
@@ -326,7 +326,7 @@ Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
 To add human review, merge a ` + "`hil`" + ` object into the block config:
 ` + "`{\"hil\":{\"predicate\":{\"kind\":\"always\"},\"skip_in_test_mode\":false}}`" + `.
 Supported gated block types are ` + "`extract`" + `, ` + "`split`" + `,
-` + "`classifier`" + `, and ` + "`conditional`" + `.`,
+` + "`classifier`" + `, and ` + "`for_each`" + ` with ` + "`map_method=split_by_key`" + `.`,
 	Example: `  # Swap the config blob
   retab workflows blocks update wf_abc123 blk_def456 \
     --config-file ./new-config.json
@@ -336,6 +336,12 @@ Supported gated block types are ` + "`extract`" + `, ` + "`split`" + `,
     > extract-hil.json
   retab workflows blocks update wf_abc123 blk_extract_1 \
     --merge-config-file ./extract-hil.json
+
+  # Gate a split_by_key for_each block when a boundary is low-confidence
+  printf '%s\n' '{"hil":{"predicate":{"kind":"boundary_confidence_lt","threshold":0.8},"skip_in_test_mode":false}}' \
+    > for-each-hil.json
+  retab workflows blocks update wf_abc123 blk_for_each_1 \
+    --merge-config-file ./for-each-hil.json
 
   # Rename a block's label
   retab workflows blocks update wf_abc123 blk_def456 \

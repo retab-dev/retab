@@ -134,6 +134,21 @@ def test_review_overlay_round_trips() -> None:
     assert ReviewOverlay.model_validate(dumped).rev == 3
 
 
+def test_review_overlay_ignores_internal_for_each_projection_identity() -> None:
+    overlay = ReviewOverlay.model_validate(
+        {
+            **_OVERLAY,
+            "block_id": "blk_for_each",
+            "runtime_block_id": "blk_for_each__map_partition",
+            "block_type": "for_each",
+        }
+    )
+
+    assert overlay.block_type == "for_each"
+    assert overlay.block_id == "blk_for_each"
+    assert "runtime_block_id" not in overlay.model_dump()
+
+
 def test_review_queue_item_round_trips_without_heavy_arrays() -> None:
     item = ReviewQueueItem.model_validate(_QUEUE_ITEM)
     assert item.id == "ovl_abc"
@@ -142,6 +157,21 @@ def test_review_queue_item_round_trips_without_heavy_arrays() -> None:
     assert "versions" not in item.model_dump()
     assert "decisions" not in item.model_dump()
     assert "audit" not in item.model_dump()
+
+
+def test_review_queue_item_ignores_internal_for_each_projection_identity() -> None:
+    item = ReviewQueueItem.model_validate(
+        {
+            **_QUEUE_ITEM,
+            "block_id": "blk_for_each",
+            "runtime_block_id": "blk_for_each__map_partition",
+            "block_type": "for_each",
+        }
+    )
+
+    assert item.block_type == "for_each"
+    assert item.block_id == "blk_for_each"
+    assert "runtime_block_id" not in item.model_dump()
 
 
 def test_review_queue_response_round_trips() -> None:
@@ -223,6 +253,7 @@ def test_prepare_edit_posts_to_versions() -> None:
     assert request.url == "/workflows/reviews/run_1/extract-1/versions"
     assert request.data == {
         "snapshot": {"total": 200},
+        "reviewable_value": None,
         "version_stamp": 3,
         "origin": "agent_edit",
         "note": "bumped total",
@@ -301,6 +332,24 @@ def test_approve_sends_approved_verdict() -> None:
     assert request.data["verdict"] == "approved"
     assert request.data["edited_output"] == {"total": 150}
     assert resp.submission_status == "accepted"
+
+
+def test_approve_can_send_reviewable_value_without_edited_output() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {"submission_status": "accepted", "overlay": _OVERLAY}
+
+    WorkflowReviews(client=client).approve(
+        "run_1",
+        "extract-1",
+        version_stamp=3,
+        reviewable_value={"chunks": [{"key": "legal-mentions", "pages": [1]}]},
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.data["reviewable_value"] == {
+        "chunks": [{"key": "legal-mentions", "pages": [1]}]
+    }
+    assert request.data["edited_output"] is None
 
 
 def test_reject_requires_reason_and_sends_rejected_verdict() -> None:

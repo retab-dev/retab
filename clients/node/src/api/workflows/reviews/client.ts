@@ -63,12 +63,14 @@ export default class APIWorkflowReviews extends CompositionClient {
         blockId: string,
         {
             snapshot,
+            reviewableValue,
             versionStamp,
             origin = "human_edit",
             note,
             commandId,
         }: {
-            snapshot: Record<string, unknown>;
+            snapshot?: Record<string, unknown> | null;
+            reviewableValue?: Record<string, unknown> | null;
             versionStamp: number;
             origin?: EditOrigin;
             note?: string | null;
@@ -79,7 +81,8 @@ export default class APIWorkflowReviews extends CompositionClient {
             url: `/workflows/reviews/${runId}/${blockId}/versions`,
             method: "POST",
             body: {
-                snapshot,
+                snapshot: snapshot ?? null,
+                reviewable_value: reviewableValue ?? null,
                 version_stamp: versionStamp,
                 origin,
                 note: note ?? null,
@@ -95,6 +98,7 @@ export default class APIWorkflowReviews extends CompositionClient {
             verdict,
             versionStamp,
             editedOutput,
+            reviewableValue,
             onSeq,
             effectiveSeq,
             reason,
@@ -103,6 +107,7 @@ export default class APIWorkflowReviews extends CompositionClient {
             verdict: "approved" | "rejected";
             versionStamp: number;
             editedOutput?: Record<string, unknown> | null;
+            reviewableValue?: Record<string, unknown> | null;
             onSeq?: number;
             effectiveSeq?: number;
             reason?: string;
@@ -116,6 +121,7 @@ export default class APIWorkflowReviews extends CompositionClient {
                 verdict,
                 version_stamp: versionStamp,
                 edited_output: editedOutput ?? null,
+                reviewable_value: reviewableValue ?? null,
                 on_seq: onSeq ?? null,
                 effective_seq: effectiveSeq ?? null,
                 reason: reason ?? null,
@@ -228,6 +234,7 @@ export default class APIWorkflowReviews extends CompositionClient {
      * @param blockId - The gated block id.
      * @param versionStamp - The overlay `rev` last observed (CAS token).
      * @param editedOutput - Optional replacement output applied with the approval.
+     * @param reviewableValue - Optional primitive-specific value compiled by the server.
      * @param onSeq - Version sequence the decision is made against.
      * @param effectiveSeq - Version that becomes effective on apply.
      * @param commandId - Optional idempotency key for deduplicating submissions.
@@ -240,12 +247,14 @@ export default class APIWorkflowReviews extends CompositionClient {
         {
             versionStamp,
             editedOutput,
+            reviewableValue,
             onSeq,
             effectiveSeq,
             commandId,
         }: {
             versionStamp: number;
             editedOutput?: Record<string, unknown> | null;
+            reviewableValue?: Record<string, unknown> | null;
             onSeq?: number;
             effectiveSeq?: number;
             commandId?: string;
@@ -259,6 +268,7 @@ export default class APIWorkflowReviews extends CompositionClient {
                 verdict: "approved",
                 versionStamp,
                 editedOutput,
+                reviewableValue,
                 onSeq,
                 effectiveSeq,
                 commandId,
@@ -310,6 +320,7 @@ export default class APIWorkflowReviews extends CompositionClient {
      * @param runId - The workflow run id.
      * @param blockId - The gated block id.
      * @param snapshot - The new output payload to record as a version.
+     * @param reviewableValue - Primitive-specific reviewed value compiled by the server.
      * @param versionStamp - The overlay `rev` last observed (CAS token).
      * @param origin - Provenance of the snapshot: `human_edit` or `agent_edit`. Defaults to `human_edit`.
      * @param note - Optional free-text note attached to the version.
@@ -322,12 +333,14 @@ export default class APIWorkflowReviews extends CompositionClient {
         blockId: string,
         {
             snapshot,
+            reviewableValue,
             versionStamp,
             origin = "human_edit",
             note,
             commandId,
         }: {
-            snapshot: Record<string, unknown>;
+            snapshot?: Record<string, unknown> | null;
+            reviewableValue?: Record<string, unknown> | null;
             versionStamp: number;
             origin?: EditOrigin;
             note?: string | null;
@@ -337,6 +350,7 @@ export default class APIWorkflowReviews extends CompositionClient {
     ): Promise<ReviewOverlay> {
         const request = this.prepare_edit(runId, blockId, {
             snapshot,
+            reviewableValue,
             versionStamp,
             origin,
             note,
@@ -483,6 +497,7 @@ export default class APIWorkflowReviews extends CompositionClient {
             verdict,
             versionStamp,
             editedOutput,
+            reviewableValue,
             onSeq,
             effectiveSeq,
             reason,
@@ -491,6 +506,7 @@ export default class APIWorkflowReviews extends CompositionClient {
             verdict: "approved" | "rejected";
             versionStamp: number;
             editedOutput?: Record<string, unknown> | null;
+            reviewableValue?: Record<string, unknown> | null;
             onSeq?: number;
             effectiveSeq?: number;
             reason?: string;
@@ -502,6 +518,7 @@ export default class APIWorkflowReviews extends CompositionClient {
             verdict,
             versionStamp,
             editedOutput,
+            reviewableValue,
             onSeq,
             effectiveSeq,
             reason,

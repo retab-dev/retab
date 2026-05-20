@@ -145,7 +145,7 @@ func TestParseBlockCreateRejectsStandaloneHILBlockType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected type=hil to be rejected locally")
 	}
-	for _, want := range []string{"config.hil", "extract", "retab workflows reviews"} {
+	for _, want := range []string{"config.hil", "extract", "for_each", "retab workflows reviews"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("error %q should contain %q", err.Error(), want)
 		}

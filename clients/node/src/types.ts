@@ -961,7 +961,7 @@ export const ZReviewOverlay = z
     workflow_run_id: z.string(),
     block_id: z.string(),
     block_run_id: z.string(),
-    block_type: z.enum(['extract', 'classifier', 'split', 'conditional']),
+    block_type: z.enum(['extract', 'classifier', 'split', 'for_each']),
     triggered_by: z.record(z.unknown()),
     status: z.enum(['awaiting_review', 'approved', 'rejected']),
     awaiting_since: z.string(),
@@ -975,7 +975,7 @@ export const ZReviewOverlay = z
     head_seq: z.number(),
     effective_seq: z.number().nullable().default(null),
   })
-  .passthrough();
+  .strip();
 export type ReviewOverlay = z.infer<typeof ZReviewOverlay>;
 
 /** A lightweight overlay summary returned by `reviews.list(...)` — no version history. */
@@ -988,7 +988,7 @@ export const ZReviewQueueItem = z
     workflow_run_id: z.string(),
     block_id: z.string(),
     block_run_id: z.string(),
-    block_type: z.enum(['extract', 'classifier', 'split', 'conditional']),
+    block_type: z.enum(['extract', 'classifier', 'split', 'for_each']),
     triggered_by: z.record(z.unknown()),
     status: z.enum(['awaiting_review', 'approved', 'rejected']),
     awaiting_since: z.string(),
@@ -999,7 +999,7 @@ export const ZReviewQueueItem = z
     head_seq: z.number(),
     effective_seq: z.number().nullable().default(null),
   })
-  .passthrough();
+  .strip();
 export type ReviewQueueItem = z.infer<typeof ZReviewQueueItem>;
 
 /** Envelope returned by `reviews.list(...)`. */
