@@ -54,6 +54,7 @@ class HandlePayload(RetabBaseModel):
     - json: Structured JSON data (extracted data, etc.)
     - text: Plain text content
     """
+
     type: Literal["file", "json", "json_ref", "text"] = Field(..., description="Type of payload")
     document: Optional[FileRef] = Field(default=None, description="For file handles: document reference")
     data: Any | None = Field(default=None, description="For JSON handles: structured data")
@@ -126,6 +127,7 @@ class WorkflowArtifact(RetabBaseModel):
 
 class ContainerContextData(RetabBaseModel):
     """Structured context for a single container in the hierarchy."""
+
     container_id: str = Field(..., description="Container ID (e.g., 'while_loop-abc')")
     iteration: int = Field(..., description="Iteration index (0-based)")
     is_parallel: bool = Field(default=False, description="Whether this container represents a parallel item")
@@ -138,6 +140,7 @@ class ErrorDetails(RetabBaseModel):
     Captures stack traces and context about where and why an error occurred.
     Mirrors backend ``ErrorDetails`` in ``services/v1/workflows/models.py``.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     stack_trace: Optional[str] = Field(default=None, description="Full Python stack trace")
@@ -208,6 +211,7 @@ StepLifecycle = Annotated[
 
 class ConditionEvaluationPerItem(RetabBaseModel):
     """Per-item evaluation result for wildcard array conditions."""
+
     indices: List[int] = Field(
         default_factory=list,
         description="Hierarchical indices for nested arrays (e.g., [0, 2, 1] for items[0].subitems[2].field[1])",
@@ -218,6 +222,7 @@ class ConditionEvaluationPerItem(RetabBaseModel):
 
 class ConditionEvaluationSubCondition(RetabBaseModel):
     """Evaluation result for a sub-condition in a compound condition."""
+
     sub_condition_id: str = Field(default="", description="Identifier for this sub-condition")
     path: str = Field(default="", description="JSON path that was evaluated")
     operator: str = Field(default="", description="Comparison operator used")
@@ -232,6 +237,7 @@ class ConditionEvaluationSubCondition(RetabBaseModel):
 
 class ConditionEvaluationDetails(RetabBaseModel):
     """Detailed evaluation information for frontend display."""
+
     path: str = Field(default="", description="JSON path that was evaluated")
     operator: str = Field(default="", description="Comparison operator used")
     expected: Any = Field(default=None, description="Expected value")
@@ -253,6 +259,7 @@ class ConditionEvaluationDetails(RetabBaseModel):
 
 class ConditionEvaluationResult(RetabBaseModel):
     """Complete evaluation result for a routing/termination condition."""
+
     condition_id: str = Field(..., description="Unique identifier for this condition")
     path: str = Field(default="", description="JSON path that was evaluated")
     operator: str = Field(default="", description="Comparison operator used")
@@ -294,6 +301,7 @@ class ConditionalEvaluation(RetabBaseModel):
     Backing record for :data:`StepArtifactRef` with
     ``operation == "conditional_evaluation"``.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
@@ -313,6 +321,7 @@ class HilEvaluation(RetabBaseModel):
     state. Backing record for :data:`StepArtifactRef` with
     ``operation == "hil_evaluation"``.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
@@ -336,6 +345,7 @@ class WhileLoopTermination(RetabBaseModel):
     Backing record for :data:`StepArtifactRef` with
     ``operation == "while_loop_termination"``.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
@@ -354,6 +364,7 @@ class WhileLoopTermination(RetabBaseModel):
 
 class ApiCallAttempt(RetabBaseModel):
     """One attempt of an api_call (initial + retries)."""
+
     model_config = ConfigDict(extra="ignore")
 
     attempt_number: int = Field(..., description="0-based attempt index")
@@ -376,6 +387,7 @@ class ApiCallInvocation(RetabBaseModel):
     Backing record for :data:`StepArtifactRef` with
     ``operation == "api_call_invocation"``.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
@@ -395,6 +407,7 @@ class FunctionInvocation(RetabBaseModel):
     Backing record for :data:`StepArtifactRef` with
     ``operation == "function_invocation"``.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique identifier")
@@ -418,6 +431,7 @@ class StepCore(RetabBaseModel):
     listing endpoints return ``StepStatus`` instances with handle payloads
     projected away server-side via Mongo ``projection``.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     block_id: str = Field(..., description="Logical ID of the block")
@@ -448,7 +462,6 @@ class StepStatus(StepCore):
     signal; the actual review decision is on the ``HilEvaluation``
     backing record.
     """
-
 
     # Identity — SDK-side relaxed (canonical model requires both).
     run_id: str = Field(default="", description="Parent workflow run ID")
@@ -503,6 +516,7 @@ class StepStatus(StepCore):
 
 class WorkflowSnapshotRef(RetabBaseModel):
     """Reference to the workflow + immutable version driving the run."""
+
     workflow_id: str = Field(..., description="ID of the workflow that was run")
     version_id: str = Field(..., description="Content-addressed workflow version used for this run")
     name_at_run_time: str = Field(..., description="Workflow name at run-creation time")
@@ -585,11 +599,13 @@ RunLifecycle = Annotated[
 
 class RunTiming(RetabBaseModel):
     """Timing information for a workflow run."""
+
     created_at: datetime.datetime = Field(...)
     started_at: Optional[datetime.datetime] = Field(default=None)
     completed_at: Optional[datetime.datetime] = Field(default=None)
     human_waiting_started_at: Optional[datetime.datetime] = Field(default=None)
     accumulated_human_waiting_ms: int = Field(default=0, ge=0)
+
 
 class RunInputs(RetabBaseModel):
     documents: Dict[str, FileRef] = Field(default_factory=dict)
@@ -602,6 +618,7 @@ class WorkflowRun(RetabBaseModel):
     Slim, typed, discriminated. Engine state is not surfaced; the terminal
     state is encoded in :attr:`lifecycle`, not loose flat fields.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(...)
@@ -611,8 +628,10 @@ class WorkflowRun(RetabBaseModel):
     timing: RunTiming = Field(...)
     inputs: RunInputs = Field(default_factory=RunInputs)
 
+
 class Workflow(RetabBaseModel):
     """A stored workflow record."""
+
     model_config = ConfigDict(extra="ignore")
 
     class Published(RetabBaseModel):
@@ -626,6 +645,7 @@ class Workflow(RetabBaseModel):
         :class:`EmailTrigger` discriminated-union variant defined at
         module top level (``WorkflowRun.trigger`` when triggered by email).
         """
+
         allowed_senders: List[str] = Field(default_factory=list, description="Allowed sender email addresses")
         allowed_domains: List[str] = Field(default_factory=list, description="Allowed sender email domains")
 
@@ -645,6 +665,7 @@ class Workflow(RetabBaseModel):
     def published_at(self) -> Optional[datetime.datetime]:
         return self.published.published_at if self.published is not None else None
 
+
 # ---------------------------------------------------------------------------
 # Type aliases
 # ---------------------------------------------------------------------------
@@ -658,14 +679,9 @@ TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancel
 class StepExecutionResponse(StepCore):
     """Step lifecycle, handle data, and artifact ref for a specific workflow step."""
 
-
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
-        description=(
-            "Canonical persisted resource produced by this step "
-            "(operation + id ref); None for steps that produce no "
-            "canonical result"
-        ),
+        description=("Canonical persisted resource produced by this step (operation + id ref); None for steps that produce no canonical result"),
     )
     handle_outputs: Dict[str, HandlePayload] = Field(
         default_factory=dict,
@@ -709,15 +725,10 @@ class WorkflowRunStep(StepCore):
     :class:`HilEvaluation`).
     """
 
-
     run_id: str = Field(..., description="Parent workflow run ID")
     artifact: Optional[StepArtifactRef] = Field(
         default=None,
-        description=(
-            "Canonical persisted resource produced by this step "
-            "(operation + id ref); None for steps that produce no "
-            "canonical result"
-        ),
+        description=("Canonical persisted resource produced by this step (operation + id ref); None for steps that produce no canonical result"),
     )
     handle_outputs: Dict[str, HandlePayload] = Field(
         default_factory=dict,
@@ -750,8 +761,10 @@ class WorkflowRunStep(StepCore):
 # Cancel / Restart / HIL decision response types
 # ---------------------------------------------------------------------------
 
+
 class CancelWorkflowResponse(RetabBaseModel):
     """Response from cancelling a workflow run."""
+
     run: WorkflowRun
     cancellation_status: Literal["cancelled", "cancellation_requested", "cancellation_failed"] = Field(
         default="cancellation_requested",
@@ -761,6 +774,7 @@ class CancelWorkflowResponse(RetabBaseModel):
 
 class RunCountsResponse(RetabBaseModel):
     """Run counts grouped by status."""
+
     total: int = 0
     completed: int = 0
     running: int = 0
@@ -772,12 +786,14 @@ class RunCountsResponse(RetabBaseModel):
 
 class ExecutionOrderResponse(RetabBaseModel):
     """DAG-ordered step IDs for a workflow run."""
+
     run_id: str = Field(..., description="Workflow run ID")
     ordered_step_ids: List[str] = Field(default_factory=list, description="Step IDs in DAG execution order")
 
 
 class DocumentSignedUrlResponse(RetabBaseModel):
     """Signed URL for downloading a document from a run step."""
+
     signed_url: str = Field(..., description="Signed download URL")
     filename: str = Field(..., description="Original filename")
     mime_type: Optional[str] = Field(default=None, description="MIME type")
@@ -785,6 +801,7 @@ class DocumentSignedUrlResponse(RetabBaseModel):
 
 class ExportResponse(RetabBaseModel):
     """Export payload containing CSV data."""
+
     csv_data: str = Field(..., description="CSV content as string")
     rows: int = Field(..., description="Number of data rows")
     columns: int = Field(..., description="Number of columns")
@@ -797,6 +814,7 @@ class ExportResponse(RetabBaseModel):
 
 class WorkflowBlockCreateRequest(RetabBaseModel):
     """Typed request payload for creating a workflow block."""
+
     model_config = ConfigDict(extra="ignore")
 
     id: str
@@ -812,6 +830,7 @@ class WorkflowBlockCreateRequest(RetabBaseModel):
 
 class WorkflowBlockUpdateRequest(RetabBaseModel):
     """Typed request payload for updating a workflow block."""
+
     model_config = ConfigDict(extra="ignore")
 
     block_id: str
@@ -826,6 +845,7 @@ class WorkflowBlockUpdateRequest(RetabBaseModel):
 
 class WorkflowEdgeCreateRequest(RetabBaseModel):
     """Typed request payload for creating a workflow edge."""
+
     model_config = ConfigDict(extra="ignore")
 
     id: str
@@ -842,6 +862,7 @@ class WorkflowEdgeCreateRequest(RetabBaseModel):
 
 class ResolvedSchemas(RetabBaseModel):
     """Graph-derived schemas for a workflow block."""
+
     model_config = ConfigDict(extra="ignore")
 
     input_schemas: Dict[str, Any] = Field(
@@ -860,6 +881,7 @@ class ResolvedSchemas(RetabBaseModel):
 
 class WorkflowBlock(RetabBaseModel):
     """A block in a workflow graph."""
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Block ID")
@@ -883,6 +905,7 @@ class WorkflowBlock(RetabBaseModel):
 
 class WorkflowEdgeDoc(RetabBaseModel):
     """A persisted edge document connecting two blocks in a workflow graph."""
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Edge ID")
@@ -897,6 +920,7 @@ class WorkflowEdgeDoc(RetabBaseModel):
 
 class WorkflowWithEntities(RetabBaseModel):
     """Complete workflow with its graph structure (blocks and edges)."""
+
     model_config = ConfigDict(extra="ignore")
 
     workflow: Workflow
@@ -916,6 +940,7 @@ class WorkflowWithEntities(RetabBaseModel):
 
 class WorkflowResolvedSchemasResponse(RetabBaseModel):
     """Graph-derived schemas for all current-draft blocks in a workflow."""
+
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
@@ -925,6 +950,7 @@ class WorkflowResolvedSchemasResponse(RetabBaseModel):
 
 class BlockResolvedSchemasResponse(RetabBaseModel):
     """Graph-derived schemas for one current-draft block."""
+
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     workflow_id: str
@@ -1052,6 +1078,7 @@ class WorkflowDiagnosisStats(RetabBaseModel):
 
 class WorkflowDiagnosisResponse(RetabBaseModel):
     """Result of ``POST /workflows/{id}/diagnose-graph``."""
+
     model_config = ConfigDict(extra="ignore")
 
     is_valid: bool
@@ -1113,6 +1140,7 @@ class WorkflowSnapshot(RetabBaseModel):
 
 class BlockSimulationIteration(RetabBaseModel):
     """One available iteration step exposed to simulate."""
+
     model_config = ConfigDict(extra="ignore")
 
     step_id: Optional[str] = None
@@ -1127,6 +1155,7 @@ class BlockSimulation(RetabBaseModel):
     inputs used, the produced outputs, and a canonical ``artifact`` ref
     when the block produces a persisted resource.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(..., description="Unique simulation ID")

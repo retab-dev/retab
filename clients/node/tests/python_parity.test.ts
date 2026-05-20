@@ -440,14 +440,20 @@ function readGoClientSource(): string {
     .join('\n');
 }
 
-function collectGoServiceFields(source: string): Map<string, Array<{ name: string; type: string }>> {
+function collectGoServiceFields(
+  source: string
+): Map<string, Array<{ name: string; type: string }>> {
   const fieldsByService = new Map<string, Array<{ name: string; type: string }>>();
 
-  for (const match of source.matchAll(/type\s+([A-Za-z_][A-Za-z0-9_]*Service)\s+struct\s*\{([\s\S]*?)\n\}/g)) {
+  for (const match of source.matchAll(
+    /type\s+([A-Za-z_][A-Za-z0-9_]*Service)\s+struct\s*\{([\s\S]*?)\n\}/g
+  )) {
     const [, serviceName, body] = match;
     const fields: Array<{ name: string; type: string }> = [];
 
-    for (const fieldMatch of body.matchAll(/^\s*([A-Z][A-Za-z0-9_]*)\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\b/gm)) {
+    for (const fieldMatch of body.matchAll(
+      /^\s*([A-Z][A-Za-z0-9_]*)\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\b/gm
+    )) {
       fields.push({ name: fieldMatch[1], type: fieldMatch[2] });
     }
 
@@ -460,7 +466,9 @@ function collectGoServiceFields(source: string): Map<string, Array<{ name: strin
 function collectGoServiceMethods(source: string): Map<string, string[]> {
   const methodsByService = new Map<string, Set<string>>();
 
-  for (const match of source.matchAll(/func\s+\([^)]+\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\)\s+([A-Z][A-Za-z0-9_]*)\s*\(/g)) {
+  for (const match of source.matchAll(
+    /func\s+\([^)]+\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\)\s+([A-Z][A-Za-z0-9_]*)\s*\(/g
+  )) {
     const [, serviceName, methodName] = match;
     if (!methodsByService.has(serviceName)) {
       methodsByService.set(serviceName, new Set());
@@ -482,9 +490,9 @@ function collectGoRootServices(source: string): Array<{ name: string; type: stri
     throw new Error('Unable to locate Go Client struct');
   }
 
-  return Array.from(match[1].matchAll(/^\s*([A-Z][A-Za-z0-9_]*)\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\b/gm)).map(
-    (fieldMatch) => ({ name: fieldMatch[1], type: fieldMatch[2] })
-  );
+  return Array.from(
+    match[1].matchAll(/^\s*([A-Z][A-Za-z0-9_]*)\s+\*([A-Za-z_][A-Za-z0-9_]*Service)\b/gm)
+  ).map((fieldMatch) => ({ name: fieldMatch[1], type: fieldMatch[2] }));
 }
 
 function buildGoResourceSurface(): PythonResourceSurface[] {
@@ -559,7 +567,9 @@ describe('python sdk parity surface', () => {
     const expectedResourcePaths = expectedPythonSurface.map(({ resource }) => resource).sort();
     const goSurface = buildGoResourceSurface();
     const goResourcePaths = goSurface.map(({ resource }) => resource).sort();
-    const goMethodsByResource = new Map(goSurface.map(({ resource, methods }) => [resource, new Set(methods)]));
+    const goMethodsByResource = new Map(
+      goSurface.map(({ resource, methods }) => [resource, new Set(methods)])
+    );
 
     expect(expectedPythonSurface.length).toBeGreaterThan(0);
     expect(goResourcePaths).toEqual(expectedResourcePaths);

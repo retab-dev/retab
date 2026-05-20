@@ -573,22 +573,21 @@ export const ZResolvedSchemas = z
   .passthrough();
 export type ResolvedSchemas = z.infer<typeof ZResolvedSchemas>;
 
-export const ZWorkflowBlock = z
-  .object({
-    id: z.string(),
-    workflow_id: z.string(),
-    draft_version: z.string().nullable().optional(),
-    type: z.string(),
-    label: z.string().default(''),
-    position_x: z.number().default(0),
-    position_y: z.number().default(0),
-    width: z.number().nullable().optional(),
-    height: z.number().nullable().optional(),
-    config: z.record(z.any()).nullable().optional(),
-    field_ref_snapshot: z.record(z.string(), z.string()).nullable().optional(),
-    parent_id: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
-  });
+export const ZWorkflowBlock = z.object({
+  id: z.string(),
+  workflow_id: z.string(),
+  draft_version: z.string().nullable().optional(),
+  type: z.string(),
+  label: z.string().default(''),
+  position_x: z.number().default(0),
+  position_y: z.number().default(0),
+  width: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
+  config: z.record(z.any()).nullable().optional(),
+  field_ref_snapshot: z.record(z.string(), z.string()).nullable().optional(),
+  parent_id: z.string().nullable().optional(),
+  updated_at: z.string().nullable().optional(),
+});
 export type WorkflowBlock = z.infer<typeof ZWorkflowBlock>;
 
 export const ZWorkflowEdgeDoc = z
@@ -704,7 +703,7 @@ export const ZDeclarativePlanResponse = z
     block_count: z.number(),
     edge_count: z.number(),
     diagnostics: z.record(z.any()),
-    format_version: z.string().default("workflows-plan/v1"),
+    format_version: z.string().default('workflows-plan/v1'),
     summary: ZDeclarativePlanSummary.default({
       add: 0,
       change: 0,
@@ -715,7 +714,7 @@ export const ZDeclarativePlanResponse = z
       has_changes: false,
     }),
     resource_changes: z.array(ZDeclarativePlanResourceChange).default([]),
-    rendered_plan: z.string().default("No changes. Infrastructure is up-to-date."),
+    rendered_plan: z.string().default('No changes. Infrastructure is up-to-date.'),
   })
   .passthrough();
 export type DeclarativePlanResponse = z.infer<typeof ZDeclarativePlanResponse>;
@@ -727,7 +726,7 @@ export const ZDeclarativeApplyResponse = z
     block_count: z.number(),
     edge_count: z.number(),
     diagnostics: z.record(z.any()),
-    format_version: z.string().default("workflows-plan/v1"),
+    format_version: z.string().default('workflows-plan/v1'),
     summary: ZDeclarativePlanSummary.default({
       add: 0,
       change: 0,
@@ -738,7 +737,7 @@ export const ZDeclarativeApplyResponse = z
       has_changes: false,
     }),
     resource_changes: z.array(ZDeclarativePlanResourceChange).default([]),
-    rendered_plan: z.string().default("No changes. Infrastructure is up-to-date."),
+    rendered_plan: z.string().default('No changes. Infrastructure is up-to-date.'),
   })
   .passthrough();
 export type DeclarativeApplyResponse = z.infer<typeof ZDeclarativeApplyResponse>;

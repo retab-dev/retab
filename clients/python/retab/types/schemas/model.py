@@ -23,6 +23,7 @@ from .chat import convert_to_openai_responses_api_format
 from ..standards import StreamingBaseModel
 from ..chat import ChatCompletionRetabMessage
 
+
 def add_reasoning_sibling_inplace(properties: dict[str, Any], field_name: str, reasoning_desc: str) -> None:
     """
     Add a reasoning sibling for a given property field_name into properties dict.
@@ -1215,7 +1216,7 @@ If extracting a company name with source quote:
     @property
     def schema_system_prompt(self) -> str:
         return (
-            self.inference_nlp_data_structure #+ "\n---\n" + "## Expected output schema as a TypeScript interface for better readability:\n\n" + self.inference_typescript_interface
+            self.inference_nlp_data_structure  # + "\n---\n" + "## Expected output schema as a TypeScript interface for better readability:\n\n" + self.inference_typescript_interface
         )
 
     @property
@@ -1226,7 +1227,7 @@ If extracting a company name with source quote:
             str: The combined system prompt string.
         """
         return self.developer_system_prompt + "\n\n" + self.schema_system_prompt
- 
+
     @property
     def title(self) -> str:
         """Returns the title of the schema.
@@ -1462,6 +1463,7 @@ If extracting a company name with source quote:
                 # Build and cache on first access
                 json_schema = object.__getattribute__(self, "json_schema")
                 from retab.utils.json_schema import convert_json_schema_to_basemodel as _conv
+
                 model = _conv(json_schema)
                 object.__setattr__(self, "pydantic_model", model)
             return model
@@ -1472,6 +1474,7 @@ If extracting a company name with source quote:
                 # Derive from full model lazily
                 base_model = object.__getattribute__(self, "pydantic_model")
                 from retab.utils.json_schema import convert_basemodel_to_partial_basemodel as _to_partial
+
                 partial = _to_partial(base_model)
                 object.__setattr__(self, "_partial_pydantic_model", partial)
             return partial
@@ -1597,7 +1600,8 @@ def __sanitize_instance(instance: Any, schema: dict[str, Any], path: SchemaPath 
 def sanitize(instance: Any, schema: dict[str, Any]) -> Any:
     expanded_schema = expand_refs(schema)
     return __sanitize_instance(instance, expanded_schema)
- 
+
+
 """
 # General Instructions
 

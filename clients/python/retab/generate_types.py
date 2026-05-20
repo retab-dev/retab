@@ -16,19 +16,25 @@ import PIL.Image
 
 to_compile: list[tuple[str, Type, bool]] = []
 
+
 def to_camel_case(snake_str: str) -> str:
-    components = snake_str.split('_')
-    return ''.join(x.title() for x in components)
+    components = snake_str.split("_")
+    return "".join(x.title() for x in components)
+
 
 names = {}
+
+
 def is_named(cls: Type) -> bool:
     return (cls.__module__, cls.__name__) in names
+
+
 def get_class_name(cls: Type) -> str:
     key = (cls.__module__, cls.__name__)
     if key in names:
         return names[key]
     name = cls.__name__
-    parts = cls.__module__.split('.')
+    parts = cls.__module__.split(".")
     while name in names.values():
         name = f"{to_camel_case(parts.pop())}{name}"
     names[key] = name
@@ -40,10 +46,8 @@ def is_base_model(field_type: Type) -> bool:
 
 
 def is_email_str_type(field_type: Any) -> bool:
-    return (
-        getattr(field_type, "__name__", None) == "EmailStr"
-        and getattr(field_type, "__module__", "").startswith("pydantic")
-    )
+    return getattr(field_type, "__name__", None) == "EmailStr" and getattr(field_type, "__module__", "").startswith("pydantic")
+
 
 def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> str:
     origin = get_origin(field_type) or field_type
@@ -84,8 +88,11 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
 
             typename += "z.object({\n"
             ts_typename += "{\n"
-            props = [(n, f.annotation, f.default) for n, f in origin.model_fields.items() if not f.exclude] if isinstance(origin, type) and issubclass(origin, BaseModel) else \
-                    [(n, f, PydanticUndefined) for n, f in origin.__annotations__.items()]
+            props = (
+                [(n, f.annotation, f.default) for n, f in origin.model_fields.items() if not f.exclude]
+                if isinstance(origin, type) and issubclass(origin, BaseModel)
+                else [(n, f, PydanticUndefined) for n, f in origin.__annotations__.items()]
+            )
 
             for field_name, field, default in props:
                 if field_name not in origin.__annotations__.keys():
@@ -157,7 +164,7 @@ def type_to_zod(field_type: Any, put_names: bool = True, ts: bool = False) -> st
         return ts_typename if not optional else ts_typename + " | null | undefined"
     else:
         return typename if not optional else typename + ".nullable().optional()"
-    
+
 
 # SET of names of python builtin types starting with a capital
 builtin_types = {
@@ -176,12 +183,11 @@ if __name__ == "__main__":
     modules = []
     for root, dirs, files in os.walk("retab/types"):
         for module in files:
-            if module[-3:] != '.py':
+            if module[-3:] != ".py":
                 continue
-            full_name = os.path.join(root, module[:-3]).replace(os.path.sep, '.')
+            full_name = os.path.join(root, module[:-3]).replace(os.path.sep, ".")
             __import__(full_name, locals(), globals())
             modules.append(full_name)
-
 
     for module_name in modules:
         for name, obj in inspect.getmembers(sys.modules[module_name]):
@@ -190,7 +196,7 @@ if __name__ == "__main__":
                 to_compile.append((objname, obj, False))
 
     print("import * as z from 'zod';\n")
-    
+
     defined = set()
     while len(to_compile) > 0:
         name, model, necessary = to_compile.pop(0)

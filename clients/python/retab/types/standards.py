@@ -13,6 +13,7 @@ T = TypeVar("T")
 
 class _Unset(Enum):
     """Sentinel for parameters that were not provided by the caller."""
+
     UNSET = "UNSET"
 
 

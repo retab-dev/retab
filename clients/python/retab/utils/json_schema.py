@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, create_model
 from pydantic.config import ConfigDict
 
 
-
 def has_cyclic_refs(schema: dict[str, Any]) -> bool:
     """Check if the JSON Schema contains cyclic references.
 
@@ -74,6 +73,7 @@ def has_cyclic_refs(schema: dict[str, Any]) -> bool:
 
     return False
 
+
 def _convert_property_schema_to_type(prop_schema: dict[str, Any]) -> Any:
     """
     Convert a single JSON Schema property to a Python type annotation:
@@ -119,7 +119,6 @@ def _convert_property_schema_to_type(prop_schema: dict[str, Any]) -> Any:
     return object
 
 
-
 def merge_descriptions(outer_schema: dict[str, Any], inner_schema: dict[str, Any]) -> dict[str, Any]:
     """
     Merge descriptions from outer and inner schemas, giving preference to outer.
@@ -142,6 +141,7 @@ def merge_descriptions(outer_schema: dict[str, Any], inner_schema: dict[str, Any
         merged.pop("X-ReasoningPrompt", None)
 
     return merged
+
 
 def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """
@@ -233,7 +233,6 @@ def expand_refs(schema: dict[str, Any], definitions: dict[str, dict[str, Any]] |
                 result[annotation] = subschema
 
     return result
-
 
 
 def convert_json_schema_to_basemodel(schema: dict[str, Any]) -> Type[BaseModel]:
@@ -386,7 +385,6 @@ def convert_basemodel_to_partial_basemodel(base_model: Type[BaseModel]) -> Type[
 
     # Dynamically create a new model
     return create_model(f"Partial{base_model.__name__}", __config__=base_model.model_config, __module__="__main__", **field_definitions)
-
 
 
 def filter_auxiliary_fields(data: dict[str, Any], prefixes: list[str] = ["reasoning___", "source___"]) -> dict[str, Any]:

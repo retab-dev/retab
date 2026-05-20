@@ -74,11 +74,7 @@ class EditTemplatesMixin:
         if name is not UNSET:
             update_dict["name"] = name
         if form_fields is not UNSET:
-            update_dict["form_fields"] = (
-                None
-                if form_fields is None
-                else [FormField(**f) if isinstance(f, dict) else f for f in form_fields]
-            )
+            update_dict["form_fields"] = None if form_fields is None else [FormField(**f) if isinstance(f, dict) else f for f in form_fields]
         payload = UpdateEditTemplateRequest(**update_dict)
         return PreparedRequest(
             method="PATCH",

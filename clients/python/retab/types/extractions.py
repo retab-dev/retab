@@ -56,9 +56,7 @@ class ExtractionConsensus(RetabBaseModel):
     likelihoods: Optional[dict[str, Any]] = Field(
         default=None,
         description=(
-            "Consensus likelihood tree mirroring the extraction output. "
-            "Scalar leaves carry per-value voter-agreement in [0, 1]; list leaves "
-            "carry one entry per matched list item."
+            "Consensus likelihood tree mirroring the extraction output. Scalar leaves carry per-value voter-agreement in [0, 1]; list leaves carry one entry per matched list item."
         ),
     )
 

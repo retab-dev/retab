@@ -99,7 +99,6 @@ class BaseRetab:
             "Content-Type": "application/json",
         }
 
-
     def _prepare_url(self, endpoint: str) -> str:
         return f"{self.base_url}/{endpoint.lstrip('/')}"
 
@@ -221,6 +220,7 @@ class Retab(BaseRetab):
         self.edits = edits.Edits(client=self)
         self.workflows = workflows.Workflows(client=self)
         self.jobs = jobs.Jobs(client=self)
+
     def _request(
         self,
         method: str,

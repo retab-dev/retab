@@ -41,9 +41,7 @@ from ....types.workflows.experiments import (
 
 # Shared TypeAdapter — reused for every metrics call so we don't re-introspect
 # the discriminated-union schema on each request.
-_METRICS_RESPONSE_ADAPTER: TypeAdapter[ExperimentMetricsResponse] = TypeAdapter(
-    ExperimentMetricsResponse
-)
+_METRICS_RESPONSE_ADAPTER: TypeAdapter[ExperimentMetricsResponse] = TypeAdapter(ExperimentMetricsResponse)
 
 
 def _dump_capture(
@@ -51,9 +49,7 @@ def _dump_capture(
 ) -> Dict[str, Any]:
     if isinstance(capture, ExperimentDocumentCaptureRequest):
         return capture.model_dump(mode="json", exclude_none=True)
-    return ExperimentDocumentCaptureRequest.model_validate(capture).model_dump(
-        mode="json", exclude_none=True
-    )
+    return ExperimentDocumentCaptureRequest.model_validate(capture).model_dump(mode="json", exclude_none=True)
 
 
 def _dump_explicit_document(
@@ -61,9 +57,7 @@ def _dump_explicit_document(
 ) -> Dict[str, Any]:
     if isinstance(document, ExplicitExperimentDocumentRequest):
         return document.model_dump(mode="json", exclude_none=True)
-    return ExplicitExperimentDocumentRequest.model_validate(document).model_dump(
-        mode="json", exclude_none=True
-    )
+    return ExplicitExperimentDocumentRequest.model_validate(document).model_dump(mode="json", exclude_none=True)
 
 
 def _build_create_or_update_body(
@@ -545,6 +539,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         response = self._client._prepared_request(request)
         return EligibleBlockListResponse.model_validate(response)
 
+
 # ---------------------------------------------------------------------------
 # Async
 # ---------------------------------------------------------------------------
@@ -720,16 +715,12 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         request = self.prepare_delete(workflow_id, experiment_id)
         await self._client._prepared_request(request)
 
-    async def duplicate(
-        self, workflow_id: str, experiment_id: str
-    ) -> ExperimentResponse:
+    async def duplicate(self, workflow_id: str, experiment_id: str) -> ExperimentResponse:
         request = self.prepare_duplicate(workflow_id, experiment_id)
         response = await self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
-    async def list_eligible_blocks(
-        self, workflow_id: str
-    ) -> EligibleBlockListResponse:
+    async def list_eligible_blocks(self, workflow_id: str) -> EligibleBlockListResponse:
         request = self.prepare_list_eligible_blocks(workflow_id)
         response = await self._client._prepared_request(request)
         return EligibleBlockListResponse.model_validate(response)

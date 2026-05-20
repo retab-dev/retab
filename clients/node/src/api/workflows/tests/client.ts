@@ -1,14 +1,14 @@
-import { CompositionClient, RequestOptions } from "../../../client.js";
-import APIWorkflowTestRuns from "./runs/client.js";
+import { CompositionClient, RequestOptions } from '../../../client.js';
+import APIWorkflowTestRuns from './runs/client.js';
 import {
-    AssertionSpec,
-    WorkflowTestListResponse,
-    WorkflowTest,
-    WorkflowTestBlockTarget,
-    WorkflowTestSource,
-    ZWorkflowTestListResponse,
-    ZWorkflowTest,
-} from "./types.js";
+  AssertionSpec,
+  WorkflowTestListResponse,
+  WorkflowTest,
+  WorkflowTestBlockTarget,
+  WorkflowTestSource,
+  ZWorkflowTestListResponse,
+  ZWorkflowTest,
+} from './types.js';
 
 /**
  * Workflow tests API client. Mirrors the eight backend endpoints
@@ -39,194 +39,193 @@ import {
  * ```
  */
 export default class APIWorkflowTests extends CompositionClient {
-    public runs: APIWorkflowTestRuns;
+  public runs: APIWorkflowTestRuns;
 
-    constructor(client: CompositionClient) {
-        super(client);
-        this.runs = new APIWorkflowTestRuns(this);
+  constructor(client: CompositionClient) {
+    super(client);
+    this.runs = new APIWorkflowTestRuns(this);
+  }
+
+  prepare_create_run(
+    workflowId: string,
+    {
+      testId,
+      target,
+      nConsensus,
+    }: {
+      testId?: string;
+      target?: WorkflowTestBlockTarget;
+      nConsensus?: number;
+    } = {}
+  ): { url: string; method: string; body: Record<string, unknown> } {
+    const body: Record<string, unknown> = {};
+    if (testId !== undefined) body.test_id = testId;
+    if (target !== undefined) body.target = target;
+    if (nConsensus !== undefined) body.n_consensus = nConsensus;
+    return {
+      url: `/workflows/${workflowId}/tests/runs`,
+      method: 'POST',
+      body,
+    };
+  }
+
+  /**
+   * Create a new workflow test against a single block in the workflow.
+   *
+   * `assertion` is required. Pass `target` and `source` as discriminated
+   * union literals — see types.ts for the variants.
+   */
+  async create(
+    {
+      workflowId,
+      target,
+      source,
+      assertion,
+      name,
+    }: {
+      workflowId: string;
+      target: WorkflowTestBlockTarget;
+      // `WorkflowTestSource` IS `Manual | RunStep` already — no need
+      // to repeat the union members. Callers benefit from the named
+      // alias showing up in IDE hover.
+      source: WorkflowTestSource;
+      assertion: AssertionSpec;
+      // Narrowed to `string | undefined` so the typed contract matches
+      // behavior — the SDK omits `name` from the body whether the
+      // caller passes `undefined` or `null`, but the TS signature
+      // shouldn't lie about supporting `null`.
+      name?: string;
+    },
+    options?: RequestOptions
+  ): Promise<WorkflowTest> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body: Record<string, any> = {
+      target,
+      source,
+      assertion,
+    };
+    if (name !== undefined) {
+      body.name = name;
     }
+    return this._fetchJson(ZWorkflowTest, {
+      url: `/workflows/${workflowId}/tests`,
+      method: 'POST',
+      body: { ...body, ...(options?.body || {}) },
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
 
-    prepare_create_run(
-        workflowId: string,
-        {
-            testId,
-            target,
-            nConsensus,
-        }: {
-            testId?: string;
-            target?: WorkflowTestBlockTarget;
-            nConsensus?: number;
-        } = {}
-    ): { url: string; method: string; body: Record<string, unknown> } {
-        const body: Record<string, unknown> = {};
-        if (testId !== undefined) body.test_id = testId;
-        if (target !== undefined) body.target = target;
-        if (nConsensus !== undefined) body.n_consensus = nConsensus;
-        return {
-            url: `/workflows/${workflowId}/tests/runs`,
-            method: "POST",
-            body,
-        };
+  /**
+   * Fetch a single workflow test by id (refreshes drift state).
+   */
+  async get(
+    {
+      workflowId,
+      testId,
+    }: {
+      workflowId: string;
+      testId: string;
+    },
+    options?: RequestOptions
+  ): Promise<WorkflowTest> {
+    return this._fetchJson(ZWorkflowTest, {
+      url: `/workflows/${workflowId}/tests/${testId}`,
+      method: 'GET',
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
+
+  /**
+   * List all workflow tests for a workflow.
+   */
+  async list(
+    {
+      workflowId,
+      targetBlockId,
+      limit = 50,
+    }: {
+      workflowId: string;
+      targetBlockId?: string;
+      limit?: number;
+    },
+    options?: RequestOptions
+  ): Promise<WorkflowTestListResponse> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const baseParams: Record<string, any> = { limit };
+    if (targetBlockId !== undefined) {
+      baseParams.target_block_id = targetBlockId;
     }
+    // `options.params` wins so callers can override the typed args via
+    // the escape hatch — matches sibling `APIWorkflowRuns.list`
+    // precedence (runs/client.ts).
+    return this._fetchJson(ZWorkflowTestListResponse, {
+      url: `/workflows/${workflowId}/tests`,
+      method: 'GET',
+      params: { ...baseParams, ...(options?.params || {}) },
+      headers: options?.headers,
+    });
+  }
 
-    /**
-     * Create a new workflow test against a single block in the workflow.
-     *
-     * `assertion` is required. Pass `target` and `source` as discriminated
-     * union literals — see types.ts for the variants.
-     */
-    async create(
-        {
-            workflowId,
-            target,
-            source,
-            assertion,
-            name,
-        }: {
-            workflowId: string;
-            target: WorkflowTestBlockTarget;
-            // `WorkflowTestSource` IS `Manual | RunStep` already — no need
-            // to repeat the union members. Callers benefit from the named
-            // alias showing up in IDE hover.
-            source: WorkflowTestSource;
-            assertion: AssertionSpec;
-            // Narrowed to `string | undefined` so the typed contract matches
-            // behavior — the SDK omits `name` from the body whether the
-            // caller passes `undefined` or `null`, but the TS signature
-            // shouldn't lie about supporting `null`.
-            name?: string;
-        },
-        options?: RequestOptions
-    ): Promise<WorkflowTest> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {
-            target,
-            source,
-            assertion,
-        };
-        if (name !== undefined) {
-            body.name = name;
-        }
-        return this._fetchJson(ZWorkflowTest, {
-            url: `/workflows/${workflowId}/tests`,
-            method: "POST",
-            body: { ...body, ...(options?.body || {}) },
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
+  /**
+   * Patch the name, assertion, and/or source of a workflow test. Each
+   * field is optional — fields you omit are left untouched. Setting
+   * `assertion: null` is rejected by the backend; use `delete()` to
+   * remove the test entirely.
+   */
+  async update(
+    {
+      workflowId,
+      testId,
+      name,
+      assertion,
+      source,
+    }: {
+      workflowId: string;
+      testId: string;
+      name?: string;
+      assertion?: AssertionSpec;
+      source?: WorkflowTestSource;
+    },
+    options?: RequestOptions
+  ): Promise<WorkflowTest> {
+    // Only include fields the caller actually passed — the backend
+    // treats missing fields as `leave untouched` and explicitly rejects
+    // an `assertion: null` payload.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body: Record<string, any> = {};
+    if (name !== undefined) body.name = name;
+    if (assertion !== undefined) body.assertion = assertion;
+    if (source !== undefined) body.source = source;
 
-    /**
-     * Fetch a single workflow test by id (refreshes drift state).
-     */
-    async get(
-        {
-            workflowId,
-            testId,
-        }: {
-            workflowId: string;
-            testId: string;
-        },
-        options?: RequestOptions
-    ): Promise<WorkflowTest> {
-        return this._fetchJson(ZWorkflowTest, {
-            url: `/workflows/${workflowId}/tests/${testId}`,
-            method: "GET",
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
+    return this._fetchJson(ZWorkflowTest, {
+      url: `/workflows/${workflowId}/tests/${testId}`,
+      method: 'PATCH',
+      body: { ...body, ...(options?.body || {}) },
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
 
-    /**
-     * List all workflow tests for a workflow.
-     */
-    async list(
-        {
-            workflowId,
-            targetBlockId,
-            limit = 50,
-        }: {
-            workflowId: string;
-            targetBlockId?: string;
-            limit?: number;
-        },
-        options?: RequestOptions
-    ): Promise<WorkflowTestListResponse> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const baseParams: Record<string, any> = { limit };
-        if (targetBlockId !== undefined) {
-            baseParams.target_block_id = targetBlockId;
-        }
-        // `options.params` wins so callers can override the typed args via
-        // the escape hatch — matches sibling `APIWorkflowRuns.list`
-        // precedence (runs/client.ts).
-        return this._fetchJson(ZWorkflowTestListResponse, {
-            url: `/workflows/${workflowId}/tests`,
-            method: "GET",
-            params: { ...baseParams, ...(options?.params || {}) },
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Patch the name, assertion, and/or source of a workflow test. Each
-     * field is optional — fields you omit are left untouched. Setting
-     * `assertion: null` is rejected by the backend; use `delete()` to
-     * remove the test entirely.
-     */
-    async update(
-        {
-            workflowId,
-            testId,
-            name,
-            assertion,
-            source,
-        }: {
-            workflowId: string;
-            testId: string;
-            name?: string;
-            assertion?: AssertionSpec;
-            source?: WorkflowTestSource;
-        },
-        options?: RequestOptions
-    ): Promise<WorkflowTest> {
-        // Only include fields the caller actually passed — the backend
-        // treats missing fields as `leave untouched` and explicitly rejects
-        // an `assertion: null` payload.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body: Record<string, any> = {};
-        if (name !== undefined) body.name = name;
-        if (assertion !== undefined) body.assertion = assertion;
-        if (source !== undefined) body.source = source;
-
-        return this._fetchJson(ZWorkflowTest, {
-            url: `/workflows/${workflowId}/tests/${testId}`,
-            method: "PATCH",
-            body: { ...body, ...(options?.body || {}) },
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
-    /**
-     * Delete a workflow test. Returns void on success.
-     */
-    async delete(
-        {
-            workflowId,
-            testId,
-        }: {
-            workflowId: string;
-            testId: string;
-        },
-        options?: RequestOptions
-    ): Promise<void> {
-        return this._fetchJson({
-            url: `/workflows/${workflowId}/tests/${testId}`,
-            method: "DELETE",
-            params: options?.params,
-            headers: options?.headers,
-        });
-    }
-
+  /**
+   * Delete a workflow test. Returns void on success.
+   */
+  async delete(
+    {
+      workflowId,
+      testId,
+    }: {
+      workflowId: string;
+      testId: string;
+    },
+    options?: RequestOptions
+  ): Promise<void> {
+    return this._fetchJson({
+      url: `/workflows/${workflowId}/tests/${testId}`,
+      method: 'DELETE',
+      params: options?.params,
+      headers: options?.headers,
+    });
+  }
 }

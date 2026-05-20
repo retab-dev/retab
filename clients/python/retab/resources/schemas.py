@@ -43,7 +43,6 @@ class SchemasMixin:
 
 
 class Schemas(SyncAPIResource, SchemasMixin):
-
     def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],
@@ -79,8 +78,8 @@ class Schemas(SyncAPIResource, SchemasMixin):
         response = self._client._prepared_request(prepared_request)
         return response
 
-class AsyncSchemas(AsyncAPIResource, SchemasMixin):
 
+class AsyncSchemas(AsyncAPIResource, SchemasMixin):
     async def generate(
         self,
         documents: Sequence[Path | str | bytes | MIMEData | IOBase | PIL.Image.Image],

@@ -17,6 +17,7 @@ mimetypes.add_type("image/webp", ".webp")
 mimetypes.add_type("image/heic", ".heic")
 mimetypes.add_type("image/heif", ".heif")
 
+
 # **** OCR DATACLASSES (DocumentAI-compatible) ****
 class Point(RetabBaseModel):
     x: int
@@ -89,14 +90,8 @@ class OCR(RetabBaseModel):
 
 
 class MIMEData(RetabBaseModel):
-    filename: str = Field(
-        description="The filename of the file",
-        examples=["file.pdf", "image.png", "data.txt"]
-    )
-    url: str = Field(
-        description="The URL of the file in base64 format",
-        examples=["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."]
-    )
+    filename: str = Field(description="The filename of the file", examples=["file.pdf", "image.png", "data.txt"])
+    url: str = Field(description="The URL of the file in base64 format", examples=["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIA..."])
 
     # Internal resource
     _buffer: Optional[io.BytesIO] = None
@@ -104,12 +99,7 @@ class MIMEData(RetabBaseModel):
     @property
     def id(self) -> str:
         parsed_url = urlsplit(self.url)
-        if (
-            parsed_url.scheme == "https"
-            and parsed_url.hostname == "storage.retab.com"
-            and not parsed_url.query
-            and not parsed_url.fragment
-        ):
+        if parsed_url.scheme == "https" and parsed_url.hostname == "storage.retab.com" and not parsed_url.query and not parsed_url.fragment:
             path_parts = [part for part in parsed_url.path.split("/") if part]
             if len(path_parts) == 2:
                 file_id, separator, extension = path_parts[1].rpartition(".")
@@ -177,13 +167,7 @@ class MIMEData(RetabBaseModel):
             size: int | str = self.size
         except ValueError:
             size = "unavailable"
-        return (
-            f"MIMEData(filename='{self.filename}', "
-            f"url='{truncated_url}', "
-            f"mime_type='{self.mime_type}', "
-            f"size='{size}', "
-            f"extension='{self.extension}')"
-        )
+        return f"MIMEData(filename='{self.filename}', url='{truncated_url}', mime_type='{self.mime_type}', size='{size}', extension='{self.extension}')"
 
     def __repr__(self) -> str:
         return self.__str__()

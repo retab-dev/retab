@@ -30,10 +30,7 @@ class ClassificationsMixin:
     ) -> PreparedRequest:
         mime_document = prepare_mime_document(document)
 
-        category_objects = [
-            Category(**cat) if isinstance(cat, dict) else cat
-            for cat in categories
-        ]
+        category_objects = [Category(**cat) if isinstance(cat, dict) else cat for cat in categories]
 
         request_dict: dict[str, Any] = {
             "document": mime_document,
@@ -88,7 +85,6 @@ class ClassificationsMixin:
 
 
 class Classifications(SyncAPIResource, ClassificationsMixin):
-
     def create(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
@@ -128,16 +124,26 @@ class Classifications(SyncAPIResource, ClassificationsMixin):
         to_date: datetime | None = None,
     ) -> PaginatedList:
         request = self._prepare_list(
-            before=before, after=after, limit=limit, order=order,
-            filename=filename, from_date=from_date, to_date=to_date,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            filename=filename,
+            from_date=from_date,
+            to_date=to_date,
         )
         response = self._client._prepared_request(request)
         result = PaginatedList(**response)
 
         def fetch_next(after: str) -> PaginatedList:
             return self.list(
-                before=None, after=after, limit=limit, order=order,
-                filename=filename, from_date=from_date, to_date=to_date,
+                before=None,
+                after=after,
+                limit=limit,
+                order=order,
+                filename=filename,
+                from_date=from_date,
+                to_date=to_date,
             )
 
         result._fetch_next_page = fetch_next
@@ -149,7 +155,6 @@ class Classifications(SyncAPIResource, ClassificationsMixin):
 
 
 class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
-
     async def create(
         self,
         document: Path | str | IOBase | MIMEData | PIL.Image.Image | HttpUrl,
@@ -189,8 +194,13 @@ class AsyncClassifications(AsyncAPIResource, ClassificationsMixin):
         to_date: datetime | None = None,
     ) -> PaginatedList:
         request = self._prepare_list(
-            before=before, after=after, limit=limit, order=order,
-            filename=filename, from_date=from_date, to_date=to_date,
+            before=before,
+            after=after,
+            limit=limit,
+            order=order,
+            filename=filename,
+            from_date=from_date,
+            to_date=to_date,
         )
         response = await self._client._prepared_request(request)
         return PaginatedList(**response)

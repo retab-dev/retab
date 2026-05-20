@@ -94,6 +94,7 @@ class ExtractionsMixin:
     def prepare_delete(self, extraction_id: str) -> PreparedRequest:
         return PreparedRequest(method="DELETE", url=f"/extractions/{extraction_id}")
 
+
 class Extractions(SyncAPIResource, ExtractionsMixin):
     """Extractions API wrapper."""
 
@@ -200,6 +201,7 @@ class Extractions(SyncAPIResource, ExtractionsMixin):
     def delete(self, extraction_id: str) -> None:
         request = self.prepare_delete(extraction_id)
         self._client._prepared_request(request)
+
 
 class AsyncExtractions(AsyncAPIResource, ExtractionsMixin):
     """Async Extractions API wrapper."""

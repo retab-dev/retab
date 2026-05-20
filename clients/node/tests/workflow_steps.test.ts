@@ -246,9 +246,9 @@ describe('workflow run steps client', () => {
     const stepsClient = new APIWorkflowRunSteps(new MockClient());
 
     expect(stepsClient.get.length).toBe(3);
-    await expect((stepsClient.get as unknown as (runId: string) => Promise<unknown>)('run_123')).rejects.toThrow(
-      'blockId is required'
-    );
+    await expect(
+      (stepsClient.get as unknown as (runId: string) => Promise<unknown>)('run_123')
+    ).rejects.toThrow('blockId is required');
   });
 
   test('only exposes get for full execution fetches', () => {
@@ -291,5 +291,4 @@ describe('workflow run steps client', () => {
       id: 'prtn_123',
     });
   });
-
 });

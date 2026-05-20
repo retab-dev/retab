@@ -410,10 +410,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             except NotFoundError:
                 pass
             if time.monotonic() >= deadline:
-                raise TimeoutError(
-                    f"Review overlay for run {run_id!r} block {block_id!r} "
-                    f"was not awaiting_review within {timeout}s"
-                )
+                raise TimeoutError(f"Review overlay for run {run_id!r} block {block_id!r} was not awaiting_review within {timeout}s")
             time.sleep(poll_interval)
 
 
@@ -685,8 +682,5 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             except NotFoundError:
                 pass
             if time.monotonic() >= deadline:
-                raise TimeoutError(
-                    f"Review overlay for run {run_id!r} block {block_id!r} "
-                    f"was not awaiting_review within {timeout}s"
-                )
+                raise TimeoutError(f"Review overlay for run {run_id!r} block {block_id!r} was not awaiting_review within {timeout}s")
             await asyncio.sleep(poll_interval)

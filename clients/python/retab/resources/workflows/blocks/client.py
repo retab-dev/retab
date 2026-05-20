@@ -182,10 +182,7 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
     def _coerce_batch_requests(
         blocks: Sequence[WorkflowBlockCreateRequest | Dict[str, Any]],
     ) -> List[WorkflowBlockCreateRequest]:
-        return [
-            block if isinstance(block, WorkflowBlockCreateRequest) else WorkflowBlockCreateRequest.model_validate(block)
-            for block in blocks
-        ]
+        return [block if isinstance(block, WorkflowBlockCreateRequest) else WorkflowBlockCreateRequest.model_validate(block) for block in blocks]
 
     def list(self, workflow_id: str) -> PaginatedList[WorkflowBlock]:
         """List all blocks for a workflow.

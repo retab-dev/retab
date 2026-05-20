@@ -10,6 +10,7 @@ from retab.types.base import RetabBaseModel
 from ...utils.display import count_image_tokens, count_text_tokens
 from ..chat import ChatCompletionRetabMessage
 from ..mime import MIMEData
+
 MediaType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
 
 
@@ -24,6 +25,7 @@ class DocumentCreateMessageRequest(RetabBaseModel):
     document: MIMEData = Field(description="The document to load.")
     image_resolution_dpi: int = Field(default=192, description="Resolution of the image sent to the LLM")
     model: str = Field(default="retab-small", description="The model to use for the document.")
+
 
 class DocumentCreateInputRequest(DocumentCreateMessageRequest):
     json_schema: dict[str, Any] = Field(description="The json schema to use for the document.")

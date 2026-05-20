@@ -200,7 +200,6 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
     def wait_for_completion(
         self,
         job_id: str,
-
         poll_interval_seconds: float = 2.0,
         timeout_seconds: float = 600.0,
         include_request: bool = False,
@@ -425,7 +424,6 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
     async def wait_for_completion(
         self,
         job_id: str,
-
         poll_interval_seconds: float = 2.0,
         timeout_seconds: float = 600.0,
         include_request: bool = False,

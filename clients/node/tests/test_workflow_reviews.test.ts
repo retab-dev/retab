@@ -238,7 +238,12 @@ describe('APIWorkflowReviews request shapes', () => {
     const mock = new MockClient({ data: [QUEUE_ITEM_JSON], has_more: false });
     const reviews = new APIWorkflowReviews(mock);
 
-    const result = await reviews.list({ workflowId: 'wf_1', status: 'approved', mine: true, limit: 25 });
+    const result = await reviews.list({
+      workflowId: 'wf_1',
+      status: 'approved',
+      mine: true,
+      limit: 25,
+    });
 
     expect(mock.lastFetchParams).toEqual({
       url: '/workflows/reviews',
@@ -412,7 +417,9 @@ describe('APIWorkflowReviews request shapes', () => {
   test('prepare_claim() exposes the Python-style request builder', () => {
     const reviews = new APIWorkflowReviews(new MockClient(OVERLAY_JSON));
 
-    expect(reviews.prepare_claim('run_1', 'extract-1', { versionStamp: 3, ttlSeconds: 600 })).toEqual({
+    expect(
+      reviews.prepare_claim('run_1', 'extract-1', { versionStamp: 3, ttlSeconds: 600 })
+    ).toEqual({
       url: '/workflows/reviews/run_1/extract-1/claim',
       method: 'POST',
       body: { version_stamp: 3, ttl_seconds: 600 },

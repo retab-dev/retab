@@ -205,7 +205,6 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
     def update(
         self,
         workflow_id: str,
-
         name: str | None = None,
         description: str | None = None,
         email_trigger: Dict[str, List[str]] | None = None,
@@ -222,7 +221,9 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
             Workflow: The updated workflow
         """
         request = self.prepare_update(
-            workflow_id, name=name, description=description,
+            workflow_id,
+            name=name,
+            description=description,
             email_trigger=email_trigger,
         )
         response = self._client._prepared_request(request)
@@ -399,14 +400,15 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
     async def update(
         self,
         workflow_id: str,
-
         name: str | None = None,
         description: str | None = None,
         email_trigger: Dict[str, List[str]] | None = None,
     ) -> Workflow:
         """Update a workflow's metadata."""
         request = self.prepare_update(
-            workflow_id, name=name, description=description,
+            workflow_id,
+            name=name,
+            description=description,
             email_trigger=email_trigger,
         )
         response = await self._client._prepared_request(request)
