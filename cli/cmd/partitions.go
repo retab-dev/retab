@@ -72,6 +72,12 @@ extraction.`,
 		nConsensus, _ := cmd.Flags().GetInt("n-consensus")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")
 		allowOverlap, _ := cmd.Flags().GetBool("allow-overlap")
+		requestOptions := []retab.RequestOption{}
+		if cmd.Flags().Changed("allow-overlap") && !allowOverlap {
+			requestOptions = append(requestOptions, retab.WithRequestBody(map[string]any{
+				"allow_overlap": false,
+			}))
+		}
 		result, err := client.Partitions.Create(ctx, retab.PartitionCreateRequest{
 			Document:     doc,
 			Key:          key,
@@ -80,7 +86,7 @@ extraction.`,
 			NConsensus:   nConsensus,
 			BustCache:    bustCache,
 			AllowOverlap: allowOverlap,
-		})
+		}, requestOptions...)
 		if err != nil {
 			return err
 		}
@@ -179,7 +185,7 @@ func init() {
 	partitionsCreateCmd.Flags().String("model", "", "model identifier (required)")
 	partitionsCreateCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 8}, "n-consensus", "consensus count (1-8)")
 	partitionsCreateCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
-	partitionsCreateCmd.Flags().Bool("allow-overlap", false, "allow partition chunks to share pages")
+	partitionsCreateCmd.Flags().Bool("allow-overlap", true, "allow partition chunks to share pages")
 	_ = partitionsCreateCmd.MarkFlagRequired("key")
 	_ = partitionsCreateCmd.MarkFlagRequired("instructions")
 	_ = partitionsCreateCmd.MarkFlagRequired("model")
