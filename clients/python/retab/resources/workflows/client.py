@@ -298,11 +298,12 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         workflow_id: str,
         re_propagate: bool = True,
     ) -> WorkflowDiagnosisResponse:
-        """Diagnose the workflow's draft graph for structural issues.
+        """Diagnose the workflow's draft graph for structural/config issues.
 
         Fetches the persisted draft entities first, then POSTs them to the
         diagnose-graph endpoint. Returns a list of ``issues`` (errors must
-        be fixed before publish; warnings are advisory) and ``stats``.
+        be fixed before publish; warnings cover incomplete config and
+        human-review guidance) and ``stats``.
 
         For diagnosing an in-memory editor graph that hasn't been saved
         yet, build the request directly with :meth:`prepare_diagnose` and
@@ -457,7 +458,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         workflow_id: str,
         re_propagate: bool = True,
     ) -> WorkflowDiagnosisResponse:
-        """Diagnose the workflow's draft graph for structural issues."""
+        """Diagnose the workflow's draft graph for structural/config issues."""
         entities = await self.get_entities(workflow_id)
         blocks = [
             {

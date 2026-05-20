@@ -367,6 +367,36 @@ describe("workflows client", () => {
         expect(workflowsClient.prepare_diagnose("wf_1", blocks, edges).body.re_propagate).toBe(true);
     });
 
+    test("diagnoseGraph preserves warning-only diagnoses", async () => {
+        const workflowsClient = new APIWorkflows(new MockClient({
+            is_valid: true,
+            issues: [
+                {
+                    severity: "warning",
+                    code: "MISSING_HIL_PREDICATE",
+                    message: "Review gate needs a predicate",
+                    block_id: "extract_1",
+                },
+            ],
+            suggestions: [],
+            stats: {
+                total_blocks: 1,
+                total_edges: 0,
+                block_types: { start: 1 },
+                start_blocks: 1,
+            },
+        }));
+
+        const diagnosis = await workflowsClient.diagnoseGraph("wf_1", {
+            blocks: [{ id: "start-1", type: "start" }],
+            edges: [],
+        });
+
+        expect(diagnosis.is_valid).toBe(true);
+        expect(diagnosis.issues[0]?.severity).toBe("warning");
+        expect(diagnosis.issues[0]?.code).toBe("MISSING_HIL_PREDICATE");
+    });
+
     test("artifacts prepare helpers expose the Python prepared-request surface", () => {
         const workflowsClient = new APIWorkflows(new MockClient({}));
 
