@@ -52,7 +52,7 @@ moved the overlay first.`,
   retab workflows reviews approve run_xyz789 blk_extract_1 --version-stamp 0
 
   # Add a gate before running: review whenever extraction misses a required field
-  printf '%s\n' '{"hil":{"predicate":{"kind":"any_required_field_null"},"skip_in_test_mode":false}}' \
+  printf '%s\n' '{"hil":{"predicate":{"kind":"any_required_field_null"}}}' \
     > extract-hil.json
   retab workflows blocks update wf_abc123 blk_extract_1 \
     --merge-config-file ./extract-hil.json`,

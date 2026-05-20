@@ -233,7 +233,7 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 	patchPath := t.TempDir() + "/hil.json"
 	if err := os.WriteFile(
 		patchPath,
-		[]byte(`{"hil":{"predicate":{"kind":"always"},"skip_in_test_mode":false}}`),
+		[]byte(`{"hil":{"predicate":{"kind":"always"}}}`),
 		0o600,
 	); err != nil {
 		t.Fatal(err)

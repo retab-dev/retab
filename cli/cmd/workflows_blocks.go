@@ -41,7 +41,7 @@ replay one block against a past run's input.`,
     --config-file ./new-config.json
 
   # Add a human review gate to an existing extract block
-  printf '%s\n' '{"hil":{"predicate":{"kind":"any_required_field_null"},"skip_in_test_mode":false}}' \
+  printf '%s\n' '{"hil":{"predicate":{"kind":"any_required_field_null"}}}' \
     > hil-config.json
   retab workflows blocks update wf_abc123 blk_extract_1 \
     --merge-config-file ./hil-config.json
@@ -324,7 +324,7 @@ Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
 ` + "`parent-id`" + `) only affect the visual editor.
 
 To add human review, merge a ` + "`hil`" + ` object into the block config:
-` + "`{\"hil\":{\"predicate\":{\"kind\":\"always\"},\"skip_in_test_mode\":false}}`" + `.
+` + "`{\"hil\":{\"predicate\":{\"kind\":\"always\"}}}`" + `.
 Supported gated block types are ` + "`extract`" + `, ` + "`split`" + `,
 ` + "`classifier`" + `, and ` + "`for_each`" + ` with ` + "`map_method=split_by_key`" + `.`,
 	Example: `  # Swap the config blob
@@ -332,13 +332,13 @@ Supported gated block types are ` + "`extract`" + `, ` + "`split`" + `,
     --config-file ./new-config.json
 
   # Gate an extract block when a required field is missing/null
-  printf '%s\n' '{"hil":{"predicate":{"kind":"any_required_field_null"},"skip_in_test_mode":false}}' \
+  printf '%s\n' '{"hil":{"predicate":{"kind":"any_required_field_null"}}}' \
     > extract-hil.json
   retab workflows blocks update wf_abc123 blk_extract_1 \
     --merge-config-file ./extract-hil.json
 
   # Gate a split_by_key for_each block when a boundary is low-confidence
-  printf '%s\n' '{"hil":{"predicate":{"kind":"boundary_confidence_lt","threshold":0.8},"skip_in_test_mode":false}}' \
+  printf '%s\n' '{"hil":{"predicate":{"kind":"boundary_confidence_lt","threshold":0.8}}}' \
     > for-each-hil.json
   retab workflows blocks update wf_abc123 blk_for_each_1 \
     --merge-config-file ./for-each-hil.json
