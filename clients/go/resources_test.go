@@ -91,6 +91,8 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 					Subdocuments: []SplitSubdocument{{
 						Name:                   "invoice",
 						Description:            "invoice pages",
+						PartitionKey:           "invoice_number",
+						AllowOverlap:           true,
 						AllowMultipleInstances: true,
 					}},
 					Model:        "retab-small",
@@ -108,6 +110,16 @@ func TestResourceCreateRequestShapes(t *testing.T) {
 				subdocuments, ok := body["subdocuments"].([]any)
 				if !ok || len(subdocuments) != 1 {
 					t.Fatalf("subdocuments = %#v", body["subdocuments"])
+				}
+				subdocument, ok := subdocuments[0].(map[string]any)
+				if !ok {
+					t.Fatalf("subdocuments[0] = %#v", subdocuments[0])
+				}
+				if got, _ := subdocument["partition_key"].(string); got != "invoice_number" {
+					t.Fatalf("subdocuments[0].partition_key = %#v", subdocument["partition_key"])
+				}
+				if got, _ := subdocument["allow_overlap"].(bool); got != true {
+					t.Fatalf("subdocuments[0].allow_overlap = %#v", subdocument["allow_overlap"])
 				}
 			},
 		},

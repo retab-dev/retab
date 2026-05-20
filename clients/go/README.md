@@ -166,6 +166,7 @@ partition, err := client.Partitions.Create(
 		Key:          "vendor",
 		Instructions: "group by vendor",
 		Model:        "retab-small",
+		AllowOverlap: false,
 	},
 	retab.WithRequestParams(params),
 	retab.WithRequestHeader("X-Debug", "true"),

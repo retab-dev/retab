@@ -2,6 +2,8 @@ import { CompositionClient, RequestOptions } from "../../client.js";
 import {
     ZMIMEData,
     MIMEDataInput,
+    ZFileRef,
+    FileRef,
     ZPaginatedList,
     PaginatedList,
     ZPartition,
@@ -9,12 +11,13 @@ import {
 } from "../../types.js";
 
 export type PartitionCreateParams = {
-    document: MIMEDataInput;
+    document: MIMEDataInput | FileRef;
     key: string;
     instructions: string;
     model: string;
     n_consensus?: number;
     bust_cache?: boolean;
+    allow_overlap?: boolean;
 };
 
 export type PartitionListParams = {
@@ -39,13 +42,20 @@ export default class APIPartitions extends CompositionClient {
         params: PartitionCreateParams,
         options?: RequestOptions,
     ): Promise<Partition> {
-        const document = await ZMIMEData.parseAsync(params.document);
+        const document =
+            typeof params.document === "object" &&
+                params.document !== null &&
+                "id" in params.document &&
+                "mime_type" in params.document
+                ? ZFileRef.parse(params.document)
+                : await ZMIMEData.parseAsync(params.document);
         const body: Record<string, unknown> = {
             document,
             key: params.key,
             instructions: params.instructions,
             model: params.model,
             n_consensus: params.n_consensus ?? 1,
+            allow_overlap: params.allow_overlap === true,
         };
         if (params.bust_cache) {
             body["bust_cache"] = true;

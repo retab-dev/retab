@@ -50,6 +50,7 @@ func TestRequestOptionsMergeParamsHeadersAndBody(t *testing.T) {
 		Key:          "vendor",
 		Instructions: "partition by vendor",
 		Model:        "retab-small",
+		AllowOverlap: true,
 	}, WithRequestParams(params), WithRequestHeader("X-Test", "yes"), WithRequestBody(map[string]any{"model": "retab-large"}))
 	if err != nil {
 		t.Fatal(err)
@@ -61,6 +62,9 @@ func TestRequestOptionsMergeParamsHeadersAndBody(t *testing.T) {
 		t.Fatalf("rawQuery = %q", rawQuery)
 	}
 	if body["model"] != "retab-large" {
+		t.Fatalf("body = %#v", body)
+	}
+	if body["allow_overlap"] != true {
 		t.Fatalf("body = %#v", body)
 	}
 }

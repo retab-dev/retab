@@ -12,7 +12,7 @@ from .mime import FileRef, MIMEData
 
 
 class PartitionRequest(RetabBaseModel):
-    document: MIMEData = Field(..., description="The document to partition")
+    document: MIMEData | FileRef = Field(..., description="The document to partition")
     key: str = Field(..., description="The key to partition the document by")
     instructions: str = Field(..., description="Instructions describing how the document should be partitioned")
     model: str = Field(default="retab-small", description="The model to use for partitioning")
@@ -23,6 +23,10 @@ class PartitionRequest(RetabBaseModel):
         description="Number of partitioning runs to use for consensus voting. Uses deterministic single-pass when set to 1.",
     )
     bust_cache: bool = Field(default=False, description="If true, skip the LLM cache and force a fresh completion")
+    allow_overlap: bool = Field(
+        default=False,
+        description="When true, allow partition chunks to share pages. Defaults to exclusive split-like chunks.",
+    )
 
 
 class PartitionChunk(RetabBaseModel):
@@ -59,6 +63,10 @@ class Partition(RetabBaseModel):
         description="Instructions supplied with the partition request",
     )
     n_consensus: int = Field(default=1, description="Number of consensus votes used")
+    allow_overlap: bool = Field(
+        default=False,
+        description="Whether partition chunks were allowed to share pages.",
+    )
     output: list[PartitionChunk] = Field(
         default_factory=list,
         description="The list of partition chunks with their assigned pages",

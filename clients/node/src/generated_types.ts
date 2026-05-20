@@ -139,6 +139,7 @@ export const ZPartition = z.lazy(() => (z.object({
     key: z.string(),
     instructions: z.string().default(""),
     n_consensus: z.number().default(1),
+    allow_overlap: z.boolean().default(false),
     output: z.array(ZPartitionChunk),
     consensus: ZPartitionConsensus,
     origin: ZProcessingRequestOrigin.nullable().optional(),
@@ -167,12 +168,13 @@ export const ZPartitionConsensus = z.lazy(() => (z.object({
 export type PartitionConsensus = z.infer<typeof ZPartitionConsensus>;
 
 export const ZPartitionRequest = z.lazy(() => (z.object({
-    document: ZMIMEData,
+    document: z.union([ZMIMEData, ZFileRef]),
     key: z.string(),
     instructions: z.string(),
     model: z.string().default("retab-small"),
     n_consensus: z.number().default(1),
     bust_cache: z.boolean().default(false),
+    allow_overlap: z.boolean().default(false),
 })));
 export type PartitionRequest = z.infer<typeof ZPartitionRequest>;
 
@@ -563,6 +565,8 @@ export type SplitSubdocumentLikelihood = z.infer<typeof ZSplitSubdocumentLikelih
 export const ZSubdocument = z.lazy(() => (z.object({
     name: z.string(),
     description: z.string().default(""),
+    partition_key: z.string().nullable().optional(),
+    allow_overlap: z.boolean().default(false),
     allow_multiple_instances: z.boolean().default(false),
 })));
 export type Subdocument = z.infer<typeof ZSubdocument>;
@@ -1785,6 +1789,7 @@ export const ZSplitSubdocument = z.lazy(() => (z.object({
     name: z.string(),
     description: z.string().default(""),
     partition_key: z.string().nullable().optional(),
+    allow_overlap: z.boolean().default(false),
     allow_multiple_instances: z.boolean().default(false),
 })));
 export type SplitSubdocument = z.infer<typeof ZSplitSubdocument>;
@@ -1929,6 +1934,7 @@ export const ZSplitV2Subdocument = z.lazy(() => (z.object({
     name: z.string(),
     description: z.string().default(""),
     partition_key: z.string().nullable().optional(),
+    allow_overlap: z.boolean().default(false),
     allow_multiple_instances: z.boolean().default(false),
 })));
 export type SplitV2Subdocument = z.infer<typeof ZSplitV2Subdocument>;

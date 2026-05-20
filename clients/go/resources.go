@@ -344,6 +344,8 @@ type Split = Resource
 type SplitSubdocument struct {
 	Name                   string `json:"name"`
 	Description            string `json:"description"`
+	PartitionKey           string `json:"partition_key,omitempty"`
+	AllowOverlap           bool   `json:"allow_overlap,omitempty"`
 	AllowMultipleInstances bool   `json:"allow_multiple_instances"`
 }
 
