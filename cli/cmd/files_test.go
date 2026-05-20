@@ -174,6 +174,23 @@ func TestResolveDownloadDest(t *testing.T) {
 	}
 }
 
+func TestFilesUploadReadsLocalFileBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	err := filesUploadCmd.RunE(filesUploadCmd, []string{"/tmp/missing.pdf"})
+	if err == nil {
+		t.Fatal("expected local file error")
+	}
+	if !strings.Contains(err.Error(), "file not found: /tmp/missing.pdf") {
+		t.Fatalf("error %q does not mention missing file", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading upload file", err.Error())
+	}
+}
+
 // TestFileIDFromURL pins the URL-parsing fallback used when the SDK's
 // typed MIMEData.ID() returns "" (non-retab storage host, etc.). The
 // rules are deliberately conservative: tolerate query strings and

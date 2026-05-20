@@ -436,7 +436,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             data["to_date"] = to_date
         if trigger_types is not None:
             data["trigger_types"] = trigger_types
-        request = PreparedRequest(method="POST", url="/workflows/runs/export_payload", data=data)
+        request = PreparedRequest(method="POST", url="/workflows/runs/export-payload", data=data)
         response = self._client._prepared_request(request)
         return ExportResponse.model_validate(response)
 
@@ -667,6 +667,6 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
             data["to_date"] = to_date
         if trigger_types is not None:
             data["trigger_types"] = trigger_types
-        request = PreparedRequest(method="POST", url="/workflows/runs/export_payload", data=data)
+        request = PreparedRequest(method="POST", url="/workflows/runs/export-payload", data=data)
         response = await self._client._prepared_request(request)
         return ExportResponse.model_validate(response)

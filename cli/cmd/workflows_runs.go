@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -178,12 +179,12 @@ subgroup to start runs (` + "`create`" + `), watch their lifecycle
 (` + "`get`" + `, ` + "`steps list`" + `), or restart failed runs
 (` + "`restart`" + `).
 
-review-based: when a gated block pauses a run it enters status
-` + "`awaiting_review`" + `. Decide gated block runs with the sibling
+Review-based: when a block pauses for review, the run enters status
+` + "`awaiting_review`" + `. Decide reviewed block runs with the sibling
 ` + "`retab workflows reviews`" + ` command group —
 ` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
-a paused block run, then ` + "`reviews approve`" + ` / ` + "`reject`" + ` to
-decide it.
+a block run awaiting review, then ` + "`reviews approve`" + ` or ` + "`reviews reject`" + `
+to decide it. Use ` + "`reviews edit`" + ` to append a corrected output before approving.
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
@@ -197,14 +198,11 @@ For declarative regression testing of workflow outputs, see
   # Stream per-block execution records
   retab workflows runs steps list run_xyz789
 
-  # List runs that are paused at a HIL gate
-  retab workflows runs list --status waiting_for_human
-
   # Cancel an in-flight run
   retab workflows runs cancel run_xyz789
 
-  # Approve a paused (gated) block run
-  retab workflows reviews approve run_xyz789 blk_extract_1 \
+  # Approve a block run awaiting review
+  retab workflows reviews approve run_xyz789 blk_review_1 \
     --version-stamp 0`,
 }
 
@@ -232,10 +230,6 @@ JSON instead of (or alongside) documents.
 By default the workflow's latest published version runs; pin a specific
 version with ` + "`--version`" + `. Inspect the resulting run with
 ` + "`workflows runs get`" + ` or ` + "`workflows runs steps list`" + `.
-If it returns ` + "`waiting_for_human`" + `, use
-` + "`retab workflows reviews list`" + ` to find the gated block and
-` + "`retab workflows reviews approve`" + ` / ` + "`reject`" + ` to resume
-or cancel the run.
 
 The legacy ` + "`--document-file BLOCK=PATH`" + ` spelling is still
 accepted as a deprecated alias for ` + "`--document`" + ` and will be
@@ -258,12 +252,6 @@ removed in a future release.`,
     --version v3 --document start=./invoice.pdf`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		req := retab.CreateWorkflowRunRequest{WorkflowID: args[0]}
 		req.Version, _ = cmd.Flags().GetString("version")
 		docsFile, _ := cmd.Flags().GetString("documents-file")
@@ -313,6 +301,14 @@ removed in a future release.`,
 					URL:      url,
 				}
 			}
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		if req.Documents != nil {
 			req.Documents, err = resolveWorkflowRunDocumentAliases(ctx, client, args[0], req.Documents)
 			if err != nil {
 				return err
@@ -322,7 +318,7 @@ removed in a future release.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -392,7 +388,7 @@ duration, cost, error info, final outputs. For per-block detail use
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -490,8 +486,31 @@ status, trigger type, date range, cost, and duration. Page by run id
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printWorkflowRunListResult(cmd, result)
 	}),
+}
+
+func printWorkflowRunListResult(cmd *cobra.Command, result any) error {
+	format, err := ResolveOutputFormat(cmd, os.Stdout)
+	if err != nil {
+		return err
+	}
+	return RenderList(os.Stdout, format, result, workflowRunListColumns)
+}
+
+var workflowRunListColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowRunCell(row, "id") }},
+	{Header: "NAME", Extract: func(row any) string { return workflowRunCell(row, "workflow.name_at_run_time") }},
+	{Header: "STATUS", Extract: func(row any) string { return workflowRunCell(row, "lifecycle.status") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return workflowRunCell(row, "timing.created_at") }},
+}
+
+func workflowRunCell(row any, key string) string {
+	v, ok := rowField(row, key)
+	if !ok || cellIsEmpty(v) {
+		return ""
+	}
+	return stringifyCell(v)
 }
 
 var workflowsRunsDeleteCmd = &cobra.Command{
@@ -542,7 +561,7 @@ make the cancel idempotent if you may retry the request.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -576,7 +595,7 @@ or ` + "`--command-id`" + ` for idempotency.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -604,7 +623,7 @@ understand what produced a given output.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -628,7 +647,7 @@ contains branches, parallel paths, or conditionals.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -652,7 +671,7 @@ workflow saw.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -711,7 +730,7 @@ pin column order.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -737,10 +756,6 @@ steps and pull the offending one with ` + "`workflows runs steps get`" + `
 to see exactly what the block did.`,
 	Example: `  # List every step in a run
   retab workflows runs steps list run_xyz789
-
-  # Find the step currently waiting for a reviewer
-  retab workflows runs steps list run_xyz789 \
-    | jq '.data[] | select(.lifecycle.status == "waiting_for_human") | .block_id'
 
   # Pull the full execution record for one block
   retab workflows runs steps get run_xyz789 blk_extract_1`,
@@ -802,7 +817,7 @@ correlate against the block's config.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

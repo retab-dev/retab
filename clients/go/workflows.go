@@ -272,7 +272,7 @@ func (s *WorkflowsService) PrepareDiagnose(workflowID string, blocks []map[strin
 	})
 }
 
-// Diagnose runs structural/config diagnosis on the persisted draft graph.
+// Diagnose runs the structural diagnosis on the persisted draft graph.
 // It fetches workflow entities first, then POSTs them to diagnose-graph.
 //
 // To diagnose an in-memory graph that hasn't been saved, call DiagnoseGraph
@@ -358,7 +358,7 @@ func (s *WorkflowSpecsService) Export(ctx context.Context, workflowID string, op
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
 	var result Resource
-	err := s.client.do(ctx, http.MethodGet, "/workflows/spec/"+url.PathEscape(workflowID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/"+url.PathEscape(workflowID)+"/spec", nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1137,7 +1137,7 @@ func (s *WorkflowRunsService) Export(ctx context.Context, request ExportWorkflow
 		body["trigger_types"] = request.TriggerTypes
 	}
 	var result WorkflowRunExportResponse
-	err := s.client.do(ctx, http.MethodPost, "/workflows/runs/export_payload", nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/runs/export-payload", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1198,8 +1198,8 @@ type ListReviewsParams struct {
 	Limit      int    // page size, 1-200
 }
 
-// List returns a page of the review queue — gated block runs awaiting
-// review, hottest first.
+// List returns a page of the review queue — block runs awaiting review,
+// hottest first.
 func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsParams, opts ...RequestOption) (*ReviewQueueResponse, error) {
 	query := url.Values{}
 	if params != nil {
@@ -1220,7 +1220,7 @@ func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsPa
 	return &result, nil
 }
 
-// Get returns the full review overlay for one gated (run, block): every
+// Get returns the full review overlay for one reviewed (run, block): every
 // version, every decision, the audit trail, and the Rev CAS token.
 func (s *WorkflowReviewsService) Get(ctx context.Context, runID string, blockID string, opts ...RequestOption) (*ReviewOverlay, error) {
 	if runID == "" {
@@ -1237,19 +1237,22 @@ func (s *WorkflowReviewsService) Get(ctx context.Context, runID string, blockID 
 	return &overlay, nil
 }
 
-// ApproveReviewRequest approves the gated output, optionally with a
+// ApproveReviewRequest approves the reviewed output, optionally with a
 // corrective edit applied as a new version before the approval lands.
 type ApproveReviewRequest struct {
 	VersionStamp    int            // overlay Rev last observed (CAS token)
-	EditedOutput    map[string]any // optional full corrected output
-	ReviewableValue map[string]any // optional primitive-specific reviewed value
+	EditedOutput    map[string]any // optional full corrected output snapshot
+	ReviewableValue map[string]any // optional primitive-specific reviewable value
 	OnSeq           *int           // version the decision is made against (default: head)
 	EffectiveSeq    *int           // version that ships downstream (default: OnSeq)
 	CommandID       string         // optional idempotency key
 }
 
-// Approve approves a gated block output.
+// Approve approves a reviewed block output.
 func (s *WorkflowReviewsService) Approve(ctx context.Context, runID string, blockID string, request ApproveReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
+	if request.EditedOutput != nil && request.ReviewableValue != nil {
+		return nil, fmt.Errorf("retab: EditedOutput and ReviewableValue are mutually exclusive")
+	}
 	body := map[string]any{
 		"verdict":       "approved",
 		"version_stamp": request.VersionStamp,
@@ -1272,14 +1275,15 @@ func (s *WorkflowReviewsService) Approve(ctx context.Context, runID string, bloc
 	return s.submitDecision(ctx, runID, blockID, body, opts...)
 }
 
-// RejectReviewRequest rejects the gated output — this cancels the run.
+// RejectReviewRequest rejects the reviewed output. The runtime records the
+// review as rejected and marks the workflow run error/rejected.
 type RejectReviewRequest struct {
 	VersionStamp int    // overlay Rev last observed (CAS token)
 	Reason       string // required — every rejection must be auditable
 	CommandID    string // optional idempotency key
 }
 
-// Reject rejects a gated block output.
+// Reject rejects a reviewed block output.
 func (s *WorkflowReviewsService) Reject(ctx context.Context, runID string, blockID string, request RejectReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
 	body := map[string]any{
 		"verdict":       "rejected",
@@ -1292,6 +1296,21 @@ func (s *WorkflowReviewsService) Reject(ctx context.Context, runID string, block
 		body["command_id"] = request.CommandID
 	}
 	return s.submitDecision(ctx, runID, blockID, body, opts...)
+}
+
+// EscalateReviewRequest is retained for source compatibility. The review
+// overlay API does not currently support escalation; use Edit, Approve, or
+// Reject instead.
+type EscalateReviewRequest struct {
+	VersionStamp int    // overlay Rev last observed (CAS token)
+	Reason       string // required
+	EscalateTo   string // required — target queue/team id
+	CommandID    string // optional idempotency key
+}
+
+// Escalate is unsupported by the review overlay API.
+func (s *WorkflowReviewsService) Escalate(ctx context.Context, runID string, blockID string, request EscalateReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
+	return nil, fmt.Errorf("retab: review escalation is not supported by the review overlay API; use Edit, Approve, or Reject")
 }
 
 func (s *WorkflowReviewsService) submitDecision(ctx context.Context, runID string, blockID string, body map[string]any, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
@@ -1311,8 +1330,8 @@ func (s *WorkflowReviewsService) submitDecision(ctx context.Context, runID strin
 
 // EditReviewRequest appends a corrective output version without deciding.
 type EditReviewRequest struct {
-	Snapshot        map[string]any // full corrected output
-	ReviewableValue map[string]any // primitive-specific reviewed value
+	Snapshot        map[string]any // optional full corrected output snapshot
+	ReviewableValue map[string]any // optional primitive-specific reviewable value
 	VersionStamp    int            // overlay Rev last observed (CAS token)
 	Origin          string         // human_edit (default) | agent_edit
 	Note            string         // optional rationale
@@ -1328,6 +1347,12 @@ func (s *WorkflowReviewsService) Edit(ctx context.Context, runID string, blockID
 	}
 	if blockID == "" {
 		return nil, fmt.Errorf("retab: blockID is required")
+	}
+	if request.Snapshot != nil && request.ReviewableValue != nil {
+		return nil, fmt.Errorf("retab: Snapshot and ReviewableValue are mutually exclusive")
+	}
+	if request.Snapshot == nil && request.ReviewableValue == nil {
+		return nil, fmt.Errorf("retab: Snapshot or ReviewableValue is required")
 	}
 	body := map[string]any{
 		"version_stamp": request.VersionStamp,
@@ -1393,8 +1418,8 @@ func (s *WorkflowReviewsService) Release(ctx context.Context, runID string, bloc
 	return &overlay, nil
 }
 
-// WaitFor polls until the block is gated and awaiting review. A 404 means
-// the workflow has not reached the review gate yet, so polling continues.
+// WaitFor polls until the block is awaiting review. A 404 means the workflow
+// has not reached the review point yet, so polling continues.
 func (s *WorkflowReviewsService) WaitFor(ctx context.Context, runID string, blockID string, params *ReviewWaitForParams, opts ...RequestOption) (*ReviewOverlay, error) {
 	pollInterval := 2 * time.Second
 	timeout := 2 * time.Minute

@@ -14,6 +14,12 @@ import (
 // reviewOverlayJSON is a minimal awaiting-review overlay the stub server
 // returns for Get / decision / version / claim responses.
 func reviewOverlayJSON(rev int, status string) map[string]any {
+	outputSnapshot := map[string]any{
+		"output": map[string]any{
+			"total":    100,
+			"currency": "USD",
+		},
+	}
 	return map[string]any{
 		"_id":                 "blockrun_1",
 		"organization_id":     "org_1",
@@ -34,7 +40,7 @@ func reviewOverlayJSON(rev int, status string) map[string]any {
 				"parent_seq":     nil,
 				"author":         map[string]any{"kind": "model", "id": "m", "display_name": "Model"},
 				"origin":         "model_output",
-				"snapshot":       map[string]any{"total": 100},
+				"snapshot":       outputSnapshot,
 				"content_sha256": "abc",
 				"created_at":     "2026-05-18T09:00:00Z",
 			},
@@ -42,19 +48,23 @@ func reviewOverlayJSON(rev int, status string) map[string]any {
 		"decisions": []any{},
 		"audit":     []any{},
 		"head_seq":  0,
+		"reviewable_value": map[string]any{
+			"kind":             "extract",
+			"source_seq":       0,
+			"snapshot_path":    []any{"output"},
+			"value":            map[string]any{"total": 100, "currency": "USD"},
+			"effective_output": outputSnapshot,
+		},
 	}
 }
 
 func TestWorkflowReviewsList(t *testing.T) {
 	var seenMethod, seenPath, seenQuery string
-	item := reviewOverlayJSON(0, "awaiting_review")
-	item["block_id"] = "blk_for_each"
-	item["block_type"] = "for_each"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenMethod, seenPath, seenQuery = r.Method, r.URL.Path, r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"data":     []any{item},
+			"data":     []any{reviewOverlayJSON(0, "awaiting_review")},
 			"has_more": true,
 		})
 	}))
@@ -84,7 +94,7 @@ func TestWorkflowReviewsList(t *testing.T) {
 	if !resp.HasMore || len(resp.Data) != 1 {
 		t.Fatalf("resp = %#v", resp)
 	}
-	if resp.Data[0].ID != "blockrun_1" || resp.Data[0].BlockType != "for_each" {
+	if resp.Data[0].ID != "blockrun_1" || resp.Data[0].BlockType != "extract" {
 		t.Fatalf("queue item = %#v", resp.Data[0])
 	}
 }
@@ -118,28 +128,17 @@ func TestWorkflowReviewsGet(t *testing.T) {
 	if len(overlay.Versions) != 1 || overlay.Versions[0].Origin != "model_output" {
 		t.Fatalf("versions = %#v", overlay.Versions)
 	}
-}
-
-func TestWorkflowReviewsGetParsesForEachOverlayWithoutRuntimeBlockID(t *testing.T) {
-	body := reviewOverlayJSON(3, "awaiting_review")
-	body["block_id"] = "blk_for_each"
-	body["block_type"] = "for_each"
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(body)
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
+	if overlay.ReviewableValue == nil {
+		t.Fatal("reviewable_value missing")
 	}
-	overlay, err := client.Workflows.Reviews.Get(context.Background(), "run_1", "blk_for_each")
-	if err != nil {
-		t.Fatal(err)
+	if overlay.ReviewableValue.Kind != "extract" || overlay.ReviewableValue.SourceSeq != 0 {
+		t.Fatalf("reviewable_value = %#v", overlay.ReviewableValue)
 	}
-	if overlay.BlockType != "for_each" {
-		t.Fatalf("block type = %s", overlay.BlockType)
+	if len(overlay.ReviewableValue.SnapshotPath) != 1 || overlay.ReviewableValue.SnapshotPath[0] != "output" {
+		t.Fatalf("snapshot_path = %#v", overlay.ReviewableValue.SnapshotPath)
+	}
+	if overlay.ReviewableValue.Value["total"] != float64(100) || overlay.ReviewableValue.Value["currency"] != "USD" {
+		t.Fatalf("reviewable value payload = %#v", overlay.ReviewableValue.Value)
 	}
 }
 
@@ -251,29 +250,29 @@ func TestWorkflowReviewsApproveSendsReviewableValue(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = client.Workflows.Reviews.Approve(context.Background(), "run_1", "blk_1", ApproveReviewRequest{
-		VersionStamp: 1,
-		ReviewableValue: map[string]any{
-			"category": "Invoice",
-		},
+		VersionStamp:    2,
+		ReviewableValue: map[string]any{"total": 110, "currency": "USD"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	reviewable, ok := body["reviewable_value"].(map[string]any)
+	reviewableValue, ok := body["reviewable_value"].(map[string]any)
 	if !ok {
 		t.Fatalf("reviewable_value missing: %#v", body)
 	}
-	if reviewable["category"] != "Invoice" {
-		t.Fatalf("reviewable_value = %#v", reviewable)
+	if reviewableValue["total"] != float64(110) || reviewableValue["currency"] != "USD" {
+		t.Fatalf("reviewable_value = %#v", reviewableValue)
 	}
 	if _, ok := body["edited_output"]; ok {
-		t.Fatalf("reviewable approval must not send edited_output: %#v", body)
+		t.Fatalf("approve should not send edited_output with reviewable_value: %#v", body)
 	}
 }
 
-func TestWorkflowReviewsReject(t *testing.T) {
+func TestWorkflowReviewsRejectAndEscalate(t *testing.T) {
 	var body map[string]any
+	var requestCount int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestCount++
 		raw, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(raw, &body)
 		w.Header().Set("Content-Type", "application/json")
@@ -296,7 +295,20 @@ func TestWorkflowReviewsReject(t *testing.T) {
 	if body["verdict"] != "rejected" || body["reason"] != "wrong document" {
 		t.Fatalf("reject body = %#v", body)
 	}
+	if requestCount != 1 {
+		t.Fatalf("requestCount after reject = %d, want 1", requestCount)
+	}
 
+	if _, err := client.Workflows.Reviews.Escalate(context.Background(), "run_1", "blk_1", EscalateReviewRequest{
+		VersionStamp: 2, Reason: "needs senior", EscalateTo: "queue_senior",
+	}); err == nil {
+		t.Fatal("expected Escalate to fail locally because the overlay API does not support escalation")
+	} else if !strings.Contains(err.Error(), "escalation is not supported") {
+		t.Fatalf("unexpected Escalate error: %v", err)
+	}
+	if requestCount != 1 {
+		t.Fatalf("Escalate should not hit the server; requestCount = %d", requestCount)
+	}
 }
 
 func TestWorkflowReviewsEditClaimRelease(t *testing.T) {
@@ -305,6 +317,7 @@ func TestWorkflowReviewsEditClaimRelease(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenPath = r.URL.Path
 		raw, _ := io.ReadAll(r.Body)
+		body = map[string]any{}
 		_ = json.Unmarshal(raw, &body)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(reviewOverlayJSON(1, "awaiting_review"))
@@ -325,6 +338,18 @@ func TestWorkflowReviewsEditClaimRelease(t *testing.T) {
 	}
 	if body["origin"] != "human_edit" || body["snapshot"] == nil {
 		t.Fatalf("edit body = %#v", body)
+	}
+
+	if _, err := client.Workflows.Reviews.Edit(context.Background(), "run_1", "blk_1", EditReviewRequest{
+		ReviewableValue: map[string]any{"category": "Invoice"}, VersionStamp: 1, Origin: "human_edit",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if body["origin"] != "human_edit" || body["reviewable_value"] == nil {
+		t.Fatalf("edit reviewable body = %#v", body)
+	}
+	if _, ok := body["snapshot"]; ok {
+		t.Fatalf("edit reviewable body should not include snapshot: %#v", body)
 	}
 
 	if _, err := client.Workflows.Reviews.Claim(context.Background(), "run_1", "blk_1", 1, 600); err != nil {

@@ -277,9 +277,7 @@ type ExtractionCreateRequest struct {
 
 type ListExtractionsParams struct {
 	ListParams
-	OriginType string
-	OriginID   string
-	Metadata   map[string]string
+	Metadata map[string]string
 }
 
 func (s *ExtractionsService) Create(ctx context.Context, request ExtractionCreateRequest, opts ...RequestOption) (*Extraction, error) {
@@ -301,8 +299,6 @@ func (s *ExtractionsService) List(ctx context.Context, params *ListExtractionsPa
 	query := listQuery(nil)
 	if params != nil {
 		applyListParams(query, &params.ListParams)
-		addQuery(query, "origin_type", params.OriginType)
-		addQuery(query, "origin_id", params.OriginID)
 		addJSONQuery(query, "metadata", params.Metadata)
 	}
 	var result PaginatedList[Extraction]

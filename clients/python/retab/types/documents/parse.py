@@ -11,7 +11,7 @@ TableParsingFormat = Literal["markdown", "yaml", "html", "json"]
 class ParseRequest(RetabBaseModel):
     """Request model for document parsing."""
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
 
     document: MIMEData = Field(..., description="Document to parse")
     model: str = Field(default="retab-small", description="Model to use for parsing")

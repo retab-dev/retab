@@ -64,16 +64,16 @@ where the default is too coarse.`,
 		if err != nil {
 			return err
 		}
+		doc, err := resolveDocument(cmd)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		doc, err := resolveDocument(cmd)
-		if err != nil {
-			return err
-		}
 		dpi, _ := cmd.Flags().GetInt("image-resolution-dpi")
 		instructions, _ := cmd.Flags().GetString("instructions")
 		bustCache, _ := cmd.Flags().GetBool("bust-cache")

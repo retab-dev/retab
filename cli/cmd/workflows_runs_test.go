@@ -30,6 +30,69 @@ func TestParseDocumentArgs_DocumentFlagOnly_NoWarning(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsCreateReadsDocumentBeforeCredentials(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	missingPath := filepath.Join(t.TempDir(), "missing-document.pdf")
+	if err := workflowsRunsCreateCmd.Flags().Set("document", "start="+missingPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsCreateCmd, "document") })
+
+	err := workflowsRunsCreateCmd.RunE(workflowsRunsCreateCmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected missing document file error")
+	}
+	if strings.Contains(err.Error(), "no credentials") {
+		t.Fatalf("local file validation should run before credentials, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "--document start=") || !strings.Contains(err.Error(), "missing-document.pdf") {
+		t.Fatalf("error should mention missing document file, got %q", err.Error())
+	}
+}
+
+func TestWorkflowsRunsGetHonorsTableOutputFallback(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/workflows/runs/run_123" {
+			t.Fatalf("path = %s, want run get", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id": "run_123",
+			"lifecycle": map[string]any{
+				"status": "completed",
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsRunsGetCmd.RunE(workflowsRunsGetCmd, []string{"run_123"}); err != nil {
+			t.Fatalf("runs get: %v", err)
+		}
+	})
+	if !strings.Contains(stderr, "falling back to json") {
+		t.Fatalf("expected table fallback warning, got stderr %q", stderr)
+	}
+	if !strings.Contains(stdout, `"id": "run_123"`) {
+		t.Fatalf("expected JSON fallback payload, got:\n%s", stdout)
+	}
+}
+
 func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -72,7 +135,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 	if err := workflowsRunsCreateCmd.Flags().Set("document", "start="+docPath); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = workflowsRunsCreateCmd.Flags().Set("document", "") })
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsCreateCmd, "document") })
 
 	stdout, stderr := captureStd(t, func() {
 		if err := workflowsRunsCreateCmd.RunE(workflowsRunsCreateCmd, []string{"wf_123"}); err != nil {
@@ -213,6 +276,70 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 	}
 	if startDocument["filename"] != "invoice.pdf" || startDocument["url"] != "https://example.com/invoice.pdf" {
 		t.Fatalf("start document = %#v", startDocument)
+	}
+}
+
+func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var postedDocuments map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{"id": "block_generated", "type": "start", "label": "Document"},
+					{"id": "extract", "type": "extract", "label": "Extract"},
+				},
+				"list_metadata": map[string]any{},
+			})
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/run":
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			postedDocuments, _ = body["documents"].(map[string]any)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":     "run_123",
+				"status": "running",
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	docsPath := filepath.Join(t.TempDir(), "documents.json")
+	if err := os.WriteFile(
+		docsPath,
+		[]byte(`{"start":{"filename":"invoice.pdf","url":"https://example.com/invoice.pdf"}}`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := &cobra.Command{Use: "test-run-create", RunE: workflowsRunsCreateCmd.RunE}
+	cmd.Flags().String("version", "", "")
+	cmd.Flags().String("documents-file", "", "")
+	cmd.Flags().StringArray("document", nil, "")
+	cmd.Flags().StringArray("document-file", nil, "")
+	cmd.Flags().StringArray("document-url", nil, "")
+	cmd.Flags().String("json-inputs-file", "", "")
+	if err := cmd.Flags().Set("documents-file", docsPath); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cmd.RunE(cmd, []string{"wf_123"}); err != nil {
+		t.Fatalf("runs create: %v", err)
+	}
+	if _, ok := postedDocuments["block_generated"]; !ok {
+		t.Fatalf("documents posted under keys %#v, want block_generated", keysOfAnyMap(postedDocuments))
+	}
+	if _, ok := postedDocuments["start"]; ok {
+		t.Fatalf("friendly alias leaked into request body: %#v", postedDocuments)
 	}
 }
 
@@ -583,10 +710,54 @@ func TestWorkflowsRunsListExamplesUseBackendStatusNames(t *testing.T) {
 	}
 }
 
+func TestWorkflowRunsListTableUsesStatusColumn(t *testing.T) {
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	result := map[string]any{
+		"data": []any{
+			map[string]any{
+				"id": "run_1",
+				"workflow": map[string]any{
+					"name_at_run_time": "Invoice workflow",
+				},
+				"lifecycle": map[string]any{
+					"status": "awaiting_review",
+				},
+				"timing": map[string]any{
+					"created_at": "2026-05-20T15:31:28Z",
+				},
+			},
+		},
+	}
+
+	stdout, stderr := captureStd(t, func() {
+		if err := printWorkflowRunListResult(workflowsRunsListCmd, result); err != nil {
+			t.Fatalf("printWorkflowRunListResult: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("stderr = %s", stderr)
+	}
+	for _, want := range []string{"ID", "NAME", "STATUS", "CREATED_AT", "run_1", "Invoice workflow", "awaiting_review"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("expected %q in runs table:\n%s", want, stdout)
+		}
+	}
+	if strings.Contains(strings.SplitN(stdout, "\n", 2)[0], "TYPE") {
+		t.Fatalf("runs list table should call lifecycle values STATUS, not TYPE:\n%s", stdout)
+	}
+}
+
 func TestWorkflowsRunsHelpUsesBackendReviewStatusName(t *testing.T) {
 	staleBackendStatus := "waiting_for" + "_human"
 	if strings.Contains(workflowsRunsCmd.Long, staleBackendStatus) {
 		t.Fatalf("runs help should not mention stale legacy review status:\n%s", workflowsRunsCmd.Long)
+	}
+	if strings.Contains(workflowsRunsCmd.Long, "escalate") {
+		t.Fatalf("runs help should not advertise unsupported review escalation:\n%s", workflowsRunsCmd.Long)
 	}
 	if !strings.Contains(workflowsRunsCmd.Long, "awaiting_review") {
 		t.Fatalf("runs help should mention backend review status awaiting_review:\n%s", workflowsRunsCmd.Long)
@@ -623,7 +794,7 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export_payload" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export-payload" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

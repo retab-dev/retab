@@ -270,7 +270,7 @@ describe('workflows client', () => {
     const response = await specsClient.export('wf_1');
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/spec/wf_1',
+      url: '/workflows/wf_1/spec',
       method: 'GET',
       params: undefined,
       headers: undefined,
@@ -972,7 +972,7 @@ describe('workflows client', () => {
     expect(run.id).toBe('run_2');
   });
 
-  test('runs.export() sends POST to /export_payload', async () => {
+  test('runs.export() sends POST to /export-payload', async () => {
     const mockClient = new MockClient({
       csv_data: 'a,b\n1,2\n',
       rows: 1,
@@ -992,7 +992,7 @@ describe('workflows client', () => {
     });
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/runs/export_payload',
+      url: '/workflows/runs/export-payload',
       method: 'POST',
       body: {
         workflow_id: 'wf_1',

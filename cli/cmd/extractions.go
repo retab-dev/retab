@@ -102,21 +102,21 @@ For streaming output (one event per line, useful on slow extractions), see
     --json-schema-file ./schema.json \
     --model gpt-4o
 
-  # Multiple metadata key=value tags for audit
+ # Multiple metadata key=value tags for audit
   retab extractions create \
     --file ./doc.pdf --json-schema-file ./s.json --model gpt-4o \
     --metadata customer=acme --metadata env=prod`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		req, err := newExtractionRequest(cmd)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req, err := newExtractionRequest(cmd)
-		if err != nil {
-			return err
-		}
 		result, err := client.Extractions.Create(ctx, req)
 		if err != nil {
 			return err
@@ -148,16 +148,16 @@ Flags and document/schema resolution are identical to
     --file-id file_abc123 --json-schema-file ./s.json --model gpt-4o \
     | jq -c 'select(.type == "delta")'`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		req, err := newExtractionRequest(cmd)
+		if err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		req, err := newExtractionRequest(cmd)
-		if err != nil {
-			return err
-		}
 		stream, err := client.Extractions.CreateStream(ctx, req)
 		if err != nil {
 			return err
@@ -185,9 +185,8 @@ var extractionsListCmd = &cobra.Command{
 
 Results are paginated using cursors: pass ` + "`--after`" + ` with the last
 extraction id from the previous page to fetch the next page, or ` + "`--before`" + `
-to walk backwards. Filter by origin (the resource that produced the
-extraction) with ` + "`--origin-type`" + ` and ` + "`--origin-id`" + `, or by
-arbitrary tags set at create time with ` + "`--metadata`" + ` (repeatable).`,
+to walk backwards. Filter by arbitrary tags set at create time with
+` + "`--metadata`" + ` (repeatable).`,
 	Example: `  # Most recent 25 extractions
   retab extractions list --limit 25
 
@@ -204,8 +203,6 @@ arbitrary tags set at create time with ` + "`--metadata`" + ` (repeatable).`,
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
 		params := retab.ListExtractionsParams{ListParams: collectListParams(cmd)}
-		params.OriginType, _ = cmd.Flags().GetString("origin-type")
-		params.OriginID, _ = cmd.Flags().GetString("origin-id")
 		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
 		md, err := parseKVStringList(metaPairs)
 		if err != nil {
@@ -330,8 +327,6 @@ func init() {
 	addExtractionBodyFlags(extractionsStreamCmd)
 
 	addListFlags(extractionsListCmd, false)
-	extractionsListCmd.Flags().String("origin-type", "", "filter by origin type")
-	extractionsListCmd.Flags().String("origin-id", "", "filter by origin id")
 	extractionsListCmd.Flags().StringArray("metadata", nil, "metadata key=value filter (repeatable)")
 
 	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsDeleteCmd)

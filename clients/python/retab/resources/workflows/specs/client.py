@@ -26,7 +26,7 @@ class WorkflowSpecsMixin:
         return PreparedRequest(method="POST", url="/workflows/spec/apply", data=data)
 
     def prepare_export(self, workflow_id: str) -> PreparedRequest:
-        return PreparedRequest(method="GET", url=f"/workflows/spec/{workflow_id}")
+        return PreparedRequest(method="GET", url=f"/workflows/{workflow_id}/spec")
 
 
 class WorkflowSpecs(SyncAPIResource, WorkflowSpecsMixin):

@@ -142,6 +142,21 @@ func TestWorkflowsSpec_AppearsInTopLevelHelp(t *testing.T) {
 	}
 }
 
+func TestWorkflowsSpecHelpUsesWorkflowVocabulary(t *testing.T) {
+	text := strings.Join([]string{
+		workflowsSpecCmd.Long,
+		workflowsSpecPlanCmd.Long,
+	}, "\n")
+	if strings.Contains(text, "Terraform") || strings.Contains(text, "Infrastructure") {
+		t.Fatalf("spec help should use workflow vocabulary, got:\n%s", text)
+	}
+	for _, want := range []string{"declarative workflow", "review-then-apply"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("spec help should mention %q, got:\n%s", want, text)
+		}
+	}
+}
+
 func TestWorkflowsSpecValidateReturnsErrorWhenResultIsInvalid(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -191,6 +206,51 @@ func TestWorkflowsSpecValidateReturnsErrorWhenResultIsInvalid(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "MISSING_USER_DECLARED_SCHEMA") {
 		t.Fatalf("stderr should include diagnostic JSON, got:\n%s", stderr)
+	}
+}
+
+func TestWorkflowsSpecValidateHonorsTableOutputFallback(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/workflows/spec/validate" {
+			t.Fatalf("path = %s, want /workflows/spec/validate", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id": "wf_valid",
+			"is_valid":    true,
+			"block_count": 1,
+			"edge_count":  0,
+			"diagnostics": map[string]any{"is_valid": true},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("apiVersion: workflows.retab.com/v1alpha2\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsSpecValidateCmd.RunE(workflowsSpecValidateCmd, []string{path}); err != nil {
+			t.Fatalf("spec validate: %v", err)
+		}
+	})
+	if !strings.Contains(stderr, "falling back to json") {
+		t.Fatalf("expected table fallback warning, got stderr %q", stderr)
+	}
+	if !strings.Contains(stdout, `"workflow_id": "wf_valid"`) {
+		t.Fatalf("expected JSON fallback payload, got:\n%s", stdout)
 	}
 }
 
@@ -304,7 +364,7 @@ func captureRootHelp(t *testing.T) string {
 }
 
 // fakeExportResource builds the kind of envelope the server actually
-// returns for `GET /workflows/spec/{id}`: a `workflow_id` plus a
+// returns for `GET /workflows/{id}/spec`: a `workflow_id` plus a
 // `yaml_definition` string. Keeps each writeSpecExport test self-
 // contained instead of stashing a global fixture.
 func fakeExportResource(yaml string) *retab.Resource {

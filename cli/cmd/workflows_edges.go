@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"os"
 	"strings"
 
 	retab "github.com/retab-dev/retab/clients/go"
@@ -72,17 +73,29 @@ func validateWorkflowEdgeCreate(req retab.WorkflowEdgeCreateRequest) error {
 	return nil
 }
 
-func resolveWorkflowEdgeStartAliases(ctx context.Context, client *retab.Client, workflowID string, req *retab.WorkflowEdgeCreateRequest) error {
-	if req.SourceBlock != "start" && req.TargetBlock != "start" {
+func resolveWorkflowEdgeAliases(ctx context.Context, client *retab.Client, workflowID string, req *retab.WorkflowEdgeCreateRequest) error {
+	needsBlockLookup := req.SourceBlock == "start" || req.TargetBlock == "start" || req.TargetHandle != ""
+	if !needsBlockLookup {
 		return nil
 	}
 	blocks, err := client.Workflows.Blocks.List(ctx, workflowID)
 	if err != nil {
 		return err
 	}
+	if err := resolveWorkflowEdgeStartAliasesFromBlocks(blocks.Data, req); err != nil {
+		return err
+	}
+	resolveWorkflowEdgeTargetHandleAliasFromBlocks(blocks.Data, req)
+	return nil
+}
+
+func resolveWorkflowEdgeStartAliasesFromBlocks(blocks []retab.WorkflowBlock, req *retab.WorkflowEdgeCreateRequest) error {
+	if req.SourceBlock != "start" && req.TargetBlock != "start" {
+		return nil
+	}
 	hasLiteralStartID := false
 	startBlockIDs := []string{}
-	for _, block := range blocks.Data {
+	for _, block := range blocks {
 		if block.ID == "start" {
 			hasLiteralStartID = true
 		}
@@ -106,6 +119,54 @@ func resolveWorkflowEdgeStartAliases(ctx context.Context, client *retab.Client, 
 		req.TargetBlock = startBlockIDs[0]
 	}
 	return nil
+}
+
+func resolveWorkflowEdgeTargetHandleAliasFromBlocks(blocks []retab.WorkflowBlock, req *retab.WorkflowEdgeCreateRequest) {
+	if req.TargetHandle == "" || strings.HasPrefix(req.TargetHandle, "input-") {
+		return
+	}
+	for _, block := range blocks {
+		if block.ID != req.TargetBlock {
+			continue
+		}
+		if resolved := targetInputHandleAlias(block.Type, block.Config, req.TargetHandle); resolved != "" {
+			req.TargetHandle = resolved
+		}
+		return
+	}
+}
+
+func targetInputHandleAlias(blockType string, config map[string]any, inputName string) string {
+	rawInputs, ok := config["inputs"].([]any)
+	if ok {
+		for _, rawInput := range rawInputs {
+			input, ok := rawInput.(map[string]any)
+			if !ok {
+				continue
+			}
+			name, _ := input["name"].(string)
+			inputType, _ := input["type"].(string)
+			if name == inputName && inputType != "" {
+				return "input-" + inputType + "-" + name
+			}
+		}
+	}
+	if rawInput, ok := config["input"].(map[string]any); ok {
+		name, _ := rawInput["name"].(string)
+		inputType, _ := rawInput["type"].(string)
+		if name == inputName && inputType != "" {
+			return "input-" + inputType + "-" + name
+		}
+	}
+	if inputName == "document" {
+		switch blockType {
+		case "extract", "classifier":
+			return "input-file-document"
+		case "split":
+			return "input-file-0"
+		}
+	}
+	return ""
 }
 
 func ensureWorkflowEdgeID(req *retab.WorkflowEdgeCreateRequest) {
@@ -147,8 +208,34 @@ to focus on a single block's wiring.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printWorkflowEdgesListResult(cmd, result)
 	}),
+}
+
+func printWorkflowEdgesListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.WorkflowEdgeDoc]) error {
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
+			return RenderList(os.Stdout, OutputTable, result, workflowEdgeColumns)
+		}
+	}
+	return printJSON(result)
+}
+
+var workflowEdgeColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowEdgeCell(row, "id") }},
+	{Header: "SOURCE_BLOCK", Extract: func(row any) string { return workflowEdgeCell(row, "source_block") }},
+	{Header: "SOURCE_HANDLE", Extract: func(row any) string { return workflowEdgeCell(row, "source_handle") }},
+	{Header: "TARGET_BLOCK", Extract: func(row any) string { return workflowEdgeCell(row, "target_block") }},
+	{Header: "TARGET_HANDLE", Extract: func(row any) string { return workflowEdgeCell(row, "target_handle") }},
+	{Header: "UPDATED_AT", Extract: func(row any) string { return workflowEdgeCell(row, "updated_at") }},
+}
+
+func workflowEdgeCell(row any, key string) string {
+	value, ok := rowField(row, key)
+	if !ok || cellIsEmpty(value) || !cellIsDisplayable(value) {
+		return ""
+	}
+	return stringifyCell(value)
 }
 
 var workflowsEdgesGetCmd = &cobra.Command{
@@ -169,7 +256,7 @@ var workflowsEdgesGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -191,11 +278,16 @@ hyphens.
 
 For ` + "`--source-block start`" + ` or ` + "`--target-block start`" + `, ` + "`start`" + `
 is an alias for the workflow's single block of type ` + "`start`" + ` unless a
-block with id ` + "`start`" + ` already exists.`,
+block with id ` + "`start`" + ` already exists. For ` + "`--target-handle`" + `,
+you may pass the friendly input name from the block config, such as
+` + "`document`" + `. The CLI resolves ` + "`document`" + ` to
+` + "`input-file-document`" + ` for extract/classifier blocks and
+` + "`input-file-0`" + ` for split blocks.`,
 	Example: `  # Connect the start document to an extractor
   retab workflows edges create wf_abc123 \
     --source-block start \
-    --source-handle document \
+    --source-handle output-file-0 \
+    --target-handle document \
     --target-block blk_extract_1
 
   # Connect extractor output to a classifier
@@ -224,7 +316,7 @@ block with id ` + "`start`" + ` already exists.`,
 		if err := validateWorkflowEdgeCreate(req); err != nil {
 			return err
 		}
-		if err := resolveWorkflowEdgeStartAliases(ctx, client, args[0], &req); err != nil {
+		if err := resolveWorkflowEdgeAliases(ctx, client, args[0], &req); err != nil {
 			return err
 		}
 		ensureWorkflowEdgeID(&req)
@@ -232,7 +324,7 @@ block with id ` + "`start`" + ` already exists.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -241,18 +333,17 @@ var workflowsEdgesCreateBatchCmd = &cobra.Command{
 	Short: "Create multiple edges from --edges-file (JSON array)",
 	Long: `Wire many edges in one call. The file is a JSON array of edge
 objects with ` + "`source_block`" + `, ` + "`target_block`" + `, and optional
-` + "`source_handle`" + `, ` + "`target_handle`" + `, ` + "`id`" + `.`,
+` + "`source_handle`" + `, ` + "`target_handle`" + `, ` + "`id`" + `.
+
+Batch creation supports the same friendly aliases as ` + "`edges create`" + `:
+` + "`source_block: \"start\"`" + ` resolves to the generated start block, and
+` + "`target_handle: \"document\"`" + ` resolves to the target block's document
+input handle.`,
 	Example: `  # Bulk-wire a graph from a manifest
   retab workflows edges create-batch wf_abc123 \
     --edges-file ./graph/edges.json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		path, _ := cmd.Flags().GetString("edges-file")
 		if path == "" {
 			return fmt.Errorf("--edges-file is required")
@@ -264,6 +355,12 @@ objects with ` + "`source_block`" + `, ` + "`target_block`" + `, and optional
 		if len(arr) == 0 {
 			return fmt.Errorf("--edges-file: empty JSON array")
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		var reqs []retab.WorkflowEdgeCreateRequest
 		for i, item := range arr {
 			obj, ok := item.(map[string]any)
@@ -274,13 +371,20 @@ objects with ` + "`source_block`" + `, ` + "`target_block`" + `, and optional
 			if err := validateWorkflowEdgeCreate(req); err != nil {
 				return fmt.Errorf("--edges-file[%d]: %w", i, err)
 			}
+			if err := resolveWorkflowEdgeAliases(ctx, client, args[0], &req); err != nil {
+				return fmt.Errorf("--edges-file[%d]: %w", i, err)
+			}
+			if _, hasExplicitID := obj["id"].(string); !hasExplicitID {
+				req.ID = ""
+			}
+			ensureWorkflowEdgeID(&req)
 			reqs = append(reqs, req)
 		}
 		result, err := client.Workflows.Edges.CreateBatch(ctx, args[0], reqs)
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

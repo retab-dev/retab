@@ -56,12 +56,6 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 		if err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		doc, err := resolveOptionalDocument(cmd)
 		if err != nil {
 			return err
@@ -73,6 +67,12 @@ rendered output (handy when distinguishing edits from multiple passes).`,
 		if doc == nil && templateID == "" {
 			return fmt.Errorf("either a document or --template-id is required")
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		req := retab.EditCreateRequest{
 			Instructions: instructions,
 			Document:     doc,
@@ -230,12 +230,6 @@ Once created, apply it to new documents with
     --name "W-9" --file ./w9-sample.pdf \
     --form-fields-file -`,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		name, _ := cmd.Flags().GetString("name")
 		if err := validateEditTemplateName(name); err != nil {
 			return err
@@ -256,6 +250,12 @@ Once created, apply it to new documents with
 		if err != nil {
 			return err
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Edits.Templates.Create(ctx, retab.EditTemplateCreateRequest{
 			Name:       name,
 			Document:   doc,
@@ -347,12 +347,6 @@ template are not retroactively re-rendered.`,
 		if !cmd.Flags().Changed("name") && formFieldsPath == "" {
 			return fmt.Errorf("at least one of --name or --form-fields-file is required")
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		var req retab.EditTemplateUpdateRequest
 		if cmd.Flags().Changed("name") {
 			v, _ := cmd.Flags().GetString("name")
@@ -372,6 +366,12 @@ template are not retroactively re-rendered.`,
 			}
 			req.FormFields = fields
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Edits.Templates.Update(ctx, args[0], req)
 		if err != nil {
 			return err

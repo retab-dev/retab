@@ -67,12 +67,6 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
 		if err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		body, err := readJSONMap(reqFile)
 		if err != nil {
 			return fmt.Errorf("--request-file: %w", err)
@@ -85,6 +79,12 @@ to filter later via ` + "`jobs list --metadata key=value`" + `.`,
 		if err := validateJobMetadata(md); err != nil {
 			return err
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Jobs.Create(ctx, retab.JobCreateRequest{
 			Endpoint: endpoint,
 			Request:  retab.Resource(body),

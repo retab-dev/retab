@@ -10,8 +10,8 @@ Retab is a document automation platform. Use it to build apps and agents that pa
 Retab supports:
 
 - Six document primitives: `parse`, `extract`, `split`, `edit`, `classify`, and `partition`
-- Workflows: saved multi-step pipelines that can combine primitives, custom logic, branches, loops, API calls, and review gates
-- Review-based routing: workflow runs can pause at review gates and resume after a human decision
+- Workflows: saved multi-step pipelines that can combine primitives, custom logic, branches, loops, API calls, and review steps
+- review-based: workflow runs can pause at review steps and resume after a human decision
 - Consensus: run multiple passes and reconcile results when accuracy matters more than latency
 - SDKs and REST APIs for Python, Node, Go, and direct HTTP usage
 - MCP access so AI agents can inspect and operate Retab through a tool server

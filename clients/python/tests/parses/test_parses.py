@@ -1,8 +1,9 @@
 import pytest
+from pydantic import ValidationError
 
 from retab import Retab
 from retab.types.mime import MIMEData
-from retab.types.parses import Parse
+from retab.types.parses import Parse, ParseRequest
 
 
 def _sample_document() -> MIMEData:
@@ -48,3 +49,14 @@ def test_parses_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
     assert result.id == "parse_123"
     assert result.output.text == "invoice"
     assert getattr(captured["request"], "url") == "/parses"
+
+
+def test_parse_request_rejects_benchmark_model_policy_fields() -> None:
+    with pytest.raises(ValidationError):
+        ParseRequest.model_validate(
+            {
+                "document": _sample_document().model_dump(mode="json"),
+                "candidate_scope": "exact_model",
+                "capacity_retry_owner": "caller",
+            }
+        )

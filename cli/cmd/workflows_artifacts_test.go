@@ -1,74 +1,51 @@
 package cmd
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync/atomic"
 	"testing"
 )
 
-func TestWorkflowsArtifactsRejectInvalidOperationBeforeRequest(t *testing.T) {
+func TestWorkflowsArtifactsGetHonorsTableOutputFallback(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		hits.Add(1)
-		http.Error(w, "server should not be reached", http.StatusInternalServerError)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/workflows/artifacts/split/splt_1" {
+			t.Fatalf("path = %s, want artifact get", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "splt_1",
+			"operation": "split",
+			"model":     "retab-small",
+			"output": []map[string]any{
+				{"name": "invoice", "pages": []int{1}},
+			},
+		})
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_BASE_URL", server.URL)
 
-	cases := []struct {
-		name string
-		cmd  func() error
-	}{
-		{
-			name: "get positional operation",
-			cmd: func() error {
-				return workflowsArtifactsGetCmd.RunE(workflowsArtifactsGetCmd, []string{"extract", "art_123"})
-			},
-		},
-		{
-			name: "list filter operation",
-			cmd: func() error {
-				if err := workflowsArtifactsListCmd.Flags().Set("operation", "extract"); err != nil {
-					return err
-				}
-				t.Cleanup(func() { _ = workflowsArtifactsListCmd.Flags().Set("operation", "") })
-				return workflowsArtifactsListCmd.RunE(workflowsArtifactsListCmd, []string{"run_123"})
-			},
-		},
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			before := hits.Load()
-			var err error
-			_, stderr := captureStd(t, func() {
-				err = tc.cmd()
-			})
-			if err == nil {
-				t.Fatal("expected invalid operation error")
-			}
-			if !strings.Contains(stderr, "invalid operation") {
-				t.Fatalf("stderr %q does not mention invalid operation", stderr)
-			}
-			if got := hits.Load(); got != before {
-				t.Fatalf("server was hit %d time(s), want 0", got-before)
-			}
-		})
-	}
-}
-
-func TestWorkflowsArtifactsExamplesUseBackendOperationNames(t *testing.T) {
-	for _, example := range []string{workflowsArtifactsCmd.Example, workflowsArtifactsGetCmd.Example, workflowsArtifactsListCmd.Example} {
-		if strings.Contains(example, " get extract ") {
-			t.Fatalf("artifact examples should use extraction, got:\n%s", example)
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsArtifactsGetCmd.RunE(workflowsArtifactsGetCmd, []string{"split", "splt_1"}); err != nil {
+			t.Fatalf("artifacts get: %v", err)
 		}
+	})
+	if !strings.Contains(stderr, "falling back to json") {
+		t.Fatalf("expected table fallback warning, got stderr %q", stderr)
 	}
-	if !strings.Contains(workflowsArtifactsGetCmd.Example, "get extraction") {
-		t.Fatalf("artifact get example should include extraction operation, got:\n%s", workflowsArtifactsGetCmd.Example)
+	if !strings.Contains(stdout, `"id": "splt_1"`) {
+		t.Fatalf("expected JSON fallback payload, got:\n%s", stdout)
 	}
 }

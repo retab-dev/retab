@@ -129,3 +129,28 @@ func TestEditTemplatesUpdateRejectsBlankNameBeforeRequest(t *testing.T) {
 		t.Fatalf("server was hit %d time(s), want 0", got)
 	}
 }
+
+func TestEditTemplatesUpdateReadsFormFieldsBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-edit-template-update", RunE: editsTemplatesUpdateCmd.RunE}
+	cmd.Flags().String("name", "", "")
+	cmd.Flags().String("form-fields-file", "", "")
+	_ = cmd.Flags().Set("form-fields-file", "/tmp/missing-fields.json")
+
+	err := cmd.RunE(cmd, []string{"tmpl_123"})
+	if err == nil {
+		t.Fatal("expected form-fields-file error")
+	}
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		err = unwrapped
+	}
+	if !strings.Contains(err.Error(), "--form-fields-file") {
+		t.Fatalf("error %q does not mention --form-fields-file", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --form-fields-file", err.Error())
+	}
+}

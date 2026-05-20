@@ -149,12 +149,6 @@ After creation, create a run with
 		if err != nil {
 			return err
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		req := retab.CreateExperimentRequest{}
 		req.WorkflowID = workflowID
 		req.BlockID = blockID
@@ -172,11 +166,17 @@ After creation, create a run with
 		if len(req.DocumentCaptures) == 0 && len(req.Documents) == 0 {
 			return fmt.Errorf("at least one document or document capture is required (--captures-file or --documents-file)")
 		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Workflows.Experiments.Create(ctx, req)
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -222,7 +222,7 @@ consensus count, recent run status.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -246,12 +246,6 @@ previously-captured results for that experiment.`,
 			!cmd.Flags().Changed("captures-file") && !cmd.Flags().Changed("documents-file") {
 			return fmt.Errorf("nothing to update: pass at least one of --name, --n-consensus, --captures-file, or --documents-file")
 		}
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		req := retab.UpdateExperimentRequest{}
 		req.Name, _ = cmd.Flags().GetString("name")
 		if cmd.Flags().Changed("name") {
@@ -272,11 +266,17 @@ previously-captured results for that experiment.`,
 		}
 		req.DocumentCaptures = captures
 		req.Documents = explicit
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
 		result, err := client.Workflows.Experiments.Update(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -323,7 +323,7 @@ the previous experiment's results.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -332,7 +332,7 @@ var workflowsExperimentsEligibleBlocksCmd = &cobra.Command{
 	Short: "List blocks eligible for experiments",
 	Long: `List the blocks in a workflow that can host an experiment.
 Not every block type is eligible — typically ` + "`extract`" + `,
-` + "`classify`" + `, and other LLM-backed blocks are supported. Use this
+` + "`classifier`" + `, and other LLM-backed blocks are supported. Use this
 to discover what to experiment on before calling
 ` + "`workflows experiments create`" + `.`,
 	Example: `  # See which blocks support experiments
@@ -361,7 +361,7 @@ func printEligibleBlocksResult(cmd *cobra.Command, result *retab.EligibleBlockLi
 		}
 	}
 	if raw != string(OutputTable) {
-		return printJSON(result)
+		return printResult(cmd, result)
 	}
 	return printResult(cmd, map[string]any{"data": result.Blocks})
 }
@@ -401,7 +401,7 @@ document in its set.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -442,7 +442,7 @@ var workflowsExperimentsRunsGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -455,7 +455,7 @@ var workflowsExperimentsRunsCancelCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -476,7 +476,7 @@ var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -489,7 +489,7 @@ var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -529,7 +529,7 @@ numbers down to individual fields. Compare against a prior run with
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

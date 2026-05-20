@@ -246,7 +246,7 @@ def test_workflow_specs_export_uses_spec_export_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/spec/wf_1"
+    assert request.url == "/workflows/wf_1/spec"
     assert isinstance(response, DeclarativeExportResponse)
     assert response.yaml_definition.startswith("apiVersion:")
 
@@ -916,7 +916,7 @@ def test_workflow_runs_export_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/runs/export_payload"
+    assert request.url == "/workflows/runs/export-payload"
     assert request.data == {
         "workflow_id": "wf_1",
         "block_id": "extract-1",

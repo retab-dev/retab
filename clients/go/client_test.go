@@ -262,7 +262,7 @@ func TestWorkflowSpecsRoutesMatchPythonAndNode(t *testing.T) {
 		"POST /workflows/spec/validate",
 		"POST /workflows/spec/plan",
 		"POST /workflows/spec/apply",
-		"GET /workflows/spec/wf_123",
+		"GET /workflows/wf_123/spec",
 	}
 	if strings.Join(requests, ",") != strings.Join(expected, ",") {
 		t.Fatalf("requests = %#v", requests)
@@ -546,7 +546,7 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]any{"order": []string{"start-1", "extract-1"}})
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/runs/run_123/documents/extract-1":
 			_ = json.NewEncoder(w).Encode(map[string]any{"url": "https://example.com/doc"})
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs/export_payload":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs/export-payload":
 			if err := json.NewDecoder(r.Body).Decode(&exportBody); err != nil {
 				t.Fatal(err)
 			}
@@ -642,7 +642,7 @@ func TestWorkflowRunsExportOmitsEmptySelectedRunIDs(t *testing.T) {
 	var exportBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export_payload" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export-payload" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&exportBody); err != nil {

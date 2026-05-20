@@ -123,11 +123,12 @@ var workflowsCmd = &cobra.Command{
 	Long: `Build and run multi-step document-processing pipelines.
 
 A workflow is a DAG of blocks (` + "`extract`" + `, ` + "`split`" + `,
-` + "`classify`" + `, ` + "`edit`" + `, ` + "`review`" + `, ` + "`conditional`" + `,
+` + "`classifier`" + `, ` + "`edit`" + `, ` + "`conditional`" + `,
 ` + "`api_call`" + `, ` + "`function`" + `, …) wired together by edges. Documents
 or JSON inputs flow through the graph; each block contributes to the final
-output. Workflows are versioned — drafts are mutable, published versions are
-immutable.
+output. Add ` + "`config.review`" + ` to reviewable blocks when a run should
+pause for review. Workflows are versioned — drafts are mutable, published
+versions are immutable.
 
 Human-in-the-loop is configured as a gate on a block (` + "`config.hil`" + `),
 not as a standalone block. A gated run pauses with status
@@ -259,7 +260,7 @@ For per-block I/O schemas, use ` + "`workflows resolved-schemas`" + `.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -297,7 +298,7 @@ functional.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -361,7 +362,7 @@ and ` + "`workflows edges`" + `.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -401,7 +402,7 @@ preserved as separate objects (see ` + "`workflows artifacts`" + `).`,
 		if err := client.Workflows.Delete(ctx, args[0]); err != nil {
 			return err
 		}
-		return printJSON(map[string]any{"id": args[0], "deleted": true})
+		return printResult(cmd, map[string]any{"id": args[0], "deleted": true})
 	}),
 }
 
@@ -448,7 +449,7 @@ the warning.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -477,7 +478,7 @@ Published versions and run history are NOT carried over.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -531,7 +532,7 @@ picture in a single request — for inspection, exporting, or feeding into
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -561,7 +562,7 @@ For a single block, prefer ` + "`workflows blocks resolved-schemas`" + `.`,
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 
@@ -586,13 +587,8 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
   retab workflows diagnose wf_abc123 --graph-file ./graph.json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
 		graphFile, _ := cmd.Flags().GetString("graph-file")
+		var graphReq *retab.DiagnoseWorkflowGraphRequest
 		if graphFile != "" {
 			body, err := readJSONMap(graphFile)
 			if err != nil {
@@ -612,17 +608,26 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 			if v, ok := body["re_propagate"].(bool); ok {
 				req.RePropagate = v
 			}
-			result, err := client.Workflows.DiagnoseGraph(ctx, args[0], req)
+			graphReq = &req
+		}
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		if graphReq != nil {
+			result, err := client.Workflows.DiagnoseGraph(ctx, args[0], *graphReq)
 			if err != nil {
 				return err
 			}
-			return printJSON(result)
+			return printResult(cmd, result)
 		}
 		result, err := client.Workflows.Diagnose(ctx, args[0])
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return printResult(cmd, result)
 	}),
 }
 

@@ -106,8 +106,6 @@ export default class APIExtractions extends CompositionClient {
       after,
       limit = 10,
       order = 'desc',
-      origin_type,
-      origin_id,
       from_date,
       to_date,
       metadata,
@@ -117,8 +115,6 @@ export default class APIExtractions extends CompositionClient {
       after?: string;
       limit?: number;
       order?: 'asc' | 'desc';
-      origin_type?: string;
-      origin_id?: string;
       from_date?: Date;
       to_date?: Date;
       metadata?: Record<string, string>;
@@ -131,8 +127,6 @@ export default class APIExtractions extends CompositionClient {
       after,
       limit,
       order,
-      origin_type,
-      origin_id,
       from_date: from_date?.toISOString(),
       to_date: to_date?.toISOString(),
       filename,

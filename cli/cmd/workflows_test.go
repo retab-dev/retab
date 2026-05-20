@@ -68,6 +68,29 @@ func TestWorkflowsListRejectsInvalidListFlagsLocally(t *testing.T) {
 	}
 }
 
+func TestWorkflowsDiagnoseReadsGraphFileBeforeCredentials(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+
+	missingPath := t.TempDir() + "/missing-graph.json"
+	if err := workflowsDiagnoseCmd.Flags().Set("graph-file", missingPath); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsDiagnoseCmd.Flags().Set("graph-file", "") })
+
+	err := workflowsDiagnoseCmd.RunE(workflowsDiagnoseCmd, []string{"wf_123"})
+	if err == nil {
+		t.Fatal("expected missing graph file error")
+	}
+	if strings.Contains(err.Error(), "no credentials") {
+		t.Fatalf("local file validation should run before credentials, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "missing-graph.json") {
+		t.Fatalf("error should mention missing graph file, got %q", err.Error())
+	}
+}
+
 func TestWorkflowsListRejectsOverLimitLocally(t *testing.T) {
 	cases := []struct {
 		name string
@@ -130,7 +153,7 @@ func TestWorkflowHelpGuidesHumanInTheLoopToGates(t *testing.T) {
 			if strings.Contains(surface.text, staleBacktick) || strings.Contains(surface.text, staleTitle) {
 				t.Fatalf("%s should not describe HIL as a standalone block:\n%s", surface.name, surface.text)
 			}
-			if !strings.Contains(surface.text, "config.hil") && !strings.Contains(surface.text, "waiting_for_human") && !strings.Contains(surface.text, "gated block") {
+			if !strings.Contains(surface.text, "config.review") && !strings.Contains(surface.text, "awaiting_review") && !strings.Contains(surface.text, "review") {
 				t.Fatalf("%s should guide users toward gates/reviews, got:\n%s", surface.name, surface.text)
 			}
 		})
@@ -145,7 +168,7 @@ func TestParseBlockCreateRejectsStandaloneHILBlockType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected type=hil to be rejected locally")
 	}
-	for _, want := range []string{"config.hil", "extract", "for_each", "retab workflows reviews"} {
+	for _, want := range []string{"config.review", "reviewable block"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("error %q should contain %q", err.Error(), want)
 		}
@@ -165,7 +188,7 @@ func TestMergeWorkflowBlockConfigPreservesExistingConfig(t *testing.T) {
 		},
 	}
 	patch := map[string]any{
-		"hil": map[string]any{
+		"review": map[string]any{
 			"predicate": map[string]any{"kind": "always"},
 		},
 		"nested": map[string]any{
@@ -184,34 +207,27 @@ func TestMergeWorkflowBlockConfigPreservesExistingConfig(t *testing.T) {
 	if nested["keep"] != "yes" || nested["old"] != "new" {
 		t.Fatalf("nested merge = %#v", nested)
 	}
-	if _, ok := merged["hil"].(map[string]any); !ok {
-		t.Fatalf("hil patch was not applied: %#v", merged)
+	if _, ok := merged["review"].(map[string]any); !ok {
+		t.Fatalf("review patch was not applied: %#v", merged)
 	}
 }
 
-func TestWorkflowsBlocksGetUsesEntitiesGraph(t *testing.T) {
+func TestWorkflowsBlocksGetUsesBlockEndpoint(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	var sawEntities bool
+	var sawGet bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodGet || r.URL.Path != "/workflows/wf_123/entities" {
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/wf_123/blocks/blk_extract" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
-		sawEntities = true
+		sawGet = true
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"workflow": map[string]any{"id": "wf_123"},
-			"blocks": []map[string]any{
-				{
-					"id":     "blk_extract",
-					"type":   "extract",
-					"label":  "Extract",
-					"config": map[string]any{"model": "retab-small"},
-				},
-			},
-			"edges":    []map[string]any{},
-			"subflows": []map[string]any{},
+			"id":     "blk_extract",
+			"type":   "extract",
+			"label":  "Extract",
+			"config": map[string]any{"model": "retab-small"},
 		})
 	}))
 	defer server.Close()
@@ -221,8 +237,8 @@ func TestWorkflowsBlocksGetUsesEntitiesGraph(t *testing.T) {
 	if err := cmd.RunE(cmd, []string{"wf_123", "blk_extract"}); err != nil {
 		t.Fatalf("blocks get: %v", err)
 	}
-	if !sawEntities {
-		t.Fatal("expected blocks get to fetch workflow entities")
+	if !sawGet {
+		t.Fatal("expected blocks get to fetch the block")
 	}
 }
 
@@ -230,10 +246,10 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
-	patchPath := t.TempDir() + "/hil.json"
+	patchPath := t.TempDir() + "/review.json"
 	if err := os.WriteFile(
 		patchPath,
-		[]byte(`{"hil":{"predicate":{"kind":"always"}}}`),
+		[]byte(`{"review":{"predicate":{"kind":"always"}}}`),
 		0o600,
 	); err != nil {
 		t.Fatal(err)
@@ -244,25 +260,18 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/entities":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_123/blocks/blk_extract":
 			sawGet = true
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"workflow": map[string]any{"id": "wf_123"},
-				"blocks": []map[string]any{
-					{
-						"id":   "blk_extract",
-						"type": "extract",
-						"config": map[string]any{
-							"model": "retab-small",
-							"json_schema": map[string]any{
-								"type":     "object",
-								"required": []string{"total"},
-							},
-						},
+				"id":   "blk_extract",
+				"type": "extract",
+				"config": map[string]any{
+					"model": "retab-small",
+					"json_schema": map[string]any{
+						"type":     "object",
+						"required": []string{"total"},
 					},
 				},
-				"edges":    []map[string]any{},
-				"subflows": []map[string]any{},
 			})
 		case r.Method == http.MethodPatch && r.URL.Path == "/workflows/wf_123/blocks/blk_extract":
 			sawPatch = true
@@ -277,8 +286,8 @@ func TestWorkflowsBlocksUpdateMergeConfigFetchesAndPreservesExistingConfig(t *te
 			if config["json_schema"] == nil {
 				t.Fatalf("json_schema not preserved in patch body: %#v", config)
 			}
-			if config["hil"] == nil {
-				t.Fatalf("hil not merged into patch body: %#v", config)
+			if config["review"] == nil {
+				t.Fatalf("review not merged into patch body: %#v", config)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id":     "blk_extract",
@@ -663,6 +672,46 @@ func TestWorkflowsDiagnoseGraphFileAcceptsEntitiesShape(t *testing.T) {
 	}
 	if !strings.Contains(stdout, `"is_valid": true`) {
 		t.Fatalf("expected diagnosis response, got:\n%s", stdout)
+	}
+}
+
+func TestWorkflowsResolvedSchemasHonorsTableOutputFallback(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/workflows/wf_schema/resolved-schemas" {
+			t.Fatalf("path = %s, want resolved-schemas", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"workflow_id": "wf_schema",
+			"schemas": map[string]any{
+				"start": map[string]any{"output_schemas": map[string]any{}},
+			},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_BASE_URL", server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsResolvedSchemasCmd.RunE(workflowsResolvedSchemasCmd, []string{"wf_schema"}); err != nil {
+			t.Fatalf("resolved-schemas: %v", err)
+		}
+	})
+	if !strings.Contains(stderr, "falling back to json") {
+		t.Fatalf("expected table fallback warning, got stderr %q", stderr)
+	}
+	if !strings.Contains(stdout, `"workflow_id": "wf_schema"`) {
+		t.Fatalf("expected JSON fallback payload, got:\n%s", stdout)
 	}
 }
 

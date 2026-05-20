@@ -7,7 +7,6 @@ from pydantic import Field
 from retab.types.base import RetabBaseModel
 
 from .documents.usage import RetabUsage
-from .extractions import ProcessingRequestOrigin
 from .mime import FileRef, MIMEData
 
 
@@ -88,10 +87,5 @@ class Split(RetabBaseModel):
         default=None,
         description="Consensus metadata for multi-vote split runs",
     )
-    origin: Optional[ProcessingRequestOrigin] = Field(
-        default=None,
-        description="Origin of the split request",
-    )
     usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the split operation")
     created_at: Optional[datetime.datetime] = None
-    updated_at: Optional[datetime.datetime] = None

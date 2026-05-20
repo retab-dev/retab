@@ -11,6 +11,8 @@ from .mime import FileRef, MIMEData
 
 
 class ExtractionRequest(RetabBaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     document: MIMEData = Field(..., description="The document to extract from")
     json_schema: dict[str, Any] = Field(..., description="JSON schema describing the structured output")
     model: str = Field(default="retab-small", description="The model to use for the extraction")
@@ -85,15 +87,10 @@ class Extraction(RetabBaseModel):
         description="Consensus metadata for multi-vote extraction runs",
     )
 
-    origin: Optional[ProcessingRequestOrigin] = Field(
-        default=None,
-        description="Origin of the extraction request",
-    )
     metadata: dict[str, str] = Field(default_factory=dict)
 
     usage: Optional[RetabUsage] = Field(default=None, description="Usage information for the extraction")
     created_at: Optional[datetime.datetime] = None
-    updated_at: Optional[datetime.datetime] = None
 
 
 class SourcesResponse(RetabBaseModel):

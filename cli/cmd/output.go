@@ -239,6 +239,11 @@ func ResolveOutputFormat(cmd *cobra.Command, w io.Writer) (OutputFormat, error) 
 			raw = f.Value.String()
 		}
 	}
+	if raw == "" && cmd != rootCmd {
+		if f := rootCmd.PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+	}
 	switch raw {
 	case "", "auto":
 		return DefaultOutputFormat(w), nil
@@ -803,8 +808,15 @@ func stringifyCell(v any) string {
 		return ""
 	}
 	rv := reflect.ValueOf(v)
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
+		if rv.IsNil() {
+			return ""
+		}
+		rv = rv.Elem()
+		v = rv.Interface()
+	}
 	switch rv.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Slice:
 		if rv.IsNil() {
 			return ""
 		}

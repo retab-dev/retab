@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	retab "github.com/retab-dev/retab/clients/go"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -78,6 +79,31 @@ func TestJobsWaitHelpMentionsEveryTerminalStatus(t *testing.T) {
 		if !strings.Contains(jobsWaitCmd.Long, status) {
 			t.Fatalf("jobs wait help should mention terminal status %q:\n%s", status, jobsWaitCmd.Long)
 		}
+	}
+}
+
+func TestJobsCreateReadsRequestFileBeforeCredentials(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	cmd := &cobra.Command{Use: "test-jobs-create", RunE: jobsCreateCmd.RunE}
+	cmd.Flags().String("endpoint", "", "")
+	cmd.Flags().String("request-file", "", "")
+	cmd.Flags().StringArray("metadata", nil, "")
+
+	_ = cmd.Flags().Set("endpoint", "/v1/parses")
+	_ = cmd.Flags().Set("request-file", "/tmp/missing-request.json")
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected request-file error")
+	}
+	if !strings.Contains(err.Error(), "--request-file") {
+		t.Fatalf("error %q does not mention --request-file", err.Error())
+	}
+	if strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("error %q checked credentials before reading --request-file", err.Error())
 	}
 }
 
