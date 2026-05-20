@@ -76,15 +76,17 @@ def test_workflows_list_uses_paginated_route() -> None:
 @pytest.mark.asyncio
 async def test_async_workflows_get_uses_detail_route() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value={
-        "id": "workflow_123",
-        "name": "Test Workflow",
-        "description": "",
-        "published": None,
-        "email_trigger": {"allowed_senders": [], "allowed_domains": []},
-        "created_at": "2026-03-12T10:00:00Z",
-        "updated_at": "2026-03-12T10:00:00Z",
-    })
+    client._prepared_request = AsyncMock(
+        return_value={
+            "id": "workflow_123",
+            "name": "Test Workflow",
+            "description": "",
+            "published": None,
+            "email_trigger": {"allowed_senders": [], "allowed_domains": []},
+            "created_at": "2026-03-12T10:00:00Z",
+            "updated_at": "2026-03-12T10:00:00Z",
+        }
+    )
 
     workflow = await AsyncWorkflows(client=client).get("workflow_123")
 
@@ -97,10 +99,12 @@ async def test_async_workflows_get_uses_detail_route() -> None:
 @pytest.mark.asyncio
 async def test_async_workflows_list_uses_paginated_route() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value={
-        "data": [],
-        "list_metadata": {"before": None, "after": "workflow_after"},
-    })
+    client._prepared_request = AsyncMock(
+        return_value={
+            "data": [],
+            "list_metadata": {"before": None, "after": "workflow_after"},
+        }
+    )
 
     result = await AsyncWorkflows(client=client).list(
         limit=5,
@@ -250,13 +254,15 @@ def test_workflow_specs_export_uses_spec_export_route() -> None:
 @pytest.mark.asyncio
 async def test_async_workflow_specs_validate_uses_spec_validate_route() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value={
-        "workflow_id": "wf_1",
-        "block_count": 2,
-        "edge_count": 1,
-        "is_valid": True,
-        "diagnostics": {"issues": []},
-    })
+    client._prepared_request = AsyncMock(
+        return_value={
+            "workflow_id": "wf_1",
+            "block_count": 2,
+            "edge_count": 1,
+            "is_valid": True,
+            "diagnostics": {"issues": []},
+        }
+    )
 
     response = await AsyncWorkflowSpecs(client=client).validate("spec: {}\n")
 
@@ -307,80 +313,88 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
 
 def test_workflow_run_v2_typed_fields() -> None:
     """v2 nested fields parse and round-trip with the typed sub-models."""
-    run = WorkflowRun.model_validate({
-        "id": "run_789",
-        "organization_id": "org_1",
-        "workflow": {
-            "workflow_id": "wf_1",
-            "version_id": "ver_abcdef0123456789abcdef0123456789",
-            "name_at_run_time": "Test",
-            "requested_version": "ver_abcdef0123456789abcdef0123456789",
-        },
-        "trigger": {"type": "api", "api_key_id": "ak_1"},
-        "lifecycle": {"status": "completed"},
-        "timing": {
-            "created_at": "2026-03-13T10:00:00Z",
-            "started_at": "2026-03-13T10:00:00Z",
-            "completed_at": "2026-03-13T10:00:05Z",
-            "accumulated_human_waiting_ms": 5000,
-        },
-        "inputs": {"documents": {}, "json_data": {"json-1": {"key": "value"}}},
-    })
+    run = WorkflowRun.model_validate(
+        {
+            "id": "run_789",
+            "organization_id": "org_1",
+            "workflow": {
+                "workflow_id": "wf_1",
+                "version_id": "ver_abcdef0123456789abcdef0123456789",
+                "name_at_run_time": "Test",
+                "requested_version": "ver_abcdef0123456789abcdef0123456789",
+            },
+            "trigger": {"type": "api", "api_key_id": "ak_1"},
+            "lifecycle": {"status": "completed"},
+            "timing": {
+                "created_at": "2026-03-13T10:00:00Z",
+                "started_at": "2026-03-13T10:00:00Z",
+                "completed_at": "2026-03-13T10:00:05Z",
+                "accumulated_review_waiting_ms": 5000,
+            },
+            "inputs": {"documents": {}, "json_data": {"json-1": {"key": "value"}}},
+        }
+    )
     assert run.workflow.workflow_id == "wf_1"
     assert run.workflow.version_id == "ver_abcdef0123456789abcdef0123456789"
     assert run.workflow.name_at_run_time == "Test"
     assert run.trigger.type == "api"
     assert run.lifecycle.status == "completed"
     assert run.inputs.json_data == {"json-1": {"key": "value"}}
-    assert run.timing.accumulated_human_waiting_ms == 5000
+    assert run.timing.accumulated_review_waiting_ms == 5000
     assert not hasattr(run.timing, "duration_ms")
     assert not hasattr(run.timing, "active_duration_ms")
     assert "duration_ms" not in run.timing.model_dump()
     assert "active_duration_ms" not in run.timing.model_dump()
 
     # Defaults: inputs default to empty
-    run2 = WorkflowRun.model_validate({
-        "id": "run_000",
-        "organization_id": "org_1",
-        "workflow": {
-            "workflow_id": "wf_1",
-            "version_id": "ver_0123456789abcdef0123456789abcdef",
-            "name_at_run_time": "T",
-        },
-        "trigger": {"type": "manual"},
-        "lifecycle": {"status": "pending"},
-        "timing": {"created_at": "2026-01-01T00:00:00Z"},
-    })
+    run2 = WorkflowRun.model_validate(
+        {
+            "id": "run_000",
+            "organization_id": "org_1",
+            "workflow": {
+                "workflow_id": "wf_1",
+                "version_id": "ver_0123456789abcdef0123456789abcdef",
+                "name_at_run_time": "T",
+            },
+            "trigger": {"type": "manual"},
+            "lifecycle": {"status": "pending"},
+            "timing": {"created_at": "2026-01-01T00:00:00Z"},
+        }
+    )
     assert run2.inputs.documents == {}
     assert run2.inputs.json_data == {}
-    assert run2.timing.accumulated_human_waiting_ms == 0
+    assert run2.timing.accumulated_review_waiting_ms == 0
 
 
 def test_workflow_with_entities_parsing() -> None:
     """WorkflowWithEntities parses blocks and edges and exposes start_blocks."""
-    wfe = WorkflowWithEntities.model_validate({
-        "workflow": {
-            "id": "wf_1", "name": "Test Workflow",
-            "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
-        },
-        "blocks": [
-            {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start", "label": "Document Input"},
-            {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract", "label": "Extract"},
-            {"id": "json-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_json", "label": "JSON Input"},
-        ],
-        "edges": [
-            {
-                "id": "edge-1",
-                "workflow_id": "wf_1",
-                "organization_id": "org_1",
-                "draft_version": "draft_1",
-                "source_block": "start-1",
-                "target_block": "extract-1",
-                "source_handle": "output-file-0",
-                "target_handle": "input-file-0",
+    wfe = WorkflowWithEntities.model_validate(
+        {
+            "workflow": {
+                "id": "wf_1",
+                "name": "Test Workflow",
+                "created_at": "2026-01-01T00:00:00Z",
+                "updated_at": "2026-01-01T00:00:00Z",
             },
-        ],
-    })
+            "blocks": [
+                {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start", "label": "Document Input"},
+                {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract", "label": "Extract"},
+                {"id": "json-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_json", "label": "JSON Input"},
+            ],
+            "edges": [
+                {
+                    "id": "edge-1",
+                    "workflow_id": "wf_1",
+                    "organization_id": "org_1",
+                    "draft_version": "draft_1",
+                    "source_block": "start-1",
+                    "target_block": "extract-1",
+                    "source_handle": "output-file-0",
+                    "target_handle": "input-file-0",
+                },
+            ],
+        }
+    )
 
     assert wfe.workflow.id == "wf_1"
     assert len(wfe.blocks) == 3
@@ -707,8 +721,10 @@ def test_workflows_get_entities_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow": {
-            "id": "wf_1", "name": "Test",
-            "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
+            "id": "wf_1",
+            "name": "Test",
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z",
         },
         "blocks": [{"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start"}],
         "edges": [],
@@ -728,13 +744,15 @@ def test_workflows_list_returns_typed_items() -> None:
     client._prepared_request.return_value = {
         "data": [
             {
-                "id": "wf_1", "name": "Workflow A",
+                "id": "wf_1",
+                "name": "Workflow A",
                 "published": {
                     "version_id": "ver_0123456789abcdef0123456789abcdef",
                     "published_at": "2026-01-01T00:00:00Z",
                 },
                 "email_trigger": {"allowed_senders": [], "allowed_domains": []},
-                "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
+                "created_at": "2026-01-01T00:00:00Z",
+                "updated_at": "2026-01-01T00:00:00Z",
             },
         ],
         "list_metadata": {"before": None, "after": None},
@@ -868,9 +886,7 @@ def test_workflow_runs_cancel_route() -> None:
 
 def test_workflow_runs_restart_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _v2_run_payload(
-        id="run_2", lifecycle={"status": "running"}
-    )
+    client._prepared_request.return_value = _v2_run_payload(id="run_2", lifecycle={"status": "running"})
 
     run = WorkflowRuns(client=client).restart("run_1", command_id="cmd_2")
 
@@ -922,21 +938,27 @@ def test_workflow_run_step_extracted_data() -> None:
     """WorkflowRunStep.extracted_data works with typed handle_outputs."""
     from retab.types.workflows.model import WorkflowRunStep
 
-    step = WorkflowRunStep.model_validate({
-        "run_id": "run_1", "organization_id": "org_1",
-        "block_id": "extract-1", "step_id": "extract-1",
-        "block_type": "extract", "block_label": "Extract",
-        "lifecycle": {"status": "completed"},
-        "handle_outputs": {
-            "output-json-0": {"type": "json", "data": {"total": 1234}},
-        },
-    })
+    step = WorkflowRunStep.model_validate(
+        {
+            "run_id": "run_1",
+            "organization_id": "org_1",
+            "block_id": "extract-1",
+            "step_id": "extract-1",
+            "block_type": "extract",
+            "block_label": "Extract",
+            "lifecycle": {"status": "completed"},
+            "handle_outputs": {
+                "output-json-0": {"type": "json", "data": {"total": 1234}},
+            },
+        }
+    )
     assert step.extracted_data == {"total": 1234}
     dumped = step.model_dump()
     assert "status" not in dumped
     assert "terminal" not in dumped
     # handle_outputs should be typed as HandlePayload
     from retab.types.workflows.model import HandlePayload
+
     payload = step.handle_outputs["output-json-0"]
     assert isinstance(payload, HandlePayload)
     assert payload.type == "json"
@@ -950,26 +972,28 @@ def test_workflow_run_step_extracted_data() -> None:
 def test_workflow_run_step_accepts_json_ref_handle_payload() -> None:
     from retab.types.workflows.model import WorkflowRunStep
 
-    step = WorkflowRunStep.model_validate({
-        "run_id": "run_1",
-        "organization_id": "org_1",
-        "block_id": "function-1",
-        "step_id": "function-1",
-        "block_type": "function",
-        "block_label": "Function",
-        "lifecycle": {"status": "completed"},
-        "handle_outputs": {
-            "output-json-0": {
-                "type": "json_ref",
-                "artifact_ref": {
-                    "operation": "workflow_step_json",
-                    "id": "artifact_123",
-                    "key": "output-json-0",
+    step = WorkflowRunStep.model_validate(
+        {
+            "run_id": "run_1",
+            "organization_id": "org_1",
+            "block_id": "function-1",
+            "step_id": "function-1",
+            "block_type": "function",
+            "block_label": "Function",
+            "lifecycle": {"status": "completed"},
+            "handle_outputs": {
+                "output-json-0": {
+                    "type": "json_ref",
+                    "artifact_ref": {
+                        "operation": "workflow_step_json",
+                        "id": "artifact_123",
+                        "key": "output-json-0",
+                    },
+                    "preview": {"truncated": True},
                 },
-                "preview": {"truncated": True},
             },
-        },
-    })
+        }
+    )
 
     payload = step.handle_outputs["output-json-0"]
     assert payload.type == "json_ref"

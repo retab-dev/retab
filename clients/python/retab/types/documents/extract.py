@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, cast
 import datetime
 
 from openai.types.chat import ChatCompletionMessageParam
@@ -69,7 +69,7 @@ class RetabParsedChatCompletion(RetabBaseModel, ParsedChatCompletion):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
     extraction_id: str | None = None
     choices: list[RetabParsedChoice]  # type: ignore
-    usage: CompletionUsage | RetabUsage | None = Field(default=None, description="Usage information for the extraction")
+    usage: CompletionUsage | RetabUsage | None = Field(default=None, description="Usage information for the extraction")  # type: ignore[assignment]
     # Additional metadata fields
     likelihoods: Optional[dict[str, Any]] = Field(
         default=None, description="Object defining the uncertainties of the fields extracted when using consensus. Follows the same structure as the extraction object."
@@ -271,7 +271,7 @@ class RetabParsedChatCompletionChunk(StreamingBaseModel, ChatCompletionChunk):
                         full_parsed=acc_full_parsed[i],
                     ),
                     index=i,
-                    finish_reason=acc_finish_reasons[i],
+                    finish_reason=cast(Literal["stop", "length", "tool_calls", "content_filter", "function_call"] | None, acc_finish_reasons[i]),
                 )
                 for i in range(max_choices)
             ],

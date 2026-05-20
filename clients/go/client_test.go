@@ -564,7 +564,7 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 
 	runs, err := client.Workflows.Runs.List(context.Background(), &ListWorkflowRunsParams{
 		WorkflowID:   "wf_123",
-		Statuses:     []string{"running", "waiting_for_human"},
+		Statuses:     []string{"running", "awaiting_review"},
 		TriggerTypes: []string{"api", "email"},
 		Fields:       []string{"id", "lifecycle"},
 		Limit:        5,
@@ -576,7 +576,7 @@ func TestWorkflowRunsListDeleteCancelRestartAndExport(t *testing.T) {
 	if len(runs.Data) != 1 || runs.Data[0].WorkflowID != "wf_123" {
 		t.Fatalf("runs = %#v", runs)
 	}
-	if !strings.Contains(listQuery, "statuses=running%2Cwaiting_for_human") {
+	if !strings.Contains(listQuery, "statuses=running%2Cawaiting_review") {
 		t.Fatalf("list query = %s", listQuery)
 	}
 

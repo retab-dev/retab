@@ -427,7 +427,12 @@ def convert_from_openai_responses_api_format(messages: list[ResponseInputItemPar
                 elif part["type"] == "input_image":
                     image_url = part.get("image_url") or ""
                     image_detail = part.get("detail") or "high"
-                    formatted_content.append(ChatCompletionContentPartImageParam(image_url=ImageURL(url=image_url, detail=image_detail), type="image_url"))
+                    formatted_content.append(
+                        ChatCompletionContentPartImageParam(
+                            image_url=ImageURL(url=image_url, detail=cast(Literal["auto", "low", "high"], image_detail)),
+                            type="image_url",
+                        )
+                    )
                 else:
                     print(f"Not supported content type: {part['type']}... Skipping...")
 

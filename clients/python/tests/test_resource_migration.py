@@ -1,6 +1,7 @@
 import inspect
 import importlib
 from io import BytesIO
+from typing import cast
 
 import pytest
 import httpx
@@ -11,6 +12,7 @@ from retab.types.extractions import ExtractionRequest
 from retab.types.mime import MIMEData
 from retab.types.partitions import Partition
 from retab.types.splits import Split
+from retab.types.standards import PreparedRequest
 
 
 def test_removed_surfaces_are_not_exposed() -> None:
@@ -44,6 +46,15 @@ def _sample_document() -> MIMEData:
     )
 
 
+def _captured_requests(captured: dict[str, object]) -> list[PreparedRequest]:
+    return cast(list[PreparedRequest], captured["requests"])
+
+
+def _request_params(request: PreparedRequest) -> dict[str, object]:
+    assert request.params is not None
+    return cast(dict[str, object], request.params)
+
+
 def test_extractions_delete_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
@@ -68,14 +79,14 @@ def test_extractions_create_has_no_stream_argument() -> None:
         Extractions(object()).create(
             document=_sample_document(),
             json_schema={"type": "object"},
-            stream=True,
+            stream=True,  # type: ignore[call-arg]
         )
 
     with pytest.raises(TypeError, match="unexpected keyword argument 'stream'"):
         AsyncExtractions(object()).create(
             document=_sample_document(),
             json_schema={"type": "object"},
-            stream=True,
+            stream=True,  # type: ignore[call-arg]
         )
 
 
@@ -134,7 +145,7 @@ def test_files_upload_uses_direct_storage_upload_for_local_paths(
     assert result.filename == "invoice.pdf"
     assert result.url == "https://storage.retab.com/org_1/file_123.pdf"
     assert result.id == "file_123"
-    requests = captured["requests"]  # type: ignore[assignment]
+    requests = _captured_requests(captured)
     assert [getattr(request, "url") for request in requests] == [
         "/files/upload",
         "/files/upload/file_123/complete",
@@ -149,7 +160,8 @@ def test_files_upload_uses_direct_storage_upload_for_local_paths(
         "sha256": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
     }
     assert captured["put_args"] == ("https://storage.googleapis.com/signed-upload",)
-    assert captured["put_kwargs"]["headers"] == {"Content-Type": "application/pdf"}  # type: ignore[index]
+    put_kwargs = cast(dict[str, object], captured["put_kwargs"])
+    assert put_kwargs["headers"] == {"Content-Type": "application/pdf"}
 
 
 def test_files_upload_file_object_streams_from_start_and_uses_object_filename(
@@ -191,7 +203,7 @@ def test_files_upload_file_object_streams_from_start_and_uses_object_filename(
         result = client.files.upload(file_obj)
 
     assert result.filename == "report.txt"
-    requests = captured["requests"]  # type: ignore[assignment]
+    requests = _captured_requests(captured)
     assert getattr(requests[0], "data") == {
         "filename": "report.txt",
         "content_type": "text/plain",
@@ -247,7 +259,7 @@ async def test_async_files_upload_uses_direct_storage_upload_for_local_paths(
         monkeypatch.setattr(client.client, "put", fake_put)
         result = await client.files.upload(document_path)
 
-    requests = captured["requests"]  # type: ignore[assignment]
+    requests = _captured_requests(captured)
     assert result.filename == "invoice.pdf"
     assert result.url == "https://storage.retab.com/org_1/file_123.pdf"
     assert [getattr(request, "url") for request in requests] == [
@@ -302,7 +314,7 @@ def test_files_upload_does_not_complete_when_direct_upload_fails(
         with pytest.raises(httpx.HTTPStatusError):
             client.files.upload(document_path)
 
-    requests = captured["requests"]  # type: ignore[assignment]
+    requests = _captured_requests(captured)
     assert [getattr(request, "url") for request in requests] == ["/files/upload"]
 
 
@@ -590,11 +602,11 @@ def test_resource_create_builders_include_supported_route_fields() -> None:
 
 def test_resource_list_builders_include_filename_filters() -> None:
     with Retab(api_key="test", base_url="http://example.com/v1") as client:
-        assert client.classifications._prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
-        assert client.parses._prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
-        assert client.splits._prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
-        assert client.partitions._prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
-        assert client.extractions.prepare_list(filename="invoice.pdf").params["filename"] == "invoice.pdf"
+        assert _request_params(client.classifications._prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
+        assert _request_params(client.parses._prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
+        assert _request_params(client.splits._prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
+        assert _request_params(client.partitions._prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
+        assert _request_params(client.extractions.prepare_list(filename="invoice.pdf"))["filename"] == "invoice.pdf"
 
 
 def test_partitions_list_and_delete_use_resource_routes(monkeypatch: pytest.MonkeyPatch) -> None:

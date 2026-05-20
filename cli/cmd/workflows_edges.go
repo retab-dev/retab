@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
@@ -32,9 +33,9 @@ dynamic ports.`,
 	Example: `  # Inspect every edge
   retab workflows edges list wf_abc123
 
-  # Wire two blocks
+  # Wire two blocks; "start" resolves to the workflow's single start block
   retab workflows edges create wf_abc123 \
-    --source-block blk_extract_1 --target-block blk_classify_1
+    --source-block start --target-block blk_extract_1
 
   # Clear the entire graph wiring (blocks remain)
   retab workflows edges delete-all wf_abc123`,
@@ -61,13 +62,6 @@ func parseEdgeCreate(obj map[string]any) retab.WorkflowEdgeCreateRequest {
 	return req
 }
 
-func ensureWorkflowEdgeID(req *retab.WorkflowEdgeCreateRequest) {
-	if req.ID != "" {
-		return
-	}
-	req.ID = defaultWorkflowEdgeID(*req)
-}
-
 func validateWorkflowEdgeCreate(req retab.WorkflowEdgeCreateRequest) error {
 	if strings.TrimSpace(req.SourceBlock) == "" {
 		return fmt.Errorf("source_block is required")
@@ -76,6 +70,49 @@ func validateWorkflowEdgeCreate(req retab.WorkflowEdgeCreateRequest) error {
 		return fmt.Errorf("target_block is required")
 	}
 	return nil
+}
+
+func resolveWorkflowEdgeStartAliases(ctx context.Context, client *retab.Client, workflowID string, req *retab.WorkflowEdgeCreateRequest) error {
+	if req.SourceBlock != "start" && req.TargetBlock != "start" {
+		return nil
+	}
+	blocks, err := client.Workflows.Blocks.List(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	hasLiteralStartID := false
+	startBlockIDs := []string{}
+	for _, block := range blocks.Data {
+		if block.ID == "start" {
+			hasLiteralStartID = true
+		}
+		if block.Type == "start" {
+			startBlockIDs = append(startBlockIDs, block.ID)
+		}
+	}
+	if hasLiteralStartID {
+		return nil
+	}
+	if len(startBlockIDs) == 0 {
+		return fmt.Errorf("start alias requested, but workflow has no start block")
+	}
+	if len(startBlockIDs) > 1 {
+		return fmt.Errorf("start alias is ambiguous: workflow has multiple start blocks")
+	}
+	if req.SourceBlock == "start" {
+		req.SourceBlock = startBlockIDs[0]
+	}
+	if req.TargetBlock == "start" {
+		req.TargetBlock = startBlockIDs[0]
+	}
+	return nil
+}
+
+func ensureWorkflowEdgeID(req *retab.WorkflowEdgeCreateRequest) {
+	if req.ID != "" {
+		return
+	}
+	req.ID = defaultWorkflowEdgeID(*req)
 }
 
 func defaultWorkflowEdgeID(req retab.WorkflowEdgeCreateRequest) string {
@@ -141,15 +178,27 @@ var workflowsEdgesCreateCmd = &cobra.Command{
 	Short: "Create an edge",
 	Long: `Connect two blocks: data flows from ` + "`--source-block`" + ` into
 ` + "`--target-block`" + `. Use ` + "`--source-handle`" + ` /
-` + "`--target-handle`" + ` for blocks with multiple named ports.
+` + "`--target-handle`" + ` for blocks with multiple named ports (e.g. a
+` + "`conditional`" + ` block exposing ` + "`true`" + ` / ` + "`false`" + `
+branches).
 
 For dynamic routing blocks, source handles are built from route
 ` + "`handle_key`" + ` values: ` + "`output-file-booking-confirmation`" + `
-for split/classifier file routes and ` + "`output-json-needs-review`" + `
+for split/classify file routes and ` + "`output-json-needs-review`" + `
 for conditional JSON routes. If a route omits ` + "`handle_key`" + `, Retab
 derives one from the human label by lowercasing it and replacing spaces with
-hyphens.`,
-	Example: `  # Connect extractor output to a classifier
+hyphens.
+
+For ` + "`--source-block start`" + ` or ` + "`--target-block start`" + `, ` + "`start`" + `
+is an alias for the workflow's single block of type ` + "`start`" + ` unless a
+block with id ` + "`start`" + ` already exists.`,
+	Example: `  # Connect the start document to an extractor
+  retab workflows edges create wf_abc123 \
+    --source-block start \
+    --source-handle document \
+    --target-block blk_extract_1
+
+  # Connect extractor output to a classifier
   retab workflows edges create wf_abc123 \
     --source-block blk_extract_1 \
     --target-block blk_classify_1
@@ -173,6 +222,9 @@ hyphens.`,
 		req.TargetHandle, _ = cmd.Flags().GetString("target-handle")
 		req.ID, _ = cmd.Flags().GetString("id")
 		if err := validateWorkflowEdgeCreate(req); err != nil {
+			return err
+		}
+		if err := resolveWorkflowEdgeStartAliases(ctx, client, args[0], &req); err != nil {
 			return err
 		}
 		ensureWorkflowEdgeID(&req)
@@ -286,8 +338,8 @@ func init() {
 	workflowsEdgesListCmd.Flags().String("target-block", "", "filter by target block")
 
 	workflowsEdgesCreateCmd.Flags().String("id", "", "edge id (optional)")
-	workflowsEdgesCreateCmd.Flags().String("source-block", "", "source block id (required)")
-	workflowsEdgesCreateCmd.Flags().String("target-block", "", "target block id (required)")
+	workflowsEdgesCreateCmd.Flags().String("source-block", "", "source block id (required) (use start for the single start block)")
+	workflowsEdgesCreateCmd.Flags().String("target-block", "", "target block id (required) (use start for the single start block)")
 	workflowsEdgesCreateCmd.Flags().String("source-handle", "", "source handle")
 	workflowsEdgesCreateCmd.Flags().String("target-handle", "", "target handle")
 	_ = workflowsEdgesCreateCmd.MarkFlagRequired("source-block")

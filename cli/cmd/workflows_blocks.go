@@ -13,7 +13,7 @@ var workflowsBlocksCmd = &cobra.Command{
 	Long: `Add, configure, and inspect the nodes of a workflow graph.
 
 A block is one processing step — ` + "`extract`" + `, ` + "`split`" + `,
-` + "`classifier`" + `, ` + "`edit`" + `, ` + "`conditional`" + `,
+` + "`classify`" + `, ` + "`edit`" + `, ` + "`review`" + `, ` + "`conditional`" + `,
 ` + "`api_call`" + `, ` + "`function`" + `, etc. Each block has a typed input,
 typed output, and a JSON ` + "`config`" + ` blob shaped by its type.
 
@@ -211,20 +211,43 @@ JSON object with the keys ` + "`id`" + ` (required), ` + "`type`" + ` (required)
 ` + "`label`" + `, ` + "`position_x`" + `, ` + "`position_y`" + `, ` + "`width`" + `,
 ` + "`height`" + `, ` + "`parent_id`" + `, and ` + "`config`" + `.
 
-Do not set the block type to ` + "`hil`" + `. Human review is configured as
-` + "`config.hil`" + ` on a supported block. For example, create an
-` + "`extract`" + ` block, then update its config with a gate predicate.
+Review is configured inside the block's typed config as
+` + "`config.review.predicate`" + `. For example, an extract block can pause
+every run with ` + "`{\"review\":{\"predicate\":{\"kind\":\"always\"}}}`" + `.
 
 For batch creation, see ` + "`workflows blocks create-batch`" + `.`,
 	Example: `  # Add one block from a JSON file
   retab workflows blocks create wf_abc123 --block-file ./extract.json
 
-  # Pipe a block definition from stdin
-  cat block.json | retab workflows blocks create wf_abc123 --block-file -
+  # Minimal extract block with a review gate
+  cat > extract-review.json <<'JSON'
+  {
+    "id": "extract_review",
+    "type": "extract",
+    "label": "Extract with review",
+    "position_x": 420,
+    "position_y": 180,
+    "config": {
+      "model": "retab-small",
+      "inputs": [{"name": "document", "type": "file", "is_primary": true}],
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "document_type": {"type": "string"}
+        },
+        "required": ["document_type"],
+        "additionalProperties": false
+      },
+      "review": {
+        "predicate": {"kind": "always"}
+      }
+    }
+  }
+  JSON
+  retab workflows blocks create wf_abc123 --block-file ./extract-review.json
 
-  # Add human review by putting "hil" inside an existing block's config
-  retab workflows blocks update wf_abc123 blk_extract_1 \
-    --merge-config-file ./extract-hil-gate.json`,
+  # Pipe a block definition from stdin
+  cat block.json | retab workflows blocks create wf_abc123 --block-file -`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)

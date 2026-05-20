@@ -80,7 +80,7 @@ export default class APIWorkflowArtifacts extends CompositionClient {
    *
    * @example
    * ```typescript
-   * const step = await client.workflows.runs.steps.get(run.id, "hil-1");
+   * const step = await client.workflows.runs.steps.get(run.id, "review-1");
    * if (step.artifact) {
    *   const artifact = await client.workflows.artifacts.get(step.artifact);
    *   console.log(artifact.operation, artifact.evaluations);

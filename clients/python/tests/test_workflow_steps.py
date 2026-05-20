@@ -40,12 +40,12 @@ def test_workflow_steps_list_uses_full_steps_route() -> None:
 def test_workflow_artifacts_get_accepts_ref_and_returns_flattened_record() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
-        "operation": "hil_evaluation",
+        "operation": "review_trigger_evaluation",
         "id": "heval_123",
         "requires_human_review": True,
     }
     artifact_ref = workflow_model.StepArtifactRef(
-        operation="hil_evaluation",
+        operation="review_trigger_evaluation",
         id="heval_123",
     )
 
@@ -53,10 +53,10 @@ def test_workflow_artifacts_get_accepts_ref_and_returns_flattened_record() -> No
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/artifacts/hil_evaluation/heval_123"
-    assert artifact.operation == "hil_evaluation"
+    assert request.url == "/workflows/artifacts/review_trigger_evaluation/heval_123"
+    assert artifact.operation == "review_trigger_evaluation"
     assert artifact.id == "heval_123"
-    assert artifact.model_dump() == {"operation": "hil_evaluation", "id": "heval_123"}
+    assert artifact.model_dump() == {"operation": "review_trigger_evaluation", "id": "heval_123"}
 
 
 def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
@@ -91,20 +91,22 @@ def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
 @pytest.mark.asyncio
 async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value={
-        "data": [
-            {
-                "run_id": "run_123",
-                "organization_id": "org_123",
-                "block_id": "extract-1",
-                "step_id": "extract-1",
-                "block_type": "extract",
-                "block_label": "Extract",
-                "lifecycle": {"status": "completed"},
-            }
-        ],
-        "list_metadata": {"before": None, "after": None},
-    })
+    client._prepared_request = AsyncMock(
+        return_value={
+            "data": [
+                {
+                    "run_id": "run_123",
+                    "organization_id": "org_123",
+                    "block_id": "extract-1",
+                    "step_id": "extract-1",
+                    "block_type": "extract",
+                    "block_label": "Extract",
+                    "lifecycle": {"status": "completed"},
+                }
+            ],
+            "list_metadata": {"before": None, "after": None},
+        }
+    )
 
     steps = await AsyncWorkflowSteps(client=client).list("run_123")
 
@@ -255,19 +257,21 @@ def test_workflow_steps_get_accepts_partition_artifact() -> None:
 @pytest.mark.asyncio
 async def test_async_workflow_steps_get_handle_outputs_typed() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value={
-        "block_id": "start-json-1",
-        "block_type": "start_json",
-        "block_label": "Start JSON",
-        "lifecycle": {"status": "completed"},
-        "handle_outputs": {
-            "output-json-0": {
-                "type": "json",
-                "data": {"payload": {"ok": True}},
+    client._prepared_request = AsyncMock(
+        return_value={
+            "block_id": "start-json-1",
+            "block_type": "start_json",
+            "block_label": "Start JSON",
+            "lifecycle": {"status": "completed"},
+            "handle_outputs": {
+                "output-json-0": {
+                    "type": "json",
+                    "data": {"payload": {"ok": True}},
+                },
             },
-        },
-        "handle_inputs": {},
-    })
+            "handle_inputs": {},
+        }
+    )
 
     step = await AsyncWorkflowSteps(client=client).get("run_123", "start-json-1")
 

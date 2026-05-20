@@ -1,4 +1,4 @@
-"""Actor-neutral client for the workflow HIL review overlay.
+"""Actor-neutral client for the workflow review overlay.
 
 Drives the review loop served under ``/workflows/reviews``: list the queue,
 fetch an overlay, post new output versions, and submit verdicts.
@@ -143,7 +143,7 @@ class WorkflowReviewsMixin:
 
 
 class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
-    """Workflow HIL review overlay API wrapper for synchronous operations.
+    """Workflow review overlay API wrapper for synchronous operations.
 
     Usage:
     - ``client.workflows.reviews.list()`` for the review queue.
@@ -415,7 +415,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
 
 
 class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
-    """Workflow HIL review overlay API wrapper for asynchronous operations.
+    """Workflow review overlay API wrapper for asynchronous operations.
 
     Usage:
     - ``await client.workflows.reviews.list()`` for the review queue.

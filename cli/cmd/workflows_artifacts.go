@@ -8,20 +8,20 @@ import (
 )
 
 var allowedWorkflowArtifactOperations = map[string]bool{
-	"extraction":             true,
-	"split":                  true,
-	"classification":         true,
-	"parse":                  true,
-	"edit":                   true,
-	"partition":              true,
-	"conditional_evaluation": true,
-	"hil_evaluation":         true,
-	"while_loop_termination": true,
-	"api_call_invocation":    true,
-	"function_invocation":    true,
+	"extraction":                true,
+	"split":                     true,
+	"classification":            true,
+	"parse":                     true,
+	"edit":                      true,
+	"partition":                 true,
+	"conditional_evaluation":    true,
+	"review_trigger_evaluation": true,
+	"while_loop_termination":    true,
+	"api_call_invocation":       true,
+	"function_invocation":       true,
 }
 
-const workflowArtifactOperationValues = "extraction, split, classification, parse, edit, partition, conditional_evaluation, hil_evaluation, while_loop_termination, api_call_invocation, function_invocation"
+const workflowArtifactOperationValues = "extraction, split, classification, parse, edit, partition, conditional_evaluation, review_trigger_evaluation, while_loop_termination, api_call_invocation, function_invocation"
 
 func validateWorkflowArtifactOperation(operation string) error {
 	if operation == "" {

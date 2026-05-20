@@ -197,12 +197,12 @@ type RunLifecycle struct {
 }
 
 type RunTiming struct {
-	CreatedAt                 *time.Time `json:"created_at,omitempty"`
-	StartedAt                 *time.Time `json:"started_at,omitempty"`
-	CompletedAt               *time.Time `json:"completed_at,omitempty"`
-	DurationMs                *int       `json:"duration_ms,omitempty"`
-	HumanWaitingStartedAt     *time.Time `json:"human_waiting_started_at,omitempty"`
-	AccumulatedHumanWaitingMS int        `json:"accumulated_human_waiting_ms,omitempty"`
+	CreatedAt                  *time.Time `json:"created_at,omitempty"`
+	StartedAt                  *time.Time `json:"started_at,omitempty"`
+	CompletedAt                *time.Time `json:"completed_at,omitempty"`
+	DurationMs                 *int       `json:"duration_ms,omitempty"`
+	ReviewWaitingStartedAt     *time.Time `json:"review_waiting_started_at,omitempty"`
+	AccumulatedReviewWaitingMS int        `json:"accumulated_review_waiting_ms,omitempty"`
 }
 
 type WorkflowSnapshotRef struct {
@@ -404,10 +404,9 @@ type CancelWorkflowResponse struct {
 	CancellationStatus string      `json:"cancellation_status"`
 }
 
-// The v1 HIL decision types (HILDecisionResource, SubmitHILDecisionResponse)
-// and the managed-agent review types (AgentHILReview, AgentProposedDecision,
-// AgentEvidenceItem, AgentEvidenceSource) were removed in the hard cutover to
-// the review overlay. See the Review* types below and WorkflowReviewsService.
+// The v1 decision and managed-agent review types were removed in the hard
+// cutover to the review overlay. See the Review* types below and
+// WorkflowReviewsService.
 
 type WorkflowRunExportResponse struct {
 	CSVData string `json:"csv_data"`
@@ -415,7 +414,7 @@ type WorkflowRunExportResponse struct {
 	Columns int    `json:"columns"`
 }
 
-// --- HIL review overlay (workflows.reviews) ----------------------------
+// --- review overlay (workflows.reviews) ----------------------------
 //
 // The review overlay is the versioned sidecar attached to a gated block run:
 // every output version, every actor who touched it, every decision, and an
@@ -473,7 +472,7 @@ type ReviewClaim struct {
 	ExpiresAt time.Time   `json:"expires_at"`
 }
 
-// ReviewOverlay is the full HIL review sidecar for one gated block run.
+// ReviewOverlay is the full review sidecar for one gated block run.
 type ReviewOverlay struct {
 	ID                string                 `json:"_id"`
 	OrganizationID    string                 `json:"organization_id"`

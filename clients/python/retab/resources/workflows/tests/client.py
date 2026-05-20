@@ -71,6 +71,27 @@ def _dump_assertion(
     return AssertionSpec.model_validate(assertion).model_dump(mode="json", exclude_none=True)
 
 
+def _prepare_create_run(
+    workflow_id: str,
+    *,
+    test_id: str | None = None,
+    target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
+    n_consensus: int | None = None,
+) -> PreparedRequest:
+    data: Dict[str, Any] = {}
+    if test_id is not None:
+        data["test_id"] = test_id
+    if target is not None:
+        data["target"] = _dump_target(target)
+    if n_consensus is not None:
+        data["n_consensus"] = n_consensus
+    return PreparedRequest(
+        method="POST",
+        url=f"/workflows/{workflow_id}/tests/runs",
+        data=data,
+    )
+
+
 class WorkflowTestsMixin:
     """Mixin shared by `WorkflowTests` (sync) and `AsyncWorkflowTests` (async)."""
 
@@ -157,17 +178,11 @@ class WorkflowTestsMixin:
         target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
         n_consensus: int | None = None,
     ) -> PreparedRequest:
-        data: Dict[str, Any] = {}
-        if test_id is not None:
-            data["test_id"] = test_id
-        if target is not None:
-            data["target"] = _dump_target(target)
-        if n_consensus is not None:
-            data["n_consensus"] = n_consensus
-        return PreparedRequest(
-            method="POST",
-            url=f"/workflows/{workflow_id}/tests/runs",
-            data=data,
+        return _prepare_create_run(
+            workflow_id,
+            test_id=test_id,
+            target=target,
+            n_consensus=n_consensus,
         )
 
 
@@ -228,8 +243,7 @@ class WorkflowTestRunsMixin:
         target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
         n_consensus: int | None = None,
     ) -> PreparedRequest:
-        return WorkflowTestsMixin.prepare_create_run(
-            self,
+        return _prepare_create_run(
             workflow_id,
             test_id=test_id,
             target=target,

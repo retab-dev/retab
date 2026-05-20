@@ -1,6 +1,6 @@
 ---
 name: retab
-description: Use when building with Retab for document parsing, extraction, splitting, editing, classification, workflow runs, consensus, or human-in-the-loop review. Guides the AI to install Retab tools and read the official docs before implementing.
+description: Use when building with Retab for document parsing, extraction, splitting, editing, classification, workflow runs, consensus, or review. Guides the AI to install Retab tools and read the official docs before implementing.
 ---
 
 # Retab
@@ -11,7 +11,7 @@ Retab supports:
 
 - Six document primitives: `parse`, `extract`, `split`, `edit`, `classify`, and `partition`
 - Workflows: saved multi-step pipelines that can combine primitives, custom logic, branches, loops, API calls, and review gates
-- Human-in-the-loop: workflow runs pause at gated blocks (`config.hil`) and resume after a review overlay decision
+- Review-based routing: workflow runs can pause at review gates and resume after a human decision
 - Consensus: run multiple passes and reconcile results when accuracy matters more than latency
 - SDKs and REST APIs for Python, Node, Go, and direct HTTP usage
 - MCP access so AI agents can inspect and operate Retab through a tool server

@@ -1,6 +1,6 @@
-"""Pydantic models for the workflow HIL review overlay.
+"""Pydantic models for the workflow review overlay.
 
-Mirrors the backend "HIL review overlay" — a versioned sidecar attached to a
+Mirrors the backend "review overlay" — a versioned sidecar attached to a
 gated workflow block run, served under ``/workflows/reviews``. The SDK drives
 the review loop through ``client.workflows.reviews.*``.
 
@@ -163,7 +163,7 @@ class ReviewOverlay(RetabBaseModel):
     block_id: str = Field(..., description="Gated block id.")
     block_run_id: str = Field(..., description="Block run id.")
     block_type: ReviewBlockType = Field(..., description="Type of the gated block.")
-    triggered_by: dict[str, Any] = Field(..., description="Discriminated HIL predicate that opened the gate.")
+    triggered_by: dict[str, Any] = Field(..., description="Discriminated review predicate that opened the gate.")
     status: ReviewStatus = Field(..., description="Overlay lifecycle status.")
     awaiting_since: datetime.datetime = Field(..., description="When the overlay started awaiting review.")
     decided_at: datetime.datetime | None = Field(default=None, description="When a terminal decision landed.")
@@ -200,7 +200,7 @@ class ReviewQueueItem(RetabBaseModel):
     block_id: str = Field(..., description="Gated block id.")
     block_run_id: str = Field(..., description="Block run id.")
     block_type: ReviewBlockType = Field(..., description="Type of the gated block.")
-    triggered_by: dict[str, Any] = Field(..., description="Discriminated HIL predicate that opened the gate.")
+    triggered_by: dict[str, Any] = Field(..., description="Discriminated review predicate that opened the gate.")
     status: ReviewStatus = Field(..., description="Overlay lifecycle status.")
     awaiting_since: datetime.datetime = Field(..., description="When the overlay started awaiting review.")
     decided_at: datetime.datetime | None = Field(default=None, description="When a terminal decision landed.")

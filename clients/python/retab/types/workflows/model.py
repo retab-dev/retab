@@ -26,10 +26,10 @@ from retab.types.mime import FileRef
 #   ``human_review_approved``. They expose a singular
 #   ``artifact: StepArtifactRef | None`` pointer.
 # - ``WorkflowArtifactOperation`` is extended with five new operations:
-#   ``conditional_evaluation``, ``hil_evaluation``, ``while_loop_termination``,
+#   ``conditional_evaluation``, ``review_trigger_evaluation``, ``while_loop_termination``,
 #   ``api_call_invocation``, ``function_invocation``.
 #   Each points at a dedicated backing-collection record:
-#   :class:`ConditionalEvaluation`, :class:`HilEvaluation`,
+#   :class:`ConditionalEvaluation`, :class:`ReviewEvaluation`,
 #   :class:`WhileLoopTermination`, :class:`ApiCallInvocation`,
 #   :class:`FunctionInvocation`.
 #
@@ -84,7 +84,7 @@ WorkflowArtifactOperation = Literal[
     # New persisted-ref operations introduced by the metadata cutover. Each
     # corresponds to a dedicated backing collection (see records below).
     "conditional_evaluation",
-    "hil_evaluation",
+    "review_trigger_evaluation",
     "while_loop_termination",
     "api_call_invocation",
     "function_invocation",
@@ -172,7 +172,7 @@ class CompletedStepLifecycle(RetabBaseModel):
 
 
 class WaitingForHumanStepLifecycle(RetabBaseModel):
-    status: Literal["waiting_for_human"] = "waiting_for_human"
+    status: Literal["awaiting_review"] = "awaiting_review"
 
 
 class ErrorStepLifecycle(RetabBaseModel):
@@ -314,12 +314,12 @@ class ConditionalEvaluation(RetabBaseModel):
     created_at: datetime.datetime = Field(..., description="When the record was created")
 
 
-class HilEvaluation(RetabBaseModel):
-    """Persisted record of an embedded human-review gate evaluation.
+class ReviewEvaluation(RetabBaseModel):
+    """Persisted record of a review block's branch evaluation.
 
     Same evaluation core as :class:`ConditionalEvaluation`, plus human-review
     state. Backing record for :data:`StepArtifactRef` with
-    ``operation == "hil_evaluation"``.
+    ``operation == "review_trigger_evaluation"``.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -455,11 +455,11 @@ class StepStatus(StepCore):
 
     Mirrors the backend ``StepStatus`` document. ``handle_inputs``,
     ``handle_outputs``, and the singular :attr:`artifact` ref are flat,
-    real fields on this model. Branch-evaluation / HIL / while-loop
+    real fields on this model. Branch-evaluation / review / while-loop
     termination state lives on the backing record referenced by
-    ``artifact`` (e.g. :class:`HilEvaluation`), not as flat fields here.
-    The ``"waiting_for_human"`` lifecycle value encodes the awaiting-review
-    signal; the actual review decision is on the ``HilEvaluation``
+    ``artifact`` (e.g. :class:`ReviewEvaluation`), not as flat fields here.
+    The ``"awaiting_review"`` lifecycle value encodes the awaiting-review
+    signal; the actual review decision is on the ``ReviewEvaluation``
     backing record.
     """
 
@@ -569,7 +569,7 @@ class RunningRun(RetabBaseModel):
 
 
 class WaitingForHumanRun(RetabBaseModel):
-    status: Literal["waiting_for_human"] = "waiting_for_human"
+    status: Literal["awaiting_review"] = "awaiting_review"
     waiting_for_block_ids: List[str] = Field(default_factory=list)
 
 
@@ -603,8 +603,9 @@ class RunTiming(RetabBaseModel):
     created_at: datetime.datetime = Field(...)
     started_at: Optional[datetime.datetime] = Field(default=None)
     completed_at: Optional[datetime.datetime] = Field(default=None)
-    human_waiting_started_at: Optional[datetime.datetime] = Field(default=None)
-    accumulated_human_waiting_ms: int = Field(default=0, ge=0)
+    review_waiting_started_at: Optional[datetime.datetime] = Field(default=None)
+    accumulated_review_waiting_ms: int = Field(default=0, ge=0)
+
 
 
 class RunInputs(RetabBaseModel):
@@ -670,7 +671,7 @@ class Workflow(RetabBaseModel):
 # Type aliases
 # ---------------------------------------------------------------------------
 
-WorkflowRunStatus = Literal["pending", "running", "completed", "error", "waiting_for_human", "cancelled"]
+WorkflowRunStatus = Literal["pending", "running", "completed", "error", "awaiting_review", "cancelled"]
 WorkflowRunTriggerType = Literal["manual", "api", "schedule", "webhook", "email", "restart"]
 
 TERMINAL_WORKFLOW_RUN_STATUSES: tuple[str, ...] = ("completed", "error", "cancelled")
@@ -720,9 +721,9 @@ class WorkflowRunStep(StepCore):
 
     Backed by the same flattened backend ``StepStatus`` shape —
     ``handle_inputs``, ``handle_outputs``, and the singular ``artifact``
-    ref are flat fields. Branch-evaluation / HIL / while-loop-termination
+    ref are flat fields. Branch-evaluation / review / while-loop-termination
     state lives on the backing record referenced by ``artifact`` (e.g.
-    :class:`HilEvaluation`).
+    :class:`ReviewEvaluation`).
     """
 
     run_id: str = Field(..., description="Parent workflow run ID")
@@ -758,7 +759,7 @@ class WorkflowRunStep(StepCore):
 
 
 # ---------------------------------------------------------------------------
-# Cancel / Restart / HIL decision response types
+# Cancel / Restart / review decision response types
 # ---------------------------------------------------------------------------
 
 
@@ -780,7 +781,7 @@ class RunCountsResponse(RetabBaseModel):
     running: int = 0
     error: int = 0
     pending: int = 0
-    waiting_for_human: int = 0
+    awaiting_review: int = 0
     cancelled: int = 0
 
 
