@@ -182,6 +182,7 @@ type PartitionCreateRequest struct {
 	Model        string `json:"model"`
 	NConsensus   int    `json:"n_consensus,omitempty"`
 	BustCache    bool   `json:"bust_cache,omitempty"`
+	AllowOverlap bool   `json:"allow_overlap,omitempty"`
 }
 
 func (s *PartitionsService) Create(ctx context.Context, request PartitionCreateRequest, opts ...RequestOption) (*Partition, error) {

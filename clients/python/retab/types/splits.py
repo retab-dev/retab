@@ -14,6 +14,11 @@ from .mime import FileRef, MIMEData
 class Subdocument(RetabBaseModel):
     name: str = Field(..., description="The name of the subdocument")
     description: str = Field(default="", description="The description of the subdocument")
+    partition_key: str | None = Field(default=None, description="The key to partition the subdocument")
+    allow_overlap: bool = Field(
+        default=False,
+        description="When partition_key is set, allow partition chunks to share pages.",
+    )
     allow_multiple_instances: bool = Field(
         default=False,
         description="When true, this subdocument type can appear more than once in the document — the split will identify each distinct instance (runs an extra vision-based refinement pass).",

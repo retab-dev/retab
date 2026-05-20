@@ -11,6 +11,8 @@ import {
 export type SplitSubdocument = {
     name: string;
     description?: string;
+    partition_key?: string | null;
+    allow_overlap?: boolean;
     allow_multiple_instances?: boolean;
 };
 
@@ -56,6 +58,8 @@ export default class APISplits extends CompositionClient {
             subdocuments: params.subdocuments.map((sd) => ({
                 name: sd.name,
                 description: sd.description ?? "",
+                partition_key: sd.partition_key ?? null,
+                allow_overlap: sd.allow_overlap === true,
                 allow_multiple_instances: sd.allow_multiple_instances ?? false,
             })),
             model: params.model,

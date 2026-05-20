@@ -656,12 +656,27 @@ def test_splits_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) 
         result = client.splits.create(
             document=_sample_document(),
             model="retab-small",
-            subdocuments=[{"name": "invoice", "description": "Invoice documents"}],
+            subdocuments=[
+                {
+                    "name": "invoice",
+                    "description": "Invoice documents",
+                    "partition_key": "invoice_number",
+                    "allow_overlap": True,
+                }
+            ],
         )
 
     assert isinstance(result, Split)
     assert result.id == "split_123"
     assert getattr(captured["request"], "url") == "/splits"
+    assert getattr(captured["request"], "data")["subdocuments"] == [
+        {
+            "name": "invoice",
+            "description": "Invoice documents",
+            "partition_key": "invoice_number",
+            "allow_overlap": True,
+        }
+    ]
 
 
 def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -703,6 +718,7 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
             instructions="Split the document into one chunk per invoice number.",
             model="retab-small",
             n_consensus=3,
+            allow_overlap=True,
         )
 
     assert isinstance(result, Partition)
@@ -721,4 +737,5 @@ def test_partitions_create_uses_new_resource_route(monkeypatch: pytest.MonkeyPat
         "instructions": "Split the document into one chunk per invoice number.",
         "model": "retab-small",
         "n_consensus": 3,
+        "allow_overlap": True,
     }

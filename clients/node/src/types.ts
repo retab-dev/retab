@@ -225,6 +225,8 @@ export type Classification = z.infer<typeof ZClassification>;
 export const ZSplitSubdocument = z.object({
   name: z.string(),
   description: z.string().default(''),
+  partition_key: z.string().nullable().optional(),
+  allow_overlap: z.boolean().default(false),
   allow_multiple_instances: z.boolean().default(false),
 });
 export type SplitSubdocument = z.infer<typeof ZSplitSubdocument>;
@@ -297,6 +299,7 @@ export const ZPartition = z
     key: z.string(),
     instructions: z.string().default(''),
     n_consensus: z.number().default(1),
+    allow_overlap: z.boolean().default(false),
     output: z.array(ZPartitionChunk).default([]),
     consensus: ZPartitionConsensus.default({ choices: [] }),
     origin: ZProcessingRequestOrigin.nullable().optional(),

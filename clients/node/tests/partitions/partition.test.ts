@@ -50,6 +50,7 @@ class MockClient extends AbstractClient {
                 key: "invoice_number",
                 instructions: "Group all pages belonging to the same invoice number.",
                 n_consensus: 3,
+                allow_overlap: false,
                 output: [
                     {
                         key: "INV-001",
@@ -90,6 +91,7 @@ describe("Node SDK partitions resource", () => {
             model: "retab-small",
             n_consensus: 3,
             bust_cache: false,
+            allow_overlap: true,
         });
 
         expect(mockClient.requests).toHaveLength(1);
@@ -105,6 +107,7 @@ describe("Node SDK partitions resource", () => {
                 instructions: "Group all pages belonging to the same invoice number.",
                 model: "retab-small",
                 n_consensus: 3,
+                allow_overlap: true,
             },
             params: undefined,
             headers: undefined,
@@ -121,6 +124,7 @@ describe("Node SDK partitions resource", () => {
             key: "invoice_number",
             instructions: "Group all pages belonging to the same invoice number.",
             n_consensus: 3,
+            allow_overlap: false,
             output: [
                 {
                     key: "INV-001",
