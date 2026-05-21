@@ -440,6 +440,9 @@ status, trigger, date, or cursor.`,
   retab workflows tests runs list --workflow-id wf_abc123 --test-id tst_jkl012 --limit 50`,
 	Args: cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := validateWorkflowTestsRunsListFilters(cmd); err != nil {
+			return err
+		}
 		query := url.Values{}
 		for _, name := range []string{"workflow-id", "test-id", "target-block-id", "status", "statuses", "exclude-status", "trigger-type", "trigger-types", "from-date", "to-date", "sort-by", "fields", "before", "after", "order"} {
 			if value, _ := cmd.Flags().GetString(name); value != "" {
@@ -454,6 +457,35 @@ status, trigger, date, or cursor.`,
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+// workflowTestRunStatusValues mirrors `WorkflowTestPublicRunStatus` in
+// `backend/.../tests/models.py`. A workflow-test run can't pause for
+// review, so `awaiting_review` is intentionally absent.
+var allowedWorkflowTestRunStatuses = map[string]bool{
+	"pending":   true,
+	"running":   true,
+	"completed": true,
+	"error":     true,
+	"cancelled": true,
+}
+
+const workflowTestRunStatusValues = "pending, running, completed, error, cancelled"
+
+func validateWorkflowTestsRunsListFilters(cmd *cobra.Command) error {
+	if err := validateEnumFlag(cmd, "status", allowedWorkflowTestRunStatuses, workflowTestRunStatusValues); err != nil {
+		return err
+	}
+	if err := validateEnumFlag(cmd, "exclude-status", allowedWorkflowTestRunStatuses, workflowTestRunStatusValues); err != nil {
+		return err
+	}
+	if err := validateOrderFlag(cmd, "order"); err != nil {
+		return err
+	}
+	if err := validateDateFlag(cmd, "from-date"); err != nil {
+		return err
+	}
+	return validateDateFlag(cmd, "to-date")
 }
 
 var workflowsTestsRunsGetCmd = &cobra.Command{
