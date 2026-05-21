@@ -108,6 +108,21 @@ const workflowRunStatusValues = "pending, running, completed, error, awaiting_re
 const workflowRunTriggerTypeValues = "manual, api, schedule, webhook, email, restart"
 const workflowRunExportSourceValues = "outputs, inputs"
 
+// Step statuses are a superset of run statuses: orchestrator-level
+// ``skipped`` shows up here but not on a run as a whole. Kept aligned
+// with `StepStatusLiteral` in `backend/.../steps/query.py`.
+var allowedWorkflowStepStatuses = map[string]bool{
+	"pending":         true,
+	"running":         true,
+	"completed":       true,
+	"skipped":         true,
+	"error":           true,
+	"awaiting_review": true,
+	"cancelled":       true,
+}
+
+const workflowStepStatusValues = "pending, running, completed, skipped, error, awaiting_review, cancelled"
+
 func validateWorkflowRunsListFilters(cmd *cobra.Command) error {
 	if err := validateEnumFlag(cmd, "status", allowedWorkflowRunStatuses, workflowRunStatusValues); err != nil {
 		return err
@@ -904,6 +919,10 @@ comparison, or experiment analysis.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+
+		if err := validateEnumArrayFlag(cmd, "status", allowedWorkflowStepStatuses, workflowStepStatusValues); err != nil {
+			return err
+		}
 
 		request := retab.StepsQueryRequest{WorkflowID: args[0]}
 		request.BlockID, _ = cmd.Flags().GetString("block-id")
