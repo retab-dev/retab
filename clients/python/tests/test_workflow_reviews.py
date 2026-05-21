@@ -55,8 +55,7 @@ _REVIEW = {
     "iteration_key": None,
     "block_type": "extract",
     "triggered_by": {"kind": "low_confidence", "threshold": 0.8},
-    "awaiting_since": _NOW,
-    "priority": 5,
+    "created_at": _NOW,
     "versions": {
         _VERSION_ID: _OUTPUT_VERSION,
         _CHILD_VERSION_ID: {
@@ -79,8 +78,7 @@ _SUMMARY = {
     "iteration_key": None,
     "block_type": "extract",
     "triggered_by": {"kind": "low_confidence"},
-    "awaiting_since": _NOW,
-    "priority": 5,
+    "created_at": _NOW,
     "seed_version_id": _VERSION_ID,
     "version_count": 2,
     "decision": None,

@@ -1204,7 +1204,7 @@ type ListReviewsParams struct {
 }
 
 // List returns a page of the review queue — block runs awaiting review,
-// hottest first. The response is the standard cursor envelope: inspect
+// oldest-created first. The response is the standard cursor envelope: inspect
 // result.ListMetadata.After to detect truncation and pass it back as the
 // After param on the next call to fetch the following page.
 func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsParams, opts ...RequestOption) (*PaginatedList[ReviewSummary], error) {

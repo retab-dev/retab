@@ -459,8 +459,7 @@ type Review struct {
 	IterationKey      *string                        `json:"iteration_key"`
 	BlockType         string                         `json:"block_type"`
 	TriggeredBy       map[string]any                 `json:"triggered_by"`
-	AwaitingSince     time.Time                      `json:"awaiting_since"`
-	Priority          int                            `json:"priority"`
+	CreatedAt         time.Time                      `json:"created_at"`
 	Versions          map[string]ReviewOutputVersion `json:"versions"`
 	Decision          *ReviewDecisionRecord          `json:"decision"`
 }
@@ -476,8 +475,7 @@ type ReviewSummary struct {
 	IterationKey  *string               `json:"iteration_key"`
 	BlockType     string                `json:"block_type"`
 	TriggeredBy   map[string]any        `json:"triggered_by"`
-	AwaitingSince time.Time             `json:"awaiting_since"`
-	Priority      int                   `json:"priority"`
+	CreatedAt     time.Time             `json:"created_at"`
 	SeedVersionID string                `json:"seed_version_id"`
 	VersionCount  int                   `json:"version_count"`
 	Decision      *ReviewDecisionRecord `json:"decision"`
