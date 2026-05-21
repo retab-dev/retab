@@ -79,7 +79,7 @@ func TestWorkflowReviewsList(t *testing.T) {
 					"priority":            0,
 				},
 			},
-			"has_more": true,
+			"list_metadata": map[string]any{"before": nil, "after": "blockrun_1"},
 		})
 	}))
 	defer server.Close()
@@ -108,8 +108,125 @@ func TestWorkflowReviewsList(t *testing.T) {
 	if strings.Contains(seenQuery, "status=") || strings.Contains(seenQuery, "mine=") {
 		t.Fatalf("query includes removed filters: %q", seenQuery)
 	}
-	if !resp.HasMore || len(resp.Data) != 1 {
+	if len(resp.Data) != 1 {
 		t.Fatalf("resp = %#v", resp)
+	}
+	// The new pagination contract: list_metadata.after carries the cursor
+	// for the next page. has_more is no longer emitted by the backend.
+	if resp.ListMetadata.After != "blockrun_1" {
+		t.Fatalf("ListMetadata.After = %q (want %q)", resp.ListMetadata.After, "blockrun_1")
+	}
+	if resp.ListMetadata.Before != "" {
+		t.Fatalf("ListMetadata.Before = %q (want empty)", resp.ListMetadata.Before)
+	}
+}
+
+// TestWorkflowReviewsListPassesBeforeAndAfterCursors pins that the SDK
+// threads --before / --after into the outbound query.
+func TestWorkflowReviewsListPassesBeforeAndAfterCursors(t *testing.T) {
+	cases := []struct {
+		name   string
+		params ListReviewsParams
+		want   string
+	}{
+		{"after only", ListReviewsParams{After: "blockrun_xyz"}, "after=blockrun_xyz"},
+		{"before only", ListReviewsParams{Before: "blockrun_abc"}, "before=blockrun_abc"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var seenQuery string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				seenQuery = r.URL.RawQuery
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"data":          []any{},
+					"list_metadata": map[string]any{"before": nil, "after": nil},
+				})
+			}))
+			defer server.Close()
+
+			client, err := NewClient("test-key", WithBaseURL(server.URL))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := client.Workflows.Reviews.List(context.Background(), &tc.params); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(seenQuery, tc.want) {
+				t.Fatalf("query %q missing %q", seenQuery, tc.want)
+			}
+		})
+	}
+}
+
+// TestWorkflowReviewsListRejectsBeforeAndAfterTogether pins that the SDK
+// fails early when both cursors are set; no HTTP call is made.
+func TestWorkflowReviewsListRejectsBeforeAndAfterTogether(t *testing.T) {
+	called := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Workflows.Reviews.List(context.Background(), &ListReviewsParams{
+		Before: "blockrun_a", After: "blockrun_b",
+	})
+	if err == nil || !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("expected mutual-exclusion error, got %v", err)
+	}
+	if called {
+		t.Fatalf("HTTP server was called despite mutex violation")
+	}
+}
+
+// TestWorkflowReviewsListDecodesCursorEnvelope pins that the canonical wire
+// shape — populated and null cursors — decodes into PaginationCursor.
+func TestWorkflowReviewsListDecodesCursorEnvelope(t *testing.T) {
+	cases := []struct {
+		name        string
+		body        string
+		wantAfter   string
+		wantBefore  string
+		wantDataLen int
+	}{
+		{
+			name:        "populated after cursor",
+			body:        `{"data":[{"_id":"blockrun_1","workflow_id":"wf_1","workflow_version_id":"wfv_1","workflow_run_id":"run_1","block_id":"blk_1","block_run_id":"blockrun_1","block_type":"extract","triggered_by":{"kind":"any_required_field_null"},"awaiting_since":"2026-05-21T09:00:00Z","priority":0}],"list_metadata":{"before":null,"after":"blockrun_next"}}`,
+			wantAfter:   "blockrun_next",
+			wantDataLen: 1,
+		},
+		{
+			name:        "null cursors",
+			body:        `{"data":[],"list_metadata":{"before":null,"after":null}}`,
+			wantDataLen: 0,
+		},
+		{
+			name:        "populated before cursor",
+			body:        `{"data":[],"list_metadata":{"before":"blockrun_prev","after":null}}`,
+			wantBefore:  "blockrun_prev",
+			wantDataLen: 0,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var resp PaginatedList[ReviewQueueItem]
+			if err := json.Unmarshal([]byte(tc.body), &resp); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			if len(resp.Data) != tc.wantDataLen {
+				t.Fatalf("data len = %d (want %d): %#v", len(resp.Data), tc.wantDataLen, resp.Data)
+			}
+			if resp.ListMetadata.After != tc.wantAfter {
+				t.Fatalf("after = %q (want %q)", resp.ListMetadata.After, tc.wantAfter)
+			}
+			if resp.ListMetadata.Before != tc.wantBefore {
+				t.Fatalf("before = %q (want %q)", resp.ListMetadata.Before, tc.wantBefore)
+			}
+		})
 	}
 }
 
@@ -118,7 +235,7 @@ func TestWorkflowReviewsListOmitsDecisionWhenEmpty(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}, "has_more": false})
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}, "list_metadata": map[string]any{"before": nil, "after": nil}})
 	}))
 	defer server.Close()
 

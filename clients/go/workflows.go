@@ -1189,24 +1189,36 @@ type ReviewWaitForParams struct {
 // Decision selects which slice of the queue to return: "none" (the server
 // default) lists overlays still awaiting review; the empty string omits the
 // filter so all overlays — open and decided — are returned.
+//
+// Before and After are opaque cursor strings copied verbatim from a previous
+// response's list_metadata. Setting both at the same time is a client error.
 type ListReviewsParams struct {
 	WorkflowID string // restrict to one workflow
 	Limit      int    // page size, 1-200
 	Decision   string // "none" for the open queue, "" to include decided overlays
+	Before     string // cursor for the previous page (from list_metadata.before)
+	After      string // cursor for the next page (from list_metadata.after)
 }
 
 // List returns a page of the review queue — block runs awaiting review,
-// hottest first. Inspect HasMore on the response to detect truncation.
-func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsParams, opts ...RequestOption) (*ReviewQueueResponse, error) {
+// hottest first. The response is the standard cursor envelope: inspect
+// result.ListMetadata.After to detect truncation and pass it back as the
+// After param on the next call to fetch the following page.
+func (s *WorkflowReviewsService) List(ctx context.Context, params *ListReviewsParams, opts ...RequestOption) (*PaginatedList[ReviewQueueItem], error) {
 	query := url.Values{}
 	if params != nil {
+		if params.Before != "" && params.After != "" {
+			return nil, fmt.Errorf("retab: Before and After are mutually exclusive")
+		}
 		addQuery(query, "workflow_id", params.WorkflowID)
 		addQuery(query, "decision", params.Decision)
+		addQuery(query, "before", params.Before)
+		addQuery(query, "after", params.After)
 		if params.Limit > 0 {
 			query.Set("limit", fmt.Sprintf("%d", params.Limit))
 		}
 	}
-	var result ReviewQueueResponse
+	var result PaginatedList[ReviewQueueItem]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/reviews", query, nil, &result, opts...)
 	if err != nil {
 		return nil, err
