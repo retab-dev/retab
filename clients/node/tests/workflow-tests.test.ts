@@ -129,9 +129,10 @@ describe('workflows.tests.create()', () => {
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/tests?workflow_id=wf_abc123',
+      url: '/workflows/tests',
       method: 'POST',
       body: {
+        workflow_id: 'wf_abc123',
         target: { type: 'block', block_id: 'block_extract' },
         source: { type: 'manual', handle_inputs: {} },
         assertion: {
@@ -177,10 +178,10 @@ describe('workflows.tests CRUD URL shapes', () => {
     const mockClient = new MockClient(TEST_RESPONSE);
     const tests = new APIWorkflowTests(mockClient);
 
-    await tests.get({ workflowId: 'wf_abc123', testId: 'wfnodetest_abc' });
+    await tests.get({ testId: 'wfnodetest_abc' });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123',
+      url: '/workflows/tests/wfnodetest_abc',
       method: 'GET',
     });
   });
@@ -231,12 +232,11 @@ describe('workflows.tests CRUD URL shapes', () => {
     const tests = new APIWorkflowTests(mockClient);
 
     await tests.delete({
-      workflowId: 'wf_abc123',
       testId: 'wfnodetest_abc',
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123',
+      url: '/workflows/tests/wfnodetest_abc',
       method: 'DELETE',
     });
   });
@@ -251,13 +251,12 @@ describe('workflows.tests.update()', () => {
     const tests = new APIWorkflowTests(mockClient);
 
     await tests.update({
-      workflowId: 'wf_abc123',
       testId: 'wfnodetest_abc',
       name: 'renamed',
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123',
+      url: '/workflows/tests/wfnodetest_abc',
       method: 'PATCH',
       body: { name: 'renamed' },
     });
@@ -270,7 +269,6 @@ describe('workflows.tests.update()', () => {
     const tests = new APIWorkflowTests(mockClient);
 
     await tests.update({
-      workflowId: 'wf_abc123',
       testId: 'wfnodetest_abc',
       assertion: {
         target: { output_handle_id: 'output-json-0', path: 'vendor.name' },
@@ -297,9 +295,9 @@ describe('workflows.tests.runs.create()', () => {
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/tests/runs?workflow_id=wf_abc123',
+      url: '/workflows/tests/runs',
       method: 'POST',
-      body: { test_id: 'wfnodetest_abc' },
+      body: { workflow_id: 'wf_abc123', test_id: 'wfnodetest_abc' },
     });
     expect(response.lifecycle.status).toBe('pending');
     expect(response.id).toBe('wftestrun_q1z2');
@@ -317,20 +315,21 @@ describe('workflows.tests.runs.create()', () => {
 
     expect(mockClient.lastFetchParams).toMatchObject({
       body: {
+        workflow_id: 'wf_abc123',
         target: { type: 'block', block_id: 'block_extract' },
         n_consensus: 5,
       },
     });
   });
 
-  test('runs.create({}) posts an empty body to run every test in the workflow', async () => {
+  test('runs.create({}) posts workflow_id to run every test in the workflow', async () => {
     const mockClient = new MockClient({ ...RUN_RESPONSE, lifecycle: PENDING });
     const tests = new APIWorkflowTests(mockClient);
 
     await tests.runs.create({ workflowId: 'wf_abc123' });
 
     const body = (mockClient.lastFetchParams as { body: Record<string, unknown> }).body;
-    expect(body).toEqual({});
+    expect(body).toEqual({ workflow_id: 'wf_abc123' });
   });
 });
 
@@ -409,22 +408,6 @@ describe('workflows.tests.runs', () => {
     });
     expect(result.data[0]?.test_id).toBe('wfnodetest_abc');
     expect(result.data[0]?.outputs).toEqual({ 'output-json-0': { total: 1234.56 } });
-  });
-
-  test('runs.results.get() uses test_id as the child key', async () => {
-    const mockClient = new MockClient(RESULT_RESPONSE);
-    const tests = new APIWorkflowTests(mockClient);
-
-    const result = await tests.runs.results.get({
-      runId: 'wftestrun_q1z2',
-      testId: 'wfnodetest_abc',
-    });
-
-    expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/tests/runs/wftestrun_q1z2/results/wfnodetest_abc',
-      method: 'GET',
-    });
-    expect(result.test_id).toBe('wfnodetest_abc');
   });
 
   test('legacy execute and scoped run aliases are not exposed', () => {

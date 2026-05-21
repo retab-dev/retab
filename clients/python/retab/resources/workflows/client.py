@@ -160,7 +160,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
             description: Workflow description
 
         Returns:
-            Workflow: The created workflow (unpublished, with a default start-document block)
+            Workflow: The created workflow (unpublished, with a default start_document block)
         """
         request = self.prepare_create(name=name, description=description)
         response = self._client._prepared_request(request)

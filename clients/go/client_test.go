@@ -143,7 +143,7 @@ func TestWorkflowsPrepareDiagnoseGraphKeepsInMemoryGraphSurface(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	blocks := []map[string]any{{"id": "start-1", "type": "start-document"}}
+	blocks := []map[string]any{{"id": "start-1", "type": "start_document"}}
 	edges := []map[string]any{{"id": "edge-1", "source": "start-1", "target": "extract-1"}}
 
 	prepared := client.Workflows.PrepareDiagnoseGraph("wf_123", blocks, edges, false)
@@ -192,7 +192,7 @@ func TestWorkflowsDiagnoseGraphDecodesWarningOnlyIssues(t *testing.T) {
 	}
 
 	diagnosis, err := client.Workflows.DiagnoseGraph(context.Background(), "wf_123", DiagnoseWorkflowGraphRequest{
-		Blocks:      []map[string]any{{"id": "start-1", "type": "start-document"}},
+		Blocks:      []map[string]any{{"id": "start-1", "type": "start_document"}},
 		Edges:       []map[string]any{},
 		RePropagate: true,
 	})
@@ -229,7 +229,7 @@ func TestWorkflowsDiagnosePostsDirectly(t *testing.T) {
 			"stats": map[string]any{
 				"total_blocks":          1,
 				"total_edges":           0,
-				"block_types":           map[string]int{"start-document": 1},
+				"block_types":           map[string]int{"start_document": 1},
 				"start_document_blocks": 1,
 			},
 		})
@@ -300,18 +300,13 @@ func TestWorkflowSpecsRoutesMatchPythonAndNode(t *testing.T) {
 	}
 }
 
-func TestWorkflowArtifactsGetListAndPrepare(t *testing.T) {
+func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 	var requests []string
 	var listQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/artifacts/extraction/ext_123":
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"operation": "extraction",
-				"id":        "ext_123",
-			})
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/artifacts":
 			listQuery = r.URL.RawQuery
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -332,10 +327,6 @@ func TestWorkflowArtifactsGetListAndPrepare(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	preparedGet := client.Workflows.Artifacts.PrepareGet("extraction", "ext_123")
-	if preparedGet.URL != "/workflows/artifacts/extraction/ext_123" || preparedGet.Method != http.MethodGet {
-		t.Fatalf("prepared artifact get = %#v", preparedGet)
-	}
 	preparedList := client.Workflows.Artifacts.PrepareList(ListWorkflowArtifactsParams{
 		RunID:     "run_123",
 		Operation: "extraction",
@@ -343,17 +334,6 @@ func TestWorkflowArtifactsGetListAndPrepare(t *testing.T) {
 	})
 	if preparedList.URL != "/workflows/artifacts" || preparedList.Method != http.MethodGet || preparedList.Params.Get("run_id") != "run_123" {
 		t.Fatalf("prepared artifact list = %#v", preparedList)
-	}
-
-	artifact, err := client.Workflows.Artifacts.GetRef(context.Background(), StepArtifactRef{
-		Operation: "extraction",
-		ID:        "ext_123",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if (*artifact)["id"] != "ext_123" {
-		t.Fatalf("artifact = %#v", artifact)
 	}
 
 	artifacts, err := client.Workflows.Artifacts.List(context.Background(), ListWorkflowArtifactsParams{
@@ -373,7 +353,7 @@ func TestWorkflowArtifactsGetListAndPrepare(t *testing.T) {
 	if !strings.Contains(listQuery, "run_id=run_123") || !strings.Contains(listQuery, "operation=extraction") || !strings.Contains(listQuery, "block_id=extract-1") {
 		t.Fatalf("list query = %s", listQuery)
 	}
-	if strings.Join(requests, ",") != "GET /workflows/artifacts/extraction/ext_123,GET /workflows/artifacts" {
+	if strings.Join(requests, ",") != "GET /workflows/artifacts" {
 		t.Fatalf("requests = %#v", requests)
 	}
 }
@@ -396,18 +376,6 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data":          []map[string]any{},
 				"list_metadata": map[string]any{"before": nil, "after": nil},
-			})
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/runs/exprun_123/results/doc_123":
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id":            "exprun_123_doc_123",
-				"experiment_id": "exp_123",
-				"run_id":        "exprun_123",
-				"document_id":   "doc_123",
-				"lifecycle":     map[string]any{"status": "completed"},
-				"timing":        map[string]any{},
-				"block_kind":    "extract",
-				"handle_inputs": map[string]any{},
-				"attempt":       1,
 			})
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/experiments/runs/exprun_123/cancel":
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -441,13 +409,6 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	}
 	if len(results.Data) != 0 || rawQuery != "limit=25" {
 		t.Fatalf("results = %#v rawQuery = %q", results, rawQuery)
-	}
-	documentResult, err := client.Workflows.Experiments.Runs.Results.Get(context.Background(), "exprun_123", "doc_123")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if documentResult.DocumentID != "doc_123" {
-		t.Fatalf("documentResult = %#v", documentResult)
 	}
 	cancelled, err := client.Workflows.Experiments.Runs.Cancel(context.Background(), "exprun_123")
 	if err != nil {
@@ -922,7 +883,7 @@ func TestWorkflowRunStepsListNormalizesNullHandles(t *testing.T) {
 					"organization_id": "org_123",
 					"block_id": "start-1",
 					"step_id": "start-1",
-					"block_type": "start-document",
+					"block_type": "start_document",
 					"block_label": "Start",
 					"lifecycle": {"status": "completed"},
 					"handle_inputs": null,

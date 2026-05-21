@@ -59,7 +59,7 @@ export default class APIWorkflowRuns extends CompositionClient {
    * ```typescript
    * const run = await client.workflows.runs.create({
    *     workflowId: "wf_abc123",
-   *     documents: { "start-document-block-1": "./invoice.pdf" },
+   *     documents: { "start_document-block-1": "./invoice.pdf" },
    * });
    * ```
    */

@@ -51,50 +51,6 @@ describe('workflow steps client', () => {
     expect('steps' in workflowsClient.runs).toBe(false);
   });
 
-  test('artifacts.get() accepts a step artifact ref', async () => {
-    class ArtifactMockClient extends AbstractClient {
-      public lastFetchParams: Record<string, unknown> | null = null;
-
-      protected async _fetch(params: {
-        url: string;
-        method: string;
-        params?: Record<string, unknown>;
-        headers?: Record<string, unknown>;
-        body?: Record<string, unknown>;
-      }): Promise<Response> {
-        this.lastFetchParams = params;
-        return new Response(
-          JSON.stringify({
-            operation: 'review_trigger_evaluation',
-            id: 'heval_123',
-            requires_human_review: true,
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-    }
-
-    const mockClient = new ArtifactMockClient();
-    const artifactsClient = new APIWorkflowArtifacts(mockClient);
-    const artifact = await artifactsClient.get({
-      operation: 'review_trigger_evaluation',
-      id: 'heval_123',
-    });
-
-    expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/artifacts/review_trigger_evaluation/heval_123',
-      method: 'GET',
-      params: undefined,
-      headers: undefined,
-    });
-    expect(artifact.operation).toBe('review_trigger_evaluation');
-    expect(artifact.id).toBe('heval_123');
-    expect(artifact.requires_human_review).toBe(true);
-  });
-
   test('artifacts.list() uses run scoped artifact route and returns paginated envelope', async () => {
     class ArtifactListMockClient extends AbstractClient {
       public lastFetchParams: Record<string, unknown> | null = null;

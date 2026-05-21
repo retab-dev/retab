@@ -62,7 +62,7 @@ const retab = new Retab({
 
 const run = await retab.workflows.runs.create({
   workflowId: "wf_abc123",
-  documents: { "start-document-node-1": "invoice.pdf" },
+  documents: { "start_document-node-1": "invoice.pdf" },
 });
 
 const currentRun = await retab.workflows.runs.get(run.id);
@@ -75,9 +75,6 @@ if (currentRun.lifecycle.status === "cancelled") {
 
 const steps = await retab.workflows.steps.list(currentRun.id);
 const extractStep = await retab.workflows.steps.get(currentRun.id, "extract-1");
-const artifact = extractStep.artifact
-  ? await retab.workflows.artifacts.get(extractStep.artifact)
-  : null;
 const runArtifacts = await retab.workflows.artifacts.list({
   runId: currentRun.id,
 });
@@ -104,7 +101,7 @@ Declarative specs use `apiVersion: workflows.retab.com/v1alpha2` and explicit ed
 ```yaml
 edges:
   - from:
-      block: start-document-node
+      block: start_document-node
       handle: output-file-0
     to:
       block: extract-node

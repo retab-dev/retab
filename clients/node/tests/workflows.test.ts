@@ -369,7 +369,7 @@ describe('workflows client', () => {
     );
 
     const diagnosis = await workflowsClient.diagnoseGraph('wf_1', {
-      blocks: [{ id: 'start-1', type: 'start-document' }],
+      blocks: [{ id: 'start-1', type: 'start_document' }],
       edges: [],
     });
 
@@ -386,7 +386,7 @@ describe('workflows client', () => {
       stats: {
         total_blocks: 1,
         total_edges: 0,
-        block_types: { 'start-document': 1 },
+        block_types: { start_document: 1 },
         start_document_blocks: 1,
       },
     });
@@ -408,18 +408,6 @@ describe('workflows client', () => {
   test('artifacts prepare helpers expose the Python prepared-request surface', () => {
     const workflowsClient = new APIWorkflows(new MockClient({}));
 
-    expect(
-      workflowsClient.artifacts.prepare_get('review_trigger_evaluation', 'artifact_1')
-    ).toEqual({
-      url: '/workflows/artifacts/review_trigger_evaluation/artifact_1',
-      method: 'GET',
-    });
-    expect(workflowsClient.artifacts.prepare_get({ operation: 'extraction', id: 'ext_1' })).toEqual(
-      {
-        url: '/workflows/artifacts/extraction/ext_1',
-        method: 'GET',
-      }
-    );
     expect(workflowsClient.artifacts.prepare_list('run_1', 'extraction', 'extract-1')).toEqual({
       url: '/workflows/artifacts',
       method: 'GET',
@@ -449,7 +437,7 @@ describe('workflows client', () => {
     expect('runBatch' in workflowsClient.experiments).toBe(false);
     expect(typeof workflowsClient.experiments.runs.get).toBe('function');
     expect(typeof workflowsClient.experiments.runs.cancel).toBe('function');
-    expect(typeof workflowsClient.experiments.runs.results.get).toBe('function');
+    expect('get' in workflowsClient.experiments.runs.results).toBe(false);
     expect(typeof workflowsClient.experiments.runs.metrics.get).toBe('function');
     expect('get_content' in workflowsClient.experiments.runs).toBe(false);
     expect('getContent' in workflowsClient.experiments.runs).toBe(false);

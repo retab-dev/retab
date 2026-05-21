@@ -298,13 +298,6 @@ type ListWorkflowArtifactsParams struct {
 	BlockID   string
 }
 
-func (s *WorkflowArtifactsService) PrepareGet(operation string, artifactID string) PreparedRequest {
-	return PreparedRequest{
-		URL:    "/workflows/artifacts/" + url.PathEscape(operation) + "/" + url.PathEscape(artifactID),
-		Method: http.MethodGet,
-	}
-}
-
 func (s *WorkflowArtifactsService) PrepareList(params ListWorkflowArtifactsParams) PreparedRequest {
 	query := url.Values{}
 	addQuery(query, "run_id", params.RunID)
@@ -315,23 +308,6 @@ func (s *WorkflowArtifactsService) PrepareList(params ListWorkflowArtifactsParam
 		Method: http.MethodGet,
 		Params: query,
 	}
-}
-
-func (s *WorkflowArtifactsService) Get(ctx context.Context, operation string, artifactID string, opts ...RequestOption) (*WorkflowArtifact, error) {
-	if operation == "" {
-		return nil, fmt.Errorf("retab: operation is required")
-	}
-	if artifactID == "" {
-		return nil, fmt.Errorf("retab: artifactID is required")
-	}
-	var result WorkflowArtifact
-	prepared := s.PrepareGet(operation, artifactID)
-	err := s.client.do(ctx, prepared.Method, prepared.URL, nil, nil, &result, opts...)
-	return &result, err
-}
-
-func (s *WorkflowArtifactsService) GetRef(ctx context.Context, ref StepArtifactRef, opts ...RequestOption) (*WorkflowArtifact, error) {
-	return s.Get(ctx, ref.Operation, ref.ID, opts...)
 }
 
 // List returns workflow artifacts produced by a single run.
@@ -414,6 +390,16 @@ type WorkflowBlockUpdateRequest struct {
 	Height    *float64       `json:"height,omitempty"`
 	Config    map[string]any `json:"config,omitempty"`
 	ParentID  *string        `json:"parent_id,omitempty"`
+	// ConfigMode controls how the server folds Config into the existing
+	// block config when both are sent. "merge" (default) does an RFC-7396
+	// JSON Merge Patch — dicts recurse, arrays/scalars replace, null deletes
+	// the key. "replace" treats Config as the full new typed config (with
+	// top-level nulls pruned). Leave empty to keep the server default.
+	//
+	// CLI mapping: --merge-config-file sets "merge", --config-file sets
+	// "replace". Pre-config_mode servers ignore the field and keep the
+	// legacy shallow-merge behavior.
+	ConfigMode string `json:"config_mode,omitempty"`
 }
 
 // List returns the canonical paginated envelope
@@ -450,15 +436,12 @@ func (s *WorkflowBlocksService) List(ctx context.Context, workflowID string, opt
 	return &result, nil
 }
 
-func (s *WorkflowBlocksService) Get(ctx context.Context, workflowID string, blockID string, opts ...RequestOption) (*WorkflowBlock, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowBlocksService) Get(ctx context.Context, blockID string, opts ...RequestOption) (*WorkflowBlock, error) {
 	if blockID == "" {
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodGet, "/workflows/blocks/"+url.PathEscape(blockID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, &block, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/blocks/"+url.PathEscape(blockID), nil, nil, &block, opts...)
 	return &block, err
 }
 
@@ -466,31 +449,27 @@ func (s *WorkflowBlocksService) Create(ctx context.Context, workflowID string, r
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
+	body := resourceFromJSON(request)
+	body["workflow_id"] = workflowID
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodPost, "/workflows/blocks?workflow_id="+url.QueryEscape(workflowID), nil, request, &block, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/blocks", nil, body, &block, opts...)
 	return &block, err
 }
 
-func (s *WorkflowBlocksService) Update(ctx context.Context, workflowID string, blockID string, request WorkflowBlockUpdateRequest, opts ...RequestOption) (*WorkflowBlock, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowBlocksService) Update(ctx context.Context, blockID string, request WorkflowBlockUpdateRequest, opts ...RequestOption) (*WorkflowBlock, error) {
 	if blockID == "" {
 		return nil, fmt.Errorf("retab: blockID is required")
 	}
 	var block WorkflowBlock
-	err := s.client.do(ctx, http.MethodPatch, "/workflows/blocks/"+url.PathEscape(blockID)+"?workflow_id="+url.QueryEscape(workflowID), nil, request, &block, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/workflows/blocks/"+url.PathEscape(blockID), nil, request, &block, opts...)
 	return &block, err
 }
 
-func (s *WorkflowBlocksService) Delete(ctx context.Context, workflowID string, blockID string, opts ...RequestOption) error {
-	if workflowID == "" {
-		return fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowBlocksService) Delete(ctx context.Context, blockID string, opts ...RequestOption) error {
 	if blockID == "" {
 		return fmt.Errorf("retab: blockID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/blocks/"+url.PathEscape(blockID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/workflows/blocks/"+url.PathEscape(blockID), nil, nil, nil, opts...)
 }
 
 type WorkflowEdgesService struct {
@@ -531,15 +510,12 @@ func (s *WorkflowEdgesService) List(ctx context.Context, workflowID string, para
 	return &result, nil
 }
 
-func (s *WorkflowEdgesService) Get(ctx context.Context, workflowID string, edgeID string, opts ...RequestOption) (*WorkflowEdgeDoc, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowEdgesService) Get(ctx context.Context, edgeID string, opts ...RequestOption) (*WorkflowEdgeDoc, error) {
 	if edgeID == "" {
 		return nil, fmt.Errorf("retab: edgeID is required")
 	}
 	var edge WorkflowEdgeDoc
-	err := s.client.do(ctx, http.MethodGet, "/workflows/edges/"+url.PathEscape(edgeID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, &edge, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/edges/"+url.PathEscape(edgeID), nil, nil, &edge, opts...)
 	return &edge, err
 }
 
@@ -547,19 +523,18 @@ func (s *WorkflowEdgesService) Create(ctx context.Context, workflowID string, re
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
+	body := resourceFromJSON(request)
+	body["workflow_id"] = workflowID
 	var edge WorkflowEdgeDoc
-	err := s.client.do(ctx, http.MethodPost, "/workflows/edges?workflow_id="+url.QueryEscape(workflowID), nil, request, &edge, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/edges", nil, body, &edge, opts...)
 	return &edge, err
 }
 
-func (s *WorkflowEdgesService) Delete(ctx context.Context, workflowID string, edgeID string, opts ...RequestOption) error {
-	if workflowID == "" {
-		return fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowEdgesService) Delete(ctx context.Context, edgeID string, opts ...RequestOption) error {
 	if edgeID == "" {
 		return fmt.Errorf("retab: edgeID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/edges/"+url.PathEscape(edgeID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/workflows/edges/"+url.PathEscape(edgeID), nil, nil, nil, opts...)
 }
 
 type WorkflowRunsService struct {
@@ -1209,20 +1184,18 @@ func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestC
 	}
 	body := resourceFromJSON(request)
 	delete(body, "WorkflowID")
+	body["workflow_id"] = request.WorkflowID
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodPost, "/workflows/tests?workflow_id="+url.QueryEscape(request.WorkflowID), nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/tests", nil, body, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowTestsService) Get(ctx context.Context, workflowID string, testID string, opts ...RequestOption) (*WorkflowTest, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowTestsService) Get(ctx context.Context, testID string, opts ...RequestOption) (*WorkflowTest, error) {
 	if testID == "" {
 		return nil, fmt.Errorf("retab: testID is required")
 	}
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/"+url.PathEscape(testID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, &result, opts...)
+	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/"+url.PathEscape(testID), nil, nil, &result, opts...)
 	return &result, err
 }
 
@@ -1242,26 +1215,20 @@ func (s *WorkflowTestsService) List(ctx context.Context, request ListWorkflowTes
 	return &result, err
 }
 
-func (s *WorkflowTestsService) Update(ctx context.Context, workflowID string, testID string, request WorkflowTestUpdateRequest, opts ...RequestOption) (*WorkflowTest, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowTestsService) Update(ctx context.Context, testID string, request WorkflowTestUpdateRequest, opts ...RequestOption) (*WorkflowTest, error) {
 	if testID == "" {
 		return nil, fmt.Errorf("retab: testID is required")
 	}
 	var result WorkflowTest
-	err := s.client.do(ctx, http.MethodPatch, "/workflows/tests/"+url.PathEscape(testID)+"?workflow_id="+url.QueryEscape(workflowID), nil, request, &result, opts...)
+	err := s.client.do(ctx, http.MethodPatch, "/workflows/tests/"+url.PathEscape(testID), nil, request, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowTestsService) Delete(ctx context.Context, workflowID string, testID string, opts ...RequestOption) error {
-	if workflowID == "" {
-		return fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowTestsService) Delete(ctx context.Context, testID string, opts ...RequestOption) error {
 	if testID == "" {
 		return fmt.Errorf("retab: testID is required")
 	}
-	return s.client.do(ctx, http.MethodDelete, "/workflows/tests/"+url.PathEscape(testID)+"?workflow_id="+url.QueryEscape(workflowID), nil, nil, nil, opts...)
+	return s.client.do(ctx, http.MethodDelete, "/workflows/tests/"+url.PathEscape(testID), nil, nil, nil, opts...)
 }
 
 func (s *WorkflowTestRunsService) Create(ctx context.Context, request CreateWorkflowTestRunRequest, opts ...RequestOption) (*WorkflowTestRun, error) {
@@ -1270,8 +1237,9 @@ func (s *WorkflowTestRunsService) Create(ctx context.Context, request CreateWork
 	}
 	body := resourceFromJSON(request)
 	delete(body, "WorkflowID")
+	body["workflow_id"] = request.WorkflowID
 	var result WorkflowTestRun
-	err := s.client.do(ctx, http.MethodPost, "/workflows/tests/runs?workflow_id="+url.QueryEscape(request.WorkflowID), nil, body, &result, opts...)
+	err := s.client.do(ctx, http.MethodPost, "/workflows/tests/runs", nil, body, &result, opts...)
 	return &result, err
 }
 
@@ -1336,18 +1304,6 @@ func (s *WorkflowTestRunResultsService) List(ctx context.Context, runID string, 
 	return &result, err
 }
 
-func (s *WorkflowTestRunResultsService) Get(ctx context.Context, runID string, testID string, opts ...RequestOption) (*WorkflowTestRunRecord, error) {
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if testID == "" {
-		return nil, fmt.Errorf("retab: testID is required")
-	}
-	var result WorkflowTestRunRecord
-	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(runID)+"/results/"+url.PathEscape(testID), nil, nil, &result, opts...)
-	return &result, err
-}
-
 func addQuery(values url.Values, key string, value string) {
 	if value != "" {
 		values.Set(key, value)
@@ -1362,7 +1318,7 @@ func addCSVQuery(values url.Values, key string, value []string) {
 
 // ---------------------------------------------------------------------------
 // Workflow experiments (consensus evaluation)
-// Mirrors /v1/workflows/experiments?workflow_id={workflow_id} — see the Python SDK at
+// Mirrors /v1/workflows/experiments — see the Python SDK at
 // retab/resources/workflows/experiments/client.py for the canonical surface.
 // ---------------------------------------------------------------------------
 
@@ -1552,8 +1508,9 @@ func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateE
 		return nil, fmt.Errorf("retab: name is required")
 	}
 	body := map[string]any{
-		"block_id": request.BlockID,
-		"name":     request.Name,
+		"workflow_id": request.WorkflowID,
+		"block_id":    request.BlockID,
+		"name":        request.Name,
 	}
 	if request.NConsensus != 0 {
 		body["n_consensus"] = request.NConsensus
@@ -1566,7 +1523,7 @@ func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateE
 	}
 	var result ExperimentResponse
 	err := s.client.do(ctx, http.MethodPost,
-		"/workflows/experiments?workflow_id="+url.QueryEscape(request.WorkflowID),
+		"/workflows/experiments",
 		nil, body, &result, opts...)
 	return &result, err
 }
@@ -1586,25 +1543,19 @@ func (s *WorkflowExperimentsService) List(ctx context.Context, workflowID string
 }
 
 // Get fetches one experiment by ID.
-func (s *WorkflowExperimentsService) Get(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) (*ExperimentResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowExperimentsService) Get(ctx context.Context, experimentID string, opts ...RequestOption) (*ExperimentResponse, error) {
 	if experimentID == "" {
 		return nil, fmt.Errorf("retab: experimentID is required")
 	}
 	var result ExperimentResponse
 	err := s.client.do(ctx, http.MethodGet,
-		"/workflows/experiments/"+url.PathEscape(experimentID)+"?workflow_id="+url.QueryEscape(workflowID),
+		"/workflows/experiments/"+url.PathEscape(experimentID),
 		nil, nil, &result, opts...)
 	return &result, err
 }
 
 // Update patches the experiment. Only fields you set are forwarded.
-func (s *WorkflowExperimentsService) Update(ctx context.Context, workflowID, experimentID string, request UpdateExperimentRequest, opts ...RequestOption) (*ExperimentResponse, error) {
-	if workflowID == "" {
-		return nil, fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowExperimentsService) Update(ctx context.Context, experimentID string, request UpdateExperimentRequest, opts ...RequestOption) (*ExperimentResponse, error) {
 	if experimentID == "" {
 		return nil, fmt.Errorf("retab: experimentID is required")
 	}
@@ -1623,21 +1574,18 @@ func (s *WorkflowExperimentsService) Update(ctx context.Context, workflowID, exp
 	}
 	var result ExperimentResponse
 	err := s.client.do(ctx, http.MethodPatch,
-		"/workflows/experiments/"+url.PathEscape(experimentID)+"?workflow_id="+url.QueryEscape(workflowID),
+		"/workflows/experiments/"+url.PathEscape(experimentID),
 		nil, body, &result, opts...)
 	return &result, err
 }
 
 // Delete removes the experiment and its runs.
-func (s *WorkflowExperimentsService) Delete(ctx context.Context, workflowID, experimentID string, opts ...RequestOption) error {
-	if workflowID == "" {
-		return fmt.Errorf("retab: workflowID is required")
-	}
+func (s *WorkflowExperimentsService) Delete(ctx context.Context, experimentID string, opts ...RequestOption) error {
 	if experimentID == "" {
 		return fmt.Errorf("retab: experimentID is required")
 	}
 	return s.client.do(ctx, http.MethodDelete,
-		"/workflows/experiments/"+url.PathEscape(experimentID)+"?workflow_id="+url.QueryEscape(workflowID),
+		"/workflows/experiments/"+url.PathEscape(experimentID),
 		nil, nil, nil, opts...)
 }
 
@@ -1719,18 +1667,6 @@ func (s *WorkflowExperimentRunResultsService) List(ctx context.Context, runID st
 	query.Set("limit", fmt.Sprintf("%d", limit))
 	var result PaginatedList[ExperimentResult]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/results", query, nil, &result, opts...)
-	return &result, err
-}
-
-func (s *WorkflowExperimentRunResultsService) Get(ctx context.Context, runID string, documentID string, opts ...RequestOption) (*ExperimentResult, error) {
-	if runID == "" {
-		return nil, fmt.Errorf("retab: runID is required")
-	}
-	if documentID == "" {
-		return nil, fmt.Errorf("retab: documentID is required")
-	}
-	var result ExperimentResult
-	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/results/"+url.PathEscape(documentID), nil, nil, &result, opts...)
 	return &result, err
 }
 

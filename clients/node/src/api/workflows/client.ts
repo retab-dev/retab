@@ -113,7 +113,7 @@ export default class APIWorkflows extends CompositionClient {
    *
    * @param name - Workflow name (default: "Untitled Workflow")
    * @param description - Workflow description (default: "")
-   * @returns The created workflow (unpublished, with a default start-document block)
+   * @returns The created workflow (unpublished, with a default start_document block)
    *
    * @example
    * ```typescript

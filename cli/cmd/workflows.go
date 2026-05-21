@@ -12,7 +12,7 @@ import (
 )
 
 // warnIfEmptyWorkflowOnPublish prints a stderr warning when the workflow has
-// 0 or 1 blocks and the single block (if any) is the auto-added `start-document`
+// 0 or 1 blocks and the single block (if any) is the auto-added `start_document`
 // placeholder. A freshly-`workflows create`d draft is exactly that shape —
 // publishing it produces a version that does nothing. The user might still
 // want to (CI stub, scaffolding), so the warning never blocks; --force on
@@ -30,14 +30,14 @@ func warnIfEmptyWorkflowOnPublish(ctx context.Context, client *retab.Client, wor
 	if !isEffectivelyEmptyDraft(blocks.Data) {
 		return
 	}
-	fmt.Fprintln(w, "warning: workflow has only a start-document block — publishing an empty workflow.")
+	fmt.Fprintln(w, "warning: workflow has only a start_document block — publishing an empty workflow.")
 	fmt.Fprintln(w, "warning: add blocks with `retab workflows blocks create` before publishing.")
 }
 
 // isEffectivelyEmptyDraft returns true for the two empty-ish shapes that
 // produce a no-op published version: a fully empty block list (shouldn't
 // happen via the UI but is possible via the API), and the canonical
-// freshly-created-workflow shape of exactly one `start-document` block.
+// freshly-created-workflow shape of exactly one `start_document` block.
 func isEffectivelyEmptyDraft(blocks []retab.WorkflowBlock) bool {
 	switch len(blocks) {
 	case 0:
@@ -50,7 +50,7 @@ func isEffectivelyEmptyDraft(blocks []retab.WorkflowBlock) bool {
 }
 
 func isStartDocumentBlock(block retab.WorkflowBlock) bool {
-	return block.Type == "start-document" || block.Type == "start"
+	return block.Type == "start_document" || block.Type == "start"
 }
 
 func workflowGraphObjects(body map[string]any, key string) ([]map[string]any, error) {
@@ -272,7 +272,7 @@ var workflowsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a workflow",
 	Long: `Scaffold a new draft workflow. Fresh drafts include the default
-start-document block; add processing blocks (` + "`workflows blocks create`" + `) and
+start_document block; add processing blocks (` + "`workflows blocks create`" + `) and
 wire them with edges (` + "`workflows edges create`" + `) to make the workflow
 functional.`,
 	Example: `  # Create a draft workflow
@@ -430,7 +430,7 @@ Subsequent ` + "`workflows runs create`" + ` calls without an explicit
 The draft remains editable after publishing; iterate freely, then publish
 again to cut a new version.
 
-By default, publishing a draft that contains only the auto-added ` + "`start-document`" + `
+By default, publishing a draft that contains only the auto-added ` + "`start_document`" + `
 block (i.e. an effectively empty workflow) prints a warning to stderr but
 proceeds — the publish itself succeeds. Pass ` + "`--force`" + ` to skip
 the warning.`,
@@ -532,7 +532,7 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 func init() {
 	workflowsListCmd.Flags().String("before", "", "workflow id: return items before this id")
 	workflowsListCmd.Flags().String("after", "", "workflow id: return items after this id")
-	workflowsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items to return (1-100)")
+	workflowsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "updated_at"), "sort-by", "sort field: updated_at")
 	workflowsListCmd.Flags().String("fields", "", "comma-separated field list to return")

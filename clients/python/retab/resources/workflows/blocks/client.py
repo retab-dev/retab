@@ -15,9 +15,9 @@ class WorkflowBlocksMixin:
         """Prepare a request to list all blocks for a workflow."""
         return PreparedRequest(method="GET", url=f"/workflows/blocks?workflow_id={workflow_id}")
 
-    def prepare_get(self, workflow_id: str, block_id: str) -> PreparedRequest:
+    def prepare_get(self, block_id: str) -> PreparedRequest:
         """Prepare a request to get a single block."""
-        return PreparedRequest(method="GET", url=f"/workflows/blocks/{block_id}?workflow_id={workflow_id}")
+        return PreparedRequest(method="GET", url=f"/workflows/blocks/{block_id}")
 
     def prepare_create(
         self,
@@ -26,20 +26,20 @@ class WorkflowBlocksMixin:
     ) -> PreparedRequest:
         """Prepare a request to create a new block."""
         data = request.model_dump(exclude_none=True)
-        return PreparedRequest(method="POST", url=f"/workflows/blocks?workflow_id={workflow_id}", data=data)
+        data["workflow_id"] = workflow_id
+        return PreparedRequest(method="POST", url="/workflows/blocks", data=data)
 
     def prepare_update(
         self,
-        workflow_id: str,
         request: WorkflowBlockUpdateRequest,
     ) -> PreparedRequest:
         """Prepare a request to partially update a block."""
         data = request.model_dump(exclude_none=True, exclude={"block_id"})
-        return PreparedRequest(method="PATCH", url=f"/workflows/blocks/{request.block_id}?workflow_id={workflow_id}", data=data)
+        return PreparedRequest(method="PATCH", url=f"/workflows/blocks/{request.block_id}", data=data)
 
-    def prepare_delete(self, workflow_id: str, block_id: str) -> PreparedRequest:
+    def prepare_delete(self, block_id: str) -> PreparedRequest:
         """Prepare a request to delete a block."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/blocks/{block_id}?workflow_id={workflow_id}")
+        return PreparedRequest(method="DELETE", url=f"/workflows/blocks/{block_id}")
 
 
 class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
@@ -109,9 +109,9 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
         result.data = [WorkflowBlock.model_validate(item) for item in result.data]
         return result
 
-    def get(self, workflow_id: str, block_id: str) -> WorkflowBlock:
+    def get(self, block_id: str) -> WorkflowBlock:
         """Get a single block by ID."""
-        request = self.prepare_get(workflow_id, block_id)
+        request = self.prepare_get(block_id)
         response = self._client._prepared_request(request)
         return WorkflowBlock.model_validate(response)
 
@@ -148,7 +148,6 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
 
     def update(
         self,
-        workflow_id: str,
         block_id: str | None = None,
         label: str | None = None,
         position_x: float | None = None,
@@ -171,13 +170,13 @@ class WorkflowBlocks(SyncAPIResource, WorkflowBlocksMixin):
             config=config,
             parent_id=parent_id,
         )
-        prepared_request = self.prepare_update(workflow_id, update_request)
+        prepared_request = self.prepare_update(update_request)
         response = self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
-    def delete(self, workflow_id: str, block_id: str) -> None:
+    def delete(self, block_id: str) -> None:
         """Delete a block."""
-        request = self.prepare_delete(workflow_id, block_id)
+        request = self.prepare_delete(block_id)
         self._client._prepared_request(request)
 
 
@@ -192,9 +191,9 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
         result.data = [WorkflowBlock.model_validate(item) for item in result.data]
         return result
 
-    async def get(self, workflow_id: str, block_id: str) -> WorkflowBlock:
+    async def get(self, block_id: str) -> WorkflowBlock:
         """Get a single block by ID."""
-        request = self.prepare_get(workflow_id, block_id)
+        request = self.prepare_get(block_id)
         response = await self._client._prepared_request(request)
         return WorkflowBlock.model_validate(response)
 
@@ -231,7 +230,6 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
 
     async def update(
         self,
-        workflow_id: str,
         block_id: str | None = None,
         label: str | None = None,
         position_x: float | None = None,
@@ -254,13 +252,13 @@ class AsyncWorkflowBlocks(AsyncAPIResource, WorkflowBlocksMixin):
             config=config,
             parent_id=parent_id,
         )
-        prepared_request = self.prepare_update(workflow_id, update_request)
+        prepared_request = self.prepare_update(update_request)
         response = await self._client._prepared_request(prepared_request)
         return WorkflowBlock.model_validate(response)
 
-    async def delete(self, workflow_id: str, block_id: str) -> None:
+    async def delete(self, block_id: str) -> None:
         """Delete a block."""
-        request = self.prepare_delete(workflow_id, block_id)
+        request = self.prepare_delete(block_id)
         await self._client._prepared_request(request)
 
     _coerce_create_request = WorkflowBlocks._coerce_create_request

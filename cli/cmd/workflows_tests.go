@@ -248,13 +248,13 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 }
 
 var workflowsTestsGetCmd = &cobra.Command{
-	Use:   "get <workflow-id> <test-id>",
+	Use:   "get <test-id>",
 	Short: "Get a test",
 	Long: `Fetch a test's definition: target block, source input, assertion
 output, name, timestamps.`,
 	Example: `  # Inspect a test
-  retab workflows tests get wf_abc123 tst_jkl012`,
-	Args: cobra.ExactArgs(2),
+  retab workflows tests get tst_jkl012`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -262,7 +262,7 @@ output, name, timestamps.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Tests.Get(ctx, args[0], args[1])
+		result, err := client.Workflows.Tests.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -301,20 +301,20 @@ particular block.`,
 }
 
 var workflowsTestsUpdateCmd = &cobra.Command{
-	Use:   "update <workflow-id> <test-id>",
+	Use:   "update <test-id>",
 	Short: "Update a test",
 	Long: `Re-pin a test's expected output or source input. Use this when
 a deliberate schema or prompt change makes the old assertion stale — the
 intent is to ratify the new output as the new baseline, not to silence
 flaky runs.`,
 	Example: `  # Refresh the assertion after a deliberate schema change
-  retab workflows tests update wf_abc123 tst_jkl012 \
+  retab workflows tests update tst_jkl012 \
     --assertion-file ./new-assertion.json
 
   # Rename a test
-  retab workflows tests update wf_abc123 tst_jkl012 \
+  retab workflows tests update tst_jkl012 \
     --name "Invoice 17 baseline (v2 schema)"`,
-	Args: cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
@@ -350,7 +350,7 @@ flaky runs.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Tests.Update(ctx, args[0], args[1], req)
+		result, err := client.Workflows.Tests.Update(ctx, args[0], req)
 		if err != nil {
 			return err
 		}
@@ -359,12 +359,12 @@ flaky runs.`,
 }
 
 var workflowsTestsDeleteCmd = &cobra.Command{
-	Use:   "delete <workflow-id> <test-id>",
+	Use:   "delete <test-id>",
 	Short: "Delete a test",
 	Long:  `Permanently delete a regression test and its run history.`,
 	Example: `  # Drop a stale test
-  retab workflows tests delete wf_abc123 tst_jkl012`,
-	Args: cobra.ExactArgs(2),
+  retab workflows tests delete tst_jkl012`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -372,10 +372,10 @@ var workflowsTestsDeleteCmd = &cobra.Command{
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Tests.Delete(ctx, args[0], args[1]); err != nil {
+		if err := client.Workflows.Tests.Delete(ctx, args[0]); err != nil {
 			return err
 		}
-		confirmDeleted("test", args[1])
+		confirmDeleted("test", args[0])
 		return nil
 	}),
 }
@@ -397,10 +397,7 @@ result records.`,
   retab workflows tests runs results list wftestrun_mno345
 
   # Recent runs for one test
-  retab workflows tests runs list --workflow-id wf_abc123 --test-id tst_jkl012
-
-  # Full child result record for one test
-  retab workflows tests runs results get wftestrun_mno345 tst_jkl012`,
+  retab workflows tests runs list --workflow-id wf_abc123 --test-id tst_jkl012`,
 }
 
 var workflowsTestsRunsCreateCmd = &cobra.Command{
@@ -425,7 +422,8 @@ var workflowsTestsRunsCreateCmd = &cobra.Command{
 			}
 			body["target"] = target
 		}
-		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/"+url.PathEscape(args[0])+"/tests/runs", nil, body)
+		body["workflow_id"] = args[0]
+		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/tests/runs", nil, body)
 		if err != nil {
 			return err
 		}
@@ -508,19 +506,6 @@ var workflowsTestsRunsResultsListCmd = &cobra.Command{
 	}),
 }
 
-var workflowsTestsRunsResultsGetCmd = &cobra.Command{
-	Use:   "get <run-id> <test-id>",
-	Short: "Get one test result from a workflow-test run",
-	Args:  cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/tests/runs/"+url.PathEscape(args[0])+"/results/"+url.PathEscape(args[1]), nil, nil)
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
 func init() {
 	workflowsTestsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsTestsCreateCmd.Flags().String("name", "", "test name")
@@ -532,13 +517,13 @@ func init() {
 	_ = workflowsTestsCreateCmd.Flags().MarkHidden("workflow-id")
 
 	workflowsTestsListCmd.Flags().String("target-block-id", "", "filter by target block id")
-	workflowsTestsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 50)")
+	workflowsTestsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 50)")
 
 	workflowsTestsUpdateCmd.Flags().String("name", "", "new test name")
 	workflowsTestsUpdateCmd.Flags().String("assertion-file", "", "JSON file with new assertion (or - for stdin)")
 	workflowsTestsUpdateCmd.Flags().String("source-file", "", "JSON file with new source (or - for stdin)")
 
-	workflowsTestsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsTestsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsTestsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
 	workflowsTestsRunsListCmd.Flags().String("test-id", "", "filter by test id")
 	workflowsTestsRunsListCmd.Flags().String("target-block-id", "", "filter by target block id")
@@ -557,9 +542,9 @@ func init() {
 	workflowsTestsRunsCreateCmd.Flags().String("test-id", "", "single test to run")
 	workflowsTestsRunsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")
 	workflowsTestsRunsCreateCmd.Flags().String("target-file", "", "JSON file with target (or - for stdin)")
-	workflowsTestsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsTestsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 
-	workflowsTestsRunsResultsCmd.AddCommand(workflowsTestsRunsResultsListCmd, workflowsTestsRunsResultsGetCmd)
+	workflowsTestsRunsResultsCmd.AddCommand(workflowsTestsRunsResultsListCmd)
 	workflowsTestsRunsCmd.AddCommand(workflowsTestsRunsCreateCmd, workflowsTestsRunsListCmd, workflowsTestsRunsGetCmd, workflowsTestsRunsCancelCmd, workflowsTestsRunsResultsCmd)
 	workflowsTestsCmd.AddCommand(workflowsTestsCreateCmd, workflowsTestsGetCmd, workflowsTestsListCmd, workflowsTestsUpdateCmd, workflowsTestsDeleteCmd, workflowsTestsRunsCmd)
 	workflowsCmd.AddCommand(workflowsTestsCmd)

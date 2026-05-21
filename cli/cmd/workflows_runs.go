@@ -10,6 +10,7 @@ import (
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // parseDocumentArgs merges the new `--document` flag with its deprecated
@@ -189,7 +190,7 @@ to decide it. Use ` + "`reviews versions create`" + ` to create a corrected outp
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
-	Example: `  # Start a run by uploading a document into the start-document block
+	Example: `  # Start a run by uploading a document into the start_document block
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf
 
@@ -235,7 +236,7 @@ version with ` + "`--version`" + `. Inspect the resulting run with
 The legacy ` + "`--document-file BLOCK=PATH`" + ` spelling is still
 accepted as a deprecated alias for ` + "`--document`" + ` and will be
 removed in a future release.`,
-	Example: `  # Upload a local file into the start-document block
+	Example: `  # Upload a local file into the start_document block
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf
 
@@ -456,7 +457,7 @@ func resolveWorkflowRunDocumentAliases(
 		return documents, nil
 	}
 	if len(startDocumentBlocks) > 1 {
-		return nil, fmt.Errorf("--document start=... is ambiguous: workflow has %d start-document blocks; use the concrete block id", len(startDocumentBlocks))
+		return nil, fmt.Errorf("--document start=... is ambiguous: workflow has %d start_document blocks; use the concrete block id", len(startDocumentBlocks))
 	}
 	resolved := make(map[string]any, len(documents))
 	for key, value := range documents {
@@ -667,6 +668,21 @@ make the cancel idempotent if you may retry the request.`,
 		if err != nil {
 			return err
 		}
+		// The server returns 200 even when the cancel signal hasn't been
+		// fully delivered yet (Temporal may be backed up; the engine flag
+		// stays at ``cancel_confirmation_pending``). Surface that
+		// non-finalized state to stderr so a user piping the response
+		// into a script can spot it. The JSON on stdout still carries
+		// the full ``cancellation_status`` field for programmatic
+		// consumers.
+		if result != nil && result.CancellationStatus != "" && result.CancellationStatus != "cancelled" {
+			fmt.Fprintf(
+				os.Stderr,
+				"note: cancellation_status=%q — the cancel request was accepted but the run has not yet reached a terminal state. Poll `retab workflows runs get %s` until lifecycle.status is one of cancelled / completed / error.\n",
+				result.CancellationStatus,
+				args[0],
+			)
+		}
 		return printResult(cmd, result)
 	}),
 }
@@ -760,6 +776,26 @@ pin column order.`,
 		result, err := client.Workflows.Runs.Export(ctx, req)
 		if err != nil {
 			return err
+		}
+		// The export endpoint wraps the CSV bytes in a JSON envelope
+		// (``{"csv_data": "...", "rows": N, "columns": M}``). For
+		// interactive / non-JSON output, dump the raw CSV directly so
+		// the user can pipe straight into a file or another tool
+		// (``... > out.csv``). JSON output keeps the full envelope for
+		// programmatic consumers that need the row / column counts.
+		raw, _ := cmd.Flags().GetBool("raw")
+		var outFormat string
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			outFormat = f.Value.String()
+		}
+		if raw || outFormat == "table" || (outFormat == "" && term.IsTerminal(int(os.Stdout.Fd()))) {
+			if result != nil {
+				_, err := os.Stdout.WriteString(result.CSVData)
+				if err == nil && !strings.HasSuffix(result.CSVData, "\n") {
+					_, err = os.Stdout.WriteString("\n")
+				}
+				return err
+			}
 		}
 		return printResult(cmd, result)
 	}),
@@ -912,7 +948,7 @@ func init() {
 	workflowsRunsListCmd.Flags().StringArray("fields", nil, "include only these fields (repeatable)")
 	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id")
 	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id")
-	workflowsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items to return (1-100)")
+	workflowsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "min-cost", "min cost")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "max-cost", "max cost")
@@ -933,6 +969,7 @@ func init() {
 	workflowsRunsExportCmd.Flags().Var(&dateFlagValue{}, "to-date", "to YYYY-MM-DD date")
 	workflowsRunsExportCmd.Flags().StringArray("trigger-types", nil, "trigger types (repeatable)")
 	workflowsRunsExportCmd.Flags().StringArray("preferred-column", nil, "preferred CSV column (repeatable)")
+	workflowsRunsExportCmd.Flags().Bool("raw", false, "write raw CSV to stdout (default for TTY); JSON envelope is used for non-TTY unless --raw or --output table")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("workflow-id")
 	_ = workflowsRunsExportCmd.MarkFlagRequired("block-id")
 

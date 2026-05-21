@@ -58,13 +58,9 @@ export default class APIWorkflowEdges extends CompositionClient {
   /**
    * Get a single edge by ID.
    */
-  async get(
-    workflowId: string,
-    edgeId: string,
-    options?: RequestOptions
-  ): Promise<WorkflowEdgeDoc> {
+  async get(edgeId: string, options?: RequestOptions): Promise<WorkflowEdgeDoc> {
     return this._fetchJson(ZWorkflowEdgeDoc, {
-      url: `/workflows/edges/${edgeId}?workflow_id=${workflowId}`,
+      url: `/workflows/edges/${edgeId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -91,9 +87,10 @@ export default class APIWorkflowEdges extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowEdgeDoc> {
     return this._fetchJson(ZWorkflowEdgeDoc, {
-      url: `/workflows/edges?workflow_id=${workflowId}`,
+      url: '/workflows/edges',
       method: 'POST',
       body: {
+        workflow_id: workflowId,
         ...serializeEdgeCreateRequest(request),
         ...((options?.body as Record<string, unknown>) || {}),
       },
@@ -105,9 +102,9 @@ export default class APIWorkflowEdges extends CompositionClient {
   /**
    * Delete an edge.
    */
-  async delete(workflowId: string, edgeId: string, options?: RequestOptions): Promise<void> {
+  async delete(edgeId: string, options?: RequestOptions): Promise<void> {
     return this._fetchJson({
-      url: `/workflows/edges/${edgeId}?workflow_id=${workflowId}`,
+      url: `/workflows/edges/${edgeId}`,
       method: 'DELETE',
       params: options?.params,
       headers: options?.headers,

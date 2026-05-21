@@ -17,10 +17,10 @@ A block is one processing step — ` + "`extract`" + `, ` + "`split`" + `,
 ` + "`api_call`" + `, ` + "`function`" + `, etc. Each block has a typed input,
 typed output, and a JSON ` + "`config`" + ` blob shaped by its type.
 
-The workhorse here is ` + "`update`" + ` — once a block is on the graph, tune
-its config with ` + "`workflows blocks update --config-file ./cfg.json`" + `
-or deep-merge review config with ` + "`--merge-config-file`" + ` rather than
-deleting and re-creating.`,
+The workhorse here is ` + "`update`" + `. Once a block is on the graph,
+swap its full config with ` + "`workflows blocks update --config-file ./cfg.json`" + `
+(REPLACE) or patch a slice with ` + "`--merge-config-file ./patch.json`" + `
+(deep merge, RFC 7396) rather than deleting and re-creating.`,
 	Example: `  # List blocks
   retab workflows blocks list wf_abc123
 
@@ -28,7 +28,7 @@ deleting and re-creating.`,
   retab workflows blocks create wf_abc123 --block-file ./extract.json
 
   # Tune just the config of an existing block
-  retab workflows blocks update wf_abc123 blk_def456 \
+  retab workflows blocks update blk_def456 \
     --config-file ./new-config.json`,
 }
 
@@ -130,17 +130,17 @@ label, position, and config.`,
 }
 
 var workflowsBlocksGetCmd = &cobra.Command{
-	Use:   "get <workflow-id> <block-id>",
+	Use:   "get <block-id>",
 	Short: "Get a workflow block",
 	Long: `Fetch a single block's full definition: type, label, position,
 parent group, and the typed config blob.`,
 	Example: `  # Inspect a block
-  retab workflows blocks get wf_abc123 blk_def456
+  retab workflows blocks get blk_def456
 
   # Save a block's config for offline editing
-  retab workflows blocks get wf_abc123 blk_def456 \
+  retab workflows blocks get blk_def456 \
     | jq '.config' > cfg.json`,
-	Args: cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -148,7 +148,7 @@ parent group, and the typed config blob.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Blocks.Get(ctx, args[0], args[1])
+		result, err := client.Workflows.Blocks.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -238,33 +238,40 @@ Review is not a standalone block type.`,
 }
 
 var workflowsBlocksUpdateCmd = &cobra.Command{
-	Use:   "update <workflow-id> <block-id>",
+	Use:   "update <block-id>",
 	Short: "Update a workflow block",
-	Long: `Tune an existing block in place. The most common use is swapping
-the typed config blob (` + "`--config-file`" + `) to adjust the prompt,
-schema, model, or thresholds without re-creating the block — your
-upstream/downstream wiring is preserved.
+	Long: `Tune an existing block in place. The two config flags map to
+explicit server-side modes:
 
-To add or change only review, deep-merge a small patch with
-` + "`--merge-config-file`" + `, for example
-` + "`{\"review\":{\"predicate\":{\"kind\":\"always\"}}}`" + `. Use ` + "`null`" + `
-as the review value to remove review from the block. Use ` + "`--config-file`" + `
-only when replacing the whole typed config.
+` + "`--config-file`" + ` REPLACES the typed config — the file is treated
+as the full new config and any existing key not in the file is dropped.
+Use this for a clean swap (new prompt, new schema, etc.).
 
-Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
-` + "`parent-id`" + `) only affect the visual editor.`,
+` + "`--merge-config-file`" + ` DEEP-MERGES a patch into the existing
+config (RFC 7396 JSON Merge Patch). Dicts recurse, arrays/scalars replace,
+` + "`null`" + ` deletes the key. Use this when you only want to touch a
+slice of the config, for example adding review:
+
+  printf '{"review":{"predicate":{"kind":"always"}}}' |
+    retab workflows blocks update BLK --merge-config-file -
+
+Pass ` + "`{\"review\":null}`" + ` to remove review without touching anything else.
+
+The flags are mutually exclusive. Layout fields (` + "`position-*`" + `,
+` + "`width`" + `, ` + "`height`" + `, ` + "`parent-id`" + `) only affect
+the visual editor.`,
 	Example: `  # Swap the config blob
-  retab workflows blocks update wf_abc123 blk_def456 \
+  retab workflows blocks update blk_def456 \
     --config-file ./new-config.json
 
   # Add review to an existing block
   printf '{"review":{"predicate":{"kind":"always"}}}' |
-    retab workflows blocks update wf_abc123 blk_def456 --merge-config-file -
+    retab workflows blocks update blk_def456 --merge-config-file -
 
   # Rename a block's label
-  retab workflows blocks update wf_abc123 blk_def456 \
+  retab workflows blocks update blk_def456 \
     --label "Extract line items"`,
-	Args: cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
@@ -313,6 +320,11 @@ Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
 				return fmt.Errorf("--config-file: %w", err)
 			}
 			req.Config = cfg
+			// Tell the server this is a full replacement, not a merge.
+			// Without this, the route keeps any existing keys that aren't
+			// in cfg (e.g. ``review``), which silently defeats
+			// ``--config-file``'s documented "replace" semantic.
+			req.ConfigMode = "replace"
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -328,13 +340,17 @@ Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
 			if err := rejectLegacyReviewConfig(patch); err != nil {
 				return fmt.Errorf("--merge-config-file: %w", err)
 			}
-			existing, err := client.Workflows.Blocks.Get(ctx, args[0], args[1])
-			if err != nil {
-				return err
-			}
-			req.Config = mergeWorkflowBlockConfig(existing.Config, patch)
+			// Send the raw patch and let the server deep-merge it. The
+			// route now implements RFC 7396 (dicts recurse, arrays/scalars
+			// replace, null deletes the key), which is what the help text
+			// has always claimed. Client-side pre-merging would (a) need
+			// its own null-as-delete pass to stay consistent and (b)
+			// double-merge against pre-config_mode servers in subtle ways
+			// — easier to make the server authoritative.
+			req.Config = patch
+			req.ConfigMode = "merge"
 		}
-		result, err := client.Workflows.Blocks.Update(ctx, args[0], args[1], req)
+		result, err := client.Workflows.Blocks.Update(ctx, args[0], req)
 		if err != nil {
 			return err
 		}
@@ -343,14 +359,14 @@ Layout fields (` + "`position-*`" + `, ` + "`width`" + `, ` + "`height`" + `,
 }
 
 var workflowsBlocksDeleteCmd = &cobra.Command{
-	Use:   "delete <workflow-id> <block-id>",
+	Use:   "delete <block-id>",
 	Short: "Delete a workflow block",
 	Long: `Remove a block from the draft graph. Edges that referenced this
 block are also deleted. Past runs that used this block remain intact —
 deletion only affects the draft.`,
 	Example: `  # Remove a block
-  retab workflows blocks delete wf_abc123 blk_def456`,
-	Args: cobra.ExactArgs(2),
+  retab workflows blocks delete blk_def456`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -358,10 +374,10 @@ deletion only affects the draft.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Blocks.Delete(ctx, args[0], args[1]); err != nil {
+		if err := client.Workflows.Blocks.Delete(ctx, args[0]); err != nil {
 			return err
 		}
-		confirmDeleted("block", args[1])
+		confirmDeleted("block", args[0])
 		return nil
 	}),
 }
@@ -375,8 +391,8 @@ func init() {
 	workflowsBlocksUpdateCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "width", "update width")
 	workflowsBlocksUpdateCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "height", "update height")
 	workflowsBlocksUpdateCmd.Flags().String("parent-id", "", "update parent id")
-	workflowsBlocksUpdateCmd.Flags().String("config-file", "", "JSON file with new config (or - for stdin)")
-	workflowsBlocksUpdateCmd.Flags().String("merge-config-file", "", "JSON file to deep-merge into the existing config (or - for stdin)")
+	workflowsBlocksUpdateCmd.Flags().String("config-file", "", "JSON file to use as the full new config — REPLACES the existing config (or - for stdin)")
+	workflowsBlocksUpdateCmd.Flags().String("merge-config-file", "", "JSON file to deep-merge into the existing config; nulls delete keys (RFC 7396) (or - for stdin)")
 
 	workflowsBlocksCmd.AddCommand(workflowsBlocksListCmd, workflowsBlocksGetCmd, workflowsBlocksCreateCmd, workflowsBlocksUpdateCmd, workflowsBlocksDeleteCmd)
 	workflowsCmd.AddCommand(workflowsBlocksCmd)
