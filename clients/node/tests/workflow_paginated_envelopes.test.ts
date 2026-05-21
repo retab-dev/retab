@@ -1,23 +1,19 @@
 import { describe, expect, test } from 'bun:test';
 
 import { AbstractClient } from '../src/client';
-import APIWorkflows from '../src/api/workflows/client';
 import APIWorkflowBlocks from '../src/api/workflows/blocks/client';
 import APIWorkflowEdges from '../src/api/workflows/edges/client';
 import APIWorkflowArtifacts from '../src/api/workflows/artifacts/client';
-import APIWorkflowRunSteps from '../src/api/workflows/runs/steps/client';
+import APIWorkflowSteps from '../src/api/workflows/steps/client';
 
 // Regression tests pinning the canonical
 // `{ data, list_metadata: { before: null, after: null } }` envelope on the
-// seven workflow GRAPH list endpoints converted from bare arrays.
+// four workflow GRAPH list endpoints converted from bare arrays.
 //
 //   GET /v1/workflows/blocks?workflow_id={wf}                                     -> PaginatedList[WorkflowBlock]
-//   GET /v1/workflows/blocks/{id}/config-history?workflow_id={wf}                 -> PaginatedList[BlockConfigVersion]
 //   GET /v1/workflows/edges?workflow_id={wf}                                      -> PaginatedList[WorkflowEdgeDoc]
 //   GET /v1/workflows/artifacts                                       -> PaginatedList[WorkflowArtifact]
-//   GET /v1/workflows/snapshots?workflow_id={wf}                                  -> PaginatedList[WorkflowSnapshot]
 //   GET /v1/workflows/steps?run_id={run}                              -> PaginatedList[WorkflowRunStep]
-//   GET /v1/workflows/steps/{block}/simulations?run_id={run}          -> PaginatedList[BlockSimulation]
 
 class EnvelopeClient extends AbstractClient {
   public lastFetchParams: Record<string, unknown> | null = null;
@@ -65,53 +61,6 @@ describe('workflow graph list endpoints return canonical paginated envelope', ()
     expect(result.list_metadata).toEqual({ before: null, after: null });
   });
 
-  test('blocks.configHistory()', async () => {
-    const client = new EnvelopeClient(
-      envelope({
-        config_fingerprint: 'fp_1',
-        block_type: 'extract',
-        block_label: 'Extract',
-        first_seen_at: '2026-01-01T00:00:00Z',
-        last_seen_at: '2026-01-02T00:00:00Z',
-        snapshot_versions: [1, 2],
-        run_count: 7,
-        is_current: true,
-      })
-    );
-    const blocks = new APIWorkflowBlocks(client);
-    const result = await blocks.configHistory('wf_aaa', 'extract-1');
-
-    expect((client.lastFetchParams as { url: string }).url).toBe(
-      '/workflows/blocks/extract-1/config-history?workflow_id=wf_aaa'
-    );
-    expect(result.data).toHaveLength(1);
-    expect(result.list_metadata).toEqual({ before: null, after: null });
-  });
-
-  test('blocks.listSimulations()', async () => {
-    const client = new EnvelopeClient(
-      envelope({
-        id: 'sim_1',
-        workflow_id: 'wf_aaa',
-        run_id: 'run_aaa',
-        block_id: 'extract-1',
-        block_type: 'extract',
-        success: true,
-      })
-    );
-    const blocks = new APIWorkflowBlocks(client);
-    const result = await blocks.listSimulations('run_aaa', 'extract-1', { limit: 5 });
-
-    expect((client.lastFetchParams as { url: string }).url).toBe(
-      '/workflows/steps/extract-1/simulations?run_id=run_aaa'
-    );
-    expect((client.lastFetchParams as { params: Record<string, unknown> }).params).toEqual({
-      limit: 5,
-    });
-    expect(result.data).toHaveLength(1);
-    expect(result.list_metadata).toEqual({ before: null, after: null });
-  });
-
   test('edges.list()', async () => {
     const client = new EnvelopeClient(
       envelope({
@@ -142,7 +91,7 @@ describe('workflow graph list endpoints return canonical paginated envelope', ()
     expect(result.list_metadata).toEqual({ before: null, after: null });
   });
 
-  test('runs.steps.list()', async () => {
+  test('steps.list()', async () => {
     const client = new EnvelopeClient(
       envelope({
         run_id: 'run_aaa',
@@ -154,34 +103,10 @@ describe('workflow graph list endpoints return canonical paginated envelope', ()
         lifecycle: { status: 'completed' },
       })
     );
-    const steps = new APIWorkflowRunSteps(client);
+    const steps = new APIWorkflowSteps(client);
     const result = await steps.list('run_aaa');
 
     expect((client.lastFetchParams as { url: string }).url).toBe('/workflows/steps?run_id=run_aaa');
-    expect(result.data).toHaveLength(1);
-    expect(result.list_metadata).toEqual({ before: null, after: null });
-  });
-
-  test('listSnapshots()', async () => {
-    const client = new EnvelopeClient(
-      envelope({
-        id: 'wfsn_1',
-        snapshot_id: 'snap_1',
-        workflow_id: 'wf_aaa',
-        version: 3,
-        description: 'third release',
-        block_count: 4,
-        edge_count: 3,
-        published_at: '2026-04-01T12:00:00Z',
-      })
-    );
-    const workflows = new APIWorkflows(client);
-    const result = await workflows.listSnapshots('wf_aaa', { limit: 25 });
-
-    expect((client.lastFetchParams as { url: string }).url).toBe('/workflows/wf_aaa/snapshots');
-    expect((client.lastFetchParams as { params: Record<string, unknown> }).params).toEqual({
-      limit: 25,
-    });
     expect(result.data).toHaveLength(1);
     expect(result.list_metadata).toEqual({ before: null, after: null });
   });

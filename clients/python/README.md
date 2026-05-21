@@ -89,7 +89,7 @@ run = client.workflows.runs.create_and_wait(
     documents={"start-document-node": "invoice.pdf"},
 )
 
-step = client.workflows.runs.steps.get(run.id, "review-node")
+step = client.workflows.steps.get(run.id, "review-node")
 if step.artifact:
     artifact = client.workflows.artifacts.get(step.artifact)
     print(artifact.operation)

@@ -27,7 +27,6 @@ from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
 from ....types.workflows.experiments import (
-    EligibleBlockListResponse,
     ExperimentDocumentCaptureRequest,
     ExperimentMetricsResponse,
     ExperimentMetricView,
@@ -154,25 +153,6 @@ class WorkflowExperimentsMixin:
             url=f"/workflows/experiments/{experiment_id}?workflow_id={workflow_id}",
         )
 
-    def prepare_duplicate(self, workflow_id: str, experiment_id: str) -> PreparedRequest:
-        """Duplicate an existing experiment.
-
-        Backend route: ``POST /v1/workflows/experiments`` with
-        ``source_experiment_id`` in the body. The duplicate creation path
-        is the same endpoint as fresh creation — the body discriminates.
-        """
-        return PreparedRequest(
-            method="POST",
-            url=f"/workflows/experiments?workflow_id={workflow_id}",
-            data={"source_experiment_id": experiment_id},
-        )
-
-    def prepare_list_eligible_blocks(self, workflow_id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/experiments/eligible-blocks?workflow_id={workflow_id}",
-        )
-
 
 def _join_csv(value: Sequence[str] | str | None) -> str | None:
     if value is None or isinstance(value, str):
@@ -185,16 +165,21 @@ class ExperimentRunsMixin:
 
     def prepare_create(
         self,
-        workflow_id: str,
-        experiment_id: str,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
     ) -> PreparedRequest:
-        # Empty-bodied ``{}`` POST is what the backend expects when no
-        # overrides are passed — the route validates the request as
-        # ``RunExperimentRequest`` which has all-optional fields.
-        data: Dict[str, Any] = {}
+        if experiment_id is None:
+            if workflow_id is None:
+                raise TypeError("experiment_id is required")
+            experiment_id = workflow_id
+            workflow_id = None
+
+        data: Dict[str, Any] = {"experiment_id": experiment_id}
+        if workflow_id is not None:
+            data["workflow_id"] = workflow_id
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/experiments/{experiment_id}/runs?workflow_id={workflow_id}",
+            url="/workflows/experiments/runs",
             data=data,
         )
 
@@ -313,14 +298,14 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
 
     def create(
         self,
-        workflow_id: str,
-        experiment_id: str,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
     ) -> ExperimentRun:
         """Ensure the experiment has fresh results for the current draft config.
 
         Args:
-            workflow_id: Workflow ID
             experiment_id: Experiment to run
+            workflow_id: Optional workflow ID
 
         Returns:
             ``ExperimentRun``. Inspect child result rows via
@@ -533,18 +518,6 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         request = self.prepare_delete(workflow_id, experiment_id)
         self._client._prepared_request(request)
 
-    def duplicate(self, workflow_id: str, experiment_id: str) -> ExperimentResponse:
-        """Duplicate an experiment, re-using the existing materialized documents."""
-        request = self.prepare_duplicate(workflow_id, experiment_id)
-        response = self._client._prepared_request(request)
-        return ExperimentResponse.model_validate(response)
-
-    def list_eligible_blocks(self, workflow_id: str) -> EligibleBlockListResponse:
-        """List blocks in a workflow that support experiments, with rollups."""
-        request = self.prepare_list_eligible_blocks(workflow_id)
-        response = self._client._prepared_request(request)
-        return EligibleBlockListResponse.model_validate(response)
-
 
 # ---------------------------------------------------------------------------
 # Async
@@ -561,8 +534,8 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
 
     async def create(
         self,
-        workflow_id: str,
-        experiment_id: str,
+        workflow_id: str | None = None,
+        experiment_id: str | None = None,
     ) -> ExperimentRun:
         request = self.prepare_create(
             workflow_id,
@@ -720,13 +693,3 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
     async def delete(self, workflow_id: str, experiment_id: str) -> None:
         request = self.prepare_delete(workflow_id, experiment_id)
         await self._client._prepared_request(request)
-
-    async def duplicate(self, workflow_id: str, experiment_id: str) -> ExperimentResponse:
-        request = self.prepare_duplicate(workflow_id, experiment_id)
-        response = await self._client._prepared_request(request)
-        return ExperimentResponse.model_validate(response)
-
-    async def list_eligible_blocks(self, workflow_id: str) -> EligibleBlockListResponse:
-        request = self.prepare_list_eligible_blocks(workflow_id)
-        response = await self._client._prepared_request(request)
-        return EligibleBlockListResponse.model_validate(response)

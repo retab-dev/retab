@@ -18,7 +18,6 @@ from ....types.workflows import (
     WorkflowRunStatus,
     WorkflowRunTriggerType,
 )
-from .steps import WorkflowSteps, AsyncWorkflowSteps
 
 
 # Type alias for document inputs
@@ -76,7 +75,7 @@ class WorkflowRunsMixin:
             ...         "start-json-block-1": {"key": "value"},
             ...     },            ... )
         """
-        data: Dict[str, Any] = {"documents": {}, "json_inputs": {}}
+        data: Dict[str, Any] = {"workflow_id": workflow_id, "documents": {}, "json_inputs": {}}
 
         # Convert each document to MIMEData and then to the format expected by the backend
         if documents:
@@ -101,7 +100,7 @@ class WorkflowRunsMixin:
         if json_inputs:
             data["json_inputs"] = json_inputs
         data["version"] = version
-        return PreparedRequest(method="POST", url=f"/workflows/{workflow_id}/run", data=data)
+        return PreparedRequest(method="POST", url="/workflows/runs", data=data)
 
     def prepare_get(self, run_id: str) -> PreparedRequest:
         """Prepare a request to get a workflow run by ID."""
@@ -183,17 +182,14 @@ class WorkflowRunsMixin:
 
     def prepare_restart(self, run_id: str, command_id: str | None = None) -> PreparedRequest:
         """Prepare a request to restart a workflow run."""
-        data = None
+        data: Dict[str, Any] = {"restart_of": run_id}
         if command_id is not None:
-            data = {"command_id": command_id}
-        return PreparedRequest(method="POST", url=f"/workflows/runs/{run_id}/restart", data=data)
+            data["command_id"] = command_id
+        return PreparedRequest(method="POST", url="/workflows/runs", data=data)
 
 
 class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
     """Workflow Runs API wrapper for synchronous operations.
-
-    Sub-clients:
-        steps: Step execution operations (get, list)
 
     Example:
         >>> from retab import Retab
@@ -207,11 +203,11 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         >>> run = client.workflows.runs.get(run.id)
         >>>
         >>> # Get outputs from persisted steps
-        >>> step_summaries = client.workflows.runs.steps.list(run.id)
+        >>> step_summaries = client.workflows.steps.list(run.id)
         >>> outputs_by_step = {
         ...     step.block_id: step.handle_outputs
         ...     for step in (
-        ...         client.workflows.runs.steps.get(run.id, summary.block_id)
+        ...         client.workflows.steps.get(summary.step_id)
         ...         for summary in step_summaries
         ...     )
         ... }
@@ -220,7 +216,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.steps = WorkflowSteps(client=self._client)
 
     def create(
         self,
@@ -444,9 +439,6 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
     """Workflow Runs API wrapper for asynchronous operations.
 
-    Sub-clients:
-        steps: Step execution operations (get, list)
-
     Example:
         >>> from retab import AsyncRetab
         >>> client = AsyncRetab(api_key="your-api-key")
@@ -459,17 +451,16 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         >>> run = await client.workflows.runs.get(run.id)
         >>>
         >>> # Get outputs from persisted steps
-        >>> step_summaries = await client.workflows.runs.steps.list(run.id)
+        >>> step_summaries = await client.workflows.steps.list(run.id)
         >>> outputs_by_step = {}
         >>> for summary in step_summaries:
-        ...     step = await client.workflows.runs.steps.get(run.id, summary.block_id)
+        ...     step = await client.workflows.steps.get(summary.step_id)
         ...     outputs_by_step[step.block_id] = step.handle_outputs
         >>> print(outputs_by_step)
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.steps = AsyncWorkflowSteps(client=self._client)
 
     async def create(
         self,

@@ -447,6 +447,19 @@ describe('APIWorkflowReviews request shapes', () => {
     const body = mock.lastFetchParams?.body as Record<string, unknown>;
     expect('note' in body).toBe(false);
     expect('origin' in body).toBe(false);
+    expect(body.parent_id).toBe(VERSION_ID);
+  });
+
+  test('versions.create() requires a parentVersionId', () => {
+    const mock = new MockClient(CHILD_REVIEW_VERSION_JSON);
+    const reviews = new APIWorkflowReviews(mock);
+
+    expect(() =>
+      reviews.versions.prepare_create({
+        reviewId: REVIEW_ID,
+        snapshot: { category: 'Invoice' },
+      } as Parameters<typeof reviews.versions.prepare_create>[0])
+    ).toThrow('parentVersionId is required');
   });
 
   test('versions.create() posts a new snapshot version to the flat versions route', async () => {
@@ -516,56 +529,11 @@ describe('APIWorkflowReviews request shapes', () => {
     expect(result.data[1]?.id).toBe(CHILD_VERSION_ID);
   });
 
-  test('waitFor() returns the review once it has no decision', async () => {
-    const mock = new MockClient({ ...REVIEW_JSON, decision: null });
-    const reviews = new APIWorkflowReviews(mock);
-
-    const review = await reviews.waitFor(REVIEW_ID, { pollIntervalMs: 1 });
-
-    expect(review.decision).toBe(null);
-    expect(mock.lastFetchParams?.url).toBe(`/workflows/reviews/${REVIEW_ID}`);
-  });
-
-  test('wait_for() aliases waitFor() for Python parity', async () => {
-    const mock = new MockClient({ ...REVIEW_JSON, decision: null });
-    const reviews = new APIWorkflowReviews(mock);
-
-    const review = await reviews.wait_for(REVIEW_ID, { pollIntervalMs: 1 });
-
-    expect(review.decision).toBe(null);
-  });
-
-  test('waitFor() throws a plain Error on timeout when the review is already decided', async () => {
+  test('wait helpers are not exposed', () => {
     const mock = new MockClient(REVIEW_JSON);
     const reviews = new APIWorkflowReviews(mock);
 
-    await expect(reviews.waitFor(REVIEW_ID, { timeoutMs: 5, pollIntervalMs: 1 })).rejects.toThrow(
-      'was not pending'
-    );
-  });
-
-  test('waitFor() swallows 404 and keeps polling until the review appears', async () => {
-    let calls = 0;
-    class FlakyClient extends AbstractClient {
-      protected async _fetch(): Promise<Response> {
-        calls += 1;
-        if (calls < 2) {
-          return new Response(JSON.stringify({ detail: 'no review' }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-        return new Response(JSON.stringify({ ...REVIEW_JSON, decision: null }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-    }
-
-    const reviews = new APIWorkflowReviews(new FlakyClient());
-    const review = await reviews.waitFor(REVIEW_ID, { pollIntervalMs: 1 });
-
-    expect(calls).toBe(2);
-    expect(review.decision).toBe(null);
+    expect('waitFor' in reviews).toBe(false);
+    expect('wait_for' in reviews).toBe(false);
   });
 });

@@ -1,4 +1,3 @@
-import * as z from 'zod';
 import { CompositionClient, RequestOptions } from '../../../client.js';
 import {
   PaginatedList,
@@ -104,34 +103,6 @@ export default class APIWorkflowEdges extends CompositionClient {
   }
 
   /**
-   * Create multiple edges in a single request.
-   *
-   * @param workflowId - The workflow ID
-   * @param edges - Array of edge definitions
-   */
-  async createBatch(
-    workflowId: string,
-    edges: WorkflowEdgeCreateRequest[],
-    options?: RequestOptions
-  ): Promise<WorkflowEdgeDoc[]> {
-    return this._fetchJson(z.array(ZWorkflowEdgeDoc), {
-      url: `/workflows/edges/batch?workflow_id=${workflowId}`,
-      method: 'POST',
-      body: edges.map((edge) => serializeEdgeCreateRequest(edge)),
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  async create_batch(
-    workflowId: string,
-    edges: WorkflowEdgeCreateRequest[],
-    options?: RequestOptions
-  ): Promise<WorkflowEdgeDoc[]> {
-    return this.createBatch(workflowId, edges, options);
-  }
-
-  /**
    * Delete an edge.
    */
   async delete(workflowId: string, edgeId: string, options?: RequestOptions): Promise<void> {
@@ -141,21 +112,5 @@ export default class APIWorkflowEdges extends CompositionClient {
       params: options?.params,
       headers: options?.headers,
     });
-  }
-
-  /**
-   * Delete all edges for a workflow.
-   */
-  async deleteAll(workflowId: string, options?: RequestOptions): Promise<void> {
-    return this._fetchJson({
-      url: `/workflows/edges?workflow_id=${workflowId}`,
-      method: 'DELETE',
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  async delete_all(workflowId: string, options?: RequestOptions): Promise<void> {
-    return this.deleteAll(workflowId, options);
   }
 }

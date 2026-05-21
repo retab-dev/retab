@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from retab.exceptions import NotFoundError
 from retab.resources.workflows.reviews.client import AsyncWorkflowReviews, WorkflowReviews
 from retab.types.workflows import (
     Actor,
@@ -184,15 +183,6 @@ def test_prepare_get_builds_review_id_url() -> None:
     assert request.url == f"/workflows/reviews/{_REVIEW_ID}"
 
 
-def test_reviews_has_no_append_version_methods() -> None:
-    """``append_version`` is gone — versions are CRUD-created via ``versions.create``."""
-    sync_reviews = WorkflowReviews(client=MagicMock())
-    assert not hasattr(sync_reviews, "append_version"), "WorkflowReviews.append_version must be removed; use versions.create instead."
-    assert not hasattr(sync_reviews, "prepare_append_version"), "WorkflowReviewsMixin.prepare_append_version must be removed; use versions.prepare_create instead."
-    async_reviews = AsyncWorkflowReviews(client=MagicMock())
-    assert not hasattr(async_reviews, "append_version"), "AsyncWorkflowReviews.append_version must be removed; use versions.create instead."
-
-
 def test_review_versions_prepare_create_get_list() -> None:
     versions = WorkflowReviews(client=MagicMock()).versions
     create = versions.prepare_create(
@@ -259,9 +249,28 @@ def test_review_versions_create_get_list_parse_responses() -> None:
         },
     ]
     versions = WorkflowReviews(client=client).versions
-    assert versions.create(review_id=_REVIEW_ID, snapshot={"category": "Invoice"}).id == _CHILD_VERSION_ID
+    assert (
+        versions.create(
+            review_id=_REVIEW_ID,
+            parent_id=_VERSION_ID,
+            snapshot={"category": "Invoice"},
+        ).id
+        == _CHILD_VERSION_ID
+    )
     assert versions.get(_CHILD_VERSION_ID).parent_id == _VERSION_ID
     assert versions.list(review_id=_REVIEW_ID).data[0].id == _VERSION_ID
+
+
+def test_review_versions_create_requires_parent_id() -> None:
+    versions = WorkflowReviews(client=MagicMock()).versions
+    with pytest.raises(TypeError):
+        versions.create(review_id=_REVIEW_ID, snapshot={"category": "Invoice"})  # type: ignore[call-arg]
+    with pytest.raises(ValueError, match="parent_id is required"):
+        versions.create(
+            review_id=_REVIEW_ID,
+            parent_id="",  # type: ignore[arg-type]
+            snapshot={"category": "Invoice"},
+        )
 
 
 def test_reject_requires_reason_keyword() -> None:
@@ -270,18 +279,9 @@ def test_reject_requires_reason_keyword() -> None:
         reviews.reject(_REVIEW_ID, version_id=_VERSION_ID)  # type: ignore[call-arg]
 
 
-def test_wait_for_returns_when_decision_absent() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {**_REVIEW, "decision": None}
-    review = WorkflowReviews(client=client).wait_for(_REVIEW_ID, timeout=5.0, poll_interval=0.01)
-    assert review.decision is None
-
-
-def test_wait_for_times_out_when_review_never_appears() -> None:
-    client = MagicMock()
-    client._prepared_request.side_effect = NotFoundError("nope", status_code=404)
-    with pytest.raises(TimeoutError):
-        WorkflowReviews(client=client).wait_for(_REVIEW_ID, timeout=0.05, poll_interval=0.01)
+def test_reviews_do_not_expose_wait_for() -> None:
+    assert not hasattr(WorkflowReviews(client=MagicMock()), "wait_for")
+    assert not hasattr(AsyncWorkflowReviews(client=MagicMock()), "wait_for")
 
 
 @pytest.mark.asyncio
@@ -291,11 +291,3 @@ async def test_async_get_and_approve() -> None:
     reviews = AsyncWorkflowReviews(client=client)
     assert (await reviews.get(_REVIEW_ID)).id == _REVIEW_ID
     assert (await reviews.approve(_REVIEW_ID, version_id=_VERSION_ID)).submission_status == "accepted"
-
-
-@pytest.mark.asyncio
-async def test_async_wait_for_times_out() -> None:
-    client = MagicMock()
-    client._prepared_request = AsyncMock(side_effect=NotFoundError("nope", status_code=404))
-    with pytest.raises(TimeoutError):
-        await AsyncWorkflowReviews(client=client).wait_for(_REVIEW_ID, timeout=0.05, poll_interval=0.01)

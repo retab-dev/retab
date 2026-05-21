@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
-import time
 from typing import Any, Dict, Literal
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
-from ....exceptions import NotFoundError
 from ....types.standards import PreparedRequest
 from ....types.workflows.reviews import (
     Review,
@@ -82,10 +79,12 @@ class WorkflowReviewVersionsMixin:
         *,
         review_id: str,
         snapshot: dict,
-        parent_id: str | None = None,
+        parent_id: str,
         note: str | None = None,
     ) -> PreparedRequest:
         """Prepare a request to create one immutable review version."""
+        if not parent_id:
+            raise ValueError("parent_id is required when creating a review version")
         data: Dict[str, Any] = {
             "review_id": review_id,
             "snapshot": snapshot,
@@ -96,7 +95,7 @@ class WorkflowReviewVersionsMixin:
         return PreparedRequest(
             method="POST",
             url="/workflows/reviews/versions",
-            data={key: value for key, value in data.items() if value is not None},
+            data=data,
         )
 
     def prepare_get(self, version_id: str) -> PreparedRequest:
@@ -139,10 +138,16 @@ class WorkflowReviewVersions(SyncAPIResource, WorkflowReviewVersionsMixin):
         *,
         review_id: str,
         snapshot: dict,
-        parent_id: str | None = None,
+        parent_id: str,
         note: str | None = None,
     ) -> ReviewVersion:
-        """Create one immutable review version."""
+        """Create one immutable correction version of a review.
+
+        ``parent_id`` is required — every SDK-created version is a
+        correction of an existing version under ``review_id``. Seed
+        versions (``parent_id is None``) are created by the workflow
+        runtime only; the SDK does not expose that path.
+        """
         request = self.prepare_create(
             review_id=review_id,
             snapshot=snapshot,
@@ -185,10 +190,16 @@ class AsyncWorkflowReviewVersions(AsyncAPIResource, WorkflowReviewVersionsMixin)
         *,
         review_id: str,
         snapshot: dict,
-        parent_id: str | None = None,
+        parent_id: str,
         note: str | None = None,
     ) -> ReviewVersion:
-        """Create one immutable review version."""
+        """Create one immutable correction version of a review.
+
+        ``parent_id`` is required — every SDK-created version is a
+        correction of an existing version under ``review_id``. Seed
+        versions (``parent_id is None``) are created by the workflow
+        runtime only; the SDK does not expose that path.
+        """
         request = self.prepare_create(
             review_id=review_id,
             snapshot=snapshot,
@@ -275,26 +286,6 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         response = self._client._prepared_request(request)
         return SubmitDecisionResponse.model_validate(response)
 
-    def wait_for(
-        self,
-        review_id: str,
-        *,
-        timeout: float = 120.0,
-        poll_interval: float = 2.0,
-    ) -> Review:
-        """Poll until the review exists and is pending."""
-        deadline = time.monotonic() + timeout
-        while True:
-            try:
-                review = self.get(review_id)
-                if review.decision is None:
-                    return review
-            except NotFoundError:
-                pass
-            if time.monotonic() >= deadline:
-                raise TimeoutError(f"Review {review_id!r} was not pending within {timeout}s")
-            time.sleep(poll_interval)
-
 
 class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
     """Workflow reviews API wrapper for asynchronous operations."""
@@ -347,23 +338,3 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         request = self.prepare_reject(review_id, version_id=version_id, reason=reason)
         response = await self._client._prepared_request(request)
         return SubmitDecisionResponse.model_validate(response)
-
-    async def wait_for(
-        self,
-        review_id: str,
-        *,
-        timeout: float = 120.0,
-        poll_interval: float = 2.0,
-    ) -> Review:
-        """Poll until the review exists and is pending."""
-        deadline = time.monotonic() + timeout
-        while True:
-            try:
-                review = await self.get(review_id)
-                if review.decision is None:
-                    return review
-            except NotFoundError:
-                pass
-            if time.monotonic() >= deadline:
-                raise TimeoutError(f"Review {review_id!r} was not pending within {timeout}s")
-            await asyncio.sleep(poll_interval)

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.pagination import PaginatedList
@@ -36,25 +36,9 @@ class WorkflowEdgesMixin:
         data = request.model_dump(exclude_none=True)
         return PreparedRequest(method="POST", url=f"/workflows/edges?workflow_id={workflow_id}", data=data)
 
-    def prepare_create_batch(
-        self,
-        workflow_id: str,
-        edges: Sequence[WorkflowEdgeCreateRequest],
-    ) -> PreparedRequest:
-        """Prepare a request to create multiple edges at once."""
-        return PreparedRequest(
-            method="POST",
-            url=f"/workflows/edges/batch?workflow_id={workflow_id}",
-            data=[edge.model_dump(exclude_none=True) for edge in edges],
-        )
-
     def prepare_delete(self, workflow_id: str, edge_id: str) -> PreparedRequest:
         """Prepare a request to delete an edge."""
         return PreparedRequest(method="DELETE", url=f"/workflows/edges/{edge_id}?workflow_id={workflow_id}")
-
-    def prepare_delete_all(self, workflow_id: str) -> PreparedRequest:
-        """Prepare a request to delete all edges for a workflow."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/edges?workflow_id={workflow_id}")
 
 
 class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
@@ -83,12 +67,6 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
             source_handle=source_handle,
             target_handle=target_handle,
         )
-
-    @staticmethod
-    def _coerce_batch_requests(
-        edges: Sequence[WorkflowEdgeCreateRequest | Dict[str, Any]],
-    ) -> List[WorkflowEdgeCreateRequest]:
-        return [edge if isinstance(edge, WorkflowEdgeCreateRequest) else WorkflowEdgeCreateRequest.model_validate(edge) for edge in edges]
 
     def list(
         self,
@@ -156,33 +134,9 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
-    def create_batch(
-        self,
-        workflow_id: str,
-        edges: Sequence[WorkflowEdgeCreateRequest | Dict[str, Any]],
-    ) -> List[WorkflowEdgeDoc]:
-        """Create multiple edges in a single request.
-
-        Args:
-            workflow_id: The workflow ID
-            edges: Typed edge request models or dicts with ``id``, ``source_block``, and ``target_block``
-
-        Returns:
-            List of created edges
-        """
-        batch_requests = self._coerce_batch_requests(edges)
-        prepared_request = self.prepare_create_batch(workflow_id, batch_requests)
-        response = self._client._prepared_request(prepared_request)
-        return [WorkflowEdgeDoc.model_validate(item) for item in response]
-
     def delete(self, workflow_id: str, edge_id: str) -> None:
         """Delete an edge."""
         request = self.prepare_delete(workflow_id, edge_id)
-        self._client._prepared_request(request)
-
-    def delete_all(self, workflow_id: str) -> None:
-        """Delete all edges for a workflow."""
-        request = self.prepare_delete_all(workflow_id)
         self._client._prepared_request(request)
 
 
@@ -239,26 +193,9 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
-    async def create_batch(
-        self,
-        workflow_id: str,
-        edges: Sequence[WorkflowEdgeCreateRequest | Dict[str, Any]],
-    ) -> List[WorkflowEdgeDoc]:
-        """Create multiple edges in a single request."""
-        batch_requests = self._coerce_batch_requests(edges)
-        prepared_request = self.prepare_create_batch(workflow_id, batch_requests)
-        response = await self._client._prepared_request(prepared_request)
-        return [WorkflowEdgeDoc.model_validate(item) for item in response]
-
     async def delete(self, workflow_id: str, edge_id: str) -> None:
         """Delete an edge."""
         request = self.prepare_delete(workflow_id, edge_id)
         await self._client._prepared_request(request)
 
-    async def delete_all(self, workflow_id: str) -> None:
-        """Delete all edges for a workflow."""
-        request = self.prepare_delete_all(workflow_id)
-        await self._client._prepared_request(request)
-
     _coerce_create_request = WorkflowEdges._coerce_create_request
-    _coerce_batch_requests = WorkflowEdges._coerce_batch_requests

@@ -1,4 +1,3 @@
-import * as z from 'zod';
 import { CompositionClient, RequestOptions } from '../../../client.js';
 import {
   MIMEDataInput,
@@ -15,7 +14,6 @@ import {
   WorkflowRunTriggerType,
 } from '../../../types.js';
 import { ZFileRef, type FileRef } from '../../../generated_types.js';
-import APIWorkflowRunSteps from './steps/client.js';
 
 type WorkflowRunDocumentInput = MIMEDataInput | FileRef;
 
@@ -44,15 +42,10 @@ function normalizeDateParam(value?: string | Date): string | undefined {
 /**
  * Workflow Runs API client for managing workflow executions.
  *
- * Sub-clients:
- * - steps: Step execution operations (get, list)
  */
 export default class APIWorkflowRuns extends CompositionClient {
-  public steps: APIWorkflowRunSteps;
-
   constructor(client: CompositionClient) {
     super(client);
-    this.steps = new APIWorkflowRunSteps(this);
   }
 
   /**
@@ -85,7 +78,7 @@ export default class APIWorkflowRuns extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowRun> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const body: Record<string, any> = {};
+    const body: Record<string, any> = { workflow_id: workflowId };
 
     if (documents) {
       const documentsPayload: Record<
@@ -121,7 +114,7 @@ export default class APIWorkflowRuns extends CompositionClient {
     body.version = version;
 
     return this._fetchJson(ZWorkflowRun, {
-      url: `/workflows/${workflowId}/run`,
+      url: '/workflows/runs',
       method: 'POST',
       body: { ...body, ...(options?.body || {}) },
       params: options?.params,
@@ -265,53 +258,13 @@ export default class APIWorkflowRuns extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowRun> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const body: Record<string, any> = {};
+    const body: Record<string, any> = { restart_of: runId };
     if (commandId !== undefined) body.command_id = commandId;
 
     return this._fetchJson(ZWorkflowRun, {
-      url: `/workflows/runs/${runId}/restart`,
+      url: '/workflows/runs',
       method: 'POST',
       body: { ...body, ...(options?.body || {}) },
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  /**
-   * Get the configuration snapshot used for a run.
-   */
-  async getConfig(runId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    return this._fetchJson(z.record(z.any()), {
-      url: `/workflows/runs/${runId}/config`,
-      method: 'GET',
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  /**
-   * Get the DAG-ordered execution order for a run.
-   */
-  async executionOrder(runId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    return this._fetchJson(z.record(z.any()), {
-      url: `/workflows/runs/${runId}/execution-order`,
-      method: 'GET',
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  /**
-   * Get a signed URL for downloading a document from a run step.
-   */
-  async getDocumentUrl(
-    runId: string,
-    blockId: string,
-    options?: RequestOptions
-  ): Promise<Record<string, unknown>> {
-    return this._fetchJson(z.record(z.any()), {
-      url: `/workflows/runs/${runId}/documents/${blockId}`,
-      method: 'GET',
       params: options?.params,
       headers: options?.headers,
     });

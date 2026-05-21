@@ -139,6 +139,25 @@ def test_async_workflows_exposes_specs_subresource() -> None:
     assert isinstance(workflows.specs, AsyncWorkflowSpecs)
 
 
+def test_removed_workflow_methods_are_not_exposed() -> None:
+    workflows = Workflows(client=MagicMock())
+
+    assert not hasattr(workflows, "duplicate")
+    assert not hasattr(workflows, "get_entities")
+    assert not hasattr(workflows, "get_resolved_schemas")
+    assert not hasattr(workflows, "list_snapshots")
+    assert not hasattr(workflows.blocks, "config_history")
+    assert not hasattr(workflows.blocks, "get_resolved_schemas")
+    assert not hasattr(workflows.blocks, "create_batch")
+    assert not hasattr(workflows.blocks, "list_simulations")
+    assert not hasattr(workflows.blocks, "simulate")
+    assert not hasattr(workflows.edges, "create_batch")
+    assert not hasattr(workflows.edges, "delete_all")
+    assert not hasattr(workflows.experiments, "duplicate")
+    assert not hasattr(workflows.experiments, "list_eligible_blocks")
+    assert not hasattr(workflows.reviews, "wait_for")
+
+
 def test_workflow_specs_validate_uses_spec_validate_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
@@ -277,7 +296,7 @@ def test_workflow_run_ignores_legacy_steps_payload() -> None:
 
     Older servers may still return a ``steps`` field in the run payload; the
     SDK must ignore it (extra="ignore" on the model). Steps are fetched
-    separately via ``client.workflows.runs.steps.list(run_id)``.
+    separately via ``client.workflows.steps.list(run_id)``.
     """
     run = WorkflowRun.model_validate(
         {
@@ -534,31 +553,6 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
     assert block.label == "Renamed"
 
 
-def test_workflow_blocks_create_batch_accepts_typed_requests() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = [
-        {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start-document"},
-        {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract"},
-    ]
-
-    blocks = WorkflowBlocks(client=client).create_batch(
-        "wf_1",
-        [
-            WorkflowBlockCreateRequest(id="start-1", type="start-document"),
-            WorkflowBlockCreateRequest(id="extract-1", type="extract"),
-        ],
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/workflows/blocks/batch?workflow_id=wf_1"
-    assert request.data == [
-        {"id": "start-1", "type": "start-document", "label": "", "position_x": 0.0, "position_y": 0.0},
-        {"id": "extract-1", "type": "extract", "label": "", "position_x": 0.0, "position_y": 0.0},
-    ]
-    assert [block.id for block in blocks] == ["start-1", "extract-1"]
-
-
 def test_workflow_block_parses_live_editing_metadata() -> None:
     block = WorkflowBlock.model_validate(
         {
@@ -668,33 +662,6 @@ def test_workflow_edges_create_accepts_typed_request() -> None:
     assert edge.id == "edge-1"
 
 
-def test_workflow_edges_create_batch_accepts_typed_requests() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = [
-        {
-            "id": "edge-1",
-            "workflow_id": "wf_1",
-            "organization_id": "org_1",
-            "draft_version": "draft_1",
-            "source_block": "start-1",
-            "target_block": "extract-1",
-        },
-    ]
-
-    edges = WorkflowEdges(client=client).create_batch(
-        "wf_1",
-        [WorkflowEdgeCreateRequest(id="edge-1", source_block="start-1", target_block="extract-1")],
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "POST"
-    assert request.url == "/workflows/edges/batch?workflow_id=wf_1"
-    assert request.data == [
-        {"id": "edge-1", "source_block": "start-1", "target_block": "extract-1"},
-    ]
-    assert [edge.id for edge in edges] == ["edge-1"]
-
-
 def test_workflows_publish_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
@@ -715,28 +682,6 @@ def test_workflows_publish_route() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/wf_1/publish"
     assert wf.published_version_id == "ver_0123456789abcdef0123456789abcdef"
-
-
-def test_workflows_get_entities_route() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {
-        "workflow": {
-            "id": "wf_1",
-            "name": "Test",
-            "created_at": "2026-01-01T00:00:00Z",
-            "updated_at": "2026-01-01T00:00:00Z",
-        },
-        "blocks": [{"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start-document"}],
-        "edges": [],
-    }
-
-    wfe = Workflows(client=client).get_entities("wf_1")
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "GET"
-    assert request.url == "/workflows/wf_1/entities"
-    assert isinstance(wfe, WorkflowWithEntities)
-    assert len(wfe.start_document_blocks) == 1
 
 
 def test_workflows_list_returns_typed_items() -> None:
@@ -797,8 +742,13 @@ def test_workflow_runs_create_without_inputs_sends_json_body() -> None:
     request = WorkflowRuns(client=MagicMock()).prepare_create(workflow_id="wf_1")
 
     assert request.method == "POST"
-    assert request.url == "/workflows/wf_1/run"
-    assert request.data == {"documents": {}, "json_inputs": {}, "version": "production"}
+    assert request.url == "/workflows/runs"
+    assert request.data == {
+        "workflow_id": "wf_1",
+        "documents": {},
+        "json_inputs": {},
+        "version": "production",
+    }
 
 
 def test_workflow_runs_create_passes_file_refs_without_content() -> None:
@@ -892,8 +842,8 @@ def test_workflow_runs_restart_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/runs/run_1/restart"
-    assert request.data == {"command_id": "cmd_2"}
+    assert request.url == "/workflows/runs"
+    assert request.data == {"restart_of": "run_1", "command_id": "cmd_2"}
     assert run.id == "run_2"
 
 

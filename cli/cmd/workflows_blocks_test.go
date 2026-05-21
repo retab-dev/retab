@@ -69,16 +69,13 @@ func TestWorkflowsBlocksUpdateHelpShowsReviewConfig(t *testing.T) {
 }
 
 func TestWorkflowsBlocksHelpDoesNotAdvertiseStandaloneReviewBlock(t *testing.T) {
-	for _, help := range []string{workflowsBlocksCmd.Long, workflowsBlocksCreateCmd.Long, workflowsBlocksCreateBatchCmd.Long} {
+	for _, help := range []string{workflowsBlocksCmd.Long, workflowsBlocksCreateCmd.Long} {
 		if strings.Contains(help, "`review`") {
 			t.Fatalf("help should not advertise review as a standalone block type:\n%s", help)
 		}
 	}
 	if !strings.Contains(workflowsBlocksCreateCmd.Long, "Review is not a standalone block type") {
 		t.Fatalf("blocks create help should explicitly steer users away from standalone review blocks:\n%s", workflowsBlocksCreateCmd.Long)
-	}
-	if !strings.Contains(workflowsBlocksCreateBatchCmd.Long, "Review is not a standalone block type") {
-		t.Fatalf("blocks create-batch help should explicitly steer users away from standalone review blocks:\n%s", workflowsBlocksCreateBatchCmd.Long)
 	}
 }
 
@@ -131,29 +128,6 @@ func TestWorkflowsBlocksCreateReadsLocalFileBeforeCredentials(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "missing-block.json") {
 		t.Fatalf("error should mention missing block file, got %q", err.Error())
-	}
-}
-
-func TestWorkflowsBlocksCreateBatchReadsLocalFileBeforeCredentials(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_API_BASE_URL", "")
-
-	missingPath := filepath.Join(t.TempDir(), "missing-blocks.json")
-	if err := workflowsBlocksCreateBatchCmd.Flags().Set("blocks-file", missingPath); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = workflowsBlocksCreateBatchCmd.Flags().Set("blocks-file", "") })
-
-	err := workflowsBlocksCreateBatchCmd.RunE(workflowsBlocksCreateBatchCmd, []string{"wf_123"})
-	if err == nil {
-		t.Fatal("expected missing blocks file error")
-	}
-	if strings.Contains(err.Error(), "no credentials") {
-		t.Fatalf("local file validation should run before credentials, got %q", err.Error())
-	}
-	if !strings.Contains(err.Error(), "missing-blocks.json") {
-		t.Fatalf("error should mention missing blocks file, got %q", err.Error())
 	}
 }
 

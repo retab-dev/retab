@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -429,88 +427,6 @@ func TestWorkflowsEdgesListTableIncludesHandles(t *testing.T) {
 	}
 }
 
-func TestWorkflowsEdgesCreateBatchResolvesFriendlyAliasesBeforeGeneratingIDs(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	edgesPath := filepath.Join(t.TempDir(), "edges.json")
-	if err := os.WriteFile(edgesPath, []byte(`[
-		{"source_block":"start","source_handle":"output-file-0","target_block":"extract_1","target_handle":"document"},
-		{"source_block":"start","source_handle":"output-file-0","target_block":"split_1","target_handle":"document"}
-	]`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	var posted []map[string]any
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`[
-				{"id":"blk_generated_start","type":"start-document"},
-				{"id":"extract_1","type":"extract","config":{"inputs":[{"name":"document","type":"file","is_primary":true}]}},
-				{"id":"split_1","type":"split","config":{"subdocuments":[{"name":"invoice"}]}}
-			]`))
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/edges/batch" && r.URL.Query().Get("workflow_id") == "wf_123":
-			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
-				t.Fatalf("decode request: %v", err)
-			}
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`[]`))
-		default:
-			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
-		}
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if err := workflowsEdgesCreateBatchCmd.Flags().Set("edges-file", edgesPath); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = workflowsEdgesCreateBatchCmd.Flags().Set("edges-file", "") })
-
-	var err error
-	captureStd(t, func() {
-		err = workflowsEdgesCreateBatchCmd.RunE(workflowsEdgesCreateBatchCmd, []string{"wf_123"})
-	})
-	if err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
-	if len(posted) != 2 {
-		t.Fatalf("posted %d edges, want 2: %#v", len(posted), posted)
-	}
-	if got := posted[0]["source_block"]; got != "blk_generated_start" {
-		t.Fatalf("edge 0 source_block = %v, want blk_generated_start", got)
-	}
-	if got := posted[0]["target_handle"]; got != "input-file-document" {
-		t.Fatalf("edge 0 target_handle = %v, want input-file-document", got)
-	}
-	if got := posted[1]["source_block"]; got != "blk_generated_start" {
-		t.Fatalf("edge 1 source_block = %v, want blk_generated_start", got)
-	}
-	if got := posted[1]["target_handle"]; got != "input-file-0" {
-		t.Fatalf("edge 1 target_handle = %v, want input-file-0", got)
-	}
-	for i, req := range []retab.WorkflowEdgeCreateRequest{
-		{
-			SourceBlock:  "blk_generated_start",
-			SourceHandle: "output-file-0",
-			TargetBlock:  "extract_1",
-			TargetHandle: "input-file-document",
-		},
-		{
-			SourceBlock:  "blk_generated_start",
-			SourceHandle: "output-file-0",
-			TargetBlock:  "split_1",
-			TargetHandle: "input-file-0",
-		},
-	} {
-		if got, want := posted[i]["id"], defaultWorkflowEdgeID(req); got != want {
-			t.Fatalf("edge %d id = %v, want %s", i, got, want)
-		}
-	}
-}
-
 func TestWorkflowsEdgesCreateRejectsAmbiguousStartAlias(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -665,64 +581,5 @@ func retabWorkflowEdgeCreateRequestForTest(sourceBlock string, targetBlock strin
 	return retab.WorkflowEdgeCreateRequest{
 		SourceBlock: sourceBlock,
 		TargetBlock: targetBlock,
-	}
-}
-
-func TestWorkflowsEdgesCreateBatchRejectsEmptyEndpointsBeforeRequest(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		hits.Add(1)
-		http.Error(w, "server should not be reached", http.StatusInternalServerError)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	edgesFile := t.TempDir() + "/edges.json"
-	if err := os.WriteFile(edgesFile, []byte(`[{"source_block":"","target_block":"block_b"}]`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := workflowsEdgesCreateBatchCmd.Flags().Set("edges-file", edgesFile); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = workflowsEdgesCreateBatchCmd.Flags().Set("edges-file", "") })
-
-	var err error
-	_, stderr := captureStd(t, func() {
-		err = workflowsEdgesCreateBatchCmd.RunE(workflowsEdgesCreateBatchCmd, []string{"wf_123"})
-	})
-	if err == nil {
-		t.Fatal("expected empty source block error")
-	}
-	if !strings.Contains(stderr, "--edges-file[0]: source_block is required") {
-		t.Fatalf("stderr %q does not mention indexed source_block", stderr)
-	}
-	if got := hits.Load(); got != 0 {
-		t.Fatalf("server was hit %d time(s), want 0", got)
-	}
-}
-
-func TestWorkflowsEdgesCreateBatchReadsLocalFileBeforeCredentials(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("RETAB_API_KEY", "")
-	t.Setenv("RETAB_API_BASE_URL", "")
-
-	missingPath := filepath.Join(t.TempDir(), "missing-edges.json")
-	if err := workflowsEdgesCreateBatchCmd.Flags().Set("edges-file", missingPath); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = workflowsEdgesCreateBatchCmd.Flags().Set("edges-file", "") })
-
-	err := workflowsEdgesCreateBatchCmd.RunE(workflowsEdgesCreateBatchCmd, []string{"wf_123"})
-	if err == nil {
-		t.Fatal("expected missing edges file error")
-	}
-	if strings.Contains(err.Error(), "no credentials") {
-		t.Fatalf("local file validation should run before credentials, got %q", err.Error())
-	}
-	if !strings.Contains(err.Error(), "missing-edges.json") {
-		t.Fatalf("error should mention missing edges file, got %q", err.Error())
 	}
 }

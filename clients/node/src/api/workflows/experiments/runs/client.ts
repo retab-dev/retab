@@ -48,9 +48,12 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
     experimentId: string
   ): { url: string; method: string; body: Record<string, unknown> } {
     return {
-      url: `/workflows/experiments/${experimentId}/runs?workflow_id=${workflowId}`,
+      url: '/workflows/experiments/runs',
       method: 'POST',
-      body: {},
+      body: {
+        experiment_id: experimentId,
+        workflow_id: workflowId,
+      },
     };
   }
 

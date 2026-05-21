@@ -155,7 +155,7 @@ func TestFileUploadContentTypeMatchesNode(t *testing.T) {
 func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 	var body Resource
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		defer r.Body.Close()
@@ -178,6 +178,9 @@ func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if body["workflow_id"] != "wf_123" {
+		t.Fatalf("workflow_id = %#v", body["workflow_id"])
+	}
 	documents, ok := body["documents"].(map[string]any)
 	if !ok {
 		t.Fatalf("documents = %#v", body["documents"])
@@ -197,7 +200,7 @@ func TestWorkflowRunCreateMaterializesDocumentsLikeNode(t *testing.T) {
 func TestWorkflowRunCreatePreservesURLBackedDocuments(t *testing.T) {
 	var body Resource
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		defer r.Body.Close()
@@ -219,6 +222,9 @@ func TestWorkflowRunCreatePreservesURLBackedDocuments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if body["workflow_id"] != "wf_123" {
+		t.Fatalf("workflow_id = %#v", body["workflow_id"])
+	}
 	documents, ok := body["documents"].(map[string]any)
 	if !ok {
 		t.Fatalf("documents = %#v", body["documents"])
@@ -238,7 +244,7 @@ func TestWorkflowRunCreatePreservesURLBackedDocuments(t *testing.T) {
 func TestWorkflowRunCreateAcceptsJSONDocumentDescriptors(t *testing.T) {
 	var body Resource
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		defer r.Body.Close()
@@ -262,6 +268,9 @@ func TestWorkflowRunCreateAcceptsJSONDocumentDescriptors(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if body["workflow_id"] != "wf_123" {
+		t.Fatalf("workflow_id = %#v", body["workflow_id"])
 	}
 	documents, ok := body["documents"].(map[string]any)
 	if !ok {
@@ -371,10 +380,6 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 				"list_metadata": Resource{"before": nil, "after": nil},
 			})
 		case "/workflows/edges":
-			if r.Method == http.MethodDelete {
-				w.WriteHeader(http.StatusNoContent)
-				return
-			}
 			_ = json.NewEncoder(w).Encode(Resource{
 				"data":          []Resource{},
 				"list_metadata": Resource{"before": nil, "after": nil},
@@ -404,9 +409,6 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 	if _, err := client.Workflows.Edges.List(context.Background(), "wf_123", nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Workflows.Edges.DeleteAll(context.Background(), "wf_123"); err != nil {
-		t.Fatal(err)
-	}
 	if _, err := client.Workflows.Tests.List(context.Background(), ListWorkflowTestsRequest{WorkflowID: "wf_123"}); err != nil {
 		t.Fatal(err)
 	}
@@ -418,7 +420,7 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "GET?workflow_id=wf_123 /workflows/blocks,GET?workflow_id=wf_123 /workflows/edges,DELETE?workflow_id=wf_123 /workflows/edges,GET?limit=50&workflow_id=wf_123 /workflows/tests,GET?limit=10&test_id=test_1&workflow_id=wf_123 /workflows/tests/runs"
+	want := "GET?workflow_id=wf_123 /workflows/blocks,GET?workflow_id=wf_123 /workflows/edges,GET?limit=50&workflow_id=wf_123 /workflows/tests,GET?limit=10&test_id=test_1&workflow_id=wf_123 /workflows/tests/runs"
 	if strings.Join(requests, ",") != want {
 		t.Fatalf("requests = %s", strings.Join(requests, ","))
 	}

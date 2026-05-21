@@ -30,7 +30,6 @@ func TestNonNegativeNumericFlagsRejectNegativeValuesLocally(t *testing.T) {
 		{name: "workflow tests consensus", cmd: workflowsTestsRunsCreateCmd, flag: "n-consensus"},
 		{name: "workflow experiments create consensus", cmd: workflowsExperimentsCreateCmd, flag: "n-consensus"},
 		{name: "workflow experiments update consensus", cmd: workflowsExperimentsUpdateCmd, flag: "n-consensus"},
-		{name: "workflow block simulate consensus", cmd: workflowsBlocksSimulateCmd, flag: "n-consensus"},
 		{name: "workflow block width", cmd: workflowsBlocksUpdateCmd, flag: "width"},
 		{name: "workflow block height", cmd: workflowsBlocksUpdateCmd, flag: "height"},
 		{name: "workflow runs min duration", cmd: workflowsRunsListCmd, flag: "min-duration"},

@@ -3,13 +3,9 @@ import {
   PaginatedList,
   Workflow,
   WorkflowDiagnosisResponse,
-  WorkflowResolvedSchemasResponse,
-  WorkflowWithEntities,
   ZPaginatedList,
   ZWorkflow,
   ZWorkflowDiagnosisResponse,
-  ZWorkflowResolvedSchemasResponse,
-  ZWorkflowWithEntities,
 } from '../../types.js';
 import APIWorkflowRuns from './runs/client.js';
 import APIWorkflowReviews from './reviews/client.js';
@@ -19,16 +15,18 @@ import APIWorkflowArtifacts from './artifacts/client.js';
 import APIWorkflowSpecs from './specs/client.js';
 import APIWorkflowTests from './tests/client.js';
 import APIWorkflowExperiments from './experiments/client.js';
+import APIWorkflowSteps from './steps/client.js';
 
 /**
  * Workflows API client for workflow operations.
  *
  * Sub-clients:
  * - runs: Workflow run operations
- * - reviews: review operations (list, get, versions.create/get/list, approve, reject, waitFor)
- * - blocks: Workflow block CRUD + simulate
+ * - reviews: review operations (list, get, versions.create/get/list, approve, reject)
+ * - blocks: Workflow block CRUD
  * - edges: Workflow edge CRUD
  * - artifacts: Workflow artifact dereference operations
+ * - steps: Workflow run step operations (get, list)
  * - specs: Declarative workflow YAML validation, planning, apply, and export
  * - tests: Workflow tests CRUD + execution + run history
  * - experiments: Consensus-experiments CRUD + per-run + metrics
@@ -39,6 +37,7 @@ export default class APIWorkflows extends CompositionClient {
   public blocks: APIWorkflowBlocks;
   public edges: APIWorkflowEdges;
   public artifacts: APIWorkflowArtifacts;
+  public steps: APIWorkflowSteps;
   public specs: APIWorkflowSpecs;
   public tests: APIWorkflowTests;
   public experiments: APIWorkflowExperiments;
@@ -50,6 +49,7 @@ export default class APIWorkflows extends CompositionClient {
     this.blocks = new APIWorkflowBlocks(this);
     this.edges = new APIWorkflowEdges(this);
     this.artifacts = new APIWorkflowArtifacts(this);
+    this.steps = new APIWorkflowSteps(this);
     this.specs = new APIWorkflowSpecs(this);
     this.tests = new APIWorkflowTests(this);
     this.experiments = new APIWorkflowExperiments(this);
@@ -222,135 +222,13 @@ export default class APIWorkflows extends CompositionClient {
     });
   }
 
-  /**
-   * Duplicate a workflow with all its blocks and edges.
-   *
-   * @returns The new duplicated workflow (unpublished)
-   */
-  async duplicate(workflowId: string, options?: RequestOptions): Promise<Workflow> {
-    return this._fetchJson(ZWorkflow, {
-      url: `/workflows/${workflowId}/duplicate`,
-      method: 'POST',
-      body: { ...(options?.body || {}) },
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  /**
-   * Get a workflow with all its entities (blocks and edges).
-   *
-   * Use the returned `blocks` array to discover start-document blocks:
-   * ```typescript
-   * const entities = await client.workflows.getEntities("wf_abc123");
-   * const startDocumentBlocks = entities.blocks.filter(b => b.type === "start-document");
-   * ```
-   */
-  async getEntities(workflowId: string, options?: RequestOptions): Promise<WorkflowWithEntities> {
-    return this._fetchJson(ZWorkflowWithEntities, {
-      url: `/workflows/${workflowId}/entities`,
-      method: 'GET',
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  async get_entities(workflowId: string, options?: RequestOptions): Promise<WorkflowWithEntities> {
-    return this.getEntities(workflowId, options);
-  }
-
-  prepare_get_resolved_schemas(workflowId: string): { url: string; method: string } {
-    return {
-      url: `/workflows/${workflowId}/resolved-schemas`,
-      method: 'GET',
-    };
-  }
-
-  /**
-   * Get graph-derived schemas for all current-draft blocks in a workflow.
-   */
-  async getResolvedSchemas(
-    workflowId: string,
-    options?: RequestOptions
-  ): Promise<WorkflowResolvedSchemasResponse> {
-    return this._fetchJson(ZWorkflowResolvedSchemasResponse, {
-      url: `/workflows/${workflowId}/resolved-schemas`,
-      method: 'GET',
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  async get_resolved_schemas(
-    workflowId: string,
-    options?: RequestOptions
-  ): Promise<WorkflowResolvedSchemasResponse> {
-    return this.getResolvedSchemas(workflowId, options);
-  }
-
-  prepare_list_snapshots(
-    workflowId: string,
-    limit?: number | null
-  ): {
-    url: string;
-    method: string;
-    params?: Record<string, unknown>;
-  } {
-    const params: Record<string, unknown> = {};
-    if (limit !== undefined && limit !== null) params.limit = limit;
-    return {
-      url: `/workflows/${workflowId}/snapshots`,
-      method: 'GET',
-      ...(Object.keys(params).length > 0 ? { params } : {}),
-    };
-  }
-
-  /**
-   * List published snapshots for a workflow (newest first).
-   *
-   * Returns the canonical
-   * `{"data": [...], "list_metadata": {"before": null, "after": null}}`
-   * pagination envelope. `limit` bounds the page size (server default: 50,
-   * max 100). ID pagination is not yet implemented for this endpoint.
-   */
-  async listSnapshots(
-    workflowId: string,
-    { limit }: { limit?: number } = {},
-    options?: RequestOptions
-  ): Promise<PaginatedList> {
-    const params = Object.fromEntries(
-      Object.entries({
-        limit,
-        ...(options?.params || {}),
-      }).filter(([, value]) => value !== undefined)
-    );
-    return this._fetchJson(ZPaginatedList, {
-      url: `/workflows/${workflowId}/snapshots`,
-      method: 'GET',
-      params,
-      headers: options?.headers,
-    });
-  }
-
-  async list_snapshots(
-    workflowId: string,
-    opts: { limit?: number } = {},
-    options?: RequestOptions
-  ): Promise<PaginatedList> {
-    return this.listSnapshots(workflowId, opts, options);
-  }
-
   prepare_diagnose(
     workflowId: string,
-    blocks: Array<Record<string, unknown>>,
-    edges: Array<Record<string, unknown>>,
     rePropagate = true
   ): {
     url: string;
     method: string;
     body: {
-      blocks: Array<Record<string, unknown>>;
-      edges: Array<Record<string, unknown>>;
       re_propagate: boolean;
     };
   } {
@@ -358,8 +236,6 @@ export default class APIWorkflows extends CompositionClient {
       url: `/workflows/${workflowId}/diagnose-graph`,
       method: 'POST',
       body: {
-        blocks,
-        edges,
         re_propagate: rePropagate,
       },
     };
@@ -368,38 +244,28 @@ export default class APIWorkflows extends CompositionClient {
   /**
    * Diagnose the workflow's draft graph for structural/config issues.
    *
-   * Fetches the persisted draft entities first (via `getEntities`) and
-   * POSTs them to `/v1/workflows/{workflow_id}/diagnose-graph`. Returns
-   * a list of `issues` (errors must be fixed before publish; warnings
-   * cover incomplete config and human-review guidance) and `stats`.
-   *
-   * To diagnose an in-memory editor graph that hasn't been saved yet,
-   * call `diagnoseGraph` directly with your own `blocks` / `edges`.
+   * POSTs directly to `/v1/workflows/{workflow_id}/diagnose-graph`.
+   * Returns a list of `issues` and graph `stats`.
    */
   async diagnose(
     workflowId: string,
-    { rePropagate = true }: { rePropagate?: boolean } = {},
+    {
+      rePropagate = true,
+    }: {
+      rePropagate?: boolean;
+    } = {},
     options?: RequestOptions
   ): Promise<WorkflowDiagnosisResponse> {
-    const entities = await this.getEntities(workflowId, options);
-    const blocks = entities.blocks.map((block) => ({
-      id: block.id,
-      type: block.type,
-      label: block.label,
-      config: block.config,
-      position: { x: block.position_x, y: block.position_y },
-      width: block.width,
-      height: block.height,
-      parent_id: block.parent_id,
-    }));
-    const edges = entities.edges.map((edge) => ({
-      id: edge.id,
-      source: edge.source_block,
-      target: edge.target_block,
-      source_handle: edge.source_handle,
-      target_handle: edge.target_handle,
-    }));
-    return this.diagnoseGraph(workflowId, { blocks, edges, rePropagate }, options);
+    return this._fetchJson(ZWorkflowDiagnosisResponse, {
+      url: `/workflows/${workflowId}/diagnose-graph`,
+      method: 'POST',
+      body: {
+        re_propagate: rePropagate,
+        ...((options?.body as Record<string, unknown>) || {}),
+      },
+      params: options?.params,
+      headers: options?.headers,
+    });
   }
 
   /**

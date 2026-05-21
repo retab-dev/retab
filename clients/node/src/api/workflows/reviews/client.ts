@@ -1,4 +1,4 @@
-import { APIError, CompositionClient, RequestOptions } from '../../../client.js';
+import { CompositionClient, RequestOptions } from '../../../client.js';
 import {
   Review,
   ReviewQueueResponse,
@@ -47,13 +47,16 @@ export class APIWorkflowReviewVersions extends CompositionClient {
     note,
   }: {
     reviewId: string;
-    parentVersionId?: string | null;
+    parentVersionId: string;
     snapshot: Record<string, unknown>;
     note?: string | null;
   }): PreparedReviewRequest {
+    if (typeof parentVersionId !== 'string' || parentVersionId.length === 0) {
+      throw new Error('parentVersionId is required when creating a review version');
+    }
     const body: Record<string, unknown> = {
       review_id: reviewId,
-      parent_id: parentVersionId ?? null,
+      parent_id: parentVersionId,
       snapshot,
     };
     if (note !== undefined && note !== null) {
@@ -94,7 +97,7 @@ export class APIWorkflowReviewVersions extends CompositionClient {
   async create(
     request: {
       reviewId: string;
-      parentVersionId?: string | null;
+      parentVersionId: string;
       snapshot: Record<string, unknown>;
       note?: string | null;
     },
@@ -320,49 +323,5 @@ export default class APIWorkflowReviews extends CompositionClient {
       params: options?.params,
       headers: options?.headers,
     });
-  }
-
-  /**
-   * Poll until a review exists and has no terminal decision.
-   */
-  async waitFor(
-    reviewId: string,
-    {
-      timeoutMs = 120000,
-      pollIntervalMs = 2000,
-    }: {
-      timeoutMs?: number;
-      pollIntervalMs?: number;
-    } = {},
-    options?: RequestOptions
-  ): Promise<Review> {
-    const deadline = Date.now() + timeoutMs;
-    for (;;) {
-      try {
-        const review = await this.get(reviewId, options);
-        if (review.decision === null) {
-          return review;
-        }
-      } catch (error) {
-        if (!(error instanceof APIError && error.status === 404)) {
-          throw error;
-        }
-      }
-      if (Date.now() >= deadline) {
-        throw new Error(`Review '${reviewId}' was not pending within ${timeoutMs}ms`);
-      }
-      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-    }
-  }
-
-  async wait_for(
-    reviewId: string,
-    options?: {
-      timeoutMs?: number;
-      pollIntervalMs?: number;
-    },
-    requestOptions?: RequestOptions
-  ): Promise<Review> {
-    return this.waitFor(reviewId, options, requestOptions);
   }
 }

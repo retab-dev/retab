@@ -28,7 +28,21 @@ type PythonClassDefinition = {
 const PYTHON_CLIENT_FILE = path.resolve(import.meta.dir, '../../python/retab/client.py');
 const PYTHON_RESOURCES_DIR = path.resolve(import.meta.dir, '../../python/retab/resources');
 const GO_CLIENT_DIR = path.resolve(import.meta.dir, '../../go');
+const DOCS_OPENAPI_FILE = path.resolve(
+  import.meta.dir,
+  '../../../../docs/api-reference/openapi.json'
+);
 const ALLOWED_NODE_ONLY_METHODS: Record<string, string[]> = {};
+const OPENAPI_METHODS = new Set([
+  'get',
+  'put',
+  'post',
+  'delete',
+  'options',
+  'head',
+  'patch',
+  'trace',
+]);
 
 class MockClient extends AbstractClient {
   public requests: RecordedRequest[] = [];
@@ -440,6 +454,151 @@ function readGoClientSource(): string {
     .join('\n');
 }
 
+function listFilesRecursive(directory: string, extension: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      return listFilesRecursive(entryPath, extension);
+    }
+    return entry.isFile() && entry.name.endsWith(extension) ? [entryPath] : [];
+  });
+}
+
+function normalizeWorkflowRoutePath(rawPath: string): string {
+  const withoutVersion = rawPath.replace(/^\/v1/, '');
+  const withoutQuery = withoutVersion.split('?')[0];
+  const normalizedParams = withoutQuery
+    .replace(/\$\{[^}]+\}/g, '{param}')
+    .replace(/\{[^}]+\}/g, '{param}');
+  const normalizedSlashes = normalizedParams.replace(/\/+/g, '/');
+  return normalizedSlashes.length > 1 ? normalizedSlashes.replace(/\/+$/, '') : normalizedSlashes;
+}
+
+function routeKey(method: string, rawPath: string): string | null {
+  const normalizedPath = normalizeWorkflowRoutePath(rawPath);
+  if (!normalizedPath.startsWith('/workflows')) {
+    return null;
+  }
+  return `${method.toLowerCase()} ${normalizedPath}`;
+}
+
+function stripQuotedLiteral(rawValue: string): string {
+  return rawValue.replace(/^f?['"`]/, '').replace(/['"`]$/, '');
+}
+
+function collectDocsWorkflowRouteKeys(): string[] {
+  const spec = JSON.parse(readFileSync(DOCS_OPENAPI_FILE, 'utf8')) as {
+    paths: Record<string, Record<string, unknown>>;
+  };
+  const routes = new Set<string>();
+
+  for (const [rawPath, pathItem] of Object.entries(spec.paths)) {
+    for (const method of Object.keys(pathItem)) {
+      if (!OPENAPI_METHODS.has(method)) {
+        continue;
+      }
+      const key = routeKey(method, rawPath);
+      if (key) {
+        routes.add(key);
+      }
+    }
+  }
+
+  return Array.from(routes).sort();
+}
+
+function collectPythonWorkflowRouteKeys(): string[] {
+  const routes = new Set<string>();
+  const workflowResourcesDirectory = path.join(PYTHON_RESOURCES_DIR, 'workflows');
+
+  for (const filePath of listFilesRecursive(workflowResourcesDirectory, '.py')) {
+    const source = readFileSync(filePath, 'utf8');
+    for (const match of source.matchAll(/PreparedRequest\(([\s\S]*?)\)/g)) {
+      const block = match[1];
+      const methodMatch = /\bmethod\s*=\s*["']([A-Z]+)["']/.exec(block);
+      const urlMatch = /\burl\s*=\s*(f?["'][^"']+["'])/.exec(block);
+      if (!methodMatch || !urlMatch) {
+        continue;
+      }
+      const key = routeKey(methodMatch[1], stripQuotedLiteral(urlMatch[1]));
+      if (key) {
+        routes.add(key);
+      }
+    }
+  }
+
+  return Array.from(routes).sort();
+}
+
+function collectNodeWorkflowRouteKeys(): string[] {
+  const routes = new Set<string>();
+  const workflowSourceDirectory = path.resolve(import.meta.dir, '../src/api/workflows');
+
+  for (const filePath of listFilesRecursive(workflowSourceDirectory, '.ts')) {
+    const source = readFileSync(filePath, 'utf8');
+    for (const match of source.matchAll(
+      /\burl:\s*(`[^`]+`|'[^']+'|"[^"]+")[\s\S]{0,350}?\bmethod:\s*['"]([A-Z]+)['"]/g
+    )) {
+      const key = routeKey(match[2], stripQuotedLiteral(match[1]));
+      if (key) {
+        routes.add(key);
+      }
+    }
+  }
+
+  return Array.from(routes).sort();
+}
+
+function goURLExpressionToRoutePaths(method: string, expression: string): string[] {
+  if (expression.includes('reviewPath(')) {
+    if (method === 'get') {
+      return ['/workflows/reviews/{param}'];
+    }
+    if (method === 'post' && expression.includes('action')) {
+      return ['/workflows/reviews/{param}/approve', '/workflows/reviews/{param}/reject'];
+    }
+  }
+
+  const expressionWithPathParams = expression.replace(/url\.PathEscape\([^)]+\)/g, '"{param}"');
+  const pathFromStringLiterals = Array.from(expressionWithPathParams.matchAll(/"([^"]*)"/g))
+    .map((match) => match[1])
+    .join('');
+
+  return pathFromStringLiterals ? [pathFromStringLiterals] : [];
+}
+
+function collectGoWorkflowRouteKeys(): string[] {
+  const routes = new Set<string>();
+  const source = readFileSync(path.join(GO_CLIENT_DIR, 'workflows.go'), 'utf8');
+
+  const recordRoute = (method: string, expression: string): void => {
+    for (const rawPath of goURLExpressionToRoutePaths(method, expression)) {
+      const key = routeKey(method, rawPath);
+      if (key) {
+        routes.add(key);
+      }
+    }
+  };
+
+  for (const match of source.matchAll(
+    /s\.client\.do\([^\n]*?http\.Method([A-Za-z]+)\s*,\s*([^,\n]+)/g
+  )) {
+    recordRoute(match[1].toLowerCase(), match[2].trim());
+  }
+
+  for (const match of source.matchAll(/PreparedRequest\s*\{([\s\S]*?)\n\s*\}/g)) {
+    const block = match[1];
+    const methodMatch = /\bMethod:\s*http\.Method([A-Za-z]+)/.exec(block);
+    const urlMatch = /\bURL:\s*([^,\n]+)/.exec(block);
+    if (!methodMatch || !urlMatch) {
+      continue;
+    }
+    recordRoute(methodMatch[1].toLowerCase(), urlMatch[1].trim());
+  }
+
+  return Array.from(routes).sort();
+}
+
 function collectGoServiceFields(
   source: string
 ): Map<string, Array<{ name: string; type: string }>> {
@@ -584,5 +743,14 @@ describe('python sdk parity surface', () => {
         `missing Go methods on ${resource}: ${missingMethods.join(', ')}`
       ).toEqual([]);
     }
+  });
+
+  test('workflow route shapes match docs openapi across sdks', () => {
+    const docsRoutes = collectDocsWorkflowRouteKeys();
+
+    expect(docsRoutes.length).toBeGreaterThan(0);
+    expect(collectPythonWorkflowRouteKeys()).toEqual(docsRoutes);
+    expect(collectNodeWorkflowRouteKeys()).toEqual(docsRoutes);
+    expect(collectGoWorkflowRouteKeys()).toEqual(docsRoutes);
   });
 });

@@ -272,21 +272,6 @@ func TestReviewsRejectHelpDoesNotPromiseRunCancellation(t *testing.T) {
 	}
 }
 
-func TestReviewsEscalateReturnsLegacyUnsupportedMessage(t *testing.T) {
-	err := workflowsReviewsEscalateCmd.RunE(workflowsReviewsEscalateCmd, []string{"rev_1"})
-	if err == nil {
-		t.Fatal("expected unsupported escalation error")
-	}
-	if !strings.Contains(err.Error(), "review escalation is not supported") {
-		t.Fatalf("expected unsupported escalation guidance, got %q", err.Error())
-	}
-	for _, stale := range []string{"required flag", "escalate-to"} {
-		if strings.Contains(err.Error(), stale) {
-			t.Fatalf("escalate should not surface stale %q wording, got %q", stale, err.Error())
-		}
-	}
-}
-
 func TestReviewsGetCommand(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -653,118 +638,6 @@ func TestReviewsSchemaCommandPropagatesMissingOverlay(t *testing.T) {
 	}
 }
 
-func TestReviewsWaitStopsWhenOverlayIsAwaitingReview(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var reviewGets int
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		reviewGets++
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	cmd := newWaitTestCmd()
-	stdout, stderr := captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
-			t.Fatalf("reviews wait: %v", err)
-		}
-	})
-	if stderr != "" {
-		t.Fatalf("stderr = %s", stderr)
-	}
-	if reviewGets != 1 {
-		t.Fatalf("reviewGets=%d", reviewGets)
-	}
-	if strings.Contains(stdout, `"versions"`) || strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
-		t.Fatalf("stdout = %s", stdout)
-	}
-}
-
-func TestReviewsWaitOnDecidedReviewExplainsItIsAlreadyDecided(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID)))
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	cmd := newWaitTestCmd()
-	if err := cmd.Flags().Set("timeout", "1"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("poll-interval", "1"); err != nil {
-		t.Fatal(err)
-	}
-	err := cmd.RunE(cmd, []string{"rev_1"})
-	if err == nil {
-		t.Fatal("expected wait to fail on an already-decided review")
-	}
-	if !strings.Contains(err.Error(), "already approved") {
-		t.Fatalf("error = %v (want 'already approved' so the operator knows wait will never succeed)", err)
-	}
-	if !strings.Contains(err.Error(), "rev_1") {
-		t.Fatalf("error = %v (want the review id)", err)
-	}
-	if strings.Contains(err.Error(), "was not pending") {
-		t.Fatalf("error = %v (must not use the old generic 'was not pending' wording on a decided review)", err)
-	}
-}
-
-func TestReviewsWaitOnMissingReviewSaysDidNotAppear(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(map[string]any{"detail": "No review rev_1."})
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	cmd := newWaitTestCmd()
-	if err := cmd.Flags().Set("timeout", "1"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("poll-interval", "1"); err != nil {
-		t.Fatal(err)
-	}
-	err := cmd.RunE(cmd, []string{"rev_1"})
-	if err == nil {
-		t.Fatal("expected wait to fail when the review never materializes")
-	}
-	if !strings.Contains(err.Error(), "did not appear") {
-		t.Fatalf("error = %v (want 'did not appear' for a review that 404s the whole window)", err)
-	}
-	if strings.Contains(err.Error(), "already approved") || strings.Contains(err.Error(), "already rejected") {
-		t.Fatalf("error = %v (must not claim the review was decided when it never existed)", err)
-	}
-}
-
-func TestReviewsWaitRejectsNonPositiveTimingFlags(t *testing.T) {
-	cmd := newWaitTestCmd()
-
-	for _, tc := range []struct {
-		flag  string
-		value string
-	}{
-		{flag: "timeout", value: "0"},
-		{flag: "timeout", value: "-1"},
-		{flag: "poll-interval", value: "0"},
-		{flag: "poll-interval", value: "-1"},
-	} {
-		if err := cmd.Flags().Set(tc.flag, tc.value); err == nil {
-			t.Fatalf("expected --%s=%s to fail", tc.flag, tc.value)
-		}
-	}
-}
-
 func TestReviewsApproveSendsVersionID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -1116,47 +989,6 @@ func TestReviewsRejectSendsVersionIDAndReason(t *testing.T) {
 	}
 }
 
-func TestReviewsEscalateIsHiddenAndDisabled(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var hits int
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits++
-		t.Fatalf("reviews escalate should not reach backend, got %s %s", r.Method, r.URL.Path)
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	if !workflowsReviewsEscalateCmd.Hidden {
-		t.Fatal("reviews escalate should be hidden from help")
-	}
-	if strings.Contains(workflowsReviewsCmd.Long, "escalate") {
-		t.Fatalf("reviews help should not advertise escalation:\n%s", workflowsReviewsCmd.Long)
-	}
-
-	cmd := newEscalateTestCmd()
-	if err := cmd.Flags().Set("reason", "needs senior sign-off"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("escalate-to", "queue_senior"); err != nil {
-		t.Fatal(err)
-	}
-
-	err := cmd.RunE(cmd, []string{"rev_1"})
-	if err == nil {
-		t.Fatal("expected disabled escalation command to fail locally")
-	}
-	for _, want := range []string{"not supported", "approve", "reject", "versions create"} {
-		if !strings.Contains(err.Error(), want) {
-			t.Fatalf("error %q should contain %q", err.Error(), want)
-		}
-	}
-	if hits != 0 {
-		t.Fatalf("backend hits = %d", hits)
-	}
-}
-
 func newApproveTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "approve", RunE: workflowsReviewsApproveCmd.RunE}
 	cmd.Flags().String("version-id", "", "")
@@ -1195,20 +1027,6 @@ func TestReviewEnumFlagsShowAllowedValues(t *testing.T) {
 	if !strings.Contains(err.Error(), "pending | approved | rejected | decided | all") {
 		t.Fatalf("decision error should show allowed values, got: %v", err)
 	}
-}
-
-func newEscalateTestCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "escalate", RunE: workflowsReviewsEscalateCmd.RunE}
-	cmd.Flags().String("reason", "", "")
-	cmd.Flags().String("escalate-to", "", "")
-	return cmd
-}
-
-func newWaitTestCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "wait", RunE: workflowsReviewsWaitCmd.RunE}
-	cmd.Flags().Var(&positiveIntFlagValue{value: "120"}, "timeout", "")
-	cmd.Flags().Var(&positiveIntFlagValue{value: "2"}, "poll-interval", "")
-	return cmd
 }
 
 func containsString(values []string, target string) bool {

@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 
 import { AbstractClient } from '../src/client';
+import APIWorkflows from '../src/api/workflows/client';
 import APIWorkflowArtifacts from '../src/api/workflows/artifacts/client';
-import APIWorkflowRunSteps from '../src/api/workflows/runs/steps/client';
+import APIWorkflowSteps from '../src/api/workflows/steps/client';
 import * as workflowTypes from '../src/types';
 
 class MockClient extends AbstractClient {
@@ -42,7 +43,14 @@ class MockClient extends AbstractClient {
   }
 }
 
-describe('workflow run steps client', () => {
+describe('workflow steps client', () => {
+  test('workflows exposes steps at top level and not under runs', () => {
+    const workflowsClient = new APIWorkflows(new MockClient());
+
+    expect(workflowsClient.steps).toBeInstanceOf(APIWorkflowSteps);
+    expect('steps' in workflowsClient.runs).toBe(false);
+  });
+
   test('artifacts.get() accepts a step artifact ref', async () => {
     class ArtifactMockClient extends AbstractClient {
       public lastFetchParams: Record<string, unknown> | null = null;
@@ -175,12 +183,12 @@ describe('workflow run steps client', () => {
     }
 
     const mockClient = new GetMockClient();
-    const stepsClient = new APIWorkflowRunSteps(mockClient);
+    const stepsClient = new APIWorkflowSteps(mockClient);
 
-    const step = await stepsClient.get('run_123', 'extract-1');
+    const step = await stepsClient.get('step_123');
 
     expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/steps/extract-1?run_id=run_123',
+      url: '/workflows/steps/step_123',
       method: 'GET',
       params: undefined,
       headers: undefined,
@@ -215,7 +223,7 @@ describe('workflow run steps client', () => {
 
   test('list() uses the full steps route and returns paginated envelope', async () => {
     const mockClient = new MockClient();
-    const stepsClient = new APIWorkflowRunSteps(mockClient);
+    const stepsClient = new APIWorkflowSteps(mockClient);
 
     const steps = await stepsClient.list('run_123');
 
@@ -243,16 +251,16 @@ describe('workflow run steps client', () => {
   });
 
   test('get() is the single-step execution fetch', async () => {
-    const stepsClient = new APIWorkflowRunSteps(new MockClient());
+    const stepsClient = new APIWorkflowSteps(new MockClient());
 
-    expect(stepsClient.get.length).toBe(3);
+    expect(stepsClient.get.length).toBe(2);
     await expect(
-      (stepsClient.get as unknown as (runId: string) => Promise<unknown>)('run_123')
-    ).rejects.toThrow('blockId is required');
+      (stepsClient.get as unknown as (stepId: string) => Promise<unknown>)('')
+    ).rejects.toThrow('stepId is required');
   });
 
   test('only exposes get for full execution fetches', () => {
-    const stepsClient = new APIWorkflowRunSteps(new MockClient());
+    const stepsClient = new APIWorkflowSteps(new MockClient());
     expect('getAll' in stepsClient).toBe(false);
     expect('get_all' in stepsClient).toBe(false);
     expect('getMany' in stepsClient).toBe(false);
@@ -283,8 +291,8 @@ describe('workflow run steps client', () => {
       }
     }
 
-    const stepsClient = new APIWorkflowRunSteps(new GetPartitionMockClient());
-    const step = await stepsClient.get('run_123', 'for_each-1');
+    const stepsClient = new APIWorkflowSteps(new GetPartitionMockClient());
+    const step = await stepsClient.get('step_for_each_1');
 
     expect(step.artifact).toEqual({
       operation: 'partition',

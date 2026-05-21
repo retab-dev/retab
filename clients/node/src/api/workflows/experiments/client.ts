@@ -1,13 +1,11 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
 import APIWorkflowExperimentRuns from './runs/client.js';
 import {
-  EligibleBlockListResponse,
   ExperimentDocumentCaptureRequest,
   ExperimentList,
   ExperimentResponse,
   ExplicitExperimentDocumentRequest,
   NConsensusValue,
-  ZEligibleBlockListResponse,
   ZExperimentList,
   ZExperimentResponse,
 } from './types.js';
@@ -129,25 +127,6 @@ export default class APIWorkflowExperiments extends CompositionClient {
     return {
       url: `/workflows/experiments/${experimentId}?workflow_id=${workflowId}`,
       method: 'DELETE',
-    };
-  }
-
-  prepare_duplicate(
-    workflowId: string,
-    experimentId: string
-  ): { url: string; method: string; body: { source_experiment_id: string } } {
-    // Duplicate is a discriminated create — body carries source_experiment_id.
-    return {
-      url: `/workflows/experiments?workflow_id=${workflowId}`,
-      method: 'POST',
-      body: { source_experiment_id: experimentId },
-    };
-  }
-
-  prepare_list_eligible_blocks(workflowId: string): { url: string; method: string } {
-    return {
-      url: `/workflows/experiments/eligible-blocks?workflow_id=${workflowId}`,
-      method: 'GET',
     };
   }
 
@@ -279,48 +258,5 @@ export default class APIWorkflowExperiments extends CompositionClient {
       params: options?.params,
       headers: options?.headers,
     });
-  }
-
-  /**
-   * Duplicate an experiment with the same documents and configuration.
-   * The duplicate has no runs.
-   */
-  async duplicate(
-    workflowId: string,
-    experimentId: string,
-    options?: RequestOptions
-  ): Promise<ExperimentResponse> {
-    const request = this.prepare_duplicate(workflowId, experimentId);
-    return this._fetchJson(ZExperimentResponse, {
-      url: request.url,
-      method: request.method,
-      body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  /**
-   * List blocks in the workflow that support experiments, with rolled-up
-   * counts of how many experiments are attached, drifted, and stale.
-   */
-  async listEligibleBlocks(
-    workflowId: string,
-    options?: RequestOptions
-  ): Promise<EligibleBlockListResponse> {
-    const request = this.prepare_list_eligible_blocks(workflowId);
-    return this._fetchJson(ZEligibleBlockListResponse, {
-      url: request.url,
-      method: request.method,
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  async list_eligible_blocks(
-    workflowId: string,
-    options?: RequestOptions
-  ): Promise<EligibleBlockListResponse> {
-    return this.listEligibleBlocks(workflowId, options);
   }
 }

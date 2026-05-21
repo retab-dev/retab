@@ -9,16 +9,13 @@ import (
 )
 
 // TestWorkflowGraphListsReturnPaginatedEnvelope is the regression guard for the
-// shape conversion of the seven workflow GRAPH list endpoints from bare
+// shape conversion of the four workflow GRAPH list endpoints from bare
 // arrays to PaginatedList[T] envelopes.
 //
 //	GET /v1/workflows/blocks?workflow_id={wf}                                    -> PaginatedList[WorkflowBlock]
-//	GET /v1/workflows/blocks/{id}/config-history?workflow_id={wf}                -> PaginatedList[BlockConfigVersion]
 //	GET /v1/workflows/edges?workflow_id={wf}                                     -> PaginatedList[WorkflowEdgeDoc]
 //	GET /v1/workflows/artifacts                                      -> PaginatedList[WorkflowArtifact]
-//	GET /v1/workflows/snapshots?workflow_id={wf}                                 -> PaginatedList[WorkflowSnapshot]
 //	GET /v1/workflows/steps?run_id={run}                              -> PaginatedList[WorkflowRunStep]
-//	GET /v1/workflows/steps/{block}/simulations?run_id={run}          -> PaginatedList[BlockSimulation]
 func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 	envelope := func(items ...map[string]any) map[string]any {
 		return map[string]any{
@@ -39,17 +36,6 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"position_x":  0,
 				"position_y":  0,
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks/extract-1/config-history" && r.URL.Query().Get("workflow_id") == "wf_aaa":
-			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
-				"config_fingerprint": "fp_1",
-				"block_type":         "extract",
-				"block_label":        "Extract",
-				"first_seen_at":      "2026-01-01T00:00:00Z",
-				"last_seen_at":       "2026-01-02T00:00:00Z",
-				"snapshot_versions":  []int{1, 2},
-				"run_count":          7,
-				"is_current":         true,
-			}))
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/edges" && r.URL.Query().Get("workflow_id") == "wf_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"id":              "edge-1",
@@ -65,17 +51,6 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"operation": "extraction",
 				"id":        "ext_123",
 			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/wf_aaa/snapshots":
-			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
-				"id":           "wfsn_1",
-				"snapshot_id":  "snap_1",
-				"workflow_id":  "wf_aaa",
-				"version":      3,
-				"description":  "third release",
-				"block_count":  4,
-				"edge_count":   3,
-				"published_at": "2026-04-01T12:00:00Z",
-			}))
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/steps" && r.URL.Query().Get("run_id") == "run_aaa":
 			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
 				"run_id":          "run_aaa",
@@ -85,15 +60,6 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 				"block_type":      "extract",
 				"block_label":     "Extract",
 				"lifecycle":       map[string]any{"status": "completed"},
-			}))
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/steps/extract-1/simulations" && r.URL.Query().Get("run_id") == "run_aaa":
-			_ = json.NewEncoder(w).Encode(envelope(map[string]any{
-				"id":          "sim_1",
-				"workflow_id": "wf_aaa",
-				"run_id":      "run_aaa",
-				"block_id":    "extract-1",
-				"block_type":  "extract",
-				"success":     true,
 			}))
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
@@ -118,14 +84,6 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 		t.Fatalf("blocks.ListMetadata = %#v", blocks.ListMetadata)
 	}
 
-	history, err := client.Workflows.Blocks.ConfigHistory(ctx, "wf_aaa", "extract-1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(history.Data) != 1 || history.Data[0].ConfigFingerprint != "fp_1" || history.Data[0].RunCount != 7 {
-		t.Fatalf("config history = %#v", history)
-	}
-
 	edges, err := client.Workflows.Edges.List(ctx, "wf_aaa", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -142,27 +100,11 @@ func TestWorkflowGraphListsReturnPaginatedEnvelope(t *testing.T) {
 		t.Fatalf("artifacts = %#v", artifacts)
 	}
 
-	snaps, err := client.Workflows.ListSnapshots(ctx, "wf_aaa", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(snaps.Data) != 1 || snaps.Data[0].SnapshotID != "snap_1" || snaps.Data[0].Version != 3 {
-		t.Fatalf("snapshots = %#v", snaps)
-	}
-
-	steps, err := client.Workflows.Runs.Steps.List(ctx, "run_aaa")
+	steps, err := client.Workflows.Steps.List(ctx, "run_aaa")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(steps.Data) != 1 || steps.Data[0].BlockID != "extract-1" {
 		t.Fatalf("steps = %#v", steps)
-	}
-
-	sims, err := client.Workflows.Blocks.ListSimulations(ctx, "run_aaa", "extract-1", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(sims.Data) != 1 || sims.Data[0].ID != "sim_1" || !sims.Data[0].Success {
-		t.Fatalf("simulations = %#v", sims)
 	}
 }

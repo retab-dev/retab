@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"regexp"
-	"time"
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
@@ -242,19 +241,6 @@ auditable.`,
 	}),
 }
 
-var workflowsReviewsEscalateCmd = &cobra.Command{
-	Use:    "escalate <review-id>",
-	Short:  "Unsupported legacy review escalation command",
-	Hidden: true,
-	Long: `Review escalation is not supported by the review API.
-Use ` + "`reviews approve`" + `, ` + "`reviews reject`" + `, or ` + "`reviews versions create`" + `.`,
-	Example: "",
-	Args:    cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		return fmt.Errorf("review escalation is not supported by the review API; use reviews approve, reviews reject, or reviews versions create")
-	}),
-}
-
 var workflowsReviewsVersionsCmd = &cobra.Command{
 	Use:   "versions",
 	Short: "Manage immutable review output versions",
@@ -375,57 +361,6 @@ Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 			return err
 		}
 		return printReviewVersionResult(cmd, result)
-	}),
-}
-
-var workflowsReviewsWaitCmd = &cobra.Command{
-	Use:   "wait <review-id>",
-	Short: "Poll until a review is pending",
-	Long: `Poll the review until it exists and has no terminal decision, then
-print it. A 404 is not an error — polling continues until ` + "`--timeout`" + `.`,
-	Example: `  retab workflows reviews wait rev_123 --timeout 300`,
-	Args:    cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		timeout, _ := cmd.Flags().GetInt("timeout")
-		interval, _ := cmd.Flags().GetInt("poll-interval")
-		deadline := time.Now().Add(time.Duration(timeout) * time.Second)
-		// Track the last terminal state we observed so the timeout error can
-		// distinguish "the review never appeared" (only 404s) from "the
-		// review is already decided" (got a body, but with a terminal
-		// decision). Generic "was not pending" is unhelpful — once a review
-		// is decided it never becomes pending again, so the caller needs to
-		// know which case they're in.
-		var lastDecided *retab.Review
-		for {
-			ctx, cancel := ctxFor(cmd)
-			review, err := client.Workflows.Reviews.Get(ctx, args[0])
-			cancel()
-			if err != nil {
-				if apiErr, ok := err.(*retab.APIError); !ok || apiErr.StatusCode != 404 {
-					return err
-				}
-			} else if review.Decision == nil {
-				return printReviewOverlayResult(cmd, review)
-			} else {
-				lastDecided = review
-			}
-			if time.Now().After(deadline) {
-				if lastDecided != nil && lastDecided.Decision != nil {
-					return fmt.Errorf(
-						"review %s is already %s (decided at %s); wait will never succeed on a decided review",
-						args[0],
-						lastDecided.Decision.Verdict,
-						lastDecided.Decision.DecidedAt.Format(time.RFC3339),
-					)
-				}
-				return fmt.Errorf("review %s did not appear within %ds", args[0], timeout)
-			}
-			time.Sleep(time.Duration(interval) * time.Second)
-		}
 	}),
 }
 
@@ -815,9 +750,6 @@ func init() {
 	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("parent-id")
 	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("snapshot-file")
 
-	workflowsReviewsWaitCmd.Flags().Var(&positiveIntFlagValue{value: "120"}, "timeout", "max seconds to wait until review is required")
-	workflowsReviewsWaitCmd.Flags().Var(&positiveIntFlagValue{value: "2"}, "poll-interval", "seconds between polls")
-
 	workflowsReviewsVersionsCmd.AddCommand(
 		workflowsReviewsVersionsListCmd,
 		workflowsReviewsVersionsGetCmd,
@@ -829,9 +761,7 @@ func init() {
 		workflowsReviewsSchemaCmd,
 		workflowsReviewsApproveCmd,
 		workflowsReviewsRejectCmd,
-		workflowsReviewsEscalateCmd,
 		workflowsReviewsVersionsCmd,
-		workflowsReviewsWaitCmd,
 	)
 	workflowsCmd.AddCommand(workflowsReviewsCmd)
 }

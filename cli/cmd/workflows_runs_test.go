@@ -109,10 +109,13 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 				},
 				"list_metadata": map[string]any{},
 			})
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/run":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs":
 			var body map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				t.Fatalf("decode request body: %v", err)
+			}
+			if body["workflow_id"] != "wf_123" {
+				t.Fatalf("workflow_id = %#v, want wf_123", body["workflow_id"])
 			}
 			postedDocuments, _ = body["documents"].(map[string]any)
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -163,12 +166,15 @@ func TestWorkflowsRunsCreateSendsDocumentURLPayload(t *testing.T) {
 	var postedDocuments map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		var body map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatalf("decode request body: %v", err)
+		}
+		if body["workflow_id"] != "wf_123" {
+			t.Fatalf("workflow_id = %#v, want wf_123", body["workflow_id"])
 		}
 		postedDocuments, _ = body["documents"].(map[string]any)
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -221,12 +227,15 @@ func TestWorkflowsRunsCreateAcceptsDocumentsFileDescriptors(t *testing.T) {
 	var postedDocuments map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/wf_123/run" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		var body map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatalf("decode request body: %v", err)
+		}
+		if body["workflow_id"] != "wf_123" {
+			t.Fatalf("workflow_id = %#v, want wf_123", body["workflow_id"])
 		}
 		postedDocuments, _ = body["documents"].(map[string]any)
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -295,10 +304,13 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 				},
 				"list_metadata": map[string]any{},
 			})
-		case r.Method == http.MethodPost && r.URL.Path == "/workflows/wf_123/run":
+		case r.Method == http.MethodPost && r.URL.Path == "/workflows/runs":
 			var body map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				t.Fatalf("decode request body: %v", err)
+			}
+			if body["workflow_id"] != "wf_123" {
+				t.Fatalf("workflow_id = %#v, want wf_123", body["workflow_id"])
 			}
 			postedDocuments, _ = body["documents"].(map[string]any)
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -572,7 +584,7 @@ func TestWorkflowsRunsRestartSendsDefaultConfigSource(t *testing.T) {
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/run_123/restart" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs" {
 			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -625,7 +637,7 @@ func TestWorkflowsRunsRestartSendsDefaultConfigSource(t *testing.T) {
 	if !strings.Contains(stdout, "run_456") {
 		t.Fatalf("expected restart response on stdout, got:\n%s", stdout)
 	}
-	if body["command_id"] != "cmd_restart" || body["config_source"] != "published" {
+	if body["restart_of"] != "run_123" || body["command_id"] != "cmd_restart" || body["config_source"] != "published" {
 		t.Fatalf("restart body = %#v", body)
 	}
 }
@@ -682,8 +694,8 @@ func resetWorkflowRunsFlag(t *testing.T, cmd *cobra.Command, name string) {
 	}
 }
 
-func TestWorkflowsRunsStepsListExampleUsesPaginatedEnvelope(t *testing.T) {
-	example := workflowsRunsStepsListCmd.Example
+func TestWorkflowsStepsListExampleUsesPaginatedEnvelope(t *testing.T) {
+	example := workflowsStepsListCmd.Example
 	if !strings.Contains(example, ".data[]") {
 		t.Fatalf("steps list example should iterate over .data[], got:\n%s", example)
 	}
@@ -697,14 +709,75 @@ func TestWorkflowsRunsStepsListExampleUsesPaginatedEnvelope(t *testing.T) {
 // (StepResponse in routes.py). A doc that names a non-existent field on
 // the live response is worse than no example — users copy-paste and get
 // empty output.
-func TestWorkflowsRunsStepsGetExampleNamesARealResponseField(t *testing.T) {
-	example := workflowsRunsStepsGetCmd.Example
+func TestWorkflowsStepsGetExampleNamesARealResponseField(t *testing.T) {
+	example := workflowsStepsGetCmd.Example
 	if strings.Contains(example, "'.input'") || strings.Contains(example, ".input ") || strings.HasSuffix(strings.TrimSpace(example), ".input") {
 		t.Fatalf("steps get example references stale .input — StepResponse exposes .handle_inputs / .handle_outputs:\n%s", example)
 	}
 	if !strings.Contains(example, "handle_inputs") && !strings.Contains(example, "handle_outputs") {
 		t.Fatalf("steps get example should reference a real StepResponse field (handle_inputs / handle_outputs):\n%s", example)
 	}
+}
+
+func TestWorkflowsStepsGetUsesStepIDRoute(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/workflows/steps/step_123" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":              "step_123",
+			"workflow_run_id": "run_123",
+			"block_id":        "blk_123",
+			"handle_inputs":   map[string]any{},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsStepsGetCmd.RunE(workflowsStepsGetCmd, []string{"step_123"}); err != nil {
+			t.Fatalf("steps get: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if !strings.Contains(stdout, "step_123") {
+		t.Fatalf("expected step response on stdout, got:\n%s", stdout)
+	}
+}
+
+func TestWorkflowsStepsGetHelpUsesStepID(t *testing.T) {
+	for _, text := range []string{workflowsStepsCmd.Example, workflowsStepsGetCmd.Use, workflowsStepsGetCmd.Long, workflowsStepsGetCmd.Example} {
+		if strings.Contains(text, "run_xyz789 blk_extract_1") || strings.Contains(text, "<run-id> <block-id>") {
+			t.Fatalf("steps get help should use step id, got:\n%s", text)
+		}
+	}
+	if !strings.Contains(workflowsStepsGetCmd.Use, "<step-id>") {
+		t.Fatalf("steps get usage should mention <step-id>, got %q", workflowsStepsGetCmd.Use)
+	}
+}
+
+func TestWorkflowsStepsCommandIsTopLevelOnly(t *testing.T) {
+	if commandByName(workflowsCmd, "steps") != workflowsStepsCmd {
+		t.Fatal("workflows steps command is not registered at the top level")
+	}
+	if commandByName(workflowsRunsCmd, "steps") != nil {
+		t.Fatal("nested steps command should not be registered under runs")
+	}
+}
+
+func commandByName(parent *cobra.Command, name string) *cobra.Command {
+	for _, child := range parent.Commands() {
+		if child.Name() == name {
+			return child
+		}
+	}
+	return nil
 }
 
 func TestWorkflowsRunsGetHelpUsesLifecycleStatusPath(t *testing.T) {

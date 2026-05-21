@@ -11,7 +11,7 @@ import (
 	retab "github.com/retab-dev/retab/clients/go"
 )
 
-func renderWorkflowASCIIViewString(t *testing.T, workflow *retab.WorkflowWithEntities) string {
+func renderWorkflowASCIIViewString(t *testing.T, workflow *workflowGraph) string {
 	t.Helper()
 	var buf bytes.Buffer
 	if err := renderWorkflowASCIIView(&buf, workflow); err != nil {
@@ -32,7 +32,7 @@ func lineAndColumn(t *testing.T, out string, needle string) (int, int) {
 }
 
 func TestRenderWorkflowASCIIViewLinearPositionedWorkflow(t *testing.T) {
-	workflow := &retab.WorkflowWithEntities{
+	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_linear", Name: "Linear invoice flow"},
 		Blocks: []retab.WorkflowBlock{
 			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
@@ -66,7 +66,7 @@ func TestRenderWorkflowASCIIViewLinearPositionedWorkflow(t *testing.T) {
 }
 
 func TestRenderWorkflowASCIIViewBranchingWorkflowPreservesVerticalShape(t *testing.T) {
-	workflow := &retab.WorkflowWithEntities{
+	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_branch", Name: "Branching review flow"},
 		Blocks: []retab.WorkflowBlock{
 			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 220},
@@ -99,7 +99,7 @@ func TestRenderWorkflowASCIIViewBranchingWorkflowPreservesVerticalShape(t *testi
 }
 
 func TestRenderWorkflowASCIIViewMergedWorkflowKeepsVisualColumns(t *testing.T) {
-	workflow := &retab.WorkflowWithEntities{
+	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_merge", Name: "Reconciliation flow"},
 		Blocks: []retab.WorkflowBlock{
 			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 220},
@@ -150,7 +150,7 @@ func TestRenderWorkflowASCIIViewMergedWorkflowKeepsVisualColumns(t *testing.T) {
 }
 
 func TestRenderWorkflowASCIIViewDisconnectedSubgraphRendersOnce(t *testing.T) {
-	workflow := &retab.WorkflowWithEntities{
+	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_detached"},
 		Blocks: []retab.WorkflowBlock{
 			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
@@ -177,7 +177,7 @@ func TestRenderWorkflowASCIIViewDisconnectedSubgraphRendersOnce(t *testing.T) {
 }
 
 func TestRenderWorkflowASCIIViewReportsIsolatedBlocks(t *testing.T) {
-	workflow := &retab.WorkflowWithEntities{
+	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_isolated"},
 		Blocks: []retab.WorkflowBlock{
 			{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
@@ -212,7 +212,7 @@ func TestRenderWorkflowASCIIViewHidesEdgeLabelsForDenseGraphs(t *testing.T) {
 		})
 	}
 	edges = append(edges, retab.WorkflowEdgeDoc{ID: "edge_end", SourceBlock: "hub", TargetBlock: "end"})
-	workflow := &retab.WorkflowWithEntities{
+	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_dense"},
 		Blocks:   blocks,
 		Edges:    edges,
@@ -227,7 +227,7 @@ func TestRenderWorkflowASCIIViewHidesEdgeLabelsForDenseGraphs(t *testing.T) {
 	}
 }
 
-func TestWorkflowsViewCommandFetchesEntitiesAndPrintsASCII(t *testing.T) {
+func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -235,20 +235,34 @@ func TestWorkflowsViewCommandFetchesEntitiesAndPrintsASCII(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
-		if r.URL.Path != "/workflows/wf_graph/entities" {
-			t.Fatalf("path = %s, want entities", r.URL.Path)
-		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"workflow": map[string]any{"id": "wf_graph", "name": "Invoice flow"},
-			"blocks": []map[string]any{
-				{"id": "start", "type": "start-document", "label": "Start", "position_x": 0, "position_y": 0},
-				{"id": "extract", "type": "extract", "label": "Extract totals", "position_x": 300, "position_y": 0},
-			},
-			"edges": []map[string]any{
-				{"id": "edge_1", "source_block": "start", "target_block": "extract"},
-			},
-		})
+		switch r.URL.Path {
+		case "/workflows/wf_graph":
+			_ = json.NewEncoder(w).Encode(map[string]any{"id": "wf_graph", "name": "Invoice flow"})
+		case "/workflows/blocks":
+			if r.URL.Query().Get("workflow_id") != "wf_graph" {
+				t.Fatalf("blocks workflow_id = %q", r.URL.Query().Get("workflow_id"))
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{"id": "start", "type": "start-document", "label": "Start", "position_x": 0, "position_y": 0},
+					{"id": "extract", "type": "extract", "label": "Extract totals", "position_x": 300, "position_y": 0},
+				},
+				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+		case "/workflows/edges":
+			if r.URL.Query().Get("workflow_id") != "wf_graph" {
+				t.Fatalf("edges workflow_id = %q", r.URL.Query().Get("workflow_id"))
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
+					{"id": "edge_1", "source_block": "start", "target_block": "extract"},
+				},
+				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+		default:
+			t.Fatalf("unexpected path = %s", r.URL.Path)
+		}
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
