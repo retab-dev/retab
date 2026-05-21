@@ -81,6 +81,9 @@ func (s *WorkflowsService) List(ctx context.Context, params *ListWorkflowsParams
 	query.Set("limit", "10")
 	query.Set("order", "desc")
 	if params != nil {
+		if params.Before != "" && params.After != "" {
+			return nil, fmt.Errorf("retab: Before and After are mutually exclusive")
+		}
 		addQuery(query, "before", params.Before)
 		addQuery(query, "after", params.After)
 		addQuery(query, "order", params.Order)
