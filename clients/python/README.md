@@ -80,7 +80,8 @@ edges:
 Workflow steps expose `artifact` as a stable `{operation, id}` pointer. Use
 `client.workflows.artifacts` to fetch the persisted record behind that pointer,
 including review evaluations, conditional matches, function outputs, and API-call
-attempts.
+attempts. Review decisions live on the review queue APIs; artifact records are
+for inspecting why a branch or gate fired.
 
 ```python
 run = client.workflows.runs.create_and_wait(
@@ -92,8 +93,9 @@ step = client.workflows.runs.steps.get(run.id, "review-node")
 if step.artifact:
     artifact = client.workflows.artifacts.get(step.artifact)
     print(artifact.operation)
-    print(artifact.requires_human_review)
-    print(artifact.evaluations)
+    print(artifact.id)
+    if artifact.operation == "review_trigger_evaluation":
+        print(artifact.evaluations)
 
 all_artifacts = client.workflows.artifacts.list(run.id)
 ```

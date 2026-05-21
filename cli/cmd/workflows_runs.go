@@ -184,7 +184,7 @@ Review-based: when a block pauses for review, the run enters status
 ` + "`retab workflows reviews`" + ` command group —
 ` + "`reviews list`" + ` for the queue, ` + "`reviews get`" + ` to inspect
 a block run awaiting review, then ` + "`reviews approve`" + ` or ` + "`reviews reject`" + `
-to decide it. Use ` + "`reviews versions create`" + ` to append a corrected output before approving.
+to decide it. Use ` + "`reviews versions append`" + ` to append a corrected output before approving.
 
 For declarative regression testing of workflow outputs, see
 ` + "`retab workflows tests --help`" + `.`,
@@ -201,9 +201,9 @@ For declarative regression testing of workflow outputs, see
   # Cancel an in-flight run
   retab workflows runs cancel run_xyz789
 
-  # Approve a block run awaiting review
-  retab workflows reviews approve run_xyz789 blk_review_1 \
-    --version-id 9d6d...`,
+  # Approve a review by id
+  retab workflows reviews approve rev_123 \
+    --version-id ver_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
 }
 
 var workflowsRunsCreateCmd = &cobra.Command{

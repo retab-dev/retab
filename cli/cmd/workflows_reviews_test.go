@@ -13,7 +13,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const reviewTestVersionID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+// 26 base32 chars after the ver_ prefix — matches the new VersionId regex
+// emitted by review_overlay_models.compute_version_id (base32 of the first
+// 16 bytes of sha256(canonical_json(snapshot))).
+const reviewTestVersionID = "ver_AAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 func reviewVersionBody(parentID any, snapshot map[string]any) map[string]any {
 	return map[string]any{
@@ -841,7 +844,7 @@ func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T
 			if err == nil {
 				t.Fatal("expected malformed version id error")
 			}
-			if !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "64-character hex") {
+			if !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "ver_") {
 				t.Fatalf("error = %v", err)
 			}
 			if strings.Contains(err.Error(), "credentials") {
@@ -873,11 +876,49 @@ func TestReviewsVersionsAppendValidatesParentVersionIDBeforeCredentials(t *testi
 	if err == nil {
 		t.Fatal("expected malformed parent id error")
 	}
-	if !strings.Contains(err.Error(), "--parent-version-id") || !strings.Contains(err.Error(), "64-character hex") {
+	if !strings.Contains(err.Error(), "--parent-version-id") || !strings.Contains(err.Error(), "ver_") {
 		t.Fatalf("error = %v", err)
 	}
 	if strings.Contains(err.Error(), "credentials") {
 		t.Fatalf("error %q checked credentials before validating --parent-version-id", err.Error())
+	}
+}
+
+// Regression guard for the CLI <-> server version-id contract. Before the
+// greenfield rename the CLI validated --version-id / --parent-version-id
+// against ^[a-fA-F0-9]{64}$ (the old sha256 hex shape) and every approve /
+// reject / append against the new ver_<26 base32> id failed at the flag layer
+// before the request was even built. Pin both halves explicitly:
+//
+//  1. A well-formed ver_ id is accepted by the validator.
+//  2. A 64-char hex id (the old shape) is rejected by the validator.
+//
+// Together they make a silent drift back to the old regex impossible.
+func TestReviewsApproveAcceptsVerPrefixedAndRejectsLegacyHexVersionID(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "")
+	t.Setenv("RETAB_API_BASE_URL", "")
+	t.Setenv("HOME", t.TempDir())
+
+	// (1) ver_<26 base32> must pass the format gate. We don't care what
+	// happens next — only that we do NOT bail out with a flag-format error.
+	cmd := newApproveTestCmd()
+	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.RunE(cmd, []string{"rev_1"})
+	if err != nil && strings.Contains(err.Error(), "--version-id") {
+		t.Fatalf("validator rejected a valid ver_ id: %v", err)
+	}
+
+	// (2) The pre-cutover 64-char hex shape must be rejected up front.
+	legacyHex := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	cmd = newApproveTestCmd()
+	if err := cmd.Flags().Set("version-id", legacyHex); err != nil {
+		t.Fatal(err)
+	}
+	err = cmd.RunE(cmd, []string{"rev_1"})
+	if err == nil || !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "ver_") {
+		t.Fatalf("legacy 64-char hex id should be rejected with --version-id ver_<...>: %v", err)
 	}
 }
 
