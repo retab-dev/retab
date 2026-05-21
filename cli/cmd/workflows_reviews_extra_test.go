@@ -220,10 +220,10 @@ func TestReviewsGetTableShowsEmptyDecisionForOpenOverlay(t *testing.T) {
 	}
 	dataRow := lines[len(lines)-1]
 	dataCols := strings.Fields(dataRow)
-	// reviewOverlayColumns has 10 columns; an open overlay should render
-	// 8 populated cells (queue projection only), so Fields() returns 8.
-	if len(dataCols) != 8 {
-		t.Fatalf("expected 8 populated cells for open overlay (last 2 empty), got %d:\n%s", len(dataCols), stdout)
+	// reviewOverlayColumns has 9 columns; an open overlay should render
+	// 7 populated cells (queue projection only), so Fields() returns 7.
+	if len(dataCols) != 7 {
+		t.Fatalf("expected 7 populated cells for open overlay (last 2 empty), got %d:\n%s", len(dataCols), stdout)
 	}
 	for _, bad := range []string{"<nil>", "approved", "rejected"} {
 		if strings.Contains(stdout, bad) {
@@ -246,8 +246,7 @@ func reviewQueueRowJSON(blockRunID string) map[string]any {
 		"iteration_key":   nil,
 		"block_type":      "extract",
 		"triggered_by":    map[string]any{"kind": "any_required_field_null"},
-		"awaiting_since":  "2026-05-21T09:00:00Z",
-		"priority":        0,
+		"created_at":      "2026-05-21T09:00:00Z",
 		"seed_version_id": reviewTestVersionID,
 		"version_count":   1,
 		"decision":        nil,

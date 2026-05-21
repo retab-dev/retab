@@ -37,8 +37,7 @@ func reviewJSON(decided bool) map[string]any {
 		"iteration_key":       nil,
 		"block_type":          "extract",
 		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
-		"awaiting_since":      "2026-05-18T09:00:00Z",
-		"priority":            0,
+		"created_at":          "2026-05-18T09:00:00Z",
 		"versions": map[string]any{
 			reviewVersionID: map[string]any{
 				"parent_id":  nil,
@@ -68,8 +67,7 @@ func reviewSummaryJSON() map[string]any {
 		"iteration_key":   nil,
 		"block_type":      "extract",
 		"triggered_by":    map[string]any{"kind": "any_required_field_null"},
-		"awaiting_since":  "2026-05-18T09:00:00Z",
-		"priority":        0,
+		"created_at":      "2026-05-18T09:00:00Z",
 		"seed_version_id": reviewVersionID,
 		"version_count":   1,
 		"decision":        nil,
