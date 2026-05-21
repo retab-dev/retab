@@ -163,7 +163,7 @@ func TestRealBackendWireShape_QueueResponseLacksOrganizationID(t *testing.T) {
 					"priority":            0,
 				},
 			},
-			"has_more": false,
+			"list_metadata": map[string]any{"before": nil, "after": "blockrun_1"},
 		})
 	}))
 	defer server.Close()
@@ -181,5 +181,10 @@ func TestRealBackendWireShape_QueueResponseLacksOrganizationID(t *testing.T) {
 	}
 	if resp.Data[0].ID != "blockrun_1" {
 		t.Fatalf("Data[0].ID = %q", resp.Data[0].ID)
+	}
+	// Pin the canonical cursor wire shape — the backend uses
+	// list_metadata.after, not has_more, to signal another page.
+	if resp.ListMetadata.After != "blockrun_1" {
+		t.Fatalf("ListMetadata.After = %q (want %q)", resp.ListMetadata.After, "blockrun_1")
 	}
 }

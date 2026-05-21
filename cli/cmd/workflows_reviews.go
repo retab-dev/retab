@@ -48,7 +48,12 @@ one item with ` + "`reviews get`" + ` to see it.
 Use ` + "`--decision`" + ` to control which slice of the queue is returned.
 ` + "`--decision none`" + ` (the default) returns the open queue: overlays still
 awaiting review. ` + "`--decision any`" + ` returns every overlay, including ones
-already approved or rejected, so an operator can review past decisions.`,
+already approved or rejected, so an operator can review past decisions.
+
+Paginate by passing the cursor from a previous response's
+` + "`list_metadata`" + `: ` + "`--after`" + ` for the next page,
+` + "`--before`" + ` for the previous one. The two are mutually
+exclusive.`,
 	Example: `  # The whole org's awaiting-review queue
   retab workflows reviews list
 
@@ -56,21 +61,29 @@ already approved or rejected, so an operator can review past decisions.`,
   retab workflows reviews list --workflow-id wf_abc123
 
   # Include decided overlays in the listing
-  retab workflows reviews list --decision any`,
+  retab workflows reviews list --decision any
+
+  # Paginate: take the cursor from the first page and feed it back as --after
+  retab workflows reviews list --after $(retab workflows reviews list --limit 50 --output json | jq -r '.list_metadata.after')`,
 	Args: cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		params := &retab.ListReviewsParams{}
+		params.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
+		params.Decision, _ = cmd.Flags().GetString("decision")
+		params.Before, _ = cmd.Flags().GetString("before")
+		params.After, _ = cmd.Flags().GetString("after")
+		if params.Before != "" && params.After != "" {
+			return fmt.Errorf("--before and --after are mutually exclusive")
+		}
+		if cmd.Flags().Changed("limit") {
+			params.Limit, _ = cmd.Flags().GetInt("limit")
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		params := &retab.ListReviewsParams{}
-		params.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
-		params.Decision, _ = cmd.Flags().GetString("decision")
-		if cmd.Flags().Changed("limit") {
-			params.Limit, _ = cmd.Flags().GetInt("limit")
-		}
 		result, err := client.Workflows.Reviews.List(ctx, params)
 		if err != nil {
 			return err
@@ -352,13 +365,23 @@ the run status and message.`,
 	}),
 }
 
-func printReviewQueueResult(cmd *cobra.Command, result *retab.ReviewQueueResponse) error {
+func printReviewQueueResult(cmd *cobra.Command, result *retab.PaginatedList[retab.ReviewQueueItem]) error {
 	format, err := ResolveOutputFormat(cmd, os.Stdout)
 	if err != nil {
 		return err
 	}
 	if format == OutputTable {
-		return RenderList(os.Stdout, OutputTable, result, reviewQueueColumns)
+		if err := RenderList(os.Stdout, OutputTable, result, reviewQueueColumns); err != nil {
+			return err
+		}
+		// Cursor-aware footer: the table goes to stdout so it stays
+		// pipeable; the truncation hint goes to stderr so jq/awk don't
+		// see it. JSON output is unchanged — the cursor is already in
+		// the list_metadata field of the printed envelope.
+		if result != nil && result.ListMetadata.After != "" {
+			fmt.Fprintf(os.Stderr, "… more results available; pass --after %s to continue.\n", result.ListMetadata.After)
+		}
+		return nil
 	}
 	return printJSON(result)
 }
@@ -652,6 +675,9 @@ func init() {
 	decisionFlag := newEnumStringFlagValue("--decision", "none", "any")
 	_ = decisionFlag.Set("none")
 	workflowsReviewsListCmd.Flags().Var(decisionFlag, "decision", "review slice to list: none (open queue, default) | any (include decided overlays)")
+	workflowsReviewsListCmd.Flags().String("before", "", "cursor for the previous page (from list_metadata.before; mutually exclusive with --after)")
+	workflowsReviewsListCmd.Flags().String("after", "", "cursor for the next page (from list_metadata.after; mutually exclusive with --before)")
+	workflowsReviewsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 
 	workflowsReviewsApproveCmd.Flags().String("version-id", "", "64-character content-addressed version id to approve (required)")
 	_ = workflowsReviewsApproveCmd.MarkFlagRequired("version-id")

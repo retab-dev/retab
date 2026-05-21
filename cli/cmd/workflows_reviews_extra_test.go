@@ -26,6 +26,9 @@ func newReviewsListTestCmd() *cobra.Command {
 	decisionFlag := newEnumStringFlagValue("--decision", "none", "any")
 	_ = decisionFlag.Set("none")
 	cmd.Flags().Var(decisionFlag, "decision", "")
+	cmd.Flags().String("before", "", "")
+	cmd.Flags().String("after", "", "")
+	cmd.MarkFlagsMutuallyExclusive("before", "after")
 	return cmd
 }
 
@@ -38,8 +41,8 @@ func TestReviewsListPassesDecisionFlag(t *testing.T) {
 		seenQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"data":     []any{},
-			"has_more": false,
+			"data":          []any{},
+			"list_metadata": map[string]any{"before": nil, "after": nil},
 		})
 	}))
 	defer server.Close()
@@ -69,8 +72,8 @@ func TestReviewsListDefaultsDecisionToNone(t *testing.T) {
 		seenQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"data":     []any{},
-			"has_more": false,
+			"data":          []any{},
+			"list_metadata": map[string]any{"before": nil, "after": nil},
 		})
 	}))
 	defer server.Close()
@@ -222,5 +225,175 @@ func TestReviewsGetTableShowsEmptyDecisionForOpenOverlay(t *testing.T) {
 		if strings.Contains(stdout, bad) {
 			t.Fatalf("open-overlay table output should not contain %q:\n%s", bad, stdout)
 		}
+	}
+}
+
+// reviewQueueRowJSON returns one well-formed queue row so the new
+// pagination tests can drive the table renderer without each test having
+// to hand-roll the same payload.
+func reviewQueueRowJSON(blockRunID string) map[string]any {
+	return map[string]any{
+		"_id":                 blockRunID,
+		"workflow_id":         "wf_1",
+		"workflow_version_id": "wfv_1",
+		"workflow_run_id":     "run_1",
+		"block_id":            "blk_1",
+		"block_run_id":        blockRunID,
+		"block_type":          "extract",
+		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
+		"awaiting_since":      "2026-05-21T09:00:00Z",
+		"priority":            0,
+	}
+}
+
+// TestReviewsListPassesBeforeAndAfterCursors verifies the CLI threads
+// --before / --after into the outbound HTTP query.
+func TestReviewsListPassesBeforeAndAfterCursors(t *testing.T) {
+	cases := []struct {
+		name string
+		flag string
+		val  string
+		want string
+	}{
+		{"before", "before", "brun_x", "before=brun_x"},
+		{"after", "after", "brun_y", "after=brun_y"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("HOME", t.TempDir())
+
+			var seenQuery string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				seenQuery = r.URL.RawQuery
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"data":          []any{},
+					"list_metadata": map[string]any{"before": nil, "after": nil},
+				})
+			}))
+			defer server.Close()
+			setReviewsBaseURL(t, server.URL)
+
+			cmd := newReviewsListTestCmd()
+			if err := cmd.Flags().Set(tc.flag, tc.val); err != nil {
+				t.Fatal(err)
+			}
+			captureStd(t, func() {
+				if err := cmd.RunE(cmd, nil); err != nil {
+					t.Fatalf("reviews list: %v", err)
+				}
+			})
+			if !strings.Contains(seenQuery, tc.want) {
+				t.Fatalf("expected %q in query, got %q", tc.want, seenQuery)
+			}
+		})
+	}
+}
+
+// TestReviewsListRejectsBeforeAndAfterTogether verifies the CLI rejects the
+// mutex violation at the command layer — no HTTP call is made.
+func TestReviewsListRejectsBeforeAndAfterTogether(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	called := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+	}))
+	defer server.Close()
+	setReviewsBaseURL(t, server.URL)
+
+	cmd := newReviewsListTestCmd()
+	if err := cmd.Flags().Set("before", "brun_x"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("after", "brun_y"); err != nil {
+		t.Fatal(err)
+	}
+	var runErr error
+	captureStd(t, func() {
+		runErr = cmd.RunE(cmd, nil)
+	})
+	if runErr == nil || !strings.Contains(runErr.Error(), "mutually exclusive") {
+		t.Fatalf("expected mutual-exclusion error, got %v", runErr)
+	}
+	if called {
+		t.Fatalf("HTTP server was called despite mutex violation")
+	}
+}
+
+// TestReviewsListTableShowsMoreResultsFooterWhenAfterCursorPresent
+// verifies that the table renderer prints the cursor footer on stderr (so
+// stdout stays pipeable) when list_metadata.after is set, and that the
+// stdout payload contains the row itself.
+func TestReviewsListTableShowsMoreResultsFooterWhenAfterCursorPresent(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data":          []any{reviewQueueRowJSON("blockrun_1")},
+			"list_metadata": map[string]any{"before": nil, "after": "brun_next"},
+		})
+	}))
+	defer server.Close()
+	setReviewsBaseURL(t, server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	cmd := newReviewsListTestCmd()
+	stdout, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, nil); err != nil {
+			t.Fatalf("reviews list: %v", err)
+		}
+	})
+	if !strings.Contains(stdout, "blockrun_1") {
+		t.Fatalf("expected row in stdout table, got:\n%s", stdout)
+	}
+	if !strings.Contains(stderr, "more results available; pass --after brun_next") {
+		t.Fatalf("expected cursor footer on stderr, got %q", stderr)
+	}
+	// The footer must NOT leak into stdout — that would break piping the
+	// table into jq / awk / column.
+	if strings.Contains(stdout, "more results available") {
+		t.Fatalf("footer leaked into stdout:\n%s", stdout)
+	}
+}
+
+// TestReviewsListTableOmitsFooterWhenNoMorePages pins the symmetric case:
+// when the backend returns list_metadata.after=null the CLI must not
+// emit a stray footer.
+func TestReviewsListTableOmitsFooterWhenNoMorePages(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data":          []any{reviewQueueRowJSON("blockrun_1")},
+			"list_metadata": map[string]any{"before": nil, "after": nil},
+		})
+	}))
+	defer server.Close()
+	setReviewsBaseURL(t, server.URL)
+
+	if err := rootCmd.PersistentFlags().Set("output", "table"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
+
+	cmd := newReviewsListTestCmd()
+	_, stderr := captureStd(t, func() {
+		if err := cmd.RunE(cmd, nil); err != nil {
+			t.Fatalf("reviews list: %v", err)
+		}
+	})
+	if strings.Contains(stderr, "more results available") {
+		t.Fatalf("expected no footer when there are no more pages, got %q", stderr)
 	}
 }

@@ -478,10 +478,13 @@ type ReviewQueueItem struct {
 }
 
 // ReviewQueueResponse is one page of the review queue.
-type ReviewQueueResponse struct {
-	Data    []ReviewQueueItem `json:"data"`
-	HasMore bool              `json:"has_more"`
-}
+//
+// Deprecated: use PaginatedList[ReviewQueueItem] returned by
+// WorkflowReviewsService.List. ReviewQueueResponse is kept only as a type
+// alias for source compatibility — the live backend emits the canonical
+// {data, list_metadata} envelope (no has_more boolean), so paginating
+// requires the cursor fields in PaginationCursor (Before/After).
+type ReviewQueueResponse = PaginatedList[ReviewQueueItem]
 
 // SubmitReviewDecisionResponse is the result of a verdict submission.
 //
