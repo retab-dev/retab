@@ -58,7 +58,7 @@ const OUTPUT_VERSION_JSON = {
 const DECISION_JSON = {
   verdict: 'approved',
   version_id: VERSION_ID,
-  decided_by: ACTOR_JSON,
+  author: ACTOR_JSON,
   decided_at: '2026-05-18T10:05:00Z',
   reason: null,
 };

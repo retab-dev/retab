@@ -37,7 +37,7 @@ _OUTPUT_VERSION = {
 _DECISION = {
     "verdict": "approved",
     "version_id": _VERSION_ID,
-    "decided_by": _ACTOR_HUMAN,
+    "author": _ACTOR_HUMAN,
     "decided_at": _NOW,
     "reason": None,
 }

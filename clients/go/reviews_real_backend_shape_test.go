@@ -44,7 +44,7 @@ func realPublicOverlayJSON() map[string]any {
 		"decision": map[string]any{
 			"verdict":    "approved",
 			"version_id": reviewVersionID,
-			"decided_by": map[string]any{"kind": "human", "id": "ada", "display_name": "ada"},
+			"author":     map[string]any{"kind": "human", "id": "ada", "display_name": "ada"},
 			"decided_at": "2026-05-21T09:05:00Z",
 			"reason":     nil,
 		},
