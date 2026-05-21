@@ -796,6 +796,7 @@ func resetWorkflowRunsFlag(t *testing.T, cmd *cobra.Command, name string) {
 		if err := slice.Replace(nil); err != nil {
 			t.Fatalf("reset --%s: %v", name, err)
 		}
+		flag.Changed = false
 		return
 	}
 	// Boolean flags reject "" — restore them by writing their default.
@@ -803,11 +804,13 @@ func resetWorkflowRunsFlag(t *testing.T, cmd *cobra.Command, name string) {
 		if err := cmd.Flags().Set(name, flag.DefValue); err != nil {
 			t.Fatalf("reset --%s: %v", name, err)
 		}
+		flag.Changed = false
 		return
 	}
 	if err := cmd.Flags().Set(name, ""); err != nil {
 		t.Fatalf("reset --%s: %v", name, err)
 	}
+	flag.Changed = false
 }
 
 func TestWorkflowsStepsListExampleUsesPaginatedEnvelope(t *testing.T) {
@@ -1015,7 +1018,6 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	flags := map[string]string{
-		"workflow-id":   "wf_123",
 		"block-id":      "blk_123",
 		"trigger-types": "api, email",
 	}
@@ -1028,7 +1030,7 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 
 	var err error
 	_, stderr := captureStd(t, func() {
-		err = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, nil)
+		err = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, []string{"wf_123"})
 	})
 	if err != nil {
 		t.Fatalf("runs export: %v\nstderr:\n%s", err, stderr)
@@ -1292,5 +1294,226 @@ func TestParseDocumentArgs_NilWarnSinkDoesNotPanic(t *testing.T) {
 	_, err := parseDocumentArgs(nil, []string{"start=./a.pdf"}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+// Bug A: `--status` and `--statuses` (and `--trigger-type` vs `--trigger-types`)
+// silently overrode each other — the array form would win and the scalar form
+// would be dropped without a warning. The fix detects the conflict locally
+// before any request is issued.
+//
+// These tests use a fresh cobra.Command wrapper so the `Changed(...)` state
+// does not leak between tests via the package-level `workflowsRunsListCmd`
+// (which is shared singleton state — pflag's `Changed` flag is sticky once
+// any test sets the flag, and the `resetWorkflowRunsFlag` helper only resets
+// values, not the `Changed` bit).
+func TestWorkflowsRunsListRejectsStatusAndStatusesTogetherLocally(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached when both --status and --statuses are set, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := newRunsListTestCmd()
+	if err := cmd.Flags().Set("status", "running"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("statuses", "completed"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = cmd.RunE(cmd, nil)
+	})
+	if err == nil {
+		t.Fatal("expected error when both --status and --statuses are set")
+	}
+	for _, want := range []string{"--status", "--statuses"} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("stderr %q should name conflicting flag %q", stderr, want)
+		}
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
+func TestWorkflowsRunsListRejectsTriggerTypeAndTriggerTypesTogetherLocally(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached when both --trigger-type and --trigger-types are set, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := newRunsListTestCmd()
+	if err := cmd.Flags().Set("trigger-type", "api"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("trigger-types", "manual"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = cmd.RunE(cmd, nil)
+	})
+	if err == nil {
+		t.Fatal("expected error when both --trigger-type and --trigger-types are set")
+	}
+	for _, want := range []string{"--trigger-type", "--trigger-types"} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("stderr %q should name conflicting flag %q", stderr, want)
+		}
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
+// newRunsListTestCmd returns a fresh wrapper around the runs list RunE,
+// declaring just the flag surface needed for the mutual-exclusion checks.
+// Using a fresh cobra.Command keeps `Changed(...)` state isolated from
+// other tests that also poke the package-level `workflowsRunsListCmd`.
+func newRunsListTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "test-runs-list", RunE: workflowsRunsListCmd.RunE}
+	cmd.Flags().String("workflow-id", "", "")
+	cmd.Flags().String("status", "", "")
+	cmd.Flags().StringArray("statuses", nil, "")
+	cmd.Flags().String("exclude-status", "", "")
+	cmd.Flags().String("trigger-type", "", "")
+	cmd.Flags().StringArray("trigger-types", nil, "")
+	cmd.Flags().String("from-date", "", "")
+	cmd.Flags().String("to-date", "", "")
+	cmd.Flags().String("search", "", "")
+	cmd.Flags().String("sort-by", "", "")
+	cmd.Flags().StringArray("fields", nil, "")
+	cmd.Flags().String("before", "", "")
+	cmd.Flags().String("after", "", "")
+	cmd.Flags().Int("limit", 0, "")
+	cmd.Flags().String("order", "", "")
+	cmd.Flags().Float64("min-cost", 0, "")
+	cmd.Flags().Float64("max-cost", 0, "")
+	cmd.Flags().Int("min-duration", 0, "")
+	cmd.Flags().Int("max-duration", 0, "")
+	return cmd
+}
+
+// Bug B: `workflows runs export` is the only `runs` command that historically
+// required `--workflow-id` instead of a positional argument. Migrate the
+// command to a positional first argument, keeping the flag as a hidden
+// deprecated fallback.
+func TestWorkflowsRunsExportAcceptsPositionalWorkflowID(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export-payload" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"csv_data": "id\nrun_123\n",
+			"rows":     1,
+			"columns":  1,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsExportCmd.Flags().Set("block-id", "blk_def"); err != nil {
+		t.Fatalf("set --block-id: %v", err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsExportCmd, "block-id") })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, []string{"wf_abc"})
+	})
+	if err != nil {
+		t.Fatalf("runs export wf_abc: %v\nstderr:\n%s", err, stderr)
+	}
+	if body["workflow_id"] != "wf_abc" {
+		t.Fatalf("workflow_id = %#v, want wf_abc", body["workflow_id"])
+	}
+	if body["block_id"] != "blk_def" {
+		t.Fatalf("block_id = %#v, want blk_def", body["block_id"])
+	}
+	if strings.Contains(stderr, "deprecated") {
+		t.Fatalf("positional invocation should not warn about deprecation, stderr:\n%s", stderr)
+	}
+}
+
+func TestWorkflowsRunsExportFlagFormStillWorksWithDeprecationWarning(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/export-payload" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"csv_data": "id\nrun_123\n",
+			"rows":     1,
+			"columns":  1,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	flags := map[string]string{
+		"workflow-id": "wf_abc",
+		"block-id":    "blk_def",
+	}
+	for flag, value := range flags {
+		if err := workflowsRunsExportCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsExportCmd, flag) })
+	}
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, nil)
+	})
+	if err != nil {
+		t.Fatalf("runs export --workflow-id: %v\nstderr:\n%s", err, stderr)
+	}
+	if body["workflow_id"] != "wf_abc" {
+		t.Fatalf("workflow_id = %#v, want wf_abc", body["workflow_id"])
+	}
+	if !strings.Contains(stderr, "--workflow-id is deprecated") {
+		t.Fatalf("stderr should warn about --workflow-id deprecation, got:\n%s", stderr)
+	}
+}
+
+// Bug C: indentation typo in the second example for `workflows runs restart`.
+func TestWorkflowsRunsRestartExampleIndentsSecondCommandLineConsistently(t *testing.T) {
+	example := workflowsRunsRestartCmd.Example
+	// One-space indented "retab" prefix used to live in the second example line.
+	if strings.Contains(example, "\n retab workflows runs restart") {
+		t.Fatalf("restart example has a single-space indent on a command line:\n%s", example)
+	}
+	if !strings.Contains(example, "\n  retab workflows runs restart run_xyz789 --config-source draft") {
+		t.Fatalf("restart example should align the draft-config-source example with two spaces:\n%s", example)
 	}
 }

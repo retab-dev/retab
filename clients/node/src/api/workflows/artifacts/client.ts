@@ -1,5 +1,10 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
-import { PaginatedList, ZPaginatedList } from '../../../types.js';
+import {
+  PaginatedList,
+  WorkflowArtifact,
+  ZPaginatedList,
+  ZWorkflowArtifact,
+} from '../../../types.js';
 
 /**
  * Workflow Artifacts API client for listing persisted run artifacts.
@@ -33,6 +38,13 @@ export default class APIWorkflowArtifacts extends CompositionClient {
     };
   }
 
+  prepare_get(artifactId: string): { url: string; method: string } {
+    return {
+      url: `/workflows/artifacts/${artifactId}`,
+      method: 'GET',
+    };
+  }
+
   /**
    * List dereferenced artifacts produced by one workflow run.
    *
@@ -63,6 +75,19 @@ export default class APIWorkflowArtifacts extends CompositionClient {
       url: request.url,
       method: request.method,
       params,
+      headers: options?.headers,
+    });
+  }
+
+  async get(
+    { artifactId }: { artifactId: string },
+    options?: RequestOptions
+  ): Promise<WorkflowArtifact> {
+    const request = this.prepare_get(artifactId);
+    return this._fetchJson(ZWorkflowArtifact, {
+      url: request.url,
+      method: request.method,
+      params: options?.params,
       headers: options?.headers,
     });
   }

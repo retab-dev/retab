@@ -98,12 +98,24 @@ func TestWorkflowReviewsListUsesHardCutoverFilters(t *testing.T) {
 		t.Fatalf("request = %s %s", seenMethod, seenPath)
 	}
 	for _, want := range []string{
-		"workflow_id=wf_1", "run_id=run_1", "block_id=blk_1", "step_id=step_1",
+		"workflow_id=wf_1",
+		// Server expects ``workflow_run_id``, not ``run_id``. The previous
+		// version of this test asserted the wrong key and pinned a silent
+		// drop — FastAPI ignores unknown query params on this route, so
+		// the filter never reached the server.
+		"workflow_run_id=run_1",
+		"block_id=blk_1", "step_id=step_1",
 		"iteration_key=0", "limit=25", "decision_status=decided",
 	} {
 		if !strings.Contains(seenQuery, want) {
 			t.Fatalf("query %q missing %q", seenQuery, want)
 		}
+	}
+	// Belt-and-braces: make sure the wrong key isn't quietly being sent
+	// alongside the right one — would defeat the fix on any server that
+	// has a legacy alias.
+	if strings.Contains(seenQuery, "run_id=run_1") && !strings.Contains(seenQuery, "workflow_run_id=run_1") {
+		t.Fatalf("query carries deprecated run_id param: %q", seenQuery)
 	}
 	if strings.Contains(seenQuery, "decision=") {
 		t.Fatalf("query includes removed decision filter: %q", seenQuery)

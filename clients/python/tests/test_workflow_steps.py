@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from retab.resources.workflows.artifacts.client import WorkflowArtifacts
+from retab.resources.workflows.artifacts.client import AsyncWorkflowArtifacts, WorkflowArtifacts
 from retab.resources.workflows.client import AsyncWorkflows, Workflows
 from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
 from retab.resources.workflows.steps.client import AsyncWorkflowSteps, WorkflowSteps
@@ -106,6 +106,22 @@ def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
     assert artifacts.list_metadata.after is None
 
 
+def test_workflow_artifacts_get_uses_flat_artifact_id_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "operation": "extraction",
+        "id": "ext_123",
+    }
+
+    artifact = WorkflowArtifacts(client=client).get("ext_123")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/artifacts/ext_123"
+    assert artifact.id == "ext_123"
+    assert artifact.operation == "extraction"
+
+
 @pytest.mark.asyncio
 async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     client = MagicMock()
@@ -135,6 +151,24 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
     assert steps.list_metadata.after is None
+
+
+@pytest.mark.asyncio
+async def test_async_workflow_artifacts_get_uses_flat_artifact_id_route() -> None:
+    client = MagicMock()
+    client._prepared_request = AsyncMock(
+        return_value={
+            "operation": "classification",
+            "id": "clss_123",
+        }
+    )
+
+    artifact = await AsyncWorkflowArtifacts(client=client).get("clss_123")
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/artifacts/clss_123"
+    assert artifact.id == "clss_123"
 
 
 def test_workflow_steps_get_handle_outputs_typed() -> None:

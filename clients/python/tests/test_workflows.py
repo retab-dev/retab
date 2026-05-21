@@ -7,6 +7,7 @@ from retab.resources.workflows.blocks.client import WorkflowBlocks
 from retab.resources.workflows.client import AsyncWorkflows, Workflows
 from retab.resources.workflows.edges.client import WorkflowEdges
 from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
+from retab.resources.workflows.simulations.client import AsyncWorkflowSimulations, WorkflowSimulations
 from retab.resources.workflows.specs.client import AsyncWorkflowSpecs, WorkflowSpecs
 from retab.types.mime import FileRef, MIMEData
 from retab.types.workflows.model import (
@@ -22,6 +23,7 @@ from retab.types.workflows.model import (
     WorkflowBlockUpdateRequest,
     WorkflowEdgeCreateRequest,
     StepExecutionResponse,
+    BlockSimulation,
 )
 
 
@@ -139,6 +141,18 @@ def test_async_workflows_exposes_specs_subresource() -> None:
     assert isinstance(workflows.specs, AsyncWorkflowSpecs)
 
 
+def test_workflows_exposes_simulations_subresource() -> None:
+    workflows = Workflows(client=MagicMock())
+
+    assert isinstance(workflows.simulations, WorkflowSimulations)
+
+
+def test_async_workflows_exposes_simulations_subresource() -> None:
+    workflows = AsyncWorkflows(client=MagicMock())
+
+    assert isinstance(workflows.simulations, AsyncWorkflowSimulations)
+
+
 def test_removed_workflow_methods_are_not_exposed() -> None:
     workflows = Workflows(client=MagicMock())
 
@@ -151,11 +165,111 @@ def test_removed_workflow_methods_are_not_exposed() -> None:
     assert not hasattr(workflows.blocks, "create_batch")
     assert not hasattr(workflows.blocks, "list_simulations")
     assert not hasattr(workflows.blocks, "simulate")
+    assert not hasattr(workflows.simulations, "simulate")
     assert not hasattr(workflows.edges, "create_batch")
     assert not hasattr(workflows.edges, "delete_all")
     assert not hasattr(workflows.experiments, "duplicate")
     assert not hasattr(workflows.experiments, "list_eligible_blocks")
     assert not hasattr(workflows.reviews, "wait_for")
+
+
+def test_workflow_simulations_create_uses_top_level_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "id": "sim_1",
+        "workflow_id": "wf_1",
+        "run_id": "run_1",
+        "block_id": "block_1",
+        "block_type": "extract",
+        "success": True,
+        "created_at": "2026-03-12T10:00:00Z",
+    }
+
+    simulation = Workflows(client=client).simulations.create(
+        run_id="run_1",
+        block_id="block_1",
+        step_id="step_1",
+        n_consensus=5,
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/simulations"
+    assert request.data == {
+        "run_id": "run_1",
+        "block_id": "block_1",
+        "step_id": "step_1",
+        "n_consensus": 5,
+    }
+    assert "workflow_id" not in request.data
+    assert isinstance(simulation, BlockSimulation)
+    assert simulation.id == "sim_1"
+
+
+def test_workflow_simulations_list_uses_top_level_route() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "data": [
+            {
+                "id": "sim_1",
+                "workflow_id": "wf_1",
+                "run_id": "run_1",
+                "block_id": "block_1",
+                "block_type": "extract",
+                "success": True,
+                "created_at": "2026-03-12T10:00:00Z",
+            }
+        ],
+        "list_metadata": {"before": None, "after": None},
+    }
+
+    result = Workflows(client=client).simulations.list(
+        run_id="run_1",
+        block_id="block_1",
+        limit=10,
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "GET"
+    assert request.url == "/workflows/simulations"
+    assert request.params == {
+        "run_id": "run_1",
+        "block_id": "block_1",
+        "limit": 10,
+    }
+    assert result.data[0].id == "sim_1"
+
+
+@pytest.mark.asyncio
+async def test_async_workflow_simulations_create_uses_top_level_route() -> None:
+    client = MagicMock()
+    client._prepared_request = AsyncMock(
+        return_value={
+            "id": "sim_1",
+            "workflow_id": "wf_1",
+            "run_id": "run_1",
+            "block_id": "block_1",
+            "block_type": "extract",
+            "success": True,
+            "created_at": "2026-03-12T10:00:00Z",
+        }
+    )
+
+    simulation = await AsyncWorkflows(client=client).simulations.create(
+        run_id="run_1",
+        block_id="block_1",
+        step_id="step_1",
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.method == "POST"
+    assert request.url == "/workflows/simulations"
+    assert request.data == {
+        "run_id": "run_1",
+        "block_id": "block_1",
+        "step_id": "step_1",
+    }
+    assert simulation.id == "sim_1"
 
 
 def test_workflow_specs_validate_uses_spec_validate_route() -> None:

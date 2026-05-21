@@ -274,6 +274,12 @@ class WorkflowTestRunResultsMixin:
             params={"limit": limit},
         )
 
+    def prepare_get(self, result_id: str) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/tests/results/{result_id}",
+        )
+
 
 def _join_csv(value: Sequence[str] | str | None) -> str | None:
     if value is None or isinstance(value, str):
@@ -287,12 +293,22 @@ class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
         response = self._client._prepared_request(request)
         return PaginatedList[WorkflowTestResult].model_validate(response)
 
+    def get(self, result_id: str) -> WorkflowTestResult:
+        request = self.prepare_get(result_id)
+        response = self._client._prepared_request(request)
+        return WorkflowTestResult.model_validate(response)
+
 
 class AsyncWorkflowTestRunResults(AsyncAPIResource, WorkflowTestRunResultsMixin):
     async def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[WorkflowTestResult]:
         request = self.prepare_list(run_id, limit=limit)
         response = await self._client._prepared_request(request)
         return PaginatedList[WorkflowTestResult].model_validate(response)
+
+    async def get(self, result_id: str) -> WorkflowTestResult:
+        request = self.prepare_get(result_id)
+        response = await self._client._prepared_request(request)
+        return WorkflowTestResult.model_validate(response)
 
 
 class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):

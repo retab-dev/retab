@@ -883,7 +883,7 @@ export const ZWorkflowDiagnosisResponse = z
 export type WorkflowDiagnosisResponse = z.infer<typeof ZWorkflowDiagnosisResponse>;
 
 // ---------------------------------------------------------------------------
-// Block simulation (POST /workflows/simulations, body { step_id, run_id, ... })
+// Block simulation (POST /workflows/simulations, body { run_id, block_id, ... })
 // ---------------------------------------------------------------------------
 
 export const ZStepArtifactRef = z
@@ -893,6 +893,13 @@ export const ZStepArtifactRef = z
   })
   .passthrough();
 export type StepArtifactRef = z.infer<typeof ZStepArtifactRef>;
+
+export type BlockSimulationCreateRequest = {
+  runId: string;
+  blockId: string;
+  stepId?: string;
+  nConsensus?: number;
+};
 
 export const ZBlockSimulation = z
   .object({

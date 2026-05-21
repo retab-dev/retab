@@ -750,6 +750,36 @@ func (v *dateFlagValue) Set(raw string) error {
 	return nil
 }
 
+// validateDateRange rejects reversed --from-date / --to-date pairs. Without
+// this, a typo (e.g. swapping the two values) silently returns the empty set
+// — indistinguishable from "no runs match the filter", which is a common
+// source of confusion when triaging "where did my runs go?".
+//
+// Both args are YYYY-MM-DD strings already validated by dateFlagValue.Set
+// (or equivalent), so this function trusts the format. Empty strings mean
+// the user didn't pass that side of the range — the function returns nil
+// in that case so the existing partial-range semantics keep working.
+func validateDateRange(fromDateFlag, toDateFlag, fromVal, toVal string) error {
+	if fromVal == "" || toVal == "" {
+		return nil
+	}
+	from, fromErr := time.Parse("2006-01-02", fromVal)
+	to, toErr := time.Parse("2006-01-02", toVal)
+	if fromErr != nil || toErr != nil {
+		// Shouldn't happen — dateFlagValue.Set rejects bad input. If it
+		// does, defer to the server: this validator is not the right
+		// place to surface a format error a second time.
+		return nil
+	}
+	if from.After(to) {
+		return fmt.Errorf(
+			"--%s %s is after --%s %s (date range is reversed; pass the older date as --%s)",
+			fromDateFlag, fromVal, toDateFlag, toVal, fromDateFlag,
+		)
+	}
+	return nil
+}
+
 // validateOrderFlag and validateDateFlag let plain `String` flags reuse
 // the same parsing as `orderFlagValue` / `dateFlagValue` without changing
 // flag registration. Useful for commands like `workflows tests runs list`

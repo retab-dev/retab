@@ -85,6 +85,19 @@ const RUN = {
   error_count: 0,
 };
 
+const RESULT = {
+  id: 'expresult_1',
+  run_id: 'exprun_1',
+  experiment_id: 'exp_1',
+  document_id: 'expdoc_1',
+  lifecycle: { status: 'completed' },
+  timing: TIMING,
+  block_kind: 'extract',
+  handle_inputs: { 'input-file-0': { type: 'file' } },
+  artifact: { operation: 'extraction', id: 'ext_1' },
+  attempt: 1,
+};
+
 describe('workflows.experiments.list paginated envelope', () => {
   test('returns {data, list_metadata}', async () => {
     const mockClient = new MockClient({
@@ -179,6 +192,20 @@ describe('workflows.experiments.runs.list paginated envelope', () => {
         order: 'asc',
       },
     });
+  });
+
+  test('results.get uses the flat result id route', async () => {
+    const mockClient = new MockClient(RESULT);
+    const runs = new APIWorkflowExperimentRuns(mockClient);
+
+    const result = await runs.results.get({ resultId: 'expresult_1' });
+
+    expect(mockClient.lastFetchParams).toMatchObject({
+      url: '/workflows/experiments/results/expresult_1',
+      method: 'GET',
+    });
+    expect(result.id).toBe('expresult_1');
+    expect(result.document_id).toBe('expdoc_1');
   });
 
   test('parent run schema strips legacy job and batch ids', async () => {

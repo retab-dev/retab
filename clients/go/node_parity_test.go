@@ -21,7 +21,7 @@ func TestNodeParityRootNamespacesAreInstalled(t *testing.T) {
 	if client.Edits.Templates == nil {
 		t.Fatalf("missing edits.templates namespace")
 	}
-	if client.Workflows.Artifacts == nil || client.Workflows.Blocks == nil || client.Workflows.Edges == nil || client.Workflows.Tests == nil || client.Workflows.Tests.Runs == nil {
+	if client.Workflows.Artifacts == nil || client.Workflows.Simulations == nil || client.Workflows.Blocks == nil || client.Workflows.Edges == nil || client.Workflows.Tests == nil || client.Workflows.Tests.Runs == nil {
 		t.Fatalf("missing workflow nested namespaces")
 	}
 }

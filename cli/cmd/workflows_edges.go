@@ -240,7 +240,7 @@ var workflowsEdgesGetCmd = &cobra.Command{
 	Short: "Get an edge",
 	Long:  `Fetch a single edge: source, target, handles.`,
 	Example: `  # Inspect an edge
-  retab workflows edges get edg_ghi789`,
+  retab workflows edges get edge_ghi789`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -329,11 +329,21 @@ var workflowsEdgesDeleteCmd = &cobra.Command{
 	Use:   "delete <edge-id>",
 	Short: "Delete an edge",
 	Long: `Remove a single edge. The blocks remain — only the wiring is
-severed.`,
-	Example: `  # Disconnect two blocks
-  retab workflows edges delete edg_ghi789`,
+severed.
+
+This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
+in scripts and CI — otherwise the command refuses to delete when stdin
+is not a terminal.`,
+	Example: `  # Disconnect two blocks (interactive, asks to confirm)
+  retab workflows edges delete edge_ghi789
+
+  # Skip the prompt in scripts
+  retab workflows edges delete edge_ghi789 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "edge", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -359,6 +369,8 @@ func init() {
 	workflowsEdgesCreateCmd.Flags().String("target-handle", "", "target handle")
 	_ = workflowsEdgesCreateCmd.MarkFlagRequired("source-block")
 	_ = workflowsEdgesCreateCmd.MarkFlagRequired("target-block")
+
+	workflowsEdgesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	workflowsEdgesCmd.AddCommand(workflowsEdgesListCmd, workflowsEdgesGetCmd, workflowsEdgesCreateCmd, workflowsEdgesDeleteCmd)
 	workflowsCmd.AddCommand(workflowsEdgesCmd)

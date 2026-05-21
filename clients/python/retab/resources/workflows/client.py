@@ -16,6 +16,7 @@ from .experiments import AsyncWorkflowExperiments, WorkflowExperiments
 from .specs import AsyncWorkflowSpecs, WorkflowSpecs
 from .steps import AsyncWorkflowSteps, WorkflowSteps
 from .tests import AsyncWorkflowTests, WorkflowTests
+from .simulations import AsyncWorkflowSimulations, WorkflowSimulations
 
 
 class WorkflowsMixin:
@@ -108,6 +109,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         edges: Workflow edge CRUD operations
         artifacts: Workflow artifact dereference operations
         specs: Declarative workflow YAML validation, planning, apply, and export
+        simulations: Workflow block simulation operations
     """
 
     def __init__(self, client: Any) -> None:
@@ -121,6 +123,7 @@ class Workflows(SyncAPIResource, WorkflowsMixin):
         self.tests = WorkflowTests(client=client)
         self.experiments = WorkflowExperiments(client=client)
         self.specs = WorkflowSpecs(client=client)
+        self.simulations = WorkflowSimulations(client=client)
 
     def get(self, workflow_id: str) -> Workflow:
         """Get a workflow by ID."""
@@ -237,6 +240,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         blocks: Workflow block CRUD operations
         edges: Workflow edge CRUD operations
         specs: Declarative workflow YAML validation, planning, apply, and export
+        simulations: Workflow block simulation operations
     """
 
     def __init__(self, client: Any) -> None:
@@ -250,6 +254,7 @@ class AsyncWorkflows(AsyncAPIResource, WorkflowsMixin):
         self.tests = AsyncWorkflowTests(client=client)
         self.experiments = AsyncWorkflowExperiments(client=client)
         self.specs = AsyncWorkflowSpecs(client=client)
+        self.simulations = AsyncWorkflowSimulations(client=client)
 
     async def get(self, workflow_id: str) -> Workflow:
         """Get a workflow by ID."""

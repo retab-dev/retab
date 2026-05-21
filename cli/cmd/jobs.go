@@ -319,6 +319,9 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 		params.DocumentType = documentTypes
 		params.FromDate, _ = cmd.Flags().GetString("from-date")
 		params.ToDate, _ = cmd.Flags().GetString("to-date")
+		if err := validateDateRange("from-date", "to-date", params.FromDate, params.ToDate); err != nil {
+			return err
+		}
 		metaPairs, _ := cmd.Flags().GetStringArray("metadata")
 		md, err := parseKVStringList(metaPairs)
 		if err != nil {

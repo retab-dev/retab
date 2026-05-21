@@ -99,6 +99,39 @@ describe('workflow steps client', () => {
     expect(artifacts.list_metadata).toEqual({ before: null, after: null });
   });
 
+  test('artifacts.get() uses the flat artifact id route', async () => {
+    class ArtifactGetMockClient extends AbstractClient {
+      public lastFetchParams: Record<string, unknown> | null = null;
+
+      protected async _fetch(params: {
+        url: string;
+        method: string;
+        params?: Record<string, unknown>;
+        headers?: Record<string, unknown>;
+        body?: Record<string, unknown>;
+      }): Promise<Response> {
+        this.lastFetchParams = params;
+        return new Response(JSON.stringify({ operation: 'extraction', id: 'ext_123' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    const mockClient = new ArtifactGetMockClient();
+    const artifactsClient = new APIWorkflowArtifacts(mockClient);
+    const artifact = await artifactsClient.get({ artifactId: 'ext_123' });
+
+    expect(mockClient.lastFetchParams).toEqual({
+      url: '/workflows/artifacts/ext_123',
+      method: 'GET',
+      params: undefined,
+      headers: undefined,
+    });
+    expect(artifact.id).toBe('ext_123');
+    expect(artifact.operation).toBe('extraction');
+  });
+
   test('get() uses the public step id route', async () => {
     class GetMockClient extends AbstractClient {
       public lastFetchParams: Record<string, unknown> | null = null;

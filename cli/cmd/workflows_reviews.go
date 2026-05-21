@@ -423,9 +423,54 @@ func printReviewVersionResult(cmd *cobra.Command, result *retab.ReviewVersion) e
 }
 
 func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitReviewDecisionResponse) error {
+	// Conflict means the submission did NOT take effect — the review
+	// already had a different decision. Surface this as a non-zero exit
+	// so scripts gating on exit code don't mistake "I tried to reject"
+	// for "the reject succeeded." The JSON is still printed on stdout
+	// (so programmatic consumers see the full payload); the diagnostic
+	// goes to stderr and the command exits non-zero via the returned
+	// error.
+	//
+	// SubmissionStatusAccepted and SubmissionStatusAlreadyApplied are
+	// both treated as success (already-applied is idempotent: the user
+	// asked for X, X is what's recorded).
+	conflict := result != nil && result.SubmissionStatus == retab.SubmissionStatusConflict
 	format, err := resolveReviewOutputFormat(cmd, os.Stdout)
 	if err != nil {
 		return err
+	}
+
+	// Surface non-resumed engine state to stderr so the user notices
+	// when approve/reject succeeded at the API level but the Temporal
+	// resume signal didn't land yet ("pending") or was a no-op
+	// ("skipped" — e.g. run already terminal). The JSON on stdout still
+	// carries the full payload for programmatic consumers; the stderr
+	// note is a one-line nudge that a poll on `runs get` is needed.
+	if format != OutputTable && result != nil && result.ResumeStatus != "" && result.ResumeStatus != retab.ResumeStatusResumed {
+		switch result.ResumeStatus {
+		case retab.ResumeStatusPending:
+			fmt.Fprintf(
+				os.Stderr,
+				"note: resume_status=%q — decision was accepted but the workflow has not resumed yet. Poll `retab workflows runs get %s` until lifecycle.status changes from awaiting_review.\n",
+				result.ResumeStatus,
+				result.Review.WorkflowRunID,
+			)
+		case retab.ResumeStatusSkipped:
+			fmt.Fprintf(
+				os.Stderr,
+				"note: resume_status=%q — decision was recorded but no resume signal was sent (the run is likely already terminal).\n",
+				result.ResumeStatus,
+			)
+		default:
+			fmt.Fprintf(
+				os.Stderr,
+				"note: resume_status=%q — see the JSON response for details.\n",
+				result.ResumeStatus,
+			)
+		}
+		if result.ResumeError != nil && *result.ResumeError != "" {
+			fmt.Fprintf(os.Stderr, "note: resume_error: %s\n", *result.ResumeError)
+		}
 	}
 	if format == OutputTable {
 		row := map[string]any{
@@ -443,11 +488,29 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitReviewDec
 			row["verdict"] = result.Review.Decision.Verdict
 			row["version_id"] = result.Review.Decision.VersionID
 		}
-		return RenderList(os.Stdout, OutputTable, struct {
+		if err := RenderList(os.Stdout, OutputTable, struct {
 			Data []map[string]any `json:"data"`
-		}{Data: []map[string]any{row}}, reviewDecisionColumns)
+		}{Data: []map[string]any{row}}, reviewDecisionColumns); err != nil {
+			return err
+		}
+	} else {
+		if err := printJSON(result); err != nil {
+			return err
+		}
 	}
-	return printJSON(result)
+	if conflict {
+		// Print the diagnostic AFTER the JSON/table so users see both
+		// the payload and the reason their scripted approve/reject
+		// produced exit 1.
+		fmt.Fprintf(
+			os.Stderr,
+			"error: submission_status=%q — the review already has a different decision; this call did NOT change it. Inspect the current decision with `retab workflows reviews get %s`.\n",
+			result.SubmissionStatus,
+			result.Review.ID,
+		)
+		return fmt.Errorf("review decision conflict: %s already has a different decision", result.Review.ID)
+	}
+	return nil
 }
 
 func printReviewSchemaResult(cmd *cobra.Command, result reviewSnapshotSchema) error {

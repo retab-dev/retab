@@ -281,11 +281,22 @@ var workflowsExperimentsDeleteCmd = &cobra.Command{
 	Use:   "delete <experiment-id>",
 	Short: "Delete an experiment",
 	Long: `Permanently delete an experiment and its run history. Captured
-production runs and artifacts are unaffected.`,
-	Example: `  # Drop an experiment
-  retab workflows experiments delete exp_pqr678`,
+production runs and artifacts are unaffected.
+
+This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
+in scripts and CI — otherwise the command refuses to delete when stdin
+is not a terminal. Run history is removed alongside the experiment
+definition.`,
+	Example: `  # Drop an experiment (interactive, asks to confirm)
+  retab workflows experiments delete exp_pqr678
+
+  # Skip the prompt in scripts
+  retab workflows experiments delete exp_pqr678 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "experiment", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -313,7 +324,7 @@ These runs are isolated from production workflow runs — they don't
 appear in ` + "`retab workflows runs list`" + ` and don't affect downstream
 consumers.`,
 	Example: `  # Create a new experiment run
-  retab workflows experiments runs create wf_abc123 exp_pqr678
+  retab workflows experiments runs create exp_pqr678
 
   # Inspect a run
   retab workflows experiments runs get exprun_aaa
@@ -323,17 +334,30 @@ consumers.`,
 }
 
 var workflowsExperimentsRunsCreateCmd = &cobra.Command{
-	Use:   "create <workflow-id> <experiment-id>",
+	Use:   "create <experiment-id>",
 	Short: "Create a new experiment run",
 	Long: `Create an experiment run that evaluates the candidate config across every
-document in its set.`,
+document in its set.
+
+The workflow id is derived server-side from the experiment record, so
+only the ` + "`<experiment-id>`" + ` positional is required. The legacy
+two-argument form (` + "`<workflow-id> <experiment-id>`" + `) is still
+accepted for backward compatibility — the leading workflow id is
+ignored.`,
 	Example: `  # Create an experiment run
-  retab workflows experiments runs create wf_abc123 exp_pqr678`,
-	Args: cobra.ExactArgs(2),
+  retab workflows experiments runs create exp_pqr678`,
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		// Backward compat: the historical shape was
+		//   `runs create <workflow-id> <experiment-id>`
+		// The server now derives `workflow_id` from the experiment, so
+		// we accept either shape and always send only `experiment_id`.
+		experimentID := args[0]
+		if len(args) == 2 {
+			experimentID = args[1]
+		}
 		body := map[string]any{
-			"workflow_id":   args[0],
-			"experiment_id": args[1],
+			"experiment_id": experimentID,
 		}
 		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/experiments/runs", nil, body)
 		if err != nil {
@@ -418,6 +442,20 @@ var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
 	}),
 }
 
+var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
+	Use:   "get <result-id>",
+	Short: "Get an experiment result",
+	Long:  `Fetch one experiment result by flat result id.`,
+	Args:  cobra.ExactArgs(1),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/results/"+url.PathEscape(args[0]), nil, nil)
+		if err != nil {
+			return err
+		}
+		return printResult(cmd, result)
+	}),
+}
+
 var workflowsExperimentsRunsMetricsCmd = &cobra.Command{
 	Use:   "metrics",
 	Short: "Inspect experiment run metrics",
@@ -437,13 +475,31 @@ numbers down to individual fields. Compare against a prior run with
 		if err := validateExperimentMetricsView(view); err != nil {
 			return err
 		}
+		documentID, _ := cmd.Flags().GetString("document-id")
+		targetPath, _ := cmd.Flags().GetString("target-path")
+		// Catch missing dependent flags client-side so users don't see
+		// the server's raw 400. The legal combinations are:
+		//   summary     — no extra requirement
+		//   by_document — --document-id required
+		//   votes       — --document-id required
+		//   by_target   — --target-path required
+		switch view {
+		case "by_document", "votes":
+			if strings.TrimSpace(documentID) == "" {
+				return fmt.Errorf("--document-id is required when --view is %s", view)
+			}
+		case "by_target":
+			if strings.TrimSpace(targetPath) == "" {
+				return fmt.Errorf("--target-path is required when --view is by_target")
+			}
+		}
 		query := url.Values{}
 		query.Set("view", view)
-		if value, _ := cmd.Flags().GetString("document-id"); value != "" {
-			query.Set("document_id", value)
+		if documentID != "" {
+			query.Set("document_id", documentID)
 		}
-		if value, _ := cmd.Flags().GetString("target-path"); value != "" {
-			query.Set("target_path", value)
+		if targetPath != "" {
+			query.Set("target_path", targetPath)
 		}
 		if value, _ := cmd.Flags().GetString("prior-run-id"); value != "" {
 			query.Set("prior_run_id", value)
@@ -502,9 +558,11 @@ func init() {
 	workflowsExperimentsRunsMetricsGetCmd.Flags().String("prior-run-id", "", "prior run id")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
 
-	workflowsExperimentsRunsResultsCmd.AddCommand(workflowsExperimentsRunsResultsListCmd)
+	workflowsExperimentsRunsResultsCmd.AddCommand(workflowsExperimentsRunsResultsListCmd, workflowsExperimentsRunsResultsGetCmd)
 	workflowsExperimentsRunsMetricsCmd.AddCommand(workflowsExperimentsRunsMetricsGetCmd)
 	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd, workflowsExperimentsRunsCancelCmd, workflowsExperimentsRunsResultsCmd, workflowsExperimentsRunsMetricsCmd)
+	workflowsExperimentsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+
 	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsRunsCmd)
 	workflowsCmd.AddCommand(workflowsExperimentsCmd)
 }

@@ -251,6 +251,12 @@ class ExperimentRunResultsMixin:
             params={"limit": limit},
         )
 
+    def prepare_get(self, result_id: str) -> PreparedRequest:
+        return PreparedRequest(
+            method="GET",
+            url=f"/workflows/experiments/results/{result_id}",
+        )
+
 
 class ExperimentRunMetricsMixin:
     def prepare_get(
@@ -370,6 +376,11 @@ class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
         request = self.prepare_list(run_id, limit=limit)
         response = self._client._prepared_request(request)
         return PaginatedList[ExperimentResult].model_validate(response)
+
+    def get(self, result_id: str) -> ExperimentResult:
+        request = self.prepare_get(result_id)
+        response = self._client._prepared_request(request)
+        return ExperimentResult.model_validate(response)
 
 
 class ExperimentRunMetrics(SyncAPIResource, ExperimentRunMetricsMixin):
@@ -588,6 +599,11 @@ class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):
         request = self.prepare_list(run_id, limit=limit)
         response = await self._client._prepared_request(request)
         return PaginatedList[ExperimentResult].model_validate(response)
+
+    async def get(self, result_id: str) -> ExperimentResult:
+        request = self.prepare_get(result_id)
+        response = await self._client._prepared_request(request)
+        return ExperimentResult.model_validate(response)
 
 
 class AsyncExperimentRunMetrics(AsyncAPIResource, ExperimentRunMetricsMixin):
