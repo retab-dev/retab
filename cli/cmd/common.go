@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -22,6 +23,7 @@ import (
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // runE wraps a command body so APIErrors render as concise user-facing
@@ -1120,6 +1122,30 @@ func redactSensitiveHeaders(h http.Header) {
 			h[name][i] = redactKey(v)
 		}
 	}
+}
+
+// confirmDestructive gates a destructive command behind an explicit user
+// confirmation. Returns nil if the caller passed --yes; otherwise prompts on
+// stderr and reads the answer from stdin (TTY only). When stdin is not a TTY
+// — pipes, redirected files, CI — refuses with a clear error rather than
+// auto-accepting a stray newline.
+func confirmDestructive(cmd *cobra.Command, kind, id string) error {
+	if yes, _ := cmd.Flags().GetBool("yes"); yes {
+		return nil
+	}
+	stdin, ok := cmd.InOrStdin().(*os.File)
+	if !ok || !term.IsTerminal(int(stdin.Fd())) {
+		return fmt.Errorf("refusing to delete %s %q without --yes (stdin is not a terminal)", kind, id)
+	}
+	fmt.Fprintf(cmd.ErrOrStderr(), "Permanently delete %s %s? Type the id to confirm: ", kind, id)
+	answer, err := bufio.NewReader(stdin).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return fmt.Errorf("read confirmation: %w", err)
+	}
+	if strings.TrimSpace(answer) != id {
+		return fmt.Errorf("aborted: %s %q not deleted", kind, id)
+	}
+	return nil
 }
 
 // confirmDeleted writes a one-line confirmation to stderr after a
