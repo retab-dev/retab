@@ -48,7 +48,7 @@ func (e *APIError) String() string {
 	return strings.Join(lines, "\n")
 }
 
-func parseAPIError(resp *http.Response, body []byte) *APIError {
+func ParseAPIError(resp *http.Response, body []byte) *APIError {
 	apiErr := &APIError{
 		StatusCode: resp.StatusCode,
 		Message:    fmt.Sprintf("Request failed (%d)", resp.StatusCode),

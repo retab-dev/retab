@@ -42,7 +42,7 @@ func (c *Client) doStream(ctx context.Context, method string, path string, query
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		responseBody, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
-		return nil, parseAPIError(resp, responseBody)
+		return nil, ParseAPIError(resp, responseBody)
 	}
 	if contentType := resp.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/stream+json") {
 		_ = resp.Body.Close()
@@ -75,7 +75,7 @@ func (c *Client) doMultipart(ctx context.Context, method string, path string, qu
 		return err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return parseAPIError(resp, responseBody)
+		return ParseAPIError(resp, responseBody)
 	}
 	if out == nil || len(responseBody) == 0 || resp.StatusCode == http.StatusNoContent {
 		return nil
@@ -108,7 +108,7 @@ func (c *Client) doMultipartStream(ctx context.Context, method string, path stri
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		responseBody, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
-		return nil, parseAPIError(resp, responseBody)
+		return nil, ParseAPIError(resp, responseBody)
 	}
 	if contentType := resp.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/stream+json") {
 		_ = resp.Body.Close()

@@ -316,7 +316,7 @@ func (c *Client) do(ctx context.Context, method string, path string, query url.V
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return parseAPIError(resp, responseBody)
+		return ParseAPIError(resp, responseBody)
 	}
 	if out == nil || len(responseBody) == 0 || resp.StatusCode == http.StatusNoContent {
 		return nil

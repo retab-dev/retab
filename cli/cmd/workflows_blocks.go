@@ -65,9 +65,11 @@ func parseBlockCreate(obj map[string]any) (retab.WorkflowBlockCreateRequest, err
 	if err := rejectLegacyReviewConfig(req.Config); err != nil {
 		return req, err
 	}
-	if req.ID == "" {
-		return req, fmt.Errorf("block id is required")
-	}
+	// id is optional: when omitted the server generates an opaque
+	// `blk_<nanoid>` via default_factory. Client-side requiring a user-chosen
+	// id forced collisions because block ids are org-globally unique, and the
+	// server's own 409 message points users at server-generated ids — which
+	// this client used to make unreachable.
 	if req.Type == "" {
 		return req, fmt.Errorf("block type is required")
 	}
