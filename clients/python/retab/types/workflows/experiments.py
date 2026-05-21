@@ -112,7 +112,7 @@ class StepArtifactRefMini(RetabBaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ExperimentResponse(RetabBaseModel):
+class WorkflowExperiment(RetabBaseModel):
     """One row of the ``GET /experiments`` listing or single-experiment fetch."""
 
     model_config = ConfigDict(extra="ignore")
@@ -195,7 +195,7 @@ class ExperimentRun(RetabBaseModel):
     error_count: int = 0
 
 
-class ExperimentRunCancelResponse(RetabBaseModel):
+class CancelWorkflowExperimentRunResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
@@ -485,12 +485,12 @@ __all__ = [
     "ExplicitExperimentDocumentRequest",
     "ExperimentDocument",
     "StepArtifactRefMini",
-    "ExperimentResponse",
+    "WorkflowExperiment",
     "ExperimentRunTrigger",
     "ExperimentRunLifecycle",
     "ExperimentRunTiming",
     "ExperimentRun",
-    "ExperimentRunCancelResponse",
+    "CancelWorkflowExperimentRunResponse",
     "ExperimentResultLifecycle",
     "ExperimentResultTiming",
     "ExperimentResult",

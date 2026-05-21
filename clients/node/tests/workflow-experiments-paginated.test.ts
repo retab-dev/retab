@@ -100,13 +100,13 @@ const RESULT = {
 
 describe('workflows.experiments.list paginated envelope', () => {
   test('experiment schema drift accepts all OpenAPI literals', async () => {
-    const { ZExperimentResponse, ZSchemaDriftStatus } = await import(
+    const { ZWorkflowExperiment, ZSchemaDriftStatus } = await import(
       '../src/api/workflows/experiments/types'
     );
 
     for (const value of ['none', 'partial', 'drifted', 'unknown']) {
       expect(() => ZSchemaDriftStatus.parse(value)).not.toThrow();
-      expect(() => ZExperimentResponse.parse({ ...EXPERIMENT, schema_drift: value })).not.toThrow();
+      expect(() => ZWorkflowExperiment.parse({ ...EXPERIMENT, schema_drift: value })).not.toThrow();
     }
   });
 

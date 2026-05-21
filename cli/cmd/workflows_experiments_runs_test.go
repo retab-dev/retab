@@ -169,6 +169,48 @@ func TestWorkflowsExperimentsRunsCreateTwoArgsBackwardCompat(t *testing.T) {
 	}
 }
 
+// TestWorkflowsExperimentsRunsCreateTwoArgsForwardsWorkflowID pins R2-6:
+// when callers pass `<workflow-id> <experiment-id>` the CLI must forward
+// the workflow id to the server in the request body so the server can
+// validate the pairing. Without this forwarding, a typo in the workflow
+// slot was silently dropped — the server derived `workflow_id` from the
+// experiment record and the run executed against the wrong workflow.
+func TestWorkflowsExperimentsRunsCreateTwoArgsForwardsWorkflowID(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/experiments/runs" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":            "exprun_123",
+			"workflow_id":   "wf_first_pos",
+			"experiment_id": "exp_second_pos",
+			"status":        "running",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	_, _ = captureStd(t, func() {
+		if err := workflowsExperimentsRunsCreateCmd.RunE(workflowsExperimentsRunsCreateCmd, []string{"wf_first_pos", "exp_second_pos"}); err != nil {
+			t.Fatalf("experiment runs create (2-arg): %v", err)
+		}
+	})
+	if got, want := body["workflow_id"], "wf_first_pos"; got != want {
+		t.Fatalf("expected workflow_id=%q in body, got %#v (full body: %#v)", want, got, body)
+	}
+	if got, want := body["experiment_id"], "exp_second_pos"; got != want {
+		t.Fatalf("expected experiment_id=%q in body, got %#v (full body: %#v)", want, got, body)
+	}
+}
+
 // TestWorkflowsExperimentsRunsMetricsGetRequiresDependentFlags asserts that
 // the CLI catches missing required flags client-side before issuing an HTTP
 // request that the server would reject with a 400.

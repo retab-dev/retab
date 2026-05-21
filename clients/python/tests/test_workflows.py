@@ -348,6 +348,7 @@ def test_workflow_specs_apply_uses_spec_apply_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "workflow_id": "wf_1",
+        "action": "noop",
         "created": False,
         "block_count": 2,
         "edge_count": 1,
@@ -365,6 +366,7 @@ def test_workflow_specs_apply_uses_spec_apply_route() -> None:
     assert request.url == "/workflows/spec/apply"
     assert request.data == {"yaml_definition": "spec: {}\n"}
     assert isinstance(response, DeclarativeApplyResponse)
+    assert response.action == "noop"
     assert response.summary.noop == 1
     assert response.resource_changes == []
 

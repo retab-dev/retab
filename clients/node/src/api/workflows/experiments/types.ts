@@ -75,7 +75,7 @@ export type ExplicitExperimentDocumentRequest = {
 // Experiment (response)
 // ---------------------------------------------------------------------------
 
-export const ZExperimentResponse = z
+export const ZWorkflowExperiment = z
   .object({
     id: z.string(),
     workflow_id: z.string(),
@@ -94,7 +94,7 @@ export const ZExperimentResponse = z
     schema_drift_detail: z.string().nullable().optional(),
   })
   .passthrough();
-export type ExperimentResponse = z.infer<typeof ZExperimentResponse>;
+export type WorkflowExperiment = z.infer<typeof ZWorkflowExperiment>;
 
 // Canonical PaginatedList envelope. The route used to return a bare array;
 // the migration to `{data, list_metadata}` brings it in line with workflows
@@ -109,7 +109,7 @@ export type ListMetadata = z.infer<typeof ZListMetadata>;
 
 export const ZExperimentList = z
   .object({
-    data: z.array(ZExperimentResponse).default([]),
+    data: z.array(ZWorkflowExperiment).default([]),
     list_metadata: ZListMetadata,
   })
   .passthrough();
@@ -165,13 +165,15 @@ export const ZExperimentRun = z
   .strip();
 export type ExperimentRun = z.infer<typeof ZExperimentRun>;
 
-export const ZExperimentRunCancelResponse = z
+export const ZCancelWorkflowExperimentRunResponse = z
   .object({
     id: z.string(),
     lifecycle: ZExperimentRunLifecycle,
   })
   .strip();
-export type ExperimentRunCancelResponse = z.infer<typeof ZExperimentRunCancelResponse>;
+export type CancelWorkflowExperimentRunResponse = z.infer<
+  typeof ZCancelWorkflowExperimentRunResponse
+>;
 
 // Canonical PaginatedList envelope for `GET /workflows/experiments/runs`.
 // The route used to return `{"runs": [...]}`; the migration to

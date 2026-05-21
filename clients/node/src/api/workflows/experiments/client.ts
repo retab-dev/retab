@@ -3,11 +3,11 @@ import APIWorkflowExperimentRuns from './runs/client.js';
 import {
   ExperimentDocumentCaptureRequest,
   ExperimentList,
-  ExperimentResponse,
+  WorkflowExperiment,
   ExplicitExperimentDocumentRequest,
   NConsensusValue,
   ZExperimentList,
-  ZExperimentResponse,
+  ZWorkflowExperiment,
 } from './types.js';
 
 /**
@@ -160,7 +160,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
       nConsensus?: NConsensusValue;
     },
     options?: RequestOptions
-  ): Promise<ExperimentResponse> {
+  ): Promise<WorkflowExperiment> {
     const request = this.prepare_create(workflowId, {
       blockId,
       name,
@@ -169,7 +169,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
       nConsensus,
     });
 
-    return this._fetchJson(ZExperimentResponse, {
+    return this._fetchJson(ZWorkflowExperiment, {
       url: request.url,
       method: request.method,
       body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },
@@ -194,9 +194,9 @@ export default class APIWorkflowExperiments extends CompositionClient {
   /**
    * Get a single experiment by ID.
    */
-  async get(experimentId: string, options?: RequestOptions): Promise<ExperimentResponse> {
+  async get(experimentId: string, options?: RequestOptions): Promise<WorkflowExperiment> {
     const request = this.prepare_get(experimentId);
-    return this._fetchJson(ZExperimentResponse, {
+    return this._fetchJson(ZWorkflowExperiment, {
       url: request.url,
       method: request.method,
       params: options?.params,
@@ -225,7 +225,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
       nConsensus?: NConsensusValue;
     },
     options?: RequestOptions
-  ): Promise<ExperimentResponse> {
+  ): Promise<WorkflowExperiment> {
     const request = this.prepare_update(experimentId, {
       name,
       documentCaptures,
@@ -233,7 +233,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
       nConsensus,
     });
 
-    return this._fetchJson(ZExperimentResponse, {
+    return this._fetchJson(ZWorkflowExperiment, {
       url: request.url,
       method: request.method,
       body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },

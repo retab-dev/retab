@@ -159,12 +159,45 @@ func TestRenderListTableEmpty(t *testing.T) {
 		{Header: "ID", Extract: func(r any) string { return r.(fileItem).ID }},
 	}
 	var buf bytes.Buffer
-	if err := RenderList(&buf, OutputTable, list, cols); err != nil {
-		t.Fatalf("RenderList table empty failed: %v", err)
-	}
+	// renderTable emits its zero-rows hint to stderr (R2-9) so the
+	// buffered stdout under test still ends as a clean header line.
+	// Capture stderr separately and discard for this assertion — the
+	// hint behaviour is pinned by TestRenderListEmitsEmptyHintForZeroRows.
+	_, _ = captureStd(t, func() {
+		if err := RenderList(&buf, OutputTable, list, cols); err != nil {
+			t.Fatalf("RenderList table empty failed: %v", err)
+		}
+	})
 	out := strings.TrimRight(buf.String(), "\n")
 	if out != "ID" {
 		t.Fatalf("want bare header 'ID', got %q", out)
+	}
+}
+
+// TestRenderListEmitsEmptyHintForZeroRows pins R2-9: a list rendered as a
+// table with zero data rows emits "(no rows)" to stderr so the lone
+// header row isn't mistaken for "all rows hidden". Stdout stays clean
+// for piping — the hint is for humans staring at a terminal, never for
+// downstream consumers.
+func TestRenderListEmitsEmptyHintForZeroRows(t *testing.T) {
+	list := fileList{Data: nil}
+	cols := []TableColumn{
+		{Header: "ID", Extract: func(r any) string { return r.(fileItem).ID }},
+	}
+	var stdoutBuf bytes.Buffer
+	_, stderr := captureStd(t, func() {
+		if err := RenderList(&stdoutBuf, OutputTable, list, cols); err != nil {
+			t.Fatalf("RenderList table empty failed: %v", err)
+		}
+	})
+	if !strings.Contains(stderr, "(no rows)") {
+		t.Fatalf("expected (no rows) hint on stderr, got: %q", stderr)
+	}
+	if strings.Contains(stdoutBuf.String(), "(no rows)") {
+		t.Fatalf("(no rows) hint should not appear in stdout buffer, got:\n%s", stdoutBuf.String())
+	}
+	if !strings.Contains(stdoutBuf.String(), "ID") {
+		t.Fatalf("expected ID header in stdout buffer, got:\n%s", stdoutBuf.String())
 	}
 }
 
@@ -564,8 +597,18 @@ func TestPrintResultTableEmptyListHonorsTableOutput(t *testing.T) {
 			t.Fatalf("printResultTable: %v", err)
 		}
 	})
-	if stderr != "" {
-		t.Fatalf("expected no fallback warning, got stderr: %q", stderr)
+	// The lone "(no rows)" hint goes to stderr so an empty result is
+	// visually distinguishable from a hidden one (R2-9). The hint must
+	// NOT leak into stdout — downstream pipes still see the clean
+	// header row.
+	if strings.Contains(stderr, "falling back to json") {
+		t.Fatalf("expected table render, got JSON-fallback warning: %q", stderr)
+	}
+	if !strings.Contains(stderr, "(no rows)") {
+		t.Fatalf("expected (no rows) hint on stderr for empty list, got: %q", stderr)
+	}
+	if strings.Contains(stdout, "(no rows)") {
+		t.Fatalf("(no rows) hint should not leak into stdout, got:\n%s", stdout)
 	}
 	if strings.HasPrefix(strings.TrimSpace(stdout), "{") {
 		t.Fatalf("expected table output for empty list, got JSON:\n%s", stdout)

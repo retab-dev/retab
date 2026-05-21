@@ -13,6 +13,46 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// TestValidateBaseURL pins the user-supplied base URL guard. Empty (use
+// default) is allowed; http/https URLs with a host are allowed; everything
+// else surfaces a CLI-shaped error before any HTTP call so users see the
+// flag spelling instead of a net/http "unsupported protocol scheme" leak.
+func TestValidateBaseURL(t *testing.T) {
+	cases := []struct {
+		name    string
+		in      string
+		wantErr bool
+		errLike string
+	}{
+		{name: "empty ok", in: "", wantErr: false},
+		{name: "localhost http ok", in: "http://localhost:4000/v1", wantErr: false},
+		{name: "https ok", in: "https://api.retab.com", wantErr: false},
+		{name: "missing scheme", in: "not-a-url", wantErr: true, errLike: "missing scheme"},
+		{name: "ftp scheme rejected", in: "ftp://x.com", wantErr: true, errLike: "not http or https"},
+		{name: "scheme without host", in: "http://", wantErr: true, errLike: "missing host"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateBaseURL(tc.in)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("expected error for %q, got nil", tc.in)
+				}
+				if !strings.Contains(err.Error(), "--base-url") {
+					t.Fatalf("error should mention --base-url, got: %v", err)
+				}
+				if tc.errLike != "" && !strings.Contains(err.Error(), tc.errLike) {
+					t.Fatalf("error %q does not contain %q", err.Error(), tc.errLike)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error for %q: %v", tc.in, err)
+			}
+		})
+	}
+}
+
 func TestParseKVStringList(t *testing.T) {
 	cases := []struct {
 		name    string

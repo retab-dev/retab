@@ -5,9 +5,9 @@ import {
   ExperimentResult,
   ExperimentResultListResponse,
   ExperimentRun,
-  ExperimentRunCancelResponse,
+  CancelWorkflowExperimentRunResponse,
   ExperimentRunListResponse,
-  ZExperimentRunCancelResponse,
+  ZCancelWorkflowExperimentRunResponse,
   ZExperimentMetricsResponse,
   ZExperimentResult,
   ZExperimentResultListResponse,
@@ -259,9 +259,9 @@ export default class APIWorkflowExperimentRuns extends CompositionClient {
   async cancel(
     { runId }: { runId: string },
     options?: RequestOptions
-  ): Promise<ExperimentRunCancelResponse> {
+  ): Promise<CancelWorkflowExperimentRunResponse> {
     const request = this.prepare_cancel(runId);
-    return this._fetchJson(ZExperimentRunCancelResponse, {
+    return this._fetchJson(ZCancelWorkflowExperimentRunResponse, {
       url: request.url,
       method: request.method,
       body: { ...request.body, ...((options?.body as Record<string, unknown>) || {}) },

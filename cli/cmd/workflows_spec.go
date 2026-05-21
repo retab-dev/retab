@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +11,7 @@ import (
 
 	retab "github.com/retab-dev/retab/clients/go"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // workflows spec — declarative (YAML) management for workflows.
@@ -140,8 +143,21 @@ var workflowsSpecApplyCmd = &cobra.Command{
 or update it (block + edge diff) if it does. The workflow's id is read
 from the spec body, so the same file always targets the same workflow.
 
-Mutating — gate behind ` + "`plan`" + ` in CI if the workflow is in production.`,
+Mutating. Before applying, the command runs ` + "`spec plan`" + ` and
+inspects the destroy count. When the plan would delete one or more
+resources (blocks, edges, or the workflow itself) the command pauses to
+confirm:
+
+  --yes / -y    skip the prompt (required for non-TTY stdin: pipes, CI).
+  TTY stdin     prints the list of resources marked for deletion to
+                stderr and prompts ` + "`Apply this change? [y/N]`" + `.
+  non-TTY       refuses outright unless ` + "`--yes`" + ` is passed —
+                a typo in ` + "`metadata.id`" + ` that points at another
+                workflow could otherwise wipe it silently.
+
+Plans with no deletions apply immediately, no extra prompt.`,
 	Example: `  retab workflows spec apply ./workflow.yaml
+  retab workflows spec apply ./workflow.yaml --yes        # skip prompt in CI
   cat workflow.yaml | retab workflows spec apply -`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
@@ -155,6 +171,21 @@ Mutating — gate behind ` + "`plan`" + ` in CI if the workflow is in production
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
+		// Plan first so we can gate destructive applies. The server's
+		// `spec apply` returns the same `summary` / `resource_changes`
+		// shape, but only AFTER applying — by then the destroy already
+		// happened. The only safe place to inspect it is from a prior
+		// plan call.
+		plan, err := client.Workflows.Specs.Plan(ctx, yaml)
+		if err != nil {
+			return translateSpecAPIError(err)
+		}
+		if err := failIfSpecValidationInvalid(plan); err != nil {
+			return err
+		}
+		if err := confirmDestructiveApply(cmd, plan); err != nil {
+			return err
+		}
 		result, err := client.Workflows.Specs.Apply(ctx, yaml)
 		if err != nil {
 			return translateSpecAPIError(err)
@@ -164,6 +195,114 @@ Mutating — gate behind ` + "`plan`" + ` in CI if the workflow is in production
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+// confirmDestructiveApply inspects a plan response and gates the
+// subsequent apply when one or more resources would be destroyed.
+//
+// Three branches, matching `confirmDestructive` for delete:
+//
+//	--yes               → proceed unconditionally, no prompt.
+//	TTY stdin           → list the doomed resources to stderr, prompt
+//	                      "Apply this change? [y/N] ". Accept y/yes
+//	                      only; anything else aborts.
+//	non-TTY, no --yes   → refuse outright. A typo in metadata.id that
+//	                      points at an unrelated workflow could
+//	                      otherwise wipe its blocks/edges silently;
+//	                      scripts must opt in with --yes.
+//
+// When the plan's destroy count is zero, this is a no-op — the apply
+// proceeds immediately so the non-destructive happy path stays
+// byte-identical to the pre-guard behaviour.
+func confirmDestructiveApply(cmd *cobra.Command, plan *retab.Resource) error {
+	destroy, doomed := planDestroyCountAndResources(plan)
+	if destroy == 0 {
+		return nil
+	}
+	if yes, _ := cmd.Flags().GetBool("yes"); yes {
+		return nil
+	}
+	stdin, ok := cmd.InOrStdin().(*os.File)
+	if !ok || !term.IsTerminal(int(stdin.Fd())) {
+		return fmt.Errorf(
+			"refusing to apply spec that would destroy %d resources without --yes (stdin is not a terminal)",
+			destroy,
+		)
+	}
+	out := cmd.ErrOrStderr()
+	fmt.Fprintf(out, "This apply will destroy %d resource(s):\n", destroy)
+	for _, r := range doomed {
+		fmt.Fprintf(out, "  - %s\n", r)
+	}
+	fmt.Fprint(out, "Apply this change? [y/N] ")
+	answer, err := bufio.NewReader(stdin).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return fmt.Errorf("read confirmation: %w", err)
+	}
+	switch strings.ToLower(strings.TrimSpace(answer)) {
+	case "y", "yes":
+		return nil
+	default:
+		return fmt.Errorf("aborted: spec apply not run")
+	}
+}
+
+// planDestroyCountAndResources extracts the destroy total and the list
+// of resource addresses scheduled for deletion from a plan response.
+// Returns (0, nil) when the response is missing the expected shape so
+// the caller treats absence-of-evidence as "nothing to gate on" — the
+// server-side validation path already failed loudly upstream if the
+// response is malformed.
+func planDestroyCountAndResources(plan *retab.Resource) (int, []string) {
+	if plan == nil {
+		return 0, nil
+	}
+	summary, _ := (*plan)["summary"].(map[string]any)
+	destroy := 0
+	if raw, ok := summary["destroy"]; ok {
+		switch n := raw.(type) {
+		case float64:
+			destroy = int(n)
+		case int:
+			destroy = n
+		}
+	}
+	if destroy == 0 {
+		return 0, nil
+	}
+	changes, _ := (*plan)["resource_changes"].([]any)
+	var doomed []string
+	for _, raw := range changes {
+		change, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		actions, _ := change["actions"].([]any)
+		hasDelete := false
+		for _, a := range actions {
+			if s, _ := a.(string); s == "delete" {
+				hasDelete = true
+				break
+			}
+		}
+		if !hasDelete {
+			continue
+		}
+		address, _ := change["address"].(string)
+		target, _ := change["target"].(string)
+		name, _ := change["name"].(string)
+		label := address
+		switch {
+		case label != "" && target != "":
+			label = fmt.Sprintf("%s (%s)", address, target)
+		case label == "" && name != "":
+			label = name
+		case label == "":
+			label = "<unknown resource>"
+		}
+		doomed = append(doomed, label)
+	}
+	return destroy, doomed
 }
 
 var workflowsSpecExportCmd = &cobra.Command{
@@ -318,6 +457,8 @@ func translateSpecAPIError(err error) error {
 func init() {
 	workflowsSpecExportCmd.Flags().String("format", "yaml", "output format: yaml | json")
 	workflowsSpecExportCmd.Flags().Bool("json", false, "shorthand for --format json")
+
+	workflowsSpecApplyCmd.Flags().BoolP("yes", "y", false, "skip the destructive-change confirmation prompt (required when stdin is not a TTY and the plan would destroy resources)")
 
 	workflowsSpecCmd.AddCommand(
 		workflowsSpecValidateCmd,

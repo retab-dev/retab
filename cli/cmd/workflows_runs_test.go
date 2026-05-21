@@ -731,6 +731,46 @@ func TestWorkflowsRunsListRejectsOverLimitLocally(t *testing.T) {
 	}
 }
 
+// TestWorkflowsRunsListRejectsUnknownFieldsLocally pins client-side
+// allowlist validation for `workflows runs list --fields`. The server
+// silently ignores unknown selectors (it projects what it knows and drops
+// the rest), so a typo would otherwise return rows with no projection
+// effect. Catch it before the HTTP call.
+func TestWorkflowsRunsListRejectsUnknownFieldsLocally(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		t.Fatalf("server should not be reached for unknown fields flag, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsListCmd.Flags().Set("fields", "bogus"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "fields") })
+
+	var err error
+	_, stderr := captureStd(t, func() {
+		err = workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
+	})
+	if err == nil {
+		t.Fatal("expected unknown fields error")
+	}
+	if !strings.Contains(stderr, "not a valid field") {
+		t.Fatalf("stderr %q does not mention not a valid field", stderr)
+	}
+	if !strings.Contains(stderr, "bogus") {
+		t.Fatalf("stderr %q does not quote the offending value", stderr)
+	}
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("server was hit %d time(s), want 0", got)
+	}
+}
+
 func TestWorkflowsRunsListRejectsBlankFieldsBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

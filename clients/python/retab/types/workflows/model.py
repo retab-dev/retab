@@ -1024,6 +1024,7 @@ class DeclarativeApplyResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     workflow_id: str
+    action: str
     created: bool
     block_count: int
     edge_count: int

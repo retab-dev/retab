@@ -168,6 +168,14 @@ Typical lifecycle:
   retab workflows publish wf_abc123 --description "v1: invoice extraction"`,
 }
 
+// workflowsListAllowedFields enumerates the top-level workflow fields the
+// server projects when `--fields` is set. Validation is client-side so
+// typos surface immediately instead of being silently dropped (the server
+// ignores unknown selectors rather than returning an error).
+var workflowsListAllowedFields = []string{
+	"id", "name", "description", "published", "email_trigger", "created_at", "updated_at",
+}
+
 var workflowsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List workflows",
@@ -198,7 +206,14 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		params.Limit, _ = cmd.Flags().GetInt("limit")
 		params.Order, _ = cmd.Flags().GetString("order")
 		params.SortBy, _ = cmd.Flags().GetString("sort-by")
-		params.Fields, _ = cmd.Flags().GetString("fields")
+		fields, err := nonBlankCommaSeparatedFlag(cmd, "fields")
+		if err != nil {
+			return err
+		}
+		if err := validateFieldsAgainstAllowlist(fields, workflowsListAllowedFields); err != nil {
+			return err
+		}
+		params.Fields = strings.Join(fields, ",")
 		result, err := client.Workflows.List(ctx, &params)
 		if err != nil {
 			return err

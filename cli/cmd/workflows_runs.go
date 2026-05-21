@@ -545,6 +545,28 @@ duration, cost, error info, final outputs. For per-block detail use
 	}),
 }
 
+// workflowsRunsListAllowedFields enumerates the top-level WorkflowRun
+// fields the server projects when `--fields` is set. Mirrors the JSON
+// shape of retab.WorkflowRun (clients/go/types.go). Dotted paths like
+// "lifecycle.status" are accepted because the validator only checks the
+// top-level prefix.
+var workflowsRunsListAllowedFields = []string{
+	"id",
+	"workflow_id",
+	"workflow",
+	"trigger",
+	"lifecycle",
+	"timing",
+	"inputs",
+	"outputs",
+	"cost",
+	"duration_ms",
+	"steps",
+	"error",
+	"created_at",
+	"updated_at",
+}
+
 var workflowsRunsListCmd = &cobra.Command{
 	Use:   "list [workflow-id]",
 	Short: "List workflow runs",
@@ -617,6 +639,9 @@ and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 		params.SortBy, _ = cmd.Flags().GetString("sort-by")
 		fields, err := nonBlankCommaSeparatedFlag(cmd, "fields")
 		if err != nil {
+			return err
+		}
+		if err := validateFieldsAgainstAllowlist(fields, workflowsRunsListAllowedFields); err != nil {
 			return err
 		}
 		params.Fields = fields
@@ -927,6 +952,36 @@ func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, err
 		}
 	}
 	return values, nil
+}
+
+// validateFieldsAgainstAllowlist rejects unknown --fields values
+// client-side so typos surface immediately instead of being silently
+// projected away by the server (the server treats unknown selectors as
+// "no such field" rather than returning an error).
+//
+// Dotted paths like "lifecycle.status" are accepted as long as the
+// top-level prefix ("lifecycle") is in the allowlist — the server's
+// projection traverses nested objects with the same rule. Empty/blank
+// pieces are caller-checked via nonBlankCommaSeparatedFlag before this
+// runs, so the slice handed in here only carries trimmed names.
+func validateFieldsAgainstAllowlist(fields []string, allowlist []string) error {
+	if len(fields) == 0 {
+		return nil
+	}
+	allowed := make(map[string]bool, len(allowlist))
+	for _, name := range allowlist {
+		allowed[name] = true
+	}
+	for _, field := range fields {
+		prefix := field
+		if i := strings.IndexByte(field, '.'); i >= 0 {
+			prefix = field[:i]
+		}
+		if !allowed[prefix] {
+			return fmt.Errorf("--fields %q is not a valid field (known: %s)", field, strings.Join(allowlist, ", "))
+		}
+	}
+	return nil
 }
 
 // nonBlankCommaSeparatedFlag reads a comma-separated string flag and

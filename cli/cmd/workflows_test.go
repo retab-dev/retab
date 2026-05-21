@@ -91,6 +91,35 @@ func TestWorkflowsDiagnoseReadsGraphFileBeforeCredentials(t *testing.T) {
 	}
 }
 
+// TestWorkflowsListRejectsUnknownFieldsLocally pins client-side
+// allowlist validation for `workflows list --fields`. The server silently
+// ignores unknown selectors, so a typo would otherwise return the full
+// payload without complaint; reject it locally before any HTTP call.
+func TestWorkflowsListRejectsUnknownFieldsLocally(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_BASE_URL", "http://127.0.0.1:1")
+
+	if err := workflowsListCmd.Flags().Set("fields", "bogus"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsListCmd.Flags().Set("fields", "") })
+
+	workflowsListCmd.SetContext(context.Background())
+	t.Cleanup(func() { workflowsListCmd.SetContext(nil) })
+
+	err := workflowsListCmd.RunE(workflowsListCmd, nil)
+	if err == nil {
+		t.Fatal("expected local validation error for --fields bogus, got nil")
+	}
+	if !strings.Contains(err.Error(), "not a valid field") {
+		t.Fatalf("error should say not a valid field, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "bogus") {
+		t.Fatalf("error should quote the offending value, got: %v", err)
+	}
+}
+
 func TestWorkflowsListRejectsOverLimitLocally(t *testing.T) {
 	cases := []struct {
 		name string

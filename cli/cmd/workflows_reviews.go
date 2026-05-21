@@ -422,7 +422,7 @@ func printReviewVersionResult(cmd *cobra.Command, result *retab.ReviewVersion) e
 	return printJSON(result)
 }
 
-func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitReviewDecisionResponse) error {
+func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitWorkflowReviewDecisionResponse) error {
 	// Conflict means the submission did NOT take effect — the review
 	// already had a different decision. Surface this as a non-zero exit
 	// so scripts gating on exit code don't mistake "I tried to reject"

@@ -129,8 +129,10 @@ func renderJSON(w io.Writer, v any) error {
 //     anonymous payloads and decoded `any` values from readJSON.
 //
 // If `data` is missing, not a slice, or empty, we render only the header
-// row. An explicit empty result is a perfectly valid table — printing an
-// error or hiding the headers would just be confusing.
+// row plus a "(no rows)" hint on stderr so the lone header isn't easily
+// mistaken for "all rows hidden" (a UX trap copied from kubectl's
+// "No resources found." behaviour). The hint goes to stderr so stdout
+// stays clean for piping.
 func renderTable(w io.Writer, v any, columns []TableColumn) error {
 	rows, err := extractDataSlice(v)
 	if err != nil {
@@ -158,7 +160,23 @@ func renderTable(w io.Writer, v any, columns []TableColumn) error {
 		}
 		fmt.Fprintln(tw)
 	}
-	return tw.Flush()
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+	if len(rows) == 0 {
+		emitEmptyRowsHint()
+	}
+	return nil
+}
+
+// emitEmptyRowsHint writes the single-line "(no rows)" indicator to
+// stderr when a table render produced a header-only output. Kept in one
+// place so the wording stays consistent between renderTable and
+// renderAutoTable. Stderr (not stdout) keeps `--output table` pipeable
+// — a downstream consumer awk-ing the header line still sees clean
+// stdout, and the hint shows up in interactive use.
+func emitEmptyRowsHint() {
+	fmt.Fprintln(os.Stderr, "(no rows)")
 }
 
 // extractDataSlice pulls the `data` slice out of a list response.
@@ -887,7 +905,9 @@ func stringifyCell(v any) string {
 // renderAutoTable writes the header + rows to w using text/tabwriter.
 // Mirrors renderTable's settings (padding=2, tab separator) so the
 // column-aligned look is identical between the auto-column and
-// explicit-TableColumn paths.
+// explicit-TableColumn paths. When the row set is empty an extra
+// "(no rows)" hint goes to stderr — same UX as renderTable — so a lone
+// header row isn't mistaken for hidden output.
 func renderAutoTable(w io.Writer, rows []any, columns []TableColumn) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	for i, col := range columns {
@@ -906,5 +926,11 @@ func renderAutoTable(w io.Writer, rows []any, columns []TableColumn) error {
 		}
 		fmt.Fprintln(tw)
 	}
-	return tw.Flush()
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+	if len(rows) == 0 {
+		emitEmptyRowsHint()
+	}
+	return nil
 }
