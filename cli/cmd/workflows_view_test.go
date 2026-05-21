@@ -195,6 +195,29 @@ func TestRenderWorkflowASCIIViewReportsIsolatedBlocks(t *testing.T) {
 	}
 }
 
+func TestRenderWorkflowASCIIViewKeepsTypeTagWhenBlockIDIsLong(t *testing.T) {
+	// Long random ids must not knock the type tag out of the meta line —
+	// the type is far more useful than the trailing 6 chars of an opaque id.
+	workflow := &workflowGraph{
+		Workflow: retab.Workflow{ID: "wf_longid", Name: "Long-id workflow"},
+		Blocks: []retab.WorkflowBlock{
+			{ID: "block_gOKWG4abcdefgh1a2KYG", Type: "start-document", Label: "Document", PositionX: 0, PositionY: 0},
+			{ID: "block_BKcQijCUKCisbTQzrLDwd", Type: "extract", Label: "Extract", PositionX: 300, PositionY: 0},
+		},
+		Edges: []retab.WorkflowEdgeDoc{
+			{ID: "edge_doc_extract", SourceBlock: "block_gOKWG4abcdefgh1a2KYG", TargetBlock: "block_BKcQijCUKCisbTQzrLDwd"},
+		},
+	}
+
+	out := renderWorkflowASCIIViewString(t, workflow)
+	if !strings.Contains(out, "[extract]") {
+		t.Fatalf("expected [extract] tag to survive truncation, got:\n%s", out)
+	}
+	if !strings.Contains(out, "[start-document]") {
+		t.Fatalf("expected [start-document] tag to survive truncation, got:\n%s", out)
+	}
+}
+
 func TestRenderWorkflowASCIIViewHidesEdgeLabelsForDenseGraphs(t *testing.T) {
 	blocks := []retab.WorkflowBlock{
 		{ID: "start", Type: "start", Label: "Start", PositionX: 0, PositionY: 0},
