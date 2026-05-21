@@ -371,7 +371,12 @@ type WorkflowBlocksService struct {
 }
 
 type WorkflowBlockCreateRequest struct {
-	ID        string         `json:"id"`
+	// ID is optional — the server generates an opaque `blk_<nanoid>` when
+	// the field is absent. omitempty matters because block ids are
+	// org-globally unique; sending "" trips the uniqueness check against any
+	// other empty-id block (or fails when an existing one is found) instead
+	// of triggering the server's default_factory.
+	ID        string         `json:"id,omitempty"`
 	Type      string         `json:"type"`
 	Label     string         `json:"label,omitempty"`
 	PositionX float64        `json:"position_x,omitempty"`
