@@ -400,8 +400,42 @@ func validateWorkflowName(name string) error {
 
 func validateWorkflowEmailAllowlistValues(flagName string, values []string) error {
 	for _, value := range values {
-		if strings.TrimSpace(value) == "" {
-			return fmt.Errorf("%s must not be blank", flagName)
+		if err := validateWorkflowEmailAllowlistValue(flagName, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateWorkflowEmailAllowlistValue rejects shapes that cannot match any
+// real inbound email. The server stores values verbatim, so a malformed
+// entry silently breaks the allowlist (no email ever matches) — the CLI
+// is the only opportunity to catch this before the user thinks they
+// locked down their workflow.
+//
+// Rules are intentionally loose (no RFC 5321 validator here): catch the
+// obviously-wrong shapes, leave plausible-looking values alone.
+func validateWorkflowEmailAllowlistValue(flagName, value string) error {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return fmt.Errorf("%s must not be blank", flagName)
+	}
+
+	switch flagName {
+	case "--allowed-sender":
+		at := strings.IndexByte(trimmed, '@')
+		if at <= 0 || at == len(trimmed)-1 || strings.Count(trimmed, "@") != 1 {
+			return fmt.Errorf("%s %q is not a valid email address (expected local@domain)", flagName, value)
+		}
+		if !strings.Contains(trimmed[at+1:], ".") {
+			return fmt.Errorf("%s %q is not a valid email address (domain must contain a dot)", flagName, value)
+		}
+	case "--allowed-domain":
+		if strings.ContainsAny(trimmed, "@ ") {
+			return fmt.Errorf("%s %q is not a valid domain (must not contain '@' or whitespace; pass the domain only)", flagName, value)
+		}
+		if !strings.Contains(trimmed, ".") {
+			return fmt.Errorf("%s %q is not a valid domain (must contain a dot)", flagName, value)
 		}
 	}
 	return nil
