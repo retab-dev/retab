@@ -176,6 +176,39 @@ func TestRenderWorkflowASCIIViewDisconnectedSubgraphRendersOnce(t *testing.T) {
 	}
 }
 
+// Regression for CLI probing 2026-05: a freshly-`workflows create`'d
+// workflow has only the auto-added start_document block and zero edges.
+// The view used to render "Disconnected: Document" against that lone
+// block, which is technically true but cosmetically wrong — the block
+// just hasn't been wired to anything yet because the user is still
+// scaffolding. Suppress the line for that exact shape.
+func TestRenderWorkflowASCIIViewSuppressesDisconnectedForFreshScaffolding(t *testing.T) {
+	cases := []struct {
+		name string
+		typ  string
+	}{
+		{name: "start_document underscore", typ: "start_document"},
+		{name: "start-document hyphen", typ: "start-document"},
+		{name: "legacy start", typ: "start"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			workflow := &workflowGraph{
+				Workflow: retab.Workflow{ID: "wf_fresh"},
+				Blocks: []retab.WorkflowBlock{
+					{ID: "start", Type: tc.typ, Label: "Document", PositionX: 100, PositionY: 200},
+				},
+				Edges: nil,
+			}
+
+			out := renderWorkflowASCIIViewString(t, workflow)
+			if strings.Contains(out, "Disconnected:") {
+				t.Fatalf("freshly-created scaffold workflow should not emit a Disconnected line:\n%s", out)
+			}
+		})
+	}
+}
+
 func TestRenderWorkflowASCIIViewReportsIsolatedBlocks(t *testing.T) {
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_isolated"},
