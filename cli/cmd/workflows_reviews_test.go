@@ -204,7 +204,7 @@ func TestReviewsHelpUsesVersionIDsAndNoReviewableProjections(t *testing.T) {
 	}
 	for _, child := range workflowsReviewsCmd.Commands() {
 		if child.Name() == "edit" {
-			t.Fatalf("reviews edit command should not exist after create-version cutover")
+			t.Fatalf("reviews edit command should not exist after append-version cutover")
 		}
 	}
 	if workflowsReviewsVersionsCmd.Commands()[0].Name() != "append" {

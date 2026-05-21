@@ -506,7 +506,7 @@ type AppendReviewVersionResponse struct {
 // delivery did not complete; the associated ResumeError carries diagnostic
 // context while server-side reconciliation retries delivery.
 type SubmitReviewDecisionResponse struct {
-	SubmissionStatus string  `json:"submission_status"` // accepted | already_applied
+	SubmissionStatus string  `json:"submission_status"` // accepted
 	Review           Review  `json:"review"`
 	ResumeStatus     string  `json:"resume_status,omitempty"` // pending | resumed | skipped
 	ResumeError      *string `json:"resume_error,omitempty"`
@@ -514,12 +514,8 @@ type SubmitReviewDecisionResponse struct {
 
 // Submission status string constants returned by Approve / Reject.
 const (
-	// SubmissionStatusAccepted means the decision was written and the
-	// downstream workflow was successfully signalled to resume.
+	// SubmissionStatusAccepted means the decision was written.
 	SubmissionStatusAccepted = "accepted"
-	// SubmissionStatusAlreadyApplied means the same (verdict, version_id) was
-	// already on file — the idempotency mechanism, safe to retry.
-	SubmissionStatusAlreadyApplied = "already_applied"
 )
 
 const (

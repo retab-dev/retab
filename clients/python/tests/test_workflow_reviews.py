@@ -246,10 +246,10 @@ def test_wait_for_times_out_when_review_never_appears() -> None:
 @pytest.mark.asyncio
 async def test_async_get_and_approve() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(side_effect=[_REVIEW, {"submission_status": "already_applied", "review": _REVIEW}])
+    client._prepared_request = AsyncMock(side_effect=[_REVIEW, {"submission_status": "accepted", "review": _REVIEW}])
     reviews = AsyncWorkflowReviews(client=client)
     assert (await reviews.get(_REVIEW_ID)).id == _REVIEW_ID
-    assert (await reviews.approve(_REVIEW_ID, version_id=_VERSION_ID)).submission_status == "already_applied"
+    assert (await reviews.approve(_REVIEW_ID, version_id=_VERSION_ID)).submission_status == "accepted"
 
 
 @pytest.mark.asyncio

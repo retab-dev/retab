@@ -983,20 +983,18 @@ export type ReviewQueueResponse = z.infer<typeof ZReviewQueueResponse>;
  *
  * `"resumed"`: signal succeeded; the workflow run advanced past the gate.
  * `"skipped"`: defensive — there was no decision to resume (should not occur).
- * `"failed"`: the signal raised; the decision IS committed but the run did
- *   NOT advance. Inspect `resume_error` for context and retry via your own
- *   reconciliation path.
+ * `"pending"`: the decision is committed and background reconciliation will
+ *   retry Temporal resume delivery.
  */
-export const ZResumeStatus = z.enum(['pending', 'resumed', 'skipped', 'failed']);
+export const ZResumeStatus = z.enum(['pending', 'resumed', 'skipped']);
 export type ResumeStatus = z.infer<typeof ZResumeStatus>;
 
 /**
  * Submission status returned by `reviews.approve/reject(...)`.
  *
  * - `"accepted"`: decision committed.
- * - `"already_applied"`: idempotent replay of an identical `(verdict, version_id)`.
  */
-export const ZSubmissionStatus = z.enum(['accepted', 'already_applied']);
+export const ZSubmissionStatus = z.enum(['accepted']);
 export type SubmissionStatus = z.infer<typeof ZSubmissionStatus>;
 
 /** Status returned by `reviews.append_version(...)`. */
