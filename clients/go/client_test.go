@@ -316,6 +316,11 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 				}},
 				"list_metadata": map[string]any{"before": nil, "after": nil},
 			})
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/artifacts/ext_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"operation": "extraction",
+				"id":        "ext_123",
+			})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
@@ -353,7 +358,14 @@ func TestWorkflowArtifactsListAndPrepare(t *testing.T) {
 	if !strings.Contains(listQuery, "run_id=run_123") || !strings.Contains(listQuery, "operation=extraction") || !strings.Contains(listQuery, "block_id=extract-1") {
 		t.Fatalf("list query = %s", listQuery)
 	}
-	if strings.Join(requests, ",") != "GET /workflows/artifacts" {
+	artifact, err := client.Workflows.Artifacts.Get(context.Background(), "ext_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if (*artifact)["id"] != "ext_123" {
+		t.Fatalf("artifact = %#v", artifact)
+	}
+	if strings.Join(requests, ",") != "GET /workflows/artifacts,GET /workflows/artifacts/ext_123" {
 		t.Fatalf("requests = %#v", requests)
 	}
 }
@@ -376,6 +388,14 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data":          []map[string]any{},
 				"list_metadata": map[string]any{"before": nil, "after": nil},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/results/expresult_123":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":            "expresult_123",
+				"run_id":        "exprun_123",
+				"experiment_id": "exp_123",
+				"document_id":   "doc_123",
+				"lifecycle":     map[string]any{"status": "completed"},
 			})
 		case r.Method == http.MethodPost && r.URL.Path == "/workflows/experiments/runs/exprun_123/cancel":
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -410,6 +430,13 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if len(results.Data) != 0 || rawQuery != "limit=25" {
 		t.Fatalf("results = %#v rawQuery = %q", results, rawQuery)
 	}
+	resultRecord, err := client.Workflows.Experiments.Runs.Results.Get(context.Background(), "expresult_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resultRecord.ID != "expresult_123" {
+		t.Fatalf("result record = %#v", resultRecord)
+	}
 	cancelled, err := client.Workflows.Experiments.Runs.Cancel(context.Background(), "exprun_123")
 	if err != nil {
 		t.Fatal(err)
@@ -427,7 +454,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	expected := []string{
 		"GET /workflows/experiments/runs/exprun_123",
 		"GET /workflows/experiments/runs/exprun_123/results",
-		"GET /workflows/experiments/runs/exprun_123/results/doc_123",
+		"GET /workflows/experiments/results/expresult_123",
 		"POST /workflows/experiments/runs/exprun_123/cancel",
 		"GET /workflows/experiments/runs/exprun_123/metrics",
 	}

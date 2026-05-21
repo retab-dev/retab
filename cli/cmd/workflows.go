@@ -350,12 +350,33 @@ and ` + "`workflows edges`" + `.`,
 		}
 		senders, _ := cmd.Flags().GetStringArray("allowed-sender")
 		domains, _ := cmd.Flags().GetStringArray("allowed-domain")
-		if cmd.Flags().Changed("allowed-sender") || cmd.Flags().Changed("allowed-domain") {
+		senderChanged := cmd.Flags().Changed("allowed-sender")
+		domainChanged := cmd.Flags().Changed("allowed-domain")
+		if senderChanged || domainChanged {
 			if err := validateWorkflowEmailAllowlistValues("--allowed-sender", senders); err != nil {
 				return err
 			}
 			if err := validateWorkflowEmailAllowlistValues("--allowed-domain", domains); err != nil {
 				return err
+			}
+			// `WorkflowEmailTrigger` is full-replace on the server. Patch
+			// semantics expect omitting a flag to leave that list alone,
+			// so pull the current state and merge anything the user did
+			// not explicitly set. The fetch is one extra round-trip but
+			// keeps the CLI's behaviour intuitive for ops-style updates
+			// (e.g. `update --allowed-domain new.com` adding a domain
+			// without nuking the configured senders).
+			if !senderChanged || !domainChanged {
+				current, err := client.Workflows.Get(ctx, args[0])
+				if err != nil {
+					return err
+				}
+				if !senderChanged {
+					senders = current.EmailTrigger.AllowedSenders
+				}
+				if !domainChanged {
+					domains = current.EmailTrigger.AllowedDomains
+				}
 			}
 			req.EmailTrigger = &retab.WorkflowEmailTrigger{
 				AllowedSenders: senders,
