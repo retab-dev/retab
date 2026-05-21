@@ -157,7 +157,7 @@ def test_prepare_list_builds_get_with_hard_cutover_filters() -> None:
     reviews = WorkflowReviews(client=MagicMock())
     request = reviews.prepare_list(
         workflow_id="wf_1",
-        workflow_run_id="run_1",
+        run_id="run_1",
         block_id="extract-1",
         step_id="step_1",
         iteration_key="0",
@@ -170,7 +170,7 @@ def test_prepare_list_builds_get_with_hard_cutover_filters() -> None:
         "limit": 10,
         "decision_status": "decided",
         "workflow_id": "wf_1",
-        "workflow_run_id": "run_1",
+        "run_id": "run_1",
         "block_id": "extract-1",
         "step_id": "step_1",
         "iteration_key": "0",
