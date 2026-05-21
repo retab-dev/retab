@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -14,13 +13,10 @@ import (
 // The `workflows reviews` command group drives the review overlay —
 // the versioned sidecar attached to a block run awaiting review. The surface is
 // actor-neutral: a correction proposed by a model, an agent, or a human all
-// flow through the same `edit` / `approve` pair.
+// flow through the same create-version / approve pair.
 //
-// Every mutating command carries a `--version-stamp` (the overlay `rev`,
-// a compare-and-swap token). When omitted, the CLI reads the current `rev`
-// first and warns on stderr — convenient for scripts, but it gives up
-// protection against a concurrent reviewer. Pass `--version-stamp`
-// explicitly to make the write fail loudly (HTTP 409) on a stale read.
+// Decisions name the exact content-addressed version id being approved or
+// rejected. Created versions append a complete snapshot under versions_by_id.
 
 var workflowsReviewsCmd = &cobra.Command{
 	Use:   "reviews",
@@ -29,32 +25,30 @@ var workflowsReviewsCmd = &cobra.Command{
 block run's output history, post corrections, and submit a verdict
 (approve / reject).
 
-Each block run awaiting review has a review overlay — an append-only log of every
-output version, every actor who touched it, and every decision. The
-overlay's ` + "`rev`" + ` is a compare-and-swap token: mutating commands
-take ` + "`--version-stamp`" + ` and fail with HTTP 409 if another reviewer
-moved the overlay first.`,
+Each block run awaiting review has a review overlay. The overlay stores
+immutable output snapshots in ` + "`versions_by_id`" + ` and one terminal
+` + "`decision`" + `. Decisions approve or reject one exact ` + "`version_id`" + `.`,
 	Example: `  # See what's waiting for review
   retab workflows reviews list
 
   # Inspect one block run awaiting review
   retab workflows reviews get run_xyz789 blk_extract_1
 
-  # Approve it as-is
-  retab workflows reviews approve run_xyz789 blk_extract_1 --version-stamp 0`,
+  # Approve one exact version
+  retab workflows reviews approve run_xyz789 blk_extract_1 --version-id 9d6d...`,
 }
 
 var workflowsReviewsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List block runs awaiting review",
 	Long: `List the review queue — block runs awaiting review and their lifecycle,
-hottest first. The heavy version/decision/audit history is omitted; pull
+hottest first. Version history and the terminal decision payload are omitted; pull
 one item with ` + "`reviews get`" + ` to see it.`,
 	Example: `  # The whole org's awaiting-review queue
   retab workflows reviews list
 
-  # Only one workflow, only reviews you have claimed
-  retab workflows reviews list --workflow-id wf_abc123 --mine`,
+  # Only one workflow
+  retab workflows reviews list --workflow-id wf_abc123`,
 	Args: cobra.NoArgs,
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -65,8 +59,6 @@ one item with ` + "`reviews get`" + ` to see it.`,
 		defer cancel()
 		params := &retab.ListReviewsParams{}
 		params.WorkflowID, _ = cmd.Flags().GetString("workflow-id")
-		params.Status, _ = cmd.Flags().GetString("status")
-		params.Mine, _ = cmd.Flags().GetBool("mine")
 		if cmd.Flags().Changed("limit") {
 			params.Limit, _ = cmd.Flags().GetInt("limit")
 		}
@@ -81,14 +73,17 @@ one item with ` + "`reviews get`" + ` to see it.`,
 var workflowsReviewsGetCmd = &cobra.Command{
 	Use:   "get <run-id> <block-id>",
 	Short: "Get the full review overlay for a block run",
-	Long: `Return the full review overlay: every output version (the
-model's original is seq 0), every decision, the audit trail, and the
-` + "`rev`" + ` CAS token you pass back as ` + "`--version-stamp`" + `.`,
+	Long: `Return the full review overlay: immutable output versions in
+` + "`versions_by_id`" + ` plus the terminal ` + "`decision`" + ` when one exists.
+Use ` + "`reviews schema`" + ` when you need the snapshot shape for a correction.`,
 	Example: `  # Inspect a block run awaiting review
   retab workflows reviews get run_xyz789 blk_extract_1
 
-  # Read the current version_stamp for a follow-up decision
-  retab workflows reviews get run_xyz789 blk_extract_1 | jq .rev`,
+  # Pick a version id to approve
+  retab workflows reviews get run_xyz789 blk_extract_1 | jq '.versions_by_id | keys'
+
+  # See the JSON shape expected by reviews versions create
+  retab workflows reviews schema run_xyz789 blk_extract_1`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
@@ -105,58 +100,65 @@ model's original is seq 0), every decision, the audit trail, and the
 	}),
 }
 
+type reviewSnapshotSchema struct {
+	BlockType   string         `json:"block_type"`
+	Snapshot    map[string]any `json:"snapshot_schema"`
+	Example     map[string]any `json:"example"`
+	Notes       []string       `json:"notes,omitempty"`
+	CreateUsage string         `json:"create_usage"`
+}
+
+var workflowsReviewsSchemaCmd = &cobra.Command{
+	Use:   "schema <run-id> <block-id>",
+	Short: "Show the snapshot shape accepted by reviews versions create",
+	Long: `Show the exact JSON snapshot shape accepted by ` + "`reviews versions create`" + ` for
+this reviewed block. The command fetches the review overlay to read the stored
+` + "`block_type`" + `, then prints the block-specific snapshot contract.
+
+This is guidance for authoring ` + "`--snapshot-file`" + `. It does not add fields
+to the review overlay and it does not change the stored review object.`,
+	Example: `  # See what corrected-output.json must contain
+  retab workflows reviews schema run_xyz789 blk_extract_1
+
+  # Machine-readable schema guidance
+  retab workflows reviews schema run_xyz789 blk_classifier_1 --output json`,
+	Args: cobra.ExactArgs(2),
+	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		client, err := newClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := ctxFor(cmd)
+		defer cancel()
+		overlay, err := client.Workflows.Reviews.Get(ctx, args[0], args[1])
+		if err != nil {
+			return err
+		}
+		schema, err := reviewSchemaForBlockType(overlay.BlockType)
+		if err != nil {
+			return err
+		}
+		schema.CreateUsage = fmt.Sprintf(
+			"retab workflows reviews versions create %s %s --from-version <version_id> --snapshot-file <snapshot.json>",
+			args[0],
+			args[1],
+		)
+		return printReviewSchemaResult(cmd, schema)
+	}),
+}
+
 var workflowsReviewsApproveCmd = &cobra.Command{
 	Use:   "approve <run-id> <block-id>",
 	Short: "Approve a reviewed block output",
-	Long: `Approve the reviewed output so the run resumes. With
-` + "`--snapshot-file`" + `, pass a full block output snapshot: the
-entire JSON output object that should be stored and shipped downstream.
-With ` + "`--reviewable-value-file`" + `, pass only the primitive-specific
-reviewable value, such as an extract JSON object or classifier category
-object; the server compiles it into the full snapshot. Either form is
-appended as a corrective version first, then approved. The model's
-original is preserved as seq 0 for audit.`,
-	Example: `  # Approve as-is
-  retab workflows reviews approve run_xyz789 blk_extract_1 --version-stamp 2
-
-  # Approve with a full block output snapshot correction
-  retab workflows reviews approve run_xyz789 blk_extract_1 \
-    --version-stamp 2 --snapshot-file ./fixed-output.json
-
-  # Approve with a primitive-specific reviewable value
-  retab workflows reviews approve run_xyz789 blk_extract_1 \
-    --version-stamp 2 --reviewable-value-file ./fixed-value.json`,
-	Args: cobra.ExactArgs(2),
+	Long: `Approve one exact output version so the run resumes. To approve a
+correction, first create it with ` + "`reviews versions create`" + `, then approve the
+returned content-addressed version id.`,
+	Example: `  retab workflows reviews approve run_xyz789 blk_extract_1 --version-id 9d6d...`,
+	Args:    cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		snapshotPath, _ := cmd.Flags().GetString("snapshot-file")
-		editedOutputPath, _ := cmd.Flags().GetString("edited-output-file")
-		reviewableValuePath, _ := cmd.Flags().GetString("reviewable-value-file")
-		if snapshotPath != "" && editedOutputPath != "" {
-			return fmt.Errorf("--snapshot-file and --edited-output-file are aliases; pass only one")
-		}
-		snapshotFlagName := "--snapshot-file"
-		if snapshotPath == "" && editedOutputPath != "" {
-			snapshotPath = editedOutputPath
-			snapshotFlagName = "--edited-output-file"
-		}
-		if snapshotPath != "" && reviewableValuePath != "" {
-			return fmt.Errorf("%s and --reviewable-value-file are mutually exclusive", snapshotFlagName)
-		}
-		var editedOutput map[string]any
-		if snapshotPath != "" {
-			data, err := readJSONMap(snapshotPath)
-			if err != nil {
-				return fmt.Errorf("%s: %w", snapshotFlagName, err)
-			}
-			editedOutput = data
-		}
-		var reviewableValue map[string]any
-		if reviewableValuePath != "" {
-			data, err := readJSONMap(reviewableValuePath)
-			if err != nil {
-				return fmt.Errorf("--reviewable-value-file: %w", err)
-			}
-			reviewableValue = data
+		versionID, err := requireReviewVersionIDFlag(cmd, "version-id")
+		if err != nil {
+			return err
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -164,16 +166,7 @@ original is preserved as seq 0 for audit.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		stamp, err := resolveVersionStamp(cmd, client, ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		req := retab.ApproveReviewRequest{VersionStamp: stamp}
-		req.CommandID, _ = cmd.Flags().GetString("command-id")
-		req.EditedOutput = editedOutput
-		req.ReviewableValue = reviewableValue
-		req.OnSeq = optionalIntFlag(cmd, "on-seq")
-		req.EffectiveSeq = optionalIntFlag(cmd, "effective-seq")
+		req := retab.ApproveReviewRequest{VersionID: versionID}
 		result, err := client.Workflows.Reviews.Approve(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
@@ -186,14 +179,17 @@ var workflowsReviewsRejectCmd = &cobra.Command{
 	Use:   "reject <run-id> <block-id>",
 	Short: "Reject a reviewed block output",
 	Long: `Reject the reviewed output. The runtime records the review as
-rejected and marks the workflow run error/rejected; downstream blocks do
-not continue. A ` + "`--reason`" + ` is required so the review decision is
+rejected and downstream blocks do not continue. A ` + "`--reason`" + ` is required so the review decision is
 auditable.`,
 	Example: `  retab workflows reviews reject run_xyz789 blk_extract_1 \
-    --version-stamp 2 --reason "wrong document type — packing slip, not invoice"`,
+    --version-id 9d6d... --reason "wrong document type — packing slip, not invoice"`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		reason, err := requireNonBlankFlag(cmd, "reason")
+		if err != nil {
+			return err
+		}
+		versionID, err := requireReviewVersionIDFlag(cmd, "version-id")
 		if err != nil {
 			return err
 		}
@@ -203,12 +199,7 @@ auditable.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		stamp, err := resolveVersionStamp(cmd, client, ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		req := retab.RejectReviewRequest{VersionStamp: stamp, Reason: reason}
-		req.CommandID, _ = cmd.Flags().GetString("command-id")
+		req := retab.RejectReviewRequest{VersionID: versionID, Reason: reason}
 		result, err := client.Workflows.Reviews.Reject(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
@@ -222,56 +213,62 @@ var workflowsReviewsEscalateCmd = &cobra.Command{
 	Short:  "Unsupported legacy review escalation command",
 	Hidden: true,
 	Long: `Review escalation is not supported by the review overlay API.
-Use ` + "`reviews approve`" + `, ` + "`reviews reject`" + `, or ` + "`reviews edit`" + `.`,
+Use ` + "`reviews approve`" + `, ` + "`reviews reject`" + `, or ` + "`reviews versions create`" + `.`,
 	Example: "",
 	Args:    cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		return fmt.Errorf("review escalation is not supported by the review overlay API; use reviews approve, reviews reject, or reviews edit")
+		return fmt.Errorf("review escalation is not supported by the review overlay API; use reviews approve, reviews reject, or reviews versions create")
 	}),
 }
 
-var workflowsReviewsEditCmd = &cobra.Command{
-	Use:   "edit <run-id> <block-id>",
-	Short: "Append a corrective output version without deciding",
-	Long: `Append a new output version to the overlay's history, leaving
-it awaiting review. Use this to record a correction for another reviewer
-to approve. ` + "`--snapshot-file`" + ` must contain a full block output snapshot:
-the entire JSON output object, not a patch. ` + "`--reviewable-value-file`" + `
-contains only the primitive-specific reviewable value, such as an extract
-JSON object or classifier category object; the server compiles it into
-the full snapshot. Pass exactly one of those files.`,
-	Example: `  # Edit with a full block output snapshot
-  retab workflows reviews edit run_xyz789 blk_extract_1 \
-    --version-stamp 1 --snapshot-file ./corrected-output.json --note "fixed currency"
+var workflowsReviewsVersionsCmd = &cobra.Command{
+	Use:   "versions",
+	Short: "Manage immutable review output versions",
+	Long: `Manage immutable output versions inside a review overlay.
 
-  # Edit with a primitive-specific reviewable value
-  retab workflows reviews edit run_xyz789 blk_extract_1 \
-    --version-stamp 1 --reviewable-value-file ./corrected-value.json`,
+Use ` + "`reviews versions create`" + ` to append a complete corrected snapshot.
+Existing versions are never mutated.`,
+}
+
+var workflowsReviewsVersionsCreateCmd = &cobra.Command{
+	Use:   "create <run-id> <block-id>",
+	Short: "Create an immutable review output version",
+	Long: `Create a new immutable output version in the overlay's version history,
+leaving it awaiting review. ` + "`--snapshot-file`" + ` must contain a full block
+output snapshot: the entire JSON object, not a patch. ` + "`--from-version`" + `
+names the version this snapshot was authored from.
+
+Snapshot shapes are block-specific:
+  extract:    ` + "`{\"invoice_number\":\"INV-1\",\"total\":1200}`" + `
+  classifier: ` + "`{\"category\":\"invoice\"}`" + `
+  split:      ` + "`{\"documents\":[{\"name\":\"booking confirmation\",\"pages\":[1,2]}]}`" + `
+  for_each:   ` + "`{\"partitions\":[{\"key\":\"invoice\",\"pages\":[1,2]}]}`" + `
+
+Run ` + "`reviews schema <run-id> <block-id>`" + ` to print the snapshot contract
+for a paused block.`,
+	Example: `  # Create a corrected output version from a full snapshot
+  retab workflows reviews versions create run_xyz789 blk_extract_1 \
+    --from-version 2b8a... --snapshot-file ./corrected-output.json --note "fixed currency"
+
+  # Pipe a classifier correction
+  printf '{"category":"booking_confirmation"}' |
+    retab workflows reviews versions create run_xyz789 blk_classifier_1 \
+      --from-version 2b8a... --snapshot-file - --origin human_created`,
 	Args: cobra.ExactArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		snapshotPath, _ := cmd.Flags().GetString("snapshot-file")
-		reviewableValuePath, _ := cmd.Flags().GetString("reviewable-value-file")
-		if snapshotPath == "" && reviewableValuePath == "" {
-			return fmt.Errorf("one of --snapshot-file or --reviewable-value-file is required")
-		}
-		if snapshotPath != "" && reviewableValuePath != "" {
-			return fmt.Errorf("--snapshot-file and --reviewable-value-file are mutually exclusive")
+		if snapshotPath == "" {
+			return fmt.Errorf("--snapshot-file is required")
 		}
 		var snapshot map[string]any
-		if snapshotPath != "" {
-			data, err := readJSONMap(snapshotPath)
-			if err != nil {
-				return fmt.Errorf("--snapshot-file: %w", err)
-			}
-			snapshot = data
+		data, err := readJSONMap(snapshotPath)
+		if err != nil {
+			return fmt.Errorf("--snapshot-file: %w", err)
 		}
-		var reviewableValue map[string]any
-		if reviewableValuePath != "" {
-			data, err := readJSONMap(reviewableValuePath)
-			if err != nil {
-				return fmt.Errorf("--reviewable-value-file: %w", err)
-			}
-			reviewableValue = data
+		snapshot = data
+		parentID, err := requireReviewVersionIDFlag(cmd, "from-version")
+		if err != nil {
+			return err
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -279,70 +276,11 @@ the full snapshot. Pass exactly one of those files.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		stamp, err := resolveVersionStamp(cmd, client, ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		req := retab.EditReviewRequest{VersionStamp: stamp}
+		req := retab.CreateReviewVersionRequest{ParentID: parentID}
 		req.Snapshot = snapshot
-		req.ReviewableValue = reviewableValue
 		req.Origin, _ = cmd.Flags().GetString("origin")
 		req.Note, _ = cmd.Flags().GetString("note")
-		req.CommandID, _ = cmd.Flags().GetString("command-id")
-		result, err := client.Workflows.Reviews.Edit(ctx, args[0], args[1], req)
-		if err != nil {
-			return err
-		}
-		return printReviewOverlayResult(cmd, result)
-	}),
-}
-
-var workflowsReviewsClaimCmd = &cobra.Command{
-	Use:   "claim <run-id> <block-id>",
-	Short: "Take the advisory review claim",
-	Long: `Take the advisory claim on a review ("Dana is reviewing this").
-A claim is never a lock — it only powers the UI; correctness still rests
-on the ` + "`--version-stamp`" + ` CAS. Claims expire after ` + "`--ttl-seconds`" + `.`,
-	Example: `  retab workflows reviews claim run_xyz789 blk_extract_1 --version-stamp 0`,
-	Args:    cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		stamp, err := resolveVersionStamp(cmd, client, ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		ttl, _ := cmd.Flags().GetInt("ttl-seconds")
-		result, err := client.Workflows.Reviews.Claim(ctx, args[0], args[1], stamp, ttl)
-		if err != nil {
-			return err
-		}
-		return printReviewOverlayResult(cmd, result)
-	}),
-}
-
-var workflowsReviewsReleaseCmd = &cobra.Command{
-	Use:     "release <run-id> <block-id>",
-	Short:   "Release the advisory review claim",
-	Long:    `Clear the advisory review claim so another reviewer can take it.`,
-	Example: `  retab workflows reviews release run_xyz789 blk_extract_1 --version-stamp 1`,
-	Args:    cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		stamp, err := resolveVersionStamp(cmd, client, ctx, args[0], args[1])
-		if err != nil {
-			return err
-		}
-		result, err := client.Workflows.Reviews.Release(ctx, args[0], args[1], stamp)
+		result, err := client.Workflows.Reviews.CreateVersion(ctx, args[0], args[1], req)
 		if err != nil {
 			return err
 		}
@@ -394,7 +332,7 @@ the run status and message.`,
 					}
 					return fmt.Errorf("run %s reached terminal status %s before block %s was awaiting_review: %s", args[0], run.Lifecycle.Status, args[1], message)
 				}
-			} else if overlay.Status == "awaiting_review" {
+			} else if overlay.Decision == nil {
 				return printReviewOverlayResult(cmd, overlay)
 			}
 			if time.Now().After(deadline) {
@@ -403,37 +341,6 @@ the run status and message.`,
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	}),
-}
-
-// resolveVersionStamp returns the explicit --version-stamp when the user set
-// it, or reads the overlay's current rev and warns. Passing the flag
-// explicitly is the clearest path for scripts because the read/review/write
-// sequence is visible to the operator.
-func resolveVersionStamp(cmd *cobra.Command, client *retab.Client, ctx context.Context, runID, blockID string) (int, error) {
-	if cmd.Flags().Changed("version-stamp") {
-		return cmd.Flags().GetInt("version-stamp")
-	}
-	overlay, err := client.Workflows.Reviews.Get(ctx, runID, blockID)
-	if err != nil {
-		return 0, err
-	}
-	fmt.Fprintf(os.Stderr,
-		"warning: --version-stamp not set; using current rev %d "+
-			"(pass --version-stamp explicitly in scripts after `reviews get`)\n", overlay.Rev)
-	return overlay.Rev, nil
-}
-
-// optionalIntFlag returns a pointer to the flag value only when the user set
-// it — so an unset --on-seq / --effective-seq is omitted from the request.
-func optionalIntFlag(cmd *cobra.Command, name string) *int {
-	if !cmd.Flags().Changed(name) {
-		return nil
-	}
-	v, err := cmd.Flags().GetInt(name)
-	if err != nil {
-		return nil
-	}
-	return &v
 }
 
 func printReviewQueueResult(cmd *cobra.Command, result *retab.ReviewQueueResponse) error {
@@ -472,14 +379,36 @@ func printReviewDecisionResult(cmd *cobra.Command, result *retab.SubmitReviewDec
 			"workflow_run_id":   result.Overlay.WorkflowRunID,
 			"block_id":          result.Overlay.BlockID,
 			"block_type":        result.Overlay.BlockType,
-			"status":            result.Overlay.Status,
-			"rev":               result.Overlay.Rev,
-			"head_seq":          result.Overlay.HeadSeq,
-			"effective_seq":     result.Overlay.EffectiveSeq,
+		}
+		if result.Overlay.Decision != nil {
+			row["verdict"] = result.Overlay.Decision.Verdict
+			row["version_id"] = result.Overlay.Decision.VersionID
 		}
 		return RenderList(os.Stdout, OutputTable, struct {
 			Data []map[string]any `json:"data"`
 		}{Data: []map[string]any{row}}, reviewDecisionColumns)
+	}
+	return printJSON(result)
+}
+
+func printReviewSchemaResult(cmd *cobra.Command, result reviewSnapshotSchema) error {
+	format, err := ResolveOutputFormat(cmd, os.Stdout)
+	if err != nil {
+		return err
+	}
+	if format == OutputTable {
+		rows := []map[string]any{
+			{
+				"block_type":   result.BlockType,
+				"schema":       result.Snapshot,
+				"example":      result.Example,
+				"notes":        result.Notes,
+				"create_usage": result.CreateUsage,
+			},
+		}
+		return RenderList(os.Stdout, OutputTable, struct {
+			Data []map[string]any `json:"data"`
+		}{Data: rows}, reviewSchemaColumns)
 	}
 	return printJSON(result)
 }
@@ -505,10 +434,9 @@ var reviewQueueColumns = []TableColumn{
 	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "workflow_run_id") }},
 	{Header: "BLOCK_ID", Extract: func(row any) string { return reviewQueueCell(row, "block_id") }},
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
-	{Header: "STATUS", Extract: func(row any) string { return reviewQueueCell(row, "status") }},
-	{Header: "REV", Extract: func(row any) string { return reviewQueueCell(row, "rev") }},
-	{Header: "HEAD", Extract: func(row any) string { return reviewQueueCell(row, "head_seq") }},
-	{Header: "EFFECTIVE", Extract: func(row any) string { return reviewQueueCell(row, "effective_seq") }},
+	{Header: "AWAITING_SINCE", Extract: func(row any) string { return reviewQueueCell(row, "awaiting_since") }},
+	{Header: "PRIORITY", Extract: func(row any) string { return reviewQueueCell(row, "priority") }},
+	{Header: "TRIGGERED_BY", Extract: func(row any) string { return reviewQueueCell(row, "triggered_by.kind") }},
 }
 
 var reviewDecisionColumns = []TableColumn{
@@ -517,10 +445,128 @@ var reviewDecisionColumns = []TableColumn{
 	{Header: "RUN_ID", Extract: func(row any) string { return reviewQueueCell(row, "workflow_run_id") }},
 	{Header: "BLOCK_ID", Extract: func(row any) string { return reviewQueueCell(row, "block_id") }},
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
-	{Header: "STATUS", Extract: func(row any) string { return reviewQueueCell(row, "status") }},
-	{Header: "REV", Extract: func(row any) string { return reviewQueueCell(row, "rev") }},
-	{Header: "HEAD", Extract: func(row any) string { return reviewQueueCell(row, "head_seq") }},
-	{Header: "EFFECTIVE", Extract: func(row any) string { return reviewQueueCell(row, "effective_seq") }},
+	{Header: "VERDICT", Extract: func(row any) string { return reviewQueueCell(row, "verdict") }},
+	{Header: "VERSION_ID", Extract: func(row any) string { return reviewQueueCell(row, "version_id") }},
+}
+
+var reviewSchemaColumns = []TableColumn{
+	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
+	{Header: "SCHEMA", Extract: func(row any) string { return reviewQueueCell(row, "schema") }},
+	{Header: "EXAMPLE", Extract: func(row any) string { return reviewQueueCell(row, "example") }},
+	{Header: "NOTES", Extract: func(row any) string { return reviewQueueCell(row, "notes") }},
+	{Header: "CREATE_USAGE", Extract: func(row any) string { return reviewQueueCell(row, "create_usage") }},
+}
+
+func reviewSchemaForBlockType(blockType string) (reviewSnapshotSchema, error) {
+	switch blockType {
+	case "extract":
+		return reviewSnapshotSchema{
+			BlockType: blockType,
+			Snapshot: map[string]any{
+				"type":                 "object",
+				"additionalProperties": true,
+			},
+			Example: map[string]any{
+				"invoice_number": "INV-1",
+				"total":          1200,
+			},
+			Notes: []string{
+				"Submit the extract output object itself.",
+				"Do not wrap it in an output field and do not submit a patch.",
+				"The allowed fields are the fields configured on the extract block.",
+			},
+		}, nil
+	case "classifier":
+		return reviewSnapshotSchema{
+			BlockType: blockType,
+			Snapshot: map[string]any{
+				"type":                 "object",
+				"required":             []string{"category"},
+				"additionalProperties": false,
+				"properties": map[string]any{
+					"category": map[string]any{"type": "string"},
+				},
+			},
+			Example: map[string]any{
+				"category": "booking-confirmation",
+			},
+			Notes: []string{
+				"Submit only the selected category.",
+				"Do not include confidence fields or other metadata.",
+			},
+		}, nil
+	case "split":
+		return reviewSnapshotSchema{
+			BlockType: blockType,
+			Snapshot: map[string]any{
+				"type":                 "object",
+				"required":             []string{"documents"},
+				"additionalProperties": false,
+				"properties": map[string]any{
+					"documents": map[string]any{
+						"type": "array",
+						"items": map[string]any{
+							"type":                 "object",
+							"required":             []string{"name", "pages"},
+							"additionalProperties": false,
+							"properties": map[string]any{
+								"name":  map[string]any{"type": "string"},
+								"pages": map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+							},
+						},
+					},
+				},
+			},
+			Example: map[string]any{
+				"documents": []map[string]any{
+					{"name": "legal-mentions", "pages": []int{1}},
+					{"name": "booking-confirmation", "pages": []int{2, 3}},
+				},
+			},
+			Notes: []string{
+				"pages are 1-based positive integers.",
+				"pages must be sorted ascending with no duplicates inside one document.",
+				"Submit the complete split list, not only the changed document.",
+			},
+		}, nil
+	case "for_each":
+		return reviewSnapshotSchema{
+			BlockType: blockType,
+			Snapshot: map[string]any{
+				"type":                 "object",
+				"required":             []string{"partitions"},
+				"additionalProperties": false,
+				"properties": map[string]any{
+					"partitions": map[string]any{
+						"type": "array",
+						"items": map[string]any{
+							"type":                 "object",
+							"required":             []string{"key", "pages"},
+							"additionalProperties": false,
+							"properties": map[string]any{
+								"key":   map[string]any{"type": "string"},
+								"pages": map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+							},
+						},
+					},
+				},
+			},
+			Example: map[string]any{
+				"partitions": []map[string]any{
+					{"key": "booking-confirmation", "pages": []int{1, 2}},
+					{"key": "legal-mentions", "pages": []int{3}},
+				},
+			},
+			Notes: []string{
+				"for_each review is only available for split-by-key blocks.",
+				"pages are 1-based positive integers.",
+				"pages must be sorted ascending with no duplicates inside one partition.",
+				"Submit the complete partition list, not only the changed partition.",
+			},
+		}, nil
+	default:
+		return reviewSnapshotSchema{}, fmt.Errorf("block type %q is not reviewable", blockType)
+	}
 }
 
 func reviewQueueCell(row any, key string) string {
@@ -537,61 +583,50 @@ func reviewQueueCell(row any, key string) string {
 	return stringifyCell(v)
 }
 
+func requireReviewVersionIDFlag(cmd *cobra.Command, name string) (string, error) {
+	value, err := requireNonBlankFlag(cmd, name)
+	if err != nil {
+		return "", err
+	}
+	if !sha256HexPattern.MatchString(value) {
+		return "", fmt.Errorf("--%s must be a 64-character hex content id", name)
+	}
+	return value, nil
+}
+
 func init() {
 	workflowsReviewsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
-	workflowsReviewsListCmd.Flags().Var(
-		newEnumStringFlagValue("--status", "awaiting_review", "approved", "rejected"),
-		"status", "lifecycle filter: awaiting_review | approved | rejected")
-	workflowsReviewsListCmd.Flags().Bool("mine", false, "only reviews you have claimed")
 	workflowsReviewsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 200}, "limit", "max items to return (1-200)")
 
-	workflowsReviewsApproveCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token); read current rev when omitted")
-	workflowsReviewsApproveCmd.Flags().String("snapshot-file", "", "JSON file with the full corrected output (or - for stdin)")
-	workflowsReviewsApproveCmd.Flags().String("edited-output-file", "", "legacy alias for --snapshot-file")
-	_ = workflowsReviewsApproveCmd.Flags().MarkHidden("edited-output-file")
-	workflowsReviewsApproveCmd.Flags().String("reviewable-value-file", "", "JSON file with the primitive-specific reviewable value (or - for stdin)")
-	workflowsReviewsApproveCmd.Flags().Int("on-seq", 0, "version seq the decision is made against")
-	workflowsReviewsApproveCmd.Flags().Int("effective-seq", 0, "version seq to ship downstream")
-	workflowsReviewsApproveCmd.Flags().String("command-id", "", "idempotency command id")
+	workflowsReviewsApproveCmd.Flags().String("version-id", "", "64-character content-addressed version id to approve (required)")
+	_ = workflowsReviewsApproveCmd.MarkFlagRequired("version-id")
 
-	workflowsReviewsRejectCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token); read current rev when omitted")
+	workflowsReviewsRejectCmd.Flags().String("version-id", "", "64-character content-addressed version id to reject (required)")
 	workflowsReviewsRejectCmd.Flags().String("reason", "", "why the output was rejected (required)")
-	workflowsReviewsRejectCmd.Flags().String("command-id", "", "idempotency command id")
+	_ = workflowsReviewsRejectCmd.MarkFlagRequired("version-id")
 	_ = workflowsReviewsRejectCmd.MarkFlagRequired("reason")
 
-	workflowsReviewsEscalateCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token); read current rev when omitted")
-	workflowsReviewsEscalateCmd.Flags().String("reason", "", "why the review is escalated (required)")
-	workflowsReviewsEscalateCmd.Flags().String("escalate-to", "", "target queue/team id (required)")
-	workflowsReviewsEscalateCmd.Flags().String("command-id", "", "idempotency command id")
-	_ = workflowsReviewsEscalateCmd.MarkFlagRequired("reason")
-	_ = workflowsReviewsEscalateCmd.MarkFlagRequired("escalate-to")
-
-	workflowsReviewsEditCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token); read current rev when omitted")
-	workflowsReviewsEditCmd.Flags().String("snapshot-file", "", "JSON file with the full corrected output — or - for stdin")
-	workflowsReviewsEditCmd.Flags().String("reviewable-value-file", "", "JSON file with the primitive-specific reviewable value — or - for stdin")
-	workflowsReviewsEditCmd.Flags().Var(
-		newEnumStringFlagValue("--origin", "human_edit", "agent_edit"),
-		"origin", "edit provenance: human_edit | agent_edit")
-	workflowsReviewsEditCmd.Flags().String("note", "", "free-text rationale for the edit")
-	workflowsReviewsEditCmd.Flags().String("command-id", "", "idempotency command id")
-
-	workflowsReviewsClaimCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token); read current rev when omitted")
-	workflowsReviewsClaimCmd.Flags().Var(&minIntFlagValue{value: "900", min: 30}, "ttl-seconds", "how long the advisory claim holds (minimum 30)")
-
-	workflowsReviewsReleaseCmd.Flags().Int("version-stamp", 0, "overlay rev (CAS token); read current rev when omitted")
+	workflowsReviewsVersionsCreateCmd.Flags().String("from-version", "", "64-character content-addressed parent version id this snapshot was authored from (required)")
+	workflowsReviewsVersionsCreateCmd.Flags().String("snapshot-file", "", "JSON file with the corrected block snapshot — or - for stdin (required)")
+	workflowsReviewsVersionsCreateCmd.Flags().Var(
+		newEnumStringFlagValue("--origin", "human_created", "agent_created"),
+		"origin", "version provenance: human_created | agent_created")
+	workflowsReviewsVersionsCreateCmd.Flags().String("note", "", "free-text rationale for the version")
+	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("from-version")
+	_ = workflowsReviewsVersionsCreateCmd.MarkFlagRequired("snapshot-file")
 
 	workflowsReviewsWaitCmd.Flags().Var(&positiveIntFlagValue{value: "120"}, "timeout", "max seconds to wait until review is required")
 	workflowsReviewsWaitCmd.Flags().Var(&positiveIntFlagValue{value: "2"}, "poll-interval", "seconds between polls")
 
+	workflowsReviewsVersionsCmd.AddCommand(workflowsReviewsVersionsCreateCmd)
 	workflowsReviewsCmd.AddCommand(
 		workflowsReviewsListCmd,
 		workflowsReviewsGetCmd,
+		workflowsReviewsSchemaCmd,
 		workflowsReviewsApproveCmd,
 		workflowsReviewsRejectCmd,
 		workflowsReviewsEscalateCmd,
-		workflowsReviewsEditCmd,
-		workflowsReviewsClaimCmd,
-		workflowsReviewsReleaseCmd,
+		workflowsReviewsVersionsCmd,
 		workflowsReviewsWaitCmd,
 	)
 	workflowsCmd.AddCommand(workflowsReviewsCmd)

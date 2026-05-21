@@ -388,7 +388,7 @@ describe('workflows client', () => {
         issues: [
           {
             severity: 'warning',
-            code: 'MISSING_HIL_PREDICATE',
+            code: 'MISSING_REVIEW_PREDICATE',
             message: 'Review gate needs a predicate',
             block_id: 'extract_1',
           },
@@ -410,14 +410,16 @@ describe('workflows client', () => {
 
     expect(diagnosis.is_valid).toBe(true);
     expect(diagnosis.issues[0]?.severity).toBe('warning');
-    expect(diagnosis.issues[0]?.code).toBe('MISSING_HIL_PREDICATE');
+    expect(diagnosis.issues[0]?.code).toBe('MISSING_REVIEW_PREDICATE');
   });
 
   test('artifacts prepare helpers expose the Python prepared-request surface', () => {
     const workflowsClient = new APIWorkflows(new MockClient({}));
 
-    expect(workflowsClient.artifacts.prepare_get('hil_evaluation', 'artifact_1')).toEqual({
-      url: '/workflows/artifacts/hil_evaluation/artifact_1',
+    expect(
+      workflowsClient.artifacts.prepare_get('review_trigger_evaluation', 'artifact_1')
+    ).toEqual({
+      url: '/workflows/artifacts/review_trigger_evaluation/artifact_1',
       method: 'GET',
     });
     expect(workflowsClient.artifacts.prepare_get({ operation: 'extraction', id: 'ext_1' })).toEqual(
@@ -564,7 +566,7 @@ describe('workflows client', () => {
         created_at: '2026-01-01T00:00:00Z',
         started_at: '2026-01-01T00:00:00Z',
         completed_at: '2026-01-01T00:00:05Z',
-        accumulated_human_waiting_ms: 5000,
+        accumulated_review_waiting_ms: 5000,
       },
       inputs: { documents: {}, json_data: {} },
     });
@@ -575,7 +577,7 @@ describe('workflows client', () => {
     expect(run.trigger.type).toBe('api');
     expect(run.workflow.workflow_id).toBe('wf_1');
     expect(run.workflow.version_id).toBe('ver_abcdef0123456789abcdef0123456789');
-    expect(run.timing.accumulated_human_waiting_ms).toBe(5000);
+    expect(run.timing.accumulated_review_waiting_ms).toBe(5000);
   });
 
   test('runs.list() serializes array and date filters', async () => {

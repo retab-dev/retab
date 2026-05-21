@@ -171,7 +171,7 @@ class CompletedStepLifecycle(RetabBaseModel):
     status: Literal["completed"] = "completed"
 
 
-class WaitingForHumanStepLifecycle(RetabBaseModel):
+class AwaitingReviewStepLifecycle(RetabBaseModel):
     status: Literal["awaiting_review"] = "awaiting_review"
 
 
@@ -201,7 +201,7 @@ StepLifecycle = Annotated[
     | QueuedStepLifecycle
     | RunningStepLifecycle
     | CompletedStepLifecycle
-    | WaitingForHumanStepLifecycle
+    | AwaitingReviewStepLifecycle
     | ErrorStepLifecycle
     | SkippedStepLifecycle
     | CancelledStepLifecycle,
@@ -568,7 +568,7 @@ class RunningRun(RetabBaseModel):
     status: Literal["running"] = "running"
 
 
-class WaitingForHumanRun(RetabBaseModel):
+class AwaitingReviewRun(RetabBaseModel):
     status: Literal["awaiting_review"] = "awaiting_review"
     waiting_for_block_ids: List[str] = Field(default_factory=list)
 
@@ -592,7 +592,7 @@ class CancelledTerminal(RetabBaseModel):
 
 
 RunLifecycle = Annotated[
-    PendingRun | RunningRun | WaitingForHumanRun | CompletedTerminal | ErrorTerminal | CancelledTerminal,
+    PendingRun | RunningRun | AwaitingReviewRun | CompletedTerminal | ErrorTerminal | CancelledTerminal,
     Field(discriminator="status"),
 ]
 

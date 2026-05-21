@@ -362,6 +362,7 @@ func TestWorkflowsEdgesCreateHelpExplainsDocumentHandleAliases(t *testing.T) {
 
 	for _, want := range []string{
 		"extract/classifier",
+		"split/classifier",
 		"input-file-document",
 		"split",
 		"input-file-0",
@@ -370,6 +371,9 @@ func TestWorkflowsEdgesCreateHelpExplainsDocumentHandleAliases(t *testing.T) {
 		if !strings.Contains(help, want) {
 			t.Fatalf("edge create help should mention %q, got:\n%s", want, help)
 		}
+	}
+	if strings.Contains(help, "split/classify") {
+		t.Fatalf("edge create help should use classifier block naming, got:\n%s", help)
 	}
 }
 

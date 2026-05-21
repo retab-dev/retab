@@ -1,11 +1,4 @@
-"""Smoke tests for `client.workflows.reviews.*` — types + request builders.
-
-Mirrors `test_workflow_steps.py`: mock `client._prepared_request` so we can
-assert on the constructed `PreparedRequest` without hitting the API, and
-round-trip the documented JSON shapes through the new Pydantic types.
-
-These tests do NOT need a live server.
-"""
+"""Smoke tests for `client.workflows.reviews.*`."""
 
 from __future__ import annotations
 
@@ -14,13 +7,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from retab.exceptions import NotFoundError
-from retab.resources.workflows.reviews.client import (
-    AsyncWorkflowReviews,
-    WorkflowReviews,
-)
+from retab.resources.workflows.reviews.client import AsyncWorkflowReviews, WorkflowReviews
 from retab.types.workflows import (
     Actor,
-    AuditEntry,
     OutputVersion,
     ReviewDecision,
     ReviewOverlay,
@@ -30,76 +19,58 @@ from retab.types.workflows import (
 )
 
 _NOW = "2026-05-01T14:30:00Z"
+_VERSION_ID = "a" * 64
+_CHILD_VERSION_ID = "b" * 64
 
 _ACTOR_HUMAN = {"kind": "human", "id": "user_1", "display_name": "Ada"}
 _ACTOR_MODEL = {"kind": "model", "id": "gpt", "display_name": "Extractor"}
 _ACTOR_AGENT = {"kind": "agent", "id": "agent_1", "display_name": "Reviewer Agent"}
 
 _OUTPUT_VERSION = {
-    "seq": 1,
-    "parent_seq": None,
+    "parent_id": None,
     "author": _ACTOR_MODEL,
     "origin": "model_output",
     "snapshot": {"output": {"total": 100, "currency": "USD"}},
-    "content_sha256": "abc123",
     "note": None,
     "created_at": _NOW,
 }
 
 _DECISION = {
-    "decision_id": "dec_1",
     "verdict": "approved",
+    "version_id": _VERSION_ID,
     "decided_by": _ACTOR_HUMAN,
     "decided_at": _NOW,
-    "on_seq": 1,
-    "effective_seq": 1,
     "reason": None,
-    "escalate_to": None,
-    "supersedes_decision_id": None,
-}
-
-_AUDIT_ENTRY = {
-    "entry_id": "audit_1",
-    "action": "decision_submitted",
-    "actor": _ACTOR_HUMAN,
-    "at": _NOW,
-    "rev_observed": 3,
-    "rev_result": 4,
-    "detail": {"verdict": "approved"},
 }
 
 _OVERLAY = {
-    "_id": "ovl_abc",
+    "_id": "brun_1",
     "organization_id": "org_x",
     "workflow_id": "wf_1",
     "workflow_version_id": "wv_1",
     "workflow_run_id": "run_1",
     "block_id": "extract-1",
     "block_run_id": "brun_1",
+    "runtime_block_id": None,
     "block_type": "extract",
     "triggered_by": {"kind": "low_confidence", "threshold": 0.8},
-    "status": "awaiting_review",
     "awaiting_since": _NOW,
-    "decided_at": None,
     "priority": 5,
-    "rev": 3,
-    "claim": {"holder": _ACTOR_HUMAN, "claimed_at": _NOW, "expires_at": _NOW},
-    "versions": [_OUTPUT_VERSION],
-    "decisions": [_DECISION],
-    "audit": [_AUDIT_ENTRY],
-    "head_seq": 1,
-    "effective_seq": None,
-    "reviewable_value": {
-        "kind": "extract",
-        "source_seq": 1,
-        "snapshot_path": ["output"],
-        "value": {"total": 100, "currency": "USD"},
-        "effective_output": {"output": {"total": 100, "currency": "USD"}},
+    "versions_by_id": {
+        _VERSION_ID: _OUTPUT_VERSION,
+        _CHILD_VERSION_ID: {
+            **_OUTPUT_VERSION,
+            "parent_id": _VERSION_ID,
+            "author": _ACTOR_AGENT,
+            "origin": "agent_created",
+            "snapshot": {"output": {"total": 150, "currency": "USD"}},
+        },
     },
+    "decision": _DECISION,
 }
 
 _QUEUE_ITEM = {
-    "_id": "ovl_abc",
+    "_id": "brun_1",
     "organization_id": "org_x",
     "workflow_id": "wf_1",
     "workflow_version_id": "wv_1",
@@ -108,109 +79,163 @@ _QUEUE_ITEM = {
     "block_run_id": "brun_1",
     "block_type": "extract",
     "triggered_by": {"kind": "low_confidence"},
-    "status": "awaiting_review",
     "awaiting_since": _NOW,
-    "decided_at": None,
     "priority": 5,
-    "rev": 3,
-    "claim": None,
-    "head_seq": 1,
-    "effective_seq": None,
 }
 
+# Real backend responses strip organization_id and runtime_block_id from public
+# review payloads (see overlay_api_models._strip_public_overlay_fields).
+_PUBLIC_OVERLAY = {
+    "_id": "brun_1",
+    "workflow_id": "wf_1",
+    "workflow_version_id": "wv_1",
+    "workflow_run_id": "run_1",
+    "block_id": "extract-1",
+    "block_run_id": "brun_1",
+    "block_type": "extract",
+    "triggered_by": {"kind": "low_confidence", "threshold": 0.8},
+    "awaiting_since": _NOW,
+    "priority": 5,
+    "versions_by_id": {
+        _VERSION_ID: _OUTPUT_VERSION,
+        _CHILD_VERSION_ID: {
+            **_OUTPUT_VERSION,
+            "parent_id": _VERSION_ID,
+            "author": _ACTOR_AGENT,
+            "origin": "agent_created",
+            "snapshot": {"output": {"total": 150, "currency": "USD"}},
+        },
+    },
+    "decision": _DECISION,
+}
 
-# ---------------------------------------------------------------------------
-# Type round-tripping
-# ---------------------------------------------------------------------------
+_PUBLIC_QUEUE_ITEM = {
+    "_id": "brun_1",
+    "workflow_id": "wf_1",
+    "workflow_version_id": "wv_1",
+    "workflow_run_id": "run_1",
+    "block_id": "extract-1",
+    "block_run_id": "brun_1",
+    "block_type": "extract",
+    "triggered_by": {"kind": "low_confidence"},
+    "awaiting_since": _NOW,
+    "priority": 5,
+}
 
 
 def test_review_overlay_round_trips() -> None:
     overlay = ReviewOverlay.model_validate(_OVERLAY)
-    assert overlay.id == "ovl_abc"
-    assert overlay.rev == 3
-    # version_stamp is a read-only convenience alias of rev
-    assert overlay.version_stamp == 3
-    assert overlay.status == "awaiting_review"
-    assert len(overlay.versions) == 1
-    assert len(overlay.decisions) == 1
-    assert len(overlay.audit) == 1
-    assert overlay.claim is not None
-    assert overlay.claim.holder.kind == "human"
-    assert overlay.reviewable_value is not None
-    assert overlay.reviewable_value.kind == "extract"
-    assert overlay.reviewable_value.source_seq == 1
-    assert overlay.reviewable_value.snapshot_path == ["output"]
-    assert overlay.reviewable_value.value == {"total": 100, "currency": "USD"}
-    assert overlay.reviewable_value.effective_output == {"output": {"total": 100, "currency": "USD"}}
-    # dumping by alias yields _id again
+    assert overlay.id == "brun_1"
+    assert set(overlay.versions_by_id) == {_VERSION_ID, _CHILD_VERSION_ID}
+    assert overlay.versions_by_id[_CHILD_VERSION_ID].parent_id == _VERSION_ID
+    assert overlay.decision is not None
+    assert overlay.decision.version_id == _VERSION_ID
     dumped = overlay.model_dump(by_alias=True)
-    assert dumped["_id"] == "ovl_abc"
-    assert ReviewOverlay.model_validate(dumped).rev == 3
+    assert dumped["_id"] == "brun_1"
+    assert ReviewOverlay.model_validate(dumped).decision is not None
 
 
-def test_review_queue_item_round_trips_without_heavy_arrays() -> None:
+def test_review_queue_item_round_trips_without_overlay_history() -> None:
     item = ReviewQueueItem.model_validate(_QUEUE_ITEM)
-    assert item.id == "ovl_abc"
-    assert item.version_stamp == 3
-    # queue items intentionally carry no version/decision/audit history
-    assert "versions" not in item.model_dump()
-    assert "decisions" not in item.model_dump()
-    assert "audit" not in item.model_dump()
+    assert item.id == "brun_1"
+    dumped = item.model_dump()
+    assert "versions_by_id" not in dumped
+    assert "decision" not in dumped
 
 
 def test_review_queue_response_round_trips() -> None:
     resp = ReviewQueueResponse.model_validate({"data": [_QUEUE_ITEM], "has_more": True})
     assert resp.has_more is True
-    assert len(resp.data) == 1
     assert resp.data[0].block_id == "extract-1"
 
 
 def test_submit_decision_response_round_trips() -> None:
-    resp = SubmitDecisionResponse.model_validate({"submission_status": "accepted", "overlay": _OVERLAY})
+    resp = SubmitDecisionResponse.model_validate({"submission_status": "accepted", "review": _OVERLAY})
     assert resp.submission_status == "accepted"
-    assert resp.overlay.rev == 3
+    assert resp.review.decision is not None
+
+
+def test_public_overlay_parses_without_organization_id() -> None:
+    overlay = ReviewOverlay.model_validate(_PUBLIC_OVERLAY)
+    assert overlay.id == "brun_1"
+    assert overlay.organization_id is None
+    assert overlay.runtime_block_id is None
+    assert overlay.decision is not None
+    assert overlay.decision.version_id == _VERSION_ID
+
+
+def test_public_queue_item_parses_without_organization_id() -> None:
+    item = ReviewQueueItem.model_validate(_PUBLIC_QUEUE_ITEM)
+    assert item.id == "brun_1"
+    assert item.organization_id is None
+
+
+def test_public_queue_response_round_trips() -> None:
+    resp = ReviewQueueResponse.model_validate({"data": [_PUBLIC_QUEUE_ITEM], "has_more": False})
+    assert resp.has_more is False
+    assert resp.data[0].organization_id is None
+
+
+def test_submit_decision_response_defaults_resume_fields() -> None:
+    resp = SubmitDecisionResponse.model_validate({"submission_status": "accepted", "review": _PUBLIC_OVERLAY})
+    assert resp.resume_status == "resumed"
+    assert resp.resume_error is None
+
+
+def test_submit_decision_response_accepts_pending_resume_with_error() -> None:
+    resp = SubmitDecisionResponse.model_validate(
+        {
+            "submission_status": "accepted_pending_resume",
+            "review": _PUBLIC_OVERLAY,
+            "resume_status": "failed",
+            "resume_error": "Workflow run not found",
+        }
+    )
+    assert resp.submission_status == "accepted_pending_resume"
+    assert resp.resume_status == "failed"
+    assert resp.resume_error == "Workflow run not found"
+
+
+def test_submit_decision_response_ignores_unknown_fields() -> None:
+    resp = SubmitDecisionResponse.model_validate(
+        {
+            "submission_status": "accepted",
+            "review": _PUBLIC_OVERLAY,
+            "future_server_field": "anything",
+        }
+    )
+    assert resp.submission_status == "accepted"
+    assert not hasattr(resp, "future_server_field")
 
 
 def test_actor_kind_is_neutral_data_not_a_branch() -> None:
-    # model / agent / human all parse into the SAME Actor type.
     for raw in (_ACTOR_MODEL, _ACTOR_AGENT, _ACTOR_HUMAN):
         actor = Actor.model_validate(raw)
         assert actor.kind in {"model", "agent", "human"}
-        assert actor.id and actor.display_name
 
 
-def test_output_version_and_decision_and_audit_round_trip() -> None:
+def test_output_version_and_decision_round_trip() -> None:
     version = OutputVersion.model_validate(_OUTPUT_VERSION)
-    assert version.seq == 1
-    assert version.parent_seq is None
+    assert version.parent_id is None
     assert version.snapshot == {"output": {"total": 100, "currency": "USD"}}
 
     decision = ReviewDecision.model_validate(_DECISION)
     assert decision.verdict == "approved"
-    assert decision.on_seq == 1
-
-    entry = AuditEntry.model_validate(_AUDIT_ENTRY)
-    assert entry.rev_observed == 3
-    assert entry.rev_result == 4
-
-
-# ---------------------------------------------------------------------------
-# prepare_* request builders
-# ---------------------------------------------------------------------------
+    assert decision.version_id == _VERSION_ID
 
 
 def test_prepare_list_builds_get_with_params() -> None:
     reviews = WorkflowReviews(client=MagicMock())
-    request = reviews.prepare_list(workflow_id="wf_1", status="approved", mine=True, limit=10)
+    request = reviews.prepare_list(workflow_id="wf_1", limit=10)
     assert request.method == "GET"
     assert request.url == "/workflows/reviews"
-    assert request.params == {"status": "approved", "mine": True, "limit": 10, "workflow_id": "wf_1"}
+    assert request.params == {"limit": 10, "workflow_id": "wf_1", "decision": "none"}
 
 
-def test_prepare_list_omits_workflow_id_when_absent() -> None:
+def test_prepare_list_can_include_decided_reviews() -> None:
     reviews = WorkflowReviews(client=MagicMock())
-    request = reviews.prepare_list()
-    assert request.params == {"status": "awaiting_review", "mine": False, "limit": 50}
+    request = reviews.prepare_list(decision="any")
+    assert request.params == {"limit": 50, "decision": "any"}
 
 
 def test_prepare_get_builds_run_block_scoped_url() -> None:
@@ -220,60 +245,38 @@ def test_prepare_get_builds_run_block_scoped_url() -> None:
     assert request.url == "/workflows/reviews/run_1/extract-1"
 
 
-def test_prepare_edit_posts_to_versions() -> None:
+def test_prepare_create_version_posts_snapshot_to_versions() -> None:
     reviews = WorkflowReviews(client=MagicMock())
-    request = reviews.prepare_edit(
+    request = reviews.prepare_create_version(
         "run_1",
         "extract-1",
-        snapshot={"total": 200},
-        version_stamp=3,
-        origin="agent_edit",
-        note="bumped total",
-        command_id="cmd_1",
+        snapshot={"category": "Invoice"},
+        parent_id=_VERSION_ID,
+        origin="agent_created",
+        note="changed category",
     )
     assert request.method == "POST"
     assert request.url == "/workflows/reviews/run_1/extract-1/versions"
     assert request.data == {
-        "snapshot": {"total": 200},
-        "version_stamp": 3,
-        "origin": "agent_edit",
-        "note": "bumped total",
-        "command_id": "cmd_1",
+        "snapshot": {"category": "Invoice"},
+        "parent_id": _VERSION_ID,
+        "origin": "agent_created",
+        "note": "changed category",
     }
 
 
-def test_prepare_decision_posts_verdict() -> None:
+def test_prepare_decision_posts_verdict_and_version_id() -> None:
     reviews = WorkflowReviews(client=MagicMock())
     request = reviews.prepare_decision(
         "run_1",
         "extract-1",
         verdict="rejected",
-        version_stamp=3,
+        version_id=_VERSION_ID,
         reason="wrong vendor",
     )
     assert request.method == "POST"
     assert request.url == "/workflows/reviews/run_1/extract-1/decision"
-    assert request.data["verdict"] == "rejected"
-    assert request.data["version_stamp"] == 3
-    assert request.data["reason"] == "wrong vendor"
-
-
-def test_prepare_claim_and_release() -> None:
-    reviews = WorkflowReviews(client=MagicMock())
-    claim = reviews.prepare_claim("run_1", "extract-1", version_stamp=3, ttl_seconds=600)
-    assert claim.method == "POST"
-    assert claim.url == "/workflows/reviews/run_1/extract-1/claim"
-    assert claim.data == {"version_stamp": 3, "ttl_seconds": 600}
-
-    release = reviews.prepare_release("run_1", "extract-1", version_stamp=3)
-    assert release.method == "POST"
-    assert release.url == "/workflows/reviews/run_1/extract-1/release"
-    assert release.data == {"version_stamp": 3}
-
-
-# ---------------------------------------------------------------------------
-# Sync resource — full round trip through a mocked client
-# ---------------------------------------------------------------------------
+    assert request.data == {"verdict": "rejected", "version_id": _VERSION_ID, "reason": "wrong vendor"}
 
 
 def test_list_parses_queue_response() -> None:
@@ -286,7 +289,6 @@ def test_list_parses_queue_response() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/reviews"
     assert isinstance(result, ReviewQueueResponse)
-    assert result.data[0].block_id == "extract-1"
 
 
 def test_get_parses_overlay() -> None:
@@ -297,73 +299,61 @@ def test_get_parses_overlay() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/reviews/run_1/extract-1"
-    assert overlay.version_stamp == 3
+    assert overlay.versions_by_id[_VERSION_ID].origin == "model_output"
 
 
 def test_approve_sends_approved_verdict() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {"submission_status": "accepted", "overlay": _OVERLAY}
+    client._prepared_request.return_value = {"submission_status": "accepted", "review": _OVERLAY}
 
-    resp = WorkflowReviews(client=client).approve("run_1", "extract-1", version_stamp=3, edited_output={"total": 150})
+    resp = WorkflowReviews(client=client).approve("run_1", "extract-1", version_id=_VERSION_ID)
 
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/reviews/run_1/extract-1/decision"
-    assert request.data["verdict"] == "approved"
-    assert request.data["edited_output"] == {"total": 150}
+    assert request.data == {"verdict": "approved", "version_id": _VERSION_ID}
     assert resp.submission_status == "accepted"
 
 
 def test_reject_requires_reason_and_sends_rejected_verdict() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = {"submission_status": "accepted", "overlay": _OVERLAY}
+    client._prepared_request.return_value = {"submission_status": "accepted", "review": _OVERLAY}
 
-    WorkflowReviews(client=client).reject("run_1", "extract-1", version_stamp=3, reason="bad data")
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.data["verdict"] == "rejected"
-    assert request.data["reason"] == "bad data"
-
-
-def test_escalate_sends_escalated_verdict_and_target() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {"submission_status": "accepted", "overlay": _OVERLAY}
-
-    WorkflowReviews(client=client).escalate("run_1", "extract-1", version_stamp=3, reason="unsure", escalate_to="senior_team")
+    WorkflowReviews(client=client).reject("run_1", "extract-1", version_id=_VERSION_ID, reason="bad data")
 
     request = client._prepared_request.call_args.args[0]
-    assert request.data["verdict"] == "escalated"
-    assert request.data["escalate_to"] == "senior_team"
+    assert request.data == {"verdict": "rejected", "version_id": _VERSION_ID, "reason": "bad data"}
 
 
-def test_edit_posts_version_and_returns_overlay() -> None:
+def test_create_version_posts_version_and_returns_overlay() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _OVERLAY
 
-    overlay = WorkflowReviews(client=client).edit("run_1", "extract-1", snapshot={"total": 200}, version_stamp=3)
+    overlay = WorkflowReviews(client=client).create_version(
+        "run_1",
+        "extract-1",
+        snapshot={"category": "Invoice"},
+        parent_id=_VERSION_ID,
+    )
 
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/reviews/run_1/extract-1/versions"
-    assert request.data["origin"] == "human_edit"
+    assert request.data["parent_id"] == _VERSION_ID
+    assert request.data["origin"] == "human_created"
     assert isinstance(overlay, ReviewOverlay)
 
 
 def test_reject_requires_reason_keyword() -> None:
     reviews = WorkflowReviews(client=MagicMock())
     with pytest.raises(TypeError):
-        reviews.reject("run_1", "extract-1", version_stamp=3)  # type: ignore[call-arg]
+        reviews.reject("run_1", "extract-1", version_id=_VERSION_ID)  # type: ignore[call-arg]
 
 
-# ---------------------------------------------------------------------------
-# wait_for — polling semantics
-# ---------------------------------------------------------------------------
-
-
-def test_wait_for_returns_when_awaiting_review() -> None:
+def test_wait_for_returns_when_decision_absent() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _OVERLAY
+    client._prepared_request.return_value = {**_OVERLAY, "decision": None}
 
     overlay = WorkflowReviews(client=client).wait_for("run_1", "extract-1", timeout=5.0, poll_interval=0.01)
-    assert overlay.status == "awaiting_review"
+    assert overlay.decision is None
 
 
 def test_wait_for_times_out_when_overlay_never_appears() -> None:
@@ -372,11 +362,6 @@ def test_wait_for_times_out_when_overlay_never_appears() -> None:
 
     with pytest.raises(TimeoutError):
         WorkflowReviews(client=client).wait_for("run_1", "extract-1", timeout=0.05, poll_interval=0.01)
-
-
-# ---------------------------------------------------------------------------
-# Async resource
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -388,18 +373,18 @@ async def test_async_get_parses_overlay() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/reviews/run_1/extract-1"
-    assert overlay.version_stamp == 3
+    assert overlay.decision is not None
 
 
 @pytest.mark.asyncio
 async def test_async_approve_sends_approved_verdict() -> None:
     client = MagicMock()
-    client._prepared_request = AsyncMock(return_value={"submission_status": "already_applied", "overlay": _OVERLAY})
+    client._prepared_request = AsyncMock(return_value={"submission_status": "already_applied", "review": _OVERLAY})
 
-    resp = await AsyncWorkflowReviews(client=client).approve("run_1", "extract-1", version_stamp=3)
+    resp = await AsyncWorkflowReviews(client=client).approve("run_1", "extract-1", version_id=_VERSION_ID)
 
     request = client._prepared_request.call_args.args[0]
-    assert request.data["verdict"] == "approved"
+    assert request.data["version_id"] == _VERSION_ID
     assert resp.submission_status == "already_applied"
 
 

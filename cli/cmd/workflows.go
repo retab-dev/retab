@@ -43,10 +43,14 @@ func isEffectivelyEmptyDraft(blocks []retab.WorkflowBlock) bool {
 	case 0:
 		return true
 	case 1:
-		return blocks[0].Type == "start"
+		return isStartDocumentBlock(blocks[0])
 	default:
 		return false
 	}
+}
+
+func isStartDocumentBlock(block retab.WorkflowBlock) bool {
+	return block.Type == "start-document" || block.Type == "start"
 }
 
 func workflowGraphObjects(body map[string]any, key string) ([]map[string]any, error) {
@@ -130,11 +134,11 @@ output. Add ` + "`config.review`" + ` to reviewable blocks when a run should
 pause for review. Workflows are versioned — drafts are mutable, published
 versions are immutable.
 
-Human-in-the-loop is configured as a gate on a block (` + "`config.hil`" + `),
-not as a standalone block. A gated run pauses with status
-` + "`waiting_for_human`" + ` and is resumed through
-` + "`retab workflows reviews approve`" + ` or cancelled through
-` + "`retab workflows reviews reject`" + `.
+Review is configured on the block (` + "`config.review`" + `), not as a
+standalone block. A reviewed run pauses with status
+` + "`awaiting_review`" + ` and is resumed through
+` + "`retab workflows reviews approve --version-id ...`" + ` or failed through
+` + "`retab workflows reviews reject --version-id ... --reason ...`" + `.
 
 Typical lifecycle:
 
@@ -154,8 +158,8 @@ Typical lifecycle:
   retab workflows runs create wf_abc123 \
     --document start=./invoice.pdf
 
-  # See runs paused for human review
-  retab workflows runs list --status waiting_for_human
+  # See runs paused for review
+  retab workflows runs list --status awaiting_review
 
   # Publish the current draft as an immutable version
   retab workflows publish wf_abc123 --description "v1: invoice extraction"`,
@@ -571,7 +575,7 @@ var workflowsDiagnoseCmd = &cobra.Command{
 	Short: "Diagnose the persisted draft graph (use --graph-file to send an in-memory graph)",
 	Long: `Validate a workflow's draft graph and report structural/config issues:
 disconnected blocks, type mismatches across edges, incomplete configs,
-human-review gate warnings, unreachable paths.
+review configuration warnings, unreachable paths.
 
 By default diagnoses the persisted draft. Pass ` + "`--graph-file`" + ` to
 diagnose an in-memory graph (e.g. before persisting changes) — the file
