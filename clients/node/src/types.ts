@@ -514,55 +514,6 @@ export const ZStepExecutionResponse = z.object({
 });
 export type StepExecutionResponse = z.infer<typeof ZStepExecutionResponse>;
 
-export const ZStepsQueryRequest = z
-  .object({
-    workflow_id: z.string(),
-    block_id: z.string().nullable().optional(),
-    block_type: z.string().nullable().optional(),
-    source_kind: z.string().nullable().optional(),
-    status: z.array(z.string()).nullable().optional(),
-    limit: z.number().int().min(1).max(1000).nullable().optional(),
-  })
-  .strict();
-export type StepsQueryRequest = z.infer<typeof ZStepsQueryRequest>;
-
-export const ZStepFingerprintJoined = z
-  .object({
-    input_fingerprint: z.string(),
-    schema_fingerprint: z.string(),
-    definition_fingerprint: z.string(),
-    resolved_definition_fingerprint: z.string(),
-    effective_execution_fingerprint: z.string(),
-    handle_inputs_fingerprint: z.string(),
-    effective_config: z.record(z.unknown()).default({}),
-    runtime_overrides: z.record(z.unknown()).default({}),
-    cohort_id: z.string().nullable().default(null),
-    source_file_id: z.string().nullable().default(null),
-    source_filename: z.string().nullable().default(null),
-  })
-  .strict();
-export type StepFingerprintJoined = z.infer<typeof ZStepFingerprintJoined>;
-
-export const ZStepQueryResult = z
-  .object({
-    step_id: z.string(),
-    run_id: z.string(),
-    workflow_id: z.string(),
-    block_id: z.string(),
-    block_type: z.string(),
-    status: z.string(),
-    started_at: z.string().nullable().optional(),
-    completed_at: z.string().nullable().optional(),
-    duration_ms: z.number().int().nullable().optional(),
-    iteration: z.number().int().nullable().optional(),
-    is_iteration: z.boolean().default(false),
-    handle_inputs: z.record(z.unknown()).default({}),
-    handle_outputs: z.record(z.unknown()).default({}),
-    fingerprint: ZStepFingerprintJoined.nullable().default(null),
-  })
-  .strict();
-export type StepQueryResult = z.infer<typeof ZStepQueryResult>;
-
 export const ZWorkflowArtifact = z
   .object({
     operation: z.string(),

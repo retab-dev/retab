@@ -47,7 +47,7 @@ func TestWorkflowSimulationsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	created, err := client.Workflows.Simulations.Create(context.Background(), CreateWorkflowSimulationRequest{
 		RunID:            "run_123",
 		BlockID:          "blk_extract",
-		SourceStepID:     "step_iter_0_blk_extract",
+		StepID:           "step_iter_0_blk_extract",
 		NConsensus:       5,
 		CheckEligibility: &checkEligibility,
 	})
@@ -60,10 +60,10 @@ func TestWorkflowSimulationsCreateAndListUseCanonicalRoutes(t *testing.T) {
 	if createBody["run_id"] != "run_123" || createBody["block_id"] != "blk_extract" {
 		t.Fatalf("create body = %#v", createBody)
 	}
-	if _, ok := createBody["step_id"]; ok {
-		t.Fatalf("create body must not send old step_id field: %#v", createBody)
+	if createBody["step_id"] != "step_iter_0_blk_extract" || createBody["n_consensus"] != float64(5) || createBody["check_eligibility"] != false {
+		t.Fatalf("create body = %#v", createBody)
 	}
-	if createBody["source_step_id"] != "step_iter_0_blk_extract" || createBody["n_consensus"] != float64(5) || createBody["check_eligibility"] != false {
+	if _, ok := createBody["source_step_id"]; ok {
 		t.Fatalf("create body = %#v", createBody)
 	}
 

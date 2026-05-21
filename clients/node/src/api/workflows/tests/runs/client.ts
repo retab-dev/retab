@@ -175,9 +175,9 @@ export class APIWorkflowTestRunResults extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowTestResultListResponse> {
     return this._fetchJson(ZWorkflowTestResultListResponse, {
-      url: `/workflows/tests/runs/${runId}/results`,
+      url: '/workflows/tests/results',
       method: 'GET',
-      params: { limit, ...(options?.params || {}) },
+      params: { run_id: runId, limit, ...(options?.params || {}) },
       headers: options?.headers,
     });
   }

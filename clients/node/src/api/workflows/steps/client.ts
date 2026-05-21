@@ -1,10 +1,9 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
 import {
   PaginatedList,
-  StepQueryResult,
-  StepsQueryRequest,
+  WorkflowRunStep,
   ZPaginatedList,
-  ZStepQueryResult,
+  ZWorkflowRunStep,
 } from '../../../types.js';
 
 /**
@@ -18,7 +17,7 @@ export default class APIWorkflowSteps extends CompositionClient {
   }
 
   /**
-   * Get one joined step row by step ID.
+   * Get one persisted step document by step ID.
    *
    * @example
    * ```typescript
@@ -26,29 +25,16 @@ export default class APIWorkflowSteps extends CompositionClient {
    * const output = step.handle_outputs?.["output-json-0"];
    * ```
    */
-  async get(stepId: string, options?: RequestOptions): Promise<StepQueryResult> {
+  async get(stepId: string, options?: RequestOptions): Promise<WorkflowRunStep> {
     if (typeof stepId !== 'string' || stepId.length === 0) {
       throw new TypeError('stepId is required');
     }
     if (options !== undefined && (typeof options !== 'object' || Array.isArray(options))) {
       throw new TypeError('options must be an object');
     }
-    return this._fetchJson(ZStepQueryResult, {
+    return this._fetchJson(ZWorkflowRunStep, {
       url: `/workflows/steps/${encodeURIComponent(stepId)}`,
       method: 'GET',
-      params: options?.params,
-      headers: options?.headers,
-    });
-  }
-
-  /**
-   * Query joined step rows for a workflow.
-   */
-  async query(request: StepsQueryRequest, options?: RequestOptions): Promise<StepQueryResult[]> {
-    return this._fetchJson(ZStepQueryResult.array(), {
-      url: '/workflows/steps/query',
-      method: 'POST',
-      body: { ...request, ...(options?.body || {}) },
       params: options?.params,
       headers: options?.headers,
     });

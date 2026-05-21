@@ -265,13 +265,13 @@ class WorkflowTestRunsMixin:
 
 
 class WorkflowTestRunResultsMixin:
-    """Mixin for child test results nested under a parent test run."""
+    """Mixin for workflow-test result rows filtered by run."""
 
     def prepare_list(self, run_id: str, *, limit: int = 20) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/tests/runs/{run_id}/results",
-            params={"limit": limit},
+            url="/workflows/tests/results",
+            params={"run_id": run_id, "limit": limit},
         )
 
     def prepare_get(self, result_id: str) -> PreparedRequest:

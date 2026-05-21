@@ -5,11 +5,7 @@ from typing import List, Optional
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.pagination import PaginatedList
 from ....types.standards import PreparedRequest
-from ....types.workflows import (
-    StepQueryResult,
-    StepsQueryRequest,
-    WorkflowRunStep,
-)
+from ....types.workflows import WorkflowRunStep
 
 
 class WorkflowStepsMixin:
@@ -23,47 +19,32 @@ class WorkflowStepsMixin:
         """Prepare a request to list all persisted step documents for a run."""
         return PreparedRequest(method="GET", url=f"/workflows/steps?run_id={run_id}")
 
-    def prepare_query(self, request: StepsQueryRequest) -> PreparedRequest:
-        """Prepare a request to query joined step rows."""
-        return PreparedRequest(
-            method="POST",
-            url="/workflows/steps/query",
-            data=request.model_dump(exclude_none=True),
-        )
-
 
 class WorkflowSteps(SyncAPIResource, WorkflowStepsMixin):
     """Workflow Steps API wrapper for synchronous operations.
 
     Usage:
-    - ``client.workflows.steps.get(step_id)`` for one joined step row.
-    - ``client.workflows.steps.query(StepsQueryRequest(...))`` for joined step rows.
-    - ``client.workflows.steps.list(run_id)`` for step summaries.
+    - ``client.workflows.steps.get(step_id)`` for one persisted step document.
+    - ``client.workflows.steps.list(run_id)`` for persisted step documents.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def get(self, step_id: str) -> StepQueryResult:
-        """Get one joined step row by step ID.
+    def get(self, step_id: str) -> WorkflowRunStep:
+        """Get one persisted step document by step ID.
 
         Args:
             step_id: The ID of the workflow step to fetch.
 
         Returns:
-            ``StepQueryResult`` for the requested step.
+            ``WorkflowRunStep`` for the requested step.
         """
         if not isinstance(step_id, str) or not step_id:
             raise TypeError("step_id is required")
         request = self.prepare_get(step_id)
         response = self._client._prepared_request(request)
-        return StepQueryResult.model_validate(response)
-
-    def query(self, request: StepsQueryRequest) -> list[StepQueryResult]:
-        """Query joined step rows."""
-        prepared_request = self.prepare_query(request)
-        response = self._client._prepared_request(prepared_request)
-        return [StepQueryResult.model_validate(item) for item in response]
+        return WorkflowRunStep.model_validate(response)
 
     def list(
         self,
@@ -98,34 +79,27 @@ class AsyncWorkflowSteps(AsyncAPIResource, WorkflowStepsMixin):
     """Workflow Steps API wrapper for asynchronous operations.
 
     Usage:
-    - ``await client.workflows.steps.get(step_id)`` for one joined step row.
-    - ``await client.workflows.steps.query(StepsQueryRequest(...))`` for joined step rows.
-    - ``await client.workflows.steps.list(run_id)`` for step summaries.
+    - ``await client.workflows.steps.get(step_id)`` for one persisted step document.
+    - ``await client.workflows.steps.list(run_id)`` for persisted step documents.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    async def get(self, step_id: str) -> StepQueryResult:
-        """Get one joined step row by step ID.
+    async def get(self, step_id: str) -> WorkflowRunStep:
+        """Get one persisted step document by step ID.
 
         Args:
             step_id: The ID of the workflow step to fetch.
 
         Returns:
-            ``StepQueryResult`` for the requested step.
+            ``WorkflowRunStep`` for the requested step.
         """
         if not isinstance(step_id, str) or not step_id:
             raise TypeError("step_id is required")
         request = self.prepare_get(step_id)
         response = await self._client._prepared_request(request)
-        return StepQueryResult.model_validate(response)
-
-    async def query(self, request: StepsQueryRequest) -> list[StepQueryResult]:
-        """Query joined step rows."""
-        prepared_request = self.prepare_query(request)
-        response = await self._client._prepared_request(prepared_request)
-        return [StepQueryResult.model_validate(item) for item in response]
+        return WorkflowRunStep.model_validate(response)
 
     async def list(
         self,

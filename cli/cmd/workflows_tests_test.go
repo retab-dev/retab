@@ -393,7 +393,7 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 			name:     "test run results list",
 			cmd:      workflowsTestsRunsResultsListCmd,
 			args:     []string{"wftestrun_123"},
-			wantPath: "/workflows/tests/runs/wftestrun_123/results",
+			wantPath: "/workflows/tests/results",
 		},
 		{
 			name:     "experiment runs list",
@@ -404,7 +404,7 @@ func TestWorkflowRunListCommandsHonorExplicitLimit(t *testing.T) {
 			name:     "experiment run results list",
 			cmd:      workflowsExperimentsRunsResultsListCmd,
 			args:     []string{"exprun_123"},
-			wantPath: "/workflows/experiments/runs/exprun_123/results",
+			wantPath: "/workflows/experiments/results",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -464,7 +464,7 @@ func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
 			name:     "test run results list",
 			cmd:      workflowsTestsRunsResultsListCmd,
 			args:     []string{"wftestrun_123"},
-			wantPath: "/workflows/tests/runs/wftestrun_123/results",
+			wantPath: "/workflows/tests/results",
 		},
 		{
 			name:     "experiment runs list",
@@ -475,7 +475,7 @@ func TestWorkflowRunListCommandsUseDocumentedDefaultLimit(t *testing.T) {
 			name:     "experiment run results list",
 			cmd:      workflowsExperimentsRunsResultsListCmd,
 			args:     []string{"exprun_123"},
-			wantPath: "/workflows/experiments/runs/exprun_123/results",
+			wantPath: "/workflows/experiments/results",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

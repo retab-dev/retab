@@ -356,6 +356,10 @@ func TestWorkflowsUpdateRejectsMalformedAllowlistValuesBeforeRequest(t *testing.
 	}{
 		{name: "domain with @", flag: "allowed-domain", value: "not@a-domain", wantError: "--allowed-domain"},
 		{name: "domain with no dot", flag: "allowed-domain", value: "localhost", wantError: "--allowed-domain"},
+		{name: "domain with trailing dot", flag: "allowed-domain", value: "example.", wantError: "--allowed-domain"},
+		{name: "domain with leading dot", flag: "allowed-domain", value: ".example.com", wantError: "--allowed-domain"},
+		{name: "domain with consecutive dots", flag: "allowed-domain", value: "example..com", wantError: "--allowed-domain"},
+		{name: "domain with bad chars", flag: "allowed-domain", value: "example!.com", wantError: "--allowed-domain"},
 		{name: "sender without @", flag: "allowed-sender", value: "no-at-sign", wantError: "--allowed-sender"},
 		{name: "sender empty local part", flag: "allowed-sender", value: "@example.com", wantError: "--allowed-sender"},
 		{name: "sender empty domain part", flag: "allowed-sender", value: "ops@", wantError: "--allowed-sender"},

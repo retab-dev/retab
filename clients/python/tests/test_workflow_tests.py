@@ -446,7 +446,8 @@ def test_runs_results_list_uses_run_id_first_results_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/tests/runs/wftestrun_q1z2/results"
+    assert request.url == "/workflows/tests/results"
+    assert request.params == {"run_id": "wftestrun_q1z2", "limit": 20}
     assert result.data[0].test_id == "wfnodetest_abc"
     assert result.data[0].outputs == {"output-json-0": {"total": 1234.56}}
 

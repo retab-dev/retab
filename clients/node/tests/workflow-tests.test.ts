@@ -391,7 +391,7 @@ describe('workflows.tests.runs', () => {
     expect(run.lifecycle.status).toBe('cancelled');
   });
 
-  test('runs.results.list() uses the parent execution results route', async () => {
+  test('runs.results.list() uses the flat results route with a run filter', async () => {
     const mockClient = new MockClient({
       data: [RESULT_RESPONSE],
       list_metadata: { before: null, after: null },
@@ -403,8 +403,9 @@ describe('workflows.tests.runs', () => {
     });
 
     expect(mockClient.lastFetchParams).toMatchObject({
-      url: '/workflows/tests/runs/wftestrun_q1z2/results',
+      url: '/workflows/tests/results',
       method: 'GET',
+      params: { run_id: 'wftestrun_q1z2', limit: 20 },
     });
     expect(result.data[0]?.test_id).toBe('wfnodetest_abc');
     expect(result.data[0]?.outputs).toEqual({ 'output-json-0': { total: 1234.56 } });

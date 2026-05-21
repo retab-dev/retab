@@ -148,10 +148,10 @@ describe('workflow steps client', () => {
           JSON.stringify({
             step_id: 'step_123',
             run_id: 'run_123',
-            workflow_id: 'wf_123',
             block_id: 'extract-1',
             block_type: 'extract',
-            status: 'completed',
+            block_label: 'Extract',
+            lifecycle: { status: 'completed' },
             handle_outputs: {
               'output-json-0': {
                 type: 'json',
@@ -182,70 +182,13 @@ describe('workflow steps client', () => {
     expect(step.step_id).toBe('step_123');
     expect(step.run_id).toBe('run_123');
     expect(step.block_id).toBe('extract-1');
-    expect(step.status).toBe('completed');
+    expect(step.lifecycle.status).toBe('completed');
     expect('output' in step).toBe(false);
     expect('artifact' in step).toBe(false);
     expect('artifacts' in step).toBe(false);
     expect('artifact_view' in step).toBe(false);
     expect('metadata' in step).toBe(false);
     expect(step.handle_outputs?.['output-json-0']).toBeDefined();
-  });
-
-  test('query() posts the current query request body', async () => {
-    class QueryMockClient extends AbstractClient {
-      public lastFetchParams: Record<string, unknown> | null = null;
-
-      protected async _fetch(params: {
-        url: string;
-        method: string;
-        params?: Record<string, unknown>;
-        headers?: Record<string, unknown>;
-        body?: Record<string, unknown>;
-      }): Promise<Response> {
-        this.lastFetchParams = params;
-        return new Response(
-          JSON.stringify([
-            {
-              step_id: 'step_123',
-              run_id: 'run_123',
-              workflow_id: 'wf_123',
-              block_id: 'extract-1',
-              block_type: 'extract',
-              status: 'completed',
-              handle_outputs: {},
-              handle_inputs: {},
-            },
-          ]),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-    }
-
-    const mockClient = new QueryMockClient();
-    const stepsClient = new APIWorkflowSteps(mockClient);
-    const steps = await stepsClient.query({
-      workflow_id: 'wf_123',
-      block_id: 'extract-1',
-      status: ['completed'],
-      limit: 25,
-    });
-
-    expect(mockClient.lastFetchParams).toEqual({
-      url: '/workflows/steps/query',
-      method: 'POST',
-      body: {
-        workflow_id: 'wf_123',
-        block_id: 'extract-1',
-        status: ['completed'],
-        limit: 25,
-      },
-      params: undefined,
-      headers: undefined,
-    });
-    expect(steps.map((step) => step.step_id)).toEqual(['step_123']);
   });
 
   test('does not export removed step execution response aliases', () => {
@@ -258,6 +201,12 @@ describe('workflow steps client', () => {
       'StepExecutionsBatchResponse',
       'ZTerminalState',
       'TerminalState',
+      'ZStepsQueryRequest',
+      'StepsQueryRequest',
+      'ZStepQueryResult',
+      'StepQueryResult',
+      'ZStepFingerprintJoined',
+      'StepFingerprintJoined',
     ];
     for (const removedName of removedNames) {
       expect(Object.prototype.hasOwnProperty.call(workflowTypes, removedName)).toBe(false);
@@ -293,7 +242,7 @@ describe('workflow steps client', () => {
     expect(steps.data[0] && 'split_documents' in steps.data[0]).toBe(false);
   });
 
-  test('get() is the single-step query row fetch', async () => {
+  test('get() is the single-step document fetch', async () => {
     const stepsClient = new APIWorkflowSteps(new MockClient());
 
     expect(stepsClient.get.length).toBe(2);
@@ -302,25 +251,34 @@ describe('workflow steps client', () => {
     ).rejects.toThrow('stepId is required');
   });
 
-  test('only exposes get and query for step row fetches', () => {
+  test('does not expose removed query fetches', () => {
     const stepsClient = new APIWorkflowSteps(new MockClient());
+    expect('query' in stepsClient).toBe(false);
     expect('getAll' in stepsClient).toBe(false);
     expect('get_all' in stepsClient).toBe(false);
     expect('getMany' in stepsClient).toBe(false);
     expect('get_many' in stepsClient).toBe(false);
   });
 
-  test('get() accepts for_each step query rows', async () => {
+  test('get() accepts for_each step documents', async () => {
     class GetForEachMockClient extends AbstractClient {
       protected async _fetch(): Promise<Response> {
         return new Response(
           JSON.stringify({
             step_id: 'step_for_each_1',
             run_id: 'run_123',
-            workflow_id: 'wf_123',
             block_id: 'for_each-1',
             block_type: 'for_each',
-            status: 'completed',
+            block_label: 'For each',
+            lifecycle: { status: 'completed' },
+            loop_containers: [
+              {
+                container_id: 'for_each-1',
+                iteration: 2,
+                is_parallel: true,
+                parallel_item_index: 2,
+              },
+            ],
             handle_outputs: {},
             handle_inputs: {},
           }),
@@ -337,6 +295,7 @@ describe('workflow steps client', () => {
 
     expect(step.step_id).toBe('step_for_each_1');
     expect(step.block_type).toBe('for_each');
-    expect(step.status).toBe('completed');
+    expect(step.lifecycle.status).toBe('completed');
+    expect(step.loop_containers[0]?.iteration).toBe(2);
   });
 });

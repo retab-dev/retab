@@ -387,7 +387,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 				"experiment_id": "exp_123",
 				"lifecycle":     map[string]any{"status": "completed"},
 			})
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/runs/exprun_123/results":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/results":
 			rawQuery = r.URL.RawQuery
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data":          []map[string]any{},
@@ -411,7 +411,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 				"experiment_id": "exp_123",
 				"lifecycle":     map[string]any{"status": "cancelled"},
 			})
-		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/runs/exprun_123/metrics":
+		case r.Method == http.MethodGet && r.URL.Path == "/workflows/experiments/metrics":
 			_ = json.NewEncoder(w).Encode(map[string]any{"view": "summary"})
 		default:
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
@@ -435,7 +435,7 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(results.Data) != 0 || rawQuery != "limit=25" {
+	if len(results.Data) != 0 || rawQuery != "limit=25&run_id=exprun_123" {
 		t.Fatalf("results = %#v rawQuery = %q", results, rawQuery)
 	}
 	runResult, err := client.Workflows.Experiments.Runs.Results.Get(context.Background(), "expresult_123")
@@ -461,10 +461,10 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	}
 	expected := []string{
 		"GET /workflows/experiments/runs/exprun_123",
-		"GET /workflows/experiments/runs/exprun_123/results",
+		"GET /workflows/experiments/results",
 		"GET /workflows/experiments/results/expresult_123",
 		"POST /workflows/experiments/runs/exprun_123/cancel",
-		"GET /workflows/experiments/runs/exprun_123/metrics",
+		"GET /workflows/experiments/metrics",
 	}
 	if strings.Join(requests, ",") != strings.Join(expected, ",") {
 		t.Fatalf("requests = %#v", requests)
@@ -808,10 +808,10 @@ func TestWorkflowStepsGet(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"step_id":     "step_123",
 			"run_id":      "run_123",
-			"workflow_id": "wf_123",
 			"block_id":    "extract-1",
 			"block_type":  "extract",
-			"status":      "completed",
+			"block_label": "Extract",
+			"lifecycle":   map[string]any{"status": "completed"},
 			"handle_inputs": map[string]any{
 				"input-file-document": map[string]any{"type": "file"},
 			},
@@ -849,35 +849,33 @@ func TestWorkflowStepsGet(t *testing.T) {
 	if seenAPIKey != "test-key" {
 		t.Fatalf("api key = %s", seenAPIKey)
 	}
-	if step.StepID != "step_123" || step.RunID != "run_123" || step.WorkflowID != "wf_123" {
+	if step.StepID != "step_123" || step.RunID != "run_123" {
 		t.Fatalf("step ids = %#v", step)
 	}
 	if step.BlockID != "extract-1" {
 		t.Fatalf("block id = %s", step.BlockID)
 	}
-	if step.Status != "completed" {
-		t.Fatalf("status = %s", step.Status)
+	if step.Lifecycle["status"] != "completed" {
+		t.Fatalf("lifecycle = %#v", step.Lifecycle)
 	}
 	if len(step.HandleInputs) != 1 {
 		t.Fatalf("handle inputs = %#v", step.HandleInputs)
 	}
-	if step.HandleOutputs["output-json-0"] == nil {
-		t.Fatal("expected output-json-0 data")
+	if step.HandleOutputs["output-json-0"].Type != "json" {
+		t.Fatalf("output-json-0 = %#v", step.HandleOutputs["output-json-0"])
 	}
-	refPayload, ok := step.HandleOutputs["output-json-ref"].(map[string]any)
+	refPayload, ok := step.HandleOutputs["output-json-ref"]
 	if !ok {
 		t.Fatalf("json_ref payload = %#v", step.HandleOutputs["output-json-ref"])
 	}
-	if refPayload["type"] != "json_ref" {
-		t.Fatalf("json_ref type = %v", refPayload["type"])
+	if refPayload.Type != "json_ref" {
+		t.Fatalf("json_ref type = %v", refPayload.Type)
 	}
-	artifactRef, ok := refPayload["artifact_ref"].(map[string]any)
-	if !ok || artifactRef["id"] != "artifact_123" {
-		t.Fatalf("artifact_ref = %#v", refPayload["artifact_ref"])
+	if refPayload.ArtifactRef["id"] != "artifact_123" {
+		t.Fatalf("artifact_ref = %#v", refPayload.ArtifactRef)
 	}
-	preview, ok := refPayload["preview"].(map[string]any)
-	if !ok || preview["truncated"] != true {
-		t.Fatalf("preview = %#v", refPayload["preview"])
+	if refPayload.Preview["truncated"] != true {
+		t.Fatalf("preview = %#v", refPayload.Preview)
 	}
 	encoded, err := json.Marshal(step)
 	if err != nil {
@@ -885,66 +883,6 @@ func TestWorkflowStepsGet(t *testing.T) {
 	}
 	if strings.Contains(string(encoded), `"terminal"`) {
 		t.Fatalf("step JSON exposed removed state fields: %s", string(encoded))
-	}
-}
-
-func TestWorkflowStepsQuery(t *testing.T) {
-	var seenMethod string
-	var seenPath string
-	var seenBody map[string]any
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seenMethod = r.Method
-		seenPath = r.URL.Path
-		if err := json.NewDecoder(r.Body).Decode(&seenBody); err != nil {
-			t.Fatal(err)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode([]map[string]any{
-			{
-				"workflow_id":    "wf_123",
-				"run_id":         "run_123",
-				"block_id":       "extract-1",
-				"step_id":        "step_123",
-				"block_type":     "extract",
-				"status":         "completed",
-				"handle_inputs":  map[string]any{},
-				"handle_outputs": map[string]any{},
-			},
-		})
-	}))
-	defer server.Close()
-
-	client, err := NewClient("test-key", WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	steps, err := client.Workflows.Steps.Query(context.Background(), StepsQueryRequest{
-		WorkflowID: "wf_123",
-		BlockID:    "extract-1",
-		Status:     []string{"completed"},
-		Limit:      25,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if seenMethod != http.MethodPost {
-		t.Fatalf("method = %s", seenMethod)
-	}
-	if seenPath != "/workflows/steps/query" {
-		t.Fatalf("path = %s", seenPath)
-	}
-	if seenBody["workflow_id"] != "wf_123" || seenBody["block_id"] != "extract-1" || seenBody["limit"] != float64(25) {
-		t.Fatalf("body = %#v", seenBody)
-	}
-	status, ok := seenBody["status"].([]any)
-	if !ok || len(status) != 1 || status[0] != "completed" {
-		t.Fatalf("status = %#v", seenBody["status"])
-	}
-	if len(steps) != 1 || steps[0].StepID != "step_123" {
-		t.Fatalf("steps = %#v", steps)
 	}
 }
 

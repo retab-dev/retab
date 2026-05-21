@@ -283,9 +283,9 @@ export class APIWorkflowExperimentRunResults extends CompositionClient {
     options?: RequestOptions
   ): Promise<ExperimentResultListResponse> {
     return this._fetchJson(ZExperimentResultListResponse, {
-      url: `/workflows/experiments/runs/${runId}/results`,
+      url: '/workflows/experiments/results',
       method: 'GET',
-      params: { limit, ...(options?.params || {}) },
+      params: { run_id: runId, limit, ...(options?.params || {}) },
       headers: options?.headers,
     });
   }
@@ -327,12 +327,16 @@ export class APIWorkflowExperimentRunMetrics extends CompositionClient {
     },
     options?: RequestOptions
   ): Promise<ExperimentMetricsResponse> {
-    const params: Record<string, unknown> = { view, include_prior: includePrior };
+    const params: Record<string, unknown> = {
+      run_id: runId,
+      view,
+      include_prior: includePrior,
+    };
     if (documentId !== undefined) params.document_id = documentId;
     if (targetPath !== undefined) params.target_path = targetPath;
     if (priorRunId !== undefined) params.prior_run_id = priorRunId;
     return this._fetchJson(ZExperimentMetricsResponse, {
-      url: `/workflows/experiments/runs/${runId}/metrics`,
+      url: '/workflows/experiments/metrics',
       method: 'GET',
       params: { ...params, ...(options?.params || {}) },
       headers: options?.headers,
