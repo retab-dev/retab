@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generic, Iterator, List, Literal, TypeVar
+from typing import Callable, Generic, Iterator, Literal, TypeVar
 
 from pydantic import ConfigDict, PrivateAttr
 from retab.types.base import RetabBaseModel

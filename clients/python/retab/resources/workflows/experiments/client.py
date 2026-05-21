@@ -19,7 +19,7 @@ so anyone reading this code recognizes the pattern.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Sequence, Union
+from typing import Any, Dict, Mapping, Sequence, Union
 
 from pydantic import TypeAdapter
 

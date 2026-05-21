@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import io
-import json
 import mimetypes
 from pathlib import Path
 from typing import Sequence, TypeVar, get_args

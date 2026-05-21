@@ -9,7 +9,7 @@ from .._resource import AsyncAPIResource, SyncAPIResource
 from ..utils.mime import prepare_mime_document_list
 from ..types.mime import MIMEData
 from ..types.schemas.generate import GenerateSchemaRequest
-from ..types.standards import PreparedRequest, UNSET, _Unset, FieldUnset
+from ..types.standards import PreparedRequest, UNSET, _Unset
 
 
 class SchemasMixin:
