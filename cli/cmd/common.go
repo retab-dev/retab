@@ -558,9 +558,19 @@ func splitKV(raw string) (string, string, bool) {
 // addListFlags attaches the id pagination + filter flags shared by
 // most list commands. baseOnly skips filename/from-date/to-date (which only
 // apply to file-shaped resources).
+//
+// `--before` and `--after` are declared mutually exclusive at the cobra
+// level — cobra.Execute() will reject any invocation that passes both
+// before the RunE body fires. Commands invoked directly from tests via
+// `cmd.RunE(...)` bypass that validation; those code paths must also
+// run an explicit `validateBeforeAfterMutex` check, otherwise the two
+// flags silently end up in the outbound query string together (and the
+// server's planner uses whichever the SDK serialized last, dropping the
+// other).
 func addListFlags(cmd *cobra.Command, baseOnly bool) {
-	cmd.Flags().String("before", "", "item id: return items before this id")
-	cmd.Flags().String("after", "", "item id: return items after this id")
+	cmd.Flags().String("before", "", "item id: return items before this id (mutually exclusive with --after)")
+	cmd.Flags().String("after", "", "item id: return items after this id (mutually exclusive with --before)")
+	cmd.MarkFlagsMutuallyExclusive("before", "after")
 	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	cmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	if !baseOnly {
@@ -568,6 +578,20 @@ func addListFlags(cmd *cobra.Command, baseOnly bool) {
 		cmd.Flags().Var(&rfc3339FlagValue{}, "from-date", "filter from this RFC3339 date")
 		cmd.Flags().Var(&rfc3339FlagValue{}, "to-date", "filter to this RFC3339 date")
 	}
+}
+
+// validateBeforeAfterMutex returns the canonical mutual-exclusion error
+// when both --before and --after were passed. Cobra's
+// `MarkFlagsMutuallyExclusive` covers the real CLI path (via
+// cmd.Execute), but RunE-invoking tests must still fail fast — so list
+// commands call this helper at the top of their RunE body.
+func validateBeforeAfterMutex(cmd *cobra.Command) error {
+	before, _ := cmd.Flags().GetString("before")
+	after, _ := cmd.Flags().GetString("after")
+	if before != "" && after != "" {
+		return fmt.Errorf("--before and --after are mutually exclusive")
+	}
+	return nil
 }
 
 type nonNegativeIntFlagValue struct{ value string }

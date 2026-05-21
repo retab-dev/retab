@@ -154,12 +154,21 @@ var parsesDeleteCmd = &cobra.Command{
 	Long: `Permanently delete a parse.
 
 Destructive and irreversible. The source document is not affected. Take a
-backup with ` + "`retab parses get`" + ` first if you may need the markdown.`,
+backup with ` + "`retab parses get`" + ` first if you may need the markdown.
+
+Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
+otherwise the command refuses to delete when stdin is not a terminal.`,
 	Example: `  # Back up, then delete
   retab parses get parse_xyz789 > backup.json
-  retab parses delete parse_xyz789`,
+  retab parses delete parse_xyz789
+
+  # Skip the prompt in scripts
+  retab parses delete parse_xyz789 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "parse", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -184,6 +193,8 @@ func init() {
 	_ = parsesCreateCmd.MarkFlagRequired("model")
 
 	addListFlags(parsesListCmd, false)
+
+	parsesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	parsesCmd.AddCommand(parsesCreateCmd, parsesGetCmd, parsesListCmd, parsesDeleteCmd)
 	rootCmd.AddCommand(parsesCmd)

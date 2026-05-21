@@ -52,7 +52,8 @@ const TEST_RESPONSE = {
     condition: { kind: 'equals', expected: 1234.56 },
     label: null,
   },
-  schema_drift: 'fresh',
+  assertion_drift_status: 'valid',
+  schema_drift: 'none',
   validation_status: 'valid',
   validation_issues: [],
   latest_run_summary: null,
@@ -438,6 +439,29 @@ describe('workflows.tests.runs', () => {
 });
 
 describe('status enum coverage', () => {
+  test('Z* drift enums match the OpenAPI literals', async () => {
+    const { ZAssertionDriftStatus, ZSchemaDriftStatus, ZWorkflowTest } = await import(
+      '../src/api/workflows/tests/types'
+    );
+
+    for (const value of ['valid', 'drifted', 'broken']) {
+      expect(() => ZAssertionDriftStatus.parse(value)).not.toThrow();
+    }
+    expect(() => ZAssertionDriftStatus.parse('fresh')).toThrow();
+
+    for (const value of ['none', 'partial', 'drifted', 'unknown']) {
+      expect(() => ZSchemaDriftStatus.parse(value)).not.toThrow();
+      expect(() =>
+        ZWorkflowTest.parse({
+          ...TEST_RESPONSE,
+          assertion_drift_status: 'valid',
+          schema_drift: value,
+        })
+      ).not.toThrow();
+    }
+    expect(() => ZSchemaDriftStatus.parse('fresh')).toThrow();
+  });
+
   test('Z* schemas accept all 7 WorkflowTestRunStatus values', async () => {
     // Pin: a future status addition (or accidental shrinkage) trips
     // this test before it ships. Without this, a `cancelled` run
@@ -462,6 +486,34 @@ describe('status enum coverage', () => {
     for (const key of ['queued', 'running', 'passed', 'failed', 'blocked', 'error', 'cancelled']) {
       expect(parsed).toHaveProperty(key, 0);
     }
+  });
+
+  test('workflow test run lifecycle/timing use the dedicated public state machine', async () => {
+    const { ZWorkflowTestRun, ZWorkflowTestResult } = await import(
+      '../src/api/workflows/tests/types'
+    );
+
+    expect(() =>
+      ZWorkflowTestRun.parse({
+        ...RUN_RESPONSE,
+        lifecycle: { status: 'awaiting_review' },
+      })
+    ).toThrow();
+    expect(() =>
+      ZWorkflowTestResult.parse({
+        ...RESULT_RESPONSE,
+        lifecycle: { status: 'awaiting_review' },
+      })
+    ).toThrow();
+
+    const parsed = ZWorkflowTestRun.parse({
+      ...RUN_RESPONSE,
+      timing: {
+        ...TIMING,
+        review_waiting_started_at: NOW,
+      },
+    });
+    expect(Object.keys(parsed.timing).sort()).toEqual(['completed_at', 'created_at', 'started_at']);
   });
 });
 

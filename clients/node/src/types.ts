@@ -593,34 +593,6 @@ export const ZWorkflowEdgeDoc = z
   .passthrough();
 export type WorkflowEdgeDoc = z.infer<typeof ZWorkflowEdgeDoc>;
 
-export const ZWorkflowWithEntities = z
-  .object({
-    workflow: ZWorkflow,
-    blocks: z.array(ZWorkflowBlock).default([]),
-    edges: z.array(ZWorkflowEdgeDoc).default([]),
-  })
-  .passthrough();
-export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
-
-export const ZWorkflowResolvedSchemasResponse = z
-  .object({
-    workflow_id: z.string(),
-    draft_version: z.string().nullable().optional(),
-    schemas: z.record(z.string(), ZResolvedSchemas).default({}),
-  })
-  .passthrough();
-export type WorkflowResolvedSchemasResponse = z.infer<typeof ZWorkflowResolvedSchemasResponse>;
-
-export const ZBlockResolvedSchemasResponse = z
-  .object({
-    workflow_id: z.string(),
-    block_id: z.string(),
-    draft_version: z.string().nullable().optional(),
-    schema: ZResolvedSchemas,
-  })
-  .passthrough();
-export type BlockResolvedSchemasResponse = z.infer<typeof ZBlockResolvedSchemasResponse>;
-
 export const ZDeclarativePlanSummary = z
   .object({
     add: z.number().default(0),

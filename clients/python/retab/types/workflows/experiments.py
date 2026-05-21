@@ -8,9 +8,7 @@ Only the fields that ride the wire are mirrored here — internal storage-only
 fields (e.g. ``last_run_config_fingerprint``) are intentionally omitted, and
 any forensic/diagnostic blob the backend may evolve uses
 ``model_config = ConfigDict(extra="ignore")`` so SDK pins don't break when
-the backend adds optional fields. ``handle_inputs`` is left as ``dict[str, Any]``
-to match the existing `tests` convention (the SDK does not model the
-``HandleInput`` discriminated union internally).
+the backend adds optional fields.
 """
 
 from __future__ import annotations
@@ -20,7 +18,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
-from retab.types.workflows.model import WorkflowSnapshotRef
+from retab.types.workflows.model import HandleInput, WorkflowSnapshotRef
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +31,7 @@ ExperimentRunStatus = Literal["pending", "running", "completed", "error", "cance
 ExperimentPublicStatus = Literal["draft", "processing", "completed", "failed", "cancelled"]
 ExperimentTargetKind = Literal["field", "subdocument", "category", "key"]
 ExperimentMetricView = Literal["summary", "by_document", "by_target", "votes"]
-ExperimentSchemaDriftStatus = Literal["none", "drifted", "unknown"]
+ExperimentSchemaDriftStatus = Literal["none", "partial", "drifted", "unknown"]
 
 
 # ---------------------------------------------------------------------------
@@ -72,7 +70,7 @@ class ExplicitExperimentDocumentRequest(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    handle_inputs: dict[str, Any]
+    handle_inputs: dict[str, HandleInput]
     provenance: ExperimentDocumentProvenance | None = None
 
 
@@ -90,7 +88,7 @@ class ExperimentDocument(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
-    handle_inputs: dict[str, Any] = Field(default_factory=dict)
+    handle_inputs: dict[str, HandleInput] = Field(default_factory=dict)
     handle_inputs_fingerprint: str = ""
     provenance: ExperimentDocumentProvenance | None = None
 
@@ -197,6 +195,13 @@ class ExperimentRun(RetabBaseModel):
     error_count: int = 0
 
 
+class ExperimentRunCancelResponse(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    lifecycle: "ExperimentRunLifecycle"
+
+
 # ---------------------------------------------------------------------------
 # Results (per-document execution)
 # ---------------------------------------------------------------------------
@@ -234,7 +239,7 @@ class ExperimentResult(RetabBaseModel):
     lifecycle: "ExperimentResultLifecycle"
     timing: "ExperimentResultTiming"
     block_kind: ExperimentBlockKind
-    handle_inputs: dict[str, Any] = Field(default_factory=dict)
+    handle_inputs: dict[str, HandleInput] = Field(default_factory=dict)
     artifact: StepArtifactRefMini | None = None
     error: str | None = None
     duration_ms: int | None = None
@@ -246,7 +251,7 @@ class ExperimentResult(RetabBaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Metrics responses (discriminated union over ``view``)
+# Metrics responses (discriminated union over ``kind``)
 # ---------------------------------------------------------------------------
 
 
@@ -260,14 +265,10 @@ class ExperimentSummaryMetricDocument(RetabBaseModel):
 
 
 class ExperimentConfusionFlowMetric(RetabBaseModel):
-    model_config = ConfigDict(
-        extra="ignore",
-        populate_by_name=True,
-        serialize_by_alias=True,
-    )
+    model_config = ConfigDict(extra="ignore")
 
-    from_: str = Field(validation_alias="from", serialization_alias="from")
-    to: str
+    source: str
+    target: str
     score: float
 
 
@@ -292,6 +293,7 @@ class ExperimentSummaryMetricsResponse(RetabBaseModel):
 
     experiment_id: str
     run_id: str
+    kind: Literal["summary"] = "summary"
     view: Literal["summary"] = "summary"
     definition_fingerprint: str | None = None
     block_kind: ExperimentBlockKind
@@ -329,6 +331,7 @@ class ExperimentByDocumentMetricsResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_id: str
+    kind: Literal["by_document"] = "by_document"
     view: Literal["by_document"] = "by_document"
     document: ExperimentMetricDocumentRef
     score: float | None = None
@@ -359,6 +362,7 @@ class ExperimentByTargetMetricsResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_id: str
+    kind: Literal["by_target"] = "by_target"
     view: Literal["by_target"] = "by_target"
     target: str
     score: float | None = None
@@ -385,23 +389,13 @@ class ExperimentVotesMetricsResponse(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_id: str
+    kind: Literal["votes"] = "votes"
     view: Literal["votes"] = "votes"
     document: ExperimentVotesMetricDocument
     target: str
     score: float | None = None
     prior_score: float | None = None
     rows: list[ExperimentVoteRow] = Field(default_factory=list)
-
-
-ExperimentMetricsViewResponse = Annotated[
-    Union[
-        ExperimentSummaryMetricsResponse,
-        ExperimentByDocumentMetricsResponse,
-        ExperimentByTargetMetricsResponse,
-        ExperimentVotesMetricsResponse,
-    ],
-    Field(discriminator="view"),
-]
 
 
 class _MetricsStaleErrorLastRun(RetabBaseModel):
@@ -420,6 +414,7 @@ class ExperimentMetricsStaleError(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    kind: Literal["stale_metrics"] = "stale_metrics"
     error: Literal["stale_metrics"] = "stale_metrics"
     experiment_id: str
     stale_reasons: list[str] = Field(default_factory=list)
@@ -433,16 +428,23 @@ class ExperimentMetricsMissingError(RetabBaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    kind: Literal["no_metrics"] = "no_metrics"
     error: Literal["no_metrics"] = "no_metrics"
     experiment_id: str
     message: str
 
 
 # Full response surface from ``GET /workflows/experiments/metrics``.
-ExperimentMetricsResponse = Union[
-    ExperimentMetricsViewResponse,
-    ExperimentMetricsStaleError,
-    ExperimentMetricsMissingError,
+ExperimentMetricsResponse = Annotated[
+    Union[
+        ExperimentSummaryMetricsResponse,
+        ExperimentByDocumentMetricsResponse,
+        ExperimentByTargetMetricsResponse,
+        ExperimentVotesMetricsResponse,
+        ExperimentMetricsStaleError,
+        ExperimentMetricsMissingError,
+    ],
+    Field(discriminator="kind"),
 ]
 
 
@@ -488,6 +490,7 @@ __all__ = [
     "ExperimentRunLifecycle",
     "ExperimentRunTiming",
     "ExperimentRun",
+    "ExperimentRunCancelResponse",
     "ExperimentResultLifecycle",
     "ExperimentResultTiming",
     "ExperimentResult",
@@ -507,7 +510,6 @@ __all__ = [
     "ExperimentVotesMetricDocument",
     "ExperimentVoteRow",
     "ExperimentVotesMetricsResponse",
-    "ExperimentMetricsViewResponse",
     "ExperimentMetricsStaleError",
     "ExperimentMetricsMissingError",
     "ExperimentMetricsResponse",

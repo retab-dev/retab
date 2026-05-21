@@ -1258,16 +1258,28 @@ type WorkflowTestRunCounts struct {
 	Cancelled int `json:"cancelled,omitempty"`
 }
 
+type WorkflowTestRunLifecycle struct {
+	Status  string `json:"status"`
+	Message string `json:"message,omitempty"`
+}
+
+type WorkflowTestRunTiming struct {
+	CreatedAt   *time.Time `json:"created_at,omitempty"`
+	StartedAt   *time.Time `json:"started_at,omitempty"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	DurationMs  *int       `json:"duration_ms,omitempty"`
+}
+
 type WorkflowTestRun struct {
-	ID         string                `json:"id"`
-	Workflow   WorkflowSnapshotRef   `json:"workflow"`
-	Trigger    RunTrigger            `json:"trigger"`
-	Lifecycle  RunLifecycle          `json:"lifecycle"`
-	Timing     RunTiming             `json:"timing"`
-	Target     *Resource             `json:"target,omitempty"`
-	TestID     string                `json:"test_id,omitempty"`
-	TotalTests int                   `json:"total_tests"`
-	Counts     WorkflowTestRunCounts `json:"counts,omitempty"`
+	ID         string                   `json:"id"`
+	Workflow   WorkflowSnapshotRef      `json:"workflow"`
+	Trigger    RunTrigger               `json:"trigger"`
+	Lifecycle  WorkflowTestRunLifecycle `json:"lifecycle"`
+	Timing     WorkflowTestRunTiming    `json:"timing"`
+	Target     *Resource                `json:"target,omitempty"`
+	TestID     string                   `json:"test_id,omitempty"`
+	TotalTests int                      `json:"total_tests"`
+	Counts     WorkflowTestRunCounts    `json:"counts,omitempty"`
 }
 
 type WorkflowTestRunResultListResponse = PaginatedList[WorkflowTestRunRecord]
@@ -1499,47 +1511,74 @@ type ExperimentResponse struct {
 }
 
 // ExperimentRun is the public run document returned by experiment run APIs.
+type ExperimentRunLifecycle struct {
+	Status string `json:"status"`
+}
+
+type ExperimentRunTiming struct {
+	CreatedAt   *time.Time `json:"created_at,omitempty"`
+	StartedAt   *time.Time `json:"started_at,omitempty"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	DurationMs  *int       `json:"duration_ms,omitempty"`
+}
+
 type ExperimentRun struct {
-	ID                     string              `json:"id"`
-	Workflow               WorkflowSnapshotRef `json:"workflow"`
-	Trigger                RunTrigger          `json:"trigger"`
-	Lifecycle              RunLifecycle        `json:"lifecycle"`
-	Timing                 RunTiming           `json:"timing"`
-	ExperimentID           string              `json:"experiment_id"`
-	BlockID                string              `json:"block_id"`
-	BlockKind              string              `json:"block_kind"`
-	NConsensus             int                 `json:"n_consensus"`
-	DefinitionFingerprint  string              `json:"definition_fingerprint"`
-	DocumentsFingerprint   string              `json:"documents_fingerprint"`
-	Score                  *float64            `json:"score,omitempty"`
-	TotalDocumentCount     int                 `json:"total_document_count"`
-	CompletedDocumentCount int                 `json:"completed_document_count"`
-	DocumentCount          int                 `json:"document_count"`
-	ErrorCount             int                 `json:"error_count"`
+	ID                     string                 `json:"id"`
+	Workflow               WorkflowSnapshotRef    `json:"workflow"`
+	Trigger                RunTrigger             `json:"trigger"`
+	Lifecycle              ExperimentRunLifecycle `json:"lifecycle"`
+	Timing                 ExperimentRunTiming    `json:"timing"`
+	ExperimentID           string                 `json:"experiment_id"`
+	BlockID                string                 `json:"block_id"`
+	BlockKind              string                 `json:"block_kind"`
+	NConsensus             int                    `json:"n_consensus"`
+	DefinitionFingerprint  string                 `json:"definition_fingerprint"`
+	DocumentsFingerprint   string                 `json:"documents_fingerprint"`
+	Score                  *float64               `json:"score,omitempty"`
+	TotalDocumentCount     int                    `json:"total_document_count"`
+	CompletedDocumentCount int                    `json:"completed_document_count"`
+	DocumentCount          int                    `json:"document_count"`
+	ErrorCount             int                    `json:"error_count"`
 }
 
 // ExperimentRunListResponse is the canonical PaginatedList envelope for
 // `GET /v1/workflows/experiments/runs`.
 type ExperimentRunListResponse = PaginatedList[ExperimentRun]
 
+type ExperimentRunCancelResponse struct {
+	ID        string                 `json:"id"`
+	Lifecycle ExperimentRunLifecycle `json:"lifecycle"`
+}
+
 // ExperimentResult is the per-document execution record inside a run.
+type ExperimentResultLifecycle struct {
+	Status string `json:"status"`
+}
+
+type ExperimentResultTiming struct {
+	CreatedAt   *time.Time `json:"created_at,omitempty"`
+	StartedAt   *time.Time `json:"started_at,omitempty"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	DurationMs  *int       `json:"duration_ms,omitempty"`
+}
+
 type ExperimentResult struct {
-	ID            string           `json:"id"`
-	RunID         string           `json:"run_id"`
-	ExperimentID  string           `json:"experiment_id"`
-	DocumentID    string           `json:"document_id"`
-	Lifecycle     RunLifecycle     `json:"lifecycle"`
-	Timing        RunTiming        `json:"timing"`
-	BlockKind     string           `json:"block_kind"`
-	HandleInputs  map[string]any   `json:"handle_inputs"`
-	Artifact      *StepArtifactRef `json:"artifact,omitempty"`
-	Error         string           `json:"error,omitempty"`
-	DurationMs    *int             `json:"duration_ms,omitempty"`
-	CreatedAt     *time.Time       `json:"created_at,omitempty"`
-	StartedAt     *time.Time       `json:"started_at,omitempty"`
-	CompletedAt   *time.Time       `json:"completed_at,omitempty"`
-	Attempt       int              `json:"attempt"`
-	IsPlaceholder bool             `json:"is_placeholder"`
+	ID            string                    `json:"id"`
+	RunID         string                    `json:"run_id"`
+	ExperimentID  string                    `json:"experiment_id"`
+	DocumentID    string                    `json:"document_id"`
+	Lifecycle     ExperimentResultLifecycle `json:"lifecycle"`
+	Timing        ExperimentResultTiming    `json:"timing"`
+	BlockKind     string                    `json:"block_kind"`
+	HandleInputs  map[string]any            `json:"handle_inputs"`
+	Artifact      *StepArtifactRef          `json:"artifact,omitempty"`
+	Error         string                    `json:"error,omitempty"`
+	DurationMs    *int                      `json:"duration_ms,omitempty"`
+	CreatedAt     *time.Time                `json:"created_at,omitempty"`
+	StartedAt     *time.Time                `json:"started_at,omitempty"`
+	CompletedAt   *time.Time                `json:"completed_at,omitempty"`
+	Attempt       int                       `json:"attempt"`
+	IsPlaceholder bool                      `json:"is_placeholder"`
 }
 
 type ExperimentResultListResponse = PaginatedList[ExperimentResult]
@@ -1752,11 +1791,11 @@ func (s *WorkflowExperimentRunsService) Get(ctx context.Context, runID string, o
 	return &result, err
 }
 
-func (s *WorkflowExperimentRunsService) Cancel(ctx context.Context, runID string, opts ...RequestOption) (*ExperimentRun, error) {
+func (s *WorkflowExperimentRunsService) Cancel(ctx context.Context, runID string, opts ...RequestOption) (*ExperimentRunCancelResponse, error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
-	var result ExperimentRun
+	var result ExperimentRunCancelResponse
 	err := s.client.do(ctx, http.MethodPost, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/cancel", nil, map[string]any{}, &result, opts...)
 	return &result, err
 }

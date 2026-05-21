@@ -289,7 +289,13 @@ var preferredColumnOrder = []struct {
 	// back into TYPE when the change-shape is what's being listed.
 	{"TYPE", []string{"type", "status", "block_type", "trigger_type", "lifecycle.status", "trigger.type", "operation", "actions"}},
 	{"MODEL", []string{"model"}},
-	{"CREATED_AT", []string{"created_at", "started_at", "updated_at", "completed_at", "timing.created_at"}},
+	// Timestamp columns are split per field so the rendered header matches the
+	// field actually shown. Lying about which timestamp a column shows is
+	// worse than choosing a different column on a different response.
+	{"CREATED_AT", []string{"created_at", "timing.created_at"}},
+	{"STARTED_AT", []string{"started_at"}},
+	{"UPDATED_AT", []string{"updated_at"}},
+	{"COMPLETED_AT", []string{"completed_at"}},
 }
 
 var defaultEmptyAutoColumns = []TableColumn{
@@ -503,6 +509,7 @@ func pickAutoColumns(rows []any) []TableColumn {
 		aliases []string
 	}
 	var picks []pick
+	timestampPicked := false
 	for _, spec := range preferredColumnOrder {
 		hit := false
 		for _, alias := range spec.aliases {
@@ -513,6 +520,17 @@ func pickAutoColumns(rows []any) []TableColumn {
 		}
 		if !hit {
 			continue
+		}
+		// Only one timestamp column at a time — the order in
+		// preferredColumnOrder (created_at > started_at > updated_at >
+		// completed_at) defines the precedence. Showing both CREATED_AT
+		// and UPDATED_AT confuses readers about which value the column
+		// is reporting.
+		if isTimestampHeader(spec.header) {
+			if timestampPicked {
+				continue
+			}
+			timestampPicked = true
 		}
 		picks = append(picks, pick{header: spec.header, aliases: spec.aliases})
 		if len(picks) == maxAutoColumns {
@@ -558,7 +576,11 @@ func pickAutoColumns(rows []any) []TableColumn {
 // normalizeTimestampCell. Matches the headers produced by
 // preferredColumnOrder and by the explicit files-list column specs.
 func isTimestampHeader(header string) bool {
-	return header == "CREATED_AT" || header == "UPDATED_AT"
+	switch header {
+	case "CREATED_AT", "UPDATED_AT", "STARTED_AT", "COMPLETED_AT":
+		return true
+	}
+	return false
 }
 
 // normalizeTimestampCell renders timestamp strings in one canonical form

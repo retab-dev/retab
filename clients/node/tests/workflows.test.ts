@@ -8,6 +8,7 @@ import APIWorkflowEdges from '../src/api/workflows/edges/client';
 import APIWorkflowSpecs from '../src/api/workflows/specs/client';
 import APIWorkflowSimulations from '../src/api/workflows/simulations/client';
 import { ZStepExecutionResponse, ZWorkflowRun, ZWorkflowRunStep } from '../src/types';
+import { ZHandlePayload } from '../src/generated_types';
 import type { WorkflowRunExportResponse } from '../src/types';
 
 class MockClient extends AbstractClient {
@@ -332,6 +333,17 @@ describe('workflows client', () => {
     expect('listSnapshots' in workflowsClient).toBe(false);
     expect('list_snapshots' in workflowsClient).toBe(false);
     expect('prepare_list_snapshots' in workflowsClient).toBe(false);
+  });
+
+  test('stale workflow aggregate models are not exported', async () => {
+    const types = await import('../src/types');
+
+    expect('ZWorkflowWithEntities' in types).toBe(false);
+    expect('WorkflowWithEntities' in types).toBe(false);
+    expect('ZWorkflowResolvedSchemasResponse' in types).toBe(false);
+    expect('WorkflowResolvedSchemasResponse' in types).toBe(false);
+    expect('ZBlockResolvedSchemasResponse' in types).toBe(false);
+    expect('BlockResolvedSchemasResponse' in types).toBe(false);
   });
 
   test('prepare_diagnose exposes the Python prepared-request surface', () => {
@@ -778,6 +790,10 @@ describe('workflows client', () => {
     expect(parsed.handle_outputs?.['output-json-0']?.type).toBe('json_ref');
     expect(parsed.handle_outputs?.['output-json-0']?.artifact_ref?.id).toBe('artifact_123');
     expect(parsed.handle_outputs?.['output-json-0']?.preview?.truncated).toBe(true);
+  });
+
+  test('handle payloads reject removed text type', () => {
+    expect(() => ZHandlePayload.parse({ type: 'text', text: 'removed' })).toThrow();
   });
 
   test('workflow run steps expose top-level model', () => {

@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import ConfigDict, Field
 from retab.types.base import RetabBaseModel
-from retab.types.workflows.model import RunLifecycle, RunTiming, Trigger, WorkflowSnapshotRef
+from retab.types.workflows.model import HandleInput, Trigger, WorkflowSnapshotRef
 
 # ---------------------------------------------------------------------------
 # Status enums
@@ -65,7 +65,7 @@ class ManualWorkflowTestSource(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     type: Literal["manual"] = "manual"
-    handle_inputs: dict[str, Any] = Field(default_factory=dict)
+    handle_inputs: dict[str, HandleInput] = Field(default_factory=dict)
 
 
 class RunStepWorkflowTestSource(RetabBaseModel):
@@ -198,8 +198,8 @@ class AssertionSchemaDep(RetabBaseModel):
     depends_on_root: bool = False
 
 
-AssertionDriftStatus = Literal["fresh", "drifted", "unknown"]
-SchemaDriftStatus = Literal["fresh", "partial", "drifted", "unknown"]
+AssertionDriftStatus = Literal["valid", "drifted", "broken"]
+SchemaDriftStatus = Literal["none", "partial", "drifted", "unknown"]
 
 
 # ---------------------------------------------------------------------------
@@ -235,6 +235,22 @@ class WorkflowTest(RetabBaseModel):
     updated_at: datetime.datetime
 
 
+class WorkflowTestRunLifecycle(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    status: Literal["pending", "running", "completed", "error", "cancelled"]
+    message: str | None = None
+
+
+class WorkflowTestRunTiming(RetabBaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    created_at: datetime.datetime
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+    duration_ms: int | None = None
+
+
 class WorkflowTestResult(RetabBaseModel):
     """One child result row produced by a workflow-test run.
 
@@ -246,10 +262,11 @@ class WorkflowTestResult(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
-    run_id: str
+    run_id: str | None = None
     test_id: str
-    lifecycle: RunLifecycle
-    timing: RunTiming
+    workflow_id: str
+    lifecycle: WorkflowTestRunLifecycle | None = None
+    timing: WorkflowTestRunTiming | None = None
     target: WorkflowTestBlockTarget
     execution_fingerprint: str = ""
     handle_inputs_fingerprint: str = ""
@@ -298,8 +315,8 @@ class WorkflowTestRun(RetabBaseModel):
     id: str
     workflow: WorkflowSnapshotRef
     trigger: Trigger
-    lifecycle: RunLifecycle
-    timing: RunTiming
+    lifecycle: WorkflowTestRunLifecycle
+    timing: WorkflowTestRunTiming
     target: WorkflowTestBlockTarget | None = None
     test_id: str | None = None
     total_tests: int
@@ -325,6 +342,8 @@ __all__ = [
     "WorkflowTest",
     "WorkflowTestBlockTarget",
     "WorkflowTestRun",
+    "WorkflowTestRunLifecycle",
+    "WorkflowTestRunTiming",
     "WorkflowTestResult",
     "WorkflowTestSource",
 ]

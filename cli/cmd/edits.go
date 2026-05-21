@@ -154,12 +154,22 @@ var editsDeleteCmd = &cobra.Command{
 
 Destructive and irreversible. The source document and any referenced
 template are not affected. Take a backup with ` + "`retab edits get`" + ` first
-if you may need it.`,
+if you may need it.
+
+This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
+in scripts and CI — otherwise the command refuses to delete when stdin
+is not a terminal.`,
 	Example: `  # Back up, then delete
   retab edits get edit_xyz789 > backup.json
-  retab edits delete edit_xyz789`,
+  retab edits delete edit_xyz789
+
+  # Skip the prompt in scripts
+  retab edits delete edit_xyz789 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "edit", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -388,12 +398,21 @@ var editsTemplatesDeleteCmd = &cobra.Command{
 Destructive and irreversible. Existing edits made from this template are
 not removed, but ` + "`retab edits templates fill --template-id`" + ` will fail
 for this id afterwards. Take a backup with
-` + "`retab edits templates get`" + ` first if you may need the definition.`,
+` + "`retab edits templates get`" + ` first if you may need the definition.
+
+Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
+otherwise the command refuses to delete when stdin is not a terminal.`,
 	Example: `  # Back up the form fields, then delete
   retab edits templates get tmpl_abc123 > backup.json
-  retab edits templates delete tmpl_abc123`,
+  retab edits templates delete tmpl_abc123
+
+  # Skip the prompt in scripts
+  retab edits templates delete tmpl_abc123 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "edit template", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -538,6 +557,9 @@ func init() {
 	editsTemplatesFillCmd.Flags().Bool("bust-cache", false, "bypass server-side cache")
 	_ = editsTemplatesFillCmd.MarkFlagRequired("template-id")
 	_ = editsTemplatesFillCmd.MarkFlagRequired("instructions")
+
+	editsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+	editsTemplatesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	editsTemplatesCmd.AddCommand(editsTemplatesCreateCmd, editsTemplatesGetCmd, editsTemplatesListCmd, editsTemplatesUpdateCmd, editsTemplatesDeleteCmd, editsTemplatesFillCmd)
 	editsCmd.AddCommand(editsCreateCmd, editsGetCmd, editsListCmd, editsDeleteCmd, editsTemplatesCmd)

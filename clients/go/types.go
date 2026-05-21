@@ -81,7 +81,6 @@ type HandlePayload struct {
 	Type        string         `json:"type"`
 	Document    *FileRef       `json:"document,omitempty"`
 	Data        any            `json:"data,omitempty"`
-	Text        string         `json:"text,omitempty"`
 	ArtifactRef map[string]any `json:"artifact_ref,omitempty"`
 	Preview     map[string]any `json:"preview,omitempty"`
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 )
 
 // `auth status` is the single most common script-and-eyeball straddle in
@@ -168,5 +169,140 @@ func TestWriteAuthStatusHuman_NotLoggedIn(t *testing.T) {
 	// No half-rendered "Logged in as " line with a missing preview.
 	if strings.Contains(out, "Logged in as \n") || strings.Contains(out, "Logged in as <") {
 		t.Errorf("rendered a malformed 'Logged in as' line for empty preview:\n%s", out)
+	}
+}
+
+// `auth status --output table` (the global formatting flag every other
+// command honours) must render a key/value table, NOT silently fall
+// through to JSON. The bug was that writeAuthStatus only knew about the
+// command-local --json flag and TTY auto-detect; the global --output
+// table flag was advertised but ignored, so scripts setting it on the
+// root saw raw JSON instead of structured key/value rows.
+func TestWriteAuthStatusTable_AuthenticatedOAuth(t *testing.T) {
+	var buf bytes.Buffer
+	payload := map[string]any{
+		"authenticated": true,
+		"source":        "~/.retab/config.json (oauth)",
+		"base_url":      "http://localhost:4000/v1",
+		"valid":         true,
+		"oauth": map[string]any{
+			"authkit_domain": "meaningful-awakening-88-staging.authkit.app",
+			"expires_at":     "2026-05-21T23:45:46Z",
+			"has_refresh":    true,
+		},
+	}
+	if err := writeAuthStatusTable(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusTable: %v", err)
+	}
+	out := buf.String()
+	for _, want := range []string{
+		"AUTHENTICATED",
+		"true",
+		"BASE_URL",
+		"http://localhost:4000/v1",
+		"SOURCE",
+		"~/.retab/config.json (oauth)",
+		"OAUTH_DOMAIN",
+		"meaningful-awakening-88-staging.authkit.app",
+		"EXPIRES_AT",
+		"2026-05-21T23:45:46Z",
+		"HAS_REFRESH",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("table output missing %q:\n%s", want, out)
+		}
+	}
+	// No JSON braces — we're not falling back to JSON.
+	if strings.Contains(out, "{") || strings.Contains(out, "\"authenticated\"") {
+		t.Errorf("table output should not be JSON:\n%s", out)
+	}
+	// No ANSI escapes leaking through.
+	if strings.Contains(out, "\x1b[") {
+		t.Errorf("ANSI escape leaked into table output:\n%s", out)
+	}
+}
+
+// The in-memory AuthConfig.OAuth.ExpiresAt is a time.Time, so the
+// payload built by authStatusCmd.RunE carries the native value (not a
+// JSON string). The table renderer must handle both shapes — the
+// initial implementation silently dropped EXPIRES_AT for the time.Time
+// case, leaving real users without the expiry row even though it's the
+// single most actionable field for "did my refresh fail?" diagnostics.
+func TestWriteAuthStatusTable_ExpiresAtAsTimeValue(t *testing.T) {
+	expires := time.Date(2026, 5, 21, 23, 45, 46, 0, time.UTC)
+	var buf bytes.Buffer
+	payload := map[string]any{
+		"authenticated": true,
+		"source":        "~/.retab/config.json (oauth)",
+		"oauth": map[string]any{
+			"authkit_domain": "x.authkit.app",
+			"expires_at":     expires,
+			"has_refresh":    true,
+		},
+	}
+	if err := writeAuthStatusTable(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusTable: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "EXPIRES_AT") {
+		t.Errorf("table output missing EXPIRES_AT row (time.Time case):\n%s", out)
+	}
+	if !strings.Contains(out, "2026-05-21T23:45:46Z") {
+		t.Errorf("table output missing RFC3339-formatted expiry:\n%s", out)
+	}
+}
+
+func TestWriteAuthStatusTable_NotLoggedIn(t *testing.T) {
+	var buf bytes.Buffer
+	payload := map[string]any{
+		"authenticated": false,
+		"source":        "",
+		"hint":          "run `retab auth login` to authenticate",
+	}
+	if err := writeAuthStatusTable(&buf, payload); err != nil {
+		t.Fatalf("writeAuthStatusTable: %v", err)
+	}
+	out := buf.String()
+	for _, want := range []string{"AUTHENTICATED", "false", "HINT", "run `retab auth login`"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("not-logged-in table output missing %q:\n%s", want, out)
+		}
+	}
+}
+
+// writeAuthStatus must dispatch to the table renderer when outputFormat
+// is OutputTable, regardless of --json or TTY state. This is the
+// integration glue that was missing — the renderers existed, the auto-
+// detect existed, but nothing routed --output table to a table view.
+func TestWriteAuthStatus_OutputTableRoutesToTable(t *testing.T) {
+	var buf bytes.Buffer
+	payload := sampleAuthStatus()
+	if err := writeAuthStatusWithFormat(&buf, payload, false, OutputTable); err != nil {
+		t.Fatalf("writeAuthStatusWithFormat: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "AUTHENTICATED") {
+		t.Errorf("--output table should emit AUTHENTICATED row, got:\n%s", out)
+	}
+	if strings.Contains(out, "{") {
+		t.Errorf("--output table should not emit JSON braces, got:\n%s", out)
+	}
+}
+
+// --output json overrides TTY auto-detect — even on a TTY writer, json
+// wins. Non-TTY here (bytes.Buffer) plus OutputJSON is the trivial case
+// but confirms the routing.
+func TestWriteAuthStatus_OutputJSONRoutesToJSON(t *testing.T) {
+	var buf bytes.Buffer
+	payload := sampleAuthStatus()
+	if err := writeAuthStatusWithFormat(&buf, payload, false, OutputJSON); err != nil {
+		t.Fatalf("writeAuthStatusWithFormat: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &decoded); err != nil {
+		t.Fatalf("--output json should produce JSON, got %v:\n%s", err, buf.String())
+	}
+	if _, ok := decoded["authenticated"]; !ok {
+		t.Errorf("--output json missing 'authenticated' key:\n%s", buf.String())
 	}
 }

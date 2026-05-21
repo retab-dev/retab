@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"strings"
+	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -185,7 +187,12 @@ config), a redacted ` + "`api_key_preview`" + `, the effective ` + "`base_url`" 
 
 Useful for debugging "why is the wrong account being used?" — the
 ` + "`source`" + ` field disambiguates --api-key vs RETAB_API_KEY vs the config
-file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
+file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.
+
+Output formatting follows the global --output flag: ` + "`--output table`" + `
+renders a KEY/VALUE table view, ` + "`--output json`" + ` forces JSON even on a
+TTY, and the default auto-detects (JSON for pipes / redirects, a
+compact human block for interactive terminals).`,
 	Example: `  # Quick check
   retab auth status
 
@@ -247,10 +254,20 @@ file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
 		}
 
 		jsonOnly, _ := cmd.Flags().GetBool("json")
+		// `--output` is the global formatting flag every command honours.
+		// When explicitly set to "json" or "table" it wins over the
+		// command-local --json flag and the TTY auto-detect — anything
+		// else (empty / "auto") falls through to the existing
+		// jsonOnly + TTY behaviour so existing scripts and the human
+		// 3-line block keep their current rules.
+		outputFormat, err := resolveAuthOutputFormat(cmd)
+		if err != nil {
+			return err
+		}
 
 		if source == "" {
 			out["hint"] = "run `retab auth login` to authenticate"
-			return writeAuthStatus(cmd.OutOrStdout(), out, jsonOnly)
+			return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 		}
 
 		// Best-effort verification — list workflows with limit=1.
@@ -258,7 +275,7 @@ file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
 		if err != nil {
 			out["valid"] = false
 			out["error"] = err.Error()
-			return writeAuthStatus(cmd.OutOrStdout(), out, jsonOnly)
+			return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
@@ -269,8 +286,32 @@ file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
 		} else {
 			out["valid"] = true
 		}
-		return writeAuthStatus(cmd.OutOrStdout(), out, jsonOnly)
+		return writeAuthStatusWithFormat(cmd.OutOrStdout(), out, jsonOnly, outputFormat)
 	}),
+}
+
+// resolveAuthOutputFormat reads the global --output persistent flag.
+// Returns OutputAuto for empty / "auto" so the caller falls back to the
+// existing jsonOnly + TTY logic; explicit "json" / "table" produce the
+// matching OutputFormat. Unknown values are already rejected at parse
+// time by outputFlagValue in root.go — defensive-only here.
+func resolveAuthOutputFormat(cmd *cobra.Command) (OutputFormat, error) {
+	var raw string
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil {
+			raw = f.Value.String()
+		}
+	}
+	switch raw {
+	case "", "auto":
+		return OutputAuto, nil
+	case string(OutputJSON):
+		return OutputJSON, nil
+	case string(OutputTable):
+		return OutputTable, nil
+	default:
+		return "", fmt.Errorf("invalid --output value %q (want: json | table | auto)", raw)
+	}
 }
 
 // writeAuthStatus decides whether `auth status` renders JSON or a human
@@ -284,7 +325,30 @@ file. Resolution order: --api-key > RETAB_API_KEY > ~/.retab/config.json.`,
 // JSON output is byte-equivalent to the legacy `printJSON(out)` form
 // (encoding/json's encoder with 2-space indent, trailing newline) so any
 // script consuming `auth status | jq …` keeps working.
+//
+// This shim preserves the pre-existing call signature for tests that
+// don't exercise the global --output flag; the runtime path goes
+// through writeAuthStatusWithFormat which adds OutputTable routing.
 func writeAuthStatus(w io.Writer, out map[string]any, jsonOnly bool) error {
+	return writeAuthStatusWithFormat(w, out, jsonOnly, OutputAuto)
+}
+
+// writeAuthStatusWithFormat routes the status payload to JSON, table,
+// or human-block rendering. The global --output flag (OutputJSON /
+// OutputTable) wins when set; OutputAuto falls back to the existing
+// rule set (jsonOnly flag OR non-TTY → JSON, TTY → human block).
+//
+// The table renderer is the new path added for issue #7 — `retab
+// --output table auth status` was previously silently emitting JSON
+// because nothing consulted the global flag here.
+func writeAuthStatusWithFormat(w io.Writer, out map[string]any, jsonOnly bool, format OutputFormat) error {
+	switch format {
+	case OutputJSON:
+		return writeAuthStatusJSON(w, out)
+	case OutputTable:
+		return writeAuthStatusTable(w, out)
+	}
+	// OutputAuto (or unset) — preserve the historical behaviour.
 	if jsonOnly || !isTerminalWriter(w) {
 		return writeAuthStatusJSON(w, out)
 	}
@@ -352,6 +416,106 @@ func writeAuthStatusHuman(w io.Writer, out map[string]any) error {
 	}
 	fmt.Fprintf(w, "%sStatus:%s  %s\n", s.dim, s.reset, status)
 	return nil
+}
+
+// writeAuthStatusTable renders the auth payload as a KEY  VALUE
+// two-column table. The shape is small and flat (6 well-known rows at
+// most), so the generic list-table renderer in output.go is the wrong
+// fit — it expects a `data: [...]` list of records. Instead we emit
+// each row directly through text/tabwriter, matching the alignment and
+// padding rules the generic renderer uses so the look is consistent
+// with the rest of the CLI's table output.
+//
+// Row order is fixed (not map iteration order) so the output is
+// deterministic across runs and easy to scan visually. Optional rows
+// (BASE_URL, OAUTH_DOMAIN, EXPIRES_AT, HAS_REFRESH, API_KEY_PREVIEW,
+// VALID, ERROR, HINT) are only emitted when present in the payload —
+// rendering an empty value would just be noise.
+func writeAuthStatusTable(w io.Writer, out map[string]any) error {
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+
+	row := func(key string, value any) {
+		fmt.Fprintf(tw, "%s\t%v\n", key, value)
+	}
+
+	// AUTHENTICATED is always present — the rest are optional and
+	// emitted only when set.
+	if v, ok := out["authenticated"]; ok {
+		row("AUTHENTICATED", v)
+	}
+	if v, ok := out["source"]; ok {
+		if s, _ := v.(string); s != "" {
+			row("SOURCE", s)
+		}
+	}
+	if v, ok := out["base_url"]; ok {
+		if s, _ := v.(string); s != "" {
+			row("BASE_URL", s)
+		}
+	}
+	if v, ok := out["api_key_preview"]; ok {
+		if s, _ := v.(string); s != "" {
+			row("API_KEY_PREVIEW", s)
+		}
+	}
+	if oauthAny, ok := out["oauth"]; ok {
+		if oauth, ok := oauthAny.(map[string]any); ok {
+			if d, _ := oauth["authkit_domain"].(string); d != "" {
+				row("OAUTH_DOMAIN", d)
+			}
+			// ExpiresAt arrives here as a time.Time (the in-memory
+			// config shape) rather than a JSON string. Stringify both
+			// representations so the row prints either way.
+			if e := stringifyExpiresAt(oauth["expires_at"]); e != "" {
+				row("EXPIRES_AT", e)
+			}
+			if hr, ok := oauth["has_refresh"]; ok {
+				row("HAS_REFRESH", hr)
+			}
+		}
+	}
+	if v, ok := out["valid"]; ok {
+		row("VALID", v)
+	}
+	if v, ok := out["error"]; ok {
+		if s, _ := v.(string); s != "" {
+			row("ERROR", s)
+		}
+	}
+	if v, ok := out["hint"]; ok {
+		if s, _ := v.(string); s != "" {
+			row("HINT", s)
+		}
+	}
+
+	return tw.Flush()
+}
+
+// stringifyExpiresAt renders an OAuth expiry to RFC3339. The in-memory
+// AuthConfig.OAuth.ExpiresAt is a time.Time, so the auth status payload
+// carries the native value rather than the JSON-marshaled string — a
+// plain `value.(string)` assertion would silently miss it. Accept both
+// shapes so the table row renders identically whether the payload
+// originated from an in-memory config or a JSON round-trip.
+func stringifyExpiresAt(v any) string {
+	switch t := v.(type) {
+	case nil:
+		return ""
+	case string:
+		return t
+	case time.Time:
+		if t.IsZero() {
+			return ""
+		}
+		return t.UTC().Format(time.RFC3339)
+	case *time.Time:
+		if t == nil || t.IsZero() {
+			return ""
+		}
+		return t.UTC().Format(time.RFC3339)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 // isTerminalWriter mirrors paletteFor's TTY check — true only when w is

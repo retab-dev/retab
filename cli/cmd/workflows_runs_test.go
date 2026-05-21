@@ -930,8 +930,9 @@ func resetWorkflowRunsFlag(t *testing.T, cmd *cobra.Command, name string) {
 		flag.Changed = false
 		return
 	}
-	// Boolean flags reject "" — restore them by writing their default.
-	if flag.Value.Type() == "bool" {
+	// Boolean and numeric flags reject "" — restore them by writing their default.
+	switch flag.Value.Type() {
+	case "bool", "float", "float64", "int", "int64", "uint", "uint64":
 		if err := cmd.Flags().Set(name, flag.DefValue); err != nil {
 			t.Fatalf("reset --%s: %v", name, err)
 		}
@@ -1351,6 +1352,69 @@ func TestWorkflowsRunsListRejectsReversedDateRange(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsListRejectsReversedCostRange(t *testing.T) {
+	// Regression: ``runs list --min-cost 100 --max-cost 1`` previously
+	// returned rows verbatim — the server-side cost filter silently
+	// accepts swapped bounds. Reject the impossible range at the CLI
+	// so the user sees the typo immediately.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should NOT be reached for reversed cost range, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{"min-cost": "100", "max-cost": "1"} {
+		if err := workflowsRunsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, flag) })
+	}
+
+	err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
+	if err == nil {
+		t.Fatal("expected reversed cost-range error, got nil")
+	}
+	for _, mustMention := range []string{"--min-cost", "--max-cost"} {
+		if !strings.Contains(err.Error(), mustMention) {
+			t.Fatalf("error %q should mention %q", err.Error(), mustMention)
+		}
+	}
+}
+
+func TestWorkflowsRunsListRejectsReversedDurationRange(t *testing.T) {
+	// Mirror of the cost-range test for duration. ``--min-duration 1000
+	// --max-duration 100`` is impossible — surface it client-side so
+	// the user can fix the typo immediately.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should NOT be reached for reversed duration range, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	for flag, value := range map[string]string{"min-duration": "1000", "max-duration": "100"} {
+		if err := workflowsRunsListCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, flag) })
+	}
+
+	err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, nil)
+	if err == nil {
+		t.Fatal("expected reversed duration-range error, got nil")
+	}
+	for _, mustMention := range []string{"--min-duration", "--max-duration"} {
+		if !strings.Contains(err.Error(), mustMention) {
+			t.Fatalf("error %q should mention %q", err.Error(), mustMention)
+		}
+	}
+}
+
 func TestWorkflowsRunsListAcceptsEqualDateRange(t *testing.T) {
 	// Equal from/to is a legitimate "single-day window" filter — must
 	// NOT be rejected as a reversed range. Pin so the validator can't
@@ -1722,7 +1786,7 @@ func newRunsListTestCmd() *cobra.Command {
 	cmd.Flags().String("to-date", "", "")
 	cmd.Flags().String("search", "", "")
 	cmd.Flags().String("sort-by", "", "")
-	cmd.Flags().StringArray("fields", nil, "")
+	cmd.Flags().String("fields", "", "")
 	cmd.Flags().String("before", "", "")
 	cmd.Flags().String("after", "", "")
 	cmd.Flags().Int("limit", 0, "")
@@ -1840,5 +1904,133 @@ func TestWorkflowsRunsRestartExampleIndentsSecondCommandLineConsistently(t *test
 	}
 	if !strings.Contains(example, "\n  retab workflows runs restart run_xyz789 --config-source draft") {
 		t.Fatalf("restart example should align the draft-config-source example with two spaces:\n%s", example)
+	}
+}
+
+// Issue 6: “runs create“ and “publish“ help previously showed
+// “--version v3“ as the example value. The API rejects “v3“ —
+// version must be “production“, “draft“, or a pinned “ver_...“
+// id. The example must use one of the accepted forms so a copy-paste
+// works against the live API instead of bouncing with a 400.
+func TestWorkflowsRunsCreateExampleDoesNotUseInvalidVersionV3(t *testing.T) {
+	example := workflowsRunsCreateCmd.Example
+	if strings.Contains(example, "--version v3") {
+		t.Fatalf("runs create example still shows --version v3, which the API rejects (want production / draft / ver_...):\n%s", example)
+	}
+	// Sanity: the example must still demonstrate --version on a line
+	// somewhere — otherwise the entire "pin a version" example is gone.
+	if !strings.Contains(example, "--version") {
+		t.Fatalf("runs create example no longer shows --version at all:\n%s", example)
+	}
+	// The replacement must be one of the three accepted forms.
+	accepted := []string{"--version production", "--version draft", "--version ver_"}
+	matched := false
+	for _, want := range accepted {
+		if strings.Contains(example, want) {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		t.Fatalf("runs create example must use --version production, --version draft, or --version ver_...; got:\n%s", example)
+	}
+}
+
+func TestWorkflowsPublishExampleDoesNotUseInvalidVersionV3(t *testing.T) {
+	example := workflowsPublishCmd.Example
+	if strings.Contains(example, "--version v3") {
+		t.Fatalf("publish example still shows --version v3, which the API rejects (want production / draft / ver_...):\n%s", example)
+	}
+	if !strings.Contains(example, "--version") {
+		t.Fatalf("publish example no longer shows --version at all:\n%s", example)
+	}
+	accepted := []string{"--version production", "--version draft", "--version ver_"}
+	matched := false
+	for _, want := range accepted {
+		if strings.Contains(example, want) {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		t.Fatalf("publish example must use --version production, --version draft, or --version ver_...; got:\n%s", example)
+	}
+}
+
+// Issue 4: “runs list“ help previously said the positional and
+// “--workflow-id“ flag forms could not be passed together, but the
+// implementation actually accepts both when they match — only the
+// disagreement case errors. Pin the help text to the real behavior so
+// the doc stops contradicting the code.
+func TestWorkflowsRunsListHelpReflectsImplementedBehavior(t *testing.T) {
+	long := workflowsRunsListCmd.Long
+	if strings.Contains(long, "not both") {
+		t.Fatalf("runs list Long still says \"not both\"; the implementation accepts both when they match, so help must not forbid it:\n%s", long)
+	}
+	// The help must positively call out that the disagreeing case is
+	// the only one that errors — otherwise users still won't know what
+	// the rule is. ``disagree`` is what the code comment uses; the
+	// help should reflect the same word so doc and code stay in sync.
+	if !strings.Contains(long, "disagree") {
+		t.Fatalf("runs list Long should explain that only disagreement between positional and --workflow-id errors:\n%s", long)
+	}
+}
+
+// Issue 4 behavioural pin: passing positional and “--workflow-id“
+// with the SAME value must be accepted (no error, no fallback to
+// workspace-wide). This is the case the help text used to forbid.
+func TestWorkflowsRunsListAcceptsPositionalAndFlagWhenTheyMatch(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var captured string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured = r.URL.Query().Get("workflow_id")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}, "list_metadata": map[string]any{}})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsListCmd.Flags().Set("workflow-id", "wf_match"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "workflow-id") })
+
+	_, _ = captureStd(t, func() {
+		if err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, []string{"wf_match"}); err != nil {
+			t.Fatalf("matching positional + flag should be accepted, got: %v", err)
+		}
+	})
+	if captured != "wf_match" {
+		t.Fatalf("server saw workflow_id = %q, want wf_match", captured)
+	}
+}
+
+// Issue 4 behavioural pin: disagreeing positional + “--workflow-id“
+// must still error. The fix only updates the help text; we want a
+// regression guard so a future "simplify" pass doesn't drop the
+// disagreement check and then quietly start picking one over the other.
+func TestWorkflowsRunsListRejectsPositionalAndFlagWhenTheyDisagree(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("server should NOT be reached for disagreeing positional + flag, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	if err := workflowsRunsListCmd.Flags().Set("workflow-id", "wf_flag"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsListCmd, "workflow-id") })
+
+	err := workflowsRunsListCmd.RunE(workflowsRunsListCmd, []string{"wf_positional"})
+	if err == nil {
+		t.Fatal("expected error when positional and --workflow-id disagree")
+	}
+	if !strings.Contains(err.Error(), "workflow id specified twice") {
+		t.Fatalf("error %q should explain the disagreement", err.Error())
 	}
 }

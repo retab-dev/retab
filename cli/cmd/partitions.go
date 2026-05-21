@@ -158,12 +158,21 @@ var partitionsDeleteCmd = &cobra.Command{
 
 Destructive and irreversible. The source document is not affected. Take a
 backup with ` + "`retab partitions get`" + ` first if you may need the chunk
-definitions.`,
+definitions.
+
+Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
+otherwise the command refuses to delete when stdin is not a terminal.`,
 	Example: `  # Back up, then delete
   retab partitions get part_xyz789 > backup.json
-  retab partitions delete part_xyz789`,
+  retab partitions delete part_xyz789
+
+  # Skip the prompt in scripts
+  retab partitions delete part_xyz789 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "partition", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -191,6 +200,8 @@ func init() {
 	_ = partitionsCreateCmd.MarkFlagRequired("model")
 
 	addListFlags(partitionsListCmd, false)
+
+	partitionsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	partitionsCmd.AddCommand(partitionsCreateCmd, partitionsGetCmd, partitionsListCmd, partitionsDeleteCmd)
 	rootCmd.AddCommand(partitionsCmd)

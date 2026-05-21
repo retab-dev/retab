@@ -944,11 +944,11 @@ export const ZWorkflowTest = z.lazy(() =>
     assertion: ZAssertionSpec.nullable().optional(),
     assertion_schema_dep: ZAssertionSchemaDep.nullable().optional(),
     assertion_drift_status: z
-      .union([z.literal('fresh'), z.literal('drifted'), z.literal('unknown')])
+      .union([z.literal('valid'), z.literal('drifted'), z.literal('broken')])
       .nullable()
       .optional(),
     schema_drift: z
-      .union([z.literal('fresh'), z.literal('partial'), z.literal('drifted'), z.literal('unknown')])
+      .union([z.literal('none'), z.literal('partial'), z.literal('drifted'), z.literal('unknown')])
       .default('unknown'),
     schema_drift_detail: z.string().nullable().optional(),
     validation_status: z.string().default('valid'),
@@ -970,13 +970,37 @@ export const ZWorkflowTestBlockTarget = z.lazy(() =>
 );
 export type WorkflowTestBlockTarget = z.infer<typeof ZWorkflowTestBlockTarget>;
 
+export const ZWorkflowTestRunLifecycle = z.lazy(() =>
+  z.object({
+    status: z.union([
+      z.literal('pending'),
+      z.literal('running'),
+      z.literal('completed'),
+      z.literal('error'),
+      z.literal('cancelled'),
+    ]),
+    message: z.string().nullable().optional(),
+  })
+);
+export type WorkflowTestRunLifecycle = z.infer<typeof ZWorkflowTestRunLifecycle>;
+
+export const ZWorkflowTestRunTiming = z.lazy(() =>
+  z.object({
+    created_at: z.string(),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+  })
+);
+export type WorkflowTestRunTiming = z.infer<typeof ZWorkflowTestRunTiming>;
+
 export const ZWorkflowTestRun = z.lazy(() =>
   z.object({
     id: z.string(),
     workflow: ZWorkflowSnapshotRef,
     trigger: ZTrigger,
-    lifecycle: ZRunLifecycle,
-    timing: ZRunTiming,
+    lifecycle: ZWorkflowTestRunLifecycle,
+    timing: ZWorkflowTestRunTiming,
     target: ZWorkflowTestBlockTarget,
     test_id: z.string().nullable().optional(),
     total_tests: z.number(),
@@ -990,8 +1014,8 @@ export const ZWorkflowTestResult = z.lazy(() =>
     id: z.string(),
     run_id: z.string(),
     test_id: z.string(),
-    lifecycle: ZRunLifecycle,
-    timing: ZRunTiming,
+    lifecycle: ZWorkflowTestRunLifecycle,
+    timing: ZWorkflowTestRunTiming,
     target: ZWorkflowTestBlockTarget,
     execution_fingerprint: z.string().default(''),
     handle_inputs_fingerprint: z.string().default(''),
@@ -1162,12 +1186,11 @@ export type FunctionInvocation = z.infer<typeof ZFunctionInvocation>;
 
 export const ZHandlePayload = z.lazy(() =>
   z.object({
-    type: z.union([z.literal('file'), z.literal('json'), z.literal('json_ref'), z.literal('text')]),
+    type: z.union([z.literal('file'), z.literal('json'), z.literal('json_ref')]),
     document: ZFileRef.nullable().optional(),
     data: z.unknown().nullable().optional(),
     artifact_ref: z.record(z.string(), z.any()).nullable().optional(),
     preview: z.record(z.string(), z.any()).nullable().optional(),
-    text: z.string().nullable().optional(),
   })
 );
 export type HandlePayload = z.infer<typeof ZHandlePayload>;
@@ -1596,34 +1619,6 @@ export const ZWorkflowRunStep = z.lazy(() =>
   })
 );
 export type WorkflowRunStep = z.infer<typeof ZWorkflowRunStep>;
-
-export const ZWorkflowWithEntities = z.lazy(() =>
-  z.object({
-    workflow: ZWorkflow,
-    blocks: z.array(ZWorkflowBlock),
-    edges: z.array(ZWorkflowEdgeDoc),
-  })
-);
-export type WorkflowWithEntities = z.infer<typeof ZWorkflowWithEntities>;
-
-export const ZWorkflowResolvedSchemasResponse = z.lazy(() =>
-  z.object({
-    workflow_id: z.string(),
-    draft_version: z.string().nullable().optional(),
-    schemas: z.record(z.string(), ZResolvedSchemas),
-  })
-);
-export type WorkflowResolvedSchemasResponse = z.infer<typeof ZWorkflowResolvedSchemasResponse>;
-
-export const ZBlockResolvedSchemasResponse = z.lazy(() =>
-  z.object({
-    workflow_id: z.string(),
-    block_id: z.string(),
-    draft_version: z.string().nullable().optional(),
-    schema: ZResolvedSchemas,
-  })
-);
-export type BlockResolvedSchemasResponse = z.infer<typeof ZBlockResolvedSchemasResponse>;
 
 export const ZDocumentSignedUrlResponse = z.lazy(() =>
   z.object({

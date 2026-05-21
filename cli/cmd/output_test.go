@@ -374,10 +374,16 @@ func TestPrintResultTableWorkflowStepColumns(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr for workflow step list: %q", stderr)
 	}
-	for _, want := range []string{"ID", "NAME", "TYPE", "MODEL", "CREATED_AT", "run_1_block_extract", "Extract invoice", "extract", "retab-small", "2026-05-15"} {
+	// Workflow steps carry `started_at` (no `created_at`) — the auto
+	// renderer must label the timestamp column STARTED_AT, not
+	// CREATED_AT, so the header is honest about which field is shown.
+	for _, want := range []string{"ID", "NAME", "TYPE", "MODEL", "STARTED_AT", "run_1_block_extract", "Extract invoice", "extract", "retab-small", "2026-05-15"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in workflow step table, got:\n%s", want, stdout)
 		}
+	}
+	if strings.Contains(stdout, "CREATED_AT") {
+		t.Fatalf("workflow step rows expose started_at only; CREATED_AT header would be a lie:\n%s", stdout)
 	}
 }
 
@@ -434,10 +440,15 @@ func TestPrintResultTableWorkflowEdgeColumns(t *testing.T) {
 	if stderr != "" {
 		t.Fatalf("unexpected stderr for workflow edge list: %q", stderr)
 	}
-	for _, want := range []string{"ID", "SOURCE", "TARGET", "CREATED_AT", "edge_1", "start", "extract", "2026-05-15"} {
+	// Edges carry `updated_at` only (no `created_at`) — header must
+	// be UPDATED_AT to reflect the field actually being rendered.
+	for _, want := range []string{"ID", "SOURCE", "TARGET", "UPDATED_AT", "edge_1", "start", "extract", "2026-05-15"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in workflow edge table, got:\n%s", want, stdout)
 		}
+	}
+	if strings.Contains(stdout, "CREATED_AT") {
+		t.Fatalf("edge rows expose updated_at only; CREATED_AT header would be a lie:\n%s", stdout)
 	}
 }
 

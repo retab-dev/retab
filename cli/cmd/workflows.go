@@ -192,6 +192,9 @@ selection. Use ` + "`--fields`" + ` to trim large list payloads, and
 		params := retab.ListWorkflowsParams{}
 		params.Before, _ = cmd.Flags().GetString("before")
 		params.After, _ = cmd.Flags().GetString("after")
+		if params.Before != "" && params.After != "" {
+			return fmt.Errorf("--before and --after are mutually exclusive")
+		}
 		params.Limit, _ = cmd.Flags().GetInt("limit")
 		params.Order, _ = cmd.Flags().GetString("order")
 		params.SortBy, _ = cmd.Flags().GetString("sort-by")
@@ -293,9 +296,11 @@ functional.`,
 		defer cancel()
 		name, _ := cmd.Flags().GetString("name")
 		if cmd.Flags().Changed("name") {
-			if err := validateWorkflowName(name); err != nil {
+			trimmed, err := validateWorkflowName(name)
+			if err != nil {
 				return err
 			}
+			name = trimmed
 		}
 		description, _ := cmd.Flags().GetString("description")
 		result, err := client.Workflows.Create(ctx, retab.CreateWorkflowRequest{
@@ -342,10 +347,11 @@ and ` + "`workflows edges`" + `.`,
 		var req retab.UpdateWorkflowRequest
 		if cmd.Flags().Changed("name") {
 			v, _ := cmd.Flags().GetString("name")
-			if err := validateWorkflowName(v); err != nil {
+			trimmed, err := validateWorkflowName(v)
+			if err != nil {
 				return err
 			}
-			req.Name = &v
+			req.Name = &trimmed
 		}
 		if cmd.Flags().Changed("description") {
 			v, _ := cmd.Flags().GetString("description")
@@ -394,11 +400,17 @@ and ` + "`workflows edges`" + `.`,
 	}),
 }
 
-func validateWorkflowName(name string) error {
-	if strings.TrimSpace(name) == "" {
-		return fmt.Errorf("workflow name must not be blank")
+// validateWorkflowName trims surrounding whitespace from the user-supplied
+// workflow name, rejects values that are blank after trimming, and returns
+// the cleaned value. Callers MUST use the returned string when building the
+// outgoing request body — otherwise “workflows create --name "  padded  "“
+// silently stores the padded version on the server (bug #3).
+func validateWorkflowName(name string) (string, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return "", fmt.Errorf("workflow name must not be blank")
 	}
-	return nil
+	return trimmed, nil
 }
 
 func validateWorkflowEmailAllowlistValues(flagName string, values []string) error {
@@ -520,9 +532,9 @@ The empty-workflow check still runs (a draft with only the auto-added
   retab workflows publish wf_abc123 \
     --description "v3: tighter line-item schema"
 
-  # Pin a run to a specific published version
+  # Pin a run to a specific published version (production, draft, or a ver_... id)
   retab workflows runs create wf_abc123 \
-    --version v3 --document start=./invoice.pdf
+    --version ver_xxx --document start=./invoice.pdf
 
   # Skip diagnose errors and the empty-workflow warning (use with care)
   retab workflows publish wf_abc123 --force`,
@@ -663,8 +675,9 @@ must be a JSON object with ` + "`blocks`" + `, ` + "`edges`" + `, and optional
 }
 
 func init() {
-	workflowsListCmd.Flags().String("before", "", "workflow id: return items before this id")
-	workflowsListCmd.Flags().String("after", "", "workflow id: return items after this id")
+	workflowsListCmd.Flags().String("before", "", "workflow id: return items before this id (mutually exclusive with --after)")
+	workflowsListCmd.Flags().String("after", "", "workflow id: return items after this id (mutually exclusive with --before)")
+	workflowsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "updated_at"), "sort-by", "sort field: updated_at")

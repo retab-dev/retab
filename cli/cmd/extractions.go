@@ -286,15 +286,21 @@ var extractionsDeleteCmd = &cobra.Command{
 This is destructive and cannot be undone. The extraction's JSON output,
 sources, and metadata are removed from the server. The underlying source
 document (if uploaded as a file) is not affected. Take a local backup with
-` + "`retab extractions get`" + ` first if you may need the result later.`,
-	Example: `  # Back up, then delete
+` + "`retab extractions get`" + ` first if you may need the result later.
+
+Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
+otherwise the command refuses to delete when stdin is not a terminal.`,
+	Example: `  # Back up, then delete (interactive)
   retab extractions get extr_xyz789 > backup.json
   retab extractions delete extr_xyz789
 
-  # Delete in a script (silent on success)
-  retab extractions delete extr_xyz789`,
+  # Delete in a script
+  retab extractions delete extr_xyz789 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "extraction", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -328,6 +334,8 @@ func init() {
 
 	addListFlags(extractionsListCmd, false)
 	extractionsListCmd.Flags().StringArray("metadata", nil, "metadata key=value filter (repeatable)")
+
+	extractionsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	extractionsCmd.AddCommand(extractionsCreateCmd, extractionsStreamCmd, extractionsListCmd, extractionsGetCmd, extractionsSourcesCmd, extractionsDeleteCmd)
 	rootCmd.AddCommand(extractionsCmd)

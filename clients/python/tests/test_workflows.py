@@ -2,6 +2,7 @@ from datetime import date
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from retab.resources.workflows.blocks.client import WorkflowBlocks
 from retab.resources.workflows.client import AsyncWorkflows, Workflows
@@ -17,8 +18,8 @@ from retab.types.workflows.model import (
     DeclarativeValidationResponse,
     WorkflowRun,
     WorkflowBlock,
-    WorkflowWithEntities,
     Workflow,
+    HandlePayload,
     WorkflowBlockCreateRequest,
     WorkflowBlockUpdateRequest,
     WorkflowEdgeCreateRequest,
@@ -499,52 +500,9 @@ def test_workflow_run_v2_typed_fields() -> None:
     assert run2.timing.accumulated_review_waiting_ms == 0
 
 
-def test_workflow_with_entities_parsing() -> None:
-    """WorkflowWithEntities parses blocks and edges and exposes start_document_blocks."""
-    wfe = WorkflowWithEntities.model_validate(
-        {
-            "workflow": {
-                "id": "wf_1",
-                "name": "Test Workflow",
-                "created_at": "2026-01-01T00:00:00Z",
-                "updated_at": "2026-01-01T00:00:00Z",
-            },
-            "blocks": [
-                {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_document", "label": "Document Input"},
-                {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract", "label": "Extract"},
-                {"id": "json-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_json", "label": "JSON Input"},
-            ],
-            "edges": [
-                {
-                    "id": "edge-1",
-                    "workflow_id": "wf_1",
-                    "organization_id": "org_1",
-                    "draft_version": "draft_1",
-                    "source_block": "start-1",
-                    "target_block": "extract-1",
-                    "source_handle": "output-file-0",
-                    "target_handle": "input-file-0",
-                },
-            ],
-        }
-    )
-
-    assert wfe.workflow.id == "wf_1"
-    assert len(wfe.blocks) == 3
-    assert len(wfe.edges) == 1
-
-    start_document_blocks = wfe.start_document_blocks
-    assert len(start_document_blocks) == 1
-    assert start_document_blocks[0].id == "start-1"
-
-    json_blocks = wfe.start_json_blocks
-    assert len(json_blocks) == 1
-    assert json_blocks[0].id == "json-1"
-
-    edge = wfe.edges[0]
-    assert edge.draft_version == "draft_1"
-    assert edge.source_block == "start-1"
-    assert edge.target_block == "extract-1"
+def test_handle_payload_rejects_removed_text_type() -> None:
+    with pytest.raises(ValidationError):
+        HandlePayload.model_validate({"type": "text", "text": "removed"})
 
 
 def test_workflows_create_route() -> None:

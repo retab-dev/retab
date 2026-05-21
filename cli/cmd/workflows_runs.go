@@ -274,9 +274,9 @@ removed in a future release.`,
   retab workflows runs create wf_abc123 \
     --json-inputs-file ./inputs.json
 
-  # Pin to a specific published version
+  # Pin to a specific published version (production, draft, or a ver_... id)
   retab workflows runs create wf_abc123 \
-    --version v3 --document start=./invoice.pdf`,
+    --version ver_xxx --document start=./invoice.pdf`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		req := retab.CreateWorkflowRunRequest{WorkflowID: args[0]}
@@ -549,11 +549,13 @@ var workflowsRunsListCmd = &cobra.Command{
 	Use:   "list [workflow-id]",
 	Short: "List workflow runs",
 	Long: `List workflow runs. Without a workflow id the result spans the
-whole workspace; with one (passed positionally OR via ` + "`--workflow-id`" + `,
-not both) the result is scoped to that workflow. Other filters available:
-status, trigger type, date range, cost, and duration. Page by run id
-(` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `) and
-` + "`--fields`" + ` to keep responses small on busy projects.`,
+whole workspace; with one (passed positionally OR via ` + "`--workflow-id`" + `)
+the result is scoped to that workflow. Passing both forms is accepted
+when they reference the same workflow id; an error is only raised when
+they disagree, so a real typo isn't silently masked. Other filters
+available: status, trigger type, date range, cost, and duration. Page by
+run id (` + "`--after`" + ` / ` + "`--before`" + ` / ` + "`--limit`" + `)
+and ` + "`--fields`" + ` to keep responses small on busy projects.`,
 	Example: `  # Scope to a single workflow (positional, matches the rest of workflows)
   retab workflows runs list wf_abc123 --limit 50
 
@@ -613,13 +615,16 @@ status, trigger type, date range, cost, and duration. Page by run id
 		}
 		params.Search, _ = cmd.Flags().GetString("search")
 		params.SortBy, _ = cmd.Flags().GetString("sort-by")
-		fields, err := nonBlankStringArrayFlag(cmd, "fields")
+		fields, err := nonBlankCommaSeparatedFlag(cmd, "fields")
 		if err != nil {
 			return err
 		}
 		params.Fields = fields
 		params.Before, _ = cmd.Flags().GetString("before")
 		params.After, _ = cmd.Flags().GetString("after")
+		if params.Before != "" && params.After != "" {
+			return fmt.Errorf("--before and --after are mutually exclusive")
+		}
 		params.Limit, _ = cmd.Flags().GetInt("limit")
 		params.Order, _ = cmd.Flags().GetString("order")
 		if cmd.Flags().Changed("min-cost") {
@@ -630,6 +635,13 @@ status, trigger type, date range, cost, and duration. Page by run id
 			v, _ := cmd.Flags().GetFloat64("max-cost")
 			params.MaxCost = &v
 		}
+		// Reject impossible ranges before issuing the request — a silent empty
+		// result set on min > max is the most confusing failure mode for
+		// someone debugging a filter, especially when the server-side filter
+		// has been observed to silently ignore swapped bounds.
+		if params.MinCost != nil && params.MaxCost != nil && *params.MinCost > *params.MaxCost {
+			return fmt.Errorf("--min-cost (%g) cannot be greater than --max-cost (%g)", *params.MinCost, *params.MaxCost)
+		}
 		if cmd.Flags().Changed("min-duration") {
 			v, _ := cmd.Flags().GetInt("min-duration")
 			params.MinDuration = &v
@@ -637,6 +649,9 @@ status, trigger type, date range, cost, and duration. Page by run id
 		if cmd.Flags().Changed("max-duration") {
 			v, _ := cmd.Flags().GetInt("max-duration")
 			params.MaxDuration = &v
+		}
+		if params.MinDuration != nil && params.MaxDuration != nil && *params.MinDuration > *params.MaxDuration {
+			return fmt.Errorf("--min-duration (%d) cannot be greater than --max-duration (%d)", *params.MinDuration, *params.MaxDuration)
 		}
 		result, err := client.Workflows.Runs.List(ctx, &params)
 		if err != nil {
@@ -914,6 +929,38 @@ func nonBlankStringArrayFlag(cmd *cobra.Command, flagName string) ([]string, err
 	return values, nil
 }
 
+// nonBlankCommaSeparatedFlag reads a comma-separated string flag and
+// returns its trimmed pieces. An unset flag (empty string) returns nil
+// (no filtering). A whitespace-only flag value, or any piece that trims
+// to empty (e.g. "id,,name" or "id, "), returns an error so the
+// misconfiguration surfaces locally before any HTTP call.
+//
+// This is the shared `--fields` shape across list commands — the API
+// expects a comma-separated query string, so passing a single `String`
+// flag matches the wire shape exactly and avoids the prior surprise
+// where `workflows runs list --fields a,b` worked but
+// `workflows runs list --fields a --fields b` was the only documented
+// form (with the two flag shapes drifting across sibling commands).
+func nonBlankCommaSeparatedFlag(cmd *cobra.Command, flagName string) ([]string, error) {
+	raw, _ := cmd.Flags().GetString(flagName)
+	if raw == "" {
+		return nil, nil
+	}
+	if strings.TrimSpace(raw) == "" {
+		return nil, fmt.Errorf("--%s must not be blank", flagName)
+	}
+	pieces := strings.Split(raw, ",")
+	out := make([]string, 0, len(pieces))
+	for _, p := range pieces {
+		trimmed := strings.TrimSpace(p)
+		if trimmed == "" {
+			return nil, fmt.Errorf("--%s must not be blank", flagName)
+		}
+		out = append(out, trimmed)
+	}
+	return out, nil
+}
+
 // ---- steps subgroup ----
 
 var workflowsStepsCmd = &cobra.Command{
@@ -1014,9 +1061,10 @@ func init() {
 	workflowsRunsListCmd.Flags().Var(&dateFlagValue{}, "to-date", "filter to this YYYY-MM-DD date")
 	workflowsRunsListCmd.Flags().String("search", "", "search query")
 	workflowsRunsListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "timing.created_at", "timing.started_at"), "sort-by", "sort field: timing.created_at | timing.started_at")
-	workflowsRunsListCmd.Flags().StringArray("fields", nil, "include only these fields (repeatable)")
-	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id")
-	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id")
+	workflowsRunsListCmd.Flags().String("fields", "", "comma-separated field list to return")
+	workflowsRunsListCmd.Flags().String("before", "", "run id: return items before this id (mutually exclusive with --after)")
+	workflowsRunsListCmd.Flags().String("after", "", "run id: return items after this id (mutually exclusive with --before)")
+	workflowsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	workflowsRunsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	workflowsRunsListCmd.Flags().Var(&nonNegativeFloatFlagValue{}, "min-cost", "min cost")

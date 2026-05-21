@@ -1323,6 +1323,33 @@ func TestWorkflowsTestsUpdateReadsLocalFilesBeforeCredentials(t *testing.T) {
 	}
 }
 
+// Issue 7: “workflows tests create“ help previously described
+// --source-file as "the input. Usually a reference to a run/step that
+// supplied known-good input." with no schema — the same level of
+// detail --target-file already gets. The fix gives --source-file the
+// same concrete-example treatment so users don't have to discover the
+// shape by trial-and-error 400s.
+//
+// The server-side discriminated union (services/v1/workflows/tests/
+// models.py:343-354) is:
+//
+//   - {"type": "manual", "handle_inputs": {...}}
+//   - {"type": "run_step", "run_id": "run_..."}
+//
+// so the help must show both shapes.
+func TestWorkflowsTestsCreateHelpDocumentsSourceFileShape(t *testing.T) {
+	long := workflowsTestsCreateCmd.Long
+	if !strings.Contains(long, `"type": "manual"`) {
+		t.Fatalf(`workflows tests create help must show the manual source shape ({"type": "manual", ...}), got:\n%s`, long)
+	}
+	if !strings.Contains(long, `"type": "run_step"`) {
+		t.Fatalf(`workflows tests create help must show the run_step source shape ({"type": "run_step", "run_id": "run_..."}), got:\n%s`, long)
+	}
+	if !strings.Contains(long, `"run_id"`) {
+		t.Fatalf("workflows tests create help must document run_id as the run_step disambiguator, got:\n%s", long)
+	}
+}
+
 // nonEmptyLines splits s on "\n" and returns the non-empty entries. We use
 // this to assert exact line counts on warning output without being tripped
 // up by the trailing newline from fmt.Fprintln.
