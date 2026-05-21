@@ -4,11 +4,13 @@ import APIWorkflowReviews from '../src/api/workflows/reviews/client';
 import { AbstractClient } from '../src/client';
 import {
   ZActor,
+  ZAppendVersionResponse,
   ZOutputVersion,
   ZReviewDecision,
   ZReviewOverlay,
   ZReviewQueueItem,
   ZReviewQueueResponse,
+  ZReviewSummary,
   ZSubmitDecisionResponse,
 } from '../src/types';
 
@@ -38,8 +40,9 @@ class MockClient extends AbstractClient {
   }
 }
 
-const VERSION_ID = 'a'.repeat(64);
-const CHILD_VERSION_ID = 'b'.repeat(64);
+const REVIEW_ID = 'rev_01HX9A7Y1R6G9J2K8M4P5Q6T7V';
+const VERSION_ID = 'ver_2N9S8Q4F6M1K7C3D5R0T8W6Y2Z';
+const CHILD_VERSION_ID = 'ver_5M8E2K7V9Q1C4T6W3D0R2Y5N8A';
 
 const ACTOR_JSON = {
   kind: 'agent',
@@ -64,17 +67,19 @@ const DECISION_JSON = {
 };
 
 const OVERLAY_JSON = {
-  _id: 'br_1',
+  id: REVIEW_ID,
   workflow_id: 'wf_1',
   workflow_version_id: 'wfv_1',
   workflow_run_id: 'run_1',
   block_id: 'extract-1',
-  block_run_id: 'br_1',
+  step_id: 'step_1',
+  parent_step_id: null,
+  iteration_key: null,
   block_type: 'extract',
   triggered_by: { kind: 'confidence_below', threshold: 0.8 },
   awaiting_since: '2026-05-18T09:58:00Z',
   priority: 5,
-  versions_by_id: {
+  versions: {
     [VERSION_ID]: OUTPUT_VERSION_JSON,
     [CHILD_VERSION_ID]: {
       ...OUTPUT_VERSION_JSON,
@@ -87,16 +92,20 @@ const OVERLAY_JSON = {
 };
 
 const QUEUE_ITEM_JSON = {
-  _id: 'br_1',
+  id: REVIEW_ID,
   workflow_id: 'wf_1',
-  workflow_version_id: 'wfv_1',
   workflow_run_id: 'run_1',
   block_id: 'extract-1',
-  block_run_id: 'br_1',
+  step_id: 'step_1',
+  parent_step_id: null,
+  iteration_key: null,
   block_type: 'extract',
   triggered_by: { kind: 'always' },
   awaiting_since: '2026-05-18T09:58:00Z',
   priority: 5,
+  seed_version_id: VERSION_ID,
+  version_count: 1,
+  decision: null,
 };
 
 describe('review zod schemas', () => {
@@ -128,39 +137,51 @@ describe('review zod schemas', () => {
     }
   });
 
-  test('ZReviewOverlay round-trips versions_by_id and decision', () => {
+  test('ZReviewOverlay round-trips versions and decision', () => {
     const overlay = ZReviewOverlay.parse(OVERLAY_JSON);
-    expect(overlay._id).toBe('br_1');
-    expect(Object.keys(overlay.versions_by_id)).toEqual([VERSION_ID, CHILD_VERSION_ID]);
-    expect(overlay.versions_by_id[CHILD_VERSION_ID]?.parent_id).toBe(VERSION_ID);
+    expect(overlay.id).toBe(REVIEW_ID);
+    expect(Object.keys(overlay.versions)).toEqual([VERSION_ID, CHILD_VERSION_ID]);
+    expect(overlay.versions[CHILD_VERSION_ID]?.parent_id).toBe(VERSION_ID);
     expect(overlay.decision?.version_id).toBe(VERSION_ID);
   });
 
-  test('ZReviewOverlay accepts for_each overlays addressed by the parent block_id', () => {
-    // The backend strips runtime_block_id from public responses — reviews are
-    // always addressed by the parent block_id, even for_each iterations.
-    // Schema MUST tolerate (and silently drop) runtime_block_id if a caller
-    // somehow forwards a raw record.
+  test('ZReviewOverlay accepts for_each reviews addressed by review id', () => {
     const overlay = ZReviewOverlay.parse({
       ...OVERLAY_JSON,
       block_id: 'blk_for_each',
-      runtime_block_id: 'blk_for_each__map_partition',
+      step_id: 'step_child',
+      parent_step_id: 'step_parent',
+      iteration_key: 'line-1',
       block_type: 'for_each',
     });
     expect(overlay.block_type).toBe('for_each');
-    expect(overlay.block_id).toBe('blk_for_each');
-    expect('runtime_block_id' in overlay).toBe(false);
+    expect(overlay.parent_step_id).toBe('step_parent');
+    expect(overlay.iteration_key).toBe('line-1');
   });
 
-  test('ZReviewQueueItem round-trips and ZReviewQueueResponse wraps it', () => {
+  test('ZReviewSummary round-trips seed_version_id and ZReviewQueueResponse wraps it', () => {
     const response = ZReviewQueueResponse.parse({
       data: [QUEUE_ITEM_JSON],
-      list_metadata: { before: null, after: 'brun_xxx' },
+      list_metadata: { before: null, after: REVIEW_ID },
     });
     expect(response.list_metadata.before).toBeNull();
-    expect(response.list_metadata.after).toBe('brun_xxx');
-    expect(response.data[0]?.block_id).toBe('extract-1');
-    expect(ZReviewQueueItem.parse(QUEUE_ITEM_JSON).priority).toBe(5);
+    expect(response.list_metadata.after).toBe(REVIEW_ID);
+    expect(response.data[0]?.seed_version_id).toBe(VERSION_ID);
+    expect(ZReviewSummary.parse(QUEUE_ITEM_JSON).version_count).toBe(1);
+    expect(ZReviewQueueItem.parse(QUEUE_ITEM_JSON).step_id).toBe('step_1');
+  });
+
+  test('ZAppendVersionResponse round-trips append status + version id + review', () => {
+    for (const status of ['accepted', 'already_exists'] as const) {
+      const parsed = ZAppendVersionResponse.parse({
+        append_status: status,
+        version_id: CHILD_VERSION_ID,
+        review: OVERLAY_JSON,
+      });
+      expect(parsed.append_status).toBe(status);
+      expect(parsed.version_id).toBe(CHILD_VERSION_ID);
+      expect(parsed.review.versions[CHILD_VERSION_ID]?.parent_id).toBe(VERSION_ID);
+    }
   });
 
   test('ZSubmitDecisionResponse round-trips submission status + review + resume_status', () => {
@@ -198,15 +219,15 @@ describe('review zod schemas', () => {
     expect(parsed.resume_error).toContain('Workflow run not found');
   });
 
-  test('ZSubmitDecisionResponse accepts submission_status="accepted_pending_resume"', () => {
-    const parsed = ZSubmitDecisionResponse.parse({
-      submission_status: 'accepted_pending_resume',
-      review: OVERLAY_JSON,
-      resume_status: 'failed',
-      resume_error: 'Workflow run not found',
-    });
-    expect(parsed.submission_status).toBe('accepted_pending_resume');
-    expect(parsed.resume_status).toBe('failed');
+  test('ZSubmitDecisionResponse rejects removed accepted_pending_resume status', () => {
+    expect(() =>
+      ZSubmitDecisionResponse.parse({
+        submission_status: 'accepted_pending_resume',
+        review: OVERLAY_JSON,
+        resume_status: 'failed',
+        resume_error: 'Workflow run not found',
+      })
+    ).toThrow();
   });
 });
 
@@ -218,17 +239,23 @@ describe('APIWorkflowReviews request shapes', () => {
     });
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.list({ workflowId: 'wf_1', limit: 25 });
+    await reviews.list({ workflowId: 'wf_1', runId: 'run_1', blockId: 'extract-1', limit: 25 });
 
     expect(mock.lastFetchParams).toEqual({
       url: '/workflows/reviews',
       method: 'GET',
-      params: { decision: 'none', limit: 25, workflow_id: 'wf_1' },
+      params: {
+        decision_status: 'pending',
+        limit: 25,
+        workflow_id: 'wf_1',
+        run_id: 'run_1',
+        block_id: 'extract-1',
+      },
       headers: undefined,
     });
   });
 
-  test('list() defaults to limit=50 and decision="none"', async () => {
+  test('list() defaults to limit=50 and decision_status="pending"', async () => {
     const mock = new MockClient({
       data: [],
       list_metadata: { before: null, after: null },
@@ -237,55 +264,62 @@ describe('APIWorkflowReviews request shapes', () => {
 
     await reviews.list();
 
-    expect(mock.lastFetchParams?.params).toEqual({ decision: 'none', limit: 50 });
+    expect(mock.lastFetchParams?.params).toEqual({ decision_status: 'pending', limit: 50 });
   });
 
-  test('list({ decision: "any" }) includes decided reviews', async () => {
+  test('list({ decisionStatus: "all" }) includes every decision state', async () => {
     const mock = new MockClient({
       data: [],
       list_metadata: { before: null, after: null },
     });
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.list({ decision: 'any' });
+    await reviews.list({ decisionStatus: 'all' });
 
-    expect(mock.lastFetchParams?.params).toEqual({ decision: 'any', limit: 50 });
+    expect(mock.lastFetchParams?.params).toEqual({ decision_status: 'all', limit: 50 });
   });
 
-  test('list({ after }) forwards cursor and surfaces list_metadata', async () => {
+  test('list({ after, stepId, iterationKey }) forwards cursors and execution filters', async () => {
     const mock = new MockClient({
       data: [QUEUE_ITEM_JSON],
-      list_metadata: { before: null, after: 'brun_xxx' },
+      list_metadata: { before: null, after: REVIEW_ID },
     });
     const reviews = new APIWorkflowReviews(mock);
 
-    const result = await reviews.list({ after: 'brun_prev', limit: 25 });
+    const result = await reviews.list({
+      after: 'rev_prev',
+      limit: 25,
+      stepId: 'step_1',
+      iterationKey: 'line-1',
+    });
 
     expect(mock.lastFetchParams?.params).toEqual({
-      decision: 'none',
+      decision_status: 'pending',
       limit: 25,
-      after: 'brun_prev',
+      step_id: 'step_1',
+      iteration_key: 'line-1',
+      after: 'rev_prev',
     });
-    expect(result.list_metadata.after).toBe('brun_xxx');
+    expect(result.list_metadata.after).toBe(REVIEW_ID);
     expect(result.list_metadata.before).toBeNull();
   });
 
-  test('get() builds the overlay GET route', async () => {
+  test('get() builds the review GET route', async () => {
     const mock = new MockClient(OVERLAY_JSON);
     const reviews = new APIWorkflowReviews(mock);
 
-    const overlay = await reviews.get('run_1', 'extract-1');
+    const overlay = await reviews.get(REVIEW_ID);
 
     expect(mock.lastFetchParams).toEqual({
-      url: '/workflows/reviews/run_1/extract-1',
+      url: `/workflows/reviews/${REVIEW_ID}`,
       method: 'GET',
       params: undefined,
       headers: undefined,
     });
-    expect(overlay._id).toBe('br_1');
+    expect(overlay.id).toBe(REVIEW_ID);
   });
 
-  test('approve() posts verdict=approved with version_id and surfaces resume_status', async () => {
+  test('approve() posts version_id to the approve endpoint and surfaces resume_status', async () => {
     const mock = new MockClient({
       submission_status: 'accepted',
       review: OVERLAY_JSON,
@@ -294,13 +328,12 @@ describe('APIWorkflowReviews request shapes', () => {
     });
     const reviews = new APIWorkflowReviews(mock);
 
-    const result = await reviews.approve('run_1', 'extract-1', { versionId: VERSION_ID });
+    const result = await reviews.approve(REVIEW_ID, { versionId: VERSION_ID });
 
     expect(mock.lastFetchParams).toEqual({
-      url: '/workflows/reviews/run_1/extract-1/decision',
+      url: `/workflows/reviews/${REVIEW_ID}/approve`,
       method: 'POST',
       body: {
-        verdict: 'approved',
         version_id: VERSION_ID,
       },
       params: undefined,
@@ -311,7 +344,7 @@ describe('APIWorkflowReviews request shapes', () => {
     expect(result.review.decision?.version_id).toBe(VERSION_ID);
   });
 
-  test('reject() posts verdict=rejected with version_id and reason', async () => {
+  test('reject() posts version_id and reason to the reject endpoint', async () => {
     const mock = new MockClient({
       submission_status: 'accepted',
       review: OVERLAY_JSON,
@@ -320,16 +353,16 @@ describe('APIWorkflowReviews request shapes', () => {
     });
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.reject('run_1', 'extract-1', { versionId: VERSION_ID, reason: 'wrong total' });
+    await reviews.reject(REVIEW_ID, { versionId: VERSION_ID, reason: 'wrong total' });
 
+    expect(mock.lastFetchParams?.url).toBe(`/workflows/reviews/${REVIEW_ID}/reject`);
     expect(mock.lastFetchParams?.body).toEqual({
-      verdict: 'rejected',
       version_id: VERSION_ID,
       reason: 'wrong total',
     });
   });
 
-  test('approve() omits the reason key when none is provided', async () => {
+  test('approve() omits the reason key', async () => {
     const mock = new MockClient({
       submission_status: 'accepted',
       review: OVERLAY_JSON,
@@ -338,19 +371,23 @@ describe('APIWorkflowReviews request shapes', () => {
     });
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.approve('run_1', 'extract-1', { versionId: VERSION_ID });
+    await reviews.approve(REVIEW_ID, { versionId: VERSION_ID });
 
     const body = mock.lastFetchParams?.body as Record<string, unknown>;
     expect('reason' in body).toBe(false);
   });
 
-  test('createVersion() omits the note key when none is provided', async () => {
-    const mock = new MockClient(OVERLAY_JSON);
+  test('appendVersion() omits the note key when none is provided', async () => {
+    const mock = new MockClient({
+      append_status: 'accepted',
+      version_id: CHILD_VERSION_ID,
+      review: OVERLAY_JSON,
+    });
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.createVersion('run_1', 'extract-1', {
+    await reviews.appendVersion(REVIEW_ID, {
       snapshot: { category: 'Invoice' },
-      parentId: VERSION_ID,
+      parentVersionId: VERSION_ID,
     });
 
     const body = mock.lastFetchParams?.body as Record<string, unknown>;
@@ -358,16 +395,19 @@ describe('APIWorkflowReviews request shapes', () => {
     expect('origin' in body).toBe(false);
   });
 
-  test('createVersion() strips origin from request option body overrides', async () => {
-    const mock = new MockClient(OVERLAY_JSON);
+  test('append_version() strips origin from request option body overrides', async () => {
+    const mock = new MockClient({
+      append_status: 'accepted',
+      version_id: CHILD_VERSION_ID,
+      review: OVERLAY_JSON,
+    });
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.createVersion(
-      'run_1',
-      'extract-1',
+    await reviews.append_version(
+      REVIEW_ID,
       {
         snapshot: { category: 'Invoice' },
-        parentId: VERSION_ID,
+        parentVersionId: VERSION_ID,
       },
       { body: { origin: 'human_created' } }
     );
@@ -376,44 +416,50 @@ describe('APIWorkflowReviews request shapes', () => {
     expect('origin' in body).toBe(false);
   });
 
-  test('createVersion() posts a new snapshot version to /versions', async () => {
-    const mock = new MockClient(OVERLAY_JSON);
+  test('appendVersion() posts a new snapshot version to /versions', async () => {
+    const mock = new MockClient({
+      append_status: 'accepted',
+      version_id: CHILD_VERSION_ID,
+      review: OVERLAY_JSON,
+    });
     const reviews = new APIWorkflowReviews(mock);
 
-    await reviews.createVersion('run_1', 'extract-1', {
+    const result = await reviews.appendVersion(REVIEW_ID, {
       snapshot: { category: 'Invoice' },
-      parentId: VERSION_ID,
+      parentVersionId: VERSION_ID,
       note: 'agent proposal',
     });
 
     expect(mock.lastFetchParams).toEqual({
-      url: '/workflows/reviews/run_1/extract-1/versions',
+      url: `/workflows/reviews/${REVIEW_ID}/versions`,
       method: 'POST',
       body: {
         snapshot: { category: 'Invoice' },
-        parent_id: VERSION_ID,
+        parent_version_id: VERSION_ID,
         note: 'agent proposal',
       },
       params: undefined,
       headers: undefined,
     });
+    expect(result.append_status).toBe('accepted');
+    expect(result.version_id).toBe(CHILD_VERSION_ID);
   });
 
   test('waitFor() returns the review once it has no decision', async () => {
     const mock = new MockClient({ ...OVERLAY_JSON, decision: null });
     const reviews = new APIWorkflowReviews(mock);
 
-    const overlay = await reviews.waitFor('run_1', 'extract-1', { pollIntervalMs: 1 });
+    const overlay = await reviews.waitFor(REVIEW_ID, { pollIntervalMs: 1 });
 
     expect(overlay.decision).toBe(null);
-    expect(mock.lastFetchParams?.url).toBe('/workflows/reviews/run_1/extract-1');
+    expect(mock.lastFetchParams?.url).toBe(`/workflows/reviews/${REVIEW_ID}`);
   });
 
   test('wait_for() aliases waitFor() for Python parity', async () => {
     const mock = new MockClient({ ...OVERLAY_JSON, decision: null });
     const reviews = new APIWorkflowReviews(mock);
 
-    const overlay = await reviews.wait_for('run_1', 'extract-1', { pollIntervalMs: 1 });
+    const overlay = await reviews.wait_for(REVIEW_ID, { pollIntervalMs: 1 });
 
     expect(overlay.decision).toBe(null);
   });
@@ -422,9 +468,9 @@ describe('APIWorkflowReviews request shapes', () => {
     const mock = new MockClient(OVERLAY_JSON);
     const reviews = new APIWorkflowReviews(mock);
 
-    await expect(
-      reviews.waitFor('run_1', 'extract-1', { timeoutMs: 5, pollIntervalMs: 1 })
-    ).rejects.toThrow('was not awaiting_review');
+    await expect(reviews.waitFor(REVIEW_ID, { timeoutMs: 5, pollIntervalMs: 1 })).rejects.toThrow(
+      'was not pending'
+    );
   });
 
   test('waitFor() swallows 404 and keeps polling until the review appears', async () => {
@@ -446,7 +492,7 @@ describe('APIWorkflowReviews request shapes', () => {
     }
 
     const reviews = new APIWorkflowReviews(new FlakyClient());
-    const overlay = await reviews.waitFor('run_1', 'extract-1', { pollIntervalMs: 1 });
+    const overlay = await reviews.waitFor(REVIEW_ID, { pollIntervalMs: 1 });
 
     expect(calls).toBe(2);
     expect(overlay.decision).toBe(null);

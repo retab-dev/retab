@@ -416,8 +416,9 @@ type WorkflowRunExportResponse struct {
 
 // --- review overlay (workflows.reviews) ----------------------------
 //
-// The review overlay is the versioned sidecar attached to a block run awaiting
-// review. Version ids are content hashes and versions are keyed by id.
+// A review is a first-class resource addressed by review id. Workflow/run/block
+// identifiers are context and list filters only. Version ids are content hashes
+// and versions are keyed by id.
 // Actor symmetry is a hard rule — model, agent, and human are one shape and
 // Kind is data, never branched on.
 
@@ -446,60 +447,69 @@ type ReviewDecisionRecord struct {
 	Reason    *string     `json:"reason"`
 }
 
-// ReviewOverlay is the full review sidecar for one reviewed block run.
-type ReviewOverlay struct {
-	ID                string                         `json:"_id"`
+// Review is the full review sidecar for one reviewed block run.
+type Review struct {
+	ID                string                         `json:"id"`
 	WorkflowID        string                         `json:"workflow_id"`
 	WorkflowVersionID string                         `json:"workflow_version_id"`
 	WorkflowRunID     string                         `json:"workflow_run_id"`
 	BlockID           string                         `json:"block_id"`
-	BlockRunID        string                         `json:"block_run_id"`
+	StepID            string                         `json:"step_id"`
+	ParentStepID      *string                        `json:"parent_step_id"`
+	IterationKey      *string                        `json:"iteration_key"`
 	BlockType         string                         `json:"block_type"`
 	TriggeredBy       map[string]any                 `json:"triggered_by"`
 	AwaitingSince     time.Time                      `json:"awaiting_since"`
 	Priority          int                            `json:"priority"`
-	VersionsByID      map[string]ReviewOutputVersion `json:"versions_by_id"`
+	Versions          map[string]ReviewOutputVersion `json:"versions"`
 	Decision          *ReviewDecisionRecord          `json:"decision"`
 }
 
-// ReviewQueueItem is the lightweight review-queue projection.
-type ReviewQueueItem struct {
-	ID                string         `json:"_id"`
-	WorkflowID        string         `json:"workflow_id"`
-	WorkflowVersionID string         `json:"workflow_version_id"`
-	WorkflowRunID     string         `json:"workflow_run_id"`
-	BlockID           string         `json:"block_id"`
-	BlockRunID        string         `json:"block_run_id"`
-	BlockType         string         `json:"block_type"`
-	TriggeredBy       map[string]any `json:"triggered_by"`
-	AwaitingSince     time.Time      `json:"awaiting_since"`
-	Priority          int            `json:"priority"`
+// ReviewSummary is the lightweight review-queue projection.
+type ReviewSummary struct {
+	ID            string                `json:"id"`
+	WorkflowID    string                `json:"workflow_id"`
+	WorkflowRunID string                `json:"workflow_run_id"`
+	BlockID       string                `json:"block_id"`
+	StepID        string                `json:"step_id"`
+	ParentStepID  *string               `json:"parent_step_id"`
+	IterationKey  *string               `json:"iteration_key"`
+	BlockType     string                `json:"block_type"`
+	TriggeredBy   map[string]any        `json:"triggered_by"`
+	AwaitingSince time.Time             `json:"awaiting_since"`
+	Priority      int                   `json:"priority"`
+	SeedVersionID string                `json:"seed_version_id"`
+	VersionCount  int                   `json:"version_count"`
+	Decision      *ReviewDecisionRecord `json:"decision"`
 }
 
 // ReviewQueueResponse is one page of the review queue.
 //
-// Deprecated: use PaginatedList[ReviewQueueItem] returned by
+// Deprecated: use PaginatedList[ReviewSummary] returned by
 // WorkflowReviewsService.List. ReviewQueueResponse is kept only as a type
 // alias for source compatibility — the live backend emits the canonical
 // {data, list_metadata} envelope (no has_more boolean), so paginating
 // requires the cursor fields in PaginationCursor (Before/After).
-type ReviewQueueResponse = PaginatedList[ReviewQueueItem]
+type ReviewQueueResponse = PaginatedList[ReviewSummary]
+
+type AppendReviewVersionResponse struct {
+	AppendStatus string `json:"append_status"` // accepted | already_exists
+	VersionID    string `json:"version_id"`
+	Review       Review `json:"review"`
+}
 
 // SubmitReviewDecisionResponse is the result of a verdict submission.
 //
 // SubmissionStatus reflects whether the decision write was accepted on the
 // server. ResumeStatus reflects whether the downstream workflow actually
-// resumed — a "failed" resume means the decision is committed but the
-// workflow did not pick up the signal (e.g. Temporal returned an error); the
-// associated ResumeError carries the underlying message for diagnostics. When
-// the resume signal fails on a fresh write, SubmissionStatus is upgraded to
-// "accepted_pending_resume" — the decision is durable but the workflow has
-// not advanced past the gate yet; a reconcile loop will retry.
+// resumed. A "pending" resume means the decision is committed but immediate
+// delivery did not complete; the associated ResumeError carries diagnostic
+// context while server-side reconciliation retries delivery.
 type SubmitReviewDecisionResponse struct {
-	SubmissionStatus string        `json:"submission_status"` // accepted | already_applied | accepted_pending_resume
-	Review           ReviewOverlay `json:"review"`
-	ResumeStatus     string        `json:"resume_status,omitempty"` // resumed | skipped | failed
-	ResumeError      *string       `json:"resume_error,omitempty"`
+	SubmissionStatus string  `json:"submission_status"` // accepted | already_applied
+	Review           Review  `json:"review"`
+	ResumeStatus     string  `json:"resume_status,omitempty"` // pending | resumed | skipped
+	ResumeError      *string `json:"resume_error,omitempty"`
 }
 
 // Submission status string constants returned by Approve / Reject.
@@ -510,15 +520,16 @@ const (
 	// SubmissionStatusAlreadyApplied means the same (verdict, version_id) was
 	// already on file — the idempotency mechanism, safe to retry.
 	SubmissionStatusAlreadyApplied = "already_applied"
-	// SubmissionStatusAcceptedPendingResume means the decision write succeeded
-	// but the Temporal resume signal failed. The reconcile loop will retry;
-	// inspect ResumeStatus and ResumeError on the response for diagnostics.
-	SubmissionStatusAcceptedPendingResume = "accepted_pending_resume"
+)
+
+const (
+	AppendStatusAccepted      = "accepted"
+	AppendStatusAlreadyExists = "already_exists"
 )
 
 // Resume status string constants reported on Approve / Reject responses.
 const (
 	ResumeStatusResumed = "resumed"
 	ResumeStatusSkipped = "skipped"
-	ResumeStatusFailed  = "failed"
+	ResumeStatusPending = "pending"
 )

@@ -1,41 +1,34 @@
 /**
- * Probe: does the TS SDK's Zod schema match what the live backend ACTUALLY returns?
- *
- * Synthesized from observed responses (verified end-to-end via the Python MCP
- * handler probe against the dev cluster):
- *
- *   - `ReviewOverlayResponse` strips `organization_id` and `runtime_block_id`.
- *   - `SubmitDecisionResponse` uses the field `overlay`, NOT `review`.
- *   - `SubmitDecisionResponse` now carries `resume_status` and `resume_error`.
- *   - `ReviewQueueItemResponse` strips `organization_id` and `runtime_block_id`.
- *   - List response has `data` + `list_metadata` ({before, after}).
- *
- * If any of these mismatch, every real SDK call will throw a ZodError.
+ * Probe: does the TS SDK's Zod schema match the review hard-cutover wire shape?
  */
 
 import { describe, expect, test } from 'bun:test';
 
 import {
+  ZAppendVersionResponse,
   ZReviewOverlay,
   ZReviewQueueItem,
   ZReviewQueueResponse,
   ZSubmitDecisionResponse,
 } from '../src/types';
 
-const VERSION_ID = 'a'.repeat(64);
+const REVIEW_ID = 'rev_01HX9A7Y1R6G9J2K8M4P5Q6T7V';
+const VERSION_ID = 'ver_2N9S8Q4F6M1K7C3D5R0T8W6Y2Z';
 
-const REAL_OVERLAY_FROM_BACKEND = {
-  _id: 'br_1',
+const REAL_REVIEW_FROM_BACKEND = {
+  id: REVIEW_ID,
   workflow_id: 'wf_1',
   workflow_version_id: 'wfv_1',
   workflow_run_id: 'run_1',
   block_id: 'extract-1',
-  block_run_id: 'br_1',
+  step_id: 'step_1',
+  parent_step_id: null,
+  iteration_key: null,
   block_type: 'extract',
   triggered_by: { kind: 'any_required_field_null' },
   awaiting_since: '2026-05-21T09:00:00Z',
   priority: 0,
-  versions_by_id: {
+  versions: {
     [VERSION_ID]: {
       parent_id: null,
       author: { kind: 'model', id: 'm', display_name: 'Model' },
@@ -47,46 +40,43 @@ const REAL_OVERLAY_FROM_BACKEND = {
   decision: null,
 };
 
-const REAL_QUEUE_ITEM_FROM_BACKEND = {
-  _id: 'br_1',
+const REAL_SUMMARY_FROM_BACKEND = {
+  id: REVIEW_ID,
   workflow_id: 'wf_1',
-  workflow_version_id: 'wfv_1',
   workflow_run_id: 'run_1',
   block_id: 'extract-1',
-  block_run_id: 'br_1',
+  step_id: 'step_1',
+  parent_step_id: null,
+  iteration_key: null,
   block_type: 'extract',
   triggered_by: { kind: 'any_required_field_null' },
   awaiting_since: '2026-05-21T09:00:00Z',
   priority: 0,
-};
-
-const REAL_SUBMIT_DECISION_RESPONSE = {
-  submission_status: 'accepted',
-  review: REAL_OVERLAY_FROM_BACKEND,
-  resume_status: 'resumed',
-  resume_error: null,
+  seed_version_id: VERSION_ID,
+  version_count: 1,
+  decision: null,
 };
 
 describe('backend wire-shape vs SDK Zod schemas', () => {
-  test('ZReviewOverlay parses a response WITHOUT organization_id (backend strips it)', () => {
-    const result = ZReviewOverlay.safeParse(REAL_OVERLAY_FROM_BACKEND);
+  test('ZReviewOverlay parses the review-id addressed response with versions', () => {
+    const result = ZReviewOverlay.safeParse(REAL_REVIEW_FROM_BACKEND);
     if (!result.success) {
       console.error('ZReviewOverlay failed:', JSON.stringify(result.error.issues, null, 2));
     }
     expect(result.success).toBe(true);
   });
 
-  test('ZReviewQueueItem parses a queue row WITHOUT organization_id', () => {
-    const result = ZReviewQueueItem.safeParse(REAL_QUEUE_ITEM_FROM_BACKEND);
+  test('ZReviewQueueItem parses a summary with seed_version_id', () => {
+    const result = ZReviewQueueItem.safeParse(REAL_SUMMARY_FROM_BACKEND);
     if (!result.success) {
       console.error('ZReviewQueueItem failed:', JSON.stringify(result.error.issues, null, 2));
     }
     expect(result.success).toBe(true);
   });
 
-  test('ZReviewQueueResponse parses {data, list_metadata} with stripped rows', () => {
+  test('ZReviewQueueResponse parses {data, list_metadata}', () => {
     const result = ZReviewQueueResponse.safeParse({
-      data: [REAL_QUEUE_ITEM_FROM_BACKEND],
+      data: [REAL_SUMMARY_FROM_BACKEND],
       list_metadata: { before: null, after: null },
     });
     if (!result.success) {
@@ -95,8 +85,25 @@ describe('backend wire-shape vs SDK Zod schemas', () => {
     expect(result.success).toBe(true);
   });
 
+  test('ZAppendVersionResponse parses {append_status, version_id, review}', () => {
+    const result = ZAppendVersionResponse.safeParse({
+      append_status: 'already_exists',
+      version_id: VERSION_ID,
+      review: REAL_REVIEW_FROM_BACKEND,
+    });
+    if (!result.success) {
+      console.error('ZAppendVersionResponse failed:', JSON.stringify(result.error.issues, null, 2));
+    }
+    expect(result.success).toBe(true);
+  });
+
   test('ZSubmitDecisionResponse parses {submission_status, review, resume_status, resume_error}', () => {
-    const result = ZSubmitDecisionResponse.safeParse(REAL_SUBMIT_DECISION_RESPONSE);
+    const result = ZSubmitDecisionResponse.safeParse({
+      submission_status: 'accepted',
+      review: REAL_REVIEW_FROM_BACKEND,
+      resume_status: 'resumed',
+      resume_error: null,
+    });
     if (!result.success) {
       console.error(
         'ZSubmitDecisionResponse failed:',

@@ -35,18 +35,19 @@ func reviewDecisionBody(verdict string, versionID string) map[string]any {
 
 func reviewOverlayBody(decision map[string]any) map[string]any {
 	return map[string]any{
-		"_id":                 "blockrun_1",
-		"organization_id":     "org_1",
+		"id":                  "rev_1",
 		"workflow_id":         "wf_1",
 		"workflow_version_id": "wfv_1",
 		"workflow_run_id":     "run_1",
 		"block_id":            "blk_1",
-		"block_run_id":        "blockrun_1",
+		"step_id":             "step_1",
+		"parent_step_id":      nil,
+		"iteration_key":       nil,
 		"block_type":          "extract",
 		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
 		"awaiting_since":      "2026-05-18T09:00:00Z",
 		"priority":            0,
-		"versions_by_id": map[string]any{
+		"versions": map[string]any{
 			reviewTestVersionID: reviewVersionBody(nil, map[string]any{"total": 100}),
 		},
 		"decision": decision,
@@ -55,17 +56,20 @@ func reviewOverlayBody(decision map[string]any) map[string]any {
 
 func reviewQueueItemBody(reviewID string, runID string, blockID string, blockType string) map[string]any {
 	return map[string]any{
-		"_id":                 reviewID,
-		"organization_id":     "org_1",
-		"workflow_id":         "wf_1",
-		"workflow_version_id": "wfv_1",
-		"workflow_run_id":     runID,
-		"block_id":            blockID,
-		"block_run_id":        reviewID,
-		"block_type":          blockType,
-		"triggered_by":        map[string]any{"kind": "always"},
-		"awaiting_since":      "2026-05-18T09:00:00Z",
-		"priority":            0,
+		"id":              reviewID,
+		"workflow_id":     "wf_1",
+		"workflow_run_id": runID,
+		"block_id":        blockID,
+		"step_id":         "step_1",
+		"parent_step_id":  nil,
+		"iteration_key":   nil,
+		"block_type":      blockType,
+		"triggered_by":    map[string]any{"kind": "always"},
+		"awaiting_since":  "2026-05-18T09:00:00Z",
+		"priority":        0,
+		"seed_version_id": reviewTestVersionID,
+		"version_count":   1,
+		"decision":        nil,
 	}
 }
 
@@ -106,7 +110,7 @@ func TestReviewsListCommand(t *testing.T) {
 	if !strings.Contains(seenQuery, "workflow_id=wf_1") || !strings.Contains(seenQuery, "limit=50") {
 		t.Fatalf("query = %s", seenQuery)
 	}
-	if strings.Contains(seenQuery, "mine=") || strings.Contains(seenQuery, "status=") {
+	if strings.Contains(seenQuery, "mine=") || strings.Contains(seenQuery, "status=awaiting_review") {
 		t.Fatalf("query should not contain legacy filters: %s", seenQuery)
 	}
 	if !strings.Contains(stdout, "blockrun_1") {
@@ -175,7 +179,7 @@ func TestReviewsListTableUsesPureQueueColumns(t *testing.T) {
 }
 
 func TestReviewsHelpUsesVersionIDsAndNoReviewableProjections(t *testing.T) {
-	for _, cmd := range []*cobra.Command{workflowsReviewsListCmd, workflowsReviewsVersionsCreateCmd, workflowsReviewsApproveCmd, workflowsReviewsRejectCmd} {
+	for _, cmd := range []*cobra.Command{workflowsReviewsListCmd, workflowsReviewsVersionsAppendCmd, workflowsReviewsApproveCmd, workflowsReviewsRejectCmd} {
 		text := strings.Join([]string{cmd.Short, cmd.Long, cmd.Example}, "\n")
 		for _, stale := range []string{"reviewable value", "reviewable-value", "version_stamp", "version-stamp", "head_seq", "effective_seq", "audit history", "audit log"} {
 			if strings.Contains(text, stale) {
@@ -189,30 +193,30 @@ func TestReviewsHelpUsesVersionIDsAndNoReviewableProjections(t *testing.T) {
 	if workflowsReviewsRejectCmd.Flags().Lookup("version-id") == nil {
 		t.Fatalf("%s should define --version-id", workflowsReviewsRejectCmd.Use)
 	}
-	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("parent-id") == nil {
-		t.Fatalf("%s should define --parent-id", workflowsReviewsVersionsCreateCmd.Use)
+	if workflowsReviewsVersionsAppendCmd.Flags().Lookup("parent-version-id") == nil {
+		t.Fatalf("%s should define --parent-version-id", workflowsReviewsVersionsAppendCmd.Use)
 	}
-	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("from-version") != nil {
-		t.Fatalf("%s should not define legacy --from-version", workflowsReviewsVersionsCreateCmd.Use)
+	if workflowsReviewsVersionsAppendCmd.Flags().Lookup("from-version") != nil {
+		t.Fatalf("%s should not define legacy --from-version", workflowsReviewsVersionsAppendCmd.Use)
 	}
-	if workflowsReviewsVersionsCreateCmd.Flags().Lookup("snapshot-file") == nil {
-		t.Fatalf("%s should define --snapshot-file", workflowsReviewsVersionsCreateCmd.Use)
+	if workflowsReviewsVersionsAppendCmd.Flags().Lookup("snapshot-file") == nil {
+		t.Fatalf("%s should define --snapshot-file", workflowsReviewsVersionsAppendCmd.Use)
 	}
 	for _, child := range workflowsReviewsCmd.Commands() {
 		if child.Name() == "edit" {
 			t.Fatalf("reviews edit command should not exist after create-version cutover")
 		}
 	}
-	if workflowsReviewsVersionsCmd.Commands()[0].Name() != "create" {
-		t.Fatalf("reviews versions should expose create, got %s", workflowsReviewsVersionsCmd.Commands()[0].Name())
+	if workflowsReviewsVersionsCmd.Commands()[0].Name() != "append" {
+		t.Fatalf("reviews versions should expose append, got %s", workflowsReviewsVersionsCmd.Commands()[0].Name())
 	}
 }
 
-func TestReviewsVersionsCreateHelpExplainsSnapshotShapes(t *testing.T) {
+func TestReviewsVersionsAppendHelpExplainsSnapshotShapes(t *testing.T) {
 	text := strings.Join([]string{
-		workflowsReviewsVersionsCreateCmd.Long,
-		workflowsReviewsVersionsCreateCmd.Example,
-		workflowsReviewsVersionsCreateCmd.Flags().Lookup("snapshot-file").Usage,
+		workflowsReviewsVersionsAppendCmd.Long,
+		workflowsReviewsVersionsAppendCmd.Example,
+		workflowsReviewsVersionsAppendCmd.Flags().Lookup("snapshot-file").Usage,
 	}, "\n")
 	for _, want := range []string{
 		"Snapshot shapes are block-specific",
@@ -226,11 +230,11 @@ func TestReviewsVersionsCreateHelpExplainsSnapshotShapes(t *testing.T) {
 		"--snapshot-file -",
 	} {
 		if !strings.Contains(text, want) {
-			t.Fatalf("create version help should explain snapshot shape %q, got:\n%s", want, text)
+			t.Fatalf("append version help should explain snapshot shape %q, got:\n%s", want, text)
 		}
 	}
 	if strings.Contains(text, "reviewable value") || strings.Contains(text, "reviewable-value") {
-		t.Fatalf("create version help should not reintroduce reviewable value wording:\n%s", text)
+		t.Fatalf("append version help should not reintroduce reviewable value wording:\n%s", text)
 	}
 }
 
@@ -253,7 +257,7 @@ func TestReviewsRejectHelpDoesNotPromiseRunCancellation(t *testing.T) {
 }
 
 func TestReviewsEscalateReturnsLegacyUnsupportedMessage(t *testing.T) {
-	err := workflowsReviewsEscalateCmd.RunE(workflowsReviewsEscalateCmd, []string{"run_1", "blk_1"})
+	err := workflowsReviewsEscalateCmd.RunE(workflowsReviewsEscalateCmd, []string{"rev_1"})
 	if err == nil {
 		t.Fatal("expected unsupported escalation error")
 	}
@@ -282,14 +286,14 @@ func TestReviewsGetCommand(t *testing.T) {
 
 	cmd := &cobra.Command{Use: "get", RunE: workflowsReviewsGetCmd.RunE}
 	stdout, _ := captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews get: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/run_1/blk_1" {
+	if seenPath != "/workflows/reviews/rev_1" {
 		t.Fatalf("path = %s", seenPath)
 	}
-	if !strings.Contains(stdout, `"versions_by_id"`) || !strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
+	if !strings.Contains(stdout, `"versions"`) || !strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
 		t.Fatalf("stdout = %s", stdout)
 	}
 	for _, want := range []string{`"decision": null`, `"parent_id": null`, `"note": null`} {
@@ -297,7 +301,7 @@ func TestReviewsGetCommand(t *testing.T) {
 			t.Fatalf("stdout should preserve %s:\n%s", want, stdout)
 		}
 	}
-	if strings.Contains(stdout, `"rev"`) || strings.Contains(stdout, `"head_seq"`) {
+	if strings.Contains(stdout, `"versions_by_id"`) || strings.Contains(stdout, `"head_seq"`) {
 		t.Fatalf("stdout contains stale overlay fields: %s", stdout)
 	}
 }
@@ -319,17 +323,17 @@ func TestReviewsGetCommandHonorsOutputTable(t *testing.T) {
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
 	stdout, stderr := captureStd(t, func() {
-		if err := workflowsReviewsGetCmd.RunE(workflowsReviewsGetCmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := workflowsReviewsGetCmd.RunE(workflowsReviewsGetCmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews get: %v", err)
 		}
 	})
 	if stderr != "" {
 		t.Fatalf("stderr = %s", stderr)
 	}
-	if strings.HasPrefix(strings.TrimSpace(stdout), "{") || strings.Contains(stdout, `"versions_by_id"`) {
+	if strings.HasPrefix(strings.TrimSpace(stdout), "{") || strings.Contains(stdout, `"versions"`) {
 		t.Fatalf("expected table output, got JSON:\n%s", stdout)
 	}
-	for _, want := range []string{"REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "blockrun_1", "run_1", "blk_1", "extract"} {
+	for _, want := range []string{"REVIEW_ID", "RUN_ID", "BLOCK_ID", "STEP_ID", "BLOCK_TYPE", "rev_1", "run_1", "blk_1", "step_1", "extract"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
@@ -355,7 +359,7 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 
 	cmd := &cobra.Command{Use: "schema", RunE: workflowsReviewsSchemaCmd.RunE}
 	stdout, stderr := captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews schema: %v", err)
 		}
 	})
@@ -365,7 +369,7 @@ func TestReviewsSchemaCommandPrintsBlockSpecificSnapshotContract(t *testing.T) {
 	if seenMethod != http.MethodGet {
 		t.Fatalf("method = %s", seenMethod)
 	}
-	if seenPath != "/workflows/reviews/run_1/blk_1" {
+	if seenPath != "/workflows/reviews/rev_1" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	for _, want := range []string{
@@ -442,7 +446,7 @@ func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
 			var requests int
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				requests++
-				if r.Method != http.MethodGet || r.URL.Path != "/workflows/reviews/run_1/blk_1" {
+				if r.Method != http.MethodGet || r.URL.Path != "/workflows/reviews/rev_1" {
 					t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
 				}
 				body := reviewOverlayBody(nil)
@@ -455,7 +459,7 @@ func TestReviewsSchemaCommandCoversEveryReviewableBlockType(t *testing.T) {
 
 			cmd := &cobra.Command{Use: "schema", RunE: workflowsReviewsSchemaCmd.RunE}
 			stdout, stderr := captureStd(t, func() {
-				if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+				if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
 					t.Fatalf("reviews schema: %v", err)
 				}
 			})
@@ -498,14 +502,14 @@ func TestReviewsSchemaCommandHonorsOutputTable(t *testing.T) {
 	t.Cleanup(func() { _ = rootCmd.PersistentFlags().Set("output", "") })
 
 	stdout, stderr := captureStd(t, func() {
-		if err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews schema: %v", err)
 		}
 	})
 	if stderr != "" {
 		t.Fatalf("stderr = %s", stderr)
 	}
-	for _, want := range []string{"BLOCK_TYPE", "SCHEMA", "EXAMPLE", "NOTES", "CREATE_USAGE", "split", "documents", "retab workflows reviews versions create"} {
+	for _, want := range []string{"BLOCK_TYPE", "SCHEMA", "EXAMPLE", "NOTES", "CREATE_USAGE", "split", "documents", "retab workflows reviews versions append"} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
@@ -528,7 +532,7 @@ func TestReviewsSchemaCommandRejectsNonReviewableBlockType(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	_, stderr := captureStd(t, func() {
-		err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_1", "blk_1"})
+		err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"rev_1"})
 		if err == nil {
 			t.Fatal("expected non-reviewable block type to fail")
 		}
@@ -557,7 +561,7 @@ func TestReviewsSchemaCommandPropagatesMissingOverlay(t *testing.T) {
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
 	_, stderr := captureStd(t, func() {
-		err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"run_missing", "blk_1"})
+		err := workflowsReviewsSchemaCmd.RunE(workflowsReviewsSchemaCmd, []string{"rev_missing"})
 		if err == nil {
 			t.Fatal("expected missing overlay to fail")
 		}
@@ -582,7 +586,7 @@ func TestReviewsWaitStopsWhenOverlayIsAwaitingReview(t *testing.T) {
 
 	cmd := newWaitTestCmd()
 	stdout, stderr := captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews wait: %v", err)
 		}
 	})
@@ -592,94 +596,8 @@ func TestReviewsWaitStopsWhenOverlayIsAwaitingReview(t *testing.T) {
 	if reviewGets != 1 {
 		t.Fatalf("reviewGets=%d", reviewGets)
 	}
-	if !strings.Contains(stdout, `"versions_by_id"`) || !strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
+	if !strings.Contains(stdout, `"versions"`) || !strings.Contains(stdout, `"`+reviewTestVersionID+`"`) {
 		t.Fatalf("stdout = %s", stdout)
-	}
-}
-
-func TestReviewsWaitStopsWhenRunTerminalBeforeOverlayExists(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var reviewGets int
-	var runGets int
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		switch r.URL.Path {
-		case "/workflows/reviews/run_1/blk_1":
-			reviewGets++
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "review overlay not found"})
-		case "/workflows/runs/run_1":
-			runGets++
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id": "run_1",
-				"lifecycle": map[string]any{
-					"status":  "error",
-					"message": "block failed before review",
-				},
-			})
-		default:
-			t.Fatalf("unexpected path %s", r.URL.Path)
-		}
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	cmd := newWaitTestCmd()
-	if err := cmd.Flags().Set("timeout", "30"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("poll-interval", "30"); err != nil {
-		t.Fatal(err)
-	}
-
-	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
-	if err == nil {
-		t.Fatal("expected wait to fail when the run is already terminal")
-	}
-	if !strings.Contains(err.Error(), "error") || !strings.Contains(err.Error(), "block failed before review") {
-		t.Fatalf("error = %v", err)
-	}
-	if reviewGets != 1 || runGets != 1 {
-		t.Fatalf("reviewGets=%d runGets=%d", reviewGets, runGets)
-	}
-}
-
-func TestReviewsWaitFailsFastWhenRunIsMissing(t *testing.T) {
-	t.Setenv("RETAB_API_KEY", "test-key")
-	t.Setenv("HOME", t.TempDir())
-
-	var reviewGets int
-	var runGets int
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		switch r.URL.Path {
-		case "/workflows/reviews/run_missing/blk_1":
-			reviewGets++
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "review overlay not found"})
-		case "/workflows/runs/run_missing":
-			runGets++
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]any{"detail": "run not found"})
-		default:
-			t.Fatalf("unexpected path %s", r.URL.Path)
-		}
-	}))
-	defer server.Close()
-	t.Setenv("RETAB_API_BASE_URL", server.URL)
-
-	cmd := newWaitTestCmd()
-	err := cmd.RunE(cmd, []string{"run_missing", "blk_1"})
-	if err == nil {
-		t.Fatal("expected missing run to fail")
-	}
-	if !strings.Contains(err.Error(), "run_missing") || !strings.Contains(err.Error(), "not found") {
-		t.Fatalf("error = %v", err)
-	}
-	if reviewGets != 1 || runGets != 1 {
-		t.Fatalf("reviewGets=%d runGets=%d", reviewGets, runGets)
 	}
 }
 
@@ -725,17 +643,17 @@ func TestReviewsApproveSendsVersionID(t *testing.T) {
 		t.Fatal(err)
 	}
 	stdout, stderr := captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews approve: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/run_1/blk_1/decision" {
+	if seenPath != "/workflows/reviews/rev_1/approve" {
 		t.Fatalf("path = %s", seenPath)
 	}
-	if body["verdict"] != "approved" || body["version_id"] != reviewTestVersionID {
+	if body["version_id"] != reviewTestVersionID {
 		t.Fatalf("body = %#v", body)
 	}
-	for _, stale := range []string{"version_stamp", "reviewable_value", "snapshot"} {
+	for _, stale := range []string{"verdict", "version_stamp", "reviewable_value", "snapshot"} {
 		if _, ok := body[stale]; ok {
 			t.Fatalf("body contains stale %q: %#v", stale, body)
 		}
@@ -753,7 +671,7 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	body := reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID))
-	body["versions_by_id"] = map[string]any{
+	body["versions"] = map[string]any{
 		reviewTestVersionID: reviewVersionBody(nil, map[string]any{"huge_nested_payload": strings.Repeat("x", 4096)}),
 	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -772,24 +690,24 @@ func TestReviewsApproveTableRendersConciseDecisionResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 	stdout, stderr := captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews approve: %v", err)
 		}
 	})
 	if stderr != "" {
 		t.Fatalf("stderr = %s", stderr)
 	}
-	if strings.HasPrefix(strings.TrimSpace(stdout), "{") || strings.Contains(stdout, `"versions_by_id"`) || strings.Contains(stdout, "huge_nested_payload") {
+	if strings.HasPrefix(strings.TrimSpace(stdout), "{") || strings.Contains(stdout, `"versions"`) || strings.Contains(stdout, "huge_nested_payload") {
 		t.Fatalf("expected concise table output, got:\n%s", stdout)
 	}
-	for _, want := range []string{"SUBMISSION", "REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "VERDICT", "VERSION_ID", "accepted", "blockrun_1", "run_1", "blk_1", "extract", "approved", reviewTestVersionID} {
+	for _, want := range []string{"SUBMISSION", "REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "VERDICT", "VERSION_ID", "accepted", "rev_1", "run_1", "blk_1", "extract", "approved", reviewTestVersionID} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
 	}
 }
 
-func TestReviewsVersionsCreateSendsSnapshotAndParentID(t *testing.T) {
+func TestReviewsVersionsAppendSendsSnapshotAndParentVersionID(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
@@ -805,27 +723,31 @@ func TestReviewsVersionsCreateSendsSnapshotAndParentID(t *testing.T) {
 		raw, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(raw, &body)
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reviewOverlayBody(nil))
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"append_status": "accepted",
+			"version_id":    reviewTestVersionID,
+			"review":        reviewOverlayBody(nil),
+		})
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
 
-	cmd := newVersionsCreateTestCmd()
+	cmd := newVersionsAppendTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("parent-id", reviewTestVersionID); err != nil {
+	if err := cmd.Flags().Set("parent-version-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 	if err := cmd.Flags().Set("note", "fixed total"); err != nil {
 		t.Fatal(err)
 	}
 	captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
-			t.Fatalf("reviews versions create: %v", err)
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
+			t.Fatalf("reviews versions append: %v", err)
 		}
 	})
-	if seenPath != "/workflows/reviews/run_1/blk_1/versions" {
+	if seenPath != "/workflows/reviews/rev_1/versions" {
 		t.Fatalf("path = %s", seenPath)
 	}
 	snapshot, ok := body["snapshot"].(map[string]any)
@@ -836,30 +758,30 @@ func TestReviewsVersionsCreateSendsSnapshotAndParentID(t *testing.T) {
 	if !ok || output["total"] != float64(110) || output["currency"] != "USD" {
 		t.Fatalf("snapshot = %#v", snapshot)
 	}
-	if body["parent_id"] != reviewTestVersionID || body["note"] != "fixed total" {
+	if body["parent_version_id"] != reviewTestVersionID || body["note"] != "fixed total" {
 		t.Fatalf("body = %#v", body)
 	}
-	for _, stale := range []string{"origin", "version_stamp", "reviewable_value", "command_id"} {
+	for _, stale := range []string{"parent_id", "origin", "version_stamp", "reviewable_value", "command_id"} {
 		if _, ok := body[stale]; ok {
 			t.Fatalf("body contains stale %q: %#v", stale, body)
 		}
 	}
 }
 
-func TestReviewsVersionsCreateReadsSnapshotBeforeCredentials(t *testing.T) {
+func TestReviewsVersionsAppendReadsSnapshotBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
-	cmd := newVersionsCreateTestCmd()
+	cmd := newVersionsAppendTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", filepath.Join(t.TempDir(), "missing.json")); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("parent-id", reviewTestVersionID); err != nil {
+	if err := cmd.Flags().Set("parent-version-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
 
-	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	err := cmd.RunE(cmd, []string{"rev_1"})
 	if err == nil {
 		t.Fatal("expected missing snapshot error")
 	}
@@ -880,7 +802,7 @@ func TestReviewsRejectRequiresReasonBeforeCredentials(t *testing.T) {
 	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
 		t.Fatal(err)
 	}
-	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	err := cmd.RunE(cmd, []string{"rev_1"})
 	if err == nil {
 		t.Fatal("expected reject to fail without --reason")
 	}
@@ -902,8 +824,8 @@ func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T
 		cmd  *cobra.Command
 		args []string
 	}{
-		{name: "approve", cmd: newApproveTestCmd(), args: []string{"run_1", "blk_1"}},
-		{name: "reject", cmd: newRejectTestCmd(), args: []string{"run_1", "blk_1"}},
+		{name: "approve", cmd: newApproveTestCmd(), args: []string{"rev_1"}},
+		{name: "reject", cmd: newRejectTestCmd(), args: []string{"rev_1"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := tc.cmd.Flags().Set("version-id", "ver_abc"); err != nil {
@@ -928,7 +850,7 @@ func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T
 	}
 }
 
-func TestReviewsVersionsCreateValidatesParentIDBeforeCredentials(t *testing.T) {
+func TestReviewsVersionsAppendValidatesParentVersionIDBeforeCredentials(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
@@ -938,23 +860,23 @@ func TestReviewsVersionsCreateValidatesParentIDBeforeCredentials(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := newVersionsCreateTestCmd()
+	cmd := newVersionsAppendTestCmd()
 	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("parent-id", "ver_abc"); err != nil {
+	if err := cmd.Flags().Set("parent-version-id", "ver_abc"); err != nil {
 		t.Fatal(err)
 	}
 
-	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	err := cmd.RunE(cmd, []string{"rev_1"})
 	if err == nil {
 		t.Fatal("expected malformed parent id error")
 	}
-	if !strings.Contains(err.Error(), "--parent-id") || !strings.Contains(err.Error(), "64-character hex") {
+	if !strings.Contains(err.Error(), "--parent-version-id") || !strings.Contains(err.Error(), "64-character hex") {
 		t.Fatalf("error = %v", err)
 	}
 	if strings.Contains(err.Error(), "credentials") {
-		t.Fatalf("error %q checked credentials before validating --parent-id", err.Error())
+		t.Fatalf("error %q checked credentials before validating --parent-version-id", err.Error())
 	}
 }
 
@@ -962,8 +884,10 @@ func TestReviewsRejectSendsVersionIDAndReason(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
 
+	var seenPath string
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPath = r.URL.Path
 		raw, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(raw, &body)
 		w.Header().Set("Content-Type", "application/json")
@@ -983,12 +907,18 @@ func TestReviewsRejectSendsVersionIDAndReason(t *testing.T) {
 		t.Fatal(err)
 	}
 	captureStd(t, func() {
-		if err := cmd.RunE(cmd, []string{"run_1", "blk_1"}); err != nil {
+		if err := cmd.RunE(cmd, []string{"rev_1"}); err != nil {
 			t.Fatalf("reviews reject: %v", err)
 		}
 	})
-	if body["verdict"] != "rejected" || body["version_id"] != reviewTestVersionID || body["reason"] != "not an invoice" {
+	if seenPath != "/workflows/reviews/rev_1/reject" {
+		t.Fatalf("path = %s", seenPath)
+	}
+	if body["version_id"] != reviewTestVersionID || body["reason"] != "not an invoice" {
 		t.Fatalf("body = %#v", body)
+	}
+	if _, ok := body["verdict"]; ok {
+		t.Fatalf("body contains stale verdict: %#v", body)
 	}
 }
 
@@ -1019,11 +949,11 @@ func TestReviewsEscalateIsHiddenAndDisabled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := cmd.RunE(cmd, []string{"run_1", "blk_1"})
+	err := cmd.RunE(cmd, []string{"rev_1"})
 	if err == nil {
 		t.Fatal("expected disabled escalation command to fail locally")
 	}
-	for _, want := range []string{"not supported", "approve", "reject", "versions create"} {
+	for _, want := range []string{"not supported", "approve", "reject", "versions append"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("error %q should contain %q", err.Error(), want)
 		}
@@ -1046,21 +976,21 @@ func newRejectTestCmd() *cobra.Command {
 	return cmd
 }
 
-func newVersionsCreateTestCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "create", RunE: workflowsReviewsVersionsCreateCmd.RunE}
-	cmd.Flags().String("parent-id", "", "")
+func newVersionsAppendTestCmd() *cobra.Command {
+	cmd := &cobra.Command{Use: "append", RunE: workflowsReviewsVersionsAppendCmd.RunE}
+	cmd.Flags().String("parent-version-id", "", "")
 	cmd.Flags().String("snapshot-file", "", "")
 	cmd.Flags().String("note", "", "")
 	return cmd
 }
 
 func TestReviewEnumFlagsShowAllowedValues(t *testing.T) {
-	decisionFlag := newEnumStringFlagValue("--decision", "none", "any")
+	decisionFlag := newEnumStringFlagValue("--decision-status", "pending", "approved", "rejected", "decided", "all")
 	err := decisionFlag.Set("typo")
 	if err == nil {
 		t.Fatal("expected invalid decision to fail")
 	}
-	if !strings.Contains(err.Error(), "none | any") {
+	if !strings.Contains(err.Error(), "pending | approved | rejected | decided | all") {
 		t.Fatalf("decision error should show allowed values, got: %v", err)
 	}
 }
