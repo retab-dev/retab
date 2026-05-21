@@ -91,6 +91,48 @@ func TestConfirmDeletedHonorsJSONOutputFlag(t *testing.T) {
 	}
 }
 
+// Regression for CLI probing 2026-05: commands routed through
+// `cliJSONRequest` (workflows runs restart, experiments runs *, tests
+// runs *) used to surface the raw HTTP envelope on non-2xx — e.g.
+// `error: GET http://… failed with status 404: {"detail":{"code":"HTTP_EXCEPTION",…}}`.
+// SDK-backed commands rendered the same shape as `404 — Workflow not found`.
+// cliJSONRequest now returns an *APIError so both paths render identically.
+func TestCLIJSONRequestSurfacesAPIErrorOnNon2xx(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"detail":{"code":"HTTP_EXCEPTION","message":"An HTTP exception occurred.","details":{"error":"Experiment run not found: exprun_404"}}}`))
+	}))
+	defer server.Close()
+
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := &cobra.Command{Use: "fake"}
+	rootCmd.AddCommand(cmd)
+	t.Cleanup(func() { rootCmd.RemoveCommand(cmd) })
+
+	_, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/exprun_404", nil, nil)
+	if err == nil {
+		t.Fatal("expected an error on 404")
+	}
+	apiErr, ok := err.(*retab.APIError)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T (%v)", err, err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("StatusCode = %d, want 404", apiErr.StatusCode)
+	}
+	if !strings.Contains(apiErr.Error(), "Experiment run not found") {
+		t.Fatalf("APIError did not surface the server message: %s", apiErr.Error())
+	}
+	// The pre-fix shape was a bare wrapped string containing "failed with status".
+	if strings.Contains(apiErr.Error(), "failed with status") {
+		t.Fatalf("APIError message still resembles the raw HTTP envelope: %s", apiErr.Error())
+	}
+}
+
 func TestRenderAPIErrorForCLIDefaultHidesRawHTTPDebug(t *testing.T) {
 	cmd := commandWithDebugFlagForTest(t, false)
 	apiErr := &retab.APIError{
