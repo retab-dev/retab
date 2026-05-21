@@ -268,15 +268,26 @@ func ResolveOutputFormat(cmd *cobra.Command, w io.Writer) (OutputFormat, error) 
 // created_at gives temporal ordering. Anything else falls back to JSON
 // — the goal is a useful default for the five wired list commands, not
 // per-resource customization (TableColumn already covers that path).
+// preferredColumnOrder is the alias map for the auto-column table
+// renderer. Each header collapses multiple JSON field names so different
+// resource shapes (artifacts use “operation“, spec changes use
+// “target“ / “actions“, etc.) light up under one consistent column
+// in the TTY default. Without these aliases the TTY default for
+// “spec plan“ and “artifacts list“ rendered empty TYPE/ACTION cells
+// even though the JSON carries the value.
 var preferredColumnOrder = []struct {
 	header  string
 	aliases []string
 }{
 	{"ID", []string{"id", "step_id", "block_id", "workflow_id", "run_id"}},
 	{"SOURCE", []string{"source_block", "source.type", "source"}},
-	{"TARGET", []string{"target_block", "target.block_id", "target"}},
-	{"NAME", []string{"name", "filename", "block_label", "name_at_run_time", "workflow.name_at_run_time"}},
-	{"TYPE", []string{"type", "status", "block_type", "trigger_type", "lifecycle.status", "trigger.type"}},
+	{"TARGET", []string{"target_block", "target.block_id", "target", "address"}},
+	{"NAME", []string{"name", "filename", "block_label", "name_at_run_time", "workflow.name_at_run_time", "summary"}},
+	// ``operation`` covers workflow artifacts (parse/extract/split/etc.);
+	// ``target_type``/``target`` covers spec-plan resource_changes; the
+	// trailing ``actions`` (array of {add|update|delete}) also rounds
+	// back into TYPE when the change-shape is what's being listed.
+	{"TYPE", []string{"type", "status", "block_type", "trigger_type", "lifecycle.status", "trigger.type", "operation", "actions"}},
 	{"MODEL", []string{"model"}},
 	{"CREATED_AT", []string{"created_at", "started_at", "updated_at", "completed_at", "timing.created_at"}},
 }

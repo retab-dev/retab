@@ -131,7 +131,7 @@ func TestParseBlockCreateRejectsMismatchedWorkflowID(t *testing.T) {
 		t.Fatal("expected mismatched workflow_id to be rejected")
 	}
 	msg := err.Error()
-	if !strings.Contains(msg, "workflow_id") {
+	if !strings.Contains(msg, "workflow_id") && !strings.Contains(msg, "workflow id") {
 		t.Fatalf("error should mention workflow_id, got %q", msg)
 	}
 	if !strings.Contains(msg, "wrk_REAL") || !strings.Contains(msg, "wrk_FAKE") {

@@ -200,6 +200,12 @@ JSON object with the keys ` + "`id`" + ` (required), ` + "`type`" + ` (required)
 ` + "`label`" + `, ` + "`position_x`" + `, ` + "`position_y`" + `, ` + "`width`" + `,
 ` + "`height`" + `, ` + "`parent_id`" + `, and ` + "`config`" + `.
 
+Block IDs are unique per ORGANIZATION, not per workflow. Reusing a
+human-friendly id like ` + "`block_extract`" + ` across two workflows in
+the same org will fail with 409. Prefer the server-generated
+` + "`blk_<nanoid>`" + ` form (omit ` + "`id`" + ` to get one) unless you
+have a reason to pin a stable name.
+
 Review is configured inside the block's typed config as
 ` + "`config.review.predicate`" + `. For example, an extract block can pause
 every run with ` + "`{\"review\":{\"predicate\":{\"kind\":\"always\"}}}`" + `.
@@ -444,6 +450,13 @@ func init() {
 	workflowsBlocksUpdateCmd.Flags().String("merge-config-file", "", "JSON file to deep-merge into the existing config; nulls delete keys (RFC 7396) (or - for stdin)")
 
 	workflowsBlocksDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+
+	// `--workflow-id` is an optional disambiguator for legacy duplicate
+	// block ids. New blocks use server-generated opaque ids and never
+	// need it; pre-uniqueness data does. See `workflowBlockLookupOpts`.
+	workflowsBlocksGetCmd.Flags().String("workflow-id", "", "scope flat block-id lookup to one workflow (for legacy duplicate ids)")
+	workflowsBlocksUpdateCmd.Flags().String("workflow-id", "", "scope flat block-id lookup to one workflow (for legacy duplicate ids)")
+	workflowsBlocksDeleteCmd.Flags().String("workflow-id", "", "scope flat block-id lookup to one workflow (for legacy duplicate ids)")
 
 	workflowsBlocksCmd.AddCommand(workflowsBlocksListCmd, workflowsBlocksGetCmd, workflowsBlocksCreateCmd, workflowsBlocksUpdateCmd, workflowsBlocksDeleteCmd)
 	workflowsCmd.AddCommand(workflowsBlocksCmd)
