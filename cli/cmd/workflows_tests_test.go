@@ -229,6 +229,62 @@ func TestWorkflowsTestsRunsCreateRejectsUnsupportedConsensusLocally(t *testing.T
 	resetConsensusFlag(t, workflowsTestsRunsCreateCmd)
 }
 
+// Regression for CLI probing 2026-05: `workflows tests runs list`
+// forwarded `--status`, `--from-date`, `--order` straight to the server
+// without local validation, surfacing raw HTTP 400/422 envelopes that the
+// sibling `workflows runs list` traps client-side. Match the behaviour
+// so users get the same clean error shape regardless of which list
+// command they call.
+func TestWorkflowsTestsRunsListRejectsInvalidFiltersBeforeRequest(t *testing.T) {
+	cases := []struct {
+		name      string
+		flag      string
+		value     string
+		wantError string
+		reset     string
+	}{
+		{name: "invalid status", flag: "status", value: "banana", wantError: "invalid --status", reset: ""},
+		{name: "invalid from-date", flag: "from-date", value: "not-a-date", wantError: "YYYY-MM-DD", reset: ""},
+		{name: "invalid to-date", flag: "to-date", value: "not-a-date", wantError: "YYYY-MM-DD", reset: ""},
+		{name: "invalid order", flag: "order", value: "sideways", wantError: "asc", reset: ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("RETAB_API_KEY", "test-key")
+			t.Setenv("HOME", t.TempDir())
+
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				t.Fatalf("server should not be reached for invalid local filter, got %s %s", r.Method, r.URL.Path)
+			}))
+			defer server.Close()
+			t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+			setErr := workflowsTestsRunsListCmd.Flags().Set(tc.flag, tc.value)
+			t.Cleanup(func() {
+				_ = workflowsTestsRunsListCmd.Flags().Set(tc.flag, tc.reset)
+			})
+
+			var err error
+			if setErr != nil {
+				err = setErr
+			} else {
+				err = workflowsTestsRunsListCmd.RunE(workflowsTestsRunsListCmd, nil)
+			}
+			if err == nil {
+				t.Fatalf("expected local validation error for --%s=%s", tc.flag, tc.value)
+			}
+			if !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("error %q does not contain %q", err.Error(), tc.wantError)
+			}
+			if got := hits.Load(); got != 0 {
+				t.Fatalf("server was hit %d time(s), want 0", got)
+			}
+		})
+	}
+}
+
 func TestWorkflowsTestsListCommandsRejectNegativeLimitLocally(t *testing.T) {
 	for _, tc := range []struct {
 		name string
