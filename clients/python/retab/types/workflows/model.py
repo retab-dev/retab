@@ -1,7 +1,7 @@
 import datetime
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import Field, ConfigDict, computed_field, field_validator
+from pydantic import Field, ConfigDict, field_validator
 from retab.types.base import RetabBaseModel
 
 from retab.types.mime import FileRef

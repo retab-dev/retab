@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import List
 
 from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.pagination import PaginatedList
