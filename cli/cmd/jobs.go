@@ -23,7 +23,7 @@ with ` + "`retrieve`" + `, block-until-done with ` + "`wait`" + `, or list
 with ` + "`list`" + `. Jobs can be cancelled or retried.
 
 Typical pattern: submit → wait (or poll on a schedule) → fetch the
-response with ` + "`retrieve-full`" + `.`,
+response with ` + "`retrieve --include-response`" + `.`,
 	Example: `  # Submit a job against an endpoint
   retab jobs create \
     --endpoint /v1/extractions \
@@ -33,8 +33,8 @@ response with ` + "`retrieve-full`" + `.`,
   # Block until terminal status (completed / failed / cancelled / expired)
   retab jobs wait job_abc123 --timeout-seconds 300
 
-  # Pull the full response body once done
-  retab jobs retrieve-full job_abc123`,
+  # Pull the response body once done
+  retab jobs retrieve job_abc123 --include-response`,
 }
 
 var jobsCreateCmd = &cobra.Command{
@@ -103,8 +103,7 @@ var jobsRetrieveCmd = &cobra.Command{
 	Long: `Fetch a job's current state: status, timestamps, error info.
 By default the original request body and response body are omitted to
 keep payloads small — use ` + "`--include-request`" + ` /
-` + "`--include-response`" + ` to embed them, or use ` + "`retrieve-full`" + `
-for both.`,
+` + "`--include-response`" + ` to embed them.`,
 	Example: `  # Just the status envelope
   retab jobs retrieve job_abc123
 
@@ -136,32 +135,6 @@ for both.`,
 			return err
 		}
 		return nil
-	}),
-}
-
-var jobsRetrieveFullCmd = &cobra.Command{
-	Use:   "retrieve-full <job-id>",
-	Short: "Retrieve a job with full request and response",
-	Long: `Fetch a job with both the original request body and the
-response body embedded. Equivalent to ` + "`retrieve --include-request --include-response`" + `.`,
-	Example: `  # Full record (request + response embedded)
-  retab jobs retrieve-full job_abc123
-
-  # Pull just the result of the wrapped endpoint
-  retab jobs retrieve-full job_abc123 | jq '.response'`,
-	Args: cobra.ExactArgs(1),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		client, err := newClient(cmd)
-		if err != nil {
-			return err
-		}
-		ctx, cancel := ctxFor(cmd)
-		defer cancel()
-		result, err := client.Jobs.RetrieveFull(ctx, args[0])
-		if err != nil {
-			return err
-		}
-		return printJSON(result)
 	}),
 }
 
@@ -299,6 +272,9 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 		params := retab.ListJobsParams{}
 		params.Before, _ = cmd.Flags().GetString("before")
 		params.After, _ = cmd.Flags().GetString("after")
+		if params.Before != "" && params.After != "" {
+			return fmt.Errorf("--before and --after are mutually exclusive")
+		}
 		params.Limit, _ = cmd.Flags().GetInt("limit")
 		params.Order, _ = cmd.Flags().GetString("order")
 		params.ID, _ = cmd.Flags().GetString("id")
@@ -581,26 +557,7 @@ func jobTableCell(row any, key string) string {
 	if !ok {
 		return ""
 	}
-	if strings.HasSuffix(key, "_at") {
-		if formatted, ok := formatJobTimestampCell(value); ok {
-			return formatted
-		}
-	}
 	return stringifyCell(value)
-}
-
-func formatJobTimestampCell(value any) (string, bool) {
-	switch v := value.(type) {
-	case int:
-		return time.Unix(int64(v), 0).UTC().Format(time.RFC3339), true
-	case int64:
-		return time.Unix(v, 0).UTC().Format(time.RFC3339), true
-	case float64:
-		if v == float64(int64(v)) {
-			return time.Unix(int64(v), 0).UTC().Format(time.RFC3339), true
-		}
-	}
-	return "", false
 }
 
 func init() {
@@ -617,8 +574,9 @@ func init() {
 	jobsWaitCmd.Flags().Var(&nonNegativeIntFlagValue{}, "poll-interval-ms", "polling interval in ms (default 2000)")
 	jobsWaitCmd.Flags().Var(&nonNegativeIntFlagValue{}, "timeout-seconds", "wait timeout in seconds (default 600)")
 
-	jobsListCmd.Flags().String("before", "", "job id: return items before this id")
-	jobsListCmd.Flags().String("after", "", "job id: return items after this id")
+	jobsListCmd.Flags().String("before", "", "job id: return items before this id (mutually exclusive with --after)")
+	jobsListCmd.Flags().String("after", "", "job id: return items after this id (mutually exclusive with --before)")
+	jobsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	jobsListCmd.Flags().Var(&nonNegativeIntFlagValue{}, "limit", "max items to return")
 	jobsListCmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	jobsListCmd.Flags().String("id", "", "filter by job id")
@@ -638,6 +596,6 @@ func init() {
 	jobsListCmd.Flags().Bool("include-request", false, "include request body")
 	jobsListCmd.Flags().Bool("include-response", false, "include response body")
 
-	jobsCmd.AddCommand(jobsCreateCmd, jobsRetrieveCmd, jobsRetrieveFullCmd, jobsWaitCmd, jobsCancelCmd, jobsRetryCmd, jobsListCmd)
+	jobsCmd.AddCommand(jobsCreateCmd, jobsRetrieveCmd, jobsWaitCmd, jobsCancelCmd, jobsRetryCmd, jobsListCmd)
 	rootCmd.AddCommand(jobsCmd)
 }

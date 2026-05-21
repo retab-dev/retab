@@ -25,13 +25,17 @@ func TestJobsListOutputTable(t *testing.T) {
 			t.Fatalf("path = %s, want /jobs", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
+		// The backend serializes job timestamps as ISO 8601 strings on the
+		// API boundary (see backend/main_server/main_server/services/v1/jobs/
+		// models.py); mirror that here so the table renderer is exercised
+		// against the real wire shape.
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
 				{
 					"id":         "job_123",
 					"status":     "completed",
 					"endpoint":   "/v1/parses",
-					"created_at": 1778679174,
+					"created_at": "2026-05-13T13:32:54Z",
 				},
 			},
 			"has_more": false,
@@ -67,7 +71,7 @@ func TestJobsListOutputTable(t *testing.T) {
 		}
 	}
 	if strings.Contains(stdout, "1778679174") {
-		t.Fatalf("jobs table should format numeric timestamps, got:\n%s", stdout)
+		t.Fatalf("jobs table should not contain raw epoch ints (server emits ISO 8601), got:\n%s", stdout)
 	}
 	if strings.Contains(stdout, "TYPE") {
 		t.Fatalf("jobs table should label the status column as STATUS, got:\n%s", stdout)
@@ -78,6 +82,14 @@ func TestJobsWaitHelpMentionsEveryTerminalStatus(t *testing.T) {
 	for _, status := range []string{"completed", "failed", "cancelled", "expired"} {
 		if !strings.Contains(jobsWaitCmd.Long, status) {
 			t.Fatalf("jobs wait help should mention terminal status %q:\n%s", status, jobsWaitCmd.Long)
+		}
+	}
+}
+
+func TestJobsCommandDoesNotExposeRetrieveFull(t *testing.T) {
+	for _, cmd := range jobsCmd.Commands() {
+		if cmd.Name() == "retrieve-full" {
+			t.Fatal("jobs command still exposes retrieve-full")
 		}
 	}
 }

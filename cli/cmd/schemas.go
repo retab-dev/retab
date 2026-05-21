@@ -46,8 +46,20 @@ At least one document is required. The more representative samples you
 pass, the more general the resulting schema. The output is a JSON Schema
 suitable for ` + "`retab extractions create --json-schema-file`" + ` — save it,
 review it, edit it by hand if you want tighter typing, and commit it
-alongside your code. Pass ` + "`--format json`" + ` to preserve the full server
-response envelope (` + "`json_schema`" + `, ` + "`created_at`" + `, etc.).`,
+alongside your code.
+
+` + "`--format`" + ` and ` + "`--output`" + ` look similar but control different things:
+
+  --format chooses WHICH payload to return.
+    --format schema (default) — just the JSON Schema body, the shape
+      you'd paste into ` + "`--json-schema-file`" + `.
+    --format json — the full server response envelope (` + "`json_schema`" + `,
+      ` + "`created_at`" + `, etc.), useful when you want sidecar metadata.
+
+  --output chooses HOW to print the selected payload. It's the global
+  flag every other command honours: ` + "`--output json`" + ` always renders
+  JSON, ` + "`--output table`" + ` renders a table when the payload is
+  tabulable, and the default auto-detects based on stdout.`,
 	Example: `  # Single sample -> schema on stdout
   retab schemas generate --file ./invoice.pdf > schema.json
 

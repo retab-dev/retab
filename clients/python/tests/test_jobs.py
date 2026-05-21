@@ -7,11 +7,13 @@ Run against local server:
 
 import base64
 import time
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
 
 from retab import Retab
+from retab.resources.jobs.client import AsyncJobs, Jobs
 from retab.types.jobs import Job
 
 # ---------------------------------------------------------------------------
@@ -224,7 +226,7 @@ def test_job_retrieve_without_payload(sync_client: Retab) -> None:
 
 
 def test_job_retrieve_with_payload(sync_client: Retab) -> None:
-    """retrieve_full includes both request and response."""
+    """retrieve can include both request and response."""
     with sync_client as client:
         job = client.jobs.create(
             endpoint="/v1/parses",
@@ -235,12 +237,17 @@ def test_job_retrieve_with_payload(sync_client: Retab) -> None:
         )
         _wait(client, job.id)
 
-        full = client.jobs.retrieve_full(job.id)
+        full = client.jobs.retrieve(job.id, include_request=True, include_response=True)
         assert full.id == job.id
         assert full.status == "completed"
-        assert full.request is not None, "retrieve_full should include request"
-        assert full.response is not None, "retrieve_full should include response"
+        assert full.request is not None, "retrieve with include_request should include request"
+        assert full.response is not None, "retrieve with include_response should include response"
         assert full.response.status_code == 200
+
+
+def test_jobs_do_not_expose_retrieve_full() -> None:
+    assert not hasattr(Jobs(client=MagicMock()), "retrieve_full")
+    assert not hasattr(AsyncJobs(client=MagicMock()), "retrieve_full")
 
 
 def test_job_list_filters(sync_client: Retab) -> None:

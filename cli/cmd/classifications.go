@@ -205,12 +205,21 @@ var classificationsDeleteCmd = &cobra.Command{
 	Long: `Permanently delete a classification.
 
 Destructive and irreversible. The source document is not affected. Take a
-backup with ` + "`retab classifications get`" + ` first if you may need it.`,
-	Example: `  # Back up, then delete
+backup with ` + "`retab classifications get`" + ` first if you may need it.
+
+Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
+otherwise the command refuses to delete when stdin is not a terminal.`,
+	Example: `  # Back up, then delete (interactive)
   retab classifications get clas_xyz789 > backup.json
-  retab classifications delete clas_xyz789`,
+  retab classifications delete clas_xyz789
+
+  # Delete in a script
+  retab classifications delete clas_xyz789 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "classification", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -237,6 +246,8 @@ func init() {
 	_ = classificationsCreateCmd.MarkFlagRequired("model")
 
 	addListFlags(classificationsListCmd, false)
+
+	classificationsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	classificationsCmd.AddCommand(classificationsCreateCmd, classificationsGetCmd, classificationsListCmd, classificationsDeleteCmd)
 	rootCmd.AddCommand(classificationsCmd)

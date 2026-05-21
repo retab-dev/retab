@@ -138,21 +138,6 @@ export default class APIJobs extends CompositionClient {
   }
 
   /**
-   * Retrieve a job by ID including full request and response payloads.
-   */
-  async retrieveFull(job_id: string, options?: RequestOptions): Promise<Job> {
-    return this.retrieve(job_id, {
-      ...options,
-      include_request: true,
-      include_response: true,
-    });
-  }
-
-  async retrieve_full(job_id: string, options?: RequestOptions): Promise<Job> {
-    return this.retrieveFull(job_id, options);
-  }
-
-  /**
    * Poll a job until terminal status, then fetch final payload once.
    */
   async waitForCompletion(job_id: string, options: JobWaitForCompletionOptions = {}): Promise<Job> {

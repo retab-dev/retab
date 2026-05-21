@@ -197,12 +197,21 @@ var splitsDeleteCmd = &cobra.Command{
 
 Destructive and irreversible. The source document is not affected. Take a
 backup with ` + "`retab splits get`" + ` first if you may need the subdocument
-boundaries again.`,
+boundaries again.
+
+Pass ` + "`--yes`" + ` to skip the confirmation prompt in scripts and CI —
+otherwise the command refuses to delete when stdin is not a terminal.`,
 	Example: `  # Back up, then delete
   retab splits get split_xyz789 > backup.json
-  retab splits delete split_xyz789`,
+  retab splits delete split_xyz789
+
+  # Skip the prompt in scripts
+  retab splits delete split_xyz789 --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "split", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -228,6 +237,8 @@ func init() {
 	_ = splitsCreateCmd.MarkFlagRequired("subdocuments-file")
 
 	addListFlags(splitsListCmd, false)
+
+	splitsDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
 
 	splitsCmd.AddCommand(splitsCreateCmd, splitsGetCmd, splitsListCmd, splitsDeleteCmd)
 	rootCmd.AddCommand(splitsCmd)

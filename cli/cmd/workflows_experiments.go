@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -110,11 +111,17 @@ func validateExperimentMetricsView(view string) error {
 	}
 }
 
-func validateExperimentName(name string) error {
-	if strings.TrimSpace(name) == "" {
-		return fmt.Errorf("experiment name is required")
+// validateExperimentName trims surrounding whitespace, rejects blank-only
+// values, and returns the cleaned name. Callers MUST use the returned
+// value when populating the outgoing request — otherwise
+// “experiments create --name "  padded  "“ persists with the padding
+// (bug #3, same shape as the workflow-name fix).
+func validateExperimentName(name string) (string, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return "", fmt.Errorf("experiment name is required")
 	}
-	return nil
+	return trimmed, nil
 }
 
 var workflowsExperimentsCreateCmd = &cobra.Command{
@@ -161,9 +168,11 @@ After creation, create a run with
 		req.WorkflowID = workflowID
 		req.BlockID = blockID
 		req.Name, _ = cmd.Flags().GetString("name")
-		if err := validateExperimentName(req.Name); err != nil {
+		trimmedName, err := validateExperimentName(req.Name)
+		if err != nil {
 			return err
 		}
+		req.Name = trimmedName
 		req.NConsensus, _ = cmd.Flags().GetInt("n-consensus")
 		captures, explicit, err := parseExperimentDocs(cmd)
 		if err != nil {
@@ -207,8 +216,46 @@ blocks.`,
 		if err != nil {
 			return err
 		}
-		return printResult(cmd, result)
+		return printWorkflowExperimentsListResult(cmd, result)
 	}),
+}
+
+// printWorkflowExperimentsListResult routes experiment list rendering to
+// a dedicated TableColumn spec when --output table is selected. The
+// generic auto-column picker maps the TYPE column to whichever alias
+// fires first (`status` wins over `block_kind` on experiment payloads),
+// which produces a column that varies confusingly between resource
+// shapes. The explicit BLOCK_KIND column makes the source field obvious
+// (bug #12) — extract / split / classifier / … — and aligns with how
+// the SDK names the field on the wire.
+func printWorkflowExperimentsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.ExperimentResponse]) error {
+	if cmd != nil {
+		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
+			return RenderList(os.Stdout, OutputTable, result, workflowExperimentColumns)
+		}
+	}
+	return printJSON(result)
+}
+
+// workflowExperimentColumns is the dedicated TableColumn spec for
+// `workflows experiments list --output table`. BLOCK_KIND replaces the
+// always-empty TYPE column the generic auto-renderer used to render
+// before bug #12 was fixed; the value comes from the `block_kind` field
+// on each Experiment record (extract / split / classifier / …).
+var workflowExperimentColumns = []TableColumn{
+	{Header: "ID", Extract: func(row any) string { return workflowExperimentCell(row, "id") }},
+	{Header: "NAME", Extract: func(row any) string { return workflowExperimentCell(row, "name") }},
+	{Header: "BLOCK_KIND", Extract: func(row any) string { return workflowExperimentCell(row, "block_kind") }},
+	{Header: "STATUS", Extract: func(row any) string { return workflowExperimentCell(row, "status") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return workflowExperimentCell(row, "created_at") }},
+}
+
+func workflowExperimentCell(row any, key string) string {
+	value, ok := rowField(row, key)
+	if !ok || cellIsEmpty(value) || !cellIsDisplayable(value) {
+		return ""
+	}
+	return stringifyCell(value)
 }
 
 var workflowsExperimentsGetCmd = &cobra.Command{
@@ -257,9 +304,11 @@ previously-captured results for that experiment.`,
 		req := retab.UpdateExperimentRequest{}
 		req.Name, _ = cmd.Flags().GetString("name")
 		if cmd.Flags().Changed("name") {
-			if err := validateExperimentName(req.Name); err != nil {
+			trimmed, err := validateExperimentName(req.Name)
+			if err != nil {
 				return err
 			}
+			req.Name = trimmed
 		}
 		if cmd.Flags().Changed("n-consensus") {
 			v, _ := cmd.Flags().GetInt("n-consensus")
@@ -425,6 +474,11 @@ positional, filters are flags — same convention as the rest of the
 		resolvedExperimentID := flagExperimentID
 		if positionalExperimentID != "" {
 			resolvedExperimentID = positionalExperimentID
+		}
+		if before, _ := cmd.Flags().GetString("before"); before != "" {
+			if after, _ := cmd.Flags().GetString("after"); after != "" {
+				return fmt.Errorf("--before and --after are mutually exclusive")
+			}
 		}
 		query := url.Values{}
 		if resolvedWorkflowID != "" {
@@ -606,8 +660,9 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
 	workflowsExperimentsRunsListCmd.Flags().String("sort-by", "", "sort field")
 	workflowsExperimentsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
-	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor")
-	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor")
+	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
+	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
+	workflowsExperimentsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsExperimentsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")

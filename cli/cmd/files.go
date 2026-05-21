@@ -169,17 +169,27 @@ removed from storage; downstream artefacts (extractions, parses, runs)
 that reference the file id keep their snapshots but the original blob
 can no longer be downloaded.
 
+This is destructive. Pass ` + "`--yes`" + ` to skip the confirmation prompt
+in scripts and CI — otherwise the command refuses to delete when stdin
+is not a terminal.
+
 For bulk cleanup of test or stale files, pipe ` + "`files list`" + ` IDs
 through ` + "`xargs`" + `.`,
-	Example: `  # Delete a single file
+	Example: `  # Delete a single file (interactive, asks to confirm)
   retab files delete file_abc123
   # => { "id": "file_abc123", "deleted": true }
 
+  # Skip the prompt in scripts
+  retab files delete file_abc123 --yes
+
   # Bulk-delete every file matching a pattern (be careful)
   retab files list --limit 100 | jq -r '.data[] | select(.filename | test("^stress_")) | .id' \
-    | xargs -n1 retab files delete`,
+    | xargs -n1 retab files delete --yes`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		if err := confirmDestructive(cmd, "file", args[0]); err != nil {
+			return err
+		}
 		client, err := newClient(cmd)
 		if err != nil {
 			return err
@@ -195,15 +205,22 @@ through ` + "`xargs`" + `.`,
 
 var filesUploadCmd = &cobra.Command{
 	Use:   "upload <path>",
-	Short: "Upload a local file",
+	Short: "Upload a local file (or - to read from stdin)",
 	Long: `Upload a local file to Retab and receive a file id.
 
 The id can be passed as --file-id to extractions, edits, schemas, and
 workflow runs in lieu of re-uploading the same blob on every call. The
 upload is synchronous; for very large files use ` + "`files create-upload`" + `
-plus ` + "`files complete-upload`" + ` to upload directly to storage.`,
+plus ` + "`files complete-upload`" + ` to upload directly to storage.
+
+Pass ` + "`-`" + ` as the positional path to read the file bytes from stdin.
+` + "`--filename`" + ` is required in that mode so the server has a name to
+store and a hint for content-type inference.`,
 	Example: `  # Upload and capture the id for reuse
   FILE_ID=$(retab files upload ./invoice.pdf | jq -r .id)
+
+  # Pipe bytes in from stdin (--filename required)
+  cat invoice.pdf | retab files upload - --filename invoice.pdf
 
   # Upload, then immediately run an extraction against the id
   retab files upload ./invoice.pdf | jq -r .id | xargs -I{} \
@@ -211,8 +228,18 @@ plus ` + "`files complete-upload`" + ` to upload directly to storage.`,
       --json-schema-file ./schema.json --model gpt-4o`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		if _, err := inferFileMIMEData(args[0]); err != nil {
-			return err
+		uploadPath := args[0]
+		if uploadPath == "-" {
+			stdinPath, cleanup, err := stageStdinUpload(cmd)
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+			uploadPath = stdinPath
+		} else {
+			if _, err := inferFileMIMEData(uploadPath); err != nil {
+				return err
+			}
 		}
 		client, err := newClient(cmd)
 		if err != nil {
@@ -220,7 +247,7 @@ plus ` + "`files complete-upload`" + ` to upload directly to storage.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Files.Upload(ctx, args[0])
+		result, err := client.Files.Upload(ctx, uploadPath)
 		if err != nil {
 			return err
 		}
@@ -230,6 +257,41 @@ plus ` + "`files complete-upload`" + ` to upload directly to storage.`,
 		}
 		return printJSON(out)
 	}),
+}
+
+// stageStdinUpload drains stdin into a temp file named per --filename so the
+// existing client.Files.Upload path (SHA256, content-type inference, 2-phase
+// upload) handles stdin transparently. Returning a cleanup closure makes the
+// RunE site read like the file path — no special-case branching on bytes vs.
+// path further down. --filename is required (no sensible default for a piped
+// blob; we'd otherwise label it "stdin" or similar and silently mis-type the
+// content).
+func stageStdinUpload(cmd *cobra.Command) (string, func(), error) {
+	filename, _ := cmd.Flags().GetString("filename")
+	if strings.TrimSpace(filename) == "" {
+		return "", func() {}, fmt.Errorf("--filename is required when uploading from stdin (-)")
+	}
+	// Disallow path separators in the filename — we use it as a basename
+	// for the staging file and we don't want a `..` or `/` to escape the
+	// temp dir or be passed to the server as a path.
+	if strings.ContainsAny(filename, `/\`) {
+		return "", func() {}, fmt.Errorf("--filename must be a bare filename, not a path: %q", filename)
+	}
+	body, err := io.ReadAll(cmd.InOrStdin())
+	if err != nil {
+		return "", func() {}, fmt.Errorf("read stdin: %w", err)
+	}
+	dir, err := os.MkdirTemp("", "retab-upload-stdin-*")
+	if err != nil {
+		return "", func() {}, fmt.Errorf("stage stdin upload: %w", err)
+	}
+	stagedPath := filepath.Join(dir, filename)
+	if err := os.WriteFile(stagedPath, body, 0o600); err != nil {
+		_ = os.RemoveAll(dir)
+		return "", func() {}, fmt.Errorf("stage stdin upload: %w", err)
+	}
+	cleanup := func() { _ = os.RemoveAll(dir) }
+	return stagedPath, cleanup, nil
 }
 
 // shapeUploadResponse builds the JSON written by `files upload`. The SDK
@@ -662,6 +724,10 @@ func init() {
 	filesListCmd.Flags().Var(newEnumStringFlagValue("--sort-by", "created_at", "updated_at"), "sort-by", "sort field: created_at | updated_at (default: created_at)")
 
 	filesDownloadCmd.Flags().StringP("output", "o", "", "output path, - for stdout (alternative to the [dest] positional; default: server filename)")
+
+	filesDeleteCmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt (required when stdin is not a TTY)")
+
+	filesUploadCmd.Flags().String("filename", "", "filename to record on the server (required when reading from stdin)")
 
 	filesCreateUploadCmd.Flags().String("filename", "", "filename (required)")
 	filesCreateUploadCmd.Flags().String("content-type", "", "content type (required)")

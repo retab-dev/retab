@@ -5,15 +5,14 @@
  * and the Python SDK's `retab/types/workflows/experiments.py`. Wire-format
  * field names are snake_case.
  *
- * The metrics response is a deeply nested discriminated union (four "views"
+ * The metrics response is a deeply nested discriminated union (four views
  * plus two error envelopes). Modeling the full union here would couple the
  * SDK to internal structural details that are still evolving. We expose:
  *
  *   - typed wrappers for the simple/stable shapes (Experiment, runs,
  *     eligible blocks, experiment run results)
  *   - `ExperimentMetricsResponse = Record<string, unknown>` — caller
- *     branches on the `view` field for view-specific payloads, or on
- *     `error` for stale/missing envelopes.
+ *     branches on the shared `kind` field.
  */
 
 import * as z from 'zod';
@@ -47,7 +46,7 @@ export const ZExperimentPublicStatus = z.enum([
 ]);
 export type ExperimentPublicStatus = z.infer<typeof ZExperimentPublicStatus>;
 
-export const ZSchemaDriftStatus = z.enum(['unknown', 'none', 'drifted']);
+export const ZSchemaDriftStatus = z.enum(['unknown', 'none', 'partial', 'drifted']);
 export type SchemaDriftStatus = z.infer<typeof ZSchemaDriftStatus>;
 
 export const ZExperimentMetricView = z.enum(['summary', 'by_document', 'by_target', 'votes']);
@@ -130,9 +129,8 @@ export type ExperimentRunTrigger = z.infer<typeof ZExperimentRunTrigger>;
 export const ZExperimentRunLifecycle = z
   .object({
     status: ZExperimentRunStatus,
-    message: z.string().nullable().optional(),
   })
-  .passthrough();
+  .strip();
 export type ExperimentRunLifecycle = z.infer<typeof ZExperimentRunLifecycle>;
 
 export const ZExperimentRunTiming = z
@@ -167,6 +165,14 @@ export const ZExperimentRun = z
   .strip();
 export type ExperimentRun = z.infer<typeof ZExperimentRun>;
 
+export const ZExperimentRunCancelResponse = z
+  .object({
+    id: z.string(),
+    lifecycle: ZExperimentRunLifecycle,
+  })
+  .strip();
+export type ExperimentRunCancelResponse = z.infer<typeof ZExperimentRunCancelResponse>;
+
 // Canonical PaginatedList envelope for `GET /workflows/experiments/runs`.
 // The route used to return `{"runs": [...]}`; the migration to
 // `{data, list_metadata}` matches the rest of the Retab list endpoints.
@@ -188,9 +194,8 @@ export type ExperimentResultStatus = z.infer<typeof ZExperimentResultStatus>;
 export const ZExperimentResultLifecycle = z
   .object({
     status: ZExperimentResultStatus,
-    message: z.string().nullable().optional(),
   })
-  .passthrough();
+  .strip();
 export type ExperimentResultLifecycle = z.infer<typeof ZExperimentResultLifecycle>;
 
 export const ZExperimentResultTiming = z
@@ -270,7 +275,7 @@ export type EligibleBlockListResponse = z.infer<typeof ZEligibleBlockListRespons
 // Metrics
 // ---------------------------------------------------------------------------
 
-// Open shape — caller branches on `view` ("summary" | "by_document" | …)
-// or `error` ("stale_metrics" | "no_metrics") to interpret the payload.
+// Open shape — caller branches on `kind`
+// ("summary" | "by_document" | "by_target" | "votes" | "stale_metrics" | "no_metrics").
 export const ZExperimentMetricsResponse = z.record(z.any());
 export type ExperimentMetricsResponse = Record<string, unknown>;

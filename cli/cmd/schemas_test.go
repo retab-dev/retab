@@ -116,6 +116,32 @@ func TestSchemasGenerateFileMissingReportsClearError(t *testing.T) {
 	}
 }
 
+// `schemas generate` uniquely uses `--format` while every other command
+// uses `--output`. Per the UX papercut audit, the two flags are kept
+// distinct (different semantics: --format chooses WHICH payload to
+// return, --output chooses HOW to render it) but the Long: help text
+// must explicitly call out the distinction so users don't see them as
+// duplicate. This test pins the disambiguation text — losing it means
+// the help reverts to looking like it has two names for one concept.
+func TestSchemasGenerateLongDisambiguatesFormatVsOutput(t *testing.T) {
+	long := schemasGenerateCmd.Long
+	if !strings.Contains(long, "--format") {
+		t.Errorf("Long: text missing --format mention:\n%s", long)
+	}
+	if !strings.Contains(long, "--output") {
+		t.Errorf("Long: text missing --output mention:\n%s", long)
+	}
+	// The whole point is to explain the distinction. Look for either
+	// "which" (which payload) or "how" (how to format) phrasing so the
+	// help can be reworded without churning this test.
+	lowered := strings.ToLower(long)
+	hasWhich := strings.Contains(lowered, "which")
+	hasHow := strings.Contains(lowered, "how")
+	if !(hasWhich && hasHow) {
+		t.Errorf("Long: text should explain --format selects WHICH payload and --output selects HOW to print:\n%s", long)
+	}
+}
+
 func TestSchemasGenerateRejectsUnknownFormatBeforeRequest(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())

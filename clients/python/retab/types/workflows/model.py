@@ -49,15 +49,48 @@ class HandlePayload(RetabBaseModel):
     Each output handle on a block produces a typed payload that can be:
     - file: A document reference (PDF, image, etc.)
     - json: Structured JSON data (extracted data, etc.)
-    - text: Plain text content
     """
 
-    type: Literal["file", "json", "json_ref", "text"] = Field(..., description="Type of payload")
+    type: Literal["file", "json", "json_ref"] = Field(..., description="Type of payload")
     document: Optional[FileRef] = Field(default=None, description="For file handles: document reference")
     data: Any | None = Field(default=None, description="For JSON handles: structured data")
     artifact_ref: Optional[dict[str, Any]] = Field(default=None, description="For json_ref handles: artifact pointer")
     preview: Optional[dict[str, Any]] = Field(default=None, description="For json_ref handles: lightweight preview")
-    text: Optional[str] = Field(default=None, description="For text payloads: text content")
+
+
+class MaterializedDocument(RetabBaseModel):
+    """Document metadata embedded in workflow block-artifact handle inputs."""
+
+    original_id: str
+    filename: str
+    mime_type: str
+    gcs_uri: str
+    size_bytes: int = 0
+    content_fingerprint: str | None = None
+
+
+class JsonHandleInput(RetabBaseModel):
+    """JSON payload for an input handle."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    type: Literal["json"] = "json"
+    data: Any = None
+
+
+class FileHandleInput(RetabBaseModel):
+    """Materialized file reference for an input handle."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    type: Literal["file"] = "file"
+    document: MaterializedDocument
+
+
+HandleInput = Annotated[
+    JsonHandleInput | FileHandleInput,
+    Field(discriminator="type"),
+]
 
 
 def _normalize_handle_payloads(value: Any) -> Any:
@@ -914,47 +947,6 @@ class WorkflowEdgeDoc(RetabBaseModel):
     updated_at: Optional[datetime.datetime] = Field(default=None, description="Last updated timestamp")
 
 
-class WorkflowWithEntities(RetabBaseModel):
-    """Complete workflow with its graph structure (blocks and edges)."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    workflow: Workflow
-    blocks: List[WorkflowBlock] = Field(default_factory=list)
-    edges: List[WorkflowEdgeDoc] = Field(default_factory=list)
-
-    @property
-    def start_document_blocks(self) -> List[WorkflowBlock]:
-        """Document input start_document blocks."""
-        return [b for b in self.blocks if b.type == "start_document"]
-
-    @property
-    def start_json_blocks(self) -> List[WorkflowBlock]:
-        """JSON input start_document blocks."""
-        return [b for b in self.blocks if b.type == "start_json"]
-
-
-class WorkflowResolvedSchemasResponse(RetabBaseModel):
-    """Graph-derived schemas for all current-draft blocks in a workflow."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    workflow_id: str
-    draft_version: Optional[str] = None
-    schemas: Dict[str, ResolvedSchemas] = Field(default_factory=dict)
-
-
-class BlockResolvedSchemasResponse(RetabBaseModel):
-    """Graph-derived schemas for one current-draft block."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    workflow_id: str
-    block_id: str
-    draft_version: Optional[str] = None
-    block_schema: ResolvedSchemas = Field(default_factory=ResolvedSchemas, alias="schema")
-
-
 class DeclarativePlanSummary(RetabBaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -1086,51 +1078,6 @@ class WorkflowDiagnosisResponse(RetabBaseModel):
 # ---------------------------------------------------------------------------
 # Block simulation (POST /workflows/simulations, body { run_id, block_id, ... })
 # ---------------------------------------------------------------------------
-
-
-class BlockConfigVersion(RetabBaseModel):
-    """A distinct config era for a block across workflow publishes.
-
-    Groups consecutive workflow snapshots in which the block's config did
-    not change into a single entry, with the snapshot version range, run
-    count, and the captured config snapshot.
-    """
-
-    model_config = ConfigDict(extra="ignore")
-
-    config_fingerprint: str
-    block_type: str = ""
-    block_label: str = ""
-    config_snapshot: Optional[Dict[str, Any]] = None
-    first_seen_at: datetime.datetime
-    last_seen_at: datetime.datetime
-    snapshot_versions: List[int] = Field(default_factory=list)
-    run_count: int = 0
-    is_current: bool = False
-
-
-class WorkflowSnapshot(RetabBaseModel):
-    """Metadata for a single published snapshot of a workflow.
-
-    Returned by ``client.workflows.snapshots.list(...)``. Each snapshot is
-    the entry point for a complete published workflow version (block and
-    edge snapshots are referenced via ``snapshot_id``).
-    """
-
-    model_config = ConfigDict(extra="ignore")
-
-    id: str
-    snapshot_id: str
-    workflow_id: str
-    organization_id: Optional[str] = None
-    version: int
-    description: str = ""
-    block_count: int = 0
-    edge_count: int = 0
-    published_by: Optional[str] = None
-    published_by_email: Optional[str] = None
-    published_by_name: Optional[str] = None
-    published_at: datetime.datetime
 
 
 class BlockSimulationIteration(RetabBaseModel):

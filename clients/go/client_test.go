@@ -113,6 +113,12 @@ func TestWorkflowsCreateUpdatePublishAndDelete(t *testing.T) {
 	}
 }
 
+func TestHandlePayloadDoesNotExposeRemovedTextField(t *testing.T) {
+	if _, ok := reflect.TypeOf(HandlePayload{}).FieldByName("Text"); ok {
+		t.Fatal("HandlePayload must not expose removed text handle payloads")
+	}
+}
+
 func TestWorkflowsPrepareDiagnoseMatchesPythonSurface(t *testing.T) {
 	client, err := NewClient("test-key")
 	if err != nil {
@@ -449,8 +455,15 @@ func TestWorkflowExperimentRunsUseRunIDFirstRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cancelled.Lifecycle.Status != "cancelled" {
+	if cancelled.ID != "exprun_123" || cancelled.Lifecycle.Status != "cancelled" {
 		t.Fatalf("cancelled = %#v", cancelled)
+	}
+	cancelledJSON, err := json.Marshal(cancelled)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(cancelledJSON), "experiment_id") || strings.Contains(string(cancelledJSON), "workflow") {
+		t.Fatalf("cancel response should only model id/lifecycle, got %s", cancelledJSON)
 	}
 	metrics, err := client.Workflows.Experiments.Runs.Metrics.Get(context.Background(), "exprun_123", nil)
 	if err != nil {
@@ -542,6 +555,34 @@ func TestWorkflowExperimentRunRequestsSendCanonicalBodies(t *testing.T) {
 	}
 	if runBody["experiment_id"] != "exp_123" || runBody["workflow_id"] != "wf_123" {
 		t.Fatalf("run body = %#v", runBody)
+	}
+}
+
+func TestWorkflowTestAndExperimentRunsUseDedicatedTimingShapes(t *testing.T) {
+	testRunJSON, err := json.Marshal(WorkflowTestRun{
+		ID:        "wftestrun_123",
+		Lifecycle: WorkflowTestRunLifecycle{Status: "completed"},
+		Timing:    WorkflowTestRunTiming{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(testRunJSON), "review_waiting_started_at") ||
+		strings.Contains(string(testRunJSON), "accumulated_review_waiting_ms") {
+		t.Fatalf("workflow test run timing should not include workflow-run review fields: %s", testRunJSON)
+	}
+
+	experimentRunJSON, err := json.Marshal(ExperimentRun{
+		ID:        "exprun_123",
+		Lifecycle: ExperimentRunLifecycle{Status: "completed"},
+		Timing:    ExperimentRunTiming{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(experimentRunJSON), "review_waiting_started_at") ||
+		strings.Contains(string(experimentRunJSON), "accumulated_review_waiting_ms") {
+		t.Fatalf("experiment run timing should not include workflow-run review fields: %s", experimentRunJSON)
 	}
 }
 
@@ -735,6 +776,11 @@ func TestWorkflowServicesDoNotExposeRemovedMethods(t *testing.T) {
 			name:    "WorkflowExperimentsService",
 			service: &WorkflowExperimentsService{},
 			methods: []string{"Duplicate", "ListEligibleBlocks"},
+		},
+		{
+			name:    "JobsService",
+			service: &JobsService{},
+			methods: []string{"RetrieveFull"},
 		},
 	}
 	for _, tc := range cases {

@@ -659,10 +659,6 @@ func (s *JobsService) Retrieve(ctx context.Context, jobID string, params *JobRet
 	return &result, err
 }
 
-func (s *JobsService) RetrieveFull(ctx context.Context, jobID string, opts ...RequestOption) (*Job, error) {
-	return s.Retrieve(ctx, jobID, &JobRetrieveParams{IncludeRequest: true, IncludeResponse: true}, opts...)
-}
-
 func (s *JobsService) WaitForCompletion(ctx context.Context, jobID string, params *JobWaitForCompletionParams, opts ...RequestOption) (*Job, error) {
 	pollInterval := 2 * time.Second
 	timeout := 10 * time.Minute

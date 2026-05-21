@@ -18,6 +18,8 @@ from retab.resources.workflows.experiments.client import (
     ExperimentRuns,
     WorkflowExperiments,
 )
+from retab.types.workflows.experiments import ExperimentByDocumentMetricsResponse
+from retab.types.workflows.model import FileHandleInput
 
 
 _NOW = "2026-05-01T14:30:00Z"
@@ -31,6 +33,13 @@ _TRIGGER = {"type": "api"}
 _PENDING = {"status": "pending"}
 _COMPLETED = {"status": "completed"}
 _TIMING = {"created_at": _NOW, "started_at": _NOW, "completed_at": _NOW}
+_MATERIALIZED_DOCUMENT = {
+    "original_id": "doc_1",
+    "filename": "a.pdf",
+    "mime_type": "application/pdf",
+    "gcs_uri": "gs://retab-dev/doc_1.pdf",
+    "size_bytes": 123,
+}
 
 
 _EXPERIMENT_RESPONSE = {
@@ -125,7 +134,7 @@ def test_experiments_create_with_explicit_documents_serializes_handle_inputs() -
         documents=[
             {
                 "handle_inputs": {
-                    "input-file-0": {"type": "file", "document": {"id": "doc_1", "filename": "a.pdf"}},
+                    "input-file-0": {"type": "file", "document": _MATERIALIZED_DOCUMENT},
                 },
             }
         ],
@@ -137,7 +146,7 @@ def test_experiments_create_with_explicit_documents_serializes_handle_inputs() -
     assert request.data["documents"] == [
         {
             "handle_inputs": {
-                "input-file-0": {"type": "file", "document": {"id": "doc_1", "filename": "a.pdf"}},
+                "input-file-0": {"type": "file", "document": _MATERIALIZED_DOCUMENT},
             },
         }
     ]
@@ -210,6 +219,18 @@ def test_experiments_get_uses_detail_route() -> None:
     assert request.url == "/workflows/experiments/exp_abc"
 
 
+def test_experiment_schema_drift_accepts_partial_and_rejects_stale_values() -> None:
+    from pydantic import ValidationError
+
+    from retab.types.workflows import ExperimentResponse
+
+    experiment = ExperimentResponse.model_validate({**_EXPERIMENT_RESPONSE, "schema_drift": "partial"})
+    assert experiment.schema_drift == "partial"
+
+    with pytest.raises(ValidationError):
+        ExperimentResponse.model_validate({**_EXPERIMENT_RESPONSE, "schema_drift": "fresh"})
+
+
 def test_experiments_delete_uses_delete_method() -> None:
     client = MagicMock()
     client._prepared_request.return_value = None
@@ -256,7 +277,7 @@ _EXPERIMENT_RESULT = {
     "lifecycle": _COMPLETED,
     "timing": _TIMING,
     "block_kind": "extract",
-    "handle_inputs": {"input-file-0": {"type": "file"}},
+    "handle_inputs": {"input-file-0": {"type": "file", "document": _MATERIALIZED_DOCUMENT}},
     "artifact": {"operation": "extraction", "id": "ext_1"},
     "attempt": 1,
 }
@@ -428,7 +449,10 @@ def test_experiments_runs_get_uses_run_id_first_route() -> None:
 
 def test_experiments_runs_cancel_uses_run_id_first_route() -> None:
     client = MagicMock()
-    client._prepared_request.return_value = _experiment_run_response(lifecycle={"status": "cancelled"})
+    client._prepared_request.return_value = {
+        "id": "exprun_1",
+        "lifecycle": {"status": "cancelled"},
+    }
 
     run = Workflows(client=client).experiments.runs.cancel("exprun_1")
 
@@ -436,6 +460,7 @@ def test_experiments_runs_cancel_uses_run_id_first_route() -> None:
     assert request.method == "POST"
     assert request.url == "/workflows/experiments/runs/exprun_1/cancel"
     assert request.data == {}
+    assert not hasattr(run, "workflow")
     assert run.lifecycle.status == "cancelled"
 
 
@@ -453,6 +478,9 @@ def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
     assert request.url == "/workflows/experiments/results"
     assert request.params == {"run_id": "exprun_1", "limit": 20}
     assert page.data[0].document_id == "expdoc_1"
+    handle_input = page.data[0].handle_inputs["input-file-0"]
+    assert isinstance(handle_input, FileHandleInput)
+    assert handle_input.document.original_id == "doc_1"
 
 
 def test_experiments_runs_results_get_uses_flat_result_id_route() -> None:
@@ -473,6 +501,7 @@ def test_experiments_runs_metrics_summary_view_default() -> None:
     client._prepared_request.return_value = {
         "experiment_id": "exp_abc",
         "run_id": "exprun_1",
+        "kind": "summary",
         "view": "summary",
         "definition_fingerprint": "deadbeef",
         "block_kind": "extract",
@@ -496,6 +525,7 @@ def test_experiments_runs_metrics_by_target_view_passes_target_path() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
         "run_id": "exprun_1",
+        "kind": "by_target",
         "view": "by_target",
         "target": "total",
         "score": 0.9,
@@ -518,11 +548,43 @@ def test_experiments_runs_metrics_by_target_view_passes_target_path() -> None:
     }
 
 
+def test_experiments_metrics_confusion_flow_uses_source_target_fields() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = {
+        "run_id": "exprun_1",
+        "kind": "by_document",
+        "view": "by_document",
+        "document": {"id": "expdoc_1", "filename": "a.pdf"},
+        "confusion": {
+            "diag": {"invoice": 0.9},
+            "flows": [{"source": "receipt", "target": "invoice", "score": 0.1}],
+        },
+        "targets": [],
+    }
+
+    result = Workflows(client=client).experiments.runs.metrics.get(
+        "exprun_1",
+        view="by_document",
+        document_id="expdoc_1",
+    )
+
+    assert isinstance(result, ExperimentByDocumentMetricsResponse)
+    assert result.confusion is not None
+    flow = result.confusion.flows[0]
+    assert flow.source == "receipt"
+    assert flow.model_dump(mode="json") == {
+        "source": "receipt",
+        "target": "invoice",
+        "score": 0.1,
+    }
+
+
 def test_experiments_runs_metrics_returns_stale_error_envelope() -> None:
     """When the latest run is stale the backend returns the
     ``error="stale_metrics"`` envelope instead of a view payload."""
     client = MagicMock()
     client._prepared_request.return_value = {
+        "kind": "stale_metrics",
         "error": "stale_metrics",
         "experiment_id": "exp_abc",
         "stale_reasons": ["config_changed"],
@@ -538,7 +600,8 @@ def test_experiments_runs_metrics_returns_stale_error_envelope() -> None:
 
     result = Workflows(client=client).experiments.runs.metrics.get("exprun_1")
 
-    # Discriminated union accepts the error envelope by ``error`` field.
+    # Discriminated union accepts the error envelope by ``kind``.
+    assert getattr(result, "kind", None) == "stale_metrics"
     assert getattr(result, "error", None) == "stale_metrics"
 
 

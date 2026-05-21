@@ -99,6 +99,17 @@ const RESULT = {
 };
 
 describe('workflows.experiments.list paginated envelope', () => {
+  test('experiment schema drift accepts all OpenAPI literals', async () => {
+    const { ZExperimentResponse, ZSchemaDriftStatus } = await import(
+      '../src/api/workflows/experiments/types'
+    );
+
+    for (const value of ['none', 'partial', 'drifted', 'unknown']) {
+      expect(() => ZSchemaDriftStatus.parse(value)).not.toThrow();
+      expect(() => ZExperimentResponse.parse({ ...EXPERIMENT, schema_drift: value })).not.toThrow();
+    }
+  });
+
   test('returns {data, list_metadata}', async () => {
     const mockClient = new MockClient({
       data: [EXPERIMENT],
@@ -120,6 +131,26 @@ describe('workflows.experiments.list paginated envelope', () => {
 });
 
 describe('workflows.experiments.runs.list paginated envelope', () => {
+  test('runs.cancel parses the compact cancel response shape', async () => {
+    const mockClient = new MockClient({
+      id: 'exprun_1',
+      lifecycle: { status: 'cancelled' },
+    });
+    const runs = new APIWorkflowExperimentRuns(mockClient);
+
+    const response = await runs.cancel({ runId: 'exprun_1' });
+
+    expect(mockClient.lastFetchParams).toMatchObject({
+      url: '/workflows/experiments/runs/exprun_1/cancel',
+      method: 'POST',
+      body: {},
+    });
+    expect(response).toEqual({
+      id: 'exprun_1',
+      lifecycle: { status: 'cancelled' },
+    });
+  });
+
   test('returns {data, list_metadata} (was {runs: [...]})', async () => {
     const mockClient = new MockClient({
       data: [RUN],

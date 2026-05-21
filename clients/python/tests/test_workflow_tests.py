@@ -43,7 +43,7 @@ _TEST_RESPONSE = {
         "condition": {"kind": "equals", "expected": 1234.56},
         "label": None,
     },
-    "schema_drift": "fresh",
+    "schema_drift": "none",
     "validation_status": "valid",
     "validation_issues": [],
     "latest_run_summary": None,
@@ -156,6 +156,30 @@ def test_create_with_run_step_source_serializes_step_id() -> None:
     # validates with `extra="forbid"` only on the request model, but
     # cleaner request payloads are easier to debug from server logs).
     assert "name" not in request.data
+
+
+def test_create_with_manual_source_serializes_typed_handle_inputs() -> None:
+    client = MagicMock()
+    client._prepared_request.return_value = _TEST_RESPONSE
+
+    Workflows(client=client).tests.create(
+        workflow_id="wf_abc123",
+        target={"type": "block", "block_id": "block_extract"},
+        source={
+            "type": "manual",
+            "handle_inputs": {"input-json-0": {"type": "json", "data": {"subtotal": 100}}},
+        },
+        assertion={
+            "target": {"output_handle_id": "output-json-0", "path": "total"},
+            "condition": {"kind": "exists"},
+        },
+    )
+
+    request = client._prepared_request.call_args.args[0]
+    assert request.data["source"] == {
+        "type": "manual",
+        "handle_inputs": {"input-json-0": {"type": "json", "data": {"subtotal": 100}}},
+    }
 
 
 def test_create_rejects_unknown_source_type() -> None:
@@ -372,6 +396,7 @@ _RESULT_RESPONSE = {
     "id": "wfresult_abc",
     "run_id": "wftestrun_q1z2",
     "test_id": "wfnodetest_abc",
+    "workflow_id": "wf_abc123",
     "lifecycle": _COMPLETED,
     "timing": _TIMING,
     "target": {"type": "block", "block_id": "block_extract"},
@@ -433,6 +458,59 @@ def test_runs_cancel_uses_run_id_first_route() -> None:
     assert request.url == "/workflows/tests/runs/wftestrun_q1z2/cancel"
     assert request.data == {}
     assert run.lifecycle.status == "cancelled"
+
+
+def test_workflow_test_run_lifecycle_uses_test_status_values() -> None:
+    from pydantic import ValidationError
+
+    from retab.types.workflows import WorkflowTestRun
+
+    run = WorkflowTestRun.model_validate(_run_response(lifecycle={"status": "error", "message": "boom"}))
+    assert run.lifecycle.status == "error"
+    assert run.lifecycle.message == "boom"
+
+    with pytest.raises(ValidationError):
+        WorkflowTestRun.model_validate(_run_response(lifecycle={"status": "awaiting_review"}))
+
+
+def test_workflow_test_result_matches_run_record_shape() -> None:
+    from retab.types.workflows import WorkflowTestResult
+
+    result = WorkflowTestResult.model_validate(
+        {
+            **_RESULT_RESPONSE,
+            "run_id": None,
+            "lifecycle": None,
+            "timing": None,
+        }
+    )
+
+    assert result.workflow_id == "wf_abc123"
+    assert result.run_id is None
+    assert result.lifecycle is None
+    assert result.timing is None
+
+
+def test_workflow_test_drift_enums_match_openapi() -> None:
+    from pydantic import ValidationError
+
+    from retab.types.workflows import WorkflowTest
+
+    valid = WorkflowTest.model_validate(
+        {
+            **_TEST_RESPONSE,
+            "assertion_drift_status": "valid",
+            "schema_drift": "partial",
+        }
+    )
+    assert valid.assertion_drift_status == "valid"
+    assert valid.schema_drift == "partial"
+
+    with pytest.raises(ValidationError):
+        WorkflowTest.model_validate({**_TEST_RESPONSE, "schema_drift": "fresh"})
+
+    with pytest.raises(ValidationError):
+        WorkflowTest.model_validate({**_TEST_RESPONSE, "assertion_drift_status": "unknown"})
 
 
 def test_runs_results_list_uses_run_id_first_results_route() -> None:
@@ -550,26 +628,22 @@ def test_workflow_test_response_parses_legacy_doc_with_null_assertion() -> None:
     assert test.assertion is None
 
 
-def test_async_runs_list_uses_test_runs_route() -> None:
+@pytest.mark.asyncio
+async def test_async_runs_list_uses_test_runs_route() -> None:
     """Sync coverage exists at `test_runs_list_uses_test_runs_route`; pin
     the async equivalent so future refactors can't drop one without the
     other.
     """
-    import asyncio
-
     client = MagicMock()
     client._prepared_request = AsyncMock(
         return_value={"data": [], "list_metadata": {"before": None, "after": None}},
     )
 
-    async def _go() -> None:
-        await AsyncWorkflows(client=client).tests.runs.list(
-            workflow_id="wf_abc123",
-            test_id="wfnodetest_abc",
-            limit=10,
-        )
-
-    asyncio.run(_go())
+    await AsyncWorkflows(client=client).tests.runs.list(
+        workflow_id="wf_abc123",
+        test_id="wfnodetest_abc",
+        limit=10,
+    )
 
     request = client._prepared_request.call_args.args[0]
     assert request.url == "/workflows/tests/runs"

@@ -94,6 +94,44 @@ func TestWorkflowsExperimentsRunsResultsGetUsesFlatResultIDRoute(t *testing.T) {
 	}
 }
 
+func TestWorkflowsExperimentsRunsCancelPrintsCompactResponse(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/experiments/runs/exprun_123/cancel" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":        "exprun_123",
+			"lifecycle": map[string]any{"status": "cancelled"},
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	stdout, stderr := captureStd(t, func() {
+		if err := workflowsExperimentsRunsCancelCmd.RunE(workflowsExperimentsRunsCancelCmd, []string{"exprun_123"}); err != nil {
+			t.Fatalf("experiment run cancel: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+	if strings.Join(requests, ",") != "POST /workflows/experiments/runs/exprun_123/cancel" {
+		t.Fatalf("requests = %v", requests)
+	}
+	if !strings.Contains(stdout, `"id": "exprun_123"`) || !strings.Contains(stdout, `"status": "cancelled"`) {
+		t.Fatalf("expected compact cancel response, got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "experiment_id") || strings.Contains(stdout, "workflow") {
+		t.Fatalf("cancel output should not require a full experiment run shape, got:\n%s", stdout)
+	}
+}
+
 // TestWorkflowsExperimentsRunsCreateTwoArgsBackwardCompat keeps the
 // historical 2-arg invocation alive: callers still pass `<workflow-id>
 // <experiment-id>` while we transition to the 1-arg shape. The CLI accepts

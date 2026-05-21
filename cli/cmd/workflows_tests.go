@@ -98,15 +98,18 @@ func resolveJSONMap(cmd *cobra.Command, flag string) (map[string]any, error) {
 	return obj, nil
 }
 
-// validateWorkflowTestName rejects empty or whitespace-only test names so
-// `workflows tests create`/`update` stay consistent with sibling commands
-// (`workflows create`, `workflows experiments create/update`) that already
-// trap blank names client-side.
-func validateWorkflowTestName(name string) error {
-	if strings.TrimSpace(name) == "" {
-		return fmt.Errorf("test name must not be blank")
+// validateWorkflowTestName trims surrounding whitespace and rejects names
+// that are empty after trimming. Returns the cleaned value so callers can
+// propagate the trimmed string into the outgoing request body — without
+// this transformation `workflows tests create --name "  padded  "` would
+// silently persist with the padding (bug #3). Sibling validators
+// (validateWorkflowName, validateExperimentName) share the same shape.
+func validateWorkflowTestName(name string) (string, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return "", fmt.Errorf("test name must not be blank")
 	}
-	return nil
+	return trimmed, nil
 }
 
 func validateWorkflowTestAssertion(assertion map[string]any) error {
@@ -195,8 +198,22 @@ You'll typically capture the three files from a successful past run:
   ` + "`--target-file`" + `     — which block to test (e.g.
   ` + `{"type": "block", "block_id": "blk_extract_1"}` + `).
 
-  ` + "`--source-file`" + `     — the input. Usually a reference to a
-  run/step that supplied known-good input.
+  ` + "`--source-file`" + `     — the input the target block will see.
+  Two accepted shapes (discriminated by ` + "`type`" + `):
+
+    1. ` + `{"type": "manual", "handle_inputs": {...}}` + ` — a
+       fully-specified input payload, keyed by handle id. Use this
+       to feed literal values that don't come from a previous run.
+       ` + "`handle_inputs`" + ` defaults to ` + `{}` + ` when omitted.
+
+    2. ` + `{"type": "run_step", "run_id": "run_xxx"}` + ` — a
+       pointer to a past run. ` + "`run_id`" + ` is required; the
+       server resolves which step within that run by matching
+       ` + "`target.block_id`" + ` from your ` + "`--target-file`" + `.
+       An optional ` + "`step_id`" + ` may be passed to pin to an
+       exact step. Both source models use ` + "`extra=\"forbid\"`" + `,
+       so any other top-level field is rejected with
+       ` + `"Extra inputs are not permitted"` + `.
 
   ` + "`--assertion-file`" + `  — the output handle/path and condition
   (e.g. ` + `{"target":{"output_handle_id":"output-json-0","path":"total"},"condition":{"kind":"equals","expected":120}}` + `).
@@ -217,9 +234,11 @@ After creation, run with ` + "`workflows tests runs create`" + `.`,
 		req := retab.WorkflowTestCreateRequest{}
 		req.WorkflowID = workflowID
 		req.Name, _ = cmd.Flags().GetString("name")
-		if err := validateWorkflowTestName(req.Name); err != nil {
+		trimmedName, err := validateWorkflowTestName(req.Name)
+		if err != nil {
 			return err
 		}
+		req.Name = trimmedName
 		target, err := resolveJSONMap(cmd, "target-file")
 		if err != nil {
 			return err
@@ -339,9 +358,11 @@ flaky runs.`,
 		req := retab.WorkflowTestUpdateRequest{}
 		req.Name, _ = cmd.Flags().GetString("name")
 		if cmd.Flags().Changed("name") {
-			if err := validateWorkflowTestName(req.Name); err != nil {
+			trimmed, err := validateWorkflowTestName(req.Name)
+			if err != nil {
 				return err
 			}
+			req.Name = trimmed
 		}
 		assertion, err := resolveJSONMap(cmd, "assertion-file")
 		if err != nil {
@@ -472,6 +493,11 @@ status, trigger, date, or cursor.`,
 		if err := validateWorkflowTestsRunsListFilters(cmd); err != nil {
 			return err
 		}
+		if before, _ := cmd.Flags().GetString("before"); before != "" {
+			if after, _ := cmd.Flags().GetString("after"); after != "" {
+				return fmt.Errorf("--before and --after are mutually exclusive")
+			}
+		}
 		query := url.Values{}
 		for _, name := range []string{"workflow-id", "test-id", "target-block-id", "status", "statuses", "exclude-status", "trigger-type", "trigger-types", "from-date", "to-date", "sort-by", "fields", "before", "after", "order"} {
 			if value, _ := cmd.Flags().GetString(name); value != "" {
@@ -586,7 +612,7 @@ func init() {
 	workflowsTestsCreateCmd.Flags().String("workflow-id", "", "workflow id (deprecated; pass as positional)")
 	workflowsTestsCreateCmd.Flags().String("name", "", "test name")
 	workflowsTestsCreateCmd.Flags().String("target-file", "", "JSON file with the target object (or - for stdin) (required)")
-	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin) (required)")
+	workflowsTestsCreateCmd.Flags().String("source-file", "", "JSON file with the source object (or - for stdin) (required). Two accepted shapes: {\"type\":\"manual\",\"handle_inputs\":{...}} or {\"type\":\"run_step\",\"run_id\":\"run_xxx\",\"step_id\":\"...\"} (step_id optional). See 'tests create --help' for the full schema.")
 	workflowsTestsCreateCmd.Flags().String("assertion-file", "", "JSON file with the assertion object (or - for stdin) (required)")
 	// Keep the flag hidden but DO NOT use MarkDeprecated — cobra's auto warning
 	// duplicates the more-specific message emitted by resolveWorkflowIDArg.
@@ -612,8 +638,9 @@ func init() {
 	workflowsTestsRunsListCmd.Flags().String("to-date", "", "created on or before YYYY-MM-DD")
 	workflowsTestsRunsListCmd.Flags().String("sort-by", "", "sort field")
 	workflowsTestsRunsListCmd.Flags().String("fields", "", "comma-separated fields")
-	workflowsTestsRunsListCmd.Flags().String("before", "", "page before cursor")
-	workflowsTestsRunsListCmd.Flags().String("after", "", "page after cursor")
+	workflowsTestsRunsListCmd.Flags().String("before", "", "page before cursor (mutually exclusive with --after)")
+	workflowsTestsRunsListCmd.Flags().String("after", "", "page after cursor (mutually exclusive with --before)")
+	workflowsTestsRunsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 	workflowsTestsRunsListCmd.Flags().String("order", "", "asc or desc")
 	workflowsTestsRunsCreateCmd.Flags().String("test-id", "", "single test to run")
 	workflowsTestsRunsCreateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "consensus count (3, 5, or 7)")

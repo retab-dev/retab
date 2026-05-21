@@ -7,12 +7,7 @@
  */
 
 import * as z from 'zod';
-import {
-  ZRunLifecycle,
-  ZRunTiming,
-  ZTrigger,
-  ZWorkflowSnapshotRef,
-} from '../../../generated_types.js';
+import { ZTrigger, ZWorkflowSnapshotRef } from '../../../generated_types.js';
 
 // ---------------------------------------------------------------------------
 // Status enums
@@ -185,11 +180,29 @@ export const ZAssertionSchemaDep = z
   .passthrough();
 export type AssertionSchemaDep = z.infer<typeof ZAssertionSchemaDep>;
 
-export const ZAssertionDriftStatus = z.enum(['fresh', 'drifted', 'unknown']);
+export const ZAssertionDriftStatus = z.enum(['valid', 'drifted', 'broken']);
 export type AssertionDriftStatus = z.infer<typeof ZAssertionDriftStatus>;
 
-export const ZSchemaDriftStatus = z.enum(['fresh', 'partial', 'drifted', 'unknown']);
+export const ZSchemaDriftStatus = z.enum(['none', 'partial', 'drifted', 'unknown']);
 export type SchemaDriftStatus = z.infer<typeof ZSchemaDriftStatus>;
+
+export const ZWorkflowTestRunLifecycle = z
+  .object({
+    status: z.enum(['pending', 'running', 'completed', 'error', 'cancelled']),
+    message: z.string().nullable().optional(),
+  })
+  .passthrough();
+export type WorkflowTestRunLifecycle = z.infer<typeof ZWorkflowTestRunLifecycle>;
+
+export const ZWorkflowTestRunTiming = z
+  .object({
+    created_at: z.string(),
+    started_at: z.string().nullable().optional(),
+    completed_at: z.string().nullable().optional(),
+    duration_ms: z.number().nullable().optional(),
+  })
+  .strip();
+export type WorkflowTestRunTiming = z.infer<typeof ZWorkflowTestRunTiming>;
 
 // ---------------------------------------------------------------------------
 // Response models
@@ -227,8 +240,8 @@ export const ZWorkflowTestResult = z
     id: z.string(),
     run_id: z.string(),
     test_id: z.string(),
-    lifecycle: ZRunLifecycle,
-    timing: ZRunTiming,
+    lifecycle: ZWorkflowTestRunLifecycle,
+    timing: ZWorkflowTestRunTiming,
     target: ZWorkflowTestBlockTarget,
     execution_fingerprint: z.string().default(''),
     handle_inputs_fingerprint: z.string().default(''),
@@ -275,8 +288,8 @@ export const ZWorkflowTestRun = z
     id: z.string(),
     workflow: ZWorkflowSnapshotRef,
     trigger: ZTrigger,
-    lifecycle: ZRunLifecycle,
-    timing: ZRunTiming,
+    lifecycle: ZWorkflowTestRunLifecycle,
+    timing: ZWorkflowTestRunTiming,
     target: ZWorkflowTestBlockTarget.nullable().optional(),
     test_id: z.string().nullable().optional(),
     total_tests: z.number(),

@@ -32,6 +32,7 @@ from ....types.workflows.experiments import (
     ExperimentMetricView,
     ExperimentResult,
     ExperimentRun,
+    ExperimentRunCancelResponse,
     ExperimentResponse,
     ExplicitExperimentDocumentRequest,
     NConsensusValue,
@@ -369,10 +370,10 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         response = self._client._prepared_request(request)
         return ExperimentRun.model_validate(response)
 
-    def cancel(self, run_id: str) -> ExperimentRun:
+    def cancel(self, run_id: str) -> ExperimentRunCancelResponse:
         request = self.prepare_cancel(run_id)
         response = self._client._prepared_request(request)
-        return ExperimentRun.model_validate(response)
+        return ExperimentRunCancelResponse.model_validate(response)
 
 
 class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
@@ -592,10 +593,10 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         response = await self._client._prepared_request(request)
         return ExperimentRun.model_validate(response)
 
-    async def cancel(self, run_id: str) -> ExperimentRun:
+    async def cancel(self, run_id: str) -> ExperimentRunCancelResponse:
         request = self.prepare_cancel(run_id)
         response = await self._client._prepared_request(request)
-        return ExperimentRun.model_validate(response)
+        return ExperimentRunCancelResponse.model_validate(response)
 
 
 class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):

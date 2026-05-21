@@ -189,14 +189,6 @@ class Jobs(SyncAPIResource, BaseJobsMixin):
         response = self._client._prepared_request(prepared)
         return Job.model_validate(response)
 
-    def retrieve_full(self, job_id: str) -> Job:
-        """Retrieve a job by ID including full request and response payloads."""
-        return self.retrieve(
-            job_id,
-            include_request=True,
-            include_response=True,
-        )
-
     def wait_for_completion(
         self,
         job_id: str,
@@ -412,14 +404,6 @@ class AsyncJobs(AsyncAPIResource, BaseJobsMixin):
         prepared = self._prepare_retrieve_with_options(job_id, include_request, include_response)
         response = await self._client._prepared_request(prepared)
         return Job.model_validate(response)
-
-    async def retrieve_full(self, job_id: str) -> Job:
-        """Retrieve a job by ID including full request and response payloads."""
-        return await self.retrieve(
-            job_id,
-            include_request=True,
-            include_response=True,
-        )
 
     async def wait_for_completion(
         self,

@@ -247,7 +247,7 @@ describe('Jobs API', () => {
     );
 
     test(
-      'retrieveFull includes request and response',
+      'retrieve can include request and response',
       async () => {
         const job = await client.jobs.create({
           endpoint: '/v1/parses',
@@ -258,7 +258,10 @@ describe('Jobs API', () => {
         });
         await client.jobs.waitForCompletion(job.id, { timeout_ms: JOB_TIMEOUT_MS });
 
-        const full = await client.jobs.retrieveFull(job.id);
+        const full = await client.jobs.retrieve(job.id, {
+          include_request: true,
+          include_response: true,
+        });
         expect(full.id).toBe(job.id);
         expect(full.status).toBe('completed');
         expect(full.request).toBeDefined();
@@ -267,6 +270,11 @@ describe('Jobs API', () => {
       },
       { timeout: TEST_TIMEOUT }
     );
+
+    test('does not expose retrieveFull aliases', () => {
+      expect('retrieveFull' in client.jobs).toBe(false);
+      expect('retrieve_full' in client.jobs).toBe(false);
+    });
 
     test(
       'list with filters returns matching jobs',
