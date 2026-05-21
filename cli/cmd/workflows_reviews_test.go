@@ -13,10 +13,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// 26 base32 chars after the ver_ prefix — matches the new VersionId regex
+// 26 base32 chars after the rvr_ prefix — matches the new VersionId regex
 // emitted by review_overlay_models.compute_version_id (base32 of the first
-// 16 bytes of sha256(canonical_json(snapshot))).
-const reviewTestVersionID = "ver_AAAAAAAAAAAAAAAAAAAAAAAAAA"
+// 16 bytes of sha256(canonical_json(snapshot))). The `rvr_` prefix
+// disambiguates review version ids from workflow version ids, which use
+// `ver_` with a different (hex, longer) shape.
+const reviewTestVersionID = "rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 func reviewVersionBody(parentID any, snapshot map[string]any) map[string]any {
 	return map[string]any{
@@ -48,8 +50,7 @@ func reviewOverlayBody(decision map[string]any) map[string]any {
 		"iteration_key":       nil,
 		"block_type":          "extract",
 		"triggered_by":        map[string]any{"kind": "any_required_field_null"},
-		"awaiting_since":      "2026-05-18T09:00:00Z",
-		"priority":            0,
+		"created_at":          "2026-05-18T09:00:00Z",
 		"versions": map[string]any{
 			reviewTestVersionID: reviewVersionBody(nil, map[string]any{"total": 100}),
 		},
@@ -68,8 +69,7 @@ func reviewQueueItemBody(reviewID string, runID string, blockID string, blockTyp
 		"iteration_key":   nil,
 		"block_type":      blockType,
 		"triggered_by":    map[string]any{"kind": "always"},
-		"awaiting_since":  "2026-05-18T09:00:00Z",
-		"priority":        0,
+		"created_at":      "2026-05-18T09:00:00Z",
 		"seed_version_id": reviewTestVersionID,
 		"version_count":   1,
 		"decision":        nil,
@@ -132,8 +132,7 @@ func TestReviewsListTableUsesPureQueueColumns(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		second := reviewQueueItemBody("review_2", "run_2", "blk_classify", "classify")
 		second["triggered_by"] = map[string]any{"kind": "category_in"}
-		second["awaiting_since"] = "2026-05-18T09:05:00Z"
-		second["priority"] = 7
+		second["created_at"] = "2026-05-18T09:05:00Z"
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []any{
 				reviewQueueItemBody("review_1", "run_1", "blk_extract", "extract"),
@@ -163,18 +162,21 @@ func TestReviewsListTableUsesPureQueueColumns(t *testing.T) {
 		t.Fatalf("expected table output, got JSON:\n%s", stdout)
 	}
 	for _, want := range []string{
-		"REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "AWAITING_SINCE", "PRIORITY", "TRIGGERED_BY",
+		"REVIEW_ID", "RUN_ID", "BLOCK_ID", "BLOCK_TYPE", "CREATED_AT", "TRIGGERED_BY",
 		"review_1", "run_1", "blk_extract", "extract",
 		"review_2", "run_2", "blk_classify", "classify",
 		"2026-05-18T09:00:00Z", "always",
-		"2026-05-18T09:05:00Z", "7", "category_in",
+		"2026-05-18T09:05:00Z", "category_in",
 	} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("expected %q in table output:\n%s", want, stdout)
 		}
 	}
 	header := strings.Fields(strings.SplitN(stdout, "\n", 2)[0])
-	for _, stale := range []string{"STATUS", "REV", "HEAD", "EFFECTIVE", "VERSION_ID", "DECISION"} {
+	for _, stale := range []string{
+		"STATUS", "REV", "HEAD", "EFFECTIVE", "VERSION_ID", "DECISION",
+		"AWAITING" + "_SINCE", "PRIOR" + "ITY",
+	} {
 		if containsString(header, stale) {
 			t.Fatalf("table output contains stale %q column:\n%s", stale, stdout)
 		}
@@ -605,6 +607,70 @@ func TestReviewsWaitStopsWhenOverlayIsAwaitingReview(t *testing.T) {
 	}
 }
 
+func TestReviewsWaitOnDecidedReviewExplainsItIsAlreadyDecided(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(reviewOverlayBody(reviewDecisionBody("approved", reviewTestVersionID)))
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := newWaitTestCmd()
+	if err := cmd.Flags().Set("timeout", "1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("poll-interval", "1"); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.RunE(cmd, []string{"rev_1"})
+	if err == nil {
+		t.Fatal("expected wait to fail on an already-decided review")
+	}
+	if !strings.Contains(err.Error(), "already approved") {
+		t.Fatalf("error = %v (want 'already approved' so the operator knows wait will never succeed)", err)
+	}
+	if !strings.Contains(err.Error(), "rev_1") {
+		t.Fatalf("error = %v (want the review id)", err)
+	}
+	if strings.Contains(err.Error(), "was not pending") {
+		t.Fatalf("error = %v (must not use the old generic 'was not pending' wording on a decided review)", err)
+	}
+}
+
+func TestReviewsWaitOnMissingReviewSaysDidNotAppear(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]any{"detail": "No review rev_1."})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	cmd := newWaitTestCmd()
+	if err := cmd.Flags().Set("timeout", "1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("poll-interval", "1"); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.RunE(cmd, []string{"rev_1"})
+	if err == nil {
+		t.Fatal("expected wait to fail when the review never materializes")
+	}
+	if !strings.Contains(err.Error(), "did not appear") {
+		t.Fatalf("error = %v (want 'did not appear' for a review that 404s the whole window)", err)
+	}
+	if strings.Contains(err.Error(), "already approved") || strings.Contains(err.Error(), "already rejected") {
+		t.Fatalf("error = %v (must not claim the review was decided when it never existed)", err)
+	}
+}
+
 func TestReviewsWaitRejectsNonPositiveTimingFlags(t *testing.T) {
 	cmd := newWaitTestCmd()
 
@@ -832,7 +898,7 @@ func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T
 		{name: "reject", cmd: newRejectTestCmd(), args: []string{"rev_1"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := tc.cmd.Flags().Set("version-id", "ver_abc"); err != nil {
+			if err := tc.cmd.Flags().Set("version-id", "rvr_abc"); err != nil {
 				t.Fatal(err)
 			}
 			if tc.name == "reject" {
@@ -844,7 +910,7 @@ func TestReviewsDecisionCommandsValidateContentIDsBeforeCredentials(t *testing.T
 			if err == nil {
 				t.Fatal("expected malformed version id error")
 			}
-			if !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "ver_") {
+			if !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "rvr_") {
 				t.Fatalf("error = %v", err)
 			}
 			if strings.Contains(err.Error(), "credentials") {
@@ -868,7 +934,7 @@ func TestReviewsVersionsAppendValidatesParentVersionIDBeforeCredentials(t *testi
 	if err := cmd.Flags().Set("snapshot-file", snapshotPath); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("parent-version-id", "ver_abc"); err != nil {
+	if err := cmd.Flags().Set("parent-version-id", "rvr_abc"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -876,7 +942,7 @@ func TestReviewsVersionsAppendValidatesParentVersionIDBeforeCredentials(t *testi
 	if err == nil {
 		t.Fatal("expected malformed parent id error")
 	}
-	if !strings.Contains(err.Error(), "--parent-version-id") || !strings.Contains(err.Error(), "ver_") {
+	if !strings.Contains(err.Error(), "--parent-version-id") || !strings.Contains(err.Error(), "rvr_") {
 		t.Fatalf("error = %v", err)
 	}
 	if strings.Contains(err.Error(), "credentials") {
@@ -884,22 +950,23 @@ func TestReviewsVersionsAppendValidatesParentVersionIDBeforeCredentials(t *testi
 	}
 }
 
-// Regression guard for the CLI <-> server version-id contract. Before the
-// greenfield rename the CLI validated --version-id / --parent-version-id
-// against ^[a-fA-F0-9]{64}$ (the old sha256 hex shape) and every approve /
-// reject / append against the new ver_<26 base32> id failed at the flag layer
-// before the request was even built. Pin both halves explicitly:
+// Regression guard for the CLI <-> server version-id contract. Two halves:
 //
-//  1. A well-formed ver_ id is accepted by the validator.
-//  2. A 64-char hex id (the old shape) is rejected by the validator.
+//  1. A well-formed rvr_<26 base32> id is accepted by the validator
+//     (the post-cutover review version-id shape, distinct from the ver_
+//     workflow version-id shape).
+//  2. Any older shape — sha256 hex, ver_ prefix, anything that isn't
+//     rvr_<26-base32> — is rejected by the validator.
 //
-// Together they make a silent drift back to the old regex impossible.
-func TestReviewsApproveAcceptsVerPrefixedAndRejectsLegacyHexVersionID(t *testing.T) {
+// Together they make a silent drift back to the old regex impossible AND
+// pin the rvr_ vs ver_ disambiguation so a "fix" that re-collapses the
+// review and workflow prefixes will fail loudly.
+func TestReviewsApproveAcceptsRvrPrefixedAndRejectsLegacyShapes(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "")
 	t.Setenv("RETAB_API_BASE_URL", "")
 	t.Setenv("HOME", t.TempDir())
 
-	// (1) ver_<26 base32> must pass the format gate. We don't care what
+	// (1) rvr_<26 base32> must pass the format gate. We don't care what
 	// happens next — only that we do NOT bail out with a flag-format error.
 	cmd := newApproveTestCmd()
 	if err := cmd.Flags().Set("version-id", reviewTestVersionID); err != nil {
@@ -907,18 +974,31 @@ func TestReviewsApproveAcceptsVerPrefixedAndRejectsLegacyHexVersionID(t *testing
 	}
 	err := cmd.RunE(cmd, []string{"rev_1"})
 	if err != nil && strings.Contains(err.Error(), "--version-id") {
-		t.Fatalf("validator rejected a valid ver_ id: %v", err)
+		t.Fatalf("validator rejected a valid rvr_ id: %v", err)
 	}
 
-	// (2) The pre-cutover 64-char hex shape must be rejected up front.
-	legacyHex := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	cmd = newApproveTestCmd()
-	if err := cmd.Flags().Set("version-id", legacyHex); err != nil {
-		t.Fatal(err)
+	// (2) Each of these must be rejected up front by the validator:
+	//   - sha256 64-char hex (the pre-cutover shape)
+	//   - ver_ prefix (workflow-version-id shape — must not be accepted
+	//     where a review version id is expected)
+	rejected := []struct {
+		name string
+		id   string
+	}{
+		{"legacy 64-char hex", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+		{"ver_ workflow-version-id shape", "ver_AAAAAAAAAAAAAAAAAAAAAAAAAA"},
 	}
-	err = cmd.RunE(cmd, []string{"rev_1"})
-	if err == nil || !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "ver_") {
-		t.Fatalf("legacy 64-char hex id should be rejected with --version-id ver_<...>: %v", err)
+	for _, tc := range rejected {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := newApproveTestCmd()
+			if err := cmd.Flags().Set("version-id", tc.id); err != nil {
+				t.Fatal(err)
+			}
+			err := cmd.RunE(cmd, []string{"rev_1"})
+			if err == nil || !strings.Contains(err.Error(), "--version-id") || !strings.Contains(err.Error(), "rvr_") {
+				t.Fatalf("%s id should be rejected with --version-id rvr_<...>: %v", tc.name, err)
+			}
+		})
 	}
 }
 

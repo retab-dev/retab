@@ -14,9 +14,11 @@ import (
 
 // Mirrors review_overlay_models.VersionId — base32 of the first 16 bytes of
 // sha256(canonical_json(snapshot)). 16 bytes is 26 base32 chars after the
-// stripped padding. Reject anything else at the CLI layer so we surface a
-// clear flag-shape error before the request leaves the client.
-var reviewVersionIDPattern = regexp.MustCompile(`^ver_[A-Z2-7]{26}$`)
+// stripped padding. The `rvr_` prefix disambiguates review version ids from
+// workflow version ids, which also use `ver_` but a different shape (hex,
+// lowercase, 32+ chars). Reject anything else at the CLI layer so we surface
+// a clear flag-shape error before the request leaves the client.
+var reviewVersionIDPattern = regexp.MustCompile(`^rvr_[A-Z2-7]{26}$`)
 
 // The `workflows reviews` command group drives the review overlay —
 // the versioned sidecar attached to a block run awaiting review. The surface is
@@ -43,14 +45,14 @@ immutable output snapshots in ` + "`versions`" + ` and one terminal
   retab workflows reviews get rev_123
 
   # Approve one exact version
-  retab workflows reviews approve rev_123 --version-id ver_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
+  retab workflows reviews approve rev_123 --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
 }
 
 var workflowsReviewsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List block runs awaiting review",
 	Long: `List the review queue — block runs awaiting review and their lifecycle,
-hottest first. Version history and the terminal decision payload are omitted; pull
+oldest-created first. Version history and the terminal decision payload are omitted; pull
 one item with ` + "`reviews get`" + ` to see it.
 
 Use ` + "`--decision-status`" + ` to control which slice of the queue is returned.
@@ -172,7 +174,7 @@ to the review overlay and it does not change the stored review object.`,
 			return err
 		}
 		schema.CreateUsage = fmt.Sprintf(
-			"retab workflows reviews versions append %s --parent-version-id <ver_...> --snapshot-file <snapshot.json>",
+			"retab workflows reviews versions append %s --parent-version-id <rvr_...> --snapshot-file <snapshot.json>",
 			args[0],
 		)
 		return printReviewSchemaResult(cmd, schema)
@@ -186,7 +188,7 @@ var workflowsReviewsApproveCmd = &cobra.Command{
 correction, first append it with ` + "`reviews versions append`" + `, then approve the
 returned content-addressed version id.
 Any version in ` + "`versions`" + ` is a valid approval target.`,
-	Example: `  retab workflows reviews approve rev_123 --version-id ver_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
+	Example: `  retab workflows reviews approve rev_123 --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA`,
 	Args:    cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		versionID, err := requireReviewVersionIDFlag(cmd, "version-id")
@@ -215,7 +217,7 @@ var workflowsReviewsRejectCmd = &cobra.Command{
 rejected and downstream blocks do not continue. A ` + "`--reason`" + ` is required so the review decision is
 auditable.`,
 	Example: `  retab workflows reviews reject rev_123 \
-    --version-id ver_AAAAAAAAAAAAAAAAAAAAAAAAAA --reason "wrong document type — packing slip, not invoice"`,
+    --version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --reason "wrong document type — packing slip, not invoice"`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		reason, err := requireNonBlankFlag(cmd, "reason")
@@ -280,12 +282,12 @@ Snapshot shapes are block-specific:
 Run ` + "`reviews schema <review-id>`" + ` to print the snapshot contract.`,
 	Example: `  # Append a corrected output version from a full snapshot
   retab workflows reviews versions append rev_123 \
-    --parent-version-id ver_AAAAAAAAAAAAAAAAAAAAAAAAAA --snapshot-file ./corrected-output.json --note "fixed currency"
+    --parent-version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --snapshot-file ./corrected-output.json --note "fixed currency"
 
   # Pipe a classifier correction
   printf '{"category":"booking_confirmation"}' |
     retab workflows reviews versions append rev_123 \
-      --parent-version-id ver_AAAAAAAAAAAAAAAAAAAAAAAAAA --snapshot-file -`,
+      --parent-version-id rvr_AAAAAAAAAAAAAAAAAAAAAAAAAA --snapshot-file -`,
 	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		snapshotPath, _ := cmd.Flags().GetString("snapshot-file")
@@ -334,6 +336,13 @@ print it. A 404 is not an error — polling continues until ` + "`--timeout`" + 
 		timeout, _ := cmd.Flags().GetInt("timeout")
 		interval, _ := cmd.Flags().GetInt("poll-interval")
 		deadline := time.Now().Add(time.Duration(timeout) * time.Second)
+		// Track the last terminal state we observed so the timeout error can
+		// distinguish "the review never appeared" (only 404s) from "the
+		// review is already decided" (got a body, but with a terminal
+		// decision). Generic "was not pending" is unhelpful — once a review
+		// is decided it never becomes pending again, so the caller needs to
+		// know which case they're in.
+		var lastDecided *retab.Review
 		for {
 			ctx, cancel := ctxFor(cmd)
 			review, err := client.Workflows.Reviews.Get(ctx, args[0])
@@ -344,9 +353,19 @@ print it. A 404 is not an error — polling continues until ` + "`--timeout`" + 
 				}
 			} else if review.Decision == nil {
 				return printReviewOverlayResult(cmd, review)
+			} else {
+				lastDecided = review
 			}
 			if time.Now().After(deadline) {
-				return fmt.Errorf("review %s was not pending within %ds", args[0], timeout)
+				if lastDecided != nil && lastDecided.Decision != nil {
+					return fmt.Errorf(
+						"review %s is already %s (decided at %s); wait will never succeed on a decided review",
+						args[0],
+						lastDecided.Decision.Verdict,
+						lastDecided.Decision.DecidedAt.Format(time.RFC3339),
+					)
+				}
+				return fmt.Errorf("review %s did not appear within %ds", args[0], timeout)
 			}
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
@@ -482,8 +501,7 @@ var reviewQueueColumns = []TableColumn{
 	{Header: "ITERATION", Extract: func(row any) string { return reviewQueueCell(row, "iteration_key") }},
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
 	{Header: "VERSIONS", Extract: func(row any) string { return reviewQueueCell(row, "version_count") }},
-	{Header: "AWAITING_SINCE", Extract: func(row any) string { return reviewQueueCell(row, "awaiting_since") }},
-	{Header: "PRIORITY", Extract: func(row any) string { return reviewQueueCell(row, "priority") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return reviewQueueCell(row, "created_at") }},
 	{Header: "TRIGGERED_BY", Extract: func(row any) string { return reviewQueueCell(row, "triggered_by.kind") }},
 }
 
@@ -497,8 +515,7 @@ var reviewOverlayColumns = []TableColumn{
 	{Header: "BLOCK_ID", Extract: func(row any) string { return reviewQueueCell(row, "block_id") }},
 	{Header: "STEP_ID", Extract: func(row any) string { return reviewQueueCell(row, "step_id") }},
 	{Header: "BLOCK_TYPE", Extract: func(row any) string { return reviewQueueCell(row, "block_type") }},
-	{Header: "AWAITING_SINCE", Extract: func(row any) string { return reviewQueueCell(row, "awaiting_since") }},
-	{Header: "PRIORITY", Extract: func(row any) string { return reviewQueueCell(row, "priority") }},
+	{Header: "CREATED_AT", Extract: func(row any) string { return reviewQueueCell(row, "created_at") }},
 	{Header: "TRIGGERED_BY", Extract: func(row any) string { return reviewQueueCell(row, "triggered_by.kind") }},
 	{Header: "VERDICT", Extract: func(row any) string { return reviewQueueCell(row, "decision.verdict") }},
 	{Header: "DECIDED_VERSION_ID", Extract: func(row any) string {
@@ -700,7 +717,7 @@ func requireReviewVersionIDFlag(cmd *cobra.Command, name string) (string, error)
 		return "", err
 	}
 	if !reviewVersionIDPattern.MatchString(value) {
-		return "", fmt.Errorf("--%s must be a ver_<26-char base32> version id", name)
+		return "", fmt.Errorf("--%s must be a rvr_<26-char base32> version id", name)
 	}
 	return value, nil
 }
@@ -719,15 +736,15 @@ func init() {
 	workflowsReviewsListCmd.Flags().String("after", "", "cursor for the next page (from list_metadata.after; mutually exclusive with --before)")
 	workflowsReviewsListCmd.MarkFlagsMutuallyExclusive("before", "after")
 
-	workflowsReviewsApproveCmd.Flags().String("version-id", "", "ver_<26-char base32> version id to approve (required)")
+	workflowsReviewsApproveCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to approve (required)")
 	_ = workflowsReviewsApproveCmd.MarkFlagRequired("version-id")
 
-	workflowsReviewsRejectCmd.Flags().String("version-id", "", "ver_<26-char base32> version id to reject (required)")
+	workflowsReviewsRejectCmd.Flags().String("version-id", "", "rvr_<26-char base32> version id to reject (required)")
 	workflowsReviewsRejectCmd.Flags().String("reason", "", "why the output was rejected (required)")
 	_ = workflowsReviewsRejectCmd.MarkFlagRequired("version-id")
 	_ = workflowsReviewsRejectCmd.MarkFlagRequired("reason")
 
-	workflowsReviewsVersionsAppendCmd.Flags().String("parent-version-id", "", "ver_<26-char base32> parent version id for the new version (required)")
+	workflowsReviewsVersionsAppendCmd.Flags().String("parent-version-id", "", "rvr_<26-char base32> parent version id for the new version (required)")
 	workflowsReviewsVersionsAppendCmd.Flags().String("snapshot-file", "", "JSON file with the corrected block snapshot — or - for stdin (required)")
 	workflowsReviewsVersionsAppendCmd.Flags().String("note", "", "free-text rationale for the version")
 	_ = workflowsReviewsVersionsAppendCmd.MarkFlagRequired("parent-version-id")

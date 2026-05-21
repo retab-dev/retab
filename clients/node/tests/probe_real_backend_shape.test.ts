@@ -13,7 +13,7 @@ import {
 } from '../src/types';
 
 const REVIEW_ID = 'rev_01HX9A7Y1R6G9J2K8M4P5Q6T7V';
-const VERSION_ID = 'ver_2N9S8Q4F6M1K7C3D5R0T8W6Y2Z';
+const VERSION_ID = 'rvr_2N9S8Q4F6M1K7C3D5R0T8W6Y2Z';
 
 const REAL_REVIEW_FROM_BACKEND = {
   id: REVIEW_ID,
@@ -26,8 +26,7 @@ const REAL_REVIEW_FROM_BACKEND = {
   iteration_key: null,
   block_type: 'extract',
   triggered_by: { kind: 'any_required_field_null' },
-  awaiting_since: '2026-05-21T09:00:00Z',
-  priority: 0,
+  created_at: '2026-05-21T09:00:00Z',
   versions: {
     [VERSION_ID]: {
       parent_id: null,
@@ -50,8 +49,7 @@ const REAL_SUMMARY_FROM_BACKEND = {
   iteration_key: null,
   block_type: 'extract',
   triggered_by: { kind: 'any_required_field_null' },
-  awaiting_since: '2026-05-21T09:00:00Z',
-  priority: 0,
+  created_at: '2026-05-21T09:00:00Z',
   seed_version_id: VERSION_ID,
   version_count: 1,
   decision: null,
