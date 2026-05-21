@@ -55,7 +55,7 @@ func TestWorkflowsBlocksUpdateHelpShowsReviewConfig(t *testing.T) {
 		`"predicate"`,
 		`"kind":"always"`,
 		`--merge-config-file -`,
-		`only when replacing the whole typed config`,
+		`when replacing the whole typed config`,
 	} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("blocks update help should show review config guidance %q, got:\n%s", want, help)
@@ -76,6 +76,27 @@ func TestWorkflowsBlocksHelpDoesNotAdvertiseStandaloneReviewBlock(t *testing.T) 
 	}
 	if !strings.Contains(workflowsBlocksCreateCmd.Long, "Review is not a standalone block type") {
 		t.Fatalf("blocks create help should explicitly steer users away from standalone review blocks:\n%s", workflowsBlocksCreateCmd.Long)
+	}
+}
+
+func TestParseBlockCreateAcceptsOmittedID(t *testing.T) {
+	// `id` is optional — the server's CreateBlockRequest carries a
+	// default_factory that mints an opaque `blk_<nanoid>`. Block ids are
+	// org-globally unique, so forcing a user-chosen id was a footgun: pick
+	// any common name and you collide with another workflow. The server's
+	// own 409 already tells users to "Create blocks with server-generated
+	// opaque IDs" — that path must be reachable through the CLI.
+	req, err := parseBlockCreate(map[string]any{
+		"type": "extract",
+	})
+	if err != nil {
+		t.Fatalf("omitted id should be accepted, got error: %v", err)
+	}
+	if req.ID != "" {
+		t.Fatalf("expected ID to remain empty so server's default_factory fires, got %q", req.ID)
+	}
+	if req.Type != "extract" {
+		t.Fatalf("expected type to round-trip, got %q", req.Type)
 	}
 }
 
