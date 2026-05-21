@@ -441,7 +441,7 @@ type ReviewOutputVersion struct {
 type ReviewDecisionRecord struct {
 	Verdict   string      `json:"verdict"` // approved | rejected
 	VersionID string      `json:"version_id"`
-	DecidedBy ReviewActor `json:"decided_by"`
+	Author    ReviewActor `json:"author"`
 	DecidedAt time.Time   `json:"decided_at"`
 	Reason    *string     `json:"reason"`
 }

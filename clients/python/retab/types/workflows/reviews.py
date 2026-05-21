@@ -75,7 +75,7 @@ class ReviewDecision(RetabBaseModel):
 
     verdict: ReviewVerdict = Field(..., description="approved / rejected.")
     version_id: VersionId = Field(..., description="Content-hash id of the version being decided.")
-    decided_by: Actor = Field(..., description="Who made the decision.")
+    author: Actor = Field(..., description="Who made the decision.")
     decided_at: datetime.datetime = Field(..., description="When the decision was recorded.")
     reason: str | None = Field(default=None, description="Free-text reason; required for rejections.")
 

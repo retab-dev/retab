@@ -28,7 +28,7 @@ func reviewDecisionBody(verdict string, versionID string) map[string]any {
 	return map[string]any{
 		"verdict":    verdict,
 		"version_id": versionID,
-		"decided_by": map[string]any{"kind": "human", "id": "user_1", "display_name": "Reviewer"},
+		"author":     map[string]any{"kind": "human", "id": "user_1", "display_name": "Reviewer"},
 		"decided_at": "2026-05-18T09:10:00Z",
 	}
 }

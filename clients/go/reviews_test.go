@@ -20,7 +20,7 @@ func reviewOverlayJSON(decided bool) map[string]any {
 		decision = map[string]any{
 			"verdict":    "approved",
 			"version_id": reviewVersionID,
-			"decided_by": map[string]any{"kind": "human", "id": "user_1", "display_name": "Ada"},
+			"author":     map[string]any{"kind": "human", "id": "user_1", "display_name": "Ada"},
 			"decided_at": "2026-05-18T09:05:00Z",
 			"reason":     nil,
 		}

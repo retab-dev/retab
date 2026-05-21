@@ -907,7 +907,7 @@ export const ZReviewDecision = z
   .object({
     verdict: z.enum(['approved', 'rejected']),
     version_id: z.string(),
-    decided_by: ZActor,
+    author: ZActor,
     decided_at: z.string(),
     reason: z.string().nullable().default(null),
   })
