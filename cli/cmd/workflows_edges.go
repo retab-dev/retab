@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -310,6 +312,7 @@ you may pass the friendly input name from the block config, such as
 		req.SourceHandle, _ = cmd.Flags().GetString("source-handle")
 		req.TargetHandle, _ = cmd.Flags().GetString("target-handle")
 		req.ID, _ = cmd.Flags().GetString("id")
+		idWasExplicit := strings.TrimSpace(req.ID) != ""
 		if err := validateWorkflowEdgeCreate(req); err != nil {
 			return err
 		}
@@ -319,10 +322,48 @@ you may pass the friendly input name from the block config, such as
 		ensureWorkflowEdgeID(&req)
 		result, err := client.Workflows.Edges.Create(ctx, args[0], req)
 		if err != nil {
-			return err
+			return rewrapAutoEdgeIDConflict(err, req, idWasExplicit)
 		}
 		return printResult(cmd, result)
 	}),
+}
+
+// rewrapAutoEdgeIDConflict rewrites the server's misleading
+// "Edge ID already exists" 409 when the CLI generated the edge id
+// deterministically from the endpoint tuple (i.e. the user did not pass
+// --id). In that case the real cause is the duplicate (source, target,
+// handles) tuple, not an id picked by the user, so the message should say
+// so. When --id was explicit, the server message is accurate; pass it
+// through unchanged.
+func rewrapAutoEdgeIDConflict(err error, req retab.WorkflowEdgeCreateRequest, idWasExplicit bool) error {
+	if idWasExplicit {
+		return err
+	}
+	var apiErr *retab.APIError
+	if !errors.As(err, &apiErr) {
+		return err
+	}
+	if apiErr.StatusCode != http.StatusConflict {
+		return err
+	}
+	if !strings.Contains(apiErr.Message, "Edge ID already exists") {
+		// Server now sends a clearer tuple-aware 409 in this case — let
+		// it through verbatim. We only override the legacy id-only message.
+		return err
+	}
+	src := req.SourceBlock
+	if req.SourceHandle != "" {
+		src = fmt.Sprintf("%s[:%s]", req.SourceBlock, req.SourceHandle)
+	}
+	tgt := req.TargetBlock
+	if req.TargetHandle != "" {
+		tgt = fmt.Sprintf("%s[:%s]", req.TargetBlock, req.TargetHandle)
+	}
+	apiErr.Message = fmt.Sprintf(
+		"an edge from %s to %s already exists (auto-generated edge id collided)",
+		src, tgt,
+	)
+	return apiErr
 }
 
 var workflowsEdgesDeleteCmd = &cobra.Command{
