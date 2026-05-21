@@ -629,7 +629,7 @@ func TestAddListFlagsRejectsNegativeLimit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected parse error for negative --limit, got nil")
 	}
-	if !strings.Contains(err.Error(), "between 0 and 100") {
+	if !strings.Contains(err.Error(), "between 1 and 100") {
 		t.Fatalf("error should mention backend limit range, got: %v", err)
 	}
 }
