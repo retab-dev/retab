@@ -185,18 +185,16 @@ describe('review zod schemas', () => {
   });
 
   test('ZSubmitDecisionResponse round-trips submission status + review + resume_status', () => {
-    for (const status of ['accepted', 'already_applied'] as const) {
-      const parsed = ZSubmitDecisionResponse.parse({
-        submission_status: status,
-        review: OVERLAY_JSON,
-        resume_status: 'resumed',
-        resume_error: null,
-      });
-      expect(parsed.submission_status).toBe(status);
-      expect(parsed.review.decision?.version_id).toBe(VERSION_ID);
-      expect(parsed.resume_status).toBe('resumed');
-      expect(parsed.resume_error).toBe(null);
-    }
+    const parsed = ZSubmitDecisionResponse.parse({
+      submission_status: 'accepted',
+      review: OVERLAY_JSON,
+      resume_status: 'resumed',
+      resume_error: null,
+    });
+    expect(parsed.submission_status).toBe('accepted');
+    expect(parsed.review.decision?.version_id).toBe(VERSION_ID);
+    expect(parsed.resume_status).toBe('resumed');
+    expect(parsed.resume_error).toBe(null);
   });
 
   test('ZSubmitDecisionResponse defaults resume_status to resumed when backend omits it', () => {
@@ -208,23 +206,31 @@ describe('review zod schemas', () => {
     expect(parsed.resume_error).toBe(null);
   });
 
-  test('ZSubmitDecisionResponse surfaces resume_status="failed" with an error message', () => {
+  test('ZSubmitDecisionResponse surfaces resume_status="pending" with an error message', () => {
     const parsed = ZSubmitDecisionResponse.parse({
       submission_status: 'accepted',
       review: OVERLAY_JSON,
-      resume_status: 'failed',
+      resume_status: 'pending',
       resume_error: 'Workflow run not found for run_id=run_1',
     });
-    expect(parsed.resume_status).toBe('failed');
+    expect(parsed.resume_status).toBe('pending');
     expect(parsed.resume_error).toContain('Workflow run not found');
   });
 
-  test('ZSubmitDecisionResponse rejects removed accepted_pending_resume status', () => {
+  test('ZSubmitDecisionResponse rejects noncanonical decision/resume statuses', () => {
     expect(() =>
       ZSubmitDecisionResponse.parse({
-        submission_status: 'accepted_pending_resume',
+        submission_status: 'queued',
         review: OVERLAY_JSON,
-        resume_status: 'failed',
+        resume_status: 'pending',
+        resume_error: 'Workflow run not found',
+      })
+    ).toThrow();
+    expect(() =>
+      ZSubmitDecisionResponse.parse({
+        submission_status: 'accepted',
+        review: OVERLAY_JSON,
+        resume_status: 'queued',
         resume_error: 'Workflow run not found',
       })
     ).toThrow();

@@ -1258,12 +1258,6 @@ type ApproveReviewRequest struct {
 // correction, first call AppendVersion to author it, then pass the returned
 // version id here.
 //
-// Submitting the same (verdict, VersionID) twice returns
-// SubmissionStatus="already_applied" — this is the idempotency mechanism, so
-// callers can retry transient failures safely. If another reviewer decided
-// first with a different verdict or VersionID, the call fails with HTTP 409;
-// call Get to read the terminal decision.
-//
 // Inspect Response.ResumeStatus to confirm the workflow actually resumed
 // downstream — Response.SubmissionStatus only reflects the decision write.
 func (s *WorkflowReviewsService) Approve(ctx context.Context, reviewID string, request ApproveReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
@@ -1282,11 +1276,6 @@ type RejectReviewRequest struct {
 
 // Reject rejects a reviewed block output. Reason is required and cancels the
 // workflow run on the server.
-//
-// Submitting the same (verdict, VersionID) twice returns
-// SubmissionStatus="already_applied". If another reviewer decided first with a
-// different verdict or VersionID, the call fails with HTTP 409; call Get to
-// read the terminal decision.
 //
 // Inspect Response.ResumeStatus to confirm the workflow actually cancelled
 // downstream — Response.SubmissionStatus only reflects the decision write.

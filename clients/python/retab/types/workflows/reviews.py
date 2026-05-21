@@ -25,7 +25,7 @@ ReviewBlockType = Literal["extract", "classifier", "split", "for_each"]
 ReviewVerdict = Literal["approved", "rejected"]
 
 #: Lifecycle status of a decision submission.
-SubmissionStatus = Literal["accepted", "already_applied"]
+SubmissionStatus = Literal["accepted"]
 
 #: Lifecycle status of an append-version request.
 AppendStatus = Literal["accepted", "already_exists"]
@@ -151,8 +151,7 @@ class ReviewQueueResponse(RetabBaseModel):
 class SubmitDecisionResponse(RetabBaseModel):
     """Envelope returned by ``reviews.approve/reject(...)``.
 
-    ``submission_status`` is ``accepted`` for a fresh decision, or one of the
-    idempotent ``already_*`` values when the server detects a replay.
+    ``submission_status`` is ``accepted`` when the decision is committed.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -165,7 +164,7 @@ class SubmitDecisionResponse(RetabBaseModel):
     )
     resume_error: str | None = Field(
         default=None,
-        description="Reason string when resume_status == 'failed'; None otherwise.",
+        description="Reason string when resume_status == 'pending'; None otherwise.",
     )
 
 
