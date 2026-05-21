@@ -324,7 +324,13 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("%s %s failed with status %d: %s", method, requestURL.String(), resp.StatusCode, strings.TrimSpace(string(respBody)))
+		// Surface the same `APIError` shape the SDK clients return so
+		// `runE` renders it through `renderAPIErrorForCLI`. Commands that
+		// route through this helper (experiments runs, tests runs list,
+		// runs restart, …) used to dump the raw HTTP envelope here while
+		// SDK-backed commands rendered "404 — Workflow not found"; that
+		// inconsistency confused users probing the CLI for status codes.
+		return nil, retab.ParseAPIError(resp, respBody)
 	}
 	if len(strings.TrimSpace(string(respBody))) == 0 {
 		return nil, nil
