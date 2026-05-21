@@ -127,7 +127,7 @@ class ReviewSummary(RetabBaseModel):
     decision: ReviewDecision | None = Field(default=None, description="Terminal decision, if one has been made.")
 
 
-class ReviewQueueResponse(RetabBaseModel):
+class WorkflowReviewQueue(RetabBaseModel):
     """Envelope returned by ``reviews.list(...)``.
 
     Pages are cursored via :class:`ListMetadata`'s ``before`` / ``after`` ids.
@@ -198,7 +198,7 @@ __all__ = [
     "ReviewDecision",
     "Review",
     "ReviewSummary",
-    "ReviewQueueResponse",
+    "WorkflowReviewQueue",
     "ReviewVersionListResponse",
     "SubmitDecisionResponse",
 ]

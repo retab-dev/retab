@@ -11,7 +11,7 @@ from retab.types.workflows import (
     Actor,
     Review,
     ReviewDecision,
-    ReviewQueueResponse,
+    WorkflowReviewQueue,
     ReviewSummary,
     ReviewVersion,
     ReviewVersionListResponse,
@@ -102,7 +102,7 @@ def test_review_summary_round_trips_without_full_history() -> None:
 
 
 def test_review_queue_response_round_trips() -> None:
-    resp = ReviewQueueResponse.model_validate({"data": [_SUMMARY], "list_metadata": {"before": None, "after": _REVIEW_ID}})
+    resp = WorkflowReviewQueue.model_validate({"data": [_SUMMARY], "list_metadata": {"before": None, "after": _REVIEW_ID}})
     assert resp.has_more is True
     assert resp.data[0].step_id == "step_1"
 
@@ -230,7 +230,7 @@ def test_list_get_approve_parse_responses() -> None:
     reviews = WorkflowReviews(client=client)
 
     queue = reviews.list(workflow_id="wf_1")
-    assert isinstance(queue, ReviewQueueResponse)
+    assert isinstance(queue, WorkflowReviewQueue)
     # The list row projection carries seed_version_id + version_count.
     assert queue.data[0].seed_version_id == _VERSION_ID
     assert queue.data[0].version_count == 2

@@ -8,7 +8,7 @@ from ...._resource import AsyncAPIResource, SyncAPIResource
 from ....types.standards import PreparedRequest
 from ....types.workflows.reviews import (
     Review,
-    ReviewQueueResponse,
+    WorkflowReviewQueue,
     ReviewVersion,
     ReviewVersionListResponse,
     SubmitDecisionResponse,
@@ -252,7 +252,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
         decision_status: ReviewDecisionStatus = "pending",
         before: str | None = None,
         after: str | None = None,
-    ) -> ReviewQueueResponse:
+    ) -> WorkflowReviewQueue:
         """List review summaries."""
         request = self.prepare_list(
             workflow_id=workflow_id,
@@ -266,7 +266,7 @@ class WorkflowReviews(SyncAPIResource, WorkflowReviewsMixin):
             after=after,
         )
         response = self._client._prepared_request(request)
-        return ReviewQueueResponse.model_validate(response)
+        return WorkflowReviewQueue.model_validate(response)
 
     def get(self, review_id: str) -> Review:
         """Fetch the full review by id."""
@@ -305,7 +305,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
         decision_status: ReviewDecisionStatus = "pending",
         before: str | None = None,
         after: str | None = None,
-    ) -> ReviewQueueResponse:
+    ) -> WorkflowReviewQueue:
         """List review summaries."""
         request = self.prepare_list(
             workflow_id=workflow_id,
@@ -319,7 +319,7 @@ class AsyncWorkflowReviews(AsyncAPIResource, WorkflowReviewsMixin):
             after=after,
         )
         response = await self._client._prepared_request(request)
-        return ReviewQueueResponse.model_validate(response)
+        return WorkflowReviewQueue.model_validate(response)
 
     async def get(self, review_id: str) -> Review:
         """Fetch the full review by id."""

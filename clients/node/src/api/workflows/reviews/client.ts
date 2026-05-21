@@ -1,12 +1,12 @@
 import { CompositionClient, RequestOptions } from '../../../client.js';
 import {
   Review,
-  ReviewQueueResponse,
+  WorkflowReviewQueue,
   ReviewVersion,
   ReviewVersionListResponse,
   SubmitDecisionResponse,
   ZReview,
-  ZReviewQueueResponse,
+  ZWorkflowReviewQueue,
   ZReviewVersion,
   ZReviewVersionListResponse,
   ZSubmitDecisionResponse,
@@ -247,7 +247,7 @@ export default class APIWorkflowReviews extends CompositionClient {
       after?: string;
     } = {},
     options?: RequestOptions
-  ): Promise<ReviewQueueResponse> {
+  ): Promise<WorkflowReviewQueue> {
     const request = this.prepare_list({
       workflowId,
       workflowRunId,
@@ -260,7 +260,7 @@ export default class APIWorkflowReviews extends CompositionClient {
       after,
     });
 
-    return this._fetchJson(ZReviewQueueResponse, {
+    return this._fetchJson(ZWorkflowReviewQueue, {
       url: request.url,
       method: request.method,
       params: { ...request.params, ...(options?.params || {}) },

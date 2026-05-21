@@ -480,23 +480,23 @@ type ReviewSummary struct {
 	Decision      *ReviewDecisionRecord `json:"decision"`
 }
 
-// ReviewQueueResponse is one page of the review queue.
+// WorkflowReviewQueue is one page of the review queue.
 //
 // Deprecated: use PaginatedList[ReviewSummary] returned by
-// WorkflowReviewsService.List. ReviewQueueResponse is kept only as a type
+// WorkflowReviewsService.List. WorkflowReviewQueue is kept only as a type
 // alias for source compatibility — the live backend emits the canonical
 // {data, list_metadata} envelope (no has_more boolean), so paginating
 // requires the cursor fields in PaginationCursor (Before/After).
-type ReviewQueueResponse = PaginatedList[ReviewSummary]
+type WorkflowReviewQueue = PaginatedList[ReviewSummary]
 
-// SubmitReviewDecisionResponse is the result of a verdict submission.
+// SubmitWorkflowReviewDecisionResponse is the result of a verdict submission.
 //
 // SubmissionStatus reflects whether the decision write was accepted on the
 // server. ResumeStatus reflects whether the downstream workflow actually
 // resumed. A "pending" resume means the decision is committed but immediate
 // delivery did not complete; the associated ResumeError carries diagnostic
 // context while server-side reconciliation retries delivery.
-type SubmitReviewDecisionResponse struct {
+type SubmitWorkflowReviewDecisionResponse struct {
 	SubmissionStatus string  `json:"submission_status"` // accepted
 	Review           Review  `json:"review"`
 	ResumeStatus     string  `json:"resume_status,omitempty"` // pending | resumed | skipped

@@ -182,6 +182,12 @@ func newClient(cmd *cobra.Command) (*retab.Client, error) {
 	if baseURL == "" {
 		baseURL = os.Getenv("RETAB_BASE_URL")
 	}
+	// Validate only user-supplied values (flag/env). An empty string here
+	// means the default ("https://api.retab.com/v1") will be used by the
+	// SDK or the config-file fallback below — both are trusted.
+	if err := validateBaseURL(baseURL); err != nil {
+		return nil, err
+	}
 
 	cfg, _ := loadConfig()
 	if baseURL == "" {
@@ -240,6 +246,12 @@ func cliJSONRequest(cmd *cobra.Command, method string, requestPath string, query
 	}
 	if baseURL == "" {
 		baseURL = os.Getenv("RETAB_BASE_URL")
+	}
+	// Mirror newClient: reject malformed flag/env base URLs before any
+	// HTTP attempt. Empty string flows through to the config file or the
+	// default, both of which are trusted.
+	if err := validateBaseURL(baseURL); err != nil {
+		return nil, err
 	}
 
 	cfg, _ := loadConfig()
@@ -538,6 +550,37 @@ func parseKVStringList(values []string) (map[string]string, error) {
 		out[key] = value
 	}
 	return out, nil
+}
+
+// validateBaseURL rejects malformed user-supplied base URLs early so the
+// failure surfaces as a clear CLI message instead of leaking a Go-internal
+// "Get \"/not-a-url/...\": unsupported protocol scheme \"\"" message from
+// net/http. Called against the flag / env value before it's plumbed into
+// the SDK or http.Request — empty means "fall back to default", which is
+// always valid and short-circuits to nil.
+//
+// Rules: must parse as a URL, must have scheme http or https, must have a
+// host. Anything else returns an error with the user-visible flag spelling
+// preserved.
+func validateBaseURL(raw string) error {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return nil
+	}
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return fmt.Errorf("--base-url %q is not a valid http(s) URL: %s", raw, err)
+	}
+	if parsed.Scheme == "" {
+		return fmt.Errorf("--base-url %q is not a valid http(s) URL: missing scheme", raw)
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return fmt.Errorf("--base-url %q is not a valid http(s) URL: scheme %q is not http or https", raw, parsed.Scheme)
+	}
+	if parsed.Host == "" {
+		return fmt.Errorf("--base-url %q is not a valid http(s) URL: missing host", raw)
+	}
+	return nil
 }
 
 func requireNonBlankFlag(cmd *cobra.Command, name string) (string, error) {

@@ -969,13 +969,13 @@ export type ListMetadata = z.infer<typeof ZListMetadata>;
  * Pages are cursored via `list_metadata.before` / `list_metadata.after`.
  * `has_more` is a derived convenience: `list_metadata.after !== null`.
  */
-export const ZReviewQueueResponse = z
+export const ZWorkflowReviewQueue = z
   .object({
     data: z.array(ZReviewSummary).default([]),
     list_metadata: ZListMetadata,
   })
   .passthrough();
-export type ReviewQueueResponse = z.infer<typeof ZReviewQueueResponse>;
+export type WorkflowReviewQueue = z.infer<typeof ZWorkflowReviewQueue>;
 
 /** Envelope returned by `reviews.versions.list(...)`. */
 export const ZReviewVersionListResponse = z

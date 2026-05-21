@@ -32,8 +32,8 @@ from ....types.workflows.experiments import (
     ExperimentMetricView,
     ExperimentResult,
     ExperimentRun,
-    ExperimentRunCancelResponse,
-    ExperimentResponse,
+    CancelWorkflowExperimentRunResponse,
+    WorkflowExperiment,
     ExplicitExperimentDocumentRequest,
     NConsensusValue,
 )
@@ -370,10 +370,10 @@ class ExperimentRuns(SyncAPIResource, ExperimentRunsMixin):
         response = self._client._prepared_request(request)
         return ExperimentRun.model_validate(response)
 
-    def cancel(self, run_id: str) -> ExperimentRunCancelResponse:
+    def cancel(self, run_id: str) -> CancelWorkflowExperimentRunResponse:
         request = self.prepare_cancel(run_id)
         response = self._client._prepared_request(request)
-        return ExperimentRunCancelResponse.model_validate(response)
+        return CancelWorkflowExperimentRunResponse.model_validate(response)
 
 
 class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
@@ -455,7 +455,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         document_captures: Sequence[Union[ExperimentDocumentCaptureRequest, Mapping[str, Any]]] | None = None,
         documents: Sequence[Union[ExplicitExperimentDocumentRequest, Mapping[str, Any]]] | None = None,
         n_consensus: NConsensusValue = 5,
-    ) -> ExperimentResponse:
+    ) -> WorkflowExperiment:
         """Create a consensus experiment on a supported block.
 
         Supported block kinds: ``extract``, ``classifier``, ``split``, and
@@ -466,7 +466,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         At least one document is required.
 
         Returns:
-            ``ExperimentResponse``. Note: this does NOT trigger a run —
+            ``WorkflowExperiment``. Note: this does NOT trigger a run —
             call ``client.workflows.experiments.runs.create(...)`` next.
         """
         request = self.prepare_create(
@@ -478,19 +478,19 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
             n_consensus=n_consensus,
         )
         response = self._client._prepared_request(request)
-        return ExperimentResponse.model_validate(response)
+        return WorkflowExperiment.model_validate(response)
 
-    def list(self, workflow_id: str) -> PaginatedList[ExperimentResponse]:
+    def list(self, workflow_id: str) -> PaginatedList[WorkflowExperiment]:
         """List all experiments attached to a workflow."""
         request = self.prepare_list(workflow_id)
         response = self._client._prepared_request(request)
-        return PaginatedList[ExperimentResponse].model_validate(response)
+        return PaginatedList[WorkflowExperiment].model_validate(response)
 
-    def get(self, experiment_id: str) -> ExperimentResponse:
+    def get(self, experiment_id: str) -> WorkflowExperiment:
         """Fetch a single experiment by id (refreshes drift state)."""
         request = self.prepare_get(experiment_id)
         response = self._client._prepared_request(request)
-        return ExperimentResponse.model_validate(response)
+        return WorkflowExperiment.model_validate(response)
 
     def update(
         self,
@@ -500,7 +500,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         document_captures: Sequence[Union[ExperimentDocumentCaptureRequest, Mapping[str, Any]]] | None = None,
         documents: Sequence[Union[ExplicitExperimentDocumentRequest, Mapping[str, Any]]] | None = None,
         n_consensus: NConsensusValue | None = None,
-    ) -> ExperimentResponse:
+    ) -> WorkflowExperiment:
         """Patch the name, document set, and/or n_consensus.
 
         Changing the document set or n_consensus invalidates existing
@@ -514,7 +514,7 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
             n_consensus=n_consensus,
         )
         response = self._client._prepared_request(request)
-        return ExperimentResponse.model_validate(response)
+        return WorkflowExperiment.model_validate(response)
 
     def delete(self, experiment_id: str) -> None:
         """Delete an experiment along with its runs and results."""
@@ -593,10 +593,10 @@ class AsyncExperimentRuns(AsyncAPIResource, ExperimentRunsMixin):
         response = await self._client._prepared_request(request)
         return ExperimentRun.model_validate(response)
 
-    async def cancel(self, run_id: str) -> ExperimentRunCancelResponse:
+    async def cancel(self, run_id: str) -> CancelWorkflowExperimentRunResponse:
         request = self.prepare_cancel(run_id)
         response = await self._client._prepared_request(request)
-        return ExperimentRunCancelResponse.model_validate(response)
+        return CancelWorkflowExperimentRunResponse.model_validate(response)
 
 
 class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):
@@ -650,7 +650,7 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         document_captures: Sequence[Union[ExperimentDocumentCaptureRequest, Mapping[str, Any]]] | None = None,
         documents: Sequence[Union[ExplicitExperimentDocumentRequest, Mapping[str, Any]]] | None = None,
         n_consensus: NConsensusValue = 5,
-    ) -> ExperimentResponse:
+    ) -> WorkflowExperiment:
         request = self.prepare_create(
             workflow_id,
             block_id=block_id,
@@ -660,17 +660,17 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
             n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(request)
-        return ExperimentResponse.model_validate(response)
+        return WorkflowExperiment.model_validate(response)
 
-    async def list(self, workflow_id: str) -> PaginatedList[ExperimentResponse]:
+    async def list(self, workflow_id: str) -> PaginatedList[WorkflowExperiment]:
         request = self.prepare_list(workflow_id)
         response = await self._client._prepared_request(request)
-        return PaginatedList[ExperimentResponse].model_validate(response)
+        return PaginatedList[WorkflowExperiment].model_validate(response)
 
-    async def get(self, experiment_id: str) -> ExperimentResponse:
+    async def get(self, experiment_id: str) -> WorkflowExperiment:
         request = self.prepare_get(experiment_id)
         response = await self._client._prepared_request(request)
-        return ExperimentResponse.model_validate(response)
+        return WorkflowExperiment.model_validate(response)
 
     async def update(
         self,
@@ -680,7 +680,7 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         document_captures: Sequence[Union[ExperimentDocumentCaptureRequest, Mapping[str, Any]]] | None = None,
         documents: Sequence[Union[ExplicitExperimentDocumentRequest, Mapping[str, Any]]] | None = None,
         n_consensus: NConsensusValue | None = None,
-    ) -> ExperimentResponse:
+    ) -> WorkflowExperiment:
         request = self.prepare_update(
             experiment_id,
             name=name,
@@ -689,7 +689,7 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
             n_consensus=n_consensus,
         )
         response = await self._client._prepared_request(request)
-        return ExperimentResponse.model_validate(response)
+        return WorkflowExperiment.model_validate(response)
 
     async def delete(self, experiment_id: str) -> None:
         request = self.prepare_delete(experiment_id)

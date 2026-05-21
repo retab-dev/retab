@@ -262,24 +262,37 @@ func TestWorkflowsSpecApplyReturnsErrorWhenResultIsInvalid(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method = %s, want POST", r.Method)
 		}
-		if r.URL.Path != "/workflows/spec/apply" {
-			t.Fatalf("path = %s, want /workflows/spec/apply", r.URL.Path)
-		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"workflow_id": "wf_invalid",
-			"is_valid":    false,
-			"diagnostics": map[string]any{
-				"is_valid": false,
-				"issues": []map[string]any{
-					{
-						"severity": "error",
-						"code":     "INVALID_EDGE_ENDPOINT",
-						"message":  "Edge target block is missing.",
+		switch r.URL.Path {
+		case "/workflows/spec/plan":
+			// Plan must return a valid (and non-destructive) shape so
+			// the destructive-confirmation guard becomes a no-op and the
+			// flow reaches the apply call this test is actually
+			// exercising.
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_invalid",
+				"action":      "update",
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary":     map[string]any{"add": 0, "change": 0, "destroy": 0},
+			})
+		case "/workflows/spec/apply":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_invalid",
+				"is_valid":    false,
+				"diagnostics": map[string]any{
+					"is_valid": false,
+					"issues": []map[string]any{
+						{
+							"severity": "error",
+							"code":     "INVALID_EDGE_ENDPOINT",
+							"message":  "Edge target block is missing.",
+						},
 					},
 				},
-			},
-		})
+			})
+		default:
+			t.Fatalf("path = %s, want /workflows/spec/plan or /workflows/spec/apply", r.URL.Path)
+		}
 	}))
 	defer server.Close()
 	t.Setenv("RETAB_API_BASE_URL", server.URL)
@@ -537,6 +550,245 @@ func TestWorkflowsSpecExportRejectsUnknownFormatBeforeRequest(t *testing.T) {
 	}
 	if got := hits.Load(); got != 0 {
 		t.Fatalf("server was hit %d time(s), want no requests", got)
+	}
+}
+
+// TestWorkflowsSpecApplyWithYesFlagSkipsPromptWhenDestroyPositive pins
+// that `--yes` lets the apply through without prompting even when the
+// plan would destroy resources. Mirrors the `--yes` contract used by
+// `workflows blocks delete` / `workflows delete` — scripts must be able
+// to opt in without a TTY.
+func TestWorkflowsSpecApplyWithYesFlagSkipsPromptWhenDestroyPositive(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var planHits, applyHits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/workflows/spec/plan":
+			planHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_test",
+				"action":      "update",
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary": map[string]any{
+					"add": 1, "change": 0, "destroy": 3,
+					"replace": 0, "noop": 0, "total": 4,
+					"has_changes": true,
+				},
+				"resource_changes": []map[string]any{
+					{"address": "block.extract_invoice", "target": "block", "name": "extract_invoice", "actions": []string{"delete"}},
+					{"address": "block.classify", "target": "block", "name": "classify", "actions": []string{"delete"}},
+					{"address": "edge.e1", "target": "edge", "name": "e1", "actions": []string{"delete"}},
+				},
+			})
+		case "/workflows/spec/apply":
+			applyHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_test",
+				"created":     false,
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary": map[string]any{
+					"add": 1, "change": 0, "destroy": 3,
+					"replace": 0, "noop": 0, "total": 4,
+					"has_changes": true,
+				},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("metadata:\n  id: wf_test\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := workflowsSpecApplyCmd.Flags().Set("yes", "true"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = workflowsSpecApplyCmd.Flags().Set("yes", "false") })
+
+	if _, _ = captureStd(t, func() {
+		if err := workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path}); err != nil {
+			t.Fatalf("apply with --yes: %v", err)
+		}
+	}); false {
+	}
+	if planHits.Load() != 1 {
+		t.Fatalf("expected exactly 1 plan call, got %d", planHits.Load())
+	}
+	if applyHits.Load() != 1 {
+		t.Fatalf("expected exactly 1 apply call, got %d", applyHits.Load())
+	}
+}
+
+// TestWorkflowsSpecApplyWithoutYesAndNonTTYStdinRefusesOnDestroy pins
+// the safety guard: when the plan would destroy resources, stdin is not
+// a terminal (CI, pipe, redirect), and `--yes` is not set, the command
+// must refuse — apply is never invoked. The error message has to mention
+// "destroy", "--yes", and "terminal" so users can see all three pieces
+// of the diagnosis in one line.
+func TestWorkflowsSpecApplyWithoutYesAndNonTTYStdinRefusesOnDestroy(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var planHits, applyHits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/workflows/spec/plan":
+			planHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_test",
+				"action":      "update",
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary": map[string]any{
+					"add": 1, "change": 1, "destroy": 3,
+					"replace": 0, "noop": 0, "total": 5,
+					"has_changes": true,
+				},
+				"resource_changes": []map[string]any{
+					{"address": "block.extract_invoice", "target": "block", "name": "extract_invoice", "actions": []string{"delete"}},
+				},
+			})
+		case "/workflows/spec/apply":
+			applyHits.Add(1)
+			t.Fatalf("apply must NOT be called when destroy > 0 and no --yes")
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("metadata:\n  id: wf_test\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := workflowsSpecApplyCmd.Flags().Set("yes", "false"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, _ = captureStd(t, func() {
+		err = workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path})
+	})
+	if err == nil {
+		t.Fatal("expected refusal when destroy > 0 and stdin is not a TTY")
+	}
+	msg := err.Error()
+	for _, want := range []string{"destroy", "--yes", "terminal"} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("error %q does not mention %q", msg, want)
+		}
+	}
+	if planHits.Load() != 1 {
+		t.Fatalf("expected 1 plan call, got %d", planHits.Load())
+	}
+	if applyHits.Load() != 0 {
+		t.Fatalf("apply must not run, got %d hits", applyHits.Load())
+	}
+}
+
+// TestWorkflowsSpecApplyDestroyZeroAppliesUnconditionally pins that a
+// non-destructive plan applies without consulting --yes or TTY state.
+// This is the byte-identical-to-pre-guard contract: a benign apply must
+// not gain a prompt nor a refusal just because we added the gate.
+func TestWorkflowsSpecApplyDestroyZeroAppliesUnconditionally(t *testing.T) {
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	var planHits, applyHits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/workflows/spec/plan":
+			planHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_test",
+				"action":      "update",
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary": map[string]any{
+					"add": 2, "change": 1, "destroy": 0,
+					"replace": 0, "noop": 0, "total": 3,
+					"has_changes": true,
+				},
+				"resource_changes": []map[string]any{
+					{"address": "block.new", "target": "block", "name": "new", "actions": []string{"create"}},
+				},
+			})
+		case "/workflows/spec/apply":
+			applyHits.Add(1)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"workflow_id": "wf_test",
+				"created":     false,
+				"diagnostics": map[string]any{"is_valid": true},
+				"summary": map[string]any{
+					"add": 2, "change": 1, "destroy": 0,
+					"replace": 0, "noop": 0, "total": 3,
+					"has_changes": true,
+				},
+			})
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	path := filepath.Join(t.TempDir(), "workflow.yaml")
+	if err := os.WriteFile(path, []byte("metadata:\n  id: wf_test\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure --yes is explicitly false; the gate must be skipped on its
+	// own when destroy == 0, not because of a leftover --yes from a
+	// sibling test.
+	if err := workflowsSpecApplyCmd.Flags().Set("yes", "false"); err != nil {
+		t.Fatal(err)
+	}
+
+	var err error
+	_, _ = captureStd(t, func() {
+		err = workflowsSpecApplyCmd.RunE(workflowsSpecApplyCmd, []string{path})
+	})
+	if err != nil {
+		t.Fatalf("non-destructive apply should succeed without --yes / TTY, got: %v", err)
+	}
+	if planHits.Load() != 1 || applyHits.Load() != 1 {
+		t.Fatalf("expected 1 plan + 1 apply call, got plan=%d apply=%d",
+			planHits.Load(), applyHits.Load())
+	}
+}
+
+// The --yes flag must be registered on the apply command (and only on
+// apply — the other spec verbs are read-only and a stray --yes would
+// silently be accepted but ignored, which is confusing).
+func TestWorkflowsSpecApply_YesFlag(t *testing.T) {
+	apply, _, err := rootCmd.Find([]string{"workflows", "spec", "apply"})
+	if err != nil {
+		t.Fatalf("workflows spec apply not registered: %v", err)
+	}
+	f := apply.Flags().Lookup("yes")
+	if f == nil {
+		t.Fatalf("apply command should expose a --yes flag")
+	}
+	if f.Shorthand != "y" {
+		t.Errorf("--yes shorthand should be -y, got %q", f.Shorthand)
+	}
+	for _, name := range []string{"validate", "plan", "export"} {
+		sibling, _, err := rootCmd.Find([]string{"workflows", "spec", name})
+		if err != nil {
+			t.Fatalf("workflows spec %s not registered: %v", name, err)
+		}
+		if sibling.Flags().Lookup("yes") != nil {
+			t.Errorf("workflows spec %s should not expose --yes (apply-only)", name)
+		}
 	}
 }
 

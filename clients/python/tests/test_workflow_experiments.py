@@ -222,13 +222,13 @@ def test_experiments_get_uses_detail_route() -> None:
 def test_experiment_schema_drift_accepts_partial_and_rejects_stale_values() -> None:
     from pydantic import ValidationError
 
-    from retab.types.workflows import ExperimentResponse
+    from retab.types.workflows import WorkflowExperiment
 
-    experiment = ExperimentResponse.model_validate({**_EXPERIMENT_RESPONSE, "schema_drift": "partial"})
+    experiment = WorkflowExperiment.model_validate({**_EXPERIMENT_RESPONSE, "schema_drift": "partial"})
     assert experiment.schema_drift == "partial"
 
     with pytest.raises(ValidationError):
-        ExperimentResponse.model_validate({**_EXPERIMENT_RESPONSE, "schema_drift": "fresh"})
+        WorkflowExperiment.model_validate({**_EXPERIMENT_RESPONSE, "schema_drift": "fresh"})
 
 
 def test_experiments_delete_uses_delete_method() -> None:

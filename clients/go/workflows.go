@@ -1129,7 +1129,7 @@ type ApproveReviewRequest struct {
 //
 // Inspect Response.ResumeStatus to confirm the workflow actually resumed
 // downstream — Response.SubmissionStatus only reflects the decision write.
-func (s *WorkflowReviewsService) Approve(ctx context.Context, reviewID string, request ApproveReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
+func (s *WorkflowReviewsService) Approve(ctx context.Context, reviewID string, request ApproveReviewRequest, opts ...RequestOption) (*SubmitWorkflowReviewDecisionResponse, error) {
 	if request.VersionID == "" {
 		return nil, fmt.Errorf("retab: VersionID is required")
 	}
@@ -1148,7 +1148,7 @@ type RejectReviewRequest struct {
 //
 // Inspect Response.ResumeStatus to confirm the workflow actually cancelled
 // downstream — Response.SubmissionStatus only reflects the decision write.
-func (s *WorkflowReviewsService) Reject(ctx context.Context, reviewID string, request RejectReviewRequest, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
+func (s *WorkflowReviewsService) Reject(ctx context.Context, reviewID string, request RejectReviewRequest, opts ...RequestOption) (*SubmitWorkflowReviewDecisionResponse, error) {
 	if request.VersionID == "" {
 		return nil, fmt.Errorf("retab: VersionID is required")
 	}
@@ -1159,11 +1159,11 @@ func (s *WorkflowReviewsService) Reject(ctx context.Context, reviewID string, re
 	return s.submitDecision(ctx, reviewID, "reject", body, opts...)
 }
 
-func (s *WorkflowReviewsService) submitDecision(ctx context.Context, reviewID string, action string, body map[string]any, opts ...RequestOption) (*SubmitReviewDecisionResponse, error) {
+func (s *WorkflowReviewsService) submitDecision(ctx context.Context, reviewID string, action string, body map[string]any, opts ...RequestOption) (*SubmitWorkflowReviewDecisionResponse, error) {
 	if reviewID == "" {
 		return nil, fmt.Errorf("retab: reviewID is required")
 	}
-	var result SubmitReviewDecisionResponse
+	var result SubmitWorkflowReviewDecisionResponse
 	err := s.client.do(ctx, http.MethodPost, reviewPath(reviewID)+"/"+action, nil, body, &result, opts...)
 	if err != nil {
 		return nil, err
@@ -1192,7 +1192,7 @@ func newWorkflowTestsService(client *Client) *WorkflowTestsService {
 }
 
 type WorkflowTest = Resource
-type WorkflowTestRunRecord = Resource
+type WorkflowTestResult = Resource
 
 type WorkflowTestCreateRequest struct {
 	WorkflowID string   `json:"-"`
@@ -1282,7 +1282,7 @@ type WorkflowTestRun struct {
 	Counts     WorkflowTestRunCounts    `json:"counts,omitempty"`
 }
 
-type WorkflowTestRunResultListResponse = PaginatedList[WorkflowTestRunRecord]
+type WorkflowTestRunResultListResponse = PaginatedList[WorkflowTestResult]
 
 func (s *WorkflowTestsService) Create(ctx context.Context, request WorkflowTestCreateRequest, opts ...RequestOption) (*WorkflowTest, error) {
 	if request.WorkflowID == "" {
@@ -1401,22 +1401,22 @@ func (s *WorkflowTestRunsService) Cancel(ctx context.Context, runID string, opts
 	return &result, err
 }
 
-func (s *WorkflowTestRunResultsService) List(ctx context.Context, runID string, opts ...RequestOption) (*PaginatedList[WorkflowTestRunRecord], error) {
+func (s *WorkflowTestRunResultsService) List(ctx context.Context, runID string, opts ...RequestOption) (*PaginatedList[WorkflowTestResult], error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
 	query := url.Values{}
 	query.Set("run_id", runID)
-	var result PaginatedList[WorkflowTestRunRecord]
+	var result PaginatedList[WorkflowTestResult]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/results", query, nil, &result, opts...)
 	return &result, err
 }
 
-func (s *WorkflowTestRunResultsService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*WorkflowTestRunRecord, error) {
+func (s *WorkflowTestRunResultsService) Get(ctx context.Context, resultID string, opts ...RequestOption) (*WorkflowTestResult, error) {
 	if resultID == "" {
 		return nil, fmt.Errorf("retab: resultID is required")
 	}
-	var result WorkflowTestRunRecord
+	var result WorkflowTestResult
 	err := s.client.do(ctx, http.MethodGet, "/workflows/tests/results/"+url.PathEscape(resultID), nil, nil, &result, opts...)
 	return &result, err
 }
@@ -1491,8 +1491,8 @@ type ExplicitExperimentDocumentRequest struct {
 	Provenance   *ExperimentDocumentProvenance `json:"provenance,omitempty"`
 }
 
-// ExperimentResponse is one experiment row returned by create/list/get/update.
-type ExperimentResponse struct {
+// WorkflowExperiment is one experiment row returned by create/list/get/update.
+type WorkflowExperiment struct {
 	ID                string    `json:"id"`
 	WorkflowID        string    `json:"workflow_id"`
 	BlockID           string    `json:"block_id"`
@@ -1545,7 +1545,7 @@ type ExperimentRun struct {
 // `GET /v1/workflows/experiments/runs`.
 type ExperimentRunListResponse = PaginatedList[ExperimentRun]
 
-type ExperimentRunCancelResponse struct {
+type CancelWorkflowExperimentRunResponse struct {
 	ID        string                 `json:"id"`
 	Lifecycle ExperimentRunLifecycle `json:"lifecycle"`
 }
@@ -1641,7 +1641,7 @@ type GetExperimentMetricsParams struct {
 
 // Create posts a new experiment definition. Use Runs.Create afterwards to
 // trigger an actual evaluation.
-func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateExperimentRequest, opts ...RequestOption) (*ExperimentResponse, error) {
+func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateExperimentRequest, opts ...RequestOption) (*WorkflowExperiment, error) {
 	if request.WorkflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
@@ -1665,7 +1665,7 @@ func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateE
 	if request.Documents != nil {
 		body["documents"] = request.Documents
 	}
-	var result ExperimentResponse
+	var result WorkflowExperiment
 	err := s.client.do(ctx, http.MethodPost,
 		"/workflows/experiments",
 		nil, body, &result, opts...)
@@ -1674,24 +1674,24 @@ func (s *WorkflowExperimentsService) Create(ctx context.Context, request CreateE
 
 // List returns every experiment attached to the workflow, newest first.
 //
-// Returns a `PaginatedList[ExperimentResponse]` to match the canonical Retab
+// Returns a `PaginatedList[WorkflowExperiment]` to match the canonical Retab
 // list envelope (`{data, list_metadata}`). Iterate over `result.Data` for the
 // rows.
-func (s *WorkflowExperimentsService) List(ctx context.Context, workflowID string, opts ...RequestOption) (*PaginatedList[ExperimentResponse], error) {
+func (s *WorkflowExperimentsService) List(ctx context.Context, workflowID string, opts ...RequestOption) (*PaginatedList[WorkflowExperiment], error) {
 	if workflowID == "" {
 		return nil, fmt.Errorf("retab: workflowID is required")
 	}
-	var result PaginatedList[ExperimentResponse]
+	var result PaginatedList[WorkflowExperiment]
 	err := s.client.do(ctx, http.MethodGet, "/workflows/experiments?workflow_id="+url.QueryEscape(workflowID), nil, nil, &result, opts...)
 	return &result, err
 }
 
 // Get fetches one experiment by ID.
-func (s *WorkflowExperimentsService) Get(ctx context.Context, experimentID string, opts ...RequestOption) (*ExperimentResponse, error) {
+func (s *WorkflowExperimentsService) Get(ctx context.Context, experimentID string, opts ...RequestOption) (*WorkflowExperiment, error) {
 	if experimentID == "" {
 		return nil, fmt.Errorf("retab: experimentID is required")
 	}
-	var result ExperimentResponse
+	var result WorkflowExperiment
 	err := s.client.do(ctx, http.MethodGet,
 		"/workflows/experiments/"+url.PathEscape(experimentID),
 		nil, nil, &result, opts...)
@@ -1699,7 +1699,7 @@ func (s *WorkflowExperimentsService) Get(ctx context.Context, experimentID strin
 }
 
 // Update patches the experiment. Only fields you set are forwarded.
-func (s *WorkflowExperimentsService) Update(ctx context.Context, experimentID string, request UpdateExperimentRequest, opts ...RequestOption) (*ExperimentResponse, error) {
+func (s *WorkflowExperimentsService) Update(ctx context.Context, experimentID string, request UpdateExperimentRequest, opts ...RequestOption) (*WorkflowExperiment, error) {
 	if experimentID == "" {
 		return nil, fmt.Errorf("retab: experimentID is required")
 	}
@@ -1716,7 +1716,7 @@ func (s *WorkflowExperimentsService) Update(ctx context.Context, experimentID st
 	if request.Documents != nil {
 		body["documents"] = request.Documents
 	}
-	var result ExperimentResponse
+	var result WorkflowExperiment
 	err := s.client.do(ctx, http.MethodPatch,
 		"/workflows/experiments/"+url.PathEscape(experimentID),
 		nil, body, &result, opts...)
@@ -1791,11 +1791,11 @@ func (s *WorkflowExperimentRunsService) Get(ctx context.Context, runID string, o
 	return &result, err
 }
 
-func (s *WorkflowExperimentRunsService) Cancel(ctx context.Context, runID string, opts ...RequestOption) (*ExperimentRunCancelResponse, error) {
+func (s *WorkflowExperimentRunsService) Cancel(ctx context.Context, runID string, opts ...RequestOption) (*CancelWorkflowExperimentRunResponse, error) {
 	if runID == "" {
 		return nil, fmt.Errorf("retab: runID is required")
 	}
-	var result ExperimentRunCancelResponse
+	var result CancelWorkflowExperimentRunResponse
 	err := s.client.do(ctx, http.MethodPost, "/workflows/experiments/runs/"+url.PathEscape(runID)+"/cancel", nil, map[string]any{}, &result, opts...)
 	return &result, err
 }

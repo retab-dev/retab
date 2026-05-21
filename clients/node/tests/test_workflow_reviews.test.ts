@@ -6,7 +6,7 @@ import {
   ZActor,
   ZDecision,
   ZReview,
-  ZReviewQueueResponse,
+  ZWorkflowReviewQueue,
   ZReviewSummary,
   ZReviewVersion,
   ZReviewVersionListResponse,
@@ -198,8 +198,8 @@ describe('review zod schemas', () => {
     expect(() => ZReviewSummary.parse(withoutCount)).toThrow();
   });
 
-  test('ZReviewQueueResponse wraps ReviewSummary rows with seed_version_id and version_count', () => {
-    const response = ZReviewQueueResponse.parse({
+  test('ZWorkflowReviewQueue wraps ReviewSummary rows with seed_version_id and version_count', () => {
+    const response = ZWorkflowReviewQueue.parse({
       data: [REVIEW_SUMMARY_JSON],
       list_metadata: { before: null, after: REVIEW_ID },
     });
@@ -209,9 +209,9 @@ describe('review zod schemas', () => {
     expect(response.data[0]?.version_count).toBe(1);
   });
 
-  test('ZReviewQueueResponse rejects pre-cutover Review rows that omit summary fields', () => {
+  test('ZWorkflowReviewQueue rejects pre-cutover Review rows that omit summary fields', () => {
     expect(() =>
-      ZReviewQueueResponse.parse({
+      ZWorkflowReviewQueue.parse({
         data: [{ ...REVIEW_JSON, decision: null }],
         list_metadata: { before: null, after: null },
       })

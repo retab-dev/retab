@@ -6,7 +6,7 @@ import { describe, expect, test } from 'bun:test';
 
 import {
   ZReview,
-  ZReviewQueueResponse,
+  ZWorkflowReviewQueue,
   ZReviewSummary,
   ZReviewVersion,
   ZReviewVersionListResponse,
@@ -72,13 +72,13 @@ describe('backend wire-shape vs SDK Zod schemas', () => {
     expect(result.success).toBe(true);
   });
 
-  test('ZReviewQueueResponse parses {data, list_metadata}', () => {
-    const result = ZReviewQueueResponse.safeParse({
+  test('ZWorkflowReviewQueue parses {data, list_metadata}', () => {
+    const result = ZWorkflowReviewQueue.safeParse({
       data: [REAL_SUMMARY_FROM_BACKEND],
       list_metadata: { before: null, after: null },
     });
     if (!result.success) {
-      console.error('ZReviewQueueResponse failed:', JSON.stringify(result.error.issues, null, 2));
+      console.error('ZWorkflowReviewQueue failed:', JSON.stringify(result.error.issues, null, 2));
     }
     expect(result.success).toBe(true);
   });

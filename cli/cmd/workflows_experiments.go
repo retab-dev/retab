@@ -228,7 +228,7 @@ blocks.`,
 // shapes. The explicit BLOCK_KIND column makes the source field obvious
 // (bug #12) — extract / split / classifier / … — and aligns with how
 // the SDK names the field on the wire.
-func printWorkflowExperimentsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.ExperimentResponse]) error {
+func printWorkflowExperimentsListResult(cmd *cobra.Command, result *retab.PaginatedList[retab.WorkflowExperiment]) error {
 	if cmd != nil {
 		if f := cmd.Root().PersistentFlags().Lookup("output"); f != nil && f.Value.String() == string(OutputTable) {
 			return RenderList(os.Stdout, OutputTable, result, workflowExperimentColumns)
@@ -399,22 +399,29 @@ document in its set.
 The workflow id is derived server-side from the experiment record, so
 only the ` + "`<experiment-id>`" + ` positional is required. The legacy
 two-argument form (` + "`<workflow-id> <experiment-id>`" + `) is still
-accepted for backward compatibility — the leading workflow id is
-ignored.`,
+accepted for backward compatibility — when supplied, the workflow id is
+forwarded to the server for cross-checking against the experiment's own
+` + "`workflow_id`" + ` so a mismatched pairing surfaces as a 404 instead
+of being silently dropped.`,
 	Example: `  # Create an experiment run
   retab workflows experiments runs create exp_pqr678`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		// Backward compat: the historical shape was
 		//   `runs create <workflow-id> <experiment-id>`
-		// The server now derives `workflow_id` from the experiment, so
-		// we accept either shape and always send only `experiment_id`.
+		// The server derives `workflow_id` from the experiment, but it
+		// ALSO validates a client-supplied `workflow_id` matches when one
+		// is sent — so we forward the leading positional when present.
+		// Without this, a typo in the workflow id slot was silently
+		// dropped (the experiment id alone determined which workflow ran).
 		experimentID := args[0]
-		if len(args) == 2 {
-			experimentID = args[1]
-		}
 		body := map[string]any{
 			"experiment_id": experimentID,
+		}
+		if len(args) == 2 {
+			experimentID = args[1]
+			body["experiment_id"] = experimentID
+			body["workflow_id"] = args[0]
 		}
 		result, err := cliJSONRequest(cmd, http.MethodPost, "/workflows/experiments/runs", nil, body)
 		if err != nil {
