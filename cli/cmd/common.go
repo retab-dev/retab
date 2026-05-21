@@ -744,6 +744,33 @@ func (v *dateFlagValue) Set(raw string) error {
 	return nil
 }
 
+// validateOrderFlag and validateDateFlag let plain `String` flags reuse
+// the same parsing as `orderFlagValue` / `dateFlagValue` without changing
+// flag registration. Useful for commands like `workflows tests runs list`
+// that historically forwarded raw query strings to the server and need
+// retrofitted client-side validation.
+
+func validateOrderFlag(cmd *cobra.Command, name string) error {
+	value, _ := cmd.Flags().GetString(name)
+	switch value {
+	case "", "asc", "desc":
+		return nil
+	default:
+		return fmt.Errorf("--%s %q must be asc or desc", name, value)
+	}
+}
+
+func validateDateFlag(cmd *cobra.Command, name string) error {
+	value, _ := cmd.Flags().GetString(name)
+	if value == "" {
+		return nil
+	}
+	if _, err := time.Parse("2006-01-02", value); err != nil {
+		return fmt.Errorf("--%s must use YYYY-MM-DD date format: %w", name, err)
+	}
+	return nil
+}
+
 type orderFlagValue struct{ value string }
 
 func (v *orderFlagValue) String() string { return v.value }
