@@ -208,7 +208,7 @@ func TestRenderWorkflowASCIIViewDoesNotLeakFloatingLabelTailOntoBoxBorder(t *tes
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_long_handles", Name: "Long handle bleed"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "start", Type: "start-document", Label: "Document", PositionX: 0, PositionY: 0},
+			{ID: "start", Type: "start_document", Label: "Document", PositionX: 0, PositionY: 0},
 			{ID: "split", Type: "split", Label: "Split", PositionX: 300, PositionY: 0},
 			{ID: "extract", Type: "extract", Label: "Extract booking", PositionX: 600, PositionY: 0},
 			{ID: "fn", Type: "function", Label: "Check booking", PositionX: 900, PositionY: 0},
@@ -261,7 +261,7 @@ func TestRenderWorkflowASCIIViewKeepsTypeTagWhenBlockIDIsLong(t *testing.T) {
 	workflow := &workflowGraph{
 		Workflow: retab.Workflow{ID: "wf_longid", Name: "Long-id workflow"},
 		Blocks: []retab.WorkflowBlock{
-			{ID: "block_gOKWG4abcdefgh1a2KYG", Type: "start-document", Label: "Document", PositionX: 0, PositionY: 0},
+			{ID: "block_gOKWG4abcdefgh1a2KYG", Type: "start_document", Label: "Document", PositionX: 0, PositionY: 0},
 			{ID: "block_BKcQijCUKCisbTQzrLDwd", Type: "extract", Label: "Extract", PositionX: 300, PositionY: 0},
 		},
 		Edges: []retab.WorkflowEdgeDoc{
@@ -273,8 +273,8 @@ func TestRenderWorkflowASCIIViewKeepsTypeTagWhenBlockIDIsLong(t *testing.T) {
 	if !strings.Contains(out, "[extract]") {
 		t.Fatalf("expected [extract] tag to survive truncation, got:\n%s", out)
 	}
-	if !strings.Contains(out, "[start-document]") {
-		t.Fatalf("expected [start-document] tag to survive truncation, got:\n%s", out)
+	if !strings.Contains(out, "[start_document]") {
+		t.Fatalf("expected [start_document] tag to survive truncation, got:\n%s", out)
 	}
 }
 
@@ -328,7 +328,7 @@ func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
-					{"id": "start", "type": "start-document", "label": "Start", "position_x": 0, "position_y": 0},
+					{"id": "start", "type": "start_document", "label": "Start", "position_x": 0, "position_y": 0},
 					{"id": "extract", "type": "extract", "label": "Extract totals", "position_x": 300, "position_y": 0},
 				},
 				"list_metadata": map[string]any{"before": nil, "after": nil},
@@ -362,7 +362,7 @@ func TestWorkflowsViewCommandFetchesGraphPartsAndPrintsASCII(t *testing.T) {
 		"Workflow: Invoice flow (wf_graph)",
 		"| Start",
 		"| Extract totals",
-		"| start [start-document]",
+		"| start [start_document]",
 		"| extract [extract]",
 		"--->",
 	} {

@@ -110,7 +110,8 @@ def test_create_posts_to_tests_route_with_full_body() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/tests?workflow_id=wf_abc123"
+    assert request.url == "/workflows/tests"
+    assert request.data["workflow_id"] == "wf_abc123"
     # Pydantic dumps the discriminated union with `type` set explicitly.
     assert request.data["target"] == {"type": "block", "block_id": "block_extract"}
     assert request.data["source"] == {
@@ -188,11 +189,11 @@ def test_get_uses_test_detail_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _TEST_RESPONSE
 
-    Workflows(client=client).tests.get("wf_abc123", "wfnodetest_abc")
+    Workflows(client=client).tests.get("wfnodetest_abc")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123"
+    assert request.url == "/workflows/tests/wfnodetest_abc"
 
 
 def test_list_uses_tests_route_with_filter() -> None:
@@ -238,11 +239,11 @@ def test_delete_uses_test_detail_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = None
 
-    Workflows(client=client).tests.delete("wf_abc123", "wfnodetest_abc")
+    Workflows(client=client).tests.delete("wfnodetest_abc")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "DELETE"
-    assert request.url == "/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123"
+    assert request.url == "/workflows/tests/wfnodetest_abc"
 
 
 # ---------------------------------------------------------------------------
@@ -260,14 +261,13 @@ def test_update_only_includes_fields_the_caller_passed() -> None:
     client._prepared_request.return_value = _TEST_RESPONSE
 
     Workflows(client=client).tests.update(
-        workflow_id="wf_abc123",
         test_id="wfnodetest_abc",
         name="renamed",
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/tests/wfnodetest_abc?workflow_id=wf_abc123"
+    assert request.url == "/workflows/tests/wfnodetest_abc"
     assert request.data == {"name": "renamed"}, f"PATCH body must only carry the field the caller passed; got {request.data!r}"
 
 
@@ -276,7 +276,6 @@ def test_update_with_assertion_serializes_assertion_only() -> None:
     client._prepared_request.return_value = _TEST_RESPONSE
 
     Workflows(client=client).tests.update(
-        workflow_id="wf_abc123",
         test_id="wfnodetest_abc",
         assertion={
             "target": {"output_handle_id": "output-json-0", "path": "vendor.name"},
@@ -322,8 +321,11 @@ def test_runs_create_with_test_id_only() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/tests/runs?workflow_id=wf_abc123"
-    assert request.data == {"test_id": "wfnodetest_abc"}
+    assert request.url == "/workflows/tests/runs"
+    assert request.data == {
+        "workflow_id": "wf_abc123",
+        "test_id": "wfnodetest_abc",
+    }
     assert response.lifecycle.status == "pending"
     assert response.id == "wftestrun_q1z2"
 
@@ -340,23 +342,21 @@ def test_runs_create_with_target_and_consensus() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.data == {
+        "workflow_id": "wf_abc123",
         "target": {"type": "block", "block_id": "block_extract"},
         "n_consensus": 5,
     }
 
 
 def test_runs_create_no_args_runs_every_test_in_workflow() -> None:
-    """Empty body = run every test in the workflow. The backend
-    distinguishes this from `target=None` because Pydantic accepts the
-    empty dict as a valid request.
-    """
+    """Only workflow_id in the body = run every test in the workflow."""
     client = MagicMock()
     client._prepared_request.return_value = _run_response()
 
     Workflows(client=client).tests.runs.create("wf_abc123")
 
     request = client._prepared_request.call_args.args[0]
-    assert request.data == {}
+    assert request.data == {"workflow_id": "wf_abc123"}
 
 
 # ---------------------------------------------------------------------------
@@ -451,21 +451,6 @@ def test_runs_results_list_uses_run_id_first_results_route() -> None:
     assert result.data[0].outputs == {"output-json-0": {"total": 1234.56}}
 
 
-def test_runs_results_get_uses_test_id_as_child_key() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = _RESULT_RESPONSE
-
-    result = Workflows(client=client).tests.runs.results.get(
-        "wftestrun_q1z2",
-        "wfnodetest_abc",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "GET"
-    assert request.url == "/workflows/tests/runs/wftestrun_q1z2/results/wfnodetest_abc"
-    assert result.test_id == "wfnodetest_abc"
-
-
 def test_tests_hard_cutover_removes_legacy_execute_and_scoped_run_aliases() -> None:
     client = MagicMock()
     tests = Workflows(client=client).tests
@@ -498,7 +483,8 @@ async def test_async_create_posts_to_tests_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/tests?workflow_id=wf_abc123"
+    assert request.url == "/workflows/tests"
+    assert request.data["workflow_id"] == "wf_abc123"
     assert test.id == "wfnodetest_abc"
 
 
@@ -528,7 +514,6 @@ def test_update_with_no_kwargs_produces_empty_patch_body() -> None:
     client._prepared_request.return_value = _TEST_RESPONSE
 
     Workflows(client=client).tests.update(
-        workflow_id="wf_abc123",
         test_id="wfnodetest_abc",
     )
 

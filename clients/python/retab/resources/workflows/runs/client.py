@@ -55,7 +55,7 @@ class WorkflowRunsMixin:
 
         Args:
             workflow_id: The ID of the workflow to run
-            documents: Mapping of start-document block IDs to their input documents.
+            documents: Mapping of start_document block IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
             json_inputs: Mapping of start-json block IDs to their input JSON data.
@@ -68,8 +68,8 @@ class WorkflowRunsMixin:
             >>> client.workflows.runs.create(
             ...     workflow_id="wf_abc123",
             ...     documents={
-            ...         "start-document-block-1": Path("invoice.pdf"),
-            ...         "start-document-block-2": Path("receipt.pdf"),
+            ...         "start_document-block-1": Path("invoice.pdf"),
+            ...         "start_document-block-2": Path("receipt.pdf"),
             ...     },
             ...     json_inputs={
             ...         "start-json-block-1": {"key": "value"},
@@ -198,7 +198,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
         >>> # Run a workflow and inspect its status
         >>> run = client.workflows.runs.create(
         ...     workflow_id="wf_abc123",
-        ...     documents={"start-document-block-1": Path("invoice.pdf")},
+        ...     documents={"start_document-block-1": Path("invoice.pdf")},
         ... )
         >>> run = client.workflows.runs.get(run.id)
         >>>
@@ -232,7 +232,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
 
         Args:
             workflow_id: The ID of the workflow to run
-            documents: Mapping of start-document block IDs to their input documents.
+            documents: Mapping of start_document block IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
             json_inputs: Mapping of start-json block IDs to their input JSON data.
@@ -245,7 +245,7 @@ class WorkflowRuns(SyncAPIResource, WorkflowRunsMixin):
             >>> run = client.workflows.runs.create(
             ...     workflow_id="wf_abc123",
             ...     documents={
-            ...         "start-document-block-1": Path("invoice.pdf"),
+            ...         "start_document-block-1": Path("invoice.pdf"),
             ...     },
             ... )
             >>> print(f"Run started: {run.id}, status: {run.lifecycle.status}")
@@ -446,7 +446,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         >>> # Run a workflow and inspect its status
         >>> run = await client.workflows.runs.create(
         ...     workflow_id="wf_abc123",
-        ...     documents={"start-document-block-1": Path("invoice.pdf")},
+        ...     documents={"start_document-block-1": Path("invoice.pdf")},
         ... )
         >>> run = await client.workflows.runs.get(run.id)
         >>>
@@ -477,7 +477,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
 
         Args:
             workflow_id: The ID of the workflow to run
-            documents: Mapping of start-document block IDs to their input documents.
+            documents: Mapping of start_document block IDs to their input documents.
                        Each document can be a file path, bytes, file-like object,
                        MIMEData, PIL Image, or HttpUrl.
             json_inputs: Mapping of start-json block IDs to their input JSON data.
@@ -489,7 +489,7 @@ class AsyncWorkflowRuns(AsyncAPIResource, WorkflowRunsMixin):
         Example:
             >>> run = await client.workflows.runs.create(
             ...     workflow_id="wf_abc123",
-            ...     documents={"start-document-block-1": Path("invoice.pdf")},
+            ...     documents={"start_document-block-1": Path("invoice.pdf")},
             ... )
             >>> print(f"Run started: {run.id}, status: {run.lifecycle.status}")
         """

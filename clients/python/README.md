@@ -68,7 +68,7 @@ Declarative specs use `apiVersion: workflows.retab.com/v1alpha2` and explicit ed
 ```yaml
 edges:
   - from:
-      block: start-document-node
+      block: start_document-node
       handle: output-file-0
     to:
       block: extract-node
@@ -86,17 +86,10 @@ for inspecting why a branch or gate fired.
 ```python
 run = client.workflows.runs.create_and_wait(
     workflow_id="workflow_abc123",
-    documents={"start-document-node": "invoice.pdf"},
+    documents={"start_document-node": "invoice.pdf"},
 )
 
 step = client.workflows.steps.get(run.id, "review-node")
-if step.artifact:
-    artifact = client.workflows.artifacts.get(step.artifact)
-    print(artifact.operation)
-    print(artifact.id)
-    if artifact.operation == "review_trigger_evaluation":
-        print(artifact.evaluations)
-
 all_artifacts = client.workflows.artifacts.list(run.id)
 ```
 

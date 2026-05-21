@@ -107,8 +107,7 @@ class StepArtifactRef(RetabBaseModel):
 class WorkflowArtifact(RetabBaseModel):
     """Dereferenced workflow artifact record.
 
-    Returned by ``client.workflows.artifacts.get(...)`` and
-    ``client.workflows.artifacts.list(...)``. It is the persisted artifact
+    Returned by ``client.workflows.artifacts.list(...)``. It is the persisted artifact
     record flattened with the ref's ``operation`` injected at top level. New
     operation-specific fields are ignored until the SDK types them explicitly.
     """
@@ -978,12 +977,12 @@ class WorkflowWithEntities(RetabBaseModel):
 
     @property
     def start_document_blocks(self) -> List[WorkflowBlock]:
-        """Document input start-document blocks."""
-        return [b for b in self.blocks if b.type == "start-document"]
+        """Document input start_document blocks."""
+        return [b for b in self.blocks if b.type == "start_document"]
 
     @property
     def start_json_blocks(self) -> List[WorkflowBlock]:
-        """JSON input start-document blocks."""
+        """JSON input start_document blocks."""
         return [b for b in self.blocks if b.type == "start_json"]
 
 

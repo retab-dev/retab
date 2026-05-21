@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from retab.resources.workflows.artifacts.client import AsyncWorkflowArtifacts, WorkflowArtifacts
+from retab.resources.workflows.artifacts.client import WorkflowArtifacts
 from retab.resources.workflows.client import AsyncWorkflows, Workflows
 from retab.resources.workflows.runs.client import AsyncWorkflowRuns, WorkflowRuns
 from retab.resources.workflows.steps.client import AsyncWorkflowSteps, WorkflowSteps
@@ -77,28 +77,6 @@ def test_async_workflow_steps_are_exposed_on_workflows_not_runs() -> None:
         object.__getattribute__(runs, "steps")
 
 
-def test_workflow_artifacts_get_accepts_ref_and_returns_flattened_record() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = {
-        "operation": "review_trigger_evaluation",
-        "id": "heval_123",
-        "requires_human_review": True,
-    }
-    artifact_ref = workflow_model.StepArtifactRef(
-        operation="review_trigger_evaluation",
-        id="heval_123",
-    )
-
-    artifact = WorkflowArtifacts(client=client).get(artifact_ref)
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "GET"
-    assert request.url == "/workflows/artifacts/review_trigger_evaluation/heval_123"
-    assert artifact.operation == "review_trigger_evaluation"
-    assert artifact.id == "heval_123"
-    assert artifact.model_dump() == {"operation": "review_trigger_evaluation", "id": "heval_123"}
-
-
 def test_workflow_artifacts_list_uses_run_scoped_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = {
@@ -157,29 +135,6 @@ async def test_async_workflow_steps_list_uses_full_steps_route() -> None:
     assert steps[0].block_id == "extract-1"
     assert steps.list_metadata.before is None
     assert steps.list_metadata.after is None
-
-
-@pytest.mark.asyncio
-async def test_async_workflow_artifacts_get_accepts_operation_and_id() -> None:
-    client = MagicMock()
-    client._prepared_request = AsyncMock(
-        return_value={
-            "operation": "function_invocation",
-            "id": "fninv_123",
-            "output": {"ok": True},
-        }
-    )
-
-    artifact = await AsyncWorkflowArtifacts(client=client).get(
-        "function_invocation",
-        "fninv_123",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "GET"
-    assert request.url == "/workflows/artifacts/function_invocation/fninv_123"
-    assert artifact.operation == "function_invocation"
-    assert artifact.model_dump() == {"operation": "function_invocation", "id": "fninv_123"}
 
 
 def test_workflow_steps_get_handle_outputs_typed() -> None:
@@ -426,7 +381,7 @@ def test_workflow_steps_get_accepts_empty_handle_outputs() -> None:
         "run_id": "run_123",
         "workflow_id": "wf_123",
         "block_id": "start-1",
-        "block_type": "start-document",
+        "block_type": "start_document",
         "status": "completed",
         "handle_outputs": {},
         "handle_inputs": {},

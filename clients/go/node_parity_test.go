@@ -375,7 +375,7 @@ func TestWorkflowNodeParitySubclientsUseNodePaths(t *testing.T) {
 		case "/workflows/blocks":
 			_ = json.NewEncoder(w).Encode(Resource{
 				"data": []Resource{{
-					"id": "block_1", "workflow_id": "wf_123", "organization_id": "org", "type": "start-document",
+					"id": "block_1", "workflow_id": "wf_123", "organization_id": "org", "type": "start_document",
 				}},
 				"list_metadata": Resource{"before": nil, "after": nil},
 			})

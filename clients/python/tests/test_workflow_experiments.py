@@ -99,7 +99,8 @@ def test_experiments_create_posts_to_workflow_experiments_route() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/experiments?workflow_id=wf_abc123"
+    assert request.url == "/workflows/experiments"
+    assert request.data["workflow_id"] == "wf_abc123"
     assert request.data["block_id"] == "block_extract"
     assert request.data["name"] == "Q1 invoices"
     assert request.data["n_consensus"] == 5
@@ -131,6 +132,8 @@ def test_experiments_create_with_explicit_documents_serializes_handle_inputs() -
     )
 
     request = client._prepared_request.call_args.args[0]
+    assert request.url == "/workflows/experiments"
+    assert request.data["workflow_id"] == "wf_abc123"
     assert request.data["documents"] == [
         {
             "handle_inputs": {
@@ -150,14 +153,13 @@ def test_experiments_update_sends_only_provided_fields() -> None:
     client._prepared_request.return_value = {**_EXPERIMENT_RESPONSE, "name": "Renamed"}
 
     Workflows(client=client).experiments.update(
-        workflow_id="wf_abc123",
         experiment_id="exp_abc",
         name="Renamed",
     )
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/experiments/exp_abc?workflow_id=wf_abc123"
+    assert request.url == "/workflows/experiments/exp_abc"
     assert request.data == {"name": "Renamed"}
 
 
@@ -166,7 +168,6 @@ def test_experiments_update_passing_n_consensus_only() -> None:
     client._prepared_request.return_value = _EXPERIMENT_RESPONSE
 
     Workflows(client=client).experiments.update(
-        workflow_id="wf_abc123",
         experiment_id="exp_abc",
         n_consensus=7,
     )
@@ -202,22 +203,22 @@ def test_experiments_get_uses_detail_route() -> None:
     client = MagicMock()
     client._prepared_request.return_value = _EXPERIMENT_RESPONSE
 
-    Workflows(client=client).experiments.get(workflow_id="wf_abc123", experiment_id="exp_abc")
+    Workflows(client=client).experiments.get(experiment_id="exp_abc")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "GET"
-    assert request.url == "/workflows/experiments/exp_abc?workflow_id=wf_abc123"
+    assert request.url == "/workflows/experiments/exp_abc"
 
 
 def test_experiments_delete_uses_delete_method() -> None:
     client = MagicMock()
     client._prepared_request.return_value = None
 
-    Workflows(client=client).experiments.delete(workflow_id="wf_abc123", experiment_id="exp_abc")
+    Workflows(client=client).experiments.delete(experiment_id="exp_abc")
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "DELETE"
-    assert request.url == "/workflows/experiments/exp_abc?workflow_id=wf_abc123"
+    assert request.url == "/workflows/experiments/exp_abc"
 
 
 # ---------------------------------------------------------------------------
@@ -451,21 +452,6 @@ def test_experiments_runs_results_list_uses_run_id_first_route() -> None:
     assert request.method == "GET"
     assert request.url == "/workflows/experiments/runs/exprun_1/results"
     assert page.data[0].document_id == "expdoc_1"
-
-
-def test_experiments_runs_results_get_uses_document_id_child_key() -> None:
-    client = MagicMock()
-    client._prepared_request.return_value = _EXPERIMENT_RESULT
-
-    result = Workflows(client=client).experiments.runs.results.get(
-        "exprun_1",
-        "expdoc_1",
-    )
-
-    request = client._prepared_request.call_args.args[0]
-    assert request.method == "GET"
-    assert request.url == "/workflows/experiments/runs/exprun_1/results/expdoc_1"
-    assert result.document_id == "expdoc_1"
 
 
 def test_experiments_runs_metrics_summary_view_default() -> None:

@@ -12,7 +12,7 @@ import {
 
 /**
  * Workflow tests API client. Mirrors the eight backend endpoints
- * under `/v1/workflows/tests?workflow_id={workflow_id}` plus the nested run
+ * under `/v1/workflows/tests` plus the nested run
  * endpoints.
  *
  * Sub-clients:
@@ -58,12 +58,12 @@ export default class APIWorkflowTests extends CompositionClient {
       nConsensus?: number;
     } = {}
   ): { url: string; method: string; body: Record<string, unknown> } {
-    const body: Record<string, unknown> = {};
+    const body: Record<string, unknown> = { workflow_id: workflowId };
     if (testId !== undefined) body.test_id = testId;
     if (target !== undefined) body.target = target;
     if (nConsensus !== undefined) body.n_consensus = nConsensus;
     return {
-      url: `/workflows/tests/runs?workflow_id=${workflowId}`,
+      url: '/workflows/tests/runs',
       method: 'POST',
       body,
     };
@@ -100,6 +100,7 @@ export default class APIWorkflowTests extends CompositionClient {
   ): Promise<WorkflowTest> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body: Record<string, any> = {
+      workflow_id: workflowId,
       target,
       source,
       assertion,
@@ -108,7 +109,7 @@ export default class APIWorkflowTests extends CompositionClient {
       body.name = name;
     }
     return this._fetchJson(ZWorkflowTest, {
-      url: `/workflows/tests?workflow_id=${workflowId}`,
+      url: '/workflows/tests',
       method: 'POST',
       body: { ...body, ...(options?.body || {}) },
       params: options?.params,
@@ -121,16 +122,14 @@ export default class APIWorkflowTests extends CompositionClient {
    */
   async get(
     {
-      workflowId,
       testId,
     }: {
-      workflowId: string;
       testId: string;
     },
     options?: RequestOptions
   ): Promise<WorkflowTest> {
     return this._fetchJson(ZWorkflowTest, {
-      url: `/workflows/tests/${testId}?workflow_id=${workflowId}`,
+      url: `/workflows/tests/${testId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -176,13 +175,11 @@ export default class APIWorkflowTests extends CompositionClient {
    */
   async update(
     {
-      workflowId,
       testId,
       name,
       assertion,
       source,
     }: {
-      workflowId: string;
       testId: string;
       name?: string;
       assertion?: AssertionSpec;
@@ -200,7 +197,7 @@ export default class APIWorkflowTests extends CompositionClient {
     if (source !== undefined) body.source = source;
 
     return this._fetchJson(ZWorkflowTest, {
-      url: `/workflows/tests/${testId}?workflow_id=${workflowId}`,
+      url: `/workflows/tests/${testId}`,
       method: 'PATCH',
       body: { ...body, ...(options?.body || {}) },
       params: options?.params,
@@ -213,16 +210,14 @@ export default class APIWorkflowTests extends CompositionClient {
    */
   async delete(
     {
-      workflowId,
       testId,
     }: {
-      workflowId: string;
       testId: string;
     },
     options?: RequestOptions
   ): Promise<void> {
     return this._fetchJson({
-      url: `/workflows/tests/${testId}?workflow_id=${workflowId}`,
+      url: `/workflows/tests/${testId}`,
       method: 'DELETE',
       params: options?.params,
       headers: options?.headers,

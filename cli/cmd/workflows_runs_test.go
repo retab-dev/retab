@@ -93,6 +93,79 @@ func TestWorkflowsRunsGetHonorsTableOutputFallback(t *testing.T) {
 	}
 }
 
+func TestWorkflowsRunsCancelSurfacesPendingCancellationStatusToStderr(t *testing.T) {
+	// Regression: the cancel endpoint returns 200 even when the cancel
+	// signal has not yet been confirmed by Temporal. Previously the CLI
+	// just printed the run object, making the response look like the
+	// run was already cancelled when it was still ``cancellation_requested``.
+	// The fix prints a one-line note to stderr so the user knows to poll.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/runs/run_pending/cancel" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"run": map[string]any{
+				"id":        "run_pending",
+				"lifecycle": map[string]any{"status": "running"},
+			},
+			"redis_available":     true,
+			"cancellation_status": "cancellation_requested",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	_, stderr := captureStd(t, func() {
+		if err := workflowsRunsCancelCmd.RunE(workflowsRunsCancelCmd, []string{"run_pending"}); err != nil {
+			t.Fatalf("runs cancel: %v", err)
+		}
+	})
+	for _, want := range []string{
+		"cancellation_status=\"cancellation_requested\"",
+		"not yet reached a terminal state",
+		"runs get run_pending",
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("expected stderr to contain %q, got:\n%s", want, stderr)
+		}
+	}
+}
+
+func TestWorkflowsRunsCancelStaysSilentWhenCancellationIsFinalized(t *testing.T) {
+	// If the server reports ``cancellation_status=cancelled`` (synchronous
+	// terminal state) the CLI should NOT emit the pending-state note —
+	// that would be misleading the other direction.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"run": map[string]any{
+				"id":        "run_done",
+				"lifecycle": map[string]any{"status": "cancelled"},
+			},
+			"redis_available":     true,
+			"cancellation_status": "cancelled",
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	_, stderr := captureStd(t, func() {
+		if err := workflowsRunsCancelCmd.RunE(workflowsRunsCancelCmd, []string{"run_done"}); err != nil {
+			t.Fatalf("runs cancel: %v", err)
+		}
+	})
+	if strings.Contains(stderr, "not yet reached a terminal state") {
+		t.Fatalf("did not expect pending-state note when cancellation_status=cancelled, got:\n%s", stderr)
+	}
+}
+
 func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T) {
 	t.Setenv("RETAB_API_KEY", "test-key")
 	t.Setenv("HOME", t.TempDir())
@@ -104,7 +177,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasToGeneratedStartBlock(t *testing.T
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
-					{"id": "block_generated", "type": "start-document", "label": "Document"},
+					{"id": "block_generated", "type": "start_document", "label": "Document"},
 					{"id": "parse", "type": "parse", "label": "Parse"},
 				},
 				"list_metadata": map[string]any{},
@@ -299,7 +372,7 @@ func TestWorkflowsRunsCreateResolvesStartAliasFromDocumentsFile(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/workflows/blocks" && r.URL.Query().Get("workflow_id") == "wf_123":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"data": []map[string]any{
-					{"id": "block_generated", "type": "start-document", "label": "Document"},
+					{"id": "block_generated", "type": "start_document", "label": "Document"},
 					{"id": "extract", "type": "extract", "label": "Extract"},
 				},
 				"list_metadata": map[string]any{},
@@ -368,7 +441,7 @@ func TestWorkflowsRunsCreateValidatesJSONInputsBeforeResolvingStartAlias(t *test
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
-				{"id": "block_generated", "type": "start-document", "label": "Document"},
+				{"id": "block_generated", "type": "start_document", "label": "Document"},
 			},
 			"list_metadata": map[string]any{},
 		})
@@ -689,6 +762,13 @@ func resetWorkflowRunsFlag(t *testing.T, cmd *cobra.Command, name string) {
 		}
 		return
 	}
+	// Boolean flags reject "" — restore them by writing their default.
+	if flag.Value.Type() == "bool" {
+		if err := cmd.Flags().Set(name, flag.DefValue); err != nil {
+			t.Fatalf("reset --%s: %v", name, err)
+		}
+		return
+	}
 	if err := cmd.Flags().Set(name, ""); err != nil {
 		t.Fatalf("reset --%s: %v", name, err)
 	}
@@ -931,6 +1011,58 @@ func TestWorkflowsRunsExportSplitsCommaSeparatedTriggerTypes(t *testing.T) {
 	for i, value := range want {
 		if triggerTypes[i] != value {
 			t.Fatalf("trigger_types = %#v, want %#v", triggerTypes, want)
+		}
+	}
+}
+
+func TestWorkflowsRunsExportRawFlagWritesPlainCSVToStdout(t *testing.T) {
+	// Regression: by default, ``export`` returned a JSON envelope
+	// (``{"csv_data": "...", "rows": N, "columns": M}``) regardless of
+	// --output. Users had to ``jq -r .csv_data`` to get usable CSV. The
+	// --raw flag dumps the CSV body straight to stdout.
+	t.Setenv("RETAB_API_KEY", "test-key")
+	t.Setenv("HOME", t.TempDir())
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"csv_data": "id;name\nrun_123;Alice\nrun_456;Bob",
+			"rows":     2,
+			"columns":  2,
+		})
+	}))
+	defer server.Close()
+	t.Setenv("RETAB_API_BASE_URL", server.URL)
+
+	flags := map[string]string{
+		"workflow-id": "wf_123",
+		"block-id":    "blk_123",
+		"raw":         "true",
+	}
+	for flag, value := range flags {
+		if err := workflowsRunsExportCmd.Flags().Set(flag, value); err != nil {
+			t.Fatalf("set --%s: %v", flag, err)
+		}
+		t.Cleanup(func() { resetWorkflowRunsFlag(t, workflowsRunsExportCmd, flag) })
+	}
+
+	var runErr error
+	stdout, stderr := captureStd(t, func() {
+		runErr = workflowsRunsExportCmd.RunE(workflowsRunsExportCmd, nil)
+	})
+	if runErr != nil {
+		t.Fatalf("runs export --raw: %v\nstderr:\n%s", runErr, stderr)
+	}
+	if !strings.HasPrefix(stdout, "id;name\nrun_123;Alice\nrun_456;Bob") {
+		t.Fatalf("--raw stdout should be the unwrapped CSV body, got:\n%q", stdout)
+	}
+	if !strings.HasSuffix(stdout, "\n") {
+		t.Fatalf("--raw stdout should end with a trailing newline (terminal friendliness), got:\n%q", stdout)
+	}
+	// Crucially the JSON envelope keys must NOT appear in stdout.
+	for _, leak := range []string{`"csv_data"`, `"rows"`, `"columns"`} {
+		if strings.Contains(stdout, leak) {
+			t.Fatalf("--raw stdout leaked JSON envelope key %q:\n%s", leak, stdout)
 		}
 	}
 }

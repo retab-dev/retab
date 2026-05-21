@@ -12,7 +12,7 @@ import {
 
 /**
  * Workflow experiments API client. Mirrors the REST endpoints under
- * `/v1/workflows/experiments?workflow_id={workflow_id}` and the Python SDK's
+ * `/v1/workflows/experiments` and the Python SDK's
  * `client.workflows.experiments.*`.
  *
  * The MCP tools (`experiments_create`, `experiments_runs_create`,
@@ -69,6 +69,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
     }
   ): { url: string; method: string; body: Record<string, unknown> } {
     const body: Record<string, unknown> = {
+      workflow_id: workflowId,
       block_id: blockId,
       name,
       n_consensus: nConsensus,
@@ -76,7 +77,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
     if (documentCaptures !== undefined) body.document_captures = documentCaptures;
     if (documents !== undefined) body.documents = documents;
     return {
-      url: `/workflows/experiments?workflow_id=${workflowId}`,
+      url: '/workflows/experiments',
       method: 'POST',
       body,
     };
@@ -89,15 +90,14 @@ export default class APIWorkflowExperiments extends CompositionClient {
     };
   }
 
-  prepare_get(workflowId: string, experimentId: string): { url: string; method: string } {
+  prepare_get(experimentId: string): { url: string; method: string } {
     return {
-      url: `/workflows/experiments/${experimentId}?workflow_id=${workflowId}`,
+      url: `/workflows/experiments/${experimentId}`,
       method: 'GET',
     };
   }
 
   prepare_update(
-    workflowId: string,
     experimentId: string,
     {
       name,
@@ -117,15 +117,15 @@ export default class APIWorkflowExperiments extends CompositionClient {
     if (documents !== undefined) body.documents = documents;
     if (nConsensus !== undefined) body.n_consensus = nConsensus;
     return {
-      url: `/workflows/experiments/${experimentId}?workflow_id=${workflowId}`,
+      url: `/workflows/experiments/${experimentId}`,
       method: 'PATCH',
       body,
     };
   }
 
-  prepare_delete(workflowId: string, experimentId: string): { url: string; method: string } {
+  prepare_delete(experimentId: string): { url: string; method: string } {
     return {
-      url: `/workflows/experiments/${experimentId}?workflow_id=${workflowId}`,
+      url: `/workflows/experiments/${experimentId}`,
       method: 'DELETE',
     };
   }
@@ -194,12 +194,8 @@ export default class APIWorkflowExperiments extends CompositionClient {
   /**
    * Get a single experiment by ID.
    */
-  async get(
-    workflowId: string,
-    experimentId: string,
-    options?: RequestOptions
-  ): Promise<ExperimentResponse> {
-    const request = this.prepare_get(workflowId, experimentId);
+  async get(experimentId: string, options?: RequestOptions): Promise<ExperimentResponse> {
+    const request = this.prepare_get(experimentId);
     return this._fetchJson(ZExperimentResponse, {
       url: request.url,
       method: request.method,
@@ -216,7 +212,6 @@ export default class APIWorkflowExperiments extends CompositionClient {
    * metrics.
    */
   async update(
-    workflowId: string,
     experimentId: string,
     {
       name,
@@ -231,7 +226,7 @@ export default class APIWorkflowExperiments extends CompositionClient {
     },
     options?: RequestOptions
   ): Promise<ExperimentResponse> {
-    const request = this.prepare_update(workflowId, experimentId, {
+    const request = this.prepare_update(experimentId, {
       name,
       documentCaptures,
       documents,
@@ -250,8 +245,8 @@ export default class APIWorkflowExperiments extends CompositionClient {
   /**
    * Delete an experiment and its runs.
    */
-  async delete(workflowId: string, experimentId: string, options?: RequestOptions): Promise<void> {
-    const request = this.prepare_delete(workflowId, experimentId);
+  async delete(experimentId: string, options?: RequestOptions): Promise<void> {
+    const request = this.prepare_delete(experimentId);
     return this._fetchJson({
       url: request.url,
       method: request.method,

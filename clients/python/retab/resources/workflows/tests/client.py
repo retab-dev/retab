@@ -1,6 +1,6 @@
 """Python SDK client for the workflow tests API.
 
-Mirrors the eight backend endpoints under ``/v1/workflows/tests?workflow_id={workflow_id}``
+Mirrors the backend endpoints under ``/v1/workflows/tests``
 plus the nested run endpoints. Sync and async variants share a `WorkflowTestsMixin`
 that builds `PreparedRequest`s — same pattern as `WorkflowRuns` /
 `WorkflowRunsMixin` in the sibling `runs` resource.
@@ -78,7 +78,7 @@ def _prepare_create_run(
     target: Union[WorkflowTestBlockTarget, Mapping[str, Any], None] = None,
     n_consensus: int | None = None,
 ) -> PreparedRequest:
-    data: Dict[str, Any] = {}
+    data: Dict[str, Any] = {"workflow_id": workflow_id}
     if test_id is not None:
         data["test_id"] = test_id
     if target is not None:
@@ -87,7 +87,7 @@ def _prepare_create_run(
         data["n_consensus"] = n_consensus
     return PreparedRequest(
         method="POST",
-        url=f"/workflows/tests/runs?workflow_id={workflow_id}",
+        url="/workflows/tests/runs",
         data=data,
     )
 
@@ -105,6 +105,7 @@ class WorkflowTestsMixin:
         name: str | None = None,
     ) -> PreparedRequest:
         data: Dict[str, Any] = {
+            "workflow_id": workflow_id,
             "target": _dump_target(target),
             "source": _dump_source(source),
             "assertion": _dump_assertion(assertion),
@@ -113,14 +114,14 @@ class WorkflowTestsMixin:
             data["name"] = name
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/tests?workflow_id={workflow_id}",
+            url="/workflows/tests",
             data=data,
         )
 
-    def prepare_get(self, workflow_id: str, test_id: str) -> PreparedRequest:
+    def prepare_get(self, test_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/tests/{test_id}?workflow_id={workflow_id}",
+            url=f"/workflows/tests/{test_id}",
         )
 
     def prepare_list(
@@ -141,7 +142,6 @@ class WorkflowTestsMixin:
 
     def prepare_update(
         self,
-        workflow_id: str,
         test_id: str,
         *,
         name: str | None = None,
@@ -160,14 +160,14 @@ class WorkflowTestsMixin:
             data["source"] = _dump_source(source)
         return PreparedRequest(
             method="PATCH",
-            url=f"/workflows/tests/{test_id}?workflow_id={workflow_id}",
+            url=f"/workflows/tests/{test_id}",
             data=data,
         )
 
-    def prepare_delete(self, workflow_id: str, test_id: str) -> PreparedRequest:
+    def prepare_delete(self, test_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="DELETE",
-            url=f"/workflows/tests/{test_id}?workflow_id={workflow_id}",
+            url=f"/workflows/tests/{test_id}",
         )
 
     def prepare_create_run(
@@ -274,12 +274,6 @@ class WorkflowTestRunResultsMixin:
             params={"limit": limit},
         )
 
-    def prepare_get(self, run_id: str, test_id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/tests/runs/{run_id}/results/{test_id}",
-        )
-
 
 def _join_csv(value: Sequence[str] | str | None) -> str | None:
     if value is None or isinstance(value, str):
@@ -293,22 +287,12 @@ class WorkflowTestRunResults(SyncAPIResource, WorkflowTestRunResultsMixin):
         response = self._client._prepared_request(request)
         return PaginatedList[WorkflowTestResult].model_validate(response)
 
-    def get(self, run_id: str, test_id: str) -> WorkflowTestResult:
-        request = self.prepare_get(run_id, test_id)
-        response = self._client._prepared_request(request)
-        return WorkflowTestResult.model_validate(response)
-
 
 class AsyncWorkflowTestRunResults(AsyncAPIResource, WorkflowTestRunResultsMixin):
     async def list(self, run_id: str, *, limit: int = 20) -> PaginatedList[WorkflowTestResult]:
         request = self.prepare_list(run_id, limit=limit)
         response = await self._client._prepared_request(request)
         return PaginatedList[WorkflowTestResult].model_validate(response)
-
-    async def get(self, run_id: str, test_id: str) -> WorkflowTestResult:
-        request = self.prepare_get(run_id, test_id)
-        response = await self._client._prepared_request(request)
-        return WorkflowTestResult.model_validate(response)
 
 
 class WorkflowTestRuns(SyncAPIResource, WorkflowTestRunsMixin):
@@ -513,9 +497,9 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         response = self._client._prepared_request(request)
         return WorkflowTest.model_validate(response)
 
-    def get(self, workflow_id: str, test_id: str) -> WorkflowTest:
+    def get(self, test_id: str) -> WorkflowTest:
         """Fetch a single workflow test by id (refreshes drift state)."""
-        request = self.prepare_get(workflow_id, test_id)
+        request = self.prepare_get(test_id)
         response = self._client._prepared_request(request)
         return WorkflowTest.model_validate(response)
 
@@ -537,7 +521,6 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
 
     def update(
         self,
-        workflow_id: str,
         test_id: str,
         *,
         name: str | None = None,
@@ -550,7 +533,6 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         ``delete()`` to remove the test entirely.
         """
         request = self.prepare_update(
-            workflow_id,
             test_id,
             name=name,
             assertion=assertion,
@@ -559,9 +541,9 @@ class WorkflowTests(SyncAPIResource, WorkflowTestsMixin):
         response = self._client._prepared_request(request)
         return WorkflowTest.model_validate(response)
 
-    def delete(self, workflow_id: str, test_id: str) -> None:
+    def delete(self, test_id: str) -> None:
         """Delete a workflow test."""
-        request = self.prepare_delete(workflow_id, test_id)
+        request = self.prepare_delete(test_id)
         self._client._prepared_request(request)
 
 
@@ -591,8 +573,8 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         response = await self._client._prepared_request(request)
         return WorkflowTest.model_validate(response)
 
-    async def get(self, workflow_id: str, test_id: str) -> WorkflowTest:
-        request = self.prepare_get(workflow_id, test_id)
+    async def get(self, test_id: str) -> WorkflowTest:
+        request = self.prepare_get(test_id)
         response = await self._client._prepared_request(request)
         return WorkflowTest.model_validate(response)
 
@@ -613,7 +595,6 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
 
     async def update(
         self,
-        workflow_id: str,
         test_id: str,
         *,
         name: str | None = None,
@@ -621,7 +602,6 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         source: Union[WorkflowTestSource, ManualWorkflowTestSource, RunStepWorkflowTestSource, Mapping[str, Any], None] = None,
     ) -> WorkflowTest:
         request = self.prepare_update(
-            workflow_id,
             test_id,
             name=name,
             assertion=assertion,
@@ -630,6 +610,6 @@ class AsyncWorkflowTests(AsyncAPIResource, WorkflowTestsMixin):
         response = await self._client._prepared_request(request)
         return WorkflowTest.model_validate(response)
 
-    async def delete(self, workflow_id: str, test_id: str) -> None:
-        request = self.prepare_delete(workflow_id, test_id)
+    async def delete(self, test_id: str) -> None:
+        request = self.prepare_delete(test_id)
         await self._client._prepared_request(request)

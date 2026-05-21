@@ -555,7 +555,7 @@ func splitKV(raw string) (string, string, bool) {
 func addListFlags(cmd *cobra.Command, baseOnly bool) {
 	cmd.Flags().String("before", "", "item id: return items before this id")
 	cmd.Flags().String("after", "", "item id: return items after this id")
-	cmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items to return (1-100)")
+	cmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items to return (1-100)")
 	cmd.Flags().Var(&orderFlagValue{}, "order", "asc | desc")
 	if !baseOnly {
 		cmd.Flags().String("filename", "", "filter by filename")

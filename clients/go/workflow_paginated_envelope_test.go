@@ -229,8 +229,15 @@ func TestWorkflowTestRunsListUsesPaginatedEnvelope(t *testing.T) {
 
 func TestWorkflowTestRunsCreateDecodesRunResource(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/workflows/tests/runs" || r.URL.Query().Get("workflow_id") != "wf_1" {
+		if r.Method != http.MethodPost || r.URL.Path != "/workflows/tests/runs" || r.URL.RawQuery != "" {
 			t.Fatalf("unexpected request %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
+		}
+		var body Resource
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		if body["workflow_id"] != "wf_1" || body["test_id"] != "wfnodetest_1" {
+			t.Fatalf("unexpected request body %#v", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{

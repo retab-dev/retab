@@ -396,7 +396,7 @@ def test_workflow_with_entities_parsing() -> None:
                 "updated_at": "2026-01-01T00:00:00Z",
             },
             "blocks": [
-                {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start-document", "label": "Document Input"},
+                {"id": "start-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_document", "label": "Document Input"},
                 {"id": "extract-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "extract", "label": "Extract"},
                 {"id": "json-1", "workflow_id": "wf_1", "organization_id": "org_1", "draft_version": "draft_1", "type": "start_json", "label": "JSON Input"},
             ],
@@ -514,8 +514,9 @@ def test_workflow_blocks_create_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/blocks?workflow_id=wf_1"
+    assert request.url == "/workflows/blocks"
     assert request.data == {
+        "workflow_id": "wf_1",
         "id": "extract-1",
         "type": "extract",
         "label": "Extract",
@@ -538,7 +539,6 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
     }
 
     block = WorkflowBlocks(client=client).update(
-        "wf_1",
         request=WorkflowBlockUpdateRequest(
             block_id="extract-1",
             label="Renamed",
@@ -548,7 +548,7 @@ def test_workflow_blocks_update_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "PATCH"
-    assert request.url == "/workflows/blocks/extract-1?workflow_id=wf_1"
+    assert request.url == "/workflows/blocks/extract-1"
     assert request.data == {"label": "Renamed", "position_x": 200.0}
     assert block.label == "Renamed"
 
@@ -651,8 +651,9 @@ def test_workflow_edges_create_accepts_typed_request() -> None:
 
     request = client._prepared_request.call_args.args[0]
     assert request.method == "POST"
-    assert request.url == "/workflows/edges?workflow_id=wf_1"
+    assert request.url == "/workflows/edges"
     assert request.data == {
+        "workflow_id": "wf_1",
         "id": "edge-1",
         "source_block": "start-1",
         "target_block": "extract-1",

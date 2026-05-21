@@ -23,9 +23,9 @@ class WorkflowEdgesMixin:
             params["target_block"] = target_block
         return PreparedRequest(method="GET", url=f"/workflows/edges?workflow_id={workflow_id}", params=params or None)
 
-    def prepare_get(self, workflow_id: str, edge_id: str) -> PreparedRequest:
+    def prepare_get(self, edge_id: str) -> PreparedRequest:
         """Prepare a request to get a single edge."""
-        return PreparedRequest(method="GET", url=f"/workflows/edges/{edge_id}?workflow_id={workflow_id}")
+        return PreparedRequest(method="GET", url=f"/workflows/edges/{edge_id}")
 
     def prepare_create(
         self,
@@ -34,11 +34,12 @@ class WorkflowEdgesMixin:
     ) -> PreparedRequest:
         """Prepare a request to create a new edge."""
         data = request.model_dump(exclude_none=True)
-        return PreparedRequest(method="POST", url=f"/workflows/edges?workflow_id={workflow_id}", data=data)
+        data["workflow_id"] = workflow_id
+        return PreparedRequest(method="POST", url="/workflows/edges", data=data)
 
-    def prepare_delete(self, workflow_id: str, edge_id: str) -> PreparedRequest:
+    def prepare_delete(self, edge_id: str) -> PreparedRequest:
         """Prepare a request to delete an edge."""
-        return PreparedRequest(method="DELETE", url=f"/workflows/edges/{edge_id}?workflow_id={workflow_id}")
+        return PreparedRequest(method="DELETE", url=f"/workflows/edges/{edge_id}")
 
 
 class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
@@ -92,9 +93,9 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         result.data = [WorkflowEdgeDoc.model_validate(item) for item in result.data]
         return result
 
-    def get(self, workflow_id: str, edge_id: str) -> WorkflowEdgeDoc:
+    def get(self, edge_id: str) -> WorkflowEdgeDoc:
         """Get a single edge by ID."""
-        request = self.prepare_get(workflow_id, edge_id)
+        request = self.prepare_get(edge_id)
         response = self._client._prepared_request(request)
         return WorkflowEdgeDoc.model_validate(response)
 
@@ -134,9 +135,9 @@ class WorkflowEdges(SyncAPIResource, WorkflowEdgesMixin):
         response = self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
-    def delete(self, workflow_id: str, edge_id: str) -> None:
+    def delete(self, edge_id: str) -> None:
         """Delete an edge."""
-        request = self.prepare_delete(workflow_id, edge_id)
+        request = self.prepare_delete(edge_id)
         self._client._prepared_request(request)
 
 
@@ -164,9 +165,9 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         result.data = [WorkflowEdgeDoc.model_validate(item) for item in result.data]
         return result
 
-    async def get(self, workflow_id: str, edge_id: str) -> WorkflowEdgeDoc:
+    async def get(self, edge_id: str) -> WorkflowEdgeDoc:
         """Get a single edge by ID."""
-        request = self.prepare_get(workflow_id, edge_id)
+        request = self.prepare_get(edge_id)
         response = await self._client._prepared_request(request)
         return WorkflowEdgeDoc.model_validate(response)
 
@@ -193,9 +194,9 @@ class AsyncWorkflowEdges(AsyncAPIResource, WorkflowEdgesMixin):
         response = await self._client._prepared_request(prepared_request)
         return WorkflowEdgeDoc.model_validate(response)
 
-    async def delete(self, workflow_id: str, edge_id: str) -> None:
+    async def delete(self, edge_id: str) -> None:
         """Delete an edge."""
-        request = self.prepare_delete(workflow_id, edge_id)
+        request = self.prepare_delete(edge_id)
         await self._client._prepared_request(request)
 
     _coerce_create_request = WorkflowEdges._coerce_create_request

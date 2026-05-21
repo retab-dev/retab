@@ -23,7 +23,6 @@ var sdkMethodCommandAliases = map[string]string{
 	"CompleteUpload":    "complete-upload",
 	"DiagnoseGraph":     "diagnose",
 	"GetDownloadLink":   "download-link",
-	"GetRef":            "",
 	"WaitForCompletion": "wait",
 }
 

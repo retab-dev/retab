@@ -204,13 +204,13 @@ blocks.`,
 }
 
 var workflowsExperimentsGetCmd = &cobra.Command{
-	Use:   "get <workflow-id> <experiment-id>",
+	Use:   "get <experiment-id>",
 	Short: "Get an experiment",
 	Long: `Fetch an experiment's definition: target block, document set,
 consensus count, recent run status.`,
 	Example: `  # Inspect an experiment
-  retab workflows experiments get wf_abc123 exp_pqr678`,
-	Args: cobra.ExactArgs(2),
+  retab workflows experiments get exp_pqr678`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -218,7 +218,7 @@ consensus count, recent run status.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.Get(ctx, args[0], args[1])
+		result, err := client.Workflows.Experiments.Get(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -227,18 +227,18 @@ consensus count, recent run status.`,
 }
 
 var workflowsExperimentsUpdateCmd = &cobra.Command{
-	Use:   "update <workflow-id> <experiment-id>",
+	Use:   "update <experiment-id>",
 	Short: "Update an experiment",
 	Long: `Rename an experiment, adjust its consensus count, or replace
 its document set. Note that updating the document set invalidates
 previously-captured results for that experiment.`,
 	Example: `  # Increase consensus to measure stability
-  retab workflows experiments update wf_abc123 exp_pqr678 --n-consensus 5
+  retab workflows experiments update exp_pqr678 --n-consensus 5
 
   # Add more documents from production
-  retab workflows experiments update wf_abc123 exp_pqr678 \
+  retab workflows experiments update exp_pqr678 \
     --captures-file ./more-captures.json`,
-	Args: cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		// Reject an empty invocation before issuing a no-op PATCH that
 		// would round-trip to the server and silently bump updated_at.
@@ -269,7 +269,7 @@ previously-captured results for that experiment.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		result, err := client.Workflows.Experiments.Update(ctx, args[0], args[1], req)
+		result, err := client.Workflows.Experiments.Update(ctx, args[0], req)
 		if err != nil {
 			return err
 		}
@@ -278,13 +278,13 @@ previously-captured results for that experiment.`,
 }
 
 var workflowsExperimentsDeleteCmd = &cobra.Command{
-	Use:   "delete <workflow-id> <experiment-id>",
+	Use:   "delete <experiment-id>",
 	Short: "Delete an experiment",
 	Long: `Permanently delete an experiment and its run history. Captured
 production runs and artifacts are unaffected.`,
 	Example: `  # Drop an experiment
-  retab workflows experiments delete wf_abc123 exp_pqr678`,
-	Args: cobra.ExactArgs(2),
+  retab workflows experiments delete exp_pqr678`,
+	Args: cobra.ExactArgs(1),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
 		client, err := newClient(cmd)
 		if err != nil {
@@ -292,10 +292,10 @@ production runs and artifacts are unaffected.`,
 		}
 		ctx, cancel := ctxFor(cmd)
 		defer cancel()
-		if err := client.Workflows.Experiments.Delete(ctx, args[0], args[1]); err != nil {
+		if err := client.Workflows.Experiments.Delete(ctx, args[0]); err != nil {
 			return err
 		}
-		confirmDeleted("experiment", args[1])
+		confirmDeleted("experiment", args[0])
 		return nil
 	}),
 }
@@ -418,19 +418,6 @@ var workflowsExperimentsRunsResultsListCmd = &cobra.Command{
 	}),
 }
 
-var workflowsExperimentsRunsResultsGetCmd = &cobra.Command{
-	Use:   "get <run-id> <document-id>",
-	Short: "Get one document result from an experiment run",
-	Args:  cobra.ExactArgs(2),
-	RunE: runE(func(cmd *cobra.Command, args []string) error {
-		result, err := cliJSONRequest(cmd, http.MethodGet, "/workflows/experiments/runs/"+url.PathEscape(args[0])+"/results/"+url.PathEscape(args[1]), nil, nil)
-		if err != nil {
-			return err
-		}
-		return printResult(cmd, result)
-	}),
-}
-
 var workflowsExperimentsRunsMetricsCmd = &cobra.Command{
 	Use:   "metrics",
 	Short: "Inspect experiment run metrics",
@@ -492,7 +479,7 @@ func init() {
 	workflowsExperimentsUpdateCmd.Flags().Var(&consensusFlagValue{}, "n-consensus", "new consensus count (3, 5, or 7)")
 	addExperimentDocFlags(workflowsExperimentsUpdateCmd)
 
-	workflowsExperimentsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsExperimentsRunsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsExperimentsRunsListCmd.Flags().String("workflow-id", "", "filter by workflow id")
 	workflowsExperimentsRunsListCmd.Flags().String("experiment-id", "", "filter by experiment id")
 	workflowsExperimentsRunsListCmd.Flags().String("block-id", "", "filter by block id")
@@ -508,14 +495,14 @@ func init() {
 	workflowsExperimentsRunsListCmd.Flags().String("before", "", "page before cursor")
 	workflowsExperimentsRunsListCmd.Flags().String("after", "", "page after cursor")
 	workflowsExperimentsRunsListCmd.Flags().String("order", "", "asc or desc")
-	workflowsExperimentsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 0, max: 100}, "limit", "max items (1-100; default 20)")
+	workflowsExperimentsRunsResultsListCmd.Flags().Var(&boundedIntFlagValue{min: 1, max: 100}, "limit", "max items (1-100; default 20)")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().String("view", "summary", "view (summary | by_document | by_target | votes)")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().String("document-id", "", "document id")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().String("target-path", "", "target path")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().String("prior-run-id", "", "prior run id")
 	workflowsExperimentsRunsMetricsGetCmd.Flags().Bool("include-prior", true, "include prior run metrics")
 
-	workflowsExperimentsRunsResultsCmd.AddCommand(workflowsExperimentsRunsResultsListCmd, workflowsExperimentsRunsResultsGetCmd)
+	workflowsExperimentsRunsResultsCmd.AddCommand(workflowsExperimentsRunsResultsListCmd)
 	workflowsExperimentsRunsMetricsCmd.AddCommand(workflowsExperimentsRunsMetricsGetCmd)
 	workflowsExperimentsRunsCmd.AddCommand(workflowsExperimentsRunsCreateCmd, workflowsExperimentsRunsListCmd, workflowsExperimentsRunsGetCmd, workflowsExperimentsRunsCancelCmd, workflowsExperimentsRunsResultsCmd, workflowsExperimentsRunsMetricsCmd)
 	workflowsExperimentsCmd.AddCommand(workflowsExperimentsCreateCmd, workflowsExperimentsListCmd, workflowsExperimentsGetCmd, workflowsExperimentsUpdateCmd, workflowsExperimentsDeleteCmd, workflowsExperimentsRunsCmd)

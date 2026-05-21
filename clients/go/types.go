@@ -52,7 +52,7 @@ func (p *PaginatedList[T]) UnmarshalJSON(data []byte) error {
 
 // MIMEData mirrors the Node SDK document shape. URL may be a data URI,
 // an HTTPS URL, or a Retab storage URL. Content/MIMEType are retained for
-// workflow start-document-block payloads, which use the backend's inline document form.
+// workflow start_document-block payloads, which use the backend's inline document form.
 type MIMEData struct {
 	Filename string `json:"filename,omitempty"`
 	Content  string `json:"content,omitempty"`

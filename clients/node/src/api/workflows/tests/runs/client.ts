@@ -1,11 +1,9 @@
 import { CompositionClient, RequestOptions } from '../../../../client.js';
 import {
   WorkflowTestBlockTarget,
-  WorkflowTestResult,
   WorkflowTestResultListResponse,
   WorkflowTestRunListResponse,
   WorkflowTestRun,
-  ZWorkflowTestResult,
   ZWorkflowTestResultListResponse,
   ZWorkflowTestRunListResponse,
   ZWorkflowTestRun,
@@ -36,13 +34,13 @@ export default class APIWorkflowTestRuns extends CompositionClient {
     },
     options?: RequestOptions
   ): Promise<WorkflowTestRun> {
-    const body: Record<string, unknown> = {};
+    const body: Record<string, unknown> = { workflow_id: workflowId };
     if (testId !== undefined) body.test_id = testId;
     if (target !== undefined) body.target = target;
     if (nConsensus !== undefined) body.n_consensus = nConsensus;
 
     return this._fetchJson(ZWorkflowTestRun, {
-      url: `/workflows/tests/runs?workflow_id=${workflowId}`,
+      url: '/workflows/tests/runs',
       method: 'POST',
       body: { ...body, ...((options?.body as Record<string, unknown>) || {}) },
       params: options?.params,
@@ -171,18 +169,6 @@ export class APIWorkflowTestRunResults extends CompositionClient {
       url: `/workflows/tests/runs/${runId}/results`,
       method: 'GET',
       params: { limit, ...(options?.params || {}) },
-      headers: options?.headers,
-    });
-  }
-
-  async get(
-    { runId, testId }: { runId: string; testId: string },
-    options?: RequestOptions
-  ): Promise<WorkflowTestResult> {
-    return this._fetchJson(ZWorkflowTestResult, {
-      url: `/workflows/tests/runs/${runId}/results/${testId}`,
-      method: 'GET',
-      params: options?.params,
       headers: options?.headers,
     });
   }

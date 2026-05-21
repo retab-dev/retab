@@ -1,6 +1,6 @@
 """Python SDK client for the workflow experiments API.
 
-Mirrors the REST endpoints under ``/v1/workflows/experiments?workflow_id={workflow_id}``.
+Mirrors the REST endpoints under ``/v1/workflows/experiments``.
 The MCP tool surface (``experiments_create``, ``experiments_runs_create``,
 ``experiments_runs_metrics_get``, ...) calls the same routes — this resource is
 the SDK-side equivalent so callers don't have to construct raw requests.
@@ -106,9 +106,10 @@ class WorkflowExperimentsMixin:
             documents=documents,
             n_consensus=n_consensus,
         )
+        body["workflow_id"] = workflow_id
         return PreparedRequest(
             method="POST",
-            url=f"/workflows/experiments?workflow_id={workflow_id}",
+            url="/workflows/experiments",
             data=body,
         )
 
@@ -118,15 +119,14 @@ class WorkflowExperimentsMixin:
             url=f"/workflows/experiments?workflow_id={workflow_id}",
         )
 
-    def prepare_get(self, workflow_id: str, experiment_id: str) -> PreparedRequest:
+    def prepare_get(self, experiment_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="GET",
-            url=f"/workflows/experiments/{experiment_id}?workflow_id={workflow_id}",
+            url=f"/workflows/experiments/{experiment_id}",
         )
 
     def prepare_update(
         self,
-        workflow_id: str,
         experiment_id: str,
         *,
         name: str | None = None,
@@ -143,14 +143,14 @@ class WorkflowExperimentsMixin:
         )
         return PreparedRequest(
             method="PATCH",
-            url=f"/workflows/experiments/{experiment_id}?workflow_id={workflow_id}",
+            url=f"/workflows/experiments/{experiment_id}",
             data=body,
         )
 
-    def prepare_delete(self, workflow_id: str, experiment_id: str) -> PreparedRequest:
+    def prepare_delete(self, experiment_id: str) -> PreparedRequest:
         return PreparedRequest(
             method="DELETE",
-            url=f"/workflows/experiments/{experiment_id}?workflow_id={workflow_id}",
+            url=f"/workflows/experiments/{experiment_id}",
         )
 
 
@@ -249,12 +249,6 @@ class ExperimentRunResultsMixin:
             method="GET",
             url=f"/workflows/experiments/runs/{run_id}/results",
             params={"limit": limit},
-        )
-
-    def prepare_get(self, run_id: str, document_id: str) -> PreparedRequest:
-        return PreparedRequest(
-            method="GET",
-            url=f"/workflows/experiments/runs/{run_id}/results/{document_id}",
         )
 
 
@@ -377,11 +371,6 @@ class ExperimentRunResults(SyncAPIResource, ExperimentRunResultsMixin):
         response = self._client._prepared_request(request)
         return PaginatedList[ExperimentResult].model_validate(response)
 
-    def get(self, run_id: str, document_id: str) -> ExperimentResult:
-        request = self.prepare_get(run_id, document_id)
-        response = self._client._prepared_request(request)
-        return ExperimentResult.model_validate(response)
-
 
 class ExperimentRunMetrics(SyncAPIResource, ExperimentRunMetricsMixin):
     def get(
@@ -481,15 +470,14 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         response = self._client._prepared_request(request)
         return PaginatedList[ExperimentResponse].model_validate(response)
 
-    def get(self, workflow_id: str, experiment_id: str) -> ExperimentResponse:
+    def get(self, experiment_id: str) -> ExperimentResponse:
         """Fetch a single experiment by id (refreshes drift state)."""
-        request = self.prepare_get(workflow_id, experiment_id)
+        request = self.prepare_get(experiment_id)
         response = self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
     def update(
         self,
-        workflow_id: str,
         experiment_id: str,
         *,
         name: str | None = None,
@@ -503,7 +491,6 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         metrics — call ``runs.create(...)`` afterwards to recompute.
         """
         request = self.prepare_update(
-            workflow_id,
             experiment_id,
             name=name,
             document_captures=document_captures,
@@ -513,9 +500,9 @@ class WorkflowExperiments(SyncAPIResource, WorkflowExperimentsMixin):
         response = self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
-    def delete(self, workflow_id: str, experiment_id: str) -> None:
+    def delete(self, experiment_id: str) -> None:
         """Delete an experiment along with its runs and results."""
-        request = self.prepare_delete(workflow_id, experiment_id)
+        request = self.prepare_delete(experiment_id)
         self._client._prepared_request(request)
 
 
@@ -602,11 +589,6 @@ class AsyncExperimentRunResults(AsyncAPIResource, ExperimentRunResultsMixin):
         response = await self._client._prepared_request(request)
         return PaginatedList[ExperimentResult].model_validate(response)
 
-    async def get(self, run_id: str, document_id: str) -> ExperimentResult:
-        request = self.prepare_get(run_id, document_id)
-        response = await self._client._prepared_request(request)
-        return ExperimentResult.model_validate(response)
-
 
 class AsyncExperimentRunMetrics(AsyncAPIResource, ExperimentRunMetricsMixin):
     async def get(
@@ -664,14 +646,13 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         response = await self._client._prepared_request(request)
         return PaginatedList[ExperimentResponse].model_validate(response)
 
-    async def get(self, workflow_id: str, experiment_id: str) -> ExperimentResponse:
-        request = self.prepare_get(workflow_id, experiment_id)
+    async def get(self, experiment_id: str) -> ExperimentResponse:
+        request = self.prepare_get(experiment_id)
         response = await self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
     async def update(
         self,
-        workflow_id: str,
         experiment_id: str,
         *,
         name: str | None = None,
@@ -680,7 +661,6 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         n_consensus: NConsensusValue | None = None,
     ) -> ExperimentResponse:
         request = self.prepare_update(
-            workflow_id,
             experiment_id,
             name=name,
             document_captures=document_captures,
@@ -690,6 +670,6 @@ class AsyncWorkflowExperiments(AsyncAPIResource, WorkflowExperimentsMixin):
         response = await self._client._prepared_request(request)
         return ExperimentResponse.model_validate(response)
 
-    async def delete(self, workflow_id: str, experiment_id: str) -> None:
-        request = self.prepare_delete(workflow_id, experiment_id)
+    async def delete(self, experiment_id: str) -> None:
+        request = self.prepare_delete(experiment_id)
         await self._client._prepared_request(request)

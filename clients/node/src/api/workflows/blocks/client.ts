@@ -64,9 +64,9 @@ export default class APIWorkflowBlocks extends CompositionClient {
   /**
    * Get a single block by ID.
    */
-  async get(workflowId: string, blockId: string, options?: RequestOptions): Promise<WorkflowBlock> {
+  async get(blockId: string, options?: RequestOptions): Promise<WorkflowBlock> {
     return this._fetchJson(ZWorkflowBlock, {
-      url: `/workflows/blocks/${blockId}?workflow_id=${workflowId}`,
+      url: `/workflows/blocks/${blockId}`,
       method: 'GET',
       params: options?.params,
       headers: options?.headers,
@@ -92,9 +92,10 @@ export default class APIWorkflowBlocks extends CompositionClient {
     options?: RequestOptions
   ): Promise<WorkflowBlock> {
     return this._fetchJson(ZWorkflowBlock, {
-      url: `/workflows/blocks?workflow_id=${workflowId}`,
+      url: '/workflows/blocks',
       method: 'POST',
       body: {
+        workflow_id: workflowId,
         ...serializeBlockCreateRequest(request),
         ...((options?.body as Record<string, unknown>) || {}),
       },
@@ -107,13 +108,12 @@ export default class APIWorkflowBlocks extends CompositionClient {
    * Update a block with partial data. Only provided fields are updated.
    */
   async update(
-    workflowId: string,
     blockId: string,
     request: WorkflowBlockUpdateRequest,
     options?: RequestOptions
   ): Promise<WorkflowBlock> {
     return this._fetchJson(ZWorkflowBlock, {
-      url: `/workflows/blocks/${blockId}?workflow_id=${workflowId}`,
+      url: `/workflows/blocks/${blockId}`,
       method: 'PATCH',
       body: {
         ...serializeBlockUpdateRequest(request),
@@ -127,9 +127,9 @@ export default class APIWorkflowBlocks extends CompositionClient {
   /**
    * Delete a block and any edges connected to it.
    */
-  async delete(workflowId: string, blockId: string, options?: RequestOptions): Promise<void> {
+  async delete(blockId: string, options?: RequestOptions): Promise<void> {
     return this._fetchJson({
-      url: `/workflows/blocks/${blockId}?workflow_id=${workflowId}`,
+      url: `/workflows/blocks/${blockId}`,
       method: 'DELETE',
       params: options?.params,
       headers: options?.headers,
