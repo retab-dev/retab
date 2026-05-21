@@ -368,16 +368,64 @@ ignored.`,
 }
 
 var workflowsExperimentsRunsListCmd = &cobra.Command{
-	Use:   "list [flags]",
+	Use:   "list [workflow-id] [experiment-id]",
 	Short: "List experiment runs",
 	Long: `List historical executions of one experiment, in reverse
-chronological order.`,
-	Example: `  # See the run history
-  retab workflows experiments runs list --experiment-id exp_pqr678`,
-	Args: cobra.NoArgs,
+chronological order.
+
+The two positional arguments mirror ` + "`workflows experiments runs create`" + `:
+the parent ids ` + "`<workflow-id>`" + ` and ` + "`<experiment-id>`" + ` are
+positional, filters are flags — same convention as the rest of the
+` + "`workflows <X> list`" + ` commands. The flag forms (` + "`--workflow-id`" + `,
+` + "`--experiment-id`" + `) are still accepted for back-compat.`,
+	Example: `  # Positional (recommended; matches ` + "`runs create`" + ` signature)
+  retab workflows experiments runs list wf_abc123 exp_pqr678
+
+  # Flag form (still accepted)
+  retab workflows experiments runs list --workflow-id wf_abc123 --experiment-id exp_pqr678`,
+	Args: cobra.MaximumNArgs(2),
 	RunE: runE(func(cmd *cobra.Command, args []string) error {
+		flagWorkflowID, _ := cmd.Flags().GetString("workflow-id")
+		flagExperimentID, _ := cmd.Flags().GetString("experiment-id")
+		positionalWorkflowID := ""
+		positionalExperimentID := ""
+		if len(args) >= 1 {
+			positionalWorkflowID = args[0]
+		}
+		if len(args) >= 2 {
+			positionalExperimentID = args[1]
+		}
+		// Reject conflict: positional + flag form disagreeing is a
+		// silent-misroute hazard (see the F-bug fix for the block create
+		// route's body/path workflow_id mismatch — same shape).
+		if positionalWorkflowID != "" && flagWorkflowID != "" && positionalWorkflowID != flagWorkflowID {
+			return fmt.Errorf(
+				"workflow id specified twice (positional %q, --workflow-id %q)",
+				positionalWorkflowID, flagWorkflowID,
+			)
+		}
+		if positionalExperimentID != "" && flagExperimentID != "" && positionalExperimentID != flagExperimentID {
+			return fmt.Errorf(
+				"experiment id specified twice (positional %q, --experiment-id %q)",
+				positionalExperimentID, flagExperimentID,
+			)
+		}
+		resolvedWorkflowID := flagWorkflowID
+		if positionalWorkflowID != "" {
+			resolvedWorkflowID = positionalWorkflowID
+		}
+		resolvedExperimentID := flagExperimentID
+		if positionalExperimentID != "" {
+			resolvedExperimentID = positionalExperimentID
+		}
 		query := url.Values{}
-		for _, name := range []string{"workflow-id", "experiment-id", "block-id", "status", "statuses", "exclude-status", "trigger-type", "trigger-types", "from-date", "to-date", "sort-by", "fields", "before", "after", "order"} {
+		if resolvedWorkflowID != "" {
+			query.Set("workflow_id", resolvedWorkflowID)
+		}
+		if resolvedExperimentID != "" {
+			query.Set("experiment_id", resolvedExperimentID)
+		}
+		for _, name := range []string{"block-id", "status", "statuses", "exclude-status", "trigger-type", "trigger-types", "from-date", "to-date", "sort-by", "fields", "before", "after", "order"} {
 			if value, _ := cmd.Flags().GetString(name); value != "" {
 				query.Set(strings.ReplaceAll(name, "-", "_"), value)
 			}
