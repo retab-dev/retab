@@ -195,6 +195,66 @@ func TestRenderWorkflowASCIIViewReportsIsolatedBlocks(t *testing.T) {
 	}
 }
 
+func TestRenderWorkflowASCIIViewDoesNotLeakFloatingLabelTailOntoBoxBorder(t *testing.T) {
+	// Regression test for the "ion" artifact: a floating edge label
+	// whose source handle is too long to fit in the gap between two
+	// horizontally adjacent boxes used to write the FULL label onto a
+	// (then-empty) box-border row, and drawBox would then overwrite
+	// only the cells that fall inside the box, leaving the label's
+	// tail (the chars between the right border of the source box and
+	// the left border of the target box) visible. Pin: no fragment of
+	// the edge label may appear glued to a box-border `+` character on
+	// the box's top or bottom row.
+	workflow := &workflowGraph{
+		Workflow: retab.Workflow{ID: "wf_long_handles", Name: "Long handle bleed"},
+		Blocks: []retab.WorkflowBlock{
+			{ID: "start", Type: "start-document", Label: "Document", PositionX: 0, PositionY: 0},
+			{ID: "split", Type: "split", Label: "Split", PositionX: 300, PositionY: 0},
+			{ID: "extract", Type: "extract", Label: "Extract booking", PositionX: 600, PositionY: 0},
+			{ID: "fn", Type: "function", Label: "Check booking", PositionX: 900, PositionY: 0},
+		},
+		Edges: []retab.WorkflowEdgeDoc{
+			{ID: "e1", SourceBlock: "start", TargetBlock: "split"},
+			{ID: "e2", SourceBlock: "split", TargetBlock: "extract", SourceHandle: "output-file-booking-confirmation"},
+			{ID: "e3", SourceBlock: "extract", TargetBlock: "fn"},
+		},
+	}
+
+	out := renderWorkflowASCIIViewString(t, workflow)
+
+	// Pin: a box-border row must contain only border chars (`+`, `-`)
+	// and whitespace — never letters bleeding in from an edge label
+	// drawn before drawBox had a chance to claim the cells. We detect
+	// this by walking every line that contains a `+` and asserting no
+	// alphanumeric character appears OUTSIDE a balanced `+...+` run.
+	for lineNo, line := range strings.Split(out, "\n") {
+		trimmed := strings.TrimRight(line, " ")
+		if !strings.Contains(trimmed, "+") {
+			continue
+		}
+		// Only consider lines whose only "real" content is box borders.
+		// A border row's content (excluding whitespace) must be entirely
+		// drawn from {+, -}.
+		alphabeticOutsideBorder := false
+		for _, ch := range strings.TrimSpace(trimmed) {
+			if ch == '+' || ch == '-' || ch == ' ' {
+				continue
+			}
+			alphabeticOutsideBorder = true
+			break
+		}
+		if !alphabeticOutsideBorder {
+			continue
+		}
+		// If we reach here, the line has letters; that's only OK when
+		// the line is actually a label/content row (contains `|`). A
+		// pure border row must not.
+		if !strings.Contains(line, "|") {
+			t.Fatalf("box-border row %d contains stray letters (likely an edge-label tail): %q\nfull output:\n%s", lineNo, line, out)
+		}
+	}
+}
+
 func TestRenderWorkflowASCIIViewKeepsTypeTagWhenBlockIDIsLong(t *testing.T) {
 	// Long random ids must not knock the type tag out of the meta line —
 	// the type is far more useful than the trailing 6 chars of an opaque id.
