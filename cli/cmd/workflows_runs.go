@@ -26,36 +26,35 @@ import (
 // The deprecated alias is preserved for one release cycle so existing
 // scripts keep working. When the alias is used at least once, a single
 // warning line is written to warnTo regardless of how many values were
-// passed. Mixing both flags is allowed — the maps are unioned, with the
-// new `--document` flag winning on key collision — and still produces
-// exactly one warning line.
+// passed.
+//
+// A given block-id must appear at most once across BOTH flags. Repeating a
+// block id inside the same flag, or having the same block id in both flags,
+// is a hard error — silently letting the last entry win would mask user
+// typos and produce surprising "which one ran?" behavior at runtime.
 //
 // Each entry must be of the form `block-id=path`. Empty keys, empty values,
 // and entries without an `=` produce an error.
 func parseDocumentArgs(docs []string, docFiles []string, warnTo io.Writer) (map[string]string, error) {
 	out := map[string]string{}
-	if err := appendKVPairs(out, docs, "--document"); err != nil {
+	// `source` tracks which flag claimed each block id so cross-flag
+	// collisions can name both flags in the error message.
+	source := map[string]string{}
+	if err := appendKVPairs(out, source, docs, "--document"); err != nil {
 		return nil, err
 	}
 	if len(docFiles) > 0 {
 		if warnTo != nil {
 			fmt.Fprintln(warnTo, "warning: --document-file is deprecated for workflows runs create; use --document <block-id>=<path>")
 		}
-		// Stage the deprecated entries first, then let --document overwrite
-		// on key collision so the new flag wins when both are passed.
-		staged := map[string]string{}
-		if err := appendKVPairs(staged, docFiles, "--document-file"); err != nil {
+		if err := appendKVPairs(out, source, docFiles, "--document-file"); err != nil {
 			return nil, err
 		}
-		for k, v := range out {
-			staged[k] = v
-		}
-		out = staged
 	}
 	return out, nil
 }
 
-func appendKVPairs(into map[string]string, raws []string, flagName string) error {
+func appendKVPairs(into map[string]string, source map[string]string, raws []string, flagName string) error {
 	for _, raw := range raws {
 		key, path, ok := splitKV(raw)
 		if !ok {
@@ -64,7 +63,20 @@ func appendKVPairs(into map[string]string, raws []string, flagName string) error
 		if key == "" || path == "" {
 			return fmt.Errorf("%s expects block-id=path, got %q", flagName, raw)
 		}
+		if prevFlag, exists := source[key]; exists {
+			if prevFlag == flagName {
+				return fmt.Errorf(
+					"block %q passed twice via %s; each block id must appear at most once",
+					key, flagName,
+				)
+			}
+			return fmt.Errorf(
+				"block %q has both %s and %s; pass exactly one source per block",
+				key, prevFlag, flagName,
+			)
+		}
 		into[key] = path
+		source[key] = flagName
 	}
 	return nil
 }
